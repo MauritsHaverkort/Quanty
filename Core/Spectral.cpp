@@ -1403,7 +1403,9 @@ uint32_t MatrixToSpectrum(const MatrixType M, const double E0, const double Gamm
 uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, SpectraType * const G)
 {
   int iE;
-  uint32_t i;
+  uint32_t iEmin,iEplus;
+  double wmin,wplus;
+  int i,j,k;
   double omega,denom;
   if(GlobalTimeOn&0x40) BeginTiming("ListOfPolesToSpectrum", &GlobalTime);
   G->b[0]=0;
@@ -1412,18 +1414,64 @@ uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, Spectra
     G->b[0]+=P.b[i];
   }
   G->b[0]=sqrt( G->b[0]);
-#pragma omp parallel for private(i,omega,denom)
-  for(iE=0;iE<=G->N;iE++)
+  if(G->Gamma==0)
   {
-    omega = (double)iE*G->dE+G->Emin+Energy;
-    // add A0
-    G->Re[iE]=P.a0;
-    // loop over all poles
-    for(i=0;i<P.N;i++)
+    for(j=0;j<P.N;j++)
     {
-      denom = (Sqr(G->Gamma/2.0) + Sqr(omega-P.a[i]));
-      G->Re[iE] += P.b[i] * (omega-P.a[i])  / denom;
-      G->Im[iE] += P.b[i] * (-G->Gamma/2.0) / denom;
+      /* the poles have energy P.a[j] */
+      if(P.a[j]<=G->Emin)
+      {
+        iEmin=0;
+        iEplus=0;
+        wmin=1;
+        wplus=0;
+      }
+      else if(P.a[j]>=G->Emax)
+      {
+        iEmin=G->N;
+        iEplus=G->N;
+        wmin=1;
+        wplus=0;
+      }
+      else
+      {
+        iEmin=(uint32_t)((P.a[j]-G->Emin)/G->dE);
+        iEplus=iEmin+1;
+        wplus=((P.a[j]-G->Emin)/G->dE)-iEmin;
+        wmin=1-wplus;
+      }
+      /* add the im part of the lorenzian to energy iEmin and iEplus */
+      G->Im[iEmin]  -=  wmin*P.b[j];
+      G->Im[iEplus] -= wplus*P.b[j];
+    }
+    /* the im part of the lorenzians is there, we now need to add the real part */
+    for(j=0;j<=G->N;j++)
+    {
+      for(k=0;k<j;k++)
+      {
+        G->Re[k]-=G->Im[j]/(Pi*(k-j));
+      }
+      for(k=j+1;k<=G->N;k++)
+      {
+        G->Re[k]-=G->Im[j]/(Pi*(k-j));
+      }
+    }
+  }
+  else
+  {
+#pragma omp parallel for private(i,omega,denom)
+    for(iE=0;iE<=G->N;iE++)
+    {
+      omega = (double)iE*G->dE+G->Emin+Energy;
+      // add A0
+      G->Re[iE]=P.a0;
+      // loop over all poles
+      for(i=0;i<P.N;i++)
+      {
+        denom = (Sqr(G->Gamma/2.0) + Sqr(omega-P.a[i]));
+        G->Re[iE] += P.b[i] * (omega-P.a[i])  / denom;
+        G->Im[iE] += P.b[i] * (-G->Gamma/2.0) / denom;
+      }
     }
   }
   if(GlobalTimeOn&0x40) EndTiming("ListOfPolesToSpectrum", &GlobalTime);
@@ -1713,8 +1761,7 @@ void SplitAndersonImpurityHamiltonian(const TriDiagonalMatrixType M, const doubl
 *   They can and probably should be replaced by functions acting on the fitted spectra !!!!!!!!!!!!!!!
 *   S <- 1/G0-1/G
 */
-void CalculateSelfEnergySpectralRepresentation(const SpectraType G0, const SpectraType G, SpectraType * const S,
-                                               const double *const FWHM)
+void CalculateSelfEnergySpectralRepresentation(const SpectraType G0, const SpectraType G, SpectraType * const S, const double *const FWHM)
 {
   uint32_t i;
   for (i = 0; i <= G0.N; i++)

@@ -147,40 +147,64 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
 
 uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
-  printf("TODO: NoneBlockResponseFunctionToSpectra\n");
+  int i;
+  int ExtraPoints = 0;
+  double EboarderShift =0;
+  const double dE = (Emax - Emin) / NE;
+  if(GammaG!=0)
+  {
+    ExtraPoints = ( 4 * GammaG ) / dE ;
+    EboarderShift = ExtraPoints * dE;
+    Emin -= EboarderShift;
+    Emax += EboarderShift;
+    NE   += 2*ExtraPoints;
+  }
+  A->phase=0;
+  A->Emax=Emax;
+  A->Emin=Emin;
+  A->EmaxPole=Emax;
+  A->EminPole=Emin;
+  A->Gamma=GammaL;
+  A->N=NE;
+  A->dE=dE;
+  A->ResonantEnergy=NAN;
+  SpectrumAllocate(*A, A);
   if(GammaL==0) // transform to spectrum with zero Gamma
   {
     switch (M->type|32)
     {
       case 'l':
       {
-        
+        ListOfPolesToSpectrum(GroundStateEnergy, *(ListOfPoles*)M->data, A);
       }
         break;
       case 't':
       {
-        
+        TriDiagonalMatrixToSpectrum(GroundStateEnergy, *(TriDiagonalMatrixType*)M->data, A);
       }
         break;
       case 'a':
       {
-        
+        AndersonImpurityMatrixToSpectrum(GroundStateEnergy, *(AndersonMatrixType*)M->data, A);
       }
         break;
       case 'n':
       {
-        
+        BADoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(BADoubleTriDiagonalMatrixType*)M->data, A);
       }
         break;
     }
   }
   else // transform to spectra with non-zero Gamma
   {
+    
+    printf("TODO: NoneBlockResponseFunctionToSpectra with Lorentzian broadening\n");
+
     switch (M->type|32)
     {
      case 'l':
      {
-     
+       
      }
      break;
      case 't':
@@ -203,6 +227,7 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
  if(GammaG!=0)
  {
    BroadenG(A, GammaG);
+   RemovePointsSpectra(A, ExtraPoints, ExtraPoints);
  }
  return 0;
 }

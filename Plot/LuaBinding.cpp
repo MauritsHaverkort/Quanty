@@ -641,7 +641,6 @@ int LuaPlotGraphics(lua_State * L)
     {"Frame","FramePlotOptions",&(Options.Frame)},
     {"Axis", "FramePlotOptions",&(Options.Frame)},
     {"LineStyle", "LinePlotOptionsArray",&(Options.Style)},
-
     {"plotIm","bool",&(Options.PlotIm)},
     {"plotRe","bool",&(Options.PlotRe)},
     {"Negate","bool",&(Options.Negate)},

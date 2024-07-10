@@ -110,25 +110,23 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 /*
  * change the type of a Block response function from M->type to type
  */
-ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char type, double T, double SingularValue)
+int ConvertBlockMatrix(ResponsefunctionType *Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
 {
-  ResponsefunctionType *res;
-  if(M->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
-  res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
-  res->NSuggestedGridPoints = 0;
-  res->type = type;
-  res->Block = true;
-  res->NSuggestedGridPoints=M->NSuggestedGridPoints;
-  if(res->NSuggestedGridPoints==0)
+  if(Min->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+  Mout->NSuggestedGridPoints = 0;
+  Mout->type = type;
+  Mout->Block = true;
+  Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
+  if(Mout->NSuggestedGridPoints==0)
   {
-    res->SuggestedGrid=NULL;
+    Mout->SuggestedGrid=NULL;
   }
   else
   {
-    res->SuggestedGrid= (double*)malloc(res->NSuggestedGridPoints*sizeof(double));
-    memcpy(res->SuggestedGrid, M->SuggestedGrid, res->NSuggestedGridPoints*sizeof(double));
+    Mout->SuggestedGrid= (double*)malloc(Mout->NSuggestedGridPoints*sizeof(double));
+    memcpy(Mout->SuggestedGrid, Min->SuggestedGrid, Mout->NSuggestedGridPoints*sizeof(double));
   }
-  switch (M->type|32)      // original type
+  switch (Min->type|32)      // original type
   {
     case 'l': // original list of poles
     {
@@ -136,28 +134,28 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          CopyBlockListOfPoles(*(BlockListOfPoles*)M->data, (BlockListOfPoles*)res->data);
+          Mout->data = (void*) malloc(sizeof(BlockListOfPoles));
+          CopyBlockListOfPoles(*(BlockListOfPoles*)Min->data, (BlockListOfPoles*)Mout->data);
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)M->data, (BlockTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N, SingularValue);
+          Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, SingularValue);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
-          BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)M->data, (BlockAndersonMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N+1);
+          Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)Min->data, (BlockAndersonMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N+1);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
           //TODO: get res->data->N right for block list of poles
           //TODO: allow flexible set of states in tri-diag form with options
-          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(M->data), (BlockNaturalImpurityOrbitalMatrixType*)(res->data), T, ((BlockListOfPoles*)(M->data))->N+1, ((BlockListOfPoles*)(M->data))->N+1);
+          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
         }
         break;
         default:
@@ -174,33 +172,33 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          if(M->NSuggestedGridPoints!=0)
+          Mout->data = (void*) malloc(sizeof(BlockListOfPoles));
+          if(Min->NSuggestedGridPoints!=0)
           {
-            BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
+            BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid((BlockTriDiagonalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, Min->SuggestedGrid, Min->NSuggestedGridPoints);
           }
           else
           {
-            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)M->data, (BlockListOfPoles*)res->data);
+            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
           }
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          CopyBlockTridiagonalMatrix(*(BlockTriDiagonalMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          CopyBlockTridiagonalMatrix(*(BlockTriDiagonalMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
-          BlockTriDiagonalMatrixToBlockAndersonMatrix(*(BlockTriDiagonalMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          BlockTriDiagonalMatrixToBlockAndersonMatrix(*(BlockTriDiagonalMatrixType*)Min->data, (BlockAndersonMatrixType*)Mout->data);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data,T);
+          Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
         }
         break;
         default:
@@ -217,38 +215,38 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          if(M->NSuggestedGridPoints!=0)
+          Mout->data = (void*) malloc(sizeof(BlockListOfPoles));
+          if(Min->NSuggestedGridPoints!=0)
           {
-            BlockAndersonMatrixToBlockListOfPolesVariableGrid(*(BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
+            BlockAndersonMatrixToBlockListOfPolesVariableGrid(*(BlockAndersonMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, Min->SuggestedGrid, Min->NSuggestedGridPoints);
           }
           else
           {
-            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)M->data, (BlockListOfPoles*)res->data);
+            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
           }
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data, SingularValue);
+          Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, SingularValue);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
-          CopyBlockAndersonMatrix(*(BlockAndersonMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          CopyBlockAndersonMatrix(*(BlockAndersonMatrixType*)Min->data, (BlockAndersonMatrixType*)Mout->data);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)M->data,(BlockNaturalImpurityOrbitalMatrixType*)res->data,T);
+          Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
         }
         break;
         default:
         {
-          printf("Error in ConvertBlockMatrix unrecognized type of M: %c",M->type);
+          printf("Error in ConvertBlockMatrix unrecognized type: %c",type);
         }
         break;
       }
@@ -260,34 +258,34 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(BlockListOfPoles));
-          if(M->NSuggestedGridPoints!=0)
+          Mout->data = (void*) malloc(sizeof(BlockListOfPoles));
+          if(Min->NSuggestedGridPoints!=0)
           {
-            BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data, M->SuggestedGrid, M->NSuggestedGridPoints);
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(*(BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, Min->SuggestedGrid, Min->NSuggestedGridPoints);
           }
           else
           {
-            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockListOfPoles*)res->data);
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
           }
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockTriDiagonalMatrixType*)res->data, SingularValue);
+          Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, SingularValue);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
-          BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix((BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockAndersonMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockAndersonMatrixType*)Mout->data);
 
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          CopyBlockNaturalImpurityOrbitalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)M->data, (BlockNaturalImpurityOrbitalMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          CopyBlockNaturalImpurityOrbitalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
         }
         break;
         default:
@@ -300,10 +298,10 @@ ResponsefunctionType *ConvertBlockMatrix(ResponsefunctionType *M, const char typ
     break;
     default:
     {
-      printf("Error in ConvertBlockMatrix unrecognized type of M: %c",M->type);
+      printf("Error in ConvertBlockMatrix unrecognized type of M: %c",Min->type);
     }
     break;
   }
-  return res;
+  return 0;
 }
 

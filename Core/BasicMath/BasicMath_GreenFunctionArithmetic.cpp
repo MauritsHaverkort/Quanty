@@ -663,8 +663,7 @@ uint32_t ReducePolesTriDiagonalMatrix(TriDiagonalMatrixType * const A, uint32_t 
 /* M=A-B
  *
  */
-uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B,
-                                                           TriDiagonalMatrixType * const M)
+uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType const A, TriDiagonalMatrixType const B, TriDiagonalMatrixType * const M)
 {
   ListOfPoles Ap, Bp;
   if (TriDiagonalMatrixToListOfPoles(A, &Ap))
@@ -711,8 +710,7 @@ uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType
 /* S = Gbath^{-1} - Gcluster^{-1}
  *
  */
-uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G,
-                                             TriDiagonalMatrixType * const Sigma)
+uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G, TriDiagonalMatrixType * const Sigma)
 {
   TriDiagonalMatrixType IG0, IG;
   IG0.N = G0.N - 1;
@@ -728,8 +726,7 @@ uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, Tri
   return DifferenceGreensFunctionTriDiagonalRepresentation(IG, IG0, Sigma);
 }
 
-uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType const G0, AndersonMatrixType const G,
-                                                         ListOfPoles * const Sigma)
+uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType const G0, AndersonMatrixType const G, ListOfPoles * const Sigma)
 {
   uint32_t i;
   ListOfPoles IG0;
@@ -754,14 +751,13 @@ uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType cons
   }
   Sigma->mu = G.mu;
   strcpy(Sigma->Name, "Self energy");
-  printf("Self energy moments\n");
-  PrintListOfPolesEssentials(*Sigma);
+  //printf("Self energy moments\n");
+  //PrintListOfPolesEssentials(*Sigma);
   FreeListOfPoles(&IG0);
   return 0;
 }
 
-uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixType const G0,
-                                                            TriDiagonalMatrixType const G, ListOfPoles * const Sigma)
+uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G, ListOfPoles * const Sigma)
 {
   ListOfPoles IG0;
   AndersonMatrixType G0And, GAnd;
@@ -796,6 +792,219 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
   return 0;
 }
 
+/*
+ *  Sigma must point to a Responsefunction object that is not initiallized.
+ */
+int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  * const G, ResponsefunctionType * const Sigma)
+{
+  if(G0->Block==false)
+  {
+    ResponsefunctionType G0And, GAnd;
+    AndersonMatrixType *G0AndData,*GAndData;
+    if(!((G0->type=='a')||(G0->type=='A')))
+    {
+      ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+      G0AndData = (AndersonMatrixType*)G0And.data;
+    }
+    else
+    {
+      G0AndData = (AndersonMatrixType*)G0->data;
+    }
+    if(!((G->type=='a')||(G->type=='A')))
+    {
+      ConvertResponsefunction(G, &GAnd, 'A', 0, 0);
+      GAndData = (AndersonMatrixType*)GAnd.data;
+    }
+    else
+    {
+      GAndData = (AndersonMatrixType*)G->data;
+    }
+    Sigma->type='L';
+    Sigma->Block=false;
+    Sigma->NSuggestedGridPoints=0;
+    Sigma->SuggestedGrid=NULL;
+    Sigma->data = (void*)malloc(sizeof(ListOfPoles));
+    SelfEnergyListOfPolesFromAndersonRepresentation(*G0AndData, *GAndData, (ListOfPoles*)Sigma->data);
+    if(!((G0->type=='a')||(G0->type=='A')))
+    {
+      FreeResponsefunction(&G0And);
+    }
+    if(!((G->type=='a')||(G->type=='A')))
+    {
+      FreeResponsefunction(&GAnd);
+    }
+  }
+  else
+  {
+    printf("Self energy on Block response functions not yet implemented\n Trivial to do \n");
+    
+    
+  }
+  return 0;
+}
+
+/*  G(mu+w) -> -G(mu-w)^*
+ *
+ */
+int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
+{
+  ResponsefunctionCopy(Gin,Gout);
+  
+  int i;
+  double TwoMu;
+  if(Gout->Block==true)
+  {
+    switch (Gout->type|32)
+    {
+      case 'a':
+      {
+        
+        printf("TODO ResponseFunctionInvertEnergy\n");
+      }
+      break;
+      case 'l':
+      {
+        
+        printf("TODO ResponseFunctionInvertEnergy\n");
+      }
+      break;
+      case 't':
+      {
+        
+        printf("TODO ResponseFunctionInvertEnergy\n");
+      }
+      break;
+      case 'n':
+      {
+        
+        printf("TODO ResponseFunctionInvertEnergy\n");
+      }
+      break;
+    }
+  }
+  else
+  {
+    switch (Gout->type|32)
+    {
+      case 'a':
+      {
+        TwoMu = 2 * ((AndersonMatrixType*)(Gout->data))->mu;
+        for(i=0;i<=((AndersonMatrixType*)(Gout->data))->N;i++)
+        {
+          ((AndersonMatrixType*)(Gout->data))->a[i]*=- 1;
+        }
+        for(i=1;i<=((AndersonMatrixType*)(Gout->data))->N;i++)
+        {
+          ((AndersonMatrixType*)(Gout->data))->a[i]+= TwoMu;
+        }
+      }
+      break;
+      case 'l':
+      {
+        TwoMu = 2 * ((ListOfPoles*)(Gout->data))->mu;
+        for(i=0;i<((ListOfPoles*)(Gout->data))->N;i++)
+        {
+          ((ListOfPoles*)(Gout->data))->a[i]*=-1;
+          ((ListOfPoles*)(Gout->data))->a[i]+=TwoMu;
+        }
+        ((ListOfPoles*)(Gout->data))->a0*=-1;
+      }
+      break;
+      case 't':
+      {
+        TwoMu = 2 * ((TriDiagonalMatrixType*)(Gout->data))->mu;
+        for(i=0;i<=((TriDiagonalMatrixType*)(Gout->data))->N;i++)
+        {
+          ((TriDiagonalMatrixType*)(Gout->data))->a[i]*=-1;
+        }
+        for(i=1;i<=((TriDiagonalMatrixType*)(Gout->data))->N;i++)
+        {
+          ((TriDiagonalMatrixType*)(Gout->data))->a[i]+=TwoMu;
+        }
+      }
+      break;
+      case 'n':
+      {
+        TwoMu = 2 * ((BADoubleTriDiagonalMatrixType*)(Gout->data))->mu;
+        
+          
+        printf("TODO ResponseFunctionInvertEnergy\n");
+
+        
+      }
+      break;
+    }
+  }
+  return 0;
+}
+
+int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
+{
+  ResponsefunctionType GBLP;
+  ConvertResponsefunction(GA, Gsum, 'L', 0, 0);
+  ConvertResponsefunction(GB, &GBLP, 'L', 0, 0);
+  
+  if(GA->Block)
+  {
+    AddBlockListOfPoles((BlockListOfPoles*)(Gsum->data), *(BlockListOfPoles*)(GBLP.data));
+  }
+  else
+  {
+    AddListOfPoles((ListOfPoles*)(Gsum->data), *(ListOfPoles*)(GBLP.data));
+  }
+  FreeResponsefunction(&GBLP);
+  return 0;
+}
+
+int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, ResponsefunctionType * const G)
+{
+ if(G0->Block==false)
+ {
+   ResponsefunctionType G0And, SigmaLP;
+   AndersonMatrixType *G0AndData;
+   ListOfPoles        *SigmaLPData;
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     G0AndData = (AndersonMatrixType*)G0And.data;
+   }
+   else
+   {
+     G0AndData = (AndersonMatrixType*)G0->data;
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     SigmaLPData = (ListOfPoles*)SigmaLP.data;
+   }
+   else
+   {
+     SigmaLPData = (ListOfPoles*)Sigma->data;
+   }
+   G->type='A';
+   G->Block=false;
+   G->NSuggestedGridPoints=0;
+   G->SuggestedGrid=NULL;
+   G->data = (void*)malloc(sizeof(AndersonMatrixType));
+   GBathAndListAndRepresentation(*G0AndData, G0AndData->mu, *SigmaLPData, (AndersonMatrixType *)(G->data) );
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     FreeResponsefunction(&G0And);
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     FreeResponsefunction(&SigmaLP);
+   }
+ }
+ else
+ {
+   printf("Hybridization function for Block response functions not yet implemented\n Trivial to do \n");
+   
+   
+ }
+ return 0;
+}
+
 
 /*  GBath(w) = 1 / ( G_0(w+mu-Sigma(w))^{-1} + Sigma(w) )
  *    G_0(w+mu-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
@@ -803,8 +1012,7 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
  *    G_0(w+mu-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w+mu-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const mu, TriDiagonalMatrixType const Sigma,
-                                      AndersonMatrixType * const G)
+uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const mu, TriDiagonalMatrixType const Sigma, AndersonMatrixType * const G)
 {
   uint32_t i, j;
   ListOfPoles bSigmaPole;
@@ -861,8 +1069,7 @@ uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const 
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - b1^2 / (w - S - a2 - b2^2 / (w - S - ...
  */
-uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma,
-                                        TriDiagonalMatrixType * const GBath, uint32_t NTriDiag)
+uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType * const GBath, uint32_t NTriDiag)
 {
   uint32_t i, j;
   MatrixType T;
@@ -914,8 +1121,7 @@ uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiago
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma,
-                                       AndersonMatrixType * const G)
+uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma, AndersonMatrixType * const G)
 {
   uint32_t i, j;
   ListOfPoles bSigmaPole;
@@ -976,8 +1182,7 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t GBathAndTriAndRepresentationParallel(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma,
-                                              AndersonMatrixType * const G)
+uint32_t GBathAndTriAndRepresentationParallel(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType * const G)
 {
   int    i, j, failed = 0;
   G->N = (G0.N - 1) * (Sigma.N + 1) + 1;
@@ -1052,8 +1257,7 @@ uint32_t GBathAndTriAndRepresentationParallel(AndersonMatrixType const G0, TriDi
  *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  */
-uint32_t OldGBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma,
-                                         AndersonMatrixType * const G)
+uint32_t OldGBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma, AndersonMatrixType * const G)
 {
   uint32_t i, j;
   ListOfPoles bSigmaPole;
@@ -1109,8 +1313,7 @@ uint32_t OldGBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagona
  *  Assume Gcl.a[0]=0;
  *         Gcl.b[0]=1;
  */
-uint32_t OldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gcl, TriDiagonalMatrixType const Sigma,
-                                              TriDiagonalMatrixType * const GBathNew)
+uint32_t OldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gcl, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType * const GBathNew)
 {
   uint32_t i;
   TriDiagonalMatrixType GclInv, SigmaInv, GBathNewInv;
@@ -1152,8 +1355,7 @@ uint32_t OldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gcl, T
  *  Assume Glocal.a[0]=0;
  *         Glocal.b[0]=1;
  */
-uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Glocal, TriDiagonalMatrixType const Sigma,
-                                                  TriDiagonalMatrixType * const GBathNew)
+uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Glocal, TriDiagonalMatrixType const Sigma, TriDiagonalMatrixType * const GBathNew)
 {
   uint32_t i;
   TriDiagonalMatrixType GlocInv, GBathNewInv;
@@ -1183,8 +1385,7 @@ uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gl
 /*  This routine returns a tri-diagonal matrix representing a greensfunction as a continued fraction in Gnew
  *  
  */
-uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonalMatrixType * const Gnew,
-                                      MatrixType const Rho, uint32_t const NRho, TriDiagonalMatrixType * const Gp)
+uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonalMatrixType * const Gnew,  MatrixType const Rho, uint32_t const NRho, TriDiagonalMatrixType * const Gp)
 {
   SparseMatrixType M;
   MatrixType T;
@@ -1859,25 +2060,27 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 /*
  *
  */
-ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const char type, double T, double SingularValue)
+int ConvertResponsefunction(ResponsefunctionType *Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
 {
-  ResponsefunctionType *res;
-  if(M->Block==true) return ConvertBlockMatrix(M,type,T,SingularValue);
-  res = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
-  res->NSuggestedGridPoints = 0;
-  res->type = type;
-  res->Block = false;
-  res->NSuggestedGridPoints=M->NSuggestedGridPoints;
-  if(res->NSuggestedGridPoints==0)
+  if(Min->Block==true)
   {
-    res->SuggestedGrid=NULL;
+    ConvertBlockMatrix(Min,Mout,type,T,SingularValue);
+    return 0;
+  }
+  Mout->NSuggestedGridPoints = 0;
+  Mout->type = type;
+  Mout->Block = false;
+  Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
+  if(Mout->NSuggestedGridPoints==0)
+  {
+    Mout->SuggestedGrid=NULL;
   }
   else
   {
-    res->SuggestedGrid= (double*)malloc(res->NSuggestedGridPoints*sizeof(double));
-    memcpy(res->SuggestedGrid, M->SuggestedGrid, res->NSuggestedGridPoints*sizeof(double));
+    Mout->SuggestedGrid= (double*)malloc(Mout->NSuggestedGridPoints*sizeof(double));
+    memcpy(Mout->SuggestedGrid, Min->SuggestedGrid, Mout->NSuggestedGridPoints*sizeof(double));
   }
-  switch (M->type|32)      // original type
+  switch (Min->type|32)      // original type
   {
     case 'l': // original list of poles
     {
@@ -1885,26 +2088,26 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(ListOfPoles));
-          ListOfPolesCopy((ListOfPoles*)res->data,*(ListOfPoles*)M->data);
+          Mout->data = (void*) malloc(sizeof(ListOfPoles));
+          ListOfPolesCopy((ListOfPoles*)Mout->data, *((ListOfPoles*)Min->data ));
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)M->data, (TriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N);
+          Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)Min->data, (TriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(AndersonMatrixType));
-          ListOfPolesToAndersonMatrix(*(ListOfPoles*)M->data, (AndersonMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(AndersonMatrixType));
+          ListOfPolesToAndersonMatrix(*(ListOfPoles*)Min->data, (AndersonMatrixType*)Mout->data);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((BlockListOfPoles*)(M->data))->N, ((BlockListOfPoles*)(M->data))->N, ((BlockListOfPoles*)(M->data))->mu, T);
+          Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->mu, T);
         }
         break;
         default:
@@ -1921,26 +2124,26 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(ListOfPoles));
-          TriDiagonalMatrixToListOfPoles(*(TriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
+          Mout->data = (void*) malloc(sizeof(ListOfPoles));
+          TriDiagonalMatrixToListOfPoles(*((TriDiagonalMatrixType*)Min->data), (ListOfPoles*)Mout->data);
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          TriDiagonalMatrixCopy((TriDiagonalMatrixType*)res->data, *(TriDiagonalMatrixType*)M->data);
+          Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          TriDiagonalMatrixCopy((TriDiagonalMatrixType*)Mout->data, *(TriDiagonalMatrixType*)Min->data);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(AndersonMatrixType));
-          TriDiagonalMatrixToAndersonMatrix(*(TriDiagonalMatrixType*)M->data, (AndersonMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(AndersonMatrixType));
+          TriDiagonalMatrixToAndersonMatrix(*(TriDiagonalMatrixType*)Min->data, (AndersonMatrixType*)Mout->data);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->N, ((TriDiagonalMatrixType*)M->data)->mu, T);
+          Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->mu, T);
         }
         break;
         default:
@@ -1957,31 +2160,31 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(ListOfPoles));
-          AndersonMatrixToListOfPoles(*(AndersonMatrixType*)M->data, (ListOfPoles*)res->data);
+          Mout->data = (void*) malloc(sizeof(ListOfPoles));
+          AndersonMatrixToListOfPoles(*((AndersonMatrixType*)(Min->data)), (ListOfPoles*)Mout->data);
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)M->data, (TriDiagonalMatrixType*)res->data, ((AndersonMatrixType*)M->data)->N);
+          Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(AndersonMatrixType));
-          AndersonMatrixCopy((AndersonMatrixType*)res->data,*(AndersonMatrixType*)M->data);
+          Mout->data = (void*) malloc(sizeof(AndersonMatrixType));
+          AndersonMatrixCopy((AndersonMatrixType*)Mout->data,*(AndersonMatrixType*)Min->data);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)M->data, (BADoubleTriDiagonalMatrixType*)res->data, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->N, ((AndersonMatrixType*)M->data)->mu, T);
+          Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->mu, T);
         }
         break;
         default:
         {
-          printf("Error in ConvertResponsefunction unrecognized type of M: %c",M->type);
+          printf("Error in ConvertResponsefunction unrecognized type of M: %c",Min->type);
         }
         break;
       }
@@ -1993,26 +2196,26 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
       {
         case 'l':
         {
-          res->data = (void*) malloc(sizeof(ListOfPoles));
-          BADoubleTriDiagonalMatrixToListOfPoles((BADoubleTriDiagonalMatrixType*)M->data, (ListOfPoles*)res->data);
+          Mout->data = (void*) malloc(sizeof(ListOfPoles));
+          BADoubleTriDiagonalMatrixToListOfPoles((BADoubleTriDiagonalMatrixType*)Min->data, (ListOfPoles*)Mout->data);
         }
         break;
         case 't':
         {
-          res->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          BADoubleTriDiagonalMatrixToTriDiagonalMatrix((BADoubleTriDiagonalMatrixType*)M->data, (TriDiagonalMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
+          BADoubleTriDiagonalMatrixToTriDiagonalMatrix((BADoubleTriDiagonalMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data);
         }
         break;
         case 'a':
         {
-          res->data = (void*) malloc(sizeof(AndersonMatrixType));
-          BADoubleTriDiagonalMatrixToAndersonMatrix((BADoubleTriDiagonalMatrixType*)M->data, (AndersonMatrixType*)res->data);
+          Mout->data = (void*) malloc(sizeof(AndersonMatrixType));
+          BADoubleTriDiagonalMatrixToAndersonMatrix((BADoubleTriDiagonalMatrixType*)Min->data, (AndersonMatrixType*)Mout->data);
         }
         break;
         case 'n':
         {
-          res->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          BADoubleTriDiagonalMatrixCopy((BADoubleTriDiagonalMatrixType*)res->data, *(BADoubleTriDiagonalMatrixType*)M->data);
+          Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          BADoubleTriDiagonalMatrixCopy((BADoubleTriDiagonalMatrixType*)Mout->data, *(BADoubleTriDiagonalMatrixType*)Min->data);
         }
         break;
         default:
@@ -2025,20 +2228,20 @@ ResponsefunctionType *ConvertResponsefunction(ResponsefunctionType *M, const cha
     break;
     default:
     {
-      printf("Error in ConvertResponsefunction unrecognized type of M: %c\n",M->type);
+      printf("Error in ConvertResponsefunction unrecognized type of M: %c\n",Min->type);
     }
     break;
   }
-  return res;
+  return 0;
 }
 
 
 /*
  *
  */
-ResponsefunctionType *ResponsefunctionCopy(ResponsefunctionType *M)
+int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout)
 {
-  return ConvertResponsefunction(M,M->type,0,0);
+  return ConvertResponsefunction(Min,Mout,Min->type,0,0);
 }
 
 /*   FreeResponsefunction frees the content of a response function

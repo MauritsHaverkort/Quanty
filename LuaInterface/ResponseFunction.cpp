@@ -28,7 +28,7 @@
  */
 static int LuaChangeTypeResponseFunction(lua_State *L)
 {
-  ResponsefunctionType *Min, *Mout;
+  ResponsefunctionType *Min, Mout;
   char const * convert;
   char type;
   double T=sqrt(DBL_MIN);
@@ -134,38 +134,31 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
-  
-  if(Min->Block==true)
-  {
-    Mout = ConvertBlockMatrix(Min, type, T, SingularValue);
-  }
-  else
-  {
-    Mout = ConvertResponsefunction(Min, type, T, SingularValue);
-  }
-  LuaPush_ResponseFunction(L, Mout);
-  FreeResponsefunction(Mout);
+  ConvertResponsefunction(Min, &Mout, type, T, SingularValue);
+  LuaPush_ResponseFunction(L, &Mout);
+  FreeResponsefunction(&Mout);
   FreeResponsefunction(Min);
   return 1;
 }
 
 static int LuaResponseFunctionToUserdata(lua_State *L)
 {
-  ResponsefunctionType *M;
+  ResponsefunctionType *Min,Mout;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=1) return luaL_error(L, "Error in ToUserdata expected a single argument, not %d\n",len);
-  M = luaL_checkResponsefunction(L,1);
-  if((M->type|32)==M->type) //lowercase, copy the response function and push it to the stack
+  Min = luaL_checkResponsefunction(L,1);
+  if((Min->type|32)==Min->type) //lowercase, copy the response function and push it to the stack
   {
-    M=ResponsefunctionCopy(M);
-    LuaPush_ResponseFunction(L, M);
-    free(M);
+    ResponsefunctionCopy(Min,&Mout);
+    LuaPush_ResponseFunction(L, &Mout);
+    FreeResponsefunction(&Mout);
+    FreeResponsefunction(Min);
   }
   else // upercase change to lower and push a table to the stack
   {
-    M->type+=32;
-    LuaPush_ResponseFunction(L, M);
-    free(M);
+    Min->type+=32;
+    LuaPush_ResponseFunction(L, Min);
+    free(Min);
   }
   return 1;
 }
@@ -246,7 +239,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
  */
 static int LuaReducePolesResponseFunction(lua_State *L)
 {
-  ResponsefunctionType *M, *MRed;
+  ResponsefunctionType *M, MRed;
   int Nred, Nredcon=0;
 
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -260,25 +253,18 @@ static int LuaReducePolesResponseFunction(lua_State *L)
     if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
     Nredcon = (int)lua_tointeger(L, 3);
   }
-  if((M->type|32)=='l')
-  {
-    MRed = ResponsefunctionCopy(M);
-  }
-  else
-  {
-    MRed = ConvertResponsefunction(M, 'l', 0, 0);
-  }
+  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
   if(len==2)
   {
-    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed->data), Nred);
+    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred);
   }
   else
   {
-    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed->data), Nred, Nredcon);
+    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred, Nredcon);
   }
-  LuaPush_ResponseFunction(L, MRed);
+  LuaPush_ResponseFunction(L, &MRed);
   FreeResponsefunction(M);
-  FreeResponsefunction(MRed);
+  FreeResponsefunction(&MRed);
   return 1;
 }
 
@@ -287,7 +273,7 @@ static int LuaReducePolesResponseFunction(lua_State *L)
  */
 static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 {
-  ResponsefunctionType *M, *MRed;
+  ResponsefunctionType *M, MRed;
   uint32_t NE;
   double *mesh;
 
@@ -301,11 +287,11 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
     return luaL_error(L, "Error in PlaceOnMesh: The first argument should be of type 'L'/'l' (ListOfPoles).\n");
   }
   mesh = luaL_checkarray_double(L, 2, &NE);
-  MRed = ResponsefunctionCopy(M);
-  BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed->data, mesh, NE);
-  LuaPush_ResponseFunction(L, MRed);
+  ResponsefunctionCopy(M,&MRed);
+  BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed.data, mesh, NE);
+  LuaPush_ResponseFunction(L, &MRed);
   FreeResponsefunction(M);
-  FreeResponsefunction(MRed);
+  FreeResponsefunction(&MRed);
   return 1;
 }
 
@@ -395,6 +381,93 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
   return 2;
 }
 
+/*  on stack two response functions and possible options
+ *  The response functions must have the same dimension
+ *  the First is G0, the second G
+ *  calculated is G0^-1 - G^-1
+ *  We transform G0 and G to an anderson form
+ *  Inverting gives a list of poles
+ *  we subtract list of poles and return sigma as a list of poles
+ */
+static int LuaCalculateSelfEnergy(lua_State *L)
+{
+  ResponsefunctionType *G0,*G,*Sigma;
+  double SingularValue,T;
+  LuaOptionsType CalculateSelfEnergyOptions[]={
+    {"SingularValue","double",&(SingularValue)},
+    {"EffectivekBT","double",&(T)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if( LuaTestOptionsList(L,-1) )
+  {
+    LuaCheckOptions(L,-1,CalculateSelfEnergyOptions);
+    len--;
+  }
+  if(len!=2)
+  {
+    return luaL_error(L, "CalculateSelfEnergy should be called with G0 and G as the argument (and an optional 3rd argument with options)\n Called with %d arguments\n",len);
+  }
+  G0 = luaL_checkResponsefunction(L,1);
+  G  = luaL_checkResponsefunction(L,2);
+  Sigma = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  CalculateSelfenergy(G0, G, Sigma);
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  FreeResponsefunction(G0);
+  FreeResponsefunction(G);
+  return 1;
+}
+
+/*   Given Delta_0(omega) as a response function
+ *   on a list of poles form it represents a tight binding Hamiltonian with:
+ *      a_0 the onsite energy of the impurity
+ *      b_i the hopping to a bath site with energy a_i
+ *   Sigma(omega)
+ *
+ *   Calculate Delta(oemga) = Delta_0( omega - Sigma(omega) )
+ */
+static int LuaCalculateHybridizationFunction(lua_State *L)
+{
+  ResponsefunctionType *D0,*D,*Sigma;
+  double SingularValue,T;
+  LuaOptionsType CalculateSelfEnergyOptions[]={
+    {"SingularValue","double",&(SingularValue)},
+    {"EffectivekBT","double",&(T)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if( LuaTestOptionsList(L,-1) )
+  {
+    LuaCheckOptions(L,-1,CalculateSelfEnergyOptions);
+    len--;
+  }
+  if(len!=2)
+  {
+    return luaL_error(L, "CalculateHybridizationFunction should be called with D0 and Sigma as the argument (and an optional 3rd argument with options)\n Called with %d arguments\n",len);
+  }
+  D0    = luaL_checkResponsefunction(L,1);
+  Sigma = luaL_checkResponsefunction(L,2);
+  D     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  
+
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  FreeResponsefunction(D0);
+  FreeResponsefunction(Sigma);
+  return 1;
+}
+
+/*
+ *
+ */
+static int LuaInvertEnergy(lua_State *L)
+{
+  ResponsefunctionType *Gin,Gout;
+  Gin = luaL_checkResponsefunction(L,1);
+  ResponseFunctionInvertEnergy(Gin,&Gout);
+  LuaPush_ResponseFunction(L, &Gout);
+  FreeResponsefunction(Gin);
+  FreeResponsefunction(&Gout);
+  return 1;
+}
+
 
 /*
  *
@@ -410,25 +483,19 @@ static int LuaResponseFunctionUnm(lua_State * L)
 static int LuaResponseFunctionAdd(lua_State * L)
 {
   ResponsefunctionType *Ma, *Mb, *res;
-
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
-  //TODO: this has memory loss
-  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
-  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0, 0);
-  AddBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
-
+  Ma = luaL_checkResponsefunction(L,1);
+  Mb = luaL_checkResponsefunction(L,2);
+  if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
+  //TODO: if the functions are of Block type test dimensions
+  
+  
   res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
-  res->NSuggestedGridPoints = 0;
-  res->type = 'L';
-  res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-  CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma->data),res->data);
-  LuaPush_ResponseFunction(L, res);
-
-  FreeBlockMatrixFromLua(Ma);
-  FreeBlockMatrixFromLua(Mb);
-
+  ResponseFunctionAdd(Ma, Mb, res);
+  FreeResponsefunction(Ma);
+  FreeResponsefunction(Mb);
   return 1;
 }
 
@@ -437,25 +504,25 @@ static int LuaResponseFunctionAdd(lua_State * L)
  */
 static int LuaResponseFunctionSub(lua_State * L)
 {
-  ResponsefunctionType *Ma, *Mb, *res;
+  ResponsefunctionType Ma, Mb, *res;
 
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
   // TODO: this has memory loss
-  Ma = ConvertBlockMatrix(luaL_checkResponsefunction(L,1), 'l', 0, 0);
-  Mb = ConvertBlockMatrix(luaL_checkResponsefunction(L,2), 'l', 0, 0);
-  SubtractBlockListOfPoles((BlockListOfPoles*)(Ma->data), *(BlockListOfPoles*)(Mb->data));
+  ConvertBlockMatrix(luaL_checkResponsefunction(L,1), &Ma, 'l', 0, 0);
+  ConvertBlockMatrix(luaL_checkResponsefunction(L,2), &Mb, 'l', 0, 0);
+  SubtractBlockListOfPoles((BlockListOfPoles*)(Ma.data), *(BlockListOfPoles*)(Mb.data));
 
   res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   res->NSuggestedGridPoints = 0;
   res->type = 'L';
   res->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-  CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma->data),res->data);
+  CopyBlockListOfPoles(*(BlockListOfPoles*)(Ma.data),res->data);
   LuaPush_ResponseFunction(L, res);
 
-  FreeBlockMatrixFromLua(Ma);
-  FreeBlockMatrixFromLua(Mb);
+  FreeBlockMatrixFromLua(&Ma);
+  FreeBlockMatrixFromLua(&Mb);
 
   return 1;
 }
@@ -859,6 +926,9 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ToUserdata", LuaResponseFunctionToUserdata},
   {"ToTightBinding", LuaResponseFunctionToTightBinding},
   {"ToOperator", LuaResponseFunctionToOperator},
+  {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
+  {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
+  {"InvertEnergy", LuaInvertEnergy},
   {NULL, NULL}
 };
 
