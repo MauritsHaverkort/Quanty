@@ -571,6 +571,7 @@ int LuaPlotGraphics(lua_State * L)
     double   Negate;
     int      Nrow;
     int      Ncolumn;
+    int      PlotPoints;
     
     double   ScaleOffDiagonal;
     double   ShiftOffDiagonal;
@@ -640,6 +641,7 @@ int LuaPlotGraphics(lua_State * L)
   Options.Negate=false;
   Options.Nrow=1;
   Options.Ncolumn=1;
+  Options.PlotPoints=600;
   Options.ScaleOffDiagonal=1;
   Options.ShiftOffDiagonal=0;
   LuaOptionsType LuaGraphicsOptions[]={
@@ -651,6 +653,7 @@ int LuaPlotGraphics(lua_State * L)
     {"Negate","bool",&(Options.Negate)},
     {"Nrow","int",&(Options.Nrow)},
     {"Ncolumn","int",&(Options.Ncolumn)},
+    {"PlotPoints","int",&(Options.PlotPoints)},
     {"ScaleOffDiagonal","double",&(Options.ScaleOffDiagonal)},
     {"ShiftOffDiagonal","double",&(Options.ShiftOffDiagonal)},
     
@@ -676,6 +679,15 @@ int LuaPlotGraphics(lua_State * L)
       lua_pop(L, 2);
     }
     // test if we can turn the table to a SpectraTypeArray and then jump to the corresponding section
+    // we want all spectra to be in the same grid.
+    // Define Emin, Emax, NE and dE
+    double GammaL=0;
+    double GammaG=0;
+    double Emin=Options.Frame.PlotRange[0].X;
+    double Emax=Options.Frame.PlotRange[1].X;
+    if(Emin==-INFINITY) Emin=-1;
+    if(Emax== INFINITY) Emax= 1;
+    int NE=Options.PlotPoints;
     a->NSpectra = (uint32_t)lua_objlen(L, 1);
     a->Spec = (SpectraType*)malloc(a->NSpectra*sizeof(SpectraType));
     a->Name=NULL;
@@ -683,11 +695,71 @@ int LuaPlotGraphics(lua_State * L)
     {
       // read element i of the table and see if we can convert it to a spectrum
       lua_rawgeti(L, 1, i+1);
-      
-      return luaL_error(L, "TODO: plot array of objects\n");
-
-      
-      
+      // a list of if then else that goes throught the options
+      if(lua_type(L,-1)==LUA_TTABLE)
+      {
+        // test if the table has a metatable related to a response function
+        if (lua_getmetatable(L, -1)) // Get the table's metatable and push it on the stack if excists
+        {
+          lua_getglobal(L, "ResponseFunctionMeta");
+          if (lua_rawequal(L, -1, -2))
+          {
+            lua_pop(L, 2);
+            // we found a response function as table. Convert it to spectra
+            ResponsefunctionType *A;
+            SpectraTypeArray Spec;
+            A = luaL_checkResponsefunction(L,-1);
+            ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
+            free(Spec.Name);
+            a->Spec[i]=Spec.Spec[0];
+            FreeResponsefunctionIncludingOriginalPointer(A);
+          }
+          else
+          {
+            lua_pop(L, 2);
+            return luaL_error(L, "Found a table to plot, but on position %d there is an object I can not convert to a spectrum\n",i+1);
+          }
+        }
+        else // we found a table without meta data. We can not convert this to a spectra
+        {
+          return luaL_error(L, "Found a table to plot, but on position %d there is an object I can not convert to a spectrum\n",i+1);
+        }
+      }
+      else if (lua_type(L,-1)==LUA_TUSERDATA)
+      {
+        if (luaL_testudata(L, -1, "Spectra_Type") != NULL)
+        {
+          //We found a spectra copy it
+          SpectraTypeArray *Spec;
+          Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+          if(Spec->NSpectra!=1) return luaL_error(L, "A table of spectra can only contain spectra objects with 1 spectrum. At position %d we found %d spectra\n",i+1,Spec->NSpectra);
+          SpectrumAllocate(Spec->Spec[0], &(a->Spec[i]));
+          CopySpectra(Spec->Spec[0], &(a->Spec[i]));
+        }
+        else if (luaL_testudata(L, -1, "GaussianRadialFunction_Type") != NULL)
+        {
+          // TODO: we found a Gaussian radial function, convert it to a spectra
+          return luaL_error(L, "TODO: Plot of Gaussian Radial function\n");
+        }
+        else if (luaL_testudata(L, -1, "InterpolatingFunction_Type") != NULL)
+        {
+          // TODO: we found an interpolating function, convert it to a spectra
+          return luaL_error(L, "TODO plot of Interpolating Function\n");
+        }
+        else if (luaL_testudata(L, -1, "ResponseFunction_Type") != NULL)
+        {
+          // We found a response function as user type, convert it
+          ResponsefunctionType *A;
+          SpectraTypeArray Spec;
+          A = luaL_checkResponsefunction(L,-1);
+          ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
+          free(Spec.Name);
+          a->Spec[i]=Spec.Spec[0];        }
+      }
+      else
+      {
+        return luaL_error(L, "Found a table to plot, but on position %d there is an object I can not convert to a spectrum\n",i+1);
+      }
       lua_pop(L, 1);
     }
     goto labelSpectraTypeArrayPlot;
@@ -861,7 +933,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           if(GammaG==0)
           {
-            NE = 600;
+            NE = Options.PlotPoints;
           }
           else
           {
