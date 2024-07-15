@@ -147,7 +147,6 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
 
 uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE)
 {
-  int i;
   int ExtraPoints = 0;
   double EboarderShift =0;
   const double dE = (Emax - Emin) / NE;

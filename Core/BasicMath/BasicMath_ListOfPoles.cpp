@@ -34,6 +34,12 @@ void FreeListOfPoles(ListOfPoles * M)
     free(M->a);
     free(M->b);
   }
+  else
+  {
+    printf("\nWARNING\nFree ListOfPoles matrix of size 0, hope it works\n\n");
+    free(M->a);
+    free(M->b);
+  }
   M->a0 = 0;
 }
 
@@ -1266,10 +1272,10 @@ uint32_t ListOfPolesDetermineOccupation(ListOfPoles M, double const Ef, double *
   return 0;
 }
 
-uint32_t ListOfPoleCopyChoped(ListOfPoles M, ListOfPoles * A, double Epsilon)
+
+uint32_t ListOfPoleChoped(ListOfPoles * A, double Epsilon)
 {
   uint32_t i, shift;
-  ListOfPolesCopy(A, M);
   shift = 0;
   for (i = 0; i < A->N; i++)
   {
@@ -1289,6 +1295,15 @@ uint32_t ListOfPoleCopyChoped(ListOfPoles M, ListOfPoles * A, double Epsilon)
   A->N -= shift;
   return 0;
 }
+
+uint32_t ListOfPoleCopyChoped(ListOfPoles M, ListOfPoles * A, double Epsilon)
+{
+  ListOfPolesCopy(A, M);
+  ListOfPoleChoped(A, Epsilon);
+  return 0;
+}
+
+
 
 /*  Shifts the list of poles such that the chemical potential (Ef at T=0) is zero
  *  There is one pole that sits exactly at Ef. This pole is split in two

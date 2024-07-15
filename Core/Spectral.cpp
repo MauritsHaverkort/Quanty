@@ -1328,8 +1328,15 @@ void TriDiagonalMatrixToSpectrum(const double Energy, const TriDiagonalMatrixTyp
 {
   double hnu, valRe, valIm, denom;
   uint32_t i, j;
-  if (fabs(G->dE) > (2 * G->Gamma))
-    printf("\n\nNeed more then two points per lorenzian FWHM in order to represent a spectrum\n\n");
+  if (G->Gamma==0)
+  {
+    ListOfPoles MLP;
+    TriDiagonalMatrixToListOfPoles(M, &MLP);
+    ListOfPolesToSpectrum(Energy, MLP, G);
+    FreeListOfPoles(&MLP);
+    return;
+  }
+  if (fabs(G->dE) > (G->Gamma / 5)) printf("\n\nNeed more then five points per lorenzian FWHM in order to represent a spectrum accurately\n\n");
   for (i = 0; i <= G->N; i++)
   {
     hnu = ((double)i * G->dE) + G->Emin + Energy;
@@ -1516,8 +1523,7 @@ uint32_t ListOfPolesToSpectrumGaussian(const double Energy, const ListOfPoles P,
 }
 
 
-uint32_t TriDiagonalMatrixToSpectrumGaussian(const double Energy, const TriDiagonalMatrixType M, SpectraType * const G,
-                                            double FWHM)
+uint32_t TriDiagonalMatrixToSpectrumGaussian(const double Energy, const TriDiagonalMatrixType M, SpectraType * const G, double FWHM)
 {
   ListOfPoles P;
   TriDiagonalMatrixToListOfPoles(M, &P);
@@ -1688,8 +1694,15 @@ void AndersonImpurityMatrixToSpectrum(const double Energy, const AndersonMatrixT
 {
   double hnu, valRe, valIm, denom;
   uint32_t i, j;
-  if (fabs(G->dE) > (2 * G->Gamma))
-    printf("\n\nNeed more then two points per lorenzian FWHM in order to represent a spectrum\n\n");
+  if (G->Gamma==0)
+  {
+    ListOfPoles MLP;
+    AndersonMatrixToListOfPoles(M, &MLP);
+    ListOfPolesToSpectrum(Energy, MLP, G);
+    FreeListOfPoles(&MLP);
+    return;
+  }
+  if (fabs(G->dE) > (G->Gamma / 5)) printf("\n\nNeed more then five points per lorenzian FWHM in order to represent a spectrum accurately \n\n");
   for (i = 0; i <= G->N; i++)
   {
     hnu = ((double)i * G->dE) + G->Emin + Energy;

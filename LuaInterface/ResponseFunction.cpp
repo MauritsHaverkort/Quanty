@@ -446,8 +446,7 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
   D0    = luaL_checkResponsefunction(L,1);
   Sigma = luaL_checkResponsefunction(L,2);
   D     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  
-
+  CalculateGBath(D0, Sigma, D);
   luaL_setmetatable(L, "ResponseFunction_Type");
   FreeResponsefunction(D0);
   FreeResponsefunction(Sigma);

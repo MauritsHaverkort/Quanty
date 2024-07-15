@@ -926,11 +926,22 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
       case 'n':
       {
         TwoMu = 2 * ((BADoubleTriDiagonalMatrixType*)(Gout->data))->mu;
-        
-          
-        printf("TODO ResponseFunctionInvertEnergy\n");
-
-        
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->a0*=-1;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB*=-1;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA*=-1;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvBA*=-1;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB+=TwoMu;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA+=TwoMu;
+        for(i=0;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.N;i++)
+        {
+          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a[i]*=-1;
+          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a[i]+=TwoMu;
+        }
+        for(i=0;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.N;i++)
+        {
+          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a[i]*=-1;
+          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a[i]+=TwoMu;
+        }
       }
       break;
     }
@@ -960,8 +971,8 @@ int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * 
 int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gdif)
 {
   ResponsefunctionType GBLP;
-  ConvertResponsefunction(GA, Gdif, 'L', 0, 0);
-  ConvertResponsefunction(GB, &GBLP, 'L', 0, 0);
+  ConvertResponsefunction(GA, Gdif, 'l', 0, 0);
+  ConvertResponsefunction(GB, &GBLP, 'l', 0, 0);
   
   if(GA->Block)
   {
@@ -2265,6 +2276,77 @@ int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout)
 {
   return ConvertResponsefunction(Min,Mout,Min->type,0,0);
 }
+
+/*
+ *
+ */
+int ResponsefunctionChop(ResponsefunctionType *M, double epsilon)
+{ //TODO: all
+  if(M->Block==true)
+  {
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        
+      }
+        break;
+      case 't':
+      {
+        
+      }
+        break;
+      case 'a':
+      {
+        
+      }
+        break;
+      case 'n':
+      {
+        
+      }
+        break;
+      default:
+      {
+        printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
+      }
+        break;
+    }
+  }
+  else
+  {
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        ListOfPoleChoped((ListOfPoles*)(M->data), epsilon);
+      }
+        break;
+      case 't':
+      {
+        TriDiagonalMatrixChop((TriDiagonalMatrixType *)(M->data), epsilon);
+      }
+        break;
+      case 'a':
+      {
+        AndersonMatrixChop((AndersonMatrixType *)(M->data), epsilon);
+      }
+        break;
+      case 'n':
+      {
+        BADoubleTriDiagonalMatrixChop((BADoubleTriDiagonalMatrixType *)(M->data), epsilon);
+      }
+        break;
+      default:
+      {
+        printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
+      }
+        break;
+    }
+  }
+  return 0;
+}
+
 
 /*   FreeResponsefunction frees the content of a response function
  *   Response functions of types with a capital letter are freed

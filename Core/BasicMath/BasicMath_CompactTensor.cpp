@@ -205,3 +205,28 @@ int CompactTensorCopy(CompactTensorType * A, CompactTensorType * copyA)
   }
   return 0;
 }
+
+
+
+int CompactTensorChop(CompactTensorType * A, double epsilon)
+{
+  int i;
+  if(A->QComplex==0)
+  {
+#pragma omp parallel for
+    for(i=0;i<A->N;i++)
+    {
+      if(Abs(A->VRe[i])<epsilon) A->VRe[i]=0;
+    }
+  }
+  else
+  {
+#pragma omp parallel for
+    for(i=0;i<A->N;i++)
+    {
+      if(Abs(A->V[i].Re)<epsilon) A->V[i].Re=0;
+      if(Abs(A->V[i].Im)<epsilon) A->V[i].Im=0;
+    }
+  }
+  return 0;
+}

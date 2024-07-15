@@ -371,7 +371,7 @@ CompactMatrixType;
  *   element (i,j,k,l,...) is found at position [((((i*Nj) + j)*Nk + k )*Nl + l)*...
  *   with Ni=dimension[0], Nj=dimension[1], ...
  *   and i in [0,Ni-1], j in [0,Nj-1] etc.
- *   varant relates to the question if the rank is co or contra variant, i.e. refers to creation or annihilation operators
+ *   variant relates to the question if the rank is co or contra variant, i.e. refers to creation or annihilation operators
  */
 typedef struct CompactTensorType
 {

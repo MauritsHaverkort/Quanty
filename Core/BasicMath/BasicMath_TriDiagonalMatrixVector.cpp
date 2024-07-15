@@ -102,13 +102,10 @@ void TriDiagonalMatrixChop(TriDiagonalMatrixType * const M, double const epsilon
   uint32_t i;
   for (i = 0; i < M->N; i++)
   {
-    if ((fabs(M->a[i]) < epsilon))
-      M->a[i] = 0;
-    if ((fabs(M->b[i]) < epsilon))
-      M->b[i] = 0;
+    if ((fabs(M->a[i]) < epsilon)) M->a[i] = 0;
+    if ((fabs(M->b[i]) < epsilon)) M->b[i] = 0;
   }
-  if ((fabs(M->a[M->N]) < epsilon))
-    M->a[M->N] = 0;
+  if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
 }
 
 /*

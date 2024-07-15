@@ -19,6 +19,12 @@ void FreeAndersonMatrix(AndersonMatrixType * const M)
     free(M->a);
     free(M->b);
   }
+  else
+  {
+    printf("\nWARNING\nFree Anderson matrix of size 0, hope it works\n\n");
+    free(M->a);
+    free(M->b);
+  }
 }
 
 /*  Init AndersonMatrix
@@ -99,13 +105,10 @@ void AndersonMatrixChop(AndersonMatrixType * const M, double const epsilon)
   uint32_t i;
   for (i = 0; i < M->N; i++)
   {
-    if ((fabs(M->a[i]) < epsilon))
-      M->a[i] = 0;
-    if ((fabs(M->b[i]) < epsilon))
-      M->b[i] = 0;
+    if ((fabs(M->a[i]) < epsilon)) M->a[i] = 0;
+    if ((fabs(M->b[i]) < epsilon)) M->b[i] = 0;
   }
-  if ((fabs(M->a[M->N]) < epsilon))
-    M->a[M->N] = 0;
+  if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
 }
 
 /*  MI=M^-1

@@ -1218,6 +1218,27 @@ static int LuaChop(lua_State * L)
         Mnew->OnLuaStack=true;
         return 1;
       }
+      if (luaL_testudata(L, len, "Tensor_Type") != NULL)
+      {
+        CompactTensorType *M = (CompactTensorType*) luaL_checkudata(L, len, "Tensor_Type");
+        CompactTensorType *Mnew;
+        Mnew = (CompactTensorType*) lua_newuserdata(L, sizeof(CompactTensorType));
+        CompactTensorCopy(M, Mnew);
+        CompactTensorChop(Mnew, epsilon);
+        luaL_setmetatable(L, "Tensor_Type");
+        Mnew->OnLuaStack=true;
+        return 1;
+      }
+      if (luaL_testudata(L, len, "SparseMatrix_Type") != NULL)
+      {
+        SparseMatrixType *M = (SparseMatrixType*) luaL_checkudata(L, len, "SparseMatrix_Type");
+        SparseMatrixType *Mnew;
+        Mnew = (SparseMatrixType*) lua_newuserdata(L, sizeof(SparseMatrixType));
+        SparseMatrixCopy(Mnew, *M);
+        SparseMatrixChop(Mnew, epsilon);
+        luaL_setmetatable(L, "SparseMatrix_Type");
+        return 1;
+      }
       if (luaL_testudata(L, len, "TightBinding_Type") != NULL)
       {
         TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
@@ -1235,8 +1256,23 @@ static int LuaChop(lua_State * L)
         luaL_setmetatable(L, "TightBinding_Type");
         return 1;
       }
+      if (luaL_testudata(L, len, "ResponseFunction_Type") != NULL)
+      {
+        ResponsefunctionType *M = (ResponsefunctionType*) luaL_checkudata(L, len, "ResponseFunction_Type");
+        ResponsefunctionType Mnew;
+        ResponsefunctionCopy(M, &Mnew);
+        ResponsefunctionChop(M, epsilon);
+        LuaPush_ResponseFunction(L, M);
+        FreeResponsefunction(M);
+        FreeResponsefunction(&Mnew);
+        return 1;
+      }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
     case LUA_TTABLE:
+      // test if the table is a response function, if so chop a resoponse function
+      
+      
+      
       lua_newtable(L);
       lua_pushnil(L);
       while(lua_next(L, len) != 0)
