@@ -1261,8 +1261,8 @@ static int LuaChop(lua_State * L)
         ResponsefunctionType *M = (ResponsefunctionType*) luaL_checkudata(L, len, "ResponseFunction_Type");
         ResponsefunctionType Mnew;
         ResponsefunctionCopy(M, &Mnew);
-        ResponsefunctionChop(M, epsilon);
-        LuaPush_ResponseFunction(L, M);
+        ResponsefunctionChop(&Mnew, epsilon);
+        LuaPush_ResponseFunction(L, &Mnew);
         FreeResponsefunction(M);
         FreeResponsefunction(&Mnew);
         return 1;

@@ -819,7 +819,7 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
     {
       GAndData = (AndersonMatrixType*)G->data;
     }
-    Sigma->type='L';
+    Sigma->type='l';
     Sigma->Block=false;
     Sigma->NSuggestedGridPoints=0;
     Sigma->SuggestedGrid=NULL;
@@ -970,20 +970,21 @@ int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * 
 
 int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gdif)
 {
+  int retval=0;
   ResponsefunctionType GBLP;
   ConvertResponsefunction(GA, Gdif, 'l', 0, 0);
   ConvertResponsefunction(GB, &GBLP, 'l', 0, 0);
   
   if(GA->Block)
   {
-    SubtractBlockListOfPoles((BlockListOfPoles*)(Gdif->data), *(BlockListOfPoles*)(GBLP.data));
+    retval=SubtractBlockListOfPoles((BlockListOfPoles*)(Gdif->data), *(BlockListOfPoles*)(GBLP.data));
   }
   else
   {
-    SubtractListOfPoles((ListOfPoles*)(Gdif->data), *(ListOfPoles*)(GBLP.data));
+    retval=SubtractListOfPoles((ListOfPoles*)(Gdif->data), *(ListOfPoles*)(GBLP.data));
   }
   FreeResponsefunction(&GBLP);
-  return 0;
+  return retval;
 }
 
 
@@ -1014,7 +1015,7 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
    {
      SigmaLPData = (ListOfPoles*)Sigma->data;
    }
-   G->type='A';
+   G->type='a';
    G->Block=false;
    G->NSuggestedGridPoints=0;
    G->SuggestedGrid=NULL;

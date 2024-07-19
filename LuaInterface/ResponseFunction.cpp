@@ -504,7 +504,7 @@ static int LuaResponseFunctionSub(lua_State * L)
 {
   ResponsefunctionType *Ma, *Mb, res;
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) return luaL_error(L, "Error in ResponseFunctionAdd: %d argument(s), 2 expected.\n", len);
+  if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
   Ma = luaL_checkResponsefunction(L,1);
   Mb = luaL_checkResponsefunction(L,2);
   if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
@@ -538,86 +538,6 @@ static int LuaResponseFunctionDiv(lua_State * L)
   return 0;
 }
 
-/*
- *
- */
-static int LuaResponseFunctionPow(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionPow\n");
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionConcat(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionConcat\n");
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionEq(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionEq\n");
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionLt(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionLt\n");
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionLe(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionLe\n");
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionIndex(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionIndex\n");
-  luaMWH_StackDump(L);
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionNewIndex(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionNewIndex\n");
-  return 0;
-}
-
-/*
- *
- */
-static int LuaResponseFunctionMode(lua_State * L)
-{
-  //TODO: all
-  printf("LuaResponseFunctionMode\n");
-  return 0;
-}
 
 /*
  *
@@ -929,12 +849,6 @@ static const struct luaL_Reg ResponseFunction_meta[] = {
   {"__sub", LuaResponseFunctionSub},
   {"__mul", LuaResponseFunctionMul},
   {"__div", LuaResponseFunctionDiv},
-  {"__pow", LuaResponseFunctionPow},
-  {"__concat", LuaResponseFunctionConcat},
-  {"__eq", LuaResponseFunctionEq},
-  {"__lt", LuaResponseFunctionLt},
-  {"__le", LuaResponseFunctionLe},
-  {"__mode", LuaResponseFunctionMode},
   {"__call", LuaResponseFunctionCall},
   {"__tostring", LuaResponseFunctionToString},
   {"__gc", LuaResponseFunctionDestroy},
@@ -947,12 +861,6 @@ static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__sub", LuaResponseFunctionSub},
   {"__mul", LuaResponseFunctionMul},
   {"__div", LuaResponseFunctionDiv},
-  {"__pow", LuaResponseFunctionPow},
-  {"__concat", LuaResponseFunctionConcat},
-  {"__eq", LuaResponseFunctionEq},
-  {"__lt", LuaResponseFunctionLt},
-  {"__le", LuaResponseFunctionLe},
-  {"__mode", LuaResponseFunctionMode},
   {"__call", LuaResponseFunctionCall},
   {NULL, NULL}
 };

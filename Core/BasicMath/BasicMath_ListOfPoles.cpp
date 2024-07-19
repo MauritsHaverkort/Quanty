@@ -1,12 +1,6 @@
 uint32_t InitListOfPoles(ListOfPoles * M)
 {
   strcpy(M->Name, "List of Poles");
-  if (M->N == 0)
-  {
-    printf("Initialized a ListOfPoles with size zero.\n");
-    fflush(stdout);
-    return 2;
-  };
   M->a = (double*)malloc((M->N) * sizeof(double));
   if (M->a == NULL)
   {
@@ -36,7 +30,7 @@ void FreeListOfPoles(ListOfPoles * M)
   }
   else
   {
-    printf("\nWARNING\nFree ListOfPoles matrix of size 0, hope it works\n\n");
+    printf("\nWARNING\nFree ListOfPoles matrix of size 0, hope it works, %s %p\n\n",M->Name,M);
     free(M->a);
     free(M->b);
   }
@@ -955,8 +949,14 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
   double VRes[A->N + B.N], WRes[A->N + B.N];
   if (A->N == 0)
   {
-    printf("SubtractListOfPoles called with NA=0\n");
-    return 1;
+    if (B.N==0)
+    {
+      A->a0 -= B.a0;
+      return 0;
+    }
+    A->N=1;
+    A->a = (double*)realloc(A->a,sizeof(double));
+    A->b = (double*)realloc(A->b,sizeof(double));
   };
   OrderListOfPoles(A);
   A->a0 -= B.a0;
@@ -1010,7 +1010,7 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
         A->b[iMin] -= ((A->a[iMin + 1] - VRes[NRes - 1]) / (A->a[iMin + 1] - A->a[iMin])) * WRes[NRes - 1];
       }
       NRes--;
-      if (A->b[iMin + 1] < 0)
+      if (A->b[iMin + 1] <= 0)
       {
         WRes[NRes] = -A->b[iMin + 1];
         VRes[NRes] = A->a[iMin + 1];
@@ -1022,7 +1022,7 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
         }
         A->N--;
       }
-      if ((A->b[iMin] < 0) && !(A->N==1))
+      if ((A->b[iMin] <= 0) && !(A->N==1))
       {
         WRes[NRes] = -A->b[iMin];
         VRes[NRes] = A->a[iMin];
@@ -1277,6 +1277,7 @@ uint32_t ListOfPoleChoped(ListOfPoles * A, double Epsilon)
 {
   uint32_t i, shift;
   shift = 0;
+  if(fabs(A->a0)<Epsilon) A->a0=0;
   for (i = 0; i < A->N; i++)
   {
     if (A->b[i] < Epsilon)

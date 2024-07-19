@@ -1550,8 +1550,8 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     // read a
     lua_rawgeti(L, narg, 1);
     len = (uint32_t)lua_objlen(L, -1);
-    if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of a equal to zero");
-    if(len==1) luaL_error(L, "Errorr reading Greens function with lenght of a equal to one");
+    if(len==0) luaL_error(L, "Errorr reading Greens function in list of poles format with lenght of a equal to zero.\nOne must specify at least a0\n");
+    //if(len==1) luaL_error(L, "Errorr reading Greens function with lenght of a equal to one");
     lua_rawgeti(L, -1, 1);
     buff->a0=(double)luaL_checknumber(L, -1);
     lua_pop(L, 1);
