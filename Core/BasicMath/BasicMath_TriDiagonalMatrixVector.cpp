@@ -12,17 +12,8 @@
  */
 void FreeTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 {
-  if (M->N != 0)
-  {
-    free(M->a);
-    free(M->b);
-  }
-  else
-  {
-    printf("\nWARNING\nFree Tridiagonal matrix of size 0, hope it works\n\n");
-    free(M->a);
-    free(M->b);
-  }
+  free(M->a);
+  free(M->b);
 }
 
 /*  Init Tri diagonal matrix

@@ -23,17 +23,8 @@ uint32_t InitListOfPoles(ListOfPoles * M)
 
 void FreeListOfPoles(ListOfPoles * M)
 {
-  if (M->N != 0)
-  {
-    free(M->a);
-    free(M->b);
-  }
-  else
-  {
-    printf("\nWARNING\nFree ListOfPoles matrix of size 0, hope it works, %s %p\n\n",M->Name,M);
-    free(M->a);
-    free(M->b);
-  }
+  free(M->a);
+  free(M->b);
   M->a0 = 0;
 }
 

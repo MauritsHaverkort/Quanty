@@ -273,8 +273,44 @@ int GraphicsToSVG(GraphicsType *G, char** SVG)
   return 0;
 }
 
-
-
+/*  creates a string that contains an HTML page description to view SVG files
+ *
+ */
+const char* SVGHTMLViewer =
+  "<!DOCTYPE html>\n"
+  "<html lang=\"en\">\n"
+  "<head>\n"
+  "    <meta charset=\"UTF-8\">\n"
+  "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+  "    <title>Quanty SVG Viewer</title>\n"
+  "    <style>\n"
+  "        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; background-color: #f0f0f0; }\n"
+  "        #controlPanel { display: flex; align-items: center; margin: 20px 0; }\n"
+  "        #svgContainer { flex-grow: 1; width: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #f0f0f0; }\n"
+  "        #svgContainer svg { display: block; max-width: 100%; max-height: calc(100% - 60px); }\n"
+  "    </style>\n"
+  "</head>\n"
+  "<body>\n"
+  "    <div id=\"controlPanel\">\n"
+  "        <button id=\"blackBackground\">Black</button>\n"
+  "        <button id=\"greyBackground\">Grey</button>\n"
+  "        <button id=\"whiteBackground\">White</button> &nbsp;&nbsp;\n"
+  "        <button id=\"toggleAspectRatio\">Toggle Aspect Ratio</button> &nbsp;&nbsp;\n"
+  "        <input type=\"file\" id=\"fileInput\" accept=\".svg\">\n"
+  "    </div>\n"
+  "    <div id=\"svgContainer\"></div>\n"
+  "    <script>\n"
+  "        let keepAspectRatio = true;\n"
+  "        document.getElementById('blackBackground').addEventListener('click', function() { document.getElementById('svgContainer').style.backgroundColor = 'black'; });\n"
+  "        document.getElementById('greyBackground').addEventListener('click', function() { document.getElementById('svgContainer').style.backgroundColor = '#f0f0f0'; });\n"
+  "        document.getElementById('whiteBackground').addEventListener('click', function() { document.getElementById('svgContainer').style.backgroundColor = 'white'; });\n"
+  "        document.getElementById('toggleAspectRatio').addEventListener('click', function() { keepAspectRatio = !keepAspectRatio; const svgElement = document.getElementById('svgContainer').querySelector('svg'); if (svgElement) { updateSvgAttributes(svgElement); } });\n"
+  "        document.getElementById('fileInput').addEventListener('click', function(event) { fileInput.value = null; });\n"
+  "        document.getElementById('fileInput').addEventListener('change', function(event) { const file = event.target.files[0]; if (file && file.type === 'image/svg+xml') { const reader = new FileReader(); reader.onload = function(e) { const svgContent = e.target.result; document.getElementById('svgContainer').innerHTML = svgContent; const svgElement = document.getElementById('svgContainer').querySelector('svg'); if (svgElement) { updateSvgAttributes(svgElement); } }; reader.readAsText(file); } else { alert('Please select a valid SVG file.'); } });\n"
+  "        function updateSvgAttributes(svgElement) { if (keepAspectRatio) { svgElement.style.width = '100%'; svgElement.style.height = '100%'; svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet'); } else { svgElement.style.width = '100vw'; svgElement.style.height = '100%'; svgElement.setAttribute('preserveAspectRatio', 'none'); } }\n"
+  "    </script>\n"
+  "</body>\n"
+  "</html>\n";
 
 
 

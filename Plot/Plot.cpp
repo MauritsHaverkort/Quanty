@@ -524,4 +524,3 @@ int AddLayer(GraphicsType *Graphics, GraphicsType *Layer)
   if( AddLayerInherentMemory(Graphics, Copy) ) return 1;
   return 0;
 }
-

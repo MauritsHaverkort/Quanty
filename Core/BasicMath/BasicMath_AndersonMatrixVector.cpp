@@ -14,17 +14,8 @@
  */
 void FreeAndersonMatrix(AndersonMatrixType * const M)
 {
-  if (M->N != 0)
-  {
-    free(M->a);
-    free(M->b);
-  }
-  else
-  {
-    printf("\nWARNING\nFree Anderson matrix of size 0, hope it works\n\n");
-    free(M->a);
-    free(M->b);
-  }
+  free(M->a);
+  free(M->b);
 }
 
 /*  Init AndersonMatrix

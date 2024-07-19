@@ -1205,7 +1205,6 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
   G->a[1] = G0.a[1];
   G->mu = mu;
   FreeAndersonMatrix(&bSigma);
-  PrintAndersonMatrixEssentials(*G);
   return 0;
 }
 

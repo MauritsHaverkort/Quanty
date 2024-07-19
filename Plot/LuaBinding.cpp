@@ -1391,6 +1391,15 @@ static int LuaPlotFermi(lua_State *L)
   return 0;
 }
 
+/*
+ *
+ */
+static int LuaSVGHTMLViewer(lua_State *L)
+{
+  lua_pushstring(L, SVGHTMLViewer);
+  return 1;
+}
+
 
 
 
@@ -1406,6 +1415,7 @@ static const struct luaL_Reg Graphics_func[] = {
   {"PlotBands", LuaPlotBands},
   {"PlotBandsAndDOS", LuaPlotBandsAndDOS},
   {"PlotFermi",LuaPlotFermi},
+  {"SVGHTMLViewer",LuaSVGHTMLViewer},
   {NULL, NULL}
 };
 
