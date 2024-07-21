@@ -243,6 +243,42 @@ uint32_t AndersonMatrixOrder(AndersonMatrixType * const M, AndersonMatrixType A)
 }
 
 
+int OrderAndersonMatrixCompare(double *elem1, double *elem2)
+{
+  if (elem1[0] < elem2[0])
+    return -1;
+  else if (elem1[0] > elem2[0])
+    return 1;
+  return 0;
+}
+
+void OrderAndersonMatrix(AndersonMatrixType * const M)
+{
+  double *Mab = (double*)malloc(2 * (M->N-1) * sizeof(double));
+  if (Mab == NULL)
+  {
+    printf("malloc for Mab failed in ListOfPoles\n");
+    fflush(stdout);
+    exit(1);
+  }
+  uint32_t i;
+  for (i = 1; i < M->N; i++)
+  {
+    Mab[2 * i-2] = M->a[i+1];
+    Mab[2 * i - 1] = M->b[i];
+  }
+  qsort((void *)Mab, M->N-1, 2 * sizeof(double), (compfn) OrderAndersonMatrixCompare);
+  for (i = 1; i < M->N; i++)
+  {
+    M->a[i+1] = Mab[2 * i-2];
+    M->b[i] = Mab[2 * i - 1];
+  }
+  free(Mab);
+}
+
+
+
+
 /*  M<-A
  *  and M.a[i]<=M.a[i+1] (for i>1)
  *  furthermore M.b[i] = fabs ( M.b[i] )

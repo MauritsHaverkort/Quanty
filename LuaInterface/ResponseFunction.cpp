@@ -42,9 +42,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {"Deflate","bool",&deflate},
     {NULL, NULL, NULL}};
   if(!(len==2)||(len==3)) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
-  if(len==3)
+  if(LuaTestOptionsList(L,-1)==1)
   {
     LuaCheckOptions(L, -1, LuaChangeTypeResponseFunctionOptions);
+    len=len-1;
   }
   Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
@@ -428,10 +429,12 @@ static int LuaCalculateSelfEnergy(lua_State *L)
 static int LuaCalculateHybridizationFunction(lua_State *L)
 {
   ResponsefunctionType *D0,*D,*Sigma;
-  double SingularValue,T;
+  CompactVectorType Grid={0,0,NULL};
+  double SingularValue=0,T=0;
   LuaOptionsType CalculateSelfEnergyOptions[]={
     {"SingularValue","double",&(SingularValue)},
     {"EffectivekBT","double",&(T)},
+    {"EnergyGrid","Vector",&Grid},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t)lua_gettop(L);
   if( LuaTestOptionsList(L,-1) )
@@ -446,7 +449,17 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
   D0    = luaL_checkResponsefunction(L,1);
   Sigma = luaL_checkResponsefunction(L,2);
   D     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  CalculateGBath(D0, Sigma, D);
+  if(Grid.Ni==0)
+  {
+    CalculateGBath(D0, Sigma, D);
+  }
+  else
+  {
+    CalculateGBathOnGrid(D0, Sigma, &Grid, D);
+    free(Grid.VRe);
+    Grid.Ni=0;
+    Grid.QComplex=0;
+  }
   luaL_setmetatable(L, "ResponseFunction_Type");
   FreeResponsefunction(D0);
   FreeResponsefunction(Sigma);

@@ -9,6 +9,8 @@ uint32_t AndersonMatrixPart(AndersonMatrixType * const M, AndersonMatrixType A, 
 uint32_t AndersonMatrixCopy(AndersonMatrixType * const M, AndersonMatrixType A);
 uint32_t AndersonMatrixOrder(AndersonMatrixType * const M, AndersonMatrixType A);
 uint32_t AndersonMatrixOrderAndAbs(AndersonMatrixType * const M, AndersonMatrixType A);
+int OrderAndersonMatrixCompare(double *elem1, double *elem2);
+void OrderAndersonMatrix(AndersonMatrixType * const M);
 void RealAndersonMatrixVector(AndersonMatrixType const M, const double *const x, double *const y);
 void ComplexAndersonMatrixVector(AndersonMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm);
 void RealVectorAndersonMatrixVector(AndersonMatrixType const M, const double *const x, double *const y);

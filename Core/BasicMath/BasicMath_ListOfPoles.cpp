@@ -167,6 +167,144 @@ uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B)
   return 0;
 }
 
+/*   A -> A+B
+ *   the pole energy of A is kept
+ *   the poles of B are shifted
+ *   A should be ordered before the call to this function
+ *   If the energy of B.a[i] is inbetween two poles of A the weight is added to the left and rigth keeping the norm fixed
+ *   If the energy of B.a[i] is lower than A.a[0] or higher than A.a[A.N-1] the values of the outer poles are allowed to shift
+ *
+ */
+uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * const B, double AminIdeal, double AmaxIdeal)
+{
+  A->a0 += B->a0;
+  double aNew,bNew,frac;
+  int i,iLow;
+  if(A->N==0)
+  {
+    if(B->N==0)
+    {
+      return 0;
+    }
+    printf("ERROR: Adding a list of poles to a list of poles with length zero and forcing to keep the grid\nNot an option\n");
+    return 1;
+  }
+  if(A->N==1)
+  {
+    aNew=A->a[0] * A->b[0];
+    bNew=A->b[0];
+    // keep weigth and first moment
+    for(i=0;i<B->N;i++)
+    {
+      aNew+=B->a[0] * B->b[0];
+      bNew+=B->b[0];
+    }
+    if(bNew==0)
+    {
+      aNew=0;
+    }
+    else
+    {
+      aNew/=bNew;
+    }
+    A->a[0]=aNew;
+    A->b[0]=bNew;
+    return 0;
+  }
+  // two or more poles in A
+  iLow=0; // the energy of the pole to add is above Grid[ilow] and below Grid[iLow+1]
+  for(i=0;i<B->N;i++)
+  {
+    while((iLow<A->N)&&(B->a[i] > A->a[iLow]))
+    {
+      iLow++;
+    }
+    if(iLow==A->N)
+    {
+      if(A->a[iLow-1] > B->a[i]) iLow--;
+    }
+    else
+    {
+      iLow--;
+    }
+    if( (iLow==0) && (B->a[i]<=AminIdeal) )
+    { // below the lowest pole or below the second pole and below AminIdeal
+      // add all weigth to the lowest pole and shift the pole to keep the first moment ok.
+      aNew=A->a[0] * A->b[0] + B->a[i] * B->b[i];
+      bNew = A->b[0] + B->b[i];
+      if(bNew<=DBL_EPSILON)
+      {
+        A->a[0] = AminIdeal;
+        A->b[0]=0;
+      }
+      else
+      {
+        A->a[0] = aNew / bNew;
+        A->b[0] = bNew;
+      }
+    }
+    else if(iLow==0)
+    { // between the lowest and first pole, above AminIdeal
+      // use this to shift the lowest pole back towards AminIdeal
+      frac = ( A->a[1] - B->a[i] ) / (A->a[1] - AminIdeal);
+      A->b[1] += B->b[i] * (1-frac);
+      aNew=A->a[0] * A->b[0] + AminIdeal * B->b[i] * frac;
+      bNew = A->b[0] + B->b[i] * frac;
+      if(bNew<=DBL_EPSILON)
+      {
+        A->a[0] = AminIdeal;
+        A->b[0]=0;
+      }
+      else
+      {
+        A->a[0] = aNew / bNew;
+        A->b[0] = bNew;
+      }
+    }
+    else if ( (iLow==A->N) || ((iLow==A->N-1)&&(B->a[i]>=AmaxIdeal)) )
+    { // above the highest pole or inbetween the highest and second highest pole, but above AmaxIdeal
+      // add all weight to highest pole and shift the pole to keep the first moment ok.
+      aNew=A->a[A->N-1] * A->b[A->N-1] + B->a[i] * B->b[i];
+      bNew = A->b[A->N-1] + B->b[i];
+      if(bNew<=DBL_EPSILON)
+      {
+        A->a[A->N-1] = AmaxIdeal;
+        A->b[A->N-1]=0;
+      }
+      else
+      {
+        A->a[A->N-1] = aNew / bNew;
+        A->b[A->N-1] = bNew;
+      }
+    }
+    else if(iLow==A->N-1)
+    { // between the highest and one but last pole
+      // use this to shift the higest pole back towards AmaxIdeal
+      frac = (  B->a[i] - A->a[A->N-2] ) / ( AmaxIdeal - A->a[A->N-2] );
+      A->b[A->N-2] += B->b[i] * (1-frac);
+      aNew=A->a[A->N-1] * A->b[A->N-1] + AmaxIdeal * B->b[i] * frac;
+      bNew = A->b[A->N-1] + B->b[i] * frac;
+      if(bNew<=DBL_EPSILON)
+      {
+        A->a[A->N-1] = AmaxIdeal;
+        A->b[A->N-1]=0;
+      }
+      else
+      {
+        A->a[A->N-1] = aNew / bNew;
+        A->b[A->N-1] = bNew;
+      }
+    }
+    else
+    { // inbetween two poles add weight to the left (iLow) and right (iLow+1)
+      frac = ( B->a[i] - A->a[iLow] ) / (A->a[iLow+1] - A->a[iLow]);
+      A->b[iLow+1] += frac     * B->b[i];
+      A->b[iLow]   += (1-frac) * B->b[i];
+    }
+  }
+  return 0;
+}
+
 
 /*   A <- alpha A + (1-alpha) B;
  *

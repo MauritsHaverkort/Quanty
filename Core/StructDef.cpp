@@ -866,8 +866,8 @@ typedef struct ResponsefunctionType
   char type;                               // l,a,t,n or L,A,T,N
   bool Block;
   void * data;
-  double *SuggestedGrid;
-  uint32_t NSuggestedGridPoints;
+  double *SuggestedGrid;                   // should be removed as we never used it
+  uint32_t NSuggestedGridPoints;           // should be removed as we never used it
 }
 ResponsefunctionType;
 

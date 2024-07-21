@@ -253,7 +253,6 @@ static int LuaMatrixTridiagonalize(lua_State * L)
   CompactMatrixType *H,*T;
   ResponsefunctionType *HTri;
   uint32_t len = (uint32_t)lua_gettop(L);
-  
   struct
   {
     CompactMatrixType StartingVectors;
@@ -294,6 +293,8 @@ static int LuaMatrixTridiagonalize(lua_State * L)
     HTri->type='t';
     HTri->Block=false;
     HTri->data=(void*)malloc(sizeof(TriDiagonalMatrixType));
+    HTri->NSuggestedGridPoints=0;
+    HTri->SuggestedGrid=NULL;
     if(Options.ReturnU)
     {
       T = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));

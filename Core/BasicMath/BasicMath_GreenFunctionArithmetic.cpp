@@ -1040,6 +1040,56 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
 }
 
 
+int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, CompactVectorType *const Grid, ResponsefunctionType * const G)
+{
+ if(G0->Block==false)
+ {
+   ResponsefunctionType G0And, SigmaLP;
+   AndersonMatrixType *G0AndData;
+   ListOfPoles        *SigmaLPData;
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     G0AndData = (AndersonMatrixType*)G0And.data;
+   }
+   else
+   {
+     G0AndData = (AndersonMatrixType*)G0->data;
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     SigmaLPData = (ListOfPoles*)SigmaLP.data;
+   }
+   else
+   {
+     SigmaLPData = (ListOfPoles*)Sigma->data;
+   }
+   G->type='a';
+   G->Block=false;
+   G->NSuggestedGridPoints=0;
+   G->SuggestedGrid=NULL;
+   G->data = (void*)malloc(sizeof(AndersonMatrixType));
+   GBathAndListAndRepresentationOnGrid(*G0AndData, G0AndData->mu, *SigmaLPData, Grid->VRe, Grid->Ni, (AndersonMatrixType *)(G->data) );
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     FreeResponsefunction(&G0And);
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     FreeResponsefunction(&SigmaLP);
+   }
+ }
+ else
+ {
+   printf("Hybridization function for Block response functions not yet implemented\n Trivial to do \n");
+   
+   
+ }
+ return 0;
+}
+
+
 /*  GBath(w) = 1 / ( G_0(w+mu-Sigma(w))^{-1} + Sigma(w) )
  *    G_0(w+mu-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
  *    G_0(w+mu-Sigma(w))^{-1}                =     (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
@@ -1180,7 +1230,7 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
     bSigma.a[1] = G0.a[i + 1] + Sigma.a0;
     for (j = 0; j < Sigma.N; j++)
     {
-      bSigma.a[j + 2] = Sigma.a[j];
+      bSigma.a[j + 2] = G0.a[i + 1] + Sigma.a[j];
       bSigma.b[j + 1] = sqrt(Sigma.b[j]);
     }
     if (AndersonMatrixToListOfPoles(bSigma, &bSigmaPole))
@@ -1205,6 +1255,76 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
   G->a[1] = G0.a[1];
   G->mu = mu;
   FreeAndersonMatrix(&bSigma);
+  OrderAndersonMatrix(G);
+  return 0;
+}
+/*
+ *
+ */
+uint32_t GBathAndListAndRepresentationOnGrid(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma, double *Grid, uint32_t NGridPoints, AndersonMatrixType * const G)
+{
+  if(NGridPoints==0)
+  {
+    printf("Zero gridpoints not yet implemented\n");
+    return 1;
+  }
+  uint32_t i, j;
+  ListOfPoles bSigmaPole,Ghyb;
+  AndersonMatrixType bSigma;
+  // we take the hybridization part as a list of poles on a grid to which we add
+  // once all added we bring it to an anderson form
+  Ghyb.N=NGridPoints;
+  InitListOfPoles(&Ghyb);
+  for(i=0;i<Ghyb.N;i++)
+  {
+    Ghyb.a[i]=Grid[i];
+    Ghyb.b[i]=0;
+  }
+  bSigma.N = Sigma.N + 1;
+  if (InitAndersonMatrix(&bSigma))
+  {
+    printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");
+    return 1;
+  }
+  bSigma.a[0] = 0;
+  for (i = 1; i < G0.N; i++)
+  {
+    bSigma.b[0] = G0.b[i];
+    bSigma.a[1] = G0.a[i + 1] + Sigma.a0;
+    for (j = 0; j < Sigma.N; j++)
+    {
+      bSigma.a[j + 2] = G0.a[i + 1] + Sigma.a[j];
+      bSigma.b[j + 1] = sqrt(Sigma.b[j]);
+    }
+    if (AndersonMatrixToListOfPoles(bSigma, &bSigmaPole))
+    {
+      printf("AndersonMatrixToListOfPoles failed in GBathAndListAndRepresentation\n");
+      return 1;
+    }
+    // add bSigmaPole to the Ghyb
+    // both are sorted
+    AddToListOfPolesOnGridOrdered(&Ghyb, &bSigmaPole, Grid[0], Grid[NGridPoints-1]);
+    FreeListOfPoles(&bSigmaPole);
+  }
+  G->N = NGridPoints+1;
+  if (InitAndersonMatrix(G))
+  {
+    printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");
+    return 1;
+  }
+  for(i=0;i<NGridPoints;i++)
+  {
+    G->a[i+2] = Ghyb.a[i];
+    G->b[i+1] = sqrt(Ghyb.b[i]);
+  }
+  G->a[0] = G0.a[0];
+  G->b[0] = G0.b[0];
+  G->a[1] = G0.a[1];
+  G->mu = mu;
+  strcpy(G->Name, "GBath");
+  FreeListOfPoles(&Ghyb);
+  FreeAndersonMatrix(&bSigma);
+  OrderAndersonMatrix(G);
   return 0;
 }
 
