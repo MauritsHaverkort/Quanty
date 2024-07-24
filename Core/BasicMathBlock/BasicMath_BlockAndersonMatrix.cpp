@@ -186,7 +186,7 @@ int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType *A, BlockLis
   if(InitBlockListOfPoles(B)) {printf("InitBlockListOfPoles failed in CopyBlockListOfPoles\n");return 1;}
   strcpy(B->Name, A->Name);
   
-  
+  //TODO:
   
   
   return 0;

@@ -5277,6 +5277,56 @@ static int LuaYtoZMatrix(lua_State * L)
 	return 1;
 }
 
+static int LuaZtoKMatrix(lua_State * L)
+{
+  uint32_t len = (uint32_t) lua_gettop(L);
+  bool isInputInteger;
+  MatrixType returnMat;
+  if (len < 1 || len > 2)
+    return luaL_error(L, "ZtoKMatrix called with %d arguments. 1 or 2 expected, multiplicity of orbital, or list of multiplicities, or orbital name, or list of orbital names, and an optional list of options.\n", len);
+  if (!lua_istable(L, 1))
+  {
+    isInputInteger = lua_isnumber(L, 1);
+  } else
+  {
+    lua_rawgeti(L, 1, 1);
+    isInputInteger = lua_isnumber(L, -1);
+    lua_pop(L, 1);
+  }
+  struct
+  {
+    bool addSpin = true;
+  } Options;
+  LuaOptionsType LuaZtoKMatrixOptions[] = {
+      { "addSpin", "bool", &(Options.addSpin) },
+      { NULL, NULL, NULL } };
+  if (len == 2)
+  {
+    if (LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaZtoKMatrixOptions);
+    } else
+    {
+      return luaL_error(L, "Second argument of ZtoKMatrix is optional but iff given should be a list of options.\n");
+    }
+  }
+  if (isInputInteger)
+  {
+    vector<int> multiplicities;
+    lua_check(L, 1, multiplicities);
+    for (int i = 0; i < multiplicities.size(); ++i)
+      multiplicities[i] = 2 * (2 * multiplicities[i] + 1);
+    returnMat = LargeRotationMatrix(multiplicities, ZToKMatrix, Options.addSpin);
+  } else
+  {
+    vector < string > orbs;
+    lua_check(L, 1, orbs);
+    returnMat = LargeRotationMatrix(orbs, ZToKMatrix, Options.addSpin);
+  }
+  LuaPushTable_MatrixType(L, &returnMat);
+  FreeMatrix(&returnMat);
+  return 1;
+}
 
 
 static const struct luaL_Reg global_functions[] = {
@@ -5353,7 +5403,8 @@ static const struct luaL_Reg global_functions[] = {
   {"Verbosity",LuaVerbosity},
 	{"YtojjzMatrix",LuaYtojjzMatrix},
 	{"YtoKMatrix",LuaYtoKMatrix},
-	{"YtoZMatrix",LuaYtoZMatrix},
+  {"YtoZMatrix",LuaYtoZMatrix},
+  {"ZtoKMatrix",LuaZtoKMatrix},
   {NULL, NULL}
 };
 

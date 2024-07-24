@@ -593,6 +593,958 @@ static int LuaResponseFunctionToString(lua_State * L)
   return 1;
 }
 
+/*  Given a Response function M
+ *  push a table to the Lua stack containing 
+ *     bitmasks for the different sections in the Hilbert space
+ *     NF and NB as integers
+ *     type as string
+ *       bitmasks included are
+ *         Core       CoreUp     CoreDn           -- a 0 string if FermionShift = 0
+ *         Impurity   ImpurityUp ImpurityDn       -- Up and Dn only present if AddSpin = True
+ *         BathVal    BathValUp  BathValDn        -- Not present if the format is Tri + Up and Dn only present if AddSpin = True
+ *         BathCon    BathConUp  BathConDn        -- Not present if the format is Tri + Up and Dn only present if AddSpin = True
+ *         BathExt    BathExtUp  BathExtDn        -- Only present if the format is Nat + Up and Dn only present if AddSpin = True
+ *         Bath       BathUp     BathDn           -- Up and Dn only present if AddSpin = True
+ *
+ */
+static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, bool AddSpin, uint32_t FermionShift)
+{
+  int i,j,k;
+  uint32_t NF,NB=0;
+  uint32_t NCore, NImpurity, NBath, NBathVal, NBathCon, NBathExt;
+  char *Core,*Impurity,*ImpurityUp,*ImpurityDn,*Bath,*BathUp,*BathDn;
+  char *BathVal,*BathValUp,*BathValDn,*BathCon,*BathConDn,*BathConUp,*BathExt,*BathExtUp,*BathExtDn;
+  
+  lua_createtable(L, 0, 0);
+  lua_pushboolean(L, M->Block);
+  lua_setfield(L,-2,"Block");
+  lua_pushboolean(L, AddSpin);
+  lua_setfield(L,-2,"AddSpin");
+  lua_pushinteger(L, FermionShift);
+  lua_setfield(L,-2,"FermionShift");
+  
+  switch(M->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      return luaL_error(L, "Error in Responsefunction.CreateBitMasks() Can not create BitMaskFields for a response function stored as a list of poles\n");
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      lua_pushstring(L, "And");
+      lua_setfield(L,-2,"type");
+      if(M->Block==true)
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          NImpurity = 2*((BlockAndersonMatrixType*)(M->data))->BlockSize;
+          NBath     = NImpurity * (((BlockAndersonMatrixType*)(M->data))->N-1);
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            BathExt[k]    ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            BathValUp[k]  ='0';
+            BathConUp[k]  ='0';
+            BathExtUp[k]  ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+            BathValDn[k]  ='0';
+            BathConDn[k]  ='0';
+            BathExtDn[k]  ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          BathExt[NF]    ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          BathValUp[NF]  ='\0';
+          BathConUp[NF]  ='\0';
+          BathExtUp[NF]  ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          BathValDn[NF]  ='\0';
+          BathConDn[NF]  ='\0';
+          BathExtDn[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          k=NCore+NImpurity;
+          if(((BlockAndersonMatrixType*)(M->data))->QComplex)
+          {
+            for(i=2;i<=((BlockAndersonMatrixType*)(M->data))->N;i++)
+            {
+              for(j=0;j<((BlockAndersonMatrixType*)(M->data))->BlockSize;j++)
+              {
+                if(((BlockAndersonMatrixType*)(M->data))->a[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ].Re < ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathVal++;
+                  BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                  k++;
+                  NBathVal++;
+                  BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                }
+                else if(((BlockAndersonMatrixType*)(M->data))->a[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ].Re > ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathCon++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                  k++;
+                  NBathCon++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                }
+                else
+                {
+                  NBathExt++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+                  k++;
+                  NBathExt++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+                }
+                k++;
+              }
+            }
+          }
+          else
+          {
+            for(i=2;i<=((BlockAndersonMatrixType*)(M->data))->N;i++)
+            {
+              for(j=0;j<((BlockAndersonMatrixType*)(M->data))->BlockSize;j++)
+              {
+                if(((BlockAndersonMatrixType*)(M->data))->aRe[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ] < ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathVal++;
+                  BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                  k++;
+                  NBathVal++;
+                  BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                }
+                else if(((BlockAndersonMatrixType*)(M->data))->aRe[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ] > ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathCon++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                  k++;
+                  NBathCon++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+                  BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+                }
+                else
+                {
+                  NBathExt++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+                  k++;
+                  NBathExt++;
+                  BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+                  BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+                  BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+                }
+                k++;
+              }
+            }
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+          lua_pushstring(L, BathExtUp);
+          lua_setfield(L,-2,"BathExtUp");
+          free(BathExtUp);
+          lua_pushstring(L, BathExtDn);
+          lua_setfield(L,-2,"BathExtDn");
+          free(BathExtDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          NImpurity = ((BlockAndersonMatrixType*)(M->data))->BlockSize;
+          NBath     = NImpurity * (((BlockAndersonMatrixType*)(M->data))->N-1);
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core     = (char*)malloc((NF+1)*sizeof(char));
+          Impurity = (char*)malloc((NF+1)*sizeof(char));
+          Bath     = (char*)malloc((NF+1)*sizeof(char));
+          BathVal  = (char*)malloc((NF+1)*sizeof(char));
+          BathCon  = (char*)malloc((NF+1)*sizeof(char));
+          BathExt  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]     ='0';
+            Impurity[k] ='0';
+            Bath[k]     ='0';
+            BathVal[k]  ='0';
+            BathCon[k]  ='0';
+            BathExt[k]  ='0';
+          }
+          Core[NF]     ='\0';
+          Impurity[NF] ='\0';
+          Bath[NF]     ='\0';
+          BathVal[NF]  ='\0';
+          BathCon[NF]  ='\0';
+          BathExt[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1';
+          }
+          k=NCore+NImpurity;
+          if(((BlockAndersonMatrixType*)(M->data))->QComplex)
+          {
+            for(i=2;i<=((BlockAndersonMatrixType*)(M->data))->N;i++)
+            {
+              for(j=0;j<((BlockAndersonMatrixType*)(M->data))->BlockSize;j++)
+              {
+                if(((BlockAndersonMatrixType*)(M->data))->a[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ].Re < ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathVal++;
+                  BathVal[k]='1';
+                  BathCon[k]='0';
+                  BathExt[k]='0';
+                }
+                else if(((BlockAndersonMatrixType*)(M->data))->a[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ].Re > ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathCon++;
+                  BathVal[k]='0';
+                  BathCon[k]='1';
+                  BathExt[k]='0';
+                }
+                else
+                {
+                  NBathExt++;
+                  BathVal[k]='0';
+                  BathCon[k]='0';
+                  BathExt[k]='1';
+                }
+                k++;
+              }
+            }
+          }
+          else
+          {
+            for(i=2;i<=((BlockAndersonMatrixType*)(M->data))->N;i++)
+            {
+              for(j=0;j<((BlockAndersonMatrixType*)(M->data))->BlockSize;j++)
+              {
+                if(((BlockAndersonMatrixType*)(M->data))->aRe[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ] < ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathVal++;
+                  BathVal[k]='1';
+                  BathCon[k]='0';
+                  BathExt[k]='0';
+                }
+                else if(((BlockAndersonMatrixType*)(M->data))->aRe[ i*((BlockAndersonMatrixType*)(M->data))->BlockSize*((BlockAndersonMatrixType*)(M->data))->BlockSize+j*((BlockAndersonMatrixType*)(M->data))->BlockSize+j ] > ((BlockAndersonMatrixType*)(M->data))->mu)
+                {
+                  NBathCon++;
+                  BathVal[k]='0';
+                  BathCon[k]='1';
+                  BathExt[k]='0';
+                }
+                else
+                {
+                  NBathExt++;
+                  BathVal[k]='0';
+                  BathCon[k]='0';
+                  BathExt[k]='1';
+                }
+                k++;
+              }
+            }
+          }
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NBathExt);
+        lua_setfield(L,-2,"NBathExt");
+        lua_pushstring(L, BathExt);
+        lua_setfield(L,-2,"BathExt");
+        free(BathExt);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      else
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          NImpurity = 2;
+          NBath     = NImpurity * (((AndersonMatrixType*)(M->data))->N-1);
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            BathExt[k]    ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            BathValUp[k]  ='0';
+            BathConUp[k]  ='0';
+            BathExtUp[k]  ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+            BathValDn[k]  ='0';
+            BathConDn[k]  ='0';
+            BathExtDn[k]  ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          BathExt[NF]    ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          BathValUp[NF]  ='\0';
+          BathConUp[NF]  ='\0';
+          BathExtUp[NF]  ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          BathValDn[NF]  ='\0';
+          BathConDn[NF]  ='\0';
+          BathExtDn[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          k=NCore+NImpurity;
+          for(i=2;i<=((AndersonMatrixType*)(M->data))->N;i++)
+          {
+            if(((AndersonMatrixType*)(M->data))->a[ i ] < ((AndersonMatrixType*)(M->data))->mu)
+            {
+              NBathVal++;
+              BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+              BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+              BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+              k++;
+              NBathVal++;
+              BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+              BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+              BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+            }
+            else if(((AndersonMatrixType*)(M->data))->a[ i ] > ((AndersonMatrixType*)(M->data))->mu)
+            {
+              NBathCon++;
+              BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+              BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+              BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+              k++;
+              NBathCon++;
+              BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+              BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+              BathExt[k]='0'; BathExtDn[k]='0'; BathExtUp[k]='0';
+            }
+            else
+            {
+              NBathExt++;
+              BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+              BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+              BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+              k++;
+              NBathExt++;
+              BathVal[k]='0'; BathValDn[k]='0'; BathValUp[k]='0';
+              BathCon[k]='0'; BathConDn[k]='0'; BathConUp[k]='0';
+              BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+            }
+            k++;
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+          lua_pushstring(L, BathExtUp);
+          lua_setfield(L,-2,"BathExtUp");
+          free(BathExtUp);
+          lua_pushstring(L, BathExtDn);
+          lua_setfield(L,-2,"BathExtDn");
+          free(BathExtDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          NImpurity = 1;
+          NBath     = NImpurity * (((AndersonMatrixType*)(M->data))->N-1);
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core     = (char*)malloc((NF+1)*sizeof(char));
+          Impurity = (char*)malloc((NF+1)*sizeof(char));
+          Bath     = (char*)malloc((NF+1)*sizeof(char));
+          BathVal  = (char*)malloc((NF+1)*sizeof(char));
+          BathCon  = (char*)malloc((NF+1)*sizeof(char));
+          BathExt  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]     ='0';
+            Impurity[k] ='0';
+            Bath[k]     ='0';
+            BathVal[k]  ='0';
+            BathCon[k]  ='0';
+            BathExt[k]  ='0';
+          }
+          Core[NF]     ='\0';
+          Impurity[NF] ='\0';
+          Bath[NF]     ='\0';
+          BathVal[NF]  ='\0';
+          BathCon[NF]  ='\0';
+          BathExt[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1';
+          }
+          k=NCore+NImpurity;
+          for(i=2;i<=((AndersonMatrixType*)(M->data))->N;i++)
+          {
+            if(((AndersonMatrixType*)(M->data))->a[ i ] < ((AndersonMatrixType*)(M->data))->mu)
+            {
+              NBathVal++;
+              BathVal[k]='1';
+              BathCon[k]='0';
+              BathExt[k]='0';
+            }
+            else if(((AndersonMatrixType*)(M->data))->a[ i ] > ((AndersonMatrixType*)(M->data))->mu)
+            {
+              NBathCon++;
+              BathVal[k]='0';
+              BathCon[k]='1';
+              BathExt[k]='0';
+            }
+            else
+            {
+              NBathExt++;
+              BathVal[k]='0';
+              BathCon[k]='0';
+              BathExt[k]='1';
+            }
+            k++;
+          }
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NBathExt);
+        lua_setfield(L,-2,"NBathExt");
+        lua_pushstring(L, BathExt);
+        lua_setfield(L,-2,"BathExt");
+        free(BathExt);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      lua_pushstring(L, "Tri");
+      lua_setfield(L,-2,"type");
+      if(M->Block==true)
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          NImpurity = 2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
+          NBath     = 0;
+          for(k=2;k<((BlockTriDiagonalMatrixType*)(M->data))->N+1;k++)
+          {
+            NBath+=2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSizeList[k];
+          }
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          k=NCore+NImpurity;
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          NImpurity = ((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
+          NBath     = 0;
+          for(k=2;k<((BlockTriDiagonalMatrixType*)(M->data))->N+1;k++)
+          {
+            NBath+=((BlockTriDiagonalMatrixType*)(M->data))->BlockSizeList[k];
+          }
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core     = (char*)malloc((NF+1)*sizeof(char));
+          Impurity = (char*)malloc((NF+1)*sizeof(char));
+          Bath     = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]     ='0';
+            Impurity[k] ='0';
+            Bath[k]     ='0';
+          }
+          Core[NF]     ='\0';
+          Impurity[NF] ='\0';
+          Bath[NF]     ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1';
+          }
+          k=NCore+NImpurity;
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      else
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          NImpurity = 2;
+          NBath     = NImpurity * (((TriDiagonalMatrixType*)(M->data))->N-1);
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          k=NCore+NImpurity;
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          NImpurity = 1;
+          NBath     = NImpurity * (((TriDiagonalMatrixType*)(M->data))->N-1);
+          NBathVal  = 0;
+          NBathCon  = 0;
+          NBathExt  = 0;
+          NF = NCore + NImpurity + NBath;
+          Core     = (char*)malloc((NF+1)*sizeof(char));
+          Impurity = (char*)malloc((NF+1)*sizeof(char));
+          Bath     = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]     ='0';
+            Impurity[k] ='0';
+            Bath[k]     ='0';
+          }
+          Core[NF]     ='\0';
+          Impurity[NF] ='\0';
+          Bath[NF]     ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NF;k++)
+          {
+            Bath[k]='1';
+          }
+          k=NCore+NImpurity;
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      lua_pushstring(L, "Nat");
+      lua_setfield(L,-2,"type");
+      if(M->Block==true)
+      {
+        if(AddSpin==true)
+        {
+          
+        }
+        else
+        {
+          
+        }
+      }
+      else
+      {
+        if(AddSpin==true)
+        {
+          
+        }
+        else
+        {
+          
+        }
+      }
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "Error in Responsefunction.CreateBitMasks() unrecognized type in response function (%s)\n",M->type);
+    }
+  }
+  return 0;
+}
+static int LuaResponseFunctionToBitMask(lua_State *L)
+{
+  ResponsefunctionType *M;
+  bool AddSpin=false;
+  uint32_t FermionShift=0;
+  LuaOptionsType LuaOptions[]={
+    {"AddSpin","bool",&AddSpin},
+    {"FermionShift","uint32_t",&FermionShift},
+    {"NCore","uint32_t",&FermionShift},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=1) return luaL_error(L, "Error in ResponseFunction.CreateBitMasks() It should be called with 1 argument, not with %d\n",len);
+  M = luaL_checkResponsefunction(L,1);
+  ResponseFunctionToLuaBitMask(L, M, AddSpin, FermionShift);
+  FreeResponsefunctionIncludingOriginalPointer(M);
+  return 1;
+}
 
 /*
  *
@@ -609,14 +1561,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     case 'L':
     case 'l':
     {
-      if(M->Block==true)
-      {
-        BlockListOfPolesToTightBinding((BlockListOfPoles *)(M->data),TB);
-      }
-      else
-      {
-        //TODO: listofpoles to TB
-      }
+      return luaL_error(L, "Error in Responsefunction.ToTightBinding() Can not create Tight Binding representations for a response function stored as a list of poles\n");
       break;
     }
     case 'A':
@@ -704,14 +1649,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     case 'L':
     case 'l':
     {
-      if(M->Block==true)
-      {
-        
-      }
-      else
-      {
-        
-      }
+      return luaL_error(L, "Error in Responsefunction.ToOperator() Can not create Operators for a response function stored as a list of poles\n");
       break;
     }
     case 'A':
@@ -853,6 +1791,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
   {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
   {"InvertEnergy", LuaInvertEnergy},
+  {"CreateBitMasks", LuaResponseFunctionToBitMask},
   {NULL, NULL}
 };
 

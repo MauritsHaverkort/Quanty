@@ -3162,6 +3162,67 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 	return out;
 }
 
+/*  Transform Tesseral to Kubic Harmonics
+ *
+ */
+MatrixType ZToKMatrix(const int multiplicity, const bool addSpin)
+{
+  MatrixType out;
+  out.QComplex = false;
+  out.Ni = multiplicity / 2;
+  out.Nj = multiplicity / 2;
+  InitMatrix(&out);
+  if (multiplicity == 2)
+  {
+//    s-shell
+    out.VRe[0][0] = 1;
+  }
+  else if (multiplicity == 6)
+  {
+//    p-shell
+    out.VRe[0][2] = 1;
+    out.VRe[1][0] = 1;
+    out.VRe[2][1] = 1;
+  }
+  else if (multiplicity == 10)
+  {
+//    d-shell
+    out.VRe[0][4] = 1;
+    out.VRe[1][2] = 1;
+    out.VRe[2][1] = 1;
+    out.VRe[3][3] = 1;
+    out.VRe[4][0] = 1;
+  }
+  else if (multiplicity == 14)
+  {
+//    f-shell
+    out.VRe[0][1] = 1;
+    out.VRe[1][4] = -sqrt(3./8.);
+    out.VRe[1][6] =  sqrt(5./8.);
+    out.VRe[2][0] = -sqrt(5./8.);
+    out.VRe[2][2] = -sqrt(3./8.);
+    out.VRe[3][3] = 1;
+    out.VRe[4][4] = -sqrt(5./8.);
+    out.VRe[4][6] = -sqrt(3./8.);
+    
+    out.VRe[5][0] = -sqrt(3./8.);
+    out.VRe[5][2] =  sqrt(5./8.);
+    out.VRe[6][5] = 1;
+  }
+  else if ((multiplicity - 2) % 4 == 0)
+  {
+    cout << "ZToKMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
+    return nullMatrix();
+  } else
+  {
+    cout << "ZToKMatrix only defined for multiplicity (2*l+1), with integer l, not for multiplicity " << multiplicity << "!" << endl;
+    return nullMatrix();
+  }
+  if (addSpin)
+    out = MatrixEnlarge(out, 2);
+  return out;
+}
+
 //TODO: should this function not have l as first argument. (Multiplicity is 4l+2 ???)
 MatrixType YToZMatrix(const int multiplicity, const bool addSpin)
 {
