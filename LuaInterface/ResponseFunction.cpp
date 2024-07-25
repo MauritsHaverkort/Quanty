@@ -1496,23 +1496,431 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
       {
         if(AddSpin==true)
         {
-          
+          NCore     = FermionShift;
+          NImpurity = 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+          NBathExt  = NImpurity;
+          NBathVal  = 0;
+          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+          {
+            NBathVal+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+          }
+          NBathCon  = 0;
+          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+          {
+            NBathCon+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+          }
+          NBath     = NBathVal + NBathCon + NBathExt;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            BathExt[k]    ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            BathValUp[k]  ='0';
+            BathConUp[k]  ='0';
+            BathExtUp[k]  ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+            BathValDn[k]  ='0';
+            BathConDn[k]  ='0';
+            BathExtDn[k]  ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          BathExt[NF]    ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          BathValUp[NF]  ='\0';
+          BathConUp[NF]  ='\0';
+          BathExtUp[NF]  ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          BathValDn[NF]  ='\0';
+          BathConDn[NF]  ='\0';
+          BathExtDn[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
+          {
+            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+            k++;
+            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
+          {
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+            k++;
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+            k++;
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+          lua_pushstring(L, BathExtUp);
+          lua_setfield(L,-2,"BathExtUp");
+          free(BathExtUp);
+          lua_pushstring(L, BathExtDn);
+          lua_setfield(L,-2,"BathExtDn");
+          free(BathExtDn);
         }
-        else
+        else // AddSpin == false
         {
-          
+          NCore     = FermionShift;
+          NImpurity = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+          NBathExt  = NImpurity;
+          NBathVal  = 0;
+          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+          {
+            NBathVal+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+          }
+          NBathCon  = 0;
+          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+          {
+            NBathCon+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+          }
+          NBath     = NBathVal + NBathCon + NBathExt;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            BathExt[k]    ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          BathExt[NF]    ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
+          {
+            BathExt[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
+          {
+            BathVal[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1';
+          }
         }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NBathExt);
+        lua_setfield(L,-2,"NBathExt");
+        lua_pushstring(L, BathExt);
+        lua_setfield(L,-2,"BathExt");
+        free(BathExt);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
       }
       else
       {
         if(AddSpin==true)
         {
-          
+          NCore     = FermionShift;
+          NImpurity = 2;
+          NBathExt  = NImpurity;
+          NBathVal = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->val.N;
+          NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N;
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            BathExt[k]    ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            BathValUp[k]  ='0';
+            BathConUp[k]  ='0';
+            BathExtUp[k]  ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+            BathValDn[k]  ='0';
+            BathConDn[k]  ='0';
+            BathExtDn[k]  ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          BathExt[NF]    ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          BathValUp[NF]  ='\0';
+          BathConUp[NF]  ='\0';
+          BathExtUp[NF]  ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          BathValDn[NF]  ='\0';
+          BathConDn[NF]  ='\0';
+          BathExtDn[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
+          {
+            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+            k++;
+            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
+          {
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+            k++;
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+            k++;
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+          lua_pushstring(L, BathExtUp);
+          lua_setfield(L,-2,"BathExtUp");
+          free(BathExtUp);
+          lua_pushstring(L, BathExtDn);
+          lua_setfield(L,-2,"BathExtDn");
+          free(BathExtDn);
         }
-        else
+        else // AddSpin == false
         {
-          
+          NCore     = FermionShift;
+          NImpurity = 1;
+          NBathExt  = NImpurity;
+          NBathVal = ((BADoubleTriDiagonalMatrixType*)(M->data))->val.N;
+          NBathCon = ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N;
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            BathExt[k]    ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          BathExt[NF]    ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
+          {
+            BathExt[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
+          {
+            BathVal[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1';
+          }
         }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NBathExt);
+        lua_setfield(L,-2,"NBathExt");
+        lua_pushstring(L, BathExt);
+        lua_setfield(L,-2,"BathExt");
+        free(BathExt);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
       }
       break;
     }
