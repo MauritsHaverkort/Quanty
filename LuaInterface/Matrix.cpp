@@ -539,7 +539,7 @@ static int LuaMatrixRandom(lua_State * L)
 static int LuaMatrixZero(lua_State * L)
 {
   CompactMatrixType *res;
-  bool Userdata=false;
+  bool Userdata=true;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFunctionOptions[]={
     {"Userdata","bool",&(Userdata)},
@@ -582,7 +582,7 @@ static int LuaMatrixZero(lua_State * L)
 static int LuaMatrixIdentity(lua_State * L)
 {
   CompactMatrixType *res;
-  bool Userdata=false;
+  bool Userdata=true;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaFunctionOptions[]={
     {"Userdata","bool",&(Userdata)},

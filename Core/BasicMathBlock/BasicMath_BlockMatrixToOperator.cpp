@@ -683,7 +683,7 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonianPerturbation(OperatorType *c
  */
 uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAndersonMatrixType const *A, bool const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
-  //TODO: test
+  //TODO: test - FAILED!!!!!
   uint32_t i,j,k,ia,ifer,jfer,ib;
   uint16_t oadd[2];
   InitNamedOperator(H, "Impurity Hamiltonian");
@@ -923,18 +923,22 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
  */
 uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *const H, BlockNaturalImpurityOrbitalMatrixType const *A, bool const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
-  //TODO: test
   uint32_t i,j,k,ia,ifer,jfer,ib;
   uint16_t oadd[2];
   InitNamedOperator(H, "Impurity Hamiltonian");
   H->NBoson=0;
-  if(Spin==false)
+  H->NFermion=NFermionShift;
+  for(i=1;i<=A->val.N;i++)
   {
-    H->NFermion=NFermionShift+(2+A->val.N+A->con.N)*A->BlockSize;
+    H->NFermion+=A->val.BlockSizeList[i];
   }
-  else
+  for(i=1;i<=A->con.N;i++)
   {
-    H->NFermion=NFermionShift+2*(2+A->val.N+A->con.N)*A->BlockSize;
+    H->NFermion+=A->con.BlockSizeList[i];
+  }
+  if(Spin==true)
+  {
+    H->NFermion=2*(H->NFermion-NFermionShift)+NFermionShift;
   }
   if(NFermion!=0 )
   {
@@ -951,7 +955,6 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
   }
   H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   InitOperatorFixedLength(H, 2, 8);
-  InitOperatorFixedLength(H, 4, 8);
   if(A->QComplex)
   {
     MakeRealOperatorFixedLengthComplex(H, 2);

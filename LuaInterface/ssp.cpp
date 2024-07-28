@@ -3275,10 +3275,13 @@ static int LuaOperatorToMatrix(lua_State *L)
   {
     bool AddDFTSelfInteraction=false;
   } Options;
+  CompactMatrixType *Rho, HMat;
   OperatorType *H;
   uint32_t len;
+  bool OnLuaStack=true;
   LuaOptionsType LuaOptions[]={
     {"AddDFTSelfInteraction","bool",&(Options.AddDFTSelfInteraction)},
+    {"UserData","bool",&(OnLuaStack)},
     {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
@@ -3286,14 +3289,14 @@ static int LuaOperatorToMatrix(lua_State *L)
   {
   	if (H->MaxLength > 2 || H->l[0].N != 0 || H->l[1].N != 0)
   		VerbosityPrintf(0x0001,"\nWarning: Without a specified density the matrix representation can only be found for the quadratic part of an operator, all other parts will be ignored.\n");
-    CompactMatrixType *Rho, HMat;
     Rho= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
     Rho->Ni=H->NFermion;
     Rho->Nj=H->NFermion;
     Rho->QComplex=0;
     InitCompactMatrix(Rho);
     if(MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho)) return luaL_error(L, "Mean-field operator failed\n");
-    LuaPushTable_CompactMatrixType(L, &HMat);
+    HMat.OnLuaStack=OnLuaStack;
+    lua_push(L,&HMat);
     FreeCompactMatrix(&HMat);
     FreeCompactMatrix(Rho);
     free(Rho);
@@ -3312,10 +3315,10 @@ static int LuaOperatorToMatrix(lua_State *L)
         if (luaL_testudata(L, 2, "Wavefunction_Type") != NULL)
         {
           WaveFunctionType *psi;
-          CompactMatrixType HMat;
           psi = (WaveFunctionType *) luaL_checkudata(L, 2, "Wavefunction_Type");
           OperatorToDeterminantMatrix(H, psi, &HMat);
-          LuaPushTable_CompactMatrixType(L, &HMat);
+          HMat.OnLuaStack=OnLuaStack;
+          lua_push(L,&HMat);
           FreeCompactMatrix(&HMat);
           return 1;
         }
@@ -3343,7 +3346,6 @@ static int LuaOperatorToMatrix(lua_State *L)
         else
         {
           lua_pop(L,1);
-          CompactMatrixType *Rho, HMat;
           Rho = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
           if(Options.AddDFTSelfInteraction==true)
           {
@@ -3353,7 +3355,8 @@ static int LuaOperatorToMatrix(lua_State *L)
           {
             if (MeanFieldOperatorOneElectronMatrix(H, &HMat, *Rho)) return luaL_error(L, "Mean-field operator failed\n");
           }
-          LuaPushTable_CompactMatrixType(L, &HMat);
+          HMat.OnLuaStack=OnLuaStack;
+          lua_push(L,&HMat);
           FreeCompactMatrix(Rho);
           FreeCompactMatrix(&HMat);
           free(Rho);

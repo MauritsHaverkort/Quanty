@@ -1793,13 +1793,13 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
             k++;
             BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal-2;k++)
           {
             BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
             k++;
             BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
+          for(k=NCore+NImpurity+NBathExt+NBathVal-2;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon-4;k++)
           {
             BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
             k++;
@@ -1878,11 +1878,11 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           {
             BathExt[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal-1;k++)
           {
             BathVal[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
+          for(k=NCore+NImpurity+NBathExt+NBathVal-1;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon-2;k++)
           {
             BathCon[k]='1';
           }
@@ -2069,7 +2069,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       }
       else
       {
-        
+        AndersonMatrixToImpurityHamiltonian(O, (AndersonMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
       }
       break;
     }
@@ -2082,7 +2082,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       }
       else
       {
-        
+        TriDiagonalMatrixToImpurityHamiltonian(O, (TriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
       }
       break;
     }
@@ -2095,7 +2095,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       }
       else
       {
-        
+        BADoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BADoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
       }
       break;
     }
@@ -2105,8 +2105,9 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       return 0;
     }
   }
+  ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift);
   FreeResponsefunctionIncludingOriginalPointer(M);
-  return 1;
+  return 2;
 }
 
 
