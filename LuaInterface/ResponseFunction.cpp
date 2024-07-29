@@ -612,7 +612,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
   int i,j,k;
   uint32_t NF,NB=0;
   uint32_t NCore, NImpurity, NBath, NBathVal, NBathCon, NBathExt;
-  char *Core,*Impurity,*ImpurityUp,*ImpurityDn,*Bath,*BathUp,*BathDn;
+  char *Core,*Impurity,*ImpurityUp,*ImpurityDn,*Bath,*BathUp,*BathDn, *ImpurityExt, *ImpurityExtUp, *ImpurityExtDn;
   char *BathVal,*BathValUp,*BathValDn,*BathCon,*BathConDn,*BathConUp,*BathExt,*BathExtUp,*BathExtDn;
   
   lua_createtable(L, 0, 0);
@@ -1722,88 +1722,97 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           NCore     = FermionShift;
           NImpurity = 2;
           NBathExt  = NImpurity;
-          NBathVal = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->val.N;
-          NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N;
-          NBath     = NBathVal + NBathCon;
+          NBathVal = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->val.N-2;
+          NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-2;
+          NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
-          Core       = (char*)malloc((NF+1)*sizeof(char));
-          Impurity   = (char*)malloc((NF+1)*sizeof(char));
-          Bath       = (char*)malloc((NF+1)*sizeof(char));
-          BathVal    = (char*)malloc((NF+1)*sizeof(char));
-          BathCon    = (char*)malloc((NF+1)*sizeof(char));
-          BathExt    = (char*)malloc((NF+1)*sizeof(char));
-          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
-          BathUp     = (char*)malloc((NF+1)*sizeof(char));
-          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
-          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
-          BathExtUp  = (char*)malloc((NF+1)*sizeof(char));
-          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
-          BathDn     = (char*)malloc((NF+1)*sizeof(char));
-          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
-          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
-          BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          Core          = (char*)malloc((NF+1)*sizeof(char));
+          Impurity      = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExt   = (char*)malloc((NF+1)*sizeof(char));
+          Bath          = (char*)malloc((NF+1)*sizeof(char));
+          BathVal       = (char*)malloc((NF+1)*sizeof(char));
+          BathCon       = (char*)malloc((NF+1)*sizeof(char));
+          BathExt       = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp        = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathExtUp     = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn        = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathExtDn     = (char*)malloc((NF+1)*sizeof(char));
           for(k=0;k<NF;k++)
           {
-            Core[k]       ='0';
-            Impurity[k]   ='0';
-            Bath[k]       ='0';
-            BathVal[k]    ='0';
-            BathCon[k]    ='0';
-            BathExt[k]    ='0';
-            ImpurityUp[k] ='0';
-            BathUp[k]     ='0';
-            BathValUp[k]  ='0';
-            BathConUp[k]  ='0';
-            BathExtUp[k]  ='0';
-            ImpurityDn[k] ='0';
-            BathDn[k]     ='0';
-            BathValDn[k]  ='0';
-            BathConDn[k]  ='0';
-            BathExtDn[k]  ='0';
+            Core[k]          ='0';
+            Impurity[k]      ='0';
+            ImpurityExt[k]   ='0';
+            Bath[k]          ='0';
+            BathVal[k]       ='0';
+            BathCon[k]       ='0';
+            BathExt[k]       ='0';
+            ImpurityUp[k]    ='0';
+            ImpurityExtUp[k] ='0';
+            BathUp[k]        ='0';
+            BathValUp[k]     ='0';
+            BathConUp[k]     ='0';
+            BathExtUp[k]     ='0';
+            ImpurityDn[k]    ='0';
+            ImpurityExtDn[k] ='0';
+            BathDn[k]        ='0';
+            BathValDn[k]     ='0';
+            BathConDn[k]     ='0';
+            BathExtDn[k]     ='0';
           }
-          Core[NF]       ='\0';
-          Impurity[NF]   ='\0';
-          Bath[NF]       ='\0';
-          BathVal[NF]    ='\0';
-          BathCon[NF]    ='\0';
-          BathExt[NF]    ='\0';
-          ImpurityUp[NF] ='\0';
-          BathUp[NF]     ='\0';
-          BathValUp[NF]  ='\0';
-          BathConUp[NF]  ='\0';
-          BathExtUp[NF]  ='\0';
-          ImpurityDn[NF] ='\0';
-          BathDn[NF]     ='\0';
-          BathValDn[NF]  ='\0';
-          BathConDn[NF]  ='\0';
-          BathExtDn[NF]  ='\0';
+          Core[NF]          ='\0';
+          Impurity[NF]      ='\0';
+          ImpurityExt[NF]   ='\0';
+          Bath[NF]          ='\0';
+          BathVal[NF]       ='\0';
+          BathCon[NF]       ='\0';
+          BathExt[NF]       ='\0';
+          ImpurityUp[NF]    ='\0';
+          ImpurityExtUp[NF] ='\0';
+          BathUp[NF]        ='\0';
+          BathValUp[NF]     ='\0';
+          BathConUp[NF]     ='\0';
+          BathExtUp[NF]     ='\0';
+          ImpurityDn[NF]    ='\0';
+          ImpurityExtDn[NF] ='\0';
+          BathDn[NF]        ='\0';
+          BathValDn[NF]     ='\0';
+          BathConDn[NF]     ='\0';
+          BathExtDn[NF]     ='\0';
           for(k=0;k<NCore;k++)
           {
             Core[k]='1';
           }
           for(k=NCore;k<NCore+NImpurity;k++)
           {
-            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0'; ImpurityExt[k]='1'; ImpurityExtDn[k]='1'; ImpurityExtUp[k]='0';
             k++;
-            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='0'; ImpurityExtUp[k]='1';
           }
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
-            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0'; ImpurityExt[k]='1'; ImpurityExtDn[k]='1'; ImpurityExtUp[k]='0';
             k++;
-            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='0'; ImpurityExtUp[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal-2;k++)
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
-            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
             k++;
-            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt+NBathVal-2;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon-4;k++)
+          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
           {
-            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
             k++;
-            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
           }
           lua_pushstring(L, ImpurityUp);
           lua_setfield(L,-2,"ImpurityUp");
@@ -1811,6 +1820,12 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           lua_pushstring(L, ImpurityDn);
           lua_setfield(L,-2,"ImpurityDn");
           free(ImpurityDn);
+          lua_pushstring(L, ImpurityExtUp);
+          lua_setfield(L,-2,"ImpurityExtUp");
+          free(ImpurityExtUp);
+          lua_pushstring(L, ImpurityExtDn);
+          lua_setfield(L,-2,"ImpurityExtDn");
+          free(ImpurityExtDn);
           lua_pushstring(L, BathUp);
           lua_setfield(L,-2,"BathUp");
           free(BathUp);
@@ -1841,12 +1856,13 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           NCore     = FermionShift;
           NImpurity = 1;
           NBathExt  = NImpurity;
-          NBathVal = ((BADoubleTriDiagonalMatrixType*)(M->data))->val.N;
-          NBathCon = ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N;
-          NBath     = NBathVal + NBathCon;
+          NBathVal = ((BADoubleTriDiagonalMatrixType*)(M->data))->val.N-1;
+          NBathCon = ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-1;
+          NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
           Core       = (char*)malloc((NF+1)*sizeof(char));
           Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExt= (char*)malloc((NF+1)*sizeof(char));
           Bath       = (char*)malloc((NF+1)*sizeof(char));
           BathVal    = (char*)malloc((NF+1)*sizeof(char));
           BathCon    = (char*)malloc((NF+1)*sizeof(char));
@@ -1855,6 +1871,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           {
             Core[k]       ='0';
             Impurity[k]   ='0';
+            ImpurityExt[k]='0';
             Bath[k]       ='0';
             BathVal[k]    ='0';
             BathCon[k]    ='0';
@@ -1862,6 +1879,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           }
           Core[NF]       ='\0';
           Impurity[NF]   ='\0';
+          ImpurityExt[NF]='\0';
           Bath[NF]       ='\0';
           BathVal[NF]    ='\0';
           BathCon[NF]    ='\0';
@@ -1873,18 +1891,23 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           for(k=NCore;k<NCore+NImpurity;k++)
           {
             Impurity[k]='1';
+            ImpurityExt[k]='1';
           }
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
             BathExt[k]='1';
+            Bath[k]='1';
+            ImpurityExt[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal-1;k++)
+          for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
             BathVal[k]='1';
+            Bath[k]='1';
           }
-          for(k=NCore+NImpurity+NBathExt+NBathVal-1;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon-2;k++)
+          for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
           {
             BathCon[k]='1';
+            Bath[k]='1';
           }
         }
         lua_pushinteger(L, NCore);
@@ -1897,6 +1920,9 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         lua_pushstring(L, Impurity);
         lua_setfield(L,-2,"Impurity");
         free(Impurity);
+        lua_pushstring(L, ImpurityExt);
+        lua_setfield(L,-2,"ImpurityExt");
+        free(ImpurityExt);
         lua_pushinteger(L, NBath);
         lua_setfield(L,-2,"NBath");
         lua_pushstring(L, Bath);

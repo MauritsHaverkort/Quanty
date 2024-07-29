@@ -2500,21 +2500,12 @@ void LuaPushTable_CompactTensorType(lua_State* L, CompactTensorType const * cons
 
 void LuaPushTable_TriDiagonalMatrixType(lua_State* L, TriDiagonalMatrixType const * const M)
 {
-  uint32_t i,MNtrunc=M->N;
-  for(i=1;i<M->N;i++)
-  {
-    if(Sqr(M->b[i])<0.01*DBL_EPSILON)
-    {
-      MNtrunc=i;
-      break;
-    }
-  }
   lua_createtable(L, 2, 3);
   /* push a */
-  LuaPushArray_double(L, M->a, MNtrunc+1);
+  LuaPushArray_double(L, M->a, M->N+1);
   lua_rawseti(L, -2, 1);
   /* push b */
-  LuaPushArray_double(L, M->b, MNtrunc);
+  LuaPushArray_double(L, M->b, M->N);
   lua_rawseti(L, -2, 2);
   /* push mu */
   lua_pushnumber(L, M->mu);
