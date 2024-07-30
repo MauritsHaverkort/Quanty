@@ -501,7 +501,6 @@ static int LuaResponseFunctionAdd(lua_State * L)
   Mb = luaL_checkResponsefunction(L,2);
   if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
   //TODO: if the functions are of Block type test dimensions
-  
   ResponseFunctionAdd(Ma, Mb, &res);
   LuaPush_ResponseFunction(L, &res);
   FreeResponsefunction(Ma);
@@ -536,9 +535,33 @@ static int LuaResponseFunctionSub(lua_State * L)
  */
 static int LuaResponseFunctionMul(lua_State * L)
 {
-  //TODO: all
-  printf("LuaResponseFunctionMul\n");
-  return 0;
+  double x;
+  ResponsefunctionType *M,xM;
+  if(lua_type(L,1)==LUA_TNUMBER)
+  {
+    x = luaL_checknumber(L, 1);
+    M = luaL_checkResponsefunction(L,2);
+  }
+  else if(lua_type(L,2)==LUA_TNUMBER)
+  {
+    x = luaL_checknumber(L, 2);
+    M = luaL_checkResponsefunction(L,1);
+  }
+  else
+  {
+    return luaL_error(L, "Error: You can only multiply a response function with a number\n");
+  }
+  if(x<0)  return luaL_error(L, "Error: response function multiplied by negative number\n");
+  // if response function on lua stack copy otherwise set *xM to M
+  xM = *M;
+  if(M->type>94)
+  { // lower case, data on lua stack, need to copy the data
+    ResponsefunctionCopy(M, &xM);
+  }
+  ResponsefunctionMul(&xM,x);
+  LuaPush_ResponseFunction(L, &xM);
+  FreeResponsefunction(M);
+  return 1;
 }
 
 /*
@@ -546,9 +569,30 @@ static int LuaResponseFunctionMul(lua_State * L)
  */
 static int LuaResponseFunctionDiv(lua_State * L)
 {
-  //TODO: all
-  printf("LuaResponseFunctionDiv\n");
-  return 0;
+  double x;
+  ResponsefunctionType *M,xM;
+  if(lua_type(L,2)==LUA_TNUMBER)
+  {
+    x = luaL_checknumber(L, 2);
+    M = luaL_checkResponsefunction(L,1);
+    if(x==0) return luaL_error(L, "Error: response function divided by zero\n");
+    if(x<0)  return luaL_error(L, "Error: response function divided by negative number\n");
+    x=1/x;
+  }
+  else
+  {
+    return luaL_error(L, "Error: You can only divide a response function with a number\n");
+  }
+  // if response function on lua stack copy otherwise set *xM to M
+  xM = *M;
+  if(M->type>94)
+  { // lower case, data on lua stack, need to copy the data
+    ResponsefunctionCopy(M, &xM);
+  }
+  ResponsefunctionMul(&xM,x);
+  LuaPush_ResponseFunction(L, &xM);
+  FreeResponsefunction(M);
+  return 1;
 }
 
 

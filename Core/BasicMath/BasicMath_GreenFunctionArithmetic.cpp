@@ -2468,6 +2468,155 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon)
 }
 
 
+/*
+ *
+ */
+int ResponsefunctionMul(ResponsefunctionType *M, double x)
+{
+  if(M->Block==true)
+  {
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        if( (((BlockListOfPoles*)(M->data))->QComplex) ==0 )
+        {
+          int k=0;
+          for(int i=0;i<(((BlockListOfPoles*)(M->data))->N); i++)
+          {
+            k++;
+            for(int j=0;j<Sqr( (((BlockListOfPoles*)(M->data))->BlockSize) ); j++)
+            {
+              ((BlockListOfPoles*)(M->data))->VRe[k]*=x;
+              k++;
+            }
+          }
+        }
+        else
+        {
+          int k=0;
+          for(int i=0;i<(((BlockListOfPoles*)(M->data))->N); i++)
+          {
+            k++;
+            for(int j=0;j<Sqr( (((BlockListOfPoles*)(M->data))->BlockSize) ); j++)
+            {
+              ((BlockListOfPoles*)(M->data))->V[k].Re*=x;
+              ((BlockListOfPoles*)(M->data))->V[k].Im*=x;
+              k++;
+            }
+          }
+        }
+      }
+        break;
+      case 't':
+      {
+        x = sqrt(x);
+        if( (((BlockTriDiagonalMatrixType*)(M->data))->QComplex) ==0 )
+        {
+          for(int i=0;i<Sqr(((BlockTriDiagonalMatrixType*)(M->data))->BlockSize);i++)
+          {
+            (((BlockTriDiagonalMatrixType*)(M->data))->bRe[i]*=x);
+          }
+        }
+        else
+        {
+          for(int i=0;i<Sqr(((BlockTriDiagonalMatrixType*)(M->data))->BlockSize);i++)
+          {
+            (((BlockTriDiagonalMatrixType*)(M->data))->b[i].Re*=x);
+            (((BlockTriDiagonalMatrixType*)(M->data))->b[i].Im*=x);
+          }
+        }
+      }
+        break;
+      case 'a':
+      {
+        x = sqrt(x);
+        if( (((BlockAndersonMatrixType*)(M->data))->QComplex) ==0 )
+        {
+          for(int i=0;i<Sqr(((BlockAndersonMatrixType*)(M->data))->BlockSize);i++)
+          {
+            (((BlockAndersonMatrixType*)(M->data))->bRe[i]*=x);
+          }
+        }
+        else
+        {
+          for(int i=0;i<Sqr(((BlockAndersonMatrixType*)(M->data))->BlockSize);i++)
+          {
+            (((BlockAndersonMatrixType*)(M->data))->b[i].Re*=x);
+            (((BlockAndersonMatrixType*)(M->data))->b[i].Im*=x);
+          }
+        }
+      }
+        break;
+      case 'n':
+      {
+        x = sqrt(x);
+        if( (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->QComplex) ==0 )
+        {
+          for(int i=0;i<Sqr(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize);i++)
+          {
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.bRe[i]*=x);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.bRe[i]*=x);
+          }
+        }
+        else
+        {
+          for(int i=0;i<Sqr(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize);i++)
+          {
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.b[i].Re*=x);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.b[i].Im*=x);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.b[i].Re*=x);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.b[i].Im*=x);
+          }
+        }      }
+        break;
+      default:
+      {
+        printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
+      }
+        break;
+    }
+  }
+  else
+  {
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        for(int i=0;i<((ListOfPoles*)(M->data))->N;i++)
+        {
+          ((ListOfPoles*)(M->data))->b[i]*=x;
+        }
+      }
+        break;
+      case 't':
+      {
+        ((TriDiagonalMatrixType*)(M->data))->b[0] *=sqrt(x);
+      }
+        break;
+      case 'a':
+      {
+        ((AndersonMatrixType*)(M->data))->b[0] *=sqrt(x);
+      }
+        break;
+      case 'n':
+      {
+        ((BADoubleTriDiagonalMatrixType*)(M->data))->b0 *=sqrt(x);
+      }
+        break;
+      default:
+      {
+        printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
+      }
+        break;
+    }
+  }
+  return 0;
+}
+
+
+
+
 /*   FreeResponsefunction frees the content of a response function
  *   Response functions of types with a capital letter are freed
  *   Response functions of types with small letters are controled by a different instance and not freed
