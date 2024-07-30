@@ -211,24 +211,20 @@ uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * cons
     A->b[0]=bNew;
     return 0;
   }
-  // two or more poles in A
-  iLow=0; // the energy of the pole to add is above Grid[ilow] and below Grid[iLow+1]
+  // two or more poles in A from 0 to A->N-1
+  //  iLow == 0    the energy B->a[i] is below A->a[0]
+  //  iLow == A->N the energy B->a[i] is above A->a[A->N-1]
+  //  otherwise    the energy B->a[i] is between A->a[iLow-1] and A->a[iLow]
+  iLow=0;
   for(i=0;i<B->N;i++)
   {
     while((iLow<A->N)&&(B->a[i] > A->a[iLow]))
     {
       iLow++;
     }
-    if(iLow==A->N)
-    {
-      if(A->a[iLow-1] > B->a[i]) iLow--;
-    }
-    else
-    {
-      iLow--;
-    }
-    if( (iLow==0) && (B->a[i]<=AminIdeal) )
-    { // below the lowest pole or below the second pole and below AminIdeal
+    
+    if((iLow==0) || ((iLow==1)&&(B->a[i] <= AminIdeal)))
+    { // below the lowest pole or below the second lowest pole and below AminIdeal
       // add all weigth to the lowest pole and shift the pole to keep the first moment ok.
       aNew=A->a[0] * A->b[0] + B->a[i] * B->b[i];
       bNew = A->b[0] + B->b[i];
@@ -243,7 +239,7 @@ uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * cons
         A->b[0] = bNew;
       }
     }
-    else if(iLow==0)
+    else if(iLow==1)
     { // between the lowest and first pole, above AminIdeal
       // use this to shift the lowest pole back towards AminIdeal
       frac = ( A->a[1] - B->a[i] ) / (A->a[1] - AminIdeal);
@@ -296,10 +292,10 @@ uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * cons
       }
     }
     else
-    { // inbetween two poles add weight to the left (iLow) and right (iLow+1)
-      frac = ( B->a[i] - A->a[iLow] ) / (A->a[iLow+1] - A->a[iLow]);
-      A->b[iLow+1] += frac     * B->b[i];
-      A->b[iLow]   += (1-frac) * B->b[i];
+    { // inbetween two poles add weight to the left (iLow-1) and right (iLow)
+      frac = ( B->a[i] - A->a[iLow-1] ) / (A->a[iLow] - A->a[iLow-1]);
+      A->b[iLow]   += frac     * B->b[i];
+      A->b[iLow-1] += (1-frac) * B->b[i];
     }
   }
   return 0;

@@ -716,13 +716,13 @@ uint32_t RealBlockWaveFunctionAddElementOMPMiniFlush(WaveFunctionType * const ps
       if (ExpandBasis)
       {
     	  if (RealBlockWaveFunctionAddElement(psi, &MiniDet[i * psi->NWord], &(MiniValue[i*Npsi]), Npsi))
-		  {
-			printf("RealBlockWaveFunctionAddElement failed in RealBlockWaveFunctionAddElementOMPMiniFlush\n");
-			fflush(stdout);
-			NoMoreMem = 1;
-			i = *NMini;
-			*NMini = 0;
-		  }
+		    {
+		  	  printf("RealBlockWaveFunctionAddElement failed in RealBlockWaveFunctionAddElementOMPMiniFlush\n");
+			    fflush(stdout);
+			    NoMoreMem = 1;
+			    i = *NMini;
+			    *NMini = 0;
+		    }
       }
       else
       {

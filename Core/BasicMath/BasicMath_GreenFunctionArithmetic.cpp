@@ -1303,6 +1303,7 @@ uint32_t GBathAndListAndRepresentationOnGrid(AndersonMatrixType const G0, double
     }
     // add bSigmaPole to the Ghyb
     // both are sorted
+    
     AddToListOfPolesOnGridOrdered(&Ghyb, &bSigmaPole, Grid[0], Grid[NGridPoints-1]);
     FreeListOfPoles(&bSigmaPole);
   }
