@@ -681,8 +681,27 @@ int LuaPlotGraphics(lua_State * L)
     // test if we can turn the table to a SpectraTypeArray and then jump to the corresponding section
     // we want all spectra to be in the same grid.
     // Define Emin, Emax, NE and dE
-    double GammaL=0;
-    double GammaG=0;
+    double GammaG, GammaL;
+    lua_getfield(L,1,"GammaG");
+    if (lua_isnil(L,-1))
+    {
+      GammaG=0;
+    }
+    else
+    {
+      GammaG=(double)luaL_checknumber(L, -1);
+    }
+    lua_pop(L,1);
+    lua_getfield(L,1,"GammaL");
+    if (lua_isnil(L,-1))
+    {
+      GammaL=0;
+    }
+    else
+    {
+      GammaL=(double)luaL_checknumber(L, -1);
+    }
+    lua_pop(L,1);
     double Emin=Options.Frame.PlotRange[0].X;
     double Emax=Options.Frame.PlotRange[1].X;
     if(Emin==-INFINITY) Emin=-1;
@@ -913,7 +932,7 @@ int LuaPlotGraphics(lua_State * L)
       if(len>1) GammaL=(double)luaL_checknumber(L, 2);
       if(len>2) GammaG=(double)luaL_checknumber(L, 3);
       if(len>3) NE=(int)luaL_checkinteger(L, 3);
-      if(len>4) return luaL_error(L, "For plotting a resonse function I expect the first argument to be a response function and the 2nd, 3rd and 4th are optional the Lorentzian and Gaussian broadingings and the number of points in the spectrum.\n In this case I got %d argumens\n",len);
+      if(len>4) return luaL_error(L, "For plotting a response function I expect the first argument to be a response function and the 2nd, 3rd and 4th are optional the Lorentzian and Gaussian broadingings and the number of points in the spectrum.\n In this case I got %d argumens\n",len);
       
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = -1;
       if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X =  1;
@@ -1397,7 +1416,8 @@ static int LuaPlotFermi(lua_State *L)
 static int LuaSVGHTMLViewer(lua_State *L)
 {
   lua_pushstring(L, SVGHTMLViewer);
-  return 1;
+  lua_pushstring(L, SVGSequencyHTMLViewer);
+  return 2;
 }
 
 

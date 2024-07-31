@@ -313,6 +313,41 @@ const char* SVGHTMLViewer =
   "</html>\n";
 
 
+const char* SVGSequencyHTMLViewer =
+  "<!DOCTYPE html>\n"
+  "<html lang=\"en\">\n"
+  "<head>\n"
+  "  <meta charset=\"UTF-8\">\n"
+  "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+  "  <title>Quanty SVG Sequence Player</title>\n"
+  "  <style>\n"
+  "      body { margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;}\n"
+  "      #controls { flex: 0 0 auto; display: flex; gap: 10px; padding: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); background-color: #f8f8f8; z-index: 1; }\n"
+  "      #svgContainer { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; overflow: hidden; }\n"
+  "      #svgContainer svg { max-width: 100%; max-height: 100%; }\n"
+  "      #fileNameDisplay { width: 200px; }\n"
+  "  </style>\n"
+  "</head>\n"
+  "<body>\n"
+  "  <div id=\"controls\"> <input type=\"file\" id=\"fileInput\" accept=\".svg\" multiple> <button id=\"playButton\">Play</button> <input type=\"text\" id=\"fileNameDisplay\" readonly> </div>\n"
+  "  <div id=\"svgContainer\"></div>\n"
+  "  <script>\n"
+  "      document.getElementById('fileInput').addEventListener('change', handleFileSelect, false);\n"
+  "      document.getElementById('playButton').addEventListener('click', playSequence, false);\n"
+  "      let svgFiles = [];\n"
+  "      let intervalId;\n"
+  "      function handleFileSelect(event) { const files = event.target.files; svgFiles = []; for (let i = 0; i < files.length; i++) { svgFiles.push(files[i]); } }\n"
+  "      function playSequence() {\n"
+  "        if (svgFiles.length === 0) { alert('Please select some SVG files first.'); return; }\n"
+  "        const svgContainer = document.getElementById('svgContainer');\n"
+  "        const fileNameDisplay = document.getElementById('fileNameDisplay');\n"
+  "        let index = 0;\n"
+  "        if (intervalId) { clearInterval(intervalId); }\n"
+  "        intervalId = setInterval(() => { const file = svgFiles[index]; fileNameDisplay.value = file.name; const reader = new FileReader(); reader.onload = function (e) { svgContainer.innerHTML = e.target.result; }; reader.readAsText(file); index++; if (index >= svgFiles.length) { index = 0; } }, 1000);\n"
+  "      }\n"
+  "  </script>\n"
+  "</body>\n"
+  "</html>\n";
 
 
 
