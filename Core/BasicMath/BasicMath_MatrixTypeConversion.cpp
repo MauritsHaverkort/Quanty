@@ -1736,11 +1736,13 @@ uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixT
 
 uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType * const M, ListOfPoles * const H)
 {
-  CompactMatrixType Mc;
-  BADoubleTriDiagonalMatrixTypeToCompactMatrix(M, &Mc);
-  
-  HermitianCompactMatrixToListOfPoles(&Mc, H);
-  FreeCompactMatrix(&Mc);
+  ListOfPoles Hcon;
+  TriDiagonalMatrixToListOfPoles(M->val, H);
+  TriDiagonalMatrixToListOfPoles(M->con, &Hcon);
+  AddListOfPoles(H, Hcon);
+  FreeListOfPoles(&Hcon);
+  ScaleListOfPoles(H, M->b0*M->b0);
+  H->a0 = M->a0;
   return 0;
 }
 
