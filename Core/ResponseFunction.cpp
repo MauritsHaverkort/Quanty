@@ -230,3 +230,314 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
  }
  return 0;
 }
+
+uint32_t ResponseFunctionGetBlockSize(const ResponsefunctionType *const a)
+{
+  if(a->Block==false) return 1;
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      return ((BlockListOfPoles*)a->data)->BlockSize;
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      return ((BlockAndersonMatrixType*)a->data)->BlockSize;
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      return ((BlockTriDiagonalMatrixType*)a->data)->BlockSize;
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->BlockSize;
+      break;
+    }
+    default:
+    {
+      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+      return 0;
+    }
+  }
+}
+
+uint32_t ResponseFunctionGetQComplex(const ResponsefunctionType *const a)
+{
+  if(a->Block==false) return 0;
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      return ((BlockListOfPoles*)a->data)->QComplex;
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      return ((BlockAndersonMatrixType*)a->data)->QComplex;
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      return ((BlockTriDiagonalMatrixType*)a->data)->QComplex;
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->QComplex;
+      break;
+    }
+    default:
+    {
+      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+      return 0;
+    }
+  }
+}
+
+uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatrixType *M)
+{
+  M->Ni = ResponseFunctionGetBlockSize(a);
+  M->Nj = M->Ni;
+  M->QComplex = ResponseFunctionGetQComplex(a);
+  InitCompactMatrix(M);
+  if(a->Block==false)
+  {
+    switch(a->type)
+    {
+      case 'L':
+      case 'l':
+      {
+        M->VRe[0] = ((ListOfPoles*)a->data)->a0;
+        break;
+      }
+      case 'A':
+      case 'a':
+      {
+        M->VRe[0] = ((AndersonMatrixType*)a->data)->a[0];
+        break;
+      }
+      case 'T':
+      case 't':
+      {
+        M->VRe[0] = ((TriDiagonalMatrixType*)a->data)->a[0];
+        break;
+      }
+      case 'N':
+      case 'n':
+      {
+        M->VRe[0] = ((BADoubleTriDiagonalMatrixType*)a->data)->a0;
+        break;
+      }
+      default:
+      {
+        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+        return 1;
+      }
+    }
+  }
+  else
+  {
+    switch(a->type)
+    {
+      case 'L':
+      case 'l':
+      {
+        if(M->QComplex==0)
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->VRe[i] = ((BlockListOfPoles*)a->data)->a0Re[i];
+          }
+        }
+        else
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->V[i].Re = ((BlockListOfPoles*)a->data)->a0[i].Re;
+            M->V[i].Im = ((BlockListOfPoles*)a->data)->a0[i].Im;
+          }
+        }
+        break;
+      }
+      case 'A':
+      case 'a':
+      {
+        if(M->QComplex==0)
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->VRe[i] = ((BlockAndersonMatrixType*)a->data)->aRe[i];
+          }
+        }
+        else
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->V[i].Re = ((BlockAndersonMatrixType*)a->data)->a[i].Re;
+            M->V[i].Im = ((BlockAndersonMatrixType*)a->data)->a[i].Im;
+          }
+        }
+        break;
+      }
+      case 'T':
+      case 't':
+      {
+        if(M->QComplex==0)
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->VRe[i] = ((BlockTriDiagonalMatrixType*)a->data)->aRe[i];
+          }
+        }
+        else
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->V[i].Re = ((BlockTriDiagonalMatrixType*)a->data)->a[i].Re;
+            M->V[i].Im = ((BlockTriDiagonalMatrixType*)a->data)->a[i].Im;
+          }
+        }
+        break;
+      }
+      case 'N':
+      case 'n':
+      {
+        if(M->QComplex==0)
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->VRe[i] = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.VRe[i];
+          }
+        }
+        else
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->V[i].Re = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.V[i].Re;
+            M->V[i].Im = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.V[i].Im;
+          }
+        }
+        break;
+      }
+      default:
+      {
+        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+        return 0;
+      }
+    }
+  }
+  return 0;
+}
+
+
+uint32_t EvaluateResponsefunction(ResponsefunctionType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  if(A->Block==true) return EvaluateBlockResponsefunctionType(A, Gw, omega, Gamma);
+  Gw->Ni=1;
+  Gw->Nj=1;
+  Gw->QComplex=1;
+  InitCompactMatrix(Gw);
+  Gw->V[0] = EvaluateResponsefunctionType(A, omega, Gamma);
+  return 0;
+}
+
+
+
+
+bool ResponseFunctionEq(const ResponsefunctionType *const a, const ResponsefunctionType *const b, double zero)
+{
+  int i,j;
+  double omega0, omega1, omega0shift;
+  CompactMatrixType Ma,Mb,A0;
+  // test dimension
+  if(ResponseFunctionGetBlockSize(a)!=ResponseFunctionGetBlockSize(b)) return false;
+  // compare a0
+  ResponseFunctionGetA0(a, &Ma);
+  ResponseFunctionGetA0(b, &A0);
+  CompactMatrixSub(&Ma, &A0);
+  if(Ma.QComplex==false)
+  {
+    for(i=0;i<Ma.Ni*Ma.Nj;i++)
+    {
+      if(Abs(Ma.VRe[i])>zero)
+      {
+        FreeCompactMatrix(&Ma);
+        FreeCompactMatrix(&A0);
+        return false;
+      }
+    }
+    MakeCompactRealMatrixComplex(&A0);
+  }
+  else
+  {
+    for(i=0;i<Ma.Ni*Ma.Nj;i++)
+    {
+      if((Abs(Ma.V[i].Re)>zero)||(Abs(Ma.V[i].Im)>zero))
+      {
+        FreeCompactMatrix(&Ma);
+        FreeCompactMatrix(&A0);
+        return false;
+      }
+    }
+  }
+  FreeCompactMatrix(&Ma);
+  // determine gridpoints and gamma for evaluation and compare values after evaluation
+  omega0=0;
+  omega1 = 1E10;
+  for(j=1;j<15;j++)
+  {
+    omega0shift=0;
+    EvaluateResponsefunction(a, &Ma, omega0-omega1, omega1/10.0);
+    EvaluateResponsefunction(b, &Mb, omega0-omega1, omega1/10.0);
+    for(i=0;i<Ma.Ni*Ma.Nj;i+=Ma.Ni+1)
+    {
+      omega0shift+= (1.0/(Ma.V[i].Re-A0.V[i].Re));
+    }
+    CompactMatrixSub(&Ma, &Mb);
+    FreeCompactMatrix(&Mb);
+    for(i=0;i<Ma.Ni*Ma.Nj;i++)
+    {
+      if((Abs(Ma.V[i].Re)>zero)||(Abs(Ma.V[i].Im)>zero))
+      {
+        FreeCompactMatrix(&Ma);
+        FreeCompactMatrix(&A0);
+        return false;
+      }
+    }
+    FreeCompactMatrix(&Ma);
+    EvaluateResponsefunction(a, &Ma, omega0+omega1, omega1/10.0);
+    EvaluateResponsefunction(b, &Mb, omega0+omega1, omega1/10.0);
+    for(i=0;i<Ma.Ni*Ma.Nj;i+=Ma.Ni+1)
+    {
+      omega0shift+= 1.0/(Ma.V[i].Re-A0.V[i].Re);
+    }
+    CompactMatrixSub(&Ma, &Mb);
+    FreeCompactMatrix(&Mb);
+    for(i=0;i<Ma.Ni*Ma.Nj;i++)
+    {
+      if((Abs(Ma.V[i].Re)>zero)||(Abs(Ma.V[i].Im)>zero))
+      {
+        FreeCompactMatrix(&Ma);
+        FreeCompactMatrix(&A0);
+        return false;
+      }
+    }
+    omega0shift=omega0shift*(-0.5/(double)Ma.Ni);
+    omega0 += omega0shift;
+    omega1 *=0.1;
+    FreeCompactMatrix(&Ma);
+  }
+  FreeCompactMatrix(&A0);
+  return true;
+}

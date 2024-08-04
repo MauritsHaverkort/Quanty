@@ -2645,8 +2645,6 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     CompactMatrixCopy(*A, fun);
     return 0;
   }
-  
-  
   int    info;
   const char *jobz = "V";
   const char *uplo = "U";
@@ -2702,11 +2700,11 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         fflush(stdout);
         return 1;
       }
-      free(iwork);	// Added by Martin, otherwhise heap is lost TODO also for complex case
+      free(iwork);
       free(work);
       return 0;
     }
-    free(iwork);	// Added by Martin, otherwhise heap is lost
+    free(iwork);
     free(work);
     return 0;
   }
@@ -2741,14 +2739,14 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         printf("also zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
-        free(iwork);	// Added by Simon, otherwhise heap is lost
+        free(iwork);
         free(cwork);
         free(work);
         return 1;
       }
     }
     CompactMatrixConjugate(fun);
-    free(iwork);	// Added by Simon, otherwhise heap is lost
+    free(iwork);
     free(cwork);
     free(work);
     return 0;

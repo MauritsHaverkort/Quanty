@@ -2244,6 +2244,26 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
   return 1;
 }
 
+/*  compare two response functions
+ *  two response functions are considered equal when evaluating them returns the same answer for all values of omega and gamma
+ */
+static int LuaResponseFunctionEq(lua_State *L)
+{
+  ResponsefunctionType *Ma, *Mb;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
+  Ma = luaL_checkResponsefunction(L,1);
+  Mb = luaL_checkResponsefunction(L,2);
+  if(ResponseFunctionEq(Ma, Mb, 100*DBL_EPSILON)==true)
+  {
+    lua_pushboolean(L,1);
+  }
+  else
+  {
+    lua_pushboolean(L,0);
+  }
+  return 1;
+}
 
 /*
  *
@@ -2281,6 +2301,7 @@ static const struct luaL_Reg ResponseFunction_meta[] = {
   {"__mul", LuaResponseFunctionMul},
   {"__div", LuaResponseFunctionDiv},
   {"__call", LuaResponseFunctionCall},
+  {"__eq",   LuaResponseFunctionEq},
   {"__tostring", LuaResponseFunctionToString},
   {"__gc", LuaResponseFunctionDestroy},
   {NULL, NULL}
@@ -2293,6 +2314,7 @@ static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__mul", LuaResponseFunctionMul},
   {"__div", LuaResponseFunctionDiv},
   {"__call", LuaResponseFunctionCall},
+  {"__eq",   LuaResponseFunctionEq},
   {NULL, NULL}
 };
 

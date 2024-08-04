@@ -333,8 +333,7 @@ uint32_t CreateStartingFunctions(const OperatorType H, uint32_t const Npsi, Dete
   // print warning if there are not enough starting determinant
   if(psi[0].N<Npsi)
   {
-    VerbosityPrintf(0x0002, "Warning: Number of states to find larger than number of determinants in random starting vector\n");
-    //TODO: Explain to the user (and the other programmers debugging this) why exactly this could be a problem.
+    VerbosityPrintf(0x0002, "Warning: Number of eigenstates you want to calculate largen than number of determinants in random starting vector\nThis can be a problem as the dimension of the Hilbert space is larger than the number of states wanted.\nSeveral starting states will be 0.\nIf the basis does not expand correctly during the iterative search for eigenstates you will end with 0 vectors as eigenstates.\n");
   }
   // init other functions
   for(i=1;i<Npsi;i++)

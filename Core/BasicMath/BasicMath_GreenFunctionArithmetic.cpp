@@ -858,26 +858,114 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
     {
       case 'a':
       {
-        
-        printf("TODO ResponseFunctionInvertEnergy\n");
+        TwoMu = 2 * ((BlockAndersonMatrixType*)(Gout->data))->mu;
+        if((((BlockAndersonMatrixType*)(Gout->data))->QComplex)==0)
+        {
+          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockAndersonMatrixType*)(Gout->data))->aRe[i])*=-1;
+            (((BlockAndersonMatrixType*)(Gout->data))->aRe[i])+=TwoMu;
+          }
+        }
+        else
+        {
+          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockAndersonMatrixType*)(Gout->data))->a[i].Re)*=-1;
+            (((BlockAndersonMatrixType*)(Gout->data))->a[i].Im)*=-1;
+            (((BlockAndersonMatrixType*)(Gout->data))->a[i].Re)+=TwoMu;
+          }
+        }
       }
       break;
       case 'l':
       {
-        
-        printf("TODO ResponseFunctionInvertEnergy\n");
+        TwoMu = 2 * ((BlockListOfPoles*)(Gout->data))->mu;
+        //   a_i can be found at position (i-1)*(1+BlockSize*BlockSize)
+        if((((BlockListOfPoles*)(Gout->data))->QComplex)==0)
+        {
+          for(int i = 0; i < ( ((BlockListOfPoles*)(Gout->data))->N) * (1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )) ; i+=(1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )))
+          {
+            (((BlockListOfPoles*)(Gout->data))->VRe[i])*=-1;
+            (((BlockListOfPoles*)(Gout->data))->VRe[i])+=TwoMu;
+          }
+        }
+        else
+        {
+          for(int i = 0; i < ( ((BlockListOfPoles*)(Gout->data))->N) * (1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )) ; i+=(1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )))
+          {
+            (((BlockListOfPoles*)(Gout->data))->V[i].Re)*=-1;
+            (((BlockListOfPoles*)(Gout->data))->V[i].Im)*=-1;
+            (((BlockListOfPoles*)(Gout->data))->V[i].Re)+=TwoMu;
+          }
+        }
       }
       break;
       case 't':
       {
-        
-        printf("TODO ResponseFunctionInvertEnergy\n");
+        TwoMu = 2 * ((BlockTriDiagonalMatrixType*)(Gout->data))->mu;
+        if((((BlockTriDiagonalMatrixType*)(Gout->data))->QComplex)==0)
+        {
+          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[i])*=-1;
+            (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[i])+=TwoMu;
+          }
+        }
+        else
+        {
+          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Re)*=-1;
+            (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Im)*=-1;
+            (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Re)+=TwoMu;
+          }
+        }
       }
       break;
       case 'n':
       {
+        TwoMu = 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->mu;
         
-        printf("TODO ResponseFunctionInvertEnergy\n");
+        if((((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->QComplex)==0)
+        {
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[i])*=-1;
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[i])+=TwoMu;
+          }
+        }
+        else
+        {
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Re)*=-1;
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Im)*=-1;
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Re)+=TwoMu;
+          }
+        }
+        if((((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->QComplex)==0)
+        {
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[i])*=-1;
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[i])+=TwoMu;
+          }
+        }
+        else
+        {
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          {
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Re)*=-1;
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Im)*=-1;
+            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Re)+=TwoMu;
+          }
+        }
+        BlockTriDiagonalMatrixType temp = ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con;
+        ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con = ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val;
+        ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val = temp;
+        //TODO: one could implement this by swapping and multiplying by -1 sub matrices of Gin.TMT.
+        SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data)));
       }
       break;
     }
