@@ -1,0 +1,965 @@
+print("--------------------------------------------------------")
+print("--                  Create Spectra                    --")
+print("--------------------------------------------------------")
+
+
+-- Define some model Hamiltonian: impurity coupled to a 1D chain
+NBath = 5
+NF = 2 + 2*NBath
+
+-- some parameters
+t = 1
+U = 3
+
+-- defining 3 Hamiltonian (real, mixed, complex)
+H0 = U*NewOperator(NF, 0, {{0, -0, 1, -1, 1}})
+for i = 1, NBath do
+		H0 = H0 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,         t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),     t}})
+end
+H1 = U*NewOperator(NF, 0, {{0, -0, 1, -1, 1}})
+for i = 1, NBath do
+		H1 = H1 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     I*t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,        -I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),    -I*t}})
+end
+H2 = 0
+for i = 1, NBath do
+		H2 = H2 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     I*t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,        -I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),    -I*t}})
+end
+H2 = Chop(H2)
+
+-- Defining 2 transition operators
+TDn = NewOperator("Cr", NF, 0)
+TUp = NewOperator("Cr", NF, 1)
+
+-- Defining 2 starting states (real and complex)
+str1 = "10"
+for i = 1, NBath do
+		str1 = str1.."00"
+end
+str2 = "01"
+for i = 1, NBath do
+		str2 = str2.."00"
+end
+psi1 = NewWavefunction(NF, 0, {{str1, 1}, {str2, 1}})
+psi1.Normalize()
+psi2 = NewWavefunction(NF, 0, {{str1, 1}, {str2, -2*I}})
+psi2.Normalize()
+
+-- comparing response funcitons has the same problem as comparing doubles, they are almost never really accurate
+-- the currenct comparison G1==G2 
+--   yields true if they are equal on a 100*DBL_EPSILON level for all values of omega and gamma.
+--       This is hard to achive but not impossible
+--   yields false if they are really different
+--   is 'ill defined' i.e. can yield both true or false, if they are roughly equal, but not perfect
+
+-- define some reference response functions
+G0Dn1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+name = "Matrix" ,
+mu = 0 ,
+type = "Tri" }
+setmetatable(G0Dn1, ResponseFunctionMeta)
+G0Dn2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.89442719099992 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+name = "Matrix" ,
+type = "Tri" ,
+mu = 0 }
+setmetatable(G0Dn2, ResponseFunctionMeta)
+G0Up1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G0Up1, ResponseFunctionMeta)
+G0Up2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.44721359549996 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G0Up2, ResponseFunctionMeta)
+G1Dn1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G1Dn1, ResponseFunctionMeta)
+G1Dn2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+	{ 0.89442719099992 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+	mu = 0 ,
+	name = "Matrix" ,
+	type = "Tri" }
+setmetatable(G1Dn2, ResponseFunctionMeta)
+G1Up1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G1Up1, ResponseFunctionMeta)
+G1Up2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.44721359549996 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G1Up2, ResponseFunctionMeta)
+G2Dn1 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Dn1, ResponseFunctionMeta)
+G2Dn2 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.89442719099992 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Dn2, ResponseFunctionMeta)
+G2Up1 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Up1, ResponseFunctionMeta)
+G2Up2 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.44721359549996 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Up2, ResponseFunctionMeta)
+
+-- some reference frequencies
+omegaList = {-1.1, -0.5463, 0.0, 4.75, 100.1}
+-- Threshold for comparing the response functions
+threshold = 1E-13
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                     Lanczos                        --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, TDn, psi1, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+if(G~=G0Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+--if(G~=G0Dn2) then error("Response function of real Hamiltonian and real wavefunction not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi1, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+if(G~=G0Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi2, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+if(G~=G0Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi1, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+if(G~=G1Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+--if(G~=G1Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi1, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+if(G~=G1Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi2, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+if(G~=G1Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi1, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi1, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi2, {{"DenseBorder", 1}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                      Dense                         --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, TDn, psi1, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+if(G~=G0Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TDn, psi2, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+--if(G~=G0Dn2) then error("Response function of real Hamiltonian and real wavefunction not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi1, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+if(G~=G0Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi2, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+if(G~=G0Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi1, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+if(G~=G1Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi2, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+--if(G~=G1Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi1, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+if(G~=G1Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi2, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+if(G~=G1Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi1, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi2, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi1, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi2, {{"DenseBorder", 3000}, {"Tensor", false}})
+G = G[1]
+--if(G~=G2Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                 Lanczos Tensor                     --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi1, {{"DenseBorder", 1}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1)[1][1] - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+		if Chop(G(omega, 0.1)[2][2] - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi2, {{"DenseBorder", 1}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G0Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G0Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi1, {{"DenseBorder", 1}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G1Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi2, {{"DenseBorder", 1}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G1Up2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi1, {{"DenseBorder", 1}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G2Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi2, {{"DenseBorder", 1}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G2Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                  Dense Tensor                      --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1)[1][1] - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+		if Chop(G(omega, 0.1)[2][2] - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi2, {{"DenseBorder", 3000}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G0Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G0Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G1Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi2, {{"DenseBorder", 3000}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G1Up2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G2Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi2, {{"DenseBorder", 3000}, {"Tensor", true}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G2Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+
+
+
+
+
+
+
+
+
+
+
+-- Define some model Hamiltonian: impurity coupled to a 1D chain
+NBath = 6
+NF = 2 + 2*NBath
+
+restrictions = {NF,0,{"00 0000000000 11",0,0}}
+
+-- some parameters
+t = 1
+U = 3
+
+-- defining 3 Hamiltonian (real, mixed, complex)
+H0 = U*NewOperator(NF, 0, {{0, -0, 1, -1, 1}})
+for i = 1, NBath do
+		H0 = H0 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,         t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),     t}})
+end
+H1 = U*NewOperator(NF, 0, {{0, -0, 1, -1, 1}})
+for i = 1, NBath do
+		H1 = H1 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     I*t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,        -I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),    -I*t}})
+end
+H2 = 0
+for i = 1, NBath do
+		H2 = H2 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     I*t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,        -I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),    -I*t}})
+end
+H2 = Chop(H2)
+
+-- Defining 2 transition operators
+TDn = NewOperator("Cr", NF, 0)
+TUp = NewOperator("Cr", NF, 1)
+
+-- Defining 2 starting states (real and complex)
+str1 = "10"
+for i = 1, NBath do
+		str1 = str1.."00"
+end
+str2 = "01"
+for i = 1, NBath do
+		str2 = str2.."00"
+end
+psi1 = NewWavefunction(NF, 0, {{str1, 1}, {str2, 1}})
+psi1.Normalize()
+psi2 = NewWavefunction(NF, 0, {{str1, 1}, {str2, -2*I}})
+psi2.Normalize()
+
+-- comparing response funcitons has the same problem as comparing doubles, they are almost never really accurate
+-- the currenct comparison G1==G2
+--   yields true if they are equal on a 100*DBL_EPSILON level for all values of omega and gamma.
+--       This is hard to achive but not impossible
+--   yields false if they are really different
+--   is 'ill defined' i.e. can yield both true or false, if they are roughly equal, but not perfect
+
+-- define some reference response functions
+G0Dn1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+name = "Matrix" ,
+mu = 0 ,
+type = "Tri" }
+setmetatable(G0Dn1, ResponseFunctionMeta)
+G0Dn2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.89442719099992 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+name = "Matrix" ,
+type = "Tri" ,
+mu = 0 }
+setmetatable(G0Dn2, ResponseFunctionMeta)
+G0Up1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G0Up1, ResponseFunctionMeta)
+G0Up2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.44721359549996 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G0Up2, ResponseFunctionMeta)
+G1Dn1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G1Dn1, ResponseFunctionMeta)
+G1Dn2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+	{ 0.89442719099992 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+	mu = 0 ,
+	name = "Matrix" ,
+	type = "Tri" }
+setmetatable(G1Dn2, ResponseFunctionMeta)
+G1Up1 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G1Up1, ResponseFunctionMeta)
+G1Up2 = { { 0 , 3 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.44721359549996 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G1Up2, ResponseFunctionMeta)
+G2Dn1 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Dn1, ResponseFunctionMeta)
+G2Dn2 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.89442719099992 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Dn2, ResponseFunctionMeta)
+G2Up1 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.70710678118655 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Up1, ResponseFunctionMeta)
+G2Up2 = { { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } ,
+{ 0.44721359549996 , 1.4142135623731 , 1.7320508075689 , 1.8257418583506 , 1.8885620632287 , 1.9157487982363 , 1.9368856700822 , 1.9184412404037 , 1.8121242659234 , 1.6640561193511 , 1.5636750773448 , 0.76996692822421 , 1.8188340988446 , 1.0377281915084 , 1.3058865320684 , 0.72839001619631 , 0.78407118884979 , 0.26511645434612 , 0.77535438103207 } ,
+mu = 0 ,
+name = "Matrix" ,
+type = "Tri" }
+setmetatable(G2Up2, ResponseFunctionMeta)
+
+-- some reference frequencies
+omegaList = {-1.1, -0.5463, 0.0, 4.75, 100.1}
+-- Threshold for comparing the response functions
+threshold = 1E-13
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                Lanczos Restricted                  --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, TDn, psi1, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G0Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G0Dn2) then error("Response function of real Hamiltonian and real wavefunction not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi1, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G0Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi2, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G0Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi1, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G1Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G1Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi1, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G1Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi2, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G1Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi1, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi1, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi2, {{"DenseBorder", 1}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                 Dense Restricted                   --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, TDn, psi1, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G0Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TDn, psi2, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G0Dn2) then error("Response function of real Hamiltonian and real wavefunction not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi1, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G0Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, TUp, psi2, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G0Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G0Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi1, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G1Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TDn, psi2, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G1Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi1, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G1Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H1, TUp, psi2, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+if(G~=G1Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G1Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi1, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Dn1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TDn, psi2, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Dn2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Dn2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi1, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Up1) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H2, TUp, psi2, {{"DenseBorder", 3000}, {"Tensor", false},{"Restrictions",restrictions}})
+G = G[1]
+--if(G~=G2Up2) then error("Response function not equal to the expected value\n",1) end
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1) - G2Up2(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--            Lanczos Tensor Restricted               --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi1, {{"DenseBorder", 1}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1)[1][1] - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+		if Chop(G(omega, 0.1)[2][2] - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi2, {{"DenseBorder", 1}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G0Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G0Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi1, {{"DenseBorder", 1}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G1Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi2, {{"DenseBorder", 1}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G1Up2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi1, {{"DenseBorder", 1}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G2Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi2, {{"DenseBorder", 1}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G2Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--             Dense Tensor Restricted                --")
+print("--------------------------------------------------------")
+
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+		if Chop(G(omega, 0.1)[1][1] - G0Dn1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+		if Chop(G(omega, 0.1)[2][2] - G0Up1(omega, 0.1), threshold) ~= 0 then
+				error("Response function not equal to the expected value\n",1)
+		end
+end
+spec, G = CreateSpectra(H0, {TDn,TUp}, psi2, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G0Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G0Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G1Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+spec, G = CreateSpectra(H1, {TDn,TUp}, psi2, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G1Dn2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G1Up2(omega, 0.1), threshold) ~= 0 then
+		error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+	if Chop(G(omega, 0.1)[2][2] - G2Up1(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	end
+end
+spec, G = CreateSpectra(H2, {TDn,TUp}, psi2, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
+for i, omega in pairs(omegaList) do
+	if Chop(G(omega, 0.1)[1][1] - G2Dn2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+	if Chop(G(omega, 0.1)[2][2] - G2Up2(omega, 0.1), threshold) ~= 0 then
+			 error("Response function not equal to the expected value\n",1)
+	 end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+collectgarbage()
+
+print("--------------------------------------------------------")
+print("--                End Create Spectra                  --")
+print("--------------------------------------------------------")
+
+

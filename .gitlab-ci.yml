@@ -29,6 +29,13 @@ test-job1:
 # ===== These functions are registered in ssp.cpp 
 #
 
+test-job-CreateSpectra:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateSpectra.Quanty"
+  dependencies:
+  - build-job
 
 test-job-DensityMatrix:
   stage: test

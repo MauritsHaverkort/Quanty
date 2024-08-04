@@ -1161,7 +1161,7 @@ uint32_t BlockOperatorPsiSerialConserveBasisPreAllocated(const OperatorType H, W
 uint32_t BlockOperatorPsiSerialRestricted(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi, DeterminantRestrictionType const Restrictions)
 {
   uint32_t i,j;
-  VerbosityPrintf(0x0002,"Start of BlockOperatorPsiSerialRestricted\n");
+  VerbosityPrintf(0x0100,"Start of BlockOperatorPsiSerialRestricted\n");
   if(Npsi==0) return 0;
   if(OperatorPsiRestricted(H, psi[0], &(Opsi[0]), Restrictions))
   {
