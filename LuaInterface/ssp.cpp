@@ -1750,7 +1750,6 @@ static int LuaCreateSpectra(lua_State *L)
     bool Sigma;
     bool KrylovBasis;
     bool DenseMethod;
-    bool ExpandBasis;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
@@ -1758,7 +1757,6 @@ static int LuaCreateSpectra(lua_State *L)
   Options.Sigma=false;
   Options.DenseMethod=false;
   Options.KrylovBasis=false;
-  Options.ExpandBasis=true;
   Options.E0=DBL_MAX;
   CompactMatrixType HDense, TpsiDense, EigenfunHDense;
   SpectraTypeArray *Spec;
@@ -1785,7 +1783,6 @@ static int LuaCreateSpectra(lua_State *L)
     {"E0","double",&(Options.E0)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
-    {"ExpandBasis", "bool",&(Options.ExpandBasis)},
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
@@ -2002,7 +1999,7 @@ static int LuaCreateSpectra(lua_State *L)
       /* loop over all wavefunctions */
       for(ipsi=0;ipsi<Options.Npsi;ipsi++)
       {
-        if(OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi], Options.Settings.restrictions)) //TODO here maybe expand Basis ?
+        if(OperatorPsiRestricted(T[iT], psi[ipsi], &Tpsi[iT*Options.Npsi+ipsi], Options.Settings.restrictions))
         {
           luaL_error(L, "OperatorPsi with restrictions failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
         }
@@ -2518,7 +2515,7 @@ static int LuaCreateSpectra(lua_State *L)
         }
         else
         {
-        	LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon),Options.ExpandBasis);//TODO ExpandBasis
+        	LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
       else
@@ -2530,7 +2527,7 @@ static int LuaCreateSpectra(lua_State *L)
           LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
         }
         else
-        {	//TODO ExpandBasis
+        {	
           LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
