@@ -1065,7 +1065,7 @@ int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionTy
   
   if(GA->Block)
   {
-    retval=SubtractBlockListOfPoles((BlockListOfPoles*)(Gdif->data), *(BlockListOfPoles*)(GBLP.data));
+    retval=SubtractBlockListOfPoles((BlockListOfPoles*)(Gdif->data), (BlockListOfPoles*)(GBLP.data));
   }
   else
   {

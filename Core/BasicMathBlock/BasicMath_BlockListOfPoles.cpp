@@ -979,209 +979,92 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
  *   If A pole in A becomes negative weight it is substracted from the remainder of A
  *   If A has only one pole left the returned weight can be negative
  */
-uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const B)
+uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const * const B)
 {
-  // TODO: fine-tuning for small number of poles.
-  double *mesh;
-  double de, rl, rr, zero=1000*DBL_EPSILON;
-  int bs=1+A->BlockSize*A->BlockSize, Nnegwt=0, lb=0, rb=A->N-1;
-  BlockListOfPoles *Bsub;
-  uint32_t i,j;
-
-  if(A->N<=1)
+  int i;
+  // tests to prevent crashing
+  if(A->BlockSize!=B->BlockSize)
   {
-    printf("SubtractBlockListOfPoles called with 1 pole or fewer.\n");
-    return 1;
-  }
-  if(A->BlockSize!=B.BlockSize)
-  {
-    printf("Tried to subtract two BlockListOfPoles with different matrix sizes %i and %i\n",A->BlockSize,B.BlockSize);
+    printf("Tried to subtract two BlockListOfPoles with different matrix sizes %i and %i\n",A->BlockSize,B->BlockSize);
     printf("Error in SubtractBlockListOfPoles\n");
     return 1;
   }
-  OrderBlockListOfPoles(A);
-
-  mesh = (double*)malloc(A->N*sizeof(double));
-  if(A->QComplex)
+  // special case N=0
+  if (A->N == 0)
   {
-    for(i=0;i<A->N;i++) mesh[i]=A->V[i*bs].Re;
-  }
-  else
-  {
-    for(i=0;i<A->N;i++) mesh[i]=A->VRe[i*bs];
-    if(B.QComplex)
+    if (B->N==0)
     {
-      if(MakeRealBlockListOfPolesComplex(A))
+      if(A->QComplex==0)
       {
-        printf("MakeRealBlockListOfPolesComplex failed in SubtractBlockListOfPoles\n");
+        if(B->QComplex==0)
+        { // A and B real
+          for(i=0;i<Sqr(A->BlockSize);i++)
+          {
+            A->VRe[i]-=B->VRe[i];
+          }
+        }
+        else
+        { // A real B Complex
+          MakeRealBlockListOfPolesComplex(A);
+          for(i=0;i<Sqr(A->BlockSize);i++)
+          {
+            A->V[i].Re-=B->V[i].Re;
+            A->V[i].Im-=B->V[i].Im;
+          }
+        }
+      }
+      else
+      {
+        if(B->QComplex==0)
+        { // A complex B Real
+          for(i=0;i<Sqr(A->BlockSize);i++)
+          {
+            A->V[i].Re-=B->VRe[i];
+          }
+        }
+        else
+        { // A complex and B complex
+          for(i=0;i<Sqr(A->BlockSize);i++)
+          {
+            A->V[i].Re-=B->V[i].Re;
+            A->V[i].Im-=B->V[i].Im;
+          }
+        }
+      }
+      return 0;
+    }
+    // Add one pole as we are going to return a negative weigth (A->N goes from 0 to 1)
+    A->N=1;
+    if(A->QComplex==0)
+    {
+      A->V = (Complex16*)realloc(A->V, (2*(1+Sqr(A->BlockSize))-1)*sizeof(Complex16));
+      if(A->V==NULL)
+      {
+        printf("Fatal Error: allocation failed in SubtractBlockListOfPoles\n");
         return 1;
       }
+      A->a0 = &(A->V[2*(1+Sqr(A->BlockSize))]);
     }
-  }
-
-  Bsub = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-  CopyBlockListOfPoles(B, Bsub);
-  BlockListOfPolesPlaceOnMesh(Bsub, mesh, A->N);
-
-  if(A->QComplex)
-  {
-    for(j=0;j<bs-1;j++)
+    else
     {
-      A->a0[j].Re -= Bsub->a0[j].Re;
-      A->a0[j].Im -= Bsub->a0[j].Im;
-    }
-
-    for(i=0;i<A->N;i++)
-    {
-      for(j=1;j<bs;j++)
+      A->VRe = (double*)realloc(A->VRe, (2*(1+Sqr(A->BlockSize))-1)*sizeof(double));
+      if(A->VRe==NULL)
       {
-        A->V[i*bs+j].Re -= Bsub->V[i*bs+j].Re;
-        A->V[i*bs+j].Im -= Bsub->V[i*bs+j].Im;
+        printf("Fatal Error: allocation failed in SubtractBlockListOfPoles\n");
+        return 1;
       }
-      if(ListOfPolesNormFlatWeightComplex(&(A->V[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
+      A->a0Re = &(A->VRe[2*(1+Sqr(A->BlockSize))]);
     }
-    while(Nnegwt!=0)
-    {
-      if(lb==rb)
-      {
-        if(ListOfPolesNormFlatWeightComplex(&(A->V[lb*bs+1]), A->BlockSize,0,0,0)<-zero)
-          printf("Warning: There is only one negative pole left after subtraction.\n");
-        break;
-      }
-      for(i=0;i<A->N;i++)
-      {
-        if(ListOfPolesNormFlatWeightComplex(&(A->V[i*bs+1]), A->BlockSize,0,0,0)<-zero)
-        {
-          // if the negative pole is left-most, merge with the right one.
-          if(i==lb)
-          {
-            for(j=1;j<bs;j++)
-            {
-              A->V[(i+1)*bs+j].Re += A->V[i*bs+j].Re; A->V[i*bs+j].Re = 0;
-              A->V[(i+1)*bs+j].Im += A->V[i*bs+j].Im; A->V[i*bs+j].Im = 0;
-            }
-            lb++;
-          }
-          else if(i==rb)
-          {
-            // if the negative pole is right-most, merge with the left one.
-            for(j=1;j<bs;j++)
-            {
-              A->V[(i-1)*bs+j].Re += A->V[i*bs+j].Re; A->V[i*bs+j].Re = 0;
-              A->V[(i-1)*bs+j].Im += A->V[i*bs+j].Im; A->V[i*bs+j].Im = 0;
-            }
-            rb--;
-          }
-          else
-          {
-            // distribute to the two neighbors.
-            de = A->V[(i+1)*bs].Re - A->V[(i-1)*bs].Re;
-            if(de<DBL_MIN*1000)
-            {
-              rr = 0.5;
-              rl = 0.5;
-            }
-            else
-            {
-              rr = (A->VRe[i*bs]-A->V[(i-1)*bs].Re)/de;
-              rl = 1.0 - rr;
-            }
-            for(j=1;j<bs;j++)
-            {
-              A->V[(i-1)*bs+j].Re += rl*A->V[i*bs+j].Re;
-              A->V[(i-1)*bs+j].Im += rl*A->V[i*bs+j].Im;
-              A->V[(i+1)*bs+j].Re += rr*A->V[i*bs+j].Re;
-              A->V[(i+1)*bs+j].Im += rr*A->V[i*bs+j].Im;
-              A->V[i*bs+j].Re = 0;
-              A->V[i*bs+j].Im = 0;
-            }
-    }
-        }
-      }
-      Nnegwt = 0;
-      for(i=0;i<A->N;i++)
-    {
-        if(ListOfPolesNormFlatWeightComplex(&(A->V[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
-      }
-    }
-  }
-  else
-  {
-    for(j=0;j<bs-1;j++)
-    {
-      A->a0Re[j] -= Bsub->a0Re[j];
-    }
-
-    for(i=0;i<A->N;i++)
-    {
-      for(j=1;j<bs;j++)
-      {
-        A->VRe[i*bs+j] -= Bsub->VRe[i*bs+j];
-      }
-      if(ListOfPolesNormFlatWeightReal(&(A->VRe[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
-    }
-    while(Nnegwt!=0)
-    {
-      if(lb==rb)
-      {
-        if(ListOfPolesNormFlatWeightReal(&(A->VRe[lb*bs+1]), A->BlockSize,0,0,0)<-zero)
-          printf("Warning: There is only one negative pole left after subtraction.\n");
-        break;
-      }
-      for(i=0;i<A->N;i++)
-      {
-        if(ListOfPolesNormFlatWeightReal(&(A->VRe[i*bs+1]), A->BlockSize,0,0,0)<-zero)
-        {
-          // if the negative pole is left-most, merge with the right one.
-          if(i==lb)
-          {
-            for(j=1;j<bs;j++)
-            {
-              A->VRe[(i+1)*bs+j] += A->VRe[i*bs+j]; A->VRe[i*bs+j] = 0;
-            }
-            lb++;
-          }
-          else if(i==rb)
-          {
-            // if the negative pole is right-most, merge with the left one.
-            for(j=1;j<bs;j++)
-            {
-              A->VRe[(i-1)*bs+j] += A->VRe[i*bs+j]; A->VRe[i*bs+j] = 0;
-            }
-            rb--;
-          }
-          else
-          {
-            // distribute to the two neighbors.
-            de = A->VRe[(i+1)*bs] - A->VRe[(i-1)*bs];
-            if(de<DBL_EPSILON)
-            {
-              rr = 0.5;
-              rl = 0.5;
-            }
-            else
-            {
-              rr = (A->VRe[i*bs]-A->VRe[(i-1)*bs])/de;
-              rl = 1.0 - rr;
-    }
-            for(j=1;j<bs;j++)
-            {
-              A->VRe[(i-1)*bs+j] += rl*A->VRe[i*bs+j];
-              A->VRe[(i+1)*bs+j] += rr*A->VRe[i*bs+j];
-              A->VRe[i*bs+j] = 0;
-            }
-          }
-        }
-      }
-      Nnegwt = 0;
-      for(i=0;i<A->N;i++)
-    {
-        if(ListOfPolesNormFlatWeightReal(&(A->VRe[i*bs+1]), A->BlockSize,0,0,0)<-zero) Nnegwt++;
-      }
-    }
-  }
-
-  ChopBlockListOfPoles(A, zero);
+    
+  };
+  // order the energies in A from small to large
+  OrderBlockListOfPoles(A);
+  
+  //TODO:
+  printf("Subtract Block List of poles not finished implementing\n");
+  return 1;
+  
+  
   return 0;
 }
 

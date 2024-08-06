@@ -514,7 +514,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMa
  *                      A : T.Nj by T.Nj
  *  dimensions of output: T.Ni by T.Ni
  */
-uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const *A, CompactMatrixType const *T, CompactMatrixType * const TconATtran)
+uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const * const A, CompactMatrixType const * const T, CompactMatrixType * const TconATtran)
 {
   uint32_t i,j,k,TATindex,icol,jcol;
   TconATtran->Ni=T->Ni;
@@ -565,7 +565,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const *A, Compa
   return 0;
 }
 
-uint32_t TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Complex16 const *A, CompactMatrixType const *T, CompactMatrixType * const TconATtran)
+uint32_t TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Complex16 const *A, CompactMatrixType const * const T, CompactMatrixType * const TconATtran)
 {
   uint32_t i,j,k,TATindex,icol,jcol;
   TconATtran->Ni=T->Ni;
@@ -3234,6 +3234,70 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
   }
   return 0;
 }
+
+/*  Given matrix A with eigenvalues Aval
+ *  split A=Apos+Aneg such that
+ *  the eigenvalues of Apos are positive or zero and the eigenvalues of Aneg are positive or negative
+ */
+uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, CompactMatrixType * const Apos, CompactMatrixType * const Aneg, bool PosDefinite, bool NegDefinite)
+{
+  int i,ipos,ineg,izero;
+  double *val,*valpos,*valneg;
+  CompactMatrixType fun;
+  if(A->Ni!=A->Nj)
+  {
+    printf("Error in HermitianCompactMatrixToPosAndNeg. A not a square matrix\n");
+    return 1;
+  }
+  val = (double*)malloc(A->Ni * sizeof(double));
+  valpos = (double*)malloc(A->Ni * sizeof(double));
+  valneg = (double*)malloc(A->Ni * sizeof(double));
+  CompactMatrixEigensystem(A, &fun, val);
+  ipos=0;
+  ineg=0;
+  izero=0;
+  for(i=0;i<A->Ni;i++)
+  {
+    if(val[i]<0)
+    {
+      valpos[i]=0;
+      valneg[i]=val[i];
+      ineg++;
+    }
+    else if(val[i]>0)
+    {
+      valpos[i]=val[i];
+      valneg[i]=0;
+      ipos++;
+    }
+    else
+    {
+      valpos[i]=0;
+      valneg[i]=0;
+      izero++;
+    }
+  }
+  PosDefinite=false;
+  NegDefinite=false;
+  if(izero+ipos==A->Ni)
+  {
+    PosDefinite=true;
+  }
+  if(izero+ineg==A->Ni)
+  {
+    NegDefinite=true;
+  }
+  TransformDiagonalMatrixByCompactMatrixTconATtran(valpos, &fun, Apos);
+  TransformDiagonalMatrixByCompactMatrixTconATtran(valneg, &fun, Aneg);
+  FreeCompactMatrix(&fun);
+  free(val);
+  free(valpos);
+  free(valneg);
+  return 0;
+}
+
+
+
 
 /*  Given a compact matrix A calculates  (w-A)^-1 _[[0,0]]
  *  algorithm assumes A to be Hermitian

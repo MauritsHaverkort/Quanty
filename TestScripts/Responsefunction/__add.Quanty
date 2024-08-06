@@ -86,7 +86,6 @@ B3s = {{3,0,3},{0,5,6},{3,6,9}}
 setmetatable(B3s, MatrixMeta)
 B3 = B3s * B3s
 
-
 MA = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
 setmetatable(MA, ResponseFunctionMeta)
 

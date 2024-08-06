@@ -14,8 +14,8 @@ uint32_t CompactMatrixVector(CompactMatrixType const *A, CompactVectorType *x, C
 uint32_t MultiplyDiagonalMatrixCompactMatrix(double const *A, CompactMatrixType * const B);
 uint32_t MultiplyCompactMatrixDiagonalMatrix(CompactMatrixType * const B, double const *A);
 uint32_t TransformDiagonalMatrixByCompactMatrixTATdag(double const *A, CompactMatrixType const *T, CompactMatrixType * const TATdag);
-uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const *A, CompactMatrixType const *T, CompactMatrixType * const TconATtran);
-uint32_t TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Complex16 const *A, CompactMatrixType const *T, CompactMatrixType * const TconATtran);
+uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const * const A, CompactMatrixType const * const T, CompactMatrixType  * const TconATtran);
+uint32_t TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Complex16 const *A, CompactMatrixType const * const T, CompactMatrixType  * const TconATtran);
 uint32_t TransformComplexDiagonalMatrixByCompactMatrixTLconATRtran(Complex16 const *A, CompactMatrixType const *TL, CompactMatrixType const *TR, CompactMatrixType * const TLconATRtran);
 uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT);
 uint32_t TransformDiagonalMatrixByCompactMatrixTtranATcon(double const *A, CompactMatrixType const *T, CompactMatrixType * const TtranATcon);
@@ -71,6 +71,7 @@ uint32_t NonHermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixT
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA);
 uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA);
 uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N);
+uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, CompactMatrixType const *Apos, CompactMatrixType const *Aneg, bool PosDefinite, bool NegDefinite);
 uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfPoles *L);
 uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec);
 uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);

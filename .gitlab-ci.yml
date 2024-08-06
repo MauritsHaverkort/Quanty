@@ -52,3 +52,34 @@ test-job-TensorProduct:
   - ./Quanty.exe "TestScripts/TensorProduct.Quanty"
   dependencies:
   - build-job
+
+
+
+
+
+
+
+
+
+
+
+# =========================================================================
+# ===== Test functions related to ResponseFunctions objects
+# ===== These functions are registered in ResponseFunction.cpp
+#
+
+test-job-Responsefunction-eq:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/__eq.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-add:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/__add.Quanty"
+  dependencies:
+  - build-job

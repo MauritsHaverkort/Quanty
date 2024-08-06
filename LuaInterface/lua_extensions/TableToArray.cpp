@@ -612,13 +612,55 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
       if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of b equal to zero");
       buff->N=len;
       lua_rawgeti(L, -1, 1);
-      buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+      {
+        CompactMatrixType *Mtemp;
+        Mtemp = luaL_checkCompactMatrix(L, -1);
+        buff->BlockSize = Mtemp->Ni;
+      }
+      else
+      {
+        buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      }
       lua_pop(L, 1);
       buff->QComplex=1;
       InitBlockTridiagonalMatrix(buff);
       for(i=0;i<buff->N;i++)
       {
         lua_rawgeti(L, -1, i+1); // get b_i onto the stack
+        if (luaL_testudata(L, -1, "Matrix_Type") != NULL) 
+        {
+          CompactMatrixType *Mtemp;
+          Mtemp = luaL_checkCompactMatrix(L, -1);
+          if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+          }
+          if(Mtemp->QComplex==0)
+          {
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->VRe[k+j*buff->BlockSize];
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+              }
+            }
+          }
+          else
+          {
+            MakeReal=false;
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->V[k+j*buff->BlockSize].Re;
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=Mtemp->V[k+j*buff->BlockSize].Im;
+              }
+            }
+          }
+        }
+        else
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
@@ -665,10 +707,43 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     lua_rawgeti(L, narg, 1);
     {
       len = (uint32_t)lua_objlen(L, -1);
-      if(len!=buff->N+1) luaL_error(L, "Errorr reading Greens function in form of Block list of poles length of A(%d) should be one larger then length of B(%d)",len,buff->N);
+      if(len!=buff->N+1) luaL_error(L, "Errorr reading Greens function of block tridiagonal matrix of poles. Length of A(%d) should be one larger then length of B(%d)",len,buff->N);
       for(i=0;i<=buff->N;i++)
       {
         lua_rawgeti(L, -1, i+1); // get a_i onto the stack
+        if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+        {
+          CompactMatrixType *Mtemp;
+          Mtemp = luaL_checkCompactMatrix(L, -1);
+          if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+          }
+          if(Mtemp->QComplex==0)
+          {
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->VRe[k+j*buff->BlockSize];
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+              }
+            }
+          }
+          else
+          {
+            MakeReal=false;
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->V[k+j*buff->BlockSize].Re;
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=Mtemp->V[k+j*buff->BlockSize].Im;
+              }
+            }
+          }
+        }
+        else
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
@@ -936,13 +1011,55 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
       if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of b equal to zero");
       buff->N=len;
       lua_rawgeti(L, -1, 1);
-      buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+      {
+        CompactMatrixType *Mtemp;
+        Mtemp = luaL_checkCompactMatrix(L, -1);
+        buff->BlockSize = Mtemp->Ni;
+      }
+      else
+      {
+        buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      }
       lua_pop(L, 1);
       buff->QComplex=1;
       InitBlockAndersonMatrix(buff);
       for(i=0;i<buff->N;i++)
       {
         lua_rawgeti(L, -1, i+1); // get b_i onto the stack
+        if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+        {
+          CompactMatrixType *Mtemp;
+          Mtemp = luaL_checkCompactMatrix(L, -1);
+          if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
+          {
+            luaL_error(L, "Errorr reading Greens function as block Anderson matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+          }
+          if(Mtemp->QComplex==0)
+          {
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->VRe[k+j*buff->BlockSize];
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+              }
+            }
+          }
+          else
+          {
+            MakeReal=false;
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->V[k+j*buff->BlockSize].Re;
+                buff->b[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=Mtemp->V[k+j*buff->BlockSize].Im;
+              }
+            }
+          }
+        }
+        else
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
@@ -993,6 +1110,39 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
       for(i=0;i<=buff->N;i++)
       {
         lua_rawgeti(L, -1, i+1); // get a_i onto the stack
+        if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+        {
+          CompactMatrixType *Mtemp;
+          Mtemp = luaL_checkCompactMatrix(L, -1);
+          if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+          }
+          if(Mtemp->QComplex==0)
+          {
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->VRe[k+j*buff->BlockSize];
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=0;
+              }
+            }
+          }
+          else
+          {
+            MakeReal=false;
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Re=Mtemp->V[k+j*buff->BlockSize].Re;
+                buff->a[i*(Sqr(buff->BlockSize))+k+j*buff->BlockSize].Im=Mtemp->V[k+j*buff->BlockSize].Im;
+              }
+            }
+          }
+        }
+        else
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
@@ -1309,7 +1459,6 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_rawgeti(L, -1, 1);
     tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
     buff->a0 = *tempM;
-    free(tempM);
     lua_pop(L,1);
     // read B0 from stack.
     lua_rawgeti(L, -1, 2);
@@ -1384,8 +1533,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
       memcpy(buff->val.bRe, tempB0.VRe, tempB0.Ni*tempB0.Nj*sizeof(double));
     }
     FreeCompactMatrix(&tempB0);
-    FreeCompactMatrix(tempM);
-    free(tempM);
+    FreeCompactMatrixIncludingPointer(tempM);
     lua_pop(L,1);
     /* read mu */
     lua_getfield(L, narg, "mu");
@@ -1662,13 +1810,55 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
       if(len==0) luaL_error(L, "Errorr reading Greens function with lenght of b equal to zero");
       buff->N=len;
       lua_rawgeti(L, -1, 1);
-      buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+      {
+        CompactMatrixType *Mtemp;
+        Mtemp = luaL_checkCompactMatrix(L, -1);
+        buff->BlockSize = Mtemp->Ni;
+      }
+      else
+      {
+        buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      }
       lua_pop(L, 1);
       buff->QComplex=1;
       InitBlockListOfPoles(buff);
       for(i=0;i<buff->N;i++)
       {
         lua_rawgeti(L, -1, i+1); // get b_i+1 onto the stack
+        if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+        {
+          CompactMatrixType *Mtemp;
+          Mtemp = luaL_checkCompactMatrix(L, -1);
+          if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+          }
+          if(Mtemp->QComplex==0)
+          {
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize].Re=Mtemp->VRe[k+j*buff->BlockSize];
+                buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize].Im=0;
+              }
+            }
+          }
+          else
+          {
+            MakeReal=false;
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize].Re=Mtemp->V[k+j*buff->BlockSize].Re;
+                buff->V[i*(1+Sqr(buff->BlockSize))+1+k+j*buff->BlockSize].Im=Mtemp->V[k+j*buff->BlockSize].Im;
+              }
+            }
+          }
+        }
+        else
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
@@ -1747,6 +1937,39 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
           {
             buff->a0[i]=buff->a0[0];
           }
+        }
+        else if (luaL_testudata(L, -1, "Matrix_Type") != NULL)
+        {
+          CompactMatrixType *Mtemp;
+          Mtemp = luaL_checkCompactMatrix(L, -1);
+          if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
+          {
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+          }
+          if(Mtemp->QComplex==0)
+          {
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->a0[k+j*buff->BlockSize].Re=Mtemp->VRe[k+j*buff->BlockSize];
+                buff->a0[k+j*buff->BlockSize].Im=0;
+              }
+            }
+          }
+          else
+          {
+            MakeReal=false;
+            for(j=0;j<buff->BlockSize;j++)
+            {
+              for(k=0;k<buff->BlockSize;k++)
+              {
+                buff->a0[k+j*buff->BlockSize].Re=Mtemp->V[k+j*buff->BlockSize].Re;
+                buff->a0[k+j*buff->BlockSize].Im=Mtemp->V[k+j*buff->BlockSize].Im;
+              }
+            }
+          }
+          
         }
         else
         {
@@ -1935,7 +2158,8 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   if(lua_objlen(L,-1)==0) luaL_error(L,"Error reading Green's function the length of the table is 0");
   lua_rawgeti(L,-1,1); // puts element A0 or a0 or the stack
   buff->Block = false;
-  if(lua_istable(L,-1)) buff->Block = true;
+  if(lua_istable(L,-1)) buff->Block = true; // A0 is a table
+  if (luaL_testudata(L, -1, "Matrix_Type") != NULL) buff->Block = true; // A0 is a pointer to a matrix
   lua_pop(L,2);
   // read type
   lua_getfield(L, narg, "type");
