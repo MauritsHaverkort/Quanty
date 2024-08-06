@@ -1040,8 +1040,8 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {
   ResponsefunctionType GBLP;
-  ConvertResponsefunction(GA, Gsum, 'L', 0, 0);
-  ConvertResponsefunction(GB, &GBLP, 'L', 0, 0);
+  ConvertResponsefunction(GA, Gsum, 'l', 0, 0);
+  ConvertResponsefunction(GB, &GBLP, 'l', 0, 0);
   
   if(GA->Block)
   {

@@ -1,0 +1,137 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction Equal                             --")
+print("--------------------------------------------------------")
+
+
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-15}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-10}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=false) then error("Response function comparison failed\n",1) end
+
+
+a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-15}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-10}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=false) then error("Response function comparison failed\n",1) end
+
+
+a = {0, 8.5,9.0,9.5,   10.5,  11,  11.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {0, 8.5,9.0,9.5,   10.5,  11,  11.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {0, 8.5,9.0,9.5,   10.5,  11,  11.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {0, 8.5,9.0,9.5,   10.5,  11,  11.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-15}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {0, 8.5,9.0,9.5,   10.5,  11,  11.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
+G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {0, 8.5,9.0,9.5,   10.5,  11,  11.5}
+b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-10}
+G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=false) then error("Response function comparison failed\n",1) end
+
+
+
+
+
+
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {1,        0.2, 0.2, 0.1,   0.1, 0.2}
+G1 = {a,b,mu=0,type="And", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = { 1,       0.2, 0.2, 0.1,   0.1, 0.2}
+G2 = {a,b,mu=0,type="And", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {1,        0.2, 0.2, 0.1,   0.1, 0.2}
+G1 = {a,b,mu=0,type="And", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = { 1,       0.2, 0.2, 0.1,   0.1, 0.2+1E-17}
+G2 = {a,b,mu=0,type="And", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
+
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = {1,        0.2, 0.2, 0.1,   0.1, 0.2}
+G1 = {a,b,mu=0,type="And", name="A"}
+setmetatable(G1, ResponseFunctionMeta)
+a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
+b = { 1,       0.2, 0.2, 0.1,   0.1, 0.2+1E-10}
+G2 = {a,b,mu=0,type="And", name="A"}
+setmetatable(G2, ResponseFunctionMeta)
+if((G1==G2)~=false) then error("Response function comparison failed\n",1) end
+
+
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

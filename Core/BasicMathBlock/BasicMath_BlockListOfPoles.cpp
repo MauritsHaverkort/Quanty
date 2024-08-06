@@ -1027,8 +1027,8 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
   {
     for(j=0;j<bs-1;j++)
     {
-      A->a0[A->N*bs+j].Re -= Bsub->a0[A->N*bs+j].Re;
-      A->a0[A->N*bs+j].Im -= Bsub->a0[A->N*bs+j].Im;
+      A->a0[j].Re -= Bsub->a0[j].Re;
+      A->a0[j].Im -= Bsub->a0[j].Im;
     }
 
     for(i=0;i<A->N;i++)
@@ -1109,7 +1109,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
   {
     for(j=0;j<bs-1;j++)
     {
-      A->a0Re[A->N*bs+j] -= Bsub->a0Re[A->N*bs+j];
+      A->a0Re[j] -= Bsub->a0Re[j];
     }
 
     for(i=0;i<A->N;i++)

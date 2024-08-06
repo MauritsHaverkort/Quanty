@@ -1,0 +1,192 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction Add                               --")
+print("--------------------------------------------------------")
+
+print("-- Single valued                                      --")
+
+a = {10,   0, 0.5,   1, 1.5}
+b = {    0.1, 0.1, 0.2, 0.3}
+GA = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(GA, ResponseFunctionMeta)
+
+a = {-10, -1,-0.5, 0}
+b = {    0.1, 0.1, 0.1}
+GB = {a,b,mu=0,type="ListOfPoles", name="B"}
+setmetatable(GB, ResponseFunctionMeta)
+
+a = {0, -1, -0.5, 0,   0.5,   1, 1.5}
+b = {   0.1, 0.1, 0.2, 0.1, 0.2, 0.3}
+GAB = {a,b,mu=0,type="ListOfPoles", name="A+B"}
+setmetatable(GAB, ResponseFunctionMeta)
+GAB = ResponseFunction.ToUserdata(GAB)
+
+
+G = GA+GB
+if((G==GAB)~=true) then error("Response function comparison failed\n",1) end
+
+
+GA_L = ResponseFunction.ChangeType(GA,"LP")
+GA_l = ResponseFunction.ToUserdata(GA_L)
+GA_T = ResponseFunction.ChangeType(GA,"Tri")
+GA_t = ResponseFunction.ToUserdata(GA_T)
+GA_A = ResponseFunction.ChangeType(GA,"And")
+GA_a = ResponseFunction.ToUserdata(GA_A)
+GA_N = ResponseFunction.ChangeType(GA,"Nat")
+GA_n = ResponseFunction.ToUserdata(GA_N)
+GA_U = ResponseFunction.ChangeType(GA,"Userdata")
+GA_u = ResponseFunction.ToUserdata(GA_U)
+GA_B = ResponseFunction.ChangeType(GA,"Table")
+GA_b = ResponseFunction.ToUserdata(GA_B)
+
+GB_L = ResponseFunction.ChangeType(GB,"LP")
+GB_l = ResponseFunction.ToUserdata(GB_L)
+GB_T = ResponseFunction.ChangeType(GB,"Tri")
+GB_t = ResponseFunction.ToUserdata(GB_T)
+GB_A = ResponseFunction.ChangeType(GB,"And")
+GB_a = ResponseFunction.ToUserdata(GB_A)
+GB_N = ResponseFunction.ChangeType(GB,"Nat")
+GB_n = ResponseFunction.ToUserdata(GB_N)
+GB_U = ResponseFunction.ChangeType(GB,"Userdata")
+GB_u = ResponseFunction.ToUserdata(GB_U)
+GB_B = ResponseFunction.ChangeType(GB,"Table")
+GB_b = ResponseFunction.ToUserdata(GB_B)
+
+GAList = {GA_L,GA_l,GA_T,GA_t,GA_A,GA_a,GA_N,GA_n,GA_U,GA_u,GA_B,GA_b}
+GBList = {GB_L,GB_l,GB_T,GB_t,GB_A,GB_a,GB_N,GB_n,GB_U,GB_u,GB_B,GB_b}
+for i=1,#GAList do
+	for j=1,#GBList do
+		G = GAList[i]+GBList[j]
+		if((G==GAB)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("GA\n",GAList[i])
+			print("GB\n",GBList[j])
+			print("G\n",G)
+			print("GAB\n",GAB)
+			error("Response function comparison failed\n",1)
+		end
+	end
+end
+
+print("-- Matrix                                             --")
+
+A0 = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(A0, MatrixMeta)
+a1 = -1/2
+a2 = 1
+a3 = 2
+
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+tempA = Copy(B1)
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+
+
+MA = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+
+
+
+A0 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(A0, MatrixMeta)
+a1 = -2
+a2 = -1
+a3 = -1/2
+
+B1s = {{3,5,3},{5,5,1},{3,1,2}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+tempB = Copy(B3)
+
+MB = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MB, ResponseFunctionMeta)
+
+A0 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(A0, MatrixMeta)
+a1 = -2
+a2 = -1
+a3 = -1/2
+a4 =  1
+a5 =  2
+
+B1s = {{3,5,3},{5,5,1},{3,1,2}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3 = tempA + tempB
+B4s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B4s, MatrixMeta)
+B4 = B4s * B4s
+B5s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B5s, MatrixMeta)
+B5 = B5s * B5s
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,B2,B3,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA+MB
+if((M==MAB)~=true) then error("Response function comparison failed\n",1) end
+
+
+MA_L = ResponseFunction.ChangeType(MA,"LP")
+MA_l = ResponseFunction.ToUserdata(MA_L)
+MA_T = ResponseFunction.ChangeType(MA,"Tri")
+MA_t = ResponseFunction.ToUserdata(MA_T)
+MA_A = ResponseFunction.ChangeType(MA,"And")
+MA_a = ResponseFunction.ToUserdata(MA_A)
+MA_N = ResponseFunction.ChangeType(MA,"Nat")
+MA_n = ResponseFunction.ToUserdata(MA_N)
+MA_U = ResponseFunction.ChangeType(MA,"Userdata")
+MA_u = ResponseFunction.ToUserdata(MA_U)
+MA_B = ResponseFunction.ChangeType(MA,"Table")
+MA_b = ResponseFunction.ToUserdata(MA_B)
+
+MB_L = ResponseFunction.ChangeType(MB,"LP")
+MB_l = ResponseFunction.ToUserdata(MB_L)
+MB_T = ResponseFunction.ChangeType(MB,"Tri")
+MB_t = ResponseFunction.ToUserdata(MB_T)
+MB_A = ResponseFunction.ChangeType(MB,"And")
+MB_a = ResponseFunction.ToUserdata(MB_A)
+--MB_N = ResponseFunction.ChangeType(MB,"Nat")
+--MB_n = ResponseFunction.ToUserdata(MB_N)
+MB_U = ResponseFunction.ChangeType(MB,"Userdata")
+MB_u = ResponseFunction.ToUserdata(MB_U)
+MB_B = ResponseFunction.ChangeType(MB,"Table")
+MB_b = ResponseFunction.ToUserdata(MB_B)
+
+MAList = {MA_L,MA_l,MA_T,MA_t,MA_A,MA_a,MA_N,MA_n,MA_U,MA_u,MA_B,MA_b}
+MBList = {MB_L,MB_l,MB_T,MB_t,MB_A,MB_a,          MB_U,MB_u,MB_B,MB_b}
+for i=1,#MAList do
+	for j=1,#MBList do
+		M = MAList[i]+MBList[j]
+		if((M==MAB)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("MA\n",MAList[i])
+			print("MB\n",MBList[j])
+			print("M\n",M(0.1,0.1))
+			print("MAB\n",MAB(0.1,0.1))
+			print("MAB\n",M(0.1,0.1)-MAB(0.1,0.1))
+			error("Response function comparison failed\n",1)
+		end
+	end
+end
+
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+

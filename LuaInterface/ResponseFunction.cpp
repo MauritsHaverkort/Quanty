@@ -2254,7 +2254,7 @@ static int LuaResponseFunctionEq(lua_State *L)
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
   Ma = luaL_checkResponsefunction(L,1);
   Mb = luaL_checkResponsefunction(L,2);
-  if(ResponseFunctionEq(Ma, Mb, 100*DBL_EPSILON)==true)
+  if(ResponseFunctionEq(Ma, Mb, 100000*DBL_EPSILON)==true)
   {
     lua_pushboolean(L,1);
   }

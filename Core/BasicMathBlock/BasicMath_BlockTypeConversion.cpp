@@ -4078,6 +4078,9 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, true);
+    
+    
+    
     dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;

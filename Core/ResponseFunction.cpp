@@ -495,7 +495,8 @@ bool ResponseFunctionEq(const ResponsefunctionType *const a, const Responsefunct
   // determine gridpoints and gamma for evaluation and compare values after evaluation
   omega0=0;
   omega1 = 1E10;
-  for(j=1;j<15;j++)
+  zero*=(Ma.Ni*Ma.Nj);
+  for(j=1;j<13;j++)
   {
     omega0shift=0;
     EvaluateResponsefunction(a, &Ma, omega0-omega1, omega1/10.0);
