@@ -8,7 +8,7 @@ build-job:
   - module load compiler/2022.1.0
   - module load mkl/2022.1.0
   - echo "current working directory $(pwd) "
-  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
+  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
   artifacts:
     paths:
     - Quanty.exe
