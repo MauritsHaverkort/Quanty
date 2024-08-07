@@ -127,7 +127,16 @@ MAB = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
 setmetatable(MAB, ResponseFunctionMeta)
 MAB = ResponseFunction.ToUserdata(MAB)
 
+
+
 M = MA-MB
+
+print(ResponseFunction.ToTable(MA))
+print(ResponseFunction.ToTable(MB))
+print(ResponseFunction.ToTable(M))
+print(ResponseFunction.ToTable(MAB))
+
+
 if((M==MAB)~=true) then error("Response function comparison failed\n",1) end
 
 

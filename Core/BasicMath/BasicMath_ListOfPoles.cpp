@@ -293,7 +293,14 @@ uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * cons
     }
     else
     { // inbetween two poles add weight to the left (iLow-1) and right (iLow)
-      frac = ( B->a[i] - A->a[iLow-1] ) / (A->a[iLow] - A->a[iLow-1]);
+      if( (A->a[iLow] - A->a[iLow-1]) <= DBL_MIN + DBL_EPSILON * (fabs(A->a[iLow])+fabs(A->a[iLow-1])))
+      {
+        frac = 0.5;
+      }
+      else
+      {
+        frac = ( B->a[i] - A->a[iLow-1] ) / (A->a[iLow] - A->a[iLow-1]);
+      }
       A->b[iLow]   += frac     * B->b[i];
       A->b[iLow-1] += (1-frac) * B->b[i];
     }

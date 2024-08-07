@@ -519,10 +519,8 @@ static int LuaResponseFunctionSub(lua_State * L)
   if(len!=2) return luaL_error(L, "Error in ResponseFunctionSub: %d argument(s), 2 expected.\n", len);
   Ma = luaL_checkResponsefunction(L,1);
   Mb = luaL_checkResponsefunction(L,2);
-  if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
-  //TODO: if the functions are of Block type test dimensions
-  
-  ResponseFunctionSubtract(Ma, Mb, &res);
+  if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionSub: Block type of both functions needs to be the same\n");
+  if(ResponseFunctionSubtract(Ma, Mb, &res)) return luaL_error(L, "Error in ResponseFunctionSub\n");
   LuaPush_ResponseFunction(L, &res);
   FreeResponsefunction(Ma);
   FreeResponsefunction(Mb);

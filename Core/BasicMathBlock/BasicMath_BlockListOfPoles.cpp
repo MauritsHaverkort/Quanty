@@ -973,6 +973,40 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
   return 0;
 }
 
+/*  removes all negative spectral weigth
+ *  For each pole i we calcualte the eigensystem of Bi
+ *  We split Bi to negative and positive eigenvalues.
+ *  If Bi is negative definite we remove Bi otherwise we keep Bi with the positive spectral weigth
+ *  The negative spectral weight of Bi is given to the poles at B(i-1) and B(i+1)
+ *    We do not transfer weight through mu.
+ *    We start at i=0 and move the negative weight to i=1
+ *    We then move the negative weight of i=1 to i=0 and i=2 keeping the norm fixed
+ *    and move the negative weigth of i=0 to i=2
+ */
+uint32_t MakeBlockListOfPolesPhysical(BlockListOfPoles * const A)
+{
+  uint32_t iMuL,iMuR; // include 0 to iMuL-1 on the left and iMuR to A->N-1 on the right
+  OrderBlockListOfPoles(A);
+  if(A->QComplex==0)
+  {
+    
+  }
+  else
+  { // Complex
+    
+  }
+  
+  // find iMu
+  iMuL=0;
+  while(iMuL < A->N)
+  {
+    iMuL++;
+  }
+  
+  
+  return 0;
+}
+
 
 /*   A <- A-B
  *   The energy of the poles in B is adjusted to be on the same "grid" as the poles in A
@@ -981,7 +1015,9 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
  */
 uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const * const B)
 {
-  int i;
+  int i,iMin,j,k;
+  double TrA,TrB,Wl,Wr;
+  CompactMatrixType Bi,Ai;
   // tests to prevent crashing
   if(A->BlockSize!=B->BlockSize)
   {
@@ -989,64 +1025,55 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
     printf("Error in SubtractBlockListOfPoles\n");
     return 1;
   }
+  // make A complex if B is complex
+  if((A->QComplex==0)&&(B->QComplex!=0))
+  {
+    MakeRealBlockListOfPolesComplex(A);
+  }
+  // set some pointers to make life easier
+  Bi.Ni=B->BlockSize;
+  Bi.Nj=B->BlockSize;
+  Bi.QComplex = B->QComplex;
+  Ai.Ni=A->BlockSize;
+  Ai.Nj=A->BlockSize;
+  Ai.QComplex = A->QComplex;
+  // A0
+  if(A->QComplex==0)
+  { // both real
+    for(i=0;i<Sqr(A->BlockSize);i++)
+    {
+      A->a0Re[i]-=B->a0Re[i];
+    }
+  }
+  else
+  { // A complex
+    if(B->QComplex==0)
+    { // B real
+      for(i=0;i<Sqr(A->BlockSize);i++)
+      {
+        A->a0[i].Re-=B->a0Re[i];
+      }
+    }
+    else
+    {
+      for(i=0;i<Sqr(A->BlockSize);i++)
+      {
+        A->a0[i].Re-=B->a0[i].Re;
+        A->a0[i].Im-=B->a0[i].Im;
+      }
+    }
+  }
   // special case N=0
   if (A->N == 0)
   {
     if (B->N==0)
     {
-      if(A->QComplex==0)
-      {
-        if(B->QComplex==0)
-        { // A and B real
-          for(i=0;i<Sqr(A->BlockSize);i++)
-          {
-            A->VRe[i]-=B->VRe[i];
-          }
-        }
-        else
-        { // A real B Complex
-          MakeRealBlockListOfPolesComplex(A);
-          for(i=0;i<Sqr(A->BlockSize);i++)
-          {
-            A->V[i].Re-=B->V[i].Re;
-            A->V[i].Im-=B->V[i].Im;
-          }
-        }
-      }
-      else
-      {
-        if(B->QComplex==0)
-        { // A complex B Real
-          for(i=0;i<Sqr(A->BlockSize);i++)
-          {
-            A->V[i].Re-=B->VRe[i];
-          }
-        }
-        else
-        { // A complex and B complex
-          for(i=0;i<Sqr(A->BlockSize);i++)
-          {
-            A->V[i].Re-=B->V[i].Re;
-            A->V[i].Im-=B->V[i].Im;
-          }
-        }
-      }
       return 0;
     }
     // Add one pole as we are going to return a negative weigth (A->N goes from 0 to 1)
     A->N=1;
     if(A->QComplex==0)
-    {
-      A->V = (Complex16*)realloc(A->V, (2*(1+Sqr(A->BlockSize))-1)*sizeof(Complex16));
-      if(A->V==NULL)
-      {
-        printf("Fatal Error: allocation failed in SubtractBlockListOfPoles\n");
-        return 1;
-      }
-      A->a0 = &(A->V[2*(1+Sqr(A->BlockSize))]);
-    }
-    else
-    {
+    { // A real
       A->VRe = (double*)realloc(A->VRe, (2*(1+Sqr(A->BlockSize))-1)*sizeof(double));
       if(A->VRe==NULL)
       {
@@ -1054,15 +1081,352 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
         return 1;
       }
       A->a0Re = &(A->VRe[2*(1+Sqr(A->BlockSize))]);
+      for(i=0;i<Sqr(A->BlockSize);i++)
+      {
+        A->a0Re[i]=A->VRe[i];
+        A->VRe[i]=0;
+      }
+      A->VRe[Sqr(A->BlockSize)]=0;
     }
-    
-  };
-  // order the energies in A from small to large
+    else
+    { // A complex
+      A->V = (Complex16*)realloc(A->V, (2*(1+Sqr(A->BlockSize))-1)*sizeof(Complex16));
+      if(A->V==NULL)
+      {
+        printf("Fatal Error: allocation failed in SubtractBlockListOfPoles\n");
+        return 1;
+      }
+      A->a0 = &(A->V[2*(1+Sqr(A->BlockSize))]);
+      for(i=0;i<Sqr(A->BlockSize);i++)
+      {
+        A->a0[i]=A->V[i];
+        A->V[i].Re=0;
+        A->V[i].Im=0;
+      }
+      A->V[Sqr(A->BlockSize)].Re=0;
+      A->V[Sqr(A->BlockSize)].Im=0;
+    }
+  }
+  // special case N=1
+  if (A->N == 1)
+  {
+    if(A->QComplex==0)
+    { // A and B real
+      Ai.VRe = &(A->VRe[1]);
+      TrA=0;
+      for(k=0;k<A->BlockSize;k++)
+      {
+        TrA+=Ai.VRe[k*(A->BlockSize+1)];
+      }
+      for(j=0;j<B->N;j++)
+      {
+        Bi.VRe = &(B->VRe[(j)*(1+Sqr(B->BlockSize))+1]);
+        TrB=0;
+        for(k=0;k<B->BlockSize;k++)
+        {
+          TrB+=Bi.VRe[k*(B->BlockSize+1)];
+        }
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]-=Bi.VRe[k];
+        }
+        if(fabs(TrA - TrB) < DBL_EPSILON)
+        {
+          A->VRe[0] = 0;
+        }
+        else
+        {
+          A->VRe[0] = (TrA * (A->VRe[0]) - TrB * (B->VRe[(j)*(1+Sqr(B->BlockSize))])) / (TrA - TrB);
+        }
+      }
+    }
+    else
+    {  //A complex
+      if(B->QComplex==0)
+      { // A complex B real
+        Ai.V = &(A->V[1]);
+        TrA=0;
+        for(k=0;k<A->BlockSize;k++)
+        {
+          TrA+=Ai.V[k*(A->BlockSize+1)].Re;
+        }
+        for(j=0;j<B->N;j++)
+        {
+          Bi.VRe = &(B->VRe[(j)*(1+Sqr(B->BlockSize))+1]);
+          TrB=0;
+          for(k=0;k<B->BlockSize;k++)
+          {
+            TrB+=Bi.VRe[k*(B->BlockSize+1)];
+          }
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Bi.VRe[k];
+          }
+          if(fabs(TrA - TrB) < DBL_EPSILON)
+          {
+            A->V[0].Re = 0;
+            A->V[0].Im = 0;
+          }
+          else
+          {
+            A->V[0].Re = (TrA * (A->V[0].Re) - TrB * (B->VRe[(j)*(1+Sqr(B->BlockSize))])) / (TrA - TrB);
+          }
+        }
+      }
+      else
+      { // A and B Complex
+        Ai.V = &(A->V[1]);
+        TrA=0;
+        for(k=0;k<A->BlockSize;k++)
+        {
+          TrA+=Ai.V[k*(A->BlockSize+1)].Re;
+        }
+        for(j=0;j<B->N;j++)
+        {
+          Bi.V = &(B->V[(j)*(1+Sqr(B->BlockSize))+1]);
+          TrB=0;
+          for(k=0;k<B->BlockSize;k++)
+          {
+            TrB+=Bi.V[k*(B->BlockSize+1)].Re;
+          }
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k]-=Bi.V[k];
+          }
+          if(fabs(TrA - TrB) < DBL_EPSILON)
+          {
+            A->V[0].Re = 0;
+            A->V[0].Im = 0;
+          }
+          else
+          {
+            A->V[0].Re = (TrA * (A->V[0].Re) - TrB * (B->V[(j)*(1+Sqr(B->BlockSize))].Re)) / (TrA - TrB);
+          }
+        }
+      }
+    }
+    return 0;
+  }
+  // N>1
   OrderBlockListOfPoles(A);
+  if(A->QComplex==0)
+  { // A and B real
+    for(i=0;i<B->N;i++)
+    {
+      Bi.VRe = &(B->VRe[i*(Sqr(B->BlockSize)+1)+1]);
+      // find position of B[i]
+      iMin=0;
+      while(iMin<A->N)
+      {
+        if(B->VRe[i*(Sqr(B->BlockSize)+1)] < A->VRe[iMin*(Sqr(A->BlockSize)+1)] ) break;
+        iMin++;
+      }
+      if(iMin==0)
+      {  // below lowest pole
+        Ai.VRe = &(A->VRe[1]);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]-=Bi.VRe[k];
+        }
+      }
+      else if(iMin==A->N)
+      { // above highest pole
+        Ai.VRe = &(A->VRe[(A->N-1)*(Sqr(B->BlockSize)+1)+1]);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]-=Bi.VRe[k];
+        }
+      }
+      else
+      { // inbetween pole iMin-1 and iMin
+        Wr = B->VRe[i*(Sqr(B->BlockSize)+1)] - A->VRe[(iMin-1)*(Sqr(B->BlockSize)+1)];
+        Wl = A->VRe[(iMin)*(Sqr(B->BlockSize)+1)] - B->VRe[i*(Sqr(B->BlockSize)+1)];
+        if(Wr <= DBL_MIN + DBL_EPSILON * (fabs(A->VRe[(iMin)*(Sqr(B->BlockSize)+1)]) + fabs(A->VRe[(iMin-1)*(Sqr(B->BlockSize)+1)])))
+        {
+          if(Wr > Wl)
+          { // both are neglegible, equal seperation
+            Wr=0.5;
+            Wl=0.5;
+          }
+          else
+          { // all weigth to the left
+            Wl=1;
+            Wr=0;
+          }
+        }
+        else if(Wl <= DBL_MIN + DBL_EPSILON * (fabs(A->VRe[(iMin)*(Sqr(B->BlockSize)+1)]) + fabs(A->VRe[(iMin-1)*(Sqr(B->BlockSize)+1)])))
+        { // all weight to the right
+          Wl=0;
+          Wr=1;
+        }
+        else
+        {
+          Wl = Wl / (Wl + Wr);
+          Wr = 1 - Wl;
+        }
+        Ai.VRe = &(A->VRe[(iMin-1)*(Sqr(B->BlockSize)+1)+1]);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]-=Wl * Bi.VRe[k];
+        }
+        Ai.VRe = &(A->VRe[(iMin)*(Sqr(B->BlockSize)+1)+1]);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]-=Wr * Bi.VRe[k];
+        }
+      }
+    }
+  }
+  else
+  {
+    if(B->QComplex==0)
+    { // A Complex and B real
+      for(i=0;i<B->N;i++)
+      {
+        Bi.VRe = &(B->VRe[i*(Sqr(B->BlockSize)+1)+1]);
+        // find position of B[i]
+        iMin=0;
+        while(iMin<A->N)
+        {
+          if(B->VRe[i*(Sqr(B->BlockSize)+1)] < A->V[iMin*(Sqr(A->BlockSize)+1)].Re ) break;
+          iMin++;
+        }
+        if(iMin==0)
+        {  // below lowest pole
+          Ai.V = &(A->V[1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Bi.VRe[k];
+          }
+        }
+        else if(iMin==A->N)
+        { // above highest pole
+          Ai.V = &(A->V[(A->N-1)*(Sqr(B->BlockSize)+1)+1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Bi.VRe[k];
+          }
+        }
+        else
+        { // inbetween pole iMin-1 and iMin
+          Wr = B->VRe[i*(Sqr(B->BlockSize)+1)] - A->V[(iMin-1)*(Sqr(B->BlockSize)+1)].Re;
+          Wl = A->V[(iMin)*(Sqr(B->BlockSize)+1)].Re - B->VRe[i*(Sqr(B->BlockSize)+1)];
+          if(Wr <= DBL_MIN + DBL_EPSILON * (fabs(A->V[(iMin)*(Sqr(B->BlockSize)+1)].Re) + fabs(A->V[(iMin-1)*(Sqr(B->BlockSize)+1)].Re)))
+          {
+            if(Wr > Wl)
+            { // both are neglegible, equal seperation
+              Wr=0.5;
+              Wl=0.5;
+            }
+            else
+            { // all weigth to the left
+              Wl=1;
+              Wr=0;
+            }
+          }
+          else if(Wl <= DBL_MIN + DBL_EPSILON * (fabs(A->V[(iMin)*(Sqr(B->BlockSize)+1)].Re) + fabs(A->V[(iMin-1)*(Sqr(B->BlockSize)+1)].Re)))
+          { // all weight to the right
+            Wl=0;
+            Wr=1;
+          }
+          else
+          {
+            Wl = Wl / (Wl + Wr);
+            Wr = 1 - Wl;
+          }
+          Ai.V = &(A->V[(iMin-1)*(Sqr(B->BlockSize)+1)+1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Wl * Bi.VRe[k];
+          }
+          Ai.V = &(A->V[(iMin)*(Sqr(B->BlockSize)+1)+1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Wr * Bi.VRe[k];
+          }
+        }
+      }
+    }
+    else
+    { // A and B Complex
+      for(i=0;i<B->N;i++)
+      {
+        Bi.V = &(B->V[i*(Sqr(B->BlockSize)+1)+1]);
+        // find position of B[i]
+        iMin=0;
+        while(iMin<A->N)
+        {
+          if(B->V[i*(Sqr(B->BlockSize)+1)].Re < A->V[iMin*(Sqr(A->BlockSize)+1)].Re ) break;
+          iMin++;
+        }
+        if(iMin==0)
+        {  // below lowest pole
+          Ai.V = &(A->V[1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Bi.V[k].Re;
+            Ai.V[k].Im-=Bi.V[k].Im;
+          }
+        }
+        else if(iMin==A->N)
+        { // above highest pole
+          Ai.V = &(A->V[(A->N-1)*(Sqr(B->BlockSize)+1)+1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Bi.V[k].Re;
+            Ai.V[k].Im-=Bi.V[k].Im;
+          }
+        }
+        else
+        { // inbetween pole iMin-1 and iMin
+          Wr = B->V[i*(Sqr(B->BlockSize)+1)].Re - A->V[(iMin-1)*(Sqr(B->BlockSize)+1)].Re;
+          Wl = A->V[(iMin)*(Sqr(B->BlockSize)+1)].Re - B->V[i*(Sqr(B->BlockSize)+1)].Re;
+          if(Wr <= DBL_MIN + DBL_EPSILON * (fabs(A->V[(iMin)*(Sqr(B->BlockSize)+1)].Re) + fabs(A->V[(iMin-1)*(Sqr(B->BlockSize)+1)].Re)))
+          {
+            if(Wr > Wl)
+            { // both are neglegible, equal seperation
+              Wr=0.5;
+              Wl=0.5;
+            }
+            else
+            { // all weigth to the left
+              Wl=1;
+              Wr=0;
+            }
+          }
+          else if(Wl <= DBL_MIN + DBL_EPSILON * (fabs(A->V[(iMin)*(Sqr(B->BlockSize)+1)].Re) + fabs(A->V[(iMin-1)*(Sqr(B->BlockSize)+1)].Re)))
+          { // all weight to the right
+            Wl=0;
+            Wr=1;
+          }
+          else
+          {
+            Wl = Wl / (Wl + Wr);
+            Wr = 1 - Wl;
+          }
+          Ai.V = &(A->V[(iMin-1)*(Sqr(B->BlockSize)+1)+1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Wl * Bi.V[k].Re;
+            Ai.V[k].Im-=Wl * Bi.V[k].Im;
+          }
+          Ai.V = &(A->V[(iMin)*(Sqr(B->BlockSize)+1)+1]);
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.V[k].Re-=Wr * Bi.V[k].Re;
+            Ai.V[k].Im-=Wr * Bi.V[k].Im;
+          }
+        }
+      }
+    }
+  }
+  // now make A physical
   
-  //TODO:
-  printf("Subtract Block List of poles not finished implementing\n");
-  return 1;
+  
+  
+  
+  
+  
   
   
   return 0;

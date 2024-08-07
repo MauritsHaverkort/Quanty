@@ -305,7 +305,7 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
       oadd[0] = k;
       RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
       oadd[1] = CrAnMask + k;
-      oadd[0] = k+2 + FermionShift;
+      oadd[0] = k+2;
       RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
       k++;
       oadd[1] = CrAnMask + k;
