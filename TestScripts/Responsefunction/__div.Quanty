@@ -152,7 +152,7 @@ setmetatable(MB_T, ResponseFunctionMeta)
 MB_T2 = { {A0,A1,A2,A3}, {sqrt(2)*B0,B1,B2}, mu=0, type="Tri", name="B"}
 setmetatable(MB_T2, ResponseFunctionMeta)
 
-MB_L2m = MB_T/(0.5)
+MB_T2m = MB_T/(0.5)
 if((MB_T2m==MB_T2)~=true) then error("Response function comparison failed\n",1) end
 
 
