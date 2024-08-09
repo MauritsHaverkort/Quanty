@@ -4,6 +4,179 @@ print("--------------------------------------------------------")
 
 
 
+--------------------------------------------------------
+-- response functions in Quanty are functions that, given
+-- a complex number as input w + I gamma/2 return a complex
+-- number (single valued functions) or a matrix (matrix functions)
+--
+-- response functions fullfil the Kramers Kronig relations and
+-- "causality". Response functions are defined by matrices such that
+-- the function is given by
+-- A0 + B0^* ( 1 / (w - H + I gamma / 2) ) B0^T
+-- H can have different forms whereby only a few blocks are non-zero
+
+
+print("--------------------------------------------------------")
+print("-------- Single valued functions -----------------------")
+print("--------------------------------------------------------")
+
+a = {10, -1,-0.5, 0,   0.5,  1,  1.5}
+b = {  0.1, 0.1, 0.1, 0.1, 0.2, 0.3}
+GA_L = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(GA_L, ResponseFunctionMeta)
+
+a = {10, -1,-0.5, 0,   0.5,  1,  1.5}
+b = {   0.2, 0.2, 0.2, 0.2, 0.4, 0.6}
+GA_L2 = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(GA_L2, ResponseFunctionMeta)
+
+GA_L2m = GA_L/(0.5)
+if((GA_L2==GA_L2m)~=true) then error("Response function comparison failed\n",1) end
+
+
+
+a = {0, 1,   1,   1,   1,   1,  1}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+GB_T = {a,b,mu=0,type="Tri", name="B"}
+setmetatable(GB_T, ResponseFunctionMeta)
+
+a = {0, 1,   1,   1,   1,   1,  1}
+b = {   sqrt(2), 0.5, 0.5, 0.5, 0.5, 0.5}
+GB_T2 = {a,b,mu=0,type="Tri", name="B"}
+setmetatable(GB_T2, ResponseFunctionMeta)
+
+GB_T2m = GB_T/(0.5)
+if((GB_T2==GB_T2m)~=true) then error("Response function comparison failed\n",1) end
+
+
+a = {0, 1, 1.5,   2, 2.5,   3, 3.5}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+GC_A = {a,b,mu=0,type="And", name="C"}
+setmetatable(GC_A, ResponseFunctionMeta)
+
+a = {0, 1, 1.5,   2, 2.5,   3, 3.5}
+b = {   sqrt(2), 0.5, 0.5, 0.5, 0.5, 0.5}
+GC_A2 = {a,b,mu=0,type="And", name="C"}
+setmetatable(GC_A2, ResponseFunctionMeta)
+
+GC_A2m = GC_A/(0.5)
+if((GC_A2m==GC_A2)~=true) then error("Response function comparison failed\n",1) end
+
+
+
+acon = {0,         1,   1,   1,   1,   1,  1}
+bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gcon = {acon,bcon,mu=0,type="Tri"}
+setmetatable(Gcon, ResponseFunctionMeta)
+aval = {0,        -1,  -1,  -1,  -1,  -1, -1}
+bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gval = {aval,bval,mu=0,type="Tri"}
+setmetatable(Gval, ResponseFunctionMeta)
+a0=0
+b0=1
+GD_N = {{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="D"}
+setmetatable(GD_N, ResponseFunctionMeta)
+
+
+
+acon = {0,         1,   1,   1,   1,   1,  1}
+bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gcon = {acon,bcon,mu=0,type="Tri"}
+setmetatable(Gcon, ResponseFunctionMeta)
+aval = {0,        -1,  -1,  -1,  -1,  -1, -1}
+bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gval = {aval,bval,mu=0,type="Tri"}
+setmetatable(Gval, ResponseFunctionMeta)
+a0=0
+b0=sqrt(2)
+GD_N2 = {{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="D"}
+setmetatable(GD_N2, ResponseFunctionMeta)
+
+
+GD_N2m = GD_N/(0.5)
+if((GD_N2m==GD_N2)~=true) then error("Response function comparison failed\n",1) end
+
+print("--------------------------------------------------------")
+print("-------- Matrix functions ------------------------------")
+print("--------------------------------------------------------")
+
+A0 = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(A0, MatrixMeta)
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+setmetatable(A1, MatrixMeta)
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+setmetatable(A2, MatrixMeta)
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+setmetatable(A3, MatrixMeta)
+a1 = -1
+a2 = 1/2
+a3 = 1
+av1 = -0.5
+av2 = -1.0
+av3 = -1.5
+ac1 = 0.5
+ac2 = 1.0
+ac3 = 1.5
+B0s = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(B0s, MatrixMeta)
+t=sqrt(0.5)
+B0vs = {{t,0,0},{0,t,0},{0,0,t}}
+setmetatable(B0vs, MatrixMeta)
+B0cs = {{t,0,0},{0,t,0},{0,0,t}}
+setmetatable(B0cs, MatrixMeta)
+B0 = B0s * B0s
+B0v = B0vs * B0vs
+B0c = B0cs * B0cs
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+
+
+MA_L = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA_L, ResponseFunctionMeta)
+MA_L2 = { {A0,a1,a2,a3}, {2*B1,2*B2,2*B3}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA_L2, ResponseFunctionMeta)
+
+MA_L2m = MA_L/(0.5)
+if((MA_L2m==MA_L2)~=true) then error("Response function comparison failed\n",1) end
+
+
+MB_T = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="B"}
+setmetatable(MB_T, ResponseFunctionMeta)
+MB_T2 = { {A0,A1,A2,A3}, {sqrt(2)*B0,B1,B2}, mu=0, type="Tri", name="B"}
+setmetatable(MB_T2, ResponseFunctionMeta)
+
+MB_L2m = MB_T/(0.5)
+if((MB_T2m==MB_T2)~=true) then error("Response function comparison failed\n",1) end
+
+
+MC_A = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="C"}
+setmetatable(MC_A, ResponseFunctionMeta)
+MC_A2 = { {A0,A1,A2,A3}, {sqrt(2)*B0,B1,B2}, mu=0, type="And", name="C"}
+setmetatable(MC_A2, ResponseFunctionMeta)
+
+MC_A2m = MC_A/(0.5)
+if((MC_A2m==MC_A2)~=true) then error("Response function comparison failed\n",1) end
+
+MD_Nv = { {A0,av1,av2,av3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Dv"}
+setmetatable(MD_Nv, ResponseFunctionMeta)
+MD_Nc = { {A0,ac1,ac2,ac3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Dc"}
+setmetatable(MD_Nc, ResponseFunctionMeta)
+MD_N = {{A0,B0},val=MD_Nv,con=MD_Nc,mu=0,type="Nat", name="D"}
+setmetatable(MD_N, ResponseFunctionMeta)
+MD_N2 = {{A0,sqrt(2)*B0},val=MD_Nv,con=MD_Nc,mu=0,type="Nat", name="D"}
+setmetatable(MD_N2, ResponseFunctionMeta)
+
+MD_N2m = MD_N/(0.5)
+if((MD_N2m==MD_N2)~=true) then error("Response function comparison failed\n",1) end
+
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")
