@@ -25,6 +25,8 @@ G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
 setmetatable(G2, ResponseFunctionMeta)
 if((G1==G2)~=true) then error("Response function comparison failed\n",1) end
 
+print(G1(0.1,0.01)-G2(0.1,0.01))
+
 a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
 b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2}
 G1 = {a,b,mu=0,type="ListOfPoles", name="A"}
@@ -33,7 +35,12 @@ a = {10, -1.5,-1.0,-0.5,   0.5,  1,  1.5}
 b = {     0.2, 0.2, 0.1,   0.1, 0.2, 0.2+1E-10}
 G2 = {a,b,mu=0,type="ListOfPoles", name="A"}
 setmetatable(G2, ResponseFunctionMeta)
-if((G1==G2)~=false) then error("Response function comparison failed\n",1) end
+print(G1(0.1,0.01)-G2(0.1,0.01))
+
+if((G1==G2)==true) then error("Response function comparison failed\n",1) end
+
+
+
 
 
 a = {0, -1.5,-1.0,-0.5,   0.5,  1,  1.5}

@@ -83,3 +83,11 @@ test-job-Responsefunction-add:
   - ./Quanty.exe "TestScripts/Responsefunction/__add.Quanty"
   dependencies:
   - build-job
+
+test-job-Responsefunction-sub:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/__sub.Quanty"
+  dependencies:
+  - build-job

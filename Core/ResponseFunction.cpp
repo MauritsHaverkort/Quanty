@@ -466,7 +466,7 @@ bool ResponseFunctionEq(const ResponsefunctionType *const a, const Responsefunct
   ResponseFunctionGetA0(a, &Ma);
   ResponseFunctionGetA0(b, &A0);
   CompactMatrixSub(&Ma, &A0);
-  if(Ma.QComplex==false)
+  if(Ma.QComplex==0)
   {
     for(i=0;i<Ma.Ni*Ma.Nj;i++)
     {
@@ -477,7 +477,6 @@ bool ResponseFunctionEq(const ResponsefunctionType *const a, const Responsefunct
         return false;
       }
     }
-    MakeCompactRealMatrixComplex(&A0);
   }
   else
   {
@@ -491,11 +490,12 @@ bool ResponseFunctionEq(const ResponsefunctionType *const a, const Responsefunct
       }
     }
   }
-  FreeCompactMatrix(&Ma);
   // determine gridpoints and gamma for evaluation and compare values after evaluation
   omega0=0;
   omega1 = 1E10;
-  zero*=(Ma.Ni*Ma.Nj);
+  zero=zero*(Ma.Ni*Ma.Nj);
+  FreeCompactMatrix(&Ma);
+  if(A0.QComplex==0) MakeCompactRealMatrixComplex(&A0);;
   for(j=1;j<13;j++)
   {
     omega0shift=0;
