@@ -267,6 +267,98 @@ uint32_t ChopBlockListOfPoles(BlockListOfPoles *A, double const epsilon)
   return 0;
 }
 
+uint32_t RealBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
+{
+  int i,k;
+  double WL,WR;
+  OrderBlockListOfPoles(A);
+  for(i=A->N-2;i>=0;i--)
+  {
+    if(A->VRe[(i+1) * (1+Sqr(A->BlockSize))] - A->VRe[(i) * (1+Sqr(A->BlockSize))] < epsilon)
+    { // merge pole i+1 with i and remove i+1
+      WL=0;WR=0;
+      for(k=0;k<A->BlockSize;k++)
+      {
+        WL+=A->VRe[(i  ) * (1+Sqr(A->BlockSize)) + 1 + k + k * A->BlockSize];
+        WR+=A->VRe[(i+1) * (1+Sqr(A->BlockSize)) + 1 + k + k * A->BlockSize];
+      }
+      if(WR<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+      {
+        WL=1;
+        WR=0;
+      }
+      else if(WL<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+      {
+        WL=0;
+        WR=1;
+      }
+      else
+      {
+        WL = WL / (WL + WR);
+        WR = 1 - WL;
+      }
+      A->VRe[(i) * (1+Sqr(A->BlockSize))] = WL * A->VRe[(i) * (1+Sqr(A->BlockSize))] + WR * A->VRe[(i+1) * (1+Sqr(A->BlockSize))];
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        A->VRe[(i) * (1+Sqr(A->BlockSize)) + 1 + k] += A->VRe[(i+1) * (1+Sqr(A->BlockSize)) + 1 + k];
+      }
+      memmove(&( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (i+2)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-i-1) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+      A->N--;
+      A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+    }
+  }
+  return 0;
+}
+uint32_t ComplexBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
+{
+  int i,k;
+  double WL,WR;
+  OrderBlockListOfPoles(A);
+  for(i=A->N-2;i>=0;i--)
+  {
+    if(A->V[(i+1) * (1+Sqr(A->BlockSize))].Re - A->V[(i) * (1+Sqr(A->BlockSize))].Re < epsilon)
+    { // merge pole i+1 with i and remove i+1
+      WL=0;WR=0;
+      for(k=0;k<A->BlockSize;k++)
+      {
+        WL+=A->V[(i  ) * (1+Sqr(A->BlockSize)) + 1 + k + k * A->BlockSize].Re;
+        WR+=A->V[(i+1) * (1+Sqr(A->BlockSize)) + 1 + k + k * A->BlockSize].Re;
+      }
+      if(WR<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+      {
+        WL=1;
+        WR=0;
+      }
+      else if(WL<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+      {
+        WL=0;
+        WR=1;
+      }
+      else
+      {
+        WL = WL / (WL + WR);
+        WR = 1 - WL;
+      }
+      A->V[(i) * (1+Sqr(A->BlockSize))].Re = WL * A->V[(i) * (1+Sqr(A->BlockSize))].Re + WR * A->V[(i+1) * (1+Sqr(A->BlockSize))].Re;
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        A->V[(i) * (1+Sqr(A->BlockSize)) + 1 + k].Re += A->V[(i+1) * (1+Sqr(A->BlockSize)) + 1 + k].Re;
+        A->V[(i) * (1+Sqr(A->BlockSize)) + 1 + k].Im += A->V[(i+1) * (1+Sqr(A->BlockSize)) + 1 + k].Im;
+      }
+      memmove(&( A->V[ (i+1)*(1+Sqr(A->BlockSize)) ] ), &( A->V[ (i+2)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-i-1) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(Complex16)  );
+      A->N--;
+      A->a0 = A->V + A->N * (1+Sqr(A->BlockSize));
+    }
+  }
+  return 0;
+}
+uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
+{
+  if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+  return ComplexBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+}
+
+
 /*
  *  A <- A + B
  */
@@ -985,25 +1077,550 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
  */
 uint32_t MakeBlockListOfPolesPhysical(BlockListOfPoles * const A)
 {
-  uint32_t iMuL,iMuR; // include 0 to iMuL-1 on the left and iMuR to A->N-1 on the right
+  char TempName[] = "Mat";
+  int i,j,k;
+  bool PosDef, NegDef;
+  double TrAiNeg,WL,WR;
+  CompactMatrixType Ai, AiPos, AiNeg, Bi;
+  int iMuL,iMuR; // include 0 to iMuL-1 on the left and iMuR to A->N-1 on the right
+  // when there is no pole do nothing
+  if(A->N==0) return 0;
+  // set some aditional pointers to make life easier
+  Ai.Ni=A->BlockSize;
+  Ai.Nj=A->BlockSize;
+  Ai.QComplex=A->QComplex;
+  Ai.Name = TempName;
+  Bi.Ni=A->BlockSize;
+  Bi.Nj=A->BlockSize;
+  Bi.QComplex=A->QComplex;
+  Bi.Name = TempName;
+  // make sure A is ordered
   OrderBlockListOfPoles(A);
+  // do the hard word depending if A is real or complex
   if(A->QComplex==0)
   {
-    
+    // when there is one pole remove the negative part
+    if(A->N==1)
+    {
+      Ai.VRe = &( A->VRe[ 1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(PosDef==true)
+      {
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        return 0;
+      }
+      printf("\n\n WARNING: Found block list of poles %s with only one pole and negative spectral weight (%e). This is unphysical, if the weight is small that might be numerics, if the weight is large there is probably an error in your physical model. I can not move the weight to neighbouring poles so I removed the negative weight, this does not conserve the norm of G.\n\n",A->Name,TrAiNeg);
+      if(NegDef==true)
+      {
+        A->N=0;
+        // move a0
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          A->VRe[k] = A->a0Re[k];
+        }
+        A->a0Re = A->VRe;
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        return 0;
+      }
+      // set Ai to AiPos
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        Ai.VRe[k] = AiPos.VRe[k];
+      }
+    }
+    // there is more than one polein A
+    // find iMu
+    iMuR=0;
+    while(iMuR < A->N)
+    {
+      if(A->VRe[iMuR * (1+Sqr(A->BlockSize))] > A->mu) break;
+      iMuR++;
+    }
+    iMuL=Min(iMuR,A->N-1);
+    while(iMuL >= 0)
+    {
+      if(A->VRe[iMuL * (1+Sqr(A->BlockSize))] < A->mu) break;
+      iMuL--;
+    }
+    // states at mu
+    if(iMuR-iMuL!=1)
+    {
+      // merge all states together
+      Ai.VRe = &( A->VRe[ (iMuL+1)*(1+Sqr(A->BlockSize)) + 1] );
+      for(i=iMuL+2;i<iMuR;i++)
+      {
+        Bi.VRe = &( A->VRe[ (i)*(1+Sqr(A->BlockSize)) + 1] );
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]+=Bi.VRe[k];
+        }
+        // state at iMuL+1 contains all spectral weigth at mu, states iMuL+2 to iMuR-1 if present should be removed lateron
+      }
+      // remove negative spectral weight from state at mu
+         // TODO: I have no good option on how to deal with the negative spectral weigth at mu.
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(PosDef==false)
+      {
+        if(fabs(TrAiNeg)>DBL_EPSILON) printf("\n\n WARNING: Found block list of poles %s with negative spectral weight (%e) at the chemical potential. Negative spectral weight is unphysical, if the weight is small that might be numerics, if the weight is large there is probably an error in your physical model. I do not know if the state at the chemical potential belongs to the valence or the conduction states so I can not move the weight to neighbouring poles. Instead I removed the negative weight, this does not conserve the norm of G.\n\n",A->Name,TrAiNeg);
+        if(NegDef==false)
+        {
+          Ai.VRe = &( A->VRe[ (iMuL+1)*(1+Sqr(A->BlockSize)) + 1] );
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]=AiPos.VRe[k];
+          }
+        }
+      }
+      // remove states from basis
+      if(NegDef==true)
+      {
+        memmove(&( A->VRe[ (iMuL+1)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) ] ), (( (1 + A->N - iMuR) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double) );
+        A->N -= ( iMuR - iMuL -1);
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        iMuR = iMuL +1;
+      }
+      else if(iMuR-iMuL>2)
+      {
+        memmove(&( A->VRe[ (iMuL+2)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) ] ), (( (1 + A->N - iMuR) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+        A->N -= ( iMuR - iMuL -2);
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        iMuR = iMuL +2;
+      }
+      FreeCompactMatrix(&AiPos);
+      FreeCompactMatrix(&AiNeg);
+    }
+    // states smaller than mu
+    labelStartSmallerThanMu:
+    if(iMuL==0)
+    {
+      Ai.VRe = &( A->VRe[1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(PosDef==false)
+      {
+        if(fabs(TrAiNeg)>DBL_EPSILON) printf("\n\n WARNING: Found block list of poles %s with negative spectral weight (%e) below the chemical potential. Negative spectral weight is unphysical, if the weight is small that might be numerics, if the weight is large there is probably an error in your physical model. There is only one pole below the chemical potential so I can not move the weight to neighbouring poles. Instead I removed the negative weight, this does not conserve the norm of %s.\n\n",A->Name,TrAiNeg, A->Name);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]=AiPos.VRe[k];
+        }
+      }
+      if(NegDef==true)
+      {
+        // remove the state
+        memmove(A->VRe, &( A->VRe[ (1+Sqr(A->BlockSize)) ] ), ((  A->N * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+        A->N--;
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        iMuL--;
+        iMuR--;
+      }
+    }
+    else if(iMuL>0)
+    {
+      // move the negative weigth at iMuL to iMuL-1
+      Ai.VRe = &( A->VRe[ (iMuL)*(1+Sqr(A->BlockSize)) + 1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(NegDef==true)
+      {
+        Bi.VRe = &( A->VRe[ (iMuL-1)*(1+Sqr(A->BlockSize)) + 1] );
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Bi.VRe[k]+=Ai.VRe[k];
+        }
+        // remove the state
+        memmove(&( A->VRe[ (iMuL)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (iMuL+1)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-iMuL) * (1+Sqr(A->BlockSize))) - 1)*sizeof(double)  );
+        A->N--;
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        iMuL--;
+        iMuR--;
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        goto labelStartSmallerThanMu;
+      }
+      if(PosDef==false)
+      {
+        Bi.VRe = &( A->VRe[ (iMuL-1)*(1+Sqr(A->BlockSize)) + 1] );
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]=AiPos.VRe[k];
+          Bi.VRe[k]+=AiNeg.VRe[k];
+        }
+      }
+      FreeCompactMatrix(&AiPos);
+      FreeCompactMatrix(&AiNeg);
+      // loop over states i from iMuL-1 to 1 and move the negative weigth equal to the left and right
+      // in an internal sub loop move from j=i+1 to j=iMuL-1 and move the weight to i-1 or j+1
+      // as a last step move the negative weight from iMuL to i-1
+      for(i=iMuL-1;i>0;i--)
+      {
+        // move the negative weigth to i-1 and i+1
+        Ai.VRe = &( A->VRe[ (i)*(1+Sqr(A->BlockSize)) + 1] );
+        HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+        if(PosDef==false)
+        {
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]=AiPos.VRe[k];
+          }
+          WL = A->VRe[ (i+1)*(1+Sqr(A->BlockSize))] - A->VRe[ (i)*(1+Sqr(A->BlockSize))];
+          WR = A->VRe[ (i)*(1+Sqr(A->BlockSize))] - A->VRe[ (i-1)*(1+Sqr(A->BlockSize))];
+          if(WR<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+          {
+            WL=1;
+            WR=0;
+          }
+          else if(WL<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+          {
+            WL=0;
+            WR=1;
+          }
+          else
+          {
+            WL = WL / (WL + WR);
+            WR = 1 - WL;
+          }
+          Ai.VRe = &( A->VRe[ (i-1)*(1+Sqr(A->BlockSize)) + 1] );
+          Bi.VRe = &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) + 1] );
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]+=WL*AiNeg.VRe[k];
+            Bi.VRe[k]+=WR*AiNeg.VRe[k];
+          }
+        }
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        // loop from i+1 to iMuL-1
+        for(j=i+1;j<iMuL;j++)
+        { // move negative weith of site j to site i-1 and site j+1
+          Ai.VRe = &( A->VRe[ (j)*(1+Sqr(A->BlockSize)) + 1] );
+          HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+          if(PosDef==false)
+          {
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Ai.VRe[k]=AiPos.VRe[k];
+            }
+            WL = A->VRe[ (j+1)*(1+Sqr(A->BlockSize))] - A->VRe[ (j)*(1+Sqr(A->BlockSize))];
+            WR = A->VRe[ (j)*(1+Sqr(A->BlockSize))] - A->VRe[ (i-1)*(1+Sqr(A->BlockSize))];
+            if(WR<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+            {
+              WL=1;
+              WR=0;
+            }
+            else if(WL<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+            {
+              WL=0;
+              WR=1;
+            }
+            else
+            {
+              WL = WL / (WL + WR);
+              WR = 1 - WL;
+            }
+            Ai.VRe = &( A->VRe[ (i-1)*(1+Sqr(A->BlockSize)) + 1] );
+            Bi.VRe = &( A->VRe[ (j+1)*(1+Sqr(A->BlockSize)) + 1] );
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Ai.VRe[k]+=WL*AiNeg.VRe[k];
+              Bi.VRe[k]+=WR*AiNeg.VRe[k];
+            }
+          }
+          FreeCompactMatrix(&AiPos);
+          FreeCompactMatrix(&AiNeg);
+        }
+        // move negative weith of site iMuL to site i-1
+        Ai.VRe = &( A->VRe[ (iMuL)*(1+Sqr(A->BlockSize)) + 1] );
+        HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+        if(PosDef==false)
+        {
+          Bi.VRe = &( A->VRe[ (i-1)*(1+Sqr(A->BlockSize)) + 1] );
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]=AiPos.VRe[k];
+            Bi.VRe[k]+=AiNeg.VRe[k];
+          }
+        }
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+      }
+      // move from 0 to iMuL-1 and only move weigth up
+      for(i=0;i<iMuL;i++)
+      {
+        Ai.VRe = &( A->VRe[ (i)*(1+Sqr(A->BlockSize)) + 1] );
+        HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+        if(PosDef==false)
+        {
+          Bi.VRe = &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) + 1] );
+          if(NegDef==true)
+          {
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Bi.VRe[k]+=Ai.VRe[k];
+            }
+          }
+          else
+          {
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Ai.VRe[k]=AiPos.VRe[k];
+              Bi.VRe[k]+=AiNeg.VRe[k];
+            }
+          }
+        }
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        if(NegDef==true)
+        {
+          // remove the state
+          memmove(&( A->VRe[ (i)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-i) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+          A->N--;
+          A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+          iMuL--;
+          iMuR--;
+          i--;
+        }
+      }
+      // remove negative weith from state at iMuL and neglect it
+      Ai.VRe = &( A->VRe[ (iMuL)*(1+Sqr(A->BlockSize)) + 1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(PosDef==false)
+      {
+        if(fabs(TrAiNeg)>DBL_EPSILON) printf("\n\n WARNING: Found block list of poles %s with negative spectral weight (%e) below the chemical potential. Negative spectral weight is unphysical, if the weight is small that might be numerics, if the weight is large there is probably an error in your physical model. I tried to move the negative spectral weight to neighbouring poles, but failed as the negative weight is in different subspaces of the matrix. This algorithm can be optimized to find better solutions.\n\n",A->Name,TrAiNeg);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]=AiPos.VRe[k];
+        }
+      }
+      FreeCompactMatrix(&AiPos);
+      FreeCompactMatrix(&AiNeg);
+      if(NegDef==true)
+      {
+        // remove the state
+        memmove(&( A->VRe[ (iMuL)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (iMuL+1)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-iMuL) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+        A->N--;
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        iMuL--;
+        iMuR--;
+        i--;
+      }
+    }
+    // states larger than mu
+    labelStartLargerThanMu:
+    if(iMuR==A->N-1)
+    {
+      Ai.VRe = &( A->VRe[ (A->N-1) * (1+Sqr(A->BlockSize)) + 1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(PosDef==false)
+      {
+        if(fabs(TrAiNeg)>DBL_EPSILON) printf("\n\n WARNING: Found block list of poles %s with negative spectral weight (%e) above the chemical potential. Negative spectral weight is unphysical, if the weight is small that might be numerics, if the weight is large there is probably an error in your physical model. There is only one pole above the chemical potential so I can not move the weight to neighbouring poles. Instead I removed the negative weight, this does not conserve the norm of %s.\n\n",A->Name,TrAiNeg, A->Name);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]=AiPos.VRe[k];
+        }
+      }
+      if(NegDef==true)
+      {
+        // remove the state
+        memmove(&( A->VRe[ (A->N-1) * (1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (A->N) * (1+Sqr(A->BlockSize)) ] ), Sqr(A->BlockSize)*sizeof(double)  );
+        A->N--;
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+      }
+    }
+    else if(iMuR<A->N-1)
+    {
+      // move the negative weigth at iMuR to iMuR+1
+      Ai.VRe = &( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) + 1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(NegDef==true)
+      {
+        Bi.VRe = &( A->VRe[ (iMuR+1)*(1+Sqr(A->BlockSize)) + 1] );
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Bi.VRe[k]+=Ai.VRe[k];
+        }
+        // remove the state
+        memmove(&( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (iMuR+1)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-iMuR) * (1+Sqr(A->BlockSize))) - 1)*sizeof(double)  );
+        A->N--;
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        goto labelStartLargerThanMu;
+      }
+      if(PosDef==false)
+      {
+        Bi.VRe = &( A->VRe[ (iMuR+1)*(1+Sqr(A->BlockSize)) + 1] );
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]=AiPos.VRe[k];
+          Bi.VRe[k]+=AiNeg.VRe[k];
+        }
+      }
+      FreeCompactMatrix(&AiPos);
+      FreeCompactMatrix(&AiNeg);
+      // loop over states i from iMuR+1 to N-2 and move the negative weigth equal to the left and right
+      // in an internal sub loop move from j=i-1 to j=iMuR+1 (down) and move the weight to i+1 or j-1
+      // as a last step move the negative weight from iMuR to i+1
+      for(i=iMuR+1;i<A->N-1;i++)
+      {
+        // move the negative weigth to i-1 and i+1
+        Ai.VRe = &( A->VRe[ (i)*(1+Sqr(A->BlockSize)) + 1] );
+        HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+        if(PosDef==false)
+        {
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]=AiPos.VRe[k];
+          }
+          WL = A->VRe[ (i+1)*(1+Sqr(A->BlockSize))] - A->VRe[ (i)*(1+Sqr(A->BlockSize))];
+          WR = A->VRe[ (i)*(1+Sqr(A->BlockSize))] - A->VRe[ (i-1)*(1+Sqr(A->BlockSize))];
+          if(WR<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+          {
+            WL=1;
+            WR=0;
+          }
+          else if(WL<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+          {
+            WL=0;
+            WR=1;
+          }
+          else
+          {
+            WL = WL / (WL + WR);
+            WR = 1 - WL;
+          }
+          Ai.VRe = &( A->VRe[ (i-1)*(1+Sqr(A->BlockSize)) + 1] );
+          Bi.VRe = &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) + 1] );
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]+=WL*AiNeg.VRe[k];
+            Bi.VRe[k]+=WR*AiNeg.VRe[k];
+          }
+        }
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        // loop from i-1 to iMuR+1
+        for(j=i-1;j>iMuR;j--)
+        { // move negative weith of site j to site i+1 and site j-1
+          Ai.VRe = &( A->VRe[ (j)*(1+Sqr(A->BlockSize)) + 1] );
+          HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+          if(PosDef==false)
+          {
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Ai.VRe[k]=AiPos.VRe[k];
+            }
+            WL = A->VRe[ (i+1)*(1+Sqr(A->BlockSize))] - A->VRe[ (j)*(1+Sqr(A->BlockSize))];
+            WR = A->VRe[ (j)*(1+Sqr(A->BlockSize))] - A->VRe[ (j-1)*(1+Sqr(A->BlockSize))];
+            if(WR<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+            {
+              WL=1;
+              WR=0;
+            }
+            else if(WL<=DBL_EPSILON*(fabs(WL)+fabs(WR)))
+            {
+              WL=0;
+              WR=1;
+            }
+            else
+            {
+              WL = WL / (WL + WR);
+              WR = 1 - WL;
+            }
+            Ai.VRe = &( A->VRe[ (j-1)*(1+Sqr(A->BlockSize)) + 1] );
+            Bi.VRe = &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) + 1] );
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Ai.VRe[k]+=WL*AiNeg.VRe[k];
+              Bi.VRe[k]+=WR*AiNeg.VRe[k];
+            }
+          }
+          FreeCompactMatrix(&AiPos);
+          FreeCompactMatrix(&AiNeg);
+        }
+        // move negative weith of site iMuR to site i+1
+        Ai.VRe = &( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) + 1] );
+        HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+        if(PosDef==false)
+        {
+          Bi.VRe = &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) + 1] );
+          for(k=0;k<Sqr(A->BlockSize);k++)
+          {
+            Ai.VRe[k]=AiPos.VRe[k];
+            Bi.VRe[k]+=AiNeg.VRe[k];
+          }
+        }
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+      }
+      // move from N-1 to iMuR+1 and only move weigth down
+      for(i=A->N-1;i>iMuR;i--)
+      {
+        Ai.VRe = &( A->VRe[ (i)*(1+Sqr(A->BlockSize)) + 1] );
+        HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+        if(PosDef==false)
+        {
+          Bi.VRe = &( A->VRe[ (i-1)*(1+Sqr(A->BlockSize)) + 1] );
+          if(NegDef==true)
+          {
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Bi.VRe[k]+=Ai.VRe[k];
+            }
+          }
+          else
+          {
+            for(k=0;k<Sqr(A->BlockSize);k++)
+            {
+              Ai.VRe[k]=AiPos.VRe[k];
+              Bi.VRe[k]+=AiNeg.VRe[k];
+            }
+          }
+        }
+        FreeCompactMatrix(&AiPos);
+        FreeCompactMatrix(&AiNeg);
+        if(NegDef==true)
+        {
+          // remove the state
+          memmove(&( A->VRe[ (i)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (i+1)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-i) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+          A->N--;
+          A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        }
+      }
+      // remove negative weith from state at iMuR and neglect it
+      Ai.VRe = &( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) + 1] );
+      HermitianCompactMatrixToPosAndNeg(&Ai, &AiPos, &AiNeg, &PosDef, &NegDef, &TrAiNeg);
+      if(PosDef==false)
+      {
+        if(fabs(TrAiNeg)>DBL_EPSILON) printf("\n\n WARNING: Found block list of poles %s with negative spectral weight (%e) above the chemical potential. Negative spectral weight is unphysical, if the weight is small that might be numerics, if the weight is large there is probably an error in your physical model. I tried to move the negative spectral weight to neighbouring poles, but failed as the negative weight is in different subspaces of the matrix. This algorithm can be optimized to find better solutions.\n\n",A->Name,TrAiNeg);
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          Ai.VRe[k]=AiPos.VRe[k];
+        }
+      }
+      FreeCompactMatrix(&AiPos);
+      FreeCompactMatrix(&AiNeg);
+      if(NegDef==true)
+      {
+        // remove the state
+        memmove(&( A->VRe[ (iMuR)*(1+Sqr(A->BlockSize)) ] ), &( A->VRe[ (iMuR+1)*(1+Sqr(A->BlockSize)) ] ), ((  (A->N-iMuR) * (1+Sqr(A->BlockSize)) ) - 1)*sizeof(double)  );
+        A->N--;
+        A->a0Re = A->VRe + A->N * (1+Sqr(A->BlockSize));
+        i--;
+      }
+    }
   }
   else
   { // Complex
     
+    
+    
+    
+    
+    
+    
+    
+    
   }
-  
-  // find iMu
-  iMuL=0;
-  while(iMuL < A->N)
-  {
-    iMuL++;
-  }
-  
-  
   return 0;
 }
 
@@ -1421,14 +2038,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
     }
   }
   // now make A physical
-  
-  
-  
-  
-  
-  
-  
-  
+  MakeBlockListOfPolesPhysical(A);
   return 0;
 }
 

@@ -97,13 +97,13 @@ setmetatable(A0, MatrixMeta)
 a1 = -1/2
 a2 =  1
 
-B1s = {{1,0,0},{0,3,0},{0,0,2}}
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
 setmetatable(B1s, MatrixMeta)
-B1 = B1s * B1s
+B1 = (B1s * B1s)/2
 temp1B = Copy(B1)
-B2s = {{1,0,0},{0,2,1},{0,1,2}}
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
 setmetatable(B2s, MatrixMeta)
-B2 = B2s * B2s
+B2s = (B2s * B2s) / 2
 temp2B = Copy(B2)
 
 MB = { {A0,a1,a2}, {B1,B2}, mu=0, type="ListOfPoles", name="A"}
@@ -127,17 +127,16 @@ MAB = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
 setmetatable(MAB, ResponseFunctionMeta)
 MAB = ResponseFunction.ToUserdata(MAB)
 
-
-
 M = MA-MB
 
-print(ResponseFunction.ToTable(MA))
-print(ResponseFunction.ToTable(MB))
-print(ResponseFunction.ToTable(M))
-print(ResponseFunction.ToTable(MAB))
-
-
-if((M==MAB)~=true) then error("Response function comparison failed\n",1) end
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+------------------------------------------------
 
 
 MA_L = ResponseFunction.ChangeType(MA,"LP")
@@ -174,14 +173,636 @@ for i=1,#MAList do
 		if((M==MAB)~=true) then
 			print("Error at i=",i,"j=",j)
 			print("MA\n",MAList[i])
+			print("MA\n",ResponseFunction.ChangeType(MAList[i],"LP"))
 			print("MB\n",MBList[j])
-			print("M\n",M(0.1,0.1))
-			print("MAB\n",MAB(0.1,0.1))
-			print("MAB\n",M(0.1,0.1)-MAB(0.1,0.1))
+			print("MB\n",ResponseFunction.ChangeType(MBList[j],"LP"))
+			print("M\n",ResponseFunction.ToTable(M))
+			print("MAB\n",ResponseFunction.ToTable(MAB))
 			error("Response function comparison failed\n",1)
 		end
 	end
 end
+
+
+A0 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(A0, MatrixMeta)
+a1 = -1
+a2 = 0
+a3 = 0
+a4 = 2
+a5 = 3
+
+
+Azero = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(Azero, MatrixMeta)
+
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+B4s = {{3,0,3},{0,5,2},{3,2,1}}
+setmetatable(B4s, MatrixMeta)
+B4 = B4s * B4s
+B5s = {{3,0,3},{0,1,2},{3,2,1}}
+setmetatable(B5s, MatrixMeta)
+B5 = B5s * B5s
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1,B2,B3,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MAp = { {A0,a1,a2,a3,a4,a5}, {B1,B2,B3,B4,Azero}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MAp, ResponseFunctionMeta)
+MAp = ResponseFunction.ToUserdata(MAp)
+
+MApp = { {Azero,a5}, {B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MApp, ResponseFunctionMeta)
+MApp = ResponseFunction.ToUserdata(MApp)
+
+M0 = MA - MA
+
+Mzero = { {Azero,0}, {Azero}, mu=0, type="ListOfPoles", name="Mzero"}
+setmetatable(Mzero, ResponseFunctionMeta)
+Mzero = ResponseFunction.ToUserdata(Mzero)
+
+if((M0==Mzero)~=true) then error("Response function comparison failed\n",1) end
+
+M0 = MA - MAp
+
+if((M0==MApp)~=true) then error("Response function comparison failed\n",1) end
+
+
+---- test shifting poles below Mu
+
+Azero = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(Azero, MatrixMeta)
+
+
+A0 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(A0, MatrixMeta)
+a1 = -3
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+B4s = {{3,0,3},{0,5,2},{3,2,1}}
+setmetatable(B4s, MatrixMeta)
+B4 = B4s * B4s
+B5s = {{3,0,3},{0,1,2},{3,2,1}}
+setmetatable(B5s, MatrixMeta)
+B5 = B5s * B5s
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1+B2/2,Azero,B3+B2/2,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,B2,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,B3,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1+(B2/3),Azero,B3+(2*B2/3),B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,B2,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,B3,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {Azero,B2,B3,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {B2,Azero,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,B3,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1,B2,Azero,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,Azero,B2,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,Azero,B1,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1/4,B1/2,B1/4,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,Azero,B1,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1/4,B1/2,B1/4,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {B1,Azero,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+
+a1 = -4
+a2 = -2
+a3 = -1
+a4 = 0
+a5 = 1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1/6,2*B1/6,3*B1/6,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,B1,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+
+
+---- test shifting poles above Mu
+
+Azero = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(Azero, MatrixMeta)
+
+
+A0 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(A0, MatrixMeta)
+a1 = 3
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+B4s = {{3,0,3},{0,5,2},{3,2,1}}
+setmetatable(B4s, MatrixMeta)
+B4 = B4s * B4s
+B5s = {{3,0,3},{0,1,2},{3,2,1}}
+setmetatable(B5s, MatrixMeta)
+B5 = B5s * B5s
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1+B2/2,Azero,B3+B2/2,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,B2,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,B3,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1+(B2/3),Azero,B3+(2*B2/3),B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,B2,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,B3,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {Azero,B2,B3,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {B2,Azero,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,B3,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1,B2,Azero,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,Azero,B2,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,Azero,B1,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1/4,B1/2,B1/4,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,Azero,B1,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1/4,B1/2,B1/4,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {B1,Azero,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+
+a1 = 4
+a2 = 2
+a3 = 1
+a4 = 0
+a5 = -1
+
+MA = { {A0,a1,a2,a3,a4,a5}, {B1/6,2*B1/6,3*B1/6,B4,B5}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA, ResponseFunctionMeta)
+MA = ResponseFunction.ToUserdata(MA)
+
+MB = { {Azero,a1,a2,a3,a4,a5}, {Azero,B1,Azero,Azero,Azero}, mu=0, type="ListOfPoles", name="B"}
+setmetatable(MB, ResponseFunctionMeta)
+MB = ResponseFunction.ToUserdata(MB)
+
+MAB = { {A0,a1,a2,a3,a4,a5}, {Azero,Azero,Azero,B4,B5}, mu=0, type="ListOfPoles", name="AB"}
+setmetatable(MAB, ResponseFunctionMeta)
+MAB = ResponseFunction.ToUserdata(MAB)
+
+M = MA-MB
+
+if((M==MAB)~=true) then
+	print("MA\n",ResponseFunction.ToTable(MA))
+	print("MB\n",ResponseFunction.ToTable(MB))
+	print("M\n",ResponseFunction.ToTable(M))
+	print("MAB\n",ResponseFunction.ToTable(MAB))
+	error("Response function comparison failed\n",1)
+end
+----------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 collectgarbage()

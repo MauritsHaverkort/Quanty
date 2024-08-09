@@ -16,8 +16,11 @@
 #define TimeStampAll() printf("=============================================================\n");\
                        printf("====    written by Maurits W. Haverkort,                 ====\n");\
                        printf("====    Yi Lu, Robert Green, Sebastian Macke,            ====\n");\
-                       printf("====    Marius Retegan, Martin Brass, and Simon Heinze   ====\n");\
-                       printf("====    (cc) 1995 - 2022 code and binaries released      ====\n");\
+                       printf("====    Marius Retegan, Martin Brass, Simon Heinze,      ====\n");\
+                       printf("====    Charles Cardot, Michelangelo Tagliavini,         ====\n");\
+                       printf("====    Sina Shokri, Kai Arnold, Paul Hill,              ====\n");\
+                       printf("====    Kevin Ackermann, Aleksandrs Zacinskis            ====\n");\
+                       printf("====    (cc) 1995 - 2024 code and binaries released      ====\n");\
                        printf("====    under creative commons CC-BY lisence             ====\n");\
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\

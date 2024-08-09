@@ -1029,6 +1029,7 @@ uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A,
 uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G)
 {
   uint32_t i,j;
+  double BandWidth;
   CompactMatrixType Afull, vec;
   if(BlockAndersonMatrixToCompactMatrix(A,&Afull))
   {
@@ -1077,6 +1078,16 @@ uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A
   }
   //
   G->mu=A->mu;
+  // merge degenerate poles
+  if(A->QComplex)
+  {
+    BandWidth = fabs( G->V[(G->N-1) * (1 + Sqr(G->BlockSize) )].Re ) + fabs( G->V[0].Re ) + DBL_EPSILON;
+  }
+  else
+  {
+    BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
+  }
+  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
   return 0;
 }
 uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
@@ -1639,6 +1650,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G)
 {
   uint32_t i,j;
+  double BandWidth;
   CompactMatrixType Afull, vec;
   if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
   {
@@ -1687,6 +1699,16 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   }
   //
   G->mu=A->mu;
+  // merge degenerate poles
+  if(A->QComplex)
+  {
+    BandWidth = fabs( G->V[(G->N-1) * (1 + Sqr(G->BlockSize) )].Re ) + fabs( G->V[0].Re ) + DBL_EPSILON;
+  }
+  else
+  {
+    BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
+  }
+  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
   return 0;
 }
 

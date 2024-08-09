@@ -3239,7 +3239,7 @@ uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const 
  *  split A=Apos+Aneg such that
  *  the eigenvalues of Apos are positive or zero and the eigenvalues of Aneg are positive or negative
  */
-uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, CompactMatrixType * const Apos, CompactMatrixType * const Aneg, bool PosDefinite, bool NegDefinite)
+uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, CompactMatrixType * const Apos, CompactMatrixType * const Aneg, bool *PosDefinite, bool *NegDefinite, double *NegWeight)
 {
   int i,ipos,ineg,izero;
   double *val,*valpos,*valneg;
@@ -3256,12 +3256,14 @@ uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, Co
   ipos=0;
   ineg=0;
   izero=0;
+  *NegWeight=0;
   for(i=0;i<A->Ni;i++)
   {
     if(val[i]<0)
     {
       valpos[i]=0;
       valneg[i]=val[i];
+      *NegWeight+=val[i];
       ineg++;
     }
     else if(val[i]>0)
@@ -3277,18 +3279,18 @@ uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, Co
       izero++;
     }
   }
-  PosDefinite=false;
-  NegDefinite=false;
-  if(izero+ipos==A->Ni)
-  {
-    PosDefinite=true;
-  }
+  *PosDefinite=false;
+  *NegDefinite=false;
   if(izero+ineg==A->Ni)
   {
-    NegDefinite=true;
+    *NegDefinite=true;
   }
-  TransformDiagonalMatrixByCompactMatrixTconATtran(valpos, &fun, Apos);
-  TransformDiagonalMatrixByCompactMatrixTconATtran(valneg, &fun, Aneg);
+  else if(izero+ipos==A->Ni)
+  {
+    *PosDefinite=true;
+  }
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(valpos, &fun, Apos);
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(valneg, &fun, Aneg);
   FreeCompactMatrix(&fun);
   free(val);
   free(valpos);

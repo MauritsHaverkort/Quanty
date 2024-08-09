@@ -2527,7 +2527,7 @@ static int LuaCreateSpectra(lua_State *L)
           LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
         }
         else
-        {	
+        {
           LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
