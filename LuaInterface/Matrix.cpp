@@ -1838,6 +1838,22 @@ static int LuaMatrixLen(lua_State * L)
 	return 1;
 }
 
+static int LauMatrixNew(lua_State *L)
+{
+  CompactMatrixType *A,*B;
+  if(lua_istable(L, 1)==0)
+  {
+    luaL_error(L, "Error NewMatrix expect as input a table");
+  }
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  A->OnLuaStack=true;
+  B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  *B = *A;
+  free(A);
+  return 1;
+}
+
 
 static const struct luaL_Reg Matrix_func[] = {
 	{"AddSpin", LuaMatrixAddSpin},
@@ -1850,6 +1866,7 @@ static const struct luaL_Reg Matrix_func[] = {
 	{"Flatten",LuaMatrixFlatten},
   {"Identity", LuaMatrixIdentity},
   {"Inverse", LuaMatrixInverse},
+  {"New", LauMatrixNew},
   {"Random", LuaMatrixRandom},
   {"RemoveSpin", LuaRemoveSpin},
   {"Rotate", LuaMatrixRotate},

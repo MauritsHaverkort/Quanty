@@ -3829,7 +3829,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
   int i,j,k,apos,bposL,bposR;
   B->QComplex=A->QComplex;
   B->Ni=(Max(1,A->val.N)+Max(1,A->con.N))*A->BlockSize;
-  B->Nj=(A->val.N+A->con.N)*A->BlockSize;
+  B->Nj=(Max(1,A->val.N)+Max(1,A->con.N))*A->BlockSize;
   if(InitCompactMatrix(B))
   {
     printf("InitCompactMatrix failed in BlockNaturalImpurityOrbitalMatrixToCompactMatrix\n");

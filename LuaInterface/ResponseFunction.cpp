@@ -155,7 +155,7 @@ static int LuaResponseFunctionToUserdata(lua_State *L)
     FreeResponsefunction(&Mout);
     FreeResponsefunction(Min);
   }
-  else // upercase change to lower and push a table to the stack
+  else // upercase change to lower and push a pointer to the stack
   {
     Min->type+=32;
     LuaPush_ResponseFunction(L, Min);
@@ -2275,8 +2275,26 @@ static int LuaResponseFunctionDestroy(lua_State * L)
   return 0;
 }
 
+/* on stack a table
+ *
+ */
+static int LuaResponseFunctionNew(lua_State *L)
+{
+  ResponsefunctionType *A;
+  if(lua_istable(L, 1)==0)
+  {
+    luaL_error(L, "Error NewResponseFunction expect as input a table");
+  }
+  A = luaL_checkResponsefunction(L,1);
+  A->type+=32;
+  LuaPush_ResponseFunction(L, A);
+  FreeResponsefunction(A);
+  return 1;
+}
+
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
+  {"New", LuaResponseFunctionNew},
   {"ReducePoles", LuaReducePolesResponseFunction},
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},

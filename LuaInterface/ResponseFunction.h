@@ -20,3 +20,4 @@ static int LuaResponseFunctionMode(lua_State * L);
 static int LuaResponseFunctionCall(lua_State * L);
 static int LuaResponseFunctionToString(lua_State * L);
 static int LuaResponseFunctionDestroy(lua_State * L);
+static int LuaResponseFunctionNew(lua_State *L);

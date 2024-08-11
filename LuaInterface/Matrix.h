@@ -29,3 +29,4 @@ static int LuaMatrixExpand(lua_State * L);
 static int LuaSubmatrix(lua_State * L);
 static int LuaMatrixEq(lua_State * L);
 static int LuaMatrixLen(lua_State * L);
+static int LauMatrixNew(lua_State *L);

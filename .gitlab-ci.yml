@@ -115,3 +115,24 @@ test-job-Responsefunction-call:
   - ./Quanty.exe "TestScripts/Responsefunction/__call.Quanty"
   dependencies:
   - build-job
+  
+
+
+
+
+
+test-job-Responsefunction-ChangeType:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/ChangeType.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-ToMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/ToMatrix.Quanty"
+  dependencies:
+  - build-job

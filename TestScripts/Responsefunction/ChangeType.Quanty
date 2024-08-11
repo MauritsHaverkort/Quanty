@@ -3,6 +3,1232 @@ print("-- Responsefunction ChangeType                        --")
 print("--------------------------------------------------------")
 
 
+print("--------------------------------------------------------")
+print("-------- Single valued functions -----------------------")
+print("--------------------------------------------------------")
+
+----- definitions
+
+a = {10, -1,-0.5, 0,   0.5,  1,  1.5}
+b = {  0.1, 0.1, 0.1, 0.1, 0.2, 0.3}
+GA_L = {a,b,mu=0,type="ListOfPoles", name="A"}
+setmetatable(GA_L, ResponseFunctionMeta)
+
+a = {0, 1,   1,   1,   1,   1,  1}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+GB_T = {a,b,mu=0,type="Tri", name="B"}
+setmetatable(GB_T, ResponseFunctionMeta)
+
+a = {0, 1, 1.5,   2, 2.5,   3, 3.5}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+GC_A = {a,b,mu=0,type="And", name="C"}
+setmetatable(GC_A, ResponseFunctionMeta)
+
+acon = {0,         1,   1,   1,   1,   1,  1}
+bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gcon = {acon,bcon,mu=0,type="Tri"}
+setmetatable(Gcon, ResponseFunctionMeta)
+aval = {0,        -1,  -1,  -1,  -1,  -1, -1}
+bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gval = {aval,bval,mu=0,type="Tri"}
+setmetatable(Gval, ResponseFunctionMeta)
+a0=0
+b0=1
+GD_N = {{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="D"}
+setmetatable(GD_N, ResponseFunctionMeta)
+
+--- to userdata
+
+GA_l = ResponseFunction.ToUserdata(GA_L)
+GB_t = ResponseFunction.ToUserdata(GB_T)
+GC_a = ResponseFunction.ToUserdata(GC_A)
+GD_n = ResponseFunction.ToUserdata(GD_N)
+
+----- change type
+
+-- GA
+GA_T = ResponseFunction.ChangeType(GA_L,"Tri")
+GA_A = ResponseFunction.ChangeType(GA_L,"And")
+GA_N = ResponseFunction.ChangeType(GA_L,"Nat")
+GA_D = ResponseFunction.ChangeType(GA_L,"Dense")
+GA_U = ResponseFunction.ChangeType(GA_L,"Userdata")
+GA_B = ResponseFunction.ChangeType(GA_L,"Table")
+
+GA_TL = ResponseFunction.ChangeType(GA_T,"LP")
+GA_AL = ResponseFunction.ChangeType(GA_A,"LP")
+GA_NL = ResponseFunction.ChangeType(GA_N,"LP")
+GA_UL = ResponseFunction.ChangeType(GA_U,"LP")
+GA_BL = ResponseFunction.ChangeType(GA_B,"LP")
+
+--GB
+GB_L = ResponseFunction.ChangeType(GB_T,"LP")
+GB_A = ResponseFunction.ChangeType(GB_T,"And")
+GB_N = ResponseFunction.ChangeType(GB_T,"Nat")
+GB_D = ResponseFunction.ChangeType(GB_T,"Dense")
+GB_U = ResponseFunction.ChangeType(GB_T,"Userdata")
+GB_B = ResponseFunction.ChangeType(GB_T,"Table")
+
+GB_LT = ResponseFunction.ChangeType(GB_L,"Tri")
+GB_AT = ResponseFunction.ChangeType(GB_A,"Tri")
+GB_NT = ResponseFunction.ChangeType(GB_N,"Tri")
+GB_UT = ResponseFunction.ChangeType(GB_U,"Tri")
+GB_BT = ResponseFunction.ChangeType(GB_B,"Tri")
+
+--GC
+GC_L = ResponseFunction.ChangeType(GC_A,"LP")
+GC_T = ResponseFunction.ChangeType(GC_A,"Tri")
+GC_N = ResponseFunction.ChangeType(GC_A,"Nat")
+GC_D = ResponseFunction.ChangeType(GC_A,"Dense")
+GC_U = ResponseFunction.ChangeType(GC_A,"Userdata")
+GC_B = ResponseFunction.ChangeType(GC_A,"Table")
+
+GC_LA = ResponseFunction.ChangeType(GC_L,"And")
+GC_TA = ResponseFunction.ChangeType(GC_T,"And")
+GC_NA = ResponseFunction.ChangeType(GC_N,"And")
+GC_UA = ResponseFunction.ChangeType(GC_U,"And")
+GC_BA = ResponseFunction.ChangeType(GC_B,"And")
+
+--GD
+GD_L = ResponseFunction.ChangeType(GD_N,"LP")
+GD_T = ResponseFunction.ChangeType(GD_N,"Tri")
+GD_A = ResponseFunction.ChangeType(GD_N,"And")
+GD_D = ResponseFunction.ChangeType(GD_N,"Dense")
+GD_U = ResponseFunction.ChangeType(GD_N,"Userdata")
+GD_B = ResponseFunction.ChangeType(GD_N,"Table")
+
+GD_LN = ResponseFunction.ChangeType(GD_L,"Nat")
+GD_TN = ResponseFunction.ChangeType(GD_T,"Nat")
+GD_AN = ResponseFunction.ChangeType(GD_A,"Nat")
+GD_UN = ResponseFunction.ChangeType(GD_U,"Nat")
+GD_BN = ResponseFunction.ChangeType(GD_B,"Nat")
+
+-- GA
+GA_t = ResponseFunction.ChangeType(GA_l,"Tri")
+GA_a = ResponseFunction.ChangeType(GA_l,"And")
+GA_n = ResponseFunction.ChangeType(GA_l,"Nat")
+GA_d = ResponseFunction.ChangeType(GA_l,"Dense")
+GA_u = ResponseFunction.ChangeType(GA_l,"Userdata")
+GA_b = ResponseFunction.ChangeType(GA_l,"Table")
+
+GA_tl = ResponseFunction.ChangeType(GA_t,"LP")
+GA_al = ResponseFunction.ChangeType(GA_a,"LP")
+GA_nl = ResponseFunction.ChangeType(GA_n,"LP")
+GA_ul = ResponseFunction.ChangeType(GA_u,"LP")
+GA_bl = ResponseFunction.ChangeType(GA_b,"LP")
+
+--GB
+GB_l = ResponseFunction.ChangeType(GB_t,"LP")
+GB_a = ResponseFunction.ChangeType(GB_t,"And")
+GB_n = ResponseFunction.ChangeType(GB_t,"Nat")
+GB_d = ResponseFunction.ChangeType(GB_t,"Dense")
+GB_u = ResponseFunction.ChangeType(GB_t,"Userdata")
+GB_b = ResponseFunction.ChangeType(GB_t,"Table")
+
+GB_lt = ResponseFunction.ChangeType(GB_l,"Tri")
+GB_at = ResponseFunction.ChangeType(GB_a,"Tri")
+GB_nt = ResponseFunction.ChangeType(GB_n,"Tri")
+GB_ut = ResponseFunction.ChangeType(GB_u,"Tri")
+GB_bt = ResponseFunction.ChangeType(GB_b,"Tri")
+
+--GC
+GC_l = ResponseFunction.ChangeType(GC_a,"LP")
+GC_t = ResponseFunction.ChangeType(GC_a,"Tri")
+GC_n = ResponseFunction.ChangeType(GC_a,"Nat")
+GC_d = ResponseFunction.ChangeType(GC_a,"Dense")
+GC_u = ResponseFunction.ChangeType(GC_a,"Userdata")
+GC_b = ResponseFunction.ChangeType(GC_a,"Table")
+
+GC_la = ResponseFunction.ChangeType(GC_l,"And")
+GC_ta = ResponseFunction.ChangeType(GC_t,"And")
+GC_na = ResponseFunction.ChangeType(GC_n,"And")
+GC_ua = ResponseFunction.ChangeType(GC_u,"And")
+GC_ba = ResponseFunction.ChangeType(GC_b,"And")
+
+--GD
+GD_l = ResponseFunction.ChangeType(GD_n,"LP")
+GD_t = ResponseFunction.ChangeType(GD_n,"Tri")
+GD_a = ResponseFunction.ChangeType(GD_n,"And")
+GD_d = ResponseFunction.ChangeType(GD_n,"Dense")
+GD_u = ResponseFunction.ChangeType(GD_n,"Userdata")
+GD_b = ResponseFunction.ChangeType(GD_n,"Table")
+
+GD_ln = ResponseFunction.ChangeType(GD_l,"Nat")
+GD_tn = ResponseFunction.ChangeType(GD_t,"Nat")
+GD_an = ResponseFunction.ChangeType(GD_a,"Nat")
+GD_un = ResponseFunction.ChangeType(GD_u,"Nat")
+GD_bn = ResponseFunction.ChangeType(GD_b,"Nat")
+
+----- test equality
+
+GList = {GA_T,GA_A,GA_N,GA_U,GA_B,GA_TL,GA_AL,GA_NL,GA_UL,GA_BL, GA_t,GA_a,GA_n,GA_u,GA_b,GA_tl,GA_al,GA_nl,GA_ul,GA_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("GA",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+GA_T=nil
+GA_A=nil
+GA_N=nil
+GA_U=nil
+GA_B=nil
+GA_TL=nil
+GA_AL=nil
+GA_NL=nil
+GA_UL=nil
+GA_BL=nil
+GA_t=nil
+GA_a=nil
+GA_n=nil
+GA_u=nil
+GA_b=nil
+GA_tl=nil
+GA_al=nil
+GA_nl=nil
+GA_ul=nil
+GA_bl=nil
+
+collectgarbage()
+
+GList = {GB_T,GB_A,GB_N,GB_U,GB_B,GB_TL,GB_AL,GB_NL,GB_UL,GB_BL, GB_t,GB_a,GB_n,GB_u,GB_b,GB_tl,GB_al,GB_nl,GB_ul,GB_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("GB",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+GB_T=nil
+GB_A=nil
+GB_N=nil
+GB_U=nil
+GB_B=nil
+GB_TL=nil
+GB_AL=nil
+GB_NL=nil
+GB_UL=nil
+GB_BL=nil
+GB_t=nil
+GB_a=nil
+GB_n=nil
+GB_u=nil
+GB_b=nil
+GB_tl=nil
+GB_al=nil
+GB_nl=nil
+GB_ul=nil
+GB_bl=nil
+
+collectgarbage()
+
+GList = {GC_T,GC_A,GC_N,GC_U,GC_B,GC_TL,GC_AL,GC_NL,GC_UL,GC_BL, GC_t,GC_a,GC_n,GC_u,GC_b,GC_tl,GC_al,GC_nl,GC_ul,GC_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("GC",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+GC_T=nil
+GC_A=nil
+GC_N=nil
+GC_U=nil
+GC_B=nil
+GC_TL=nil
+GC_AL=nil
+GC_NL=nil
+GC_UL=nil
+GC_BL=nil
+GC_t=nil
+GC_a=nil
+GC_n=nil
+GC_u=nil
+GC_b=nil
+GC_tl=nil
+GC_al=nil
+GC_nl=nil
+GC_ul=nil
+GC_bl=nil
+
+collectgarbage()
+
+GList = {GD_T,GD_A,GD_N,GD_U,GD_B,GD_TL,GD_AL,GD_NL,GD_UL,GD_BL, GD_t,GD_a,GD_n,GD_u,GD_b,GD_tl,GD_al,GD_nl,GD_ul,GD_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("GD",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+GD_T=nil
+GD_A=nil
+GD_N=nil
+GD_U=nil
+GD_B=nil
+GD_TL=nil
+GD_AL=nil
+GD_NL=nil
+GD_UL=nil
+GD_BL=nil
+GD_t=nil
+GD_a=nil
+GD_n=nil
+GD_u=nil
+GD_b=nil
+GD_tl=nil
+GD_al=nil
+GD_nl=nil
+GD_ul=nil
+GD_bl=nil
+
+collectgarbage()
+print("--------------------------------------------------------")
+print("--              Type conversion matrix                --")
+print("--------------------------------------------------------")
+
+----- definitions
+
+A0 = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(A0, MatrixMeta)
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+setmetatable(A1, MatrixMeta)
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+setmetatable(A2, MatrixMeta)
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+setmetatable(A3, MatrixMeta)
+a1 = -1
+a2 = 1/2
+a3 = 1
+av1 = -0.5
+av2 = -1.0
+av3 = -1.5
+ac1 = 0.5
+ac2 = 1.0
+ac3 = 1.5
+B0s = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(B0s, MatrixMeta)
+t=sqrt(0.5)
+B0vs = {{t,0,0},{0,t,0},{0,0,t}}
+setmetatable(B0vs, MatrixMeta)
+B0cs = {{t,0,0},{0,t,0},{0,0,t}}
+setmetatable(B0cs, MatrixMeta)
+B0 = B0s * B0s
+B0v = B0vs * B0vs
+B0c = B0cs * B0cs
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+
+MA_L = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA_L, ResponseFunctionMeta)
+
+MB_T = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="B"}
+setmetatable(MB_T, ResponseFunctionMeta)
+
+MC_A = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="C"}
+setmetatable(MC_A, ResponseFunctionMeta)
+
+MD_Nv = { {A0,av1,av2,av3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Dv"}
+setmetatable(MD_Nv, ResponseFunctionMeta)
+
+MD_Nc = { {A0,ac1,ac2,ac3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Dc"}
+setmetatable(MD_Nc, ResponseFunctionMeta)
+
+MD_N = {{A0,B0},val=MD_Nv,con=MD_Nc,mu=0,type="Nat", name="D"}
+setmetatable(MD_N, ResponseFunctionMeta)
+
+--- to userdata
+
+MA_l = ResponseFunction.ToUserdata(MA_L)
+MB_t = ResponseFunction.ToUserdata(MB_T)
+MC_a = ResponseFunction.ToUserdata(MC_A)
+MD_n = ResponseFunction.ToUserdata(MD_N)
+
+----- change type
+
+-- MA
+MA_T = ResponseFunction.ChangeType(MA_L,"Tri")
+MA_A = ResponseFunction.ChangeType(MA_L,"And")
+MA_N = ResponseFunction.ChangeType(MA_L,"Nat")
+MA_D = ResponseFunction.ChangeType(MA_L,"Dense")
+MA_U = ResponseFunction.ChangeType(MA_L,"Userdata")
+MA_B = ResponseFunction.ChangeType(MA_L,"Table")
+
+MA_TL = ResponseFunction.ChangeType(MA_T,"LP")
+MA_AL = ResponseFunction.ChangeType(MA_A,"LP")
+MA_NL = ResponseFunction.ChangeType(MA_N,"LP")
+MA_UL = ResponseFunction.ChangeType(MA_U,"LP")
+MA_BL = ResponseFunction.ChangeType(MA_B,"LP")
+
+-- MB
+MB_T = ResponseFunction.ChangeType(MB_T,"Tri")
+MB_A = ResponseFunction.ChangeType(MB_T,"And")
+MB_N = ResponseFunction.ChangeType(MB_T,"Nat")
+MB_D = ResponseFunction.ChangeType(MB_T,"Dense")
+MB_U = ResponseFunction.ChangeType(MB_T,"Userdata")
+MB_B = ResponseFunction.ChangeType(MB_T,"Table")
+
+MB_TL = ResponseFunction.ChangeType(MB_T,"LP")
+MB_AL = ResponseFunction.ChangeType(MB_A,"LP")
+MB_NL = ResponseFunction.ChangeType(MB_N,"LP")
+MB_UL = ResponseFunction.ChangeType(MB_U,"LP")
+MB_BL = ResponseFunction.ChangeType(MB_B,"LP")
+
+-- MC
+MC_T = ResponseFunction.ChangeType(MC_A,"Tri")
+MC_A = ResponseFunction.ChangeType(MC_A,"And")
+MC_N = ResponseFunction.ChangeType(MC_A,"Nat")
+MC_D = ResponseFunction.ChangeType(MC_A,"Dense")
+MC_U = ResponseFunction.ChangeType(MC_A,"Userdata")
+MC_B = ResponseFunction.ChangeType(MC_A,"Table")
+
+MC_TL = ResponseFunction.ChangeType(MC_T,"LP")
+MC_AL = ResponseFunction.ChangeType(MC_A,"LP")
+MC_NL = ResponseFunction.ChangeType(MC_N,"LP")
+MC_UL = ResponseFunction.ChangeType(MC_U,"LP")
+MC_BL = ResponseFunction.ChangeType(MC_B,"LP")
+
+
+-- MD
+MD_T = ResponseFunction.ChangeType(MD_N,"Tri")
+MD_A = ResponseFunction.ChangeType(MD_N,"And")
+MD_N = ResponseFunction.ChangeType(MD_N,"Nat")
+MD_D = ResponseFunction.ChangeType(MD_N,"Dense")
+MD_U = ResponseFunction.ChangeType(MD_N,"Userdata")
+MD_B = ResponseFunction.ChangeType(MD_N,"Table")
+
+MD_TL = ResponseFunction.ChangeType(MD_T,"LP")
+MD_AL = ResponseFunction.ChangeType(MD_A,"LP")
+MD_NL = ResponseFunction.ChangeType(MD_N,"LP")
+MD_UL = ResponseFunction.ChangeType(MD_U,"LP")
+MD_BL = ResponseFunction.ChangeType(MD_B,"LP")
+
+
+-- MA
+MA_t = ResponseFunction.ChangeType(MA_l,"Tri")
+MA_a = ResponseFunction.ChangeType(MA_l,"And")
+MA_n = ResponseFunction.ChangeType(MA_l,"Nat")
+MA_d = ResponseFunction.ChangeType(MA_l,"Dense")
+MA_u = ResponseFunction.ChangeType(MA_l,"Userdata")
+MA_b = ResponseFunction.ChangeType(MA_l,"Table")
+
+MA_tl = ResponseFunction.ChangeType(MA_t,"LP")
+MA_al = ResponseFunction.ChangeType(MA_a,"LP")
+MA_nl = ResponseFunction.ChangeType(MA_n,"LP")
+MA_ul = ResponseFunction.ChangeType(MA_u,"LP")
+MA_bl = ResponseFunction.ChangeType(MA_b,"LP")
+
+-- MB
+MB_t = ResponseFunction.ChangeType(MB_t,"Tri")
+MB_a = ResponseFunction.ChangeType(MB_t,"And")
+MB_n = ResponseFunction.ChangeType(MB_t,"Nat")
+MB_d = ResponseFunction.ChangeType(MB_t,"Dense")
+MB_u = ResponseFunction.ChangeType(MB_t,"Userdata")
+MB_b = ResponseFunction.ChangeType(MB_t,"Table")
+
+MB_tl = ResponseFunction.ChangeType(MB_t,"LP")
+MB_al = ResponseFunction.ChangeType(MB_a,"LP")
+MB_nl = ResponseFunction.ChangeType(MB_n,"LP")
+MB_ul = ResponseFunction.ChangeType(MB_u,"LP")
+MB_bl = ResponseFunction.ChangeType(MB_b,"LP")
+
+-- MC
+MC_t = ResponseFunction.ChangeType(MC_a,"Tri")
+MC_a = ResponseFunction.ChangeType(MC_a,"And")
+MC_n = ResponseFunction.ChangeType(MC_a,"Nat")
+MC_d = ResponseFunction.ChangeType(MC_a,"Dense")
+MC_u = ResponseFunction.ChangeType(MC_a,"Userdata")
+MC_b = ResponseFunction.ChangeType(MC_a,"Table")
+
+MC_tl = ResponseFunction.ChangeType(MC_t,"LP")
+MC_al = ResponseFunction.ChangeType(MC_a,"LP")
+MC_nl = ResponseFunction.ChangeType(MC_n,"LP")
+MC_ul = ResponseFunction.ChangeType(MC_u,"LP")
+MC_bl = ResponseFunction.ChangeType(MC_b,"LP")
+
+
+-- MD
+MD_t = ResponseFunction.ChangeType(MD_n,"Tri")
+MD_a = ResponseFunction.ChangeType(MD_n,"And")
+MD_n = ResponseFunction.ChangeType(MD_n,"Nat")
+MD_d = ResponseFunction.ChangeType(MD_n,"Dense")
+MD_u = ResponseFunction.ChangeType(MD_n,"Userdata")
+MD_b = ResponseFunction.ChangeType(MD_n,"Table")
+
+MD_tl = ResponseFunction.ChangeType(MD_t,"LP")
+MD_al = ResponseFunction.ChangeType(MD_a,"LP")
+MD_nl = ResponseFunction.ChangeType(MD_n,"LP")
+MD_ul = ResponseFunction.ChangeType(MD_u,"LP")
+MD_bl = ResponseFunction.ChangeType(MD_b,"LP")
+
+
+----- test equality
+
+GList = {MA_T,MA_A,MA_N,MA_U,MA_B,MA_TL,MA_AL,MA_NL,MA_UL,MA_BL, MA_t,MA_a,MA_n,MA_u,MA_b,MA_tl,MA_al,MA_nl,MA_ul,MA_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MA",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MA_T=nil
+MA_A=nil
+MA_N=nil
+MA_U=nil
+MA_B=nil
+MA_TL=nil
+MA_AL=nil
+MA_NL=nil
+MA_UL=nil
+MA_BL=nil
+MA_t=nil
+MA_a=nil
+MA_n=nil
+MA_u=nil
+MA_b=nil
+MA_tl=nil
+MA_al=nil
+MA_nl=nil
+MA_ul=nil
+MA_bl=nil
+
+collectgarbage()
+
+GList = {MB_T,MB_A,MB_N,MB_U,MB_B,MB_TL,MB_AL,MB_NL,MB_UL,MB_BL, MB_t,MB_a,MB_n,MB_u,MB_b,MB_tl,MB_al,MB_nl,MB_ul,MB_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MB",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MB_T=nil
+MB_A=nil
+MB_N=nil
+MB_U=nil
+MB_B=nil
+MB_TL=nil
+MB_AL=nil
+MB_NL=nil
+MB_UL=nil
+MB_BL=nil
+MB_t=nil
+MB_a=nil
+MB_n=nil
+MB_u=nil
+MB_b=nil
+MB_tl=nil
+MB_al=nil
+MB_nl=nil
+MB_ul=nil
+MB_bl=nil
+
+collectgarbage()
+
+GList = {MC_T,MC_A,MC_N,MC_U,MC_B,MC_TL,MC_AL,MC_NL,MC_UL,MC_BL, MC_t,MC_a,MC_n,MC_u,MC_b,MC_tl,MC_al,MC_nl,MC_ul,MC_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MC",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MC_T=nil
+MC_A=nil
+MC_N=nil
+MC_U=nil
+MC_B=nil
+MC_TL=nil
+MC_AL=nil
+MC_NL=nil
+MC_UL=nil
+MC_BL=nil
+MC_t=nil
+MC_a=nil
+MC_n=nil
+MC_u=nil
+MC_b=nil
+MC_tl=nil
+MC_al=nil
+MC_nl=nil
+MC_ul=nil
+MC_bl=nil
+
+collectgarbage()
+
+GList = {MD_T,MD_A,MD_N,MD_U,MD_B,MD_TL,MD_AL,MD_NL,MD_UL,MD_BL, MD_t,MD_a,MD_n,MD_u,MD_b,MD_tl,MD_al,MD_nl,MD_ul,MD_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MD",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MD_T=nil
+MD_A=nil
+MD_N=nil
+MD_U=nil
+MD_B=nil
+MD_TL=nil
+MD_AL=nil
+MD_NL=nil
+MD_UL=nil
+MD_BL=nil
+MD_t=nil
+MD_a=nil
+MD_n=nil
+MD_u=nil
+MD_b=nil
+MD_tl=nil
+MD_al=nil
+MD_nl=nil
+MD_ul=nil
+MD_bl=nil
+
+collectgarbage()
+
+
+print("--------------------------------------------------------")
+print("--         Type conversion complex matrix             --")
+print("--------------------------------------------------------")
+
+
+----- definitions
+
+A0 = {{1,I,0},{-I,1,0},{0,0,0}}
+setmetatable(A0, MatrixMeta)
+A1 = {{1,2,3},{2,5,6},{3,6,9}}
+setmetatable(A1, MatrixMeta)
+A2 = {{2,2,3},{2,5,6},{3,6,9}}
+setmetatable(A2, MatrixMeta)
+A3 = {{3,2,3},{2,5,6},{3,6,9}}
+setmetatable(A3, MatrixMeta)
+a1 = -1
+a2 = 1/2
+a3 = 1
+av1 = -0.5
+av2 = -1.0
+av3 = -1.5
+ac1 = 0.5
+ac2 = 1.0
+ac3 = 1.5
+B0s = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(B0s, MatrixMeta)
+t=sqrt(0.5)
+B0vs = {{t,0,0},{0,t,0},{0,0,t}}
+setmetatable(B0vs, MatrixMeta)
+B0cs = {{t,0,0},{0,t,0},{0,0,t}}
+setmetatable(B0cs, MatrixMeta)
+B0 = B0s * B0s
+B0v = B0vs * B0vs
+B0c = B0cs * B0cs
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+
+MA_L = { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="A"}
+setmetatable(MA_L, ResponseFunctionMeta)
+
+MB_T = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="B"}
+setmetatable(MB_T, ResponseFunctionMeta)
+
+MC_A = { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="C"}
+setmetatable(MC_A, ResponseFunctionMeta)
+
+MD_Nv = { {A0,av1,av2,av3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Dv"}
+setmetatable(MD_Nv, ResponseFunctionMeta)
+
+MD_Nc = { {A0,ac1,ac2,ac3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Dc"}
+setmetatable(MD_Nc, ResponseFunctionMeta)
+
+MD_N = {{A0,B0},val=MD_Nv,con=MD_Nc,mu=0,type="Nat", name="D"}
+setmetatable(MD_N, ResponseFunctionMeta)
+
+--- to userdata
+
+MA_l = ResponseFunction.ToUserdata(MA_L)
+MB_t = ResponseFunction.ToUserdata(MB_T)
+MC_a = ResponseFunction.ToUserdata(MC_A)
+MD_n = ResponseFunction.ToUserdata(MD_N)
+
+----- change type
+
+-- MA
+MA_T = ResponseFunction.ChangeType(MA_L,"Tri")
+MA_A = ResponseFunction.ChangeType(MA_L,"And")
+MA_N = ResponseFunction.ChangeType(MA_L,"Nat")
+MA_D = ResponseFunction.ChangeType(MA_L,"Dense")
+MA_U = ResponseFunction.ChangeType(MA_L,"Userdata")
+MA_B = ResponseFunction.ChangeType(MA_L,"Table")
+
+MA_TL = ResponseFunction.ChangeType(MA_T,"LP")
+MA_AL = ResponseFunction.ChangeType(MA_A,"LP")
+MA_NL = ResponseFunction.ChangeType(MA_N,"LP")
+MA_UL = ResponseFunction.ChangeType(MA_U,"LP")
+MA_BL = ResponseFunction.ChangeType(MA_B,"LP")
+
+-- MB
+MB_T = ResponseFunction.ChangeType(MB_T,"Tri")
+MB_A = ResponseFunction.ChangeType(MB_T,"And")
+MB_N = ResponseFunction.ChangeType(MB_T,"Nat")
+MB_D = ResponseFunction.ChangeType(MB_T,"Dense")
+MB_U = ResponseFunction.ChangeType(MB_T,"Userdata")
+MB_B = ResponseFunction.ChangeType(MB_T,"Table")
+
+MB_TL = ResponseFunction.ChangeType(MB_T,"LP")
+MB_AL = ResponseFunction.ChangeType(MB_A,"LP")
+MB_NL = ResponseFunction.ChangeType(MB_N,"LP")
+MB_UL = ResponseFunction.ChangeType(MB_U,"LP")
+MB_BL = ResponseFunction.ChangeType(MB_B,"LP")
+
+-- MC
+MC_T = ResponseFunction.ChangeType(MC_A,"Tri")
+MC_A = ResponseFunction.ChangeType(MC_A,"And")
+MC_N = ResponseFunction.ChangeType(MC_A,"Nat")
+MC_D = ResponseFunction.ChangeType(MC_A,"Dense")
+MC_U = ResponseFunction.ChangeType(MC_A,"Userdata")
+MC_B = ResponseFunction.ChangeType(MC_A,"Table")
+
+MC_TL = ResponseFunction.ChangeType(MC_T,"LP")
+MC_AL = ResponseFunction.ChangeType(MC_A,"LP")
+MC_NL = ResponseFunction.ChangeType(MC_N,"LP")
+MC_UL = ResponseFunction.ChangeType(MC_U,"LP")
+MC_BL = ResponseFunction.ChangeType(MC_B,"LP")
+
+
+-- MD
+MD_T = ResponseFunction.ChangeType(MD_N,"Tri")
+MD_A = ResponseFunction.ChangeType(MD_N,"And")
+MD_N = ResponseFunction.ChangeType(MD_N,"Nat")
+print("Hello")
+--MD_D = ResponseFunction.ChangeType(MD_N,"Dense")
+print("Hello")
+MD_U = ResponseFunction.ChangeType(MD_N,"Userdata")
+print("Hello")
+MD_B = ResponseFunction.ChangeType(MD_N,"Table")
+print("Hello")
+
+MD_TL = ResponseFunction.ChangeType(MD_T,"LP")
+MD_AL = ResponseFunction.ChangeType(MD_A,"LP")
+MD_NL = ResponseFunction.ChangeType(MD_N,"LP")
+MD_UL = ResponseFunction.ChangeType(MD_U,"LP")
+MD_BL = ResponseFunction.ChangeType(MD_B,"LP")
+
+
+-- MA
+MA_t = ResponseFunction.ChangeType(MA_l,"Tri")
+MA_a = ResponseFunction.ChangeType(MA_l,"And")
+MA_n = ResponseFunction.ChangeType(MA_l,"Nat")
+MA_d = ResponseFunction.ChangeType(MA_l,"Dense")
+MA_u = ResponseFunction.ChangeType(MA_l,"Userdata")
+MA_b = ResponseFunction.ChangeType(MA_l,"Table")
+
+MA_tl = ResponseFunction.ChangeType(MA_t,"LP")
+MA_al = ResponseFunction.ChangeType(MA_a,"LP")
+MA_nl = ResponseFunction.ChangeType(MA_n,"LP")
+MA_ul = ResponseFunction.ChangeType(MA_u,"LP")
+MA_bl = ResponseFunction.ChangeType(MA_b,"LP")
+
+-- MB
+MB_t = ResponseFunction.ChangeType(MB_t,"Tri")
+MB_a = ResponseFunction.ChangeType(MB_t,"And")
+MB_n = ResponseFunction.ChangeType(MB_t,"Nat")
+MB_d = ResponseFunction.ChangeType(MB_t,"Dense")
+MB_u = ResponseFunction.ChangeType(MB_t,"Userdata")
+MB_b = ResponseFunction.ChangeType(MB_t,"Table")
+
+MB_tl = ResponseFunction.ChangeType(MB_t,"LP")
+MB_al = ResponseFunction.ChangeType(MB_a,"LP")
+MB_nl = ResponseFunction.ChangeType(MB_n,"LP")
+MB_ul = ResponseFunction.ChangeType(MB_u,"LP")
+MB_bl = ResponseFunction.ChangeType(MB_b,"LP")
+
+-- MC
+MC_t = ResponseFunction.ChangeType(MC_a,"Tri")
+MC_a = ResponseFunction.ChangeType(MC_a,"And")
+MC_n = ResponseFunction.ChangeType(MC_a,"Nat")
+--MC_d = ResponseFunction.ChangeType(MC_a,"Dense")
+MC_u = ResponseFunction.ChangeType(MC_a,"Userdata")
+MC_b = ResponseFunction.ChangeType(MC_a,"Table")
+
+MC_tl = ResponseFunction.ChangeType(MC_t,"LP")
+MC_al = ResponseFunction.ChangeType(MC_a,"LP")
+MC_nl = ResponseFunction.ChangeType(MC_n,"LP")
+MC_ul = ResponseFunction.ChangeType(MC_u,"LP")
+MC_bl = ResponseFunction.ChangeType(MC_b,"LP")
+
+
+-- MD
+MD_t = ResponseFunction.ChangeType(MD_n,"Tri")
+MD_a = ResponseFunction.ChangeType(MD_n,"And")
+MD_n = ResponseFunction.ChangeType(MD_n,"Nat")
+MD_d = ResponseFunction.ChangeType(MD_n,"Dense")
+MD_u = ResponseFunction.ChangeType(MD_n,"Userdata")
+MD_b = ResponseFunction.ChangeType(MD_n,"Table")
+
+MD_tl = ResponseFunction.ChangeType(MD_t,"LP")
+MD_al = ResponseFunction.ChangeType(MD_a,"LP")
+MD_nl = ResponseFunction.ChangeType(MD_n,"LP")
+MD_ul = ResponseFunction.ChangeType(MD_u,"LP")
+MD_bl = ResponseFunction.ChangeType(MD_b,"LP")
+
+
+----- test equality
+
+GList = {MA_T,MA_A,MA_N,MA_U,MA_B,MA_TL,MA_AL,MA_NL,MA_UL,MA_BL, MA_t,MA_a,MA_n,MA_u,MA_b,MA_tl,MA_al,MA_nl,MA_ul,MA_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MA",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MA_T=nil
+MA_A=nil
+MA_N=nil
+MA_U=nil
+MA_B=nil
+MA_TL=nil
+MA_AL=nil
+MA_NL=nil
+MA_UL=nil
+MA_BL=nil
+MA_t=nil
+MA_a=nil
+MA_n=nil
+MA_u=nil
+MA_b=nil
+MA_tl=nil
+MA_al=nil
+MA_nl=nil
+MA_ul=nil
+MA_bl=nil
+
+collectgarbage()
+
+GList = {MB_T,MB_A,MB_N,MB_U,MB_B,MB_TL,MB_AL,MB_NL,MB_UL,MB_BL, MB_t,MB_a,MB_n,MB_u,MB_b,MB_tl,MB_al,MB_nl,MB_ul,MB_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MB",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MB_T=nil
+MB_A=nil
+MB_N=nil
+MB_U=nil
+MB_B=nil
+MB_TL=nil
+MB_AL=nil
+MB_NL=nil
+MB_UL=nil
+MB_BL=nil
+MB_t=nil
+MB_a=nil
+MB_n=nil
+MB_u=nil
+MB_b=nil
+MB_tl=nil
+MB_al=nil
+MB_nl=nil
+MB_ul=nil
+MB_bl=nil
+
+collectgarbage()
+
+GList = {MC_T,MC_A,MC_N,MC_U,MC_B,MC_TL,MC_AL,MC_NL,MC_UL,MC_BL, MC_t,MC_a,MC_n,MC_u,MC_b,MC_tl,MC_al,MC_nl,MC_ul,MC_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MC",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MC_T=nil
+MC_A=nil
+MC_N=nil
+MC_U=nil
+MC_B=nil
+MC_TL=nil
+MC_AL=nil
+MC_NL=nil
+MC_UL=nil
+MC_BL=nil
+MC_t=nil
+MC_a=nil
+MC_n=nil
+MC_u=nil
+MC_b=nil
+MC_tl=nil
+MC_al=nil
+MC_nl=nil
+MC_ul=nil
+MC_bl=nil
+
+collectgarbage()
+
+GList = {MD_T,MD_A,MD_N,MD_U,MD_B,MD_TL,MD_AL,MD_NL,MD_UL,MD_BL, MD_t,MD_a,MD_n,MD_u,MD_b,MD_tl,MD_al,MD_nl,MD_ul,MD_bl}
+
+for i=1,#GList do
+	for j=1,#GList do
+		print("MD",i,j)
+		A = ResponseFunction.ToUserdata(GList[i])
+		B = ResponseFunction.ToUserdata(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+		A = ResponseFunction.ToTable(GList[i])
+		B = ResponseFunction.ToTable(GList[i])
+		if((A==B)~=true) then
+			print("Error at i=",i,"j=",j)
+			print("G[i]\n",ResponseFunction.ToTable(GList[i]))
+			print("G[j]\n",ResponseFunction.ToTable(GList[j]))
+			print("G[i]-G[j]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			print("G[j]-G[i]\n",ResponseFunction.ToTable(GList[i]-GList[j]))
+			error("Response function comparison failed\n",1)
+		end
+		A=nil
+		B=nil
+		collectgarbage()
+	end
+end
+
+MD_T=nil
+MD_A=nil
+MD_N=nil
+MD_U=nil
+MD_B=nil
+MD_TL=nil
+MD_AL=nil
+MD_NL=nil
+MD_UL=nil
+MD_BL=nil
+MD_t=nil
+MD_a=nil
+MD_n=nil
+MD_u=nil
+MD_b=nil
+MD_tl=nil
+MD_al=nil
+MD_nl=nil
+MD_ul=nil
+MD_bl=nil
+
+collectgarbage()
+
+
+
+
+
 
 collectgarbage()
 print("--------------------------------------------------------")

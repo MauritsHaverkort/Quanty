@@ -477,9 +477,18 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
   const char *type;
   uint32_t len;
   TriDiagonalMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((TriDiagonalMatrixType*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
-    luaL_error(L, "Error Green's function should be represented by a table");
+    luaL_error(L, "Error Green's function should be represented by a table or as a userdate");
   }
   lua_getfield(L, narg, "type");
   if(lua_isstring(L,-1)==0)
@@ -587,6 +596,15 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
   uint32_t len,i,j,k;
   bool MakeReal=true;
   BlockTriDiagonalMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((BlockTriDiagonalMatrixType*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -866,6 +884,15 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
   const char *type;
   uint32_t len;
   AndersonMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((AndersonMatrixType*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -975,6 +1002,15 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
   uint32_t len,i,j,k;
   bool MakeReal=true;
   BlockAndersonMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((BlockAndersonMatrixType*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -1252,6 +1288,15 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
 {
   const char *type;
   BADoubleTriDiagonalMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((BADoubleTriDiagonalMatrixType*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -1291,7 +1336,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     lua_pop(L,1);
     /* read val */
     lua_getfield(L, narg, "val");
-    if(lua_istable(L,-1)==0)
+    if(lua_isnil(L,-1)==1)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field val");
     }
@@ -1301,7 +1346,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     lua_pop(L,1);
     /* read con */
     lua_getfield(L, narg, "con");
-    if(lua_istable(L,-1)==0)
+    if(lua_isnil(L,-1)==1)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field con");
     }
@@ -1391,6 +1436,15 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
 {
   const char *type;
   BlockNaturalImpurityOrbitalMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((BlockNaturalImpurityOrbitalMatrixType*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -1431,7 +1485,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
     // read val from stack
     lua_getfield(L, narg, "val");
-    if(lua_istable(L,-1)==0)
+    if(lua_isnil(L,-1)==1)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field val");
     }
@@ -1441,7 +1495,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L,1);
     // read con from stack
     lua_getfield(L, narg, "con");
-    if(lua_istable(L,-1)==0)
+    if(lua_isnil(L,-1)==1)
     {
       luaL_error(L, "Error Green's function of format NaturalImpurityOrbital should have a field con");
     }
@@ -1619,6 +1673,15 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
   uint32_t i,len;
   const char *type;
   ListOfPoles *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((ListOfPoles*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
@@ -1752,6 +1815,15 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
   uint32_t i,j,k,len;
   const char *type;
   BlockListOfPoles *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    buff = ((BlockListOfPoles*)(buffResTri.data));
+    return buff;
+  }
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table");
