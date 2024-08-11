@@ -188,6 +188,9 @@ Mexp = Matrix.Flatten({{ B0c*A1c*B0c+B0v*A1v*B0v,-B0c*A1c*B0v+B0v*A1v*B0c, B1v*B
 											 { B1c*B0c                , -B1c*B0v               , 0      , 0 , A2     , B2 },
 											 { 0                      , 0                      , 0      , 0 , B2     , A3 }})
 M = ResponseFunction.ToMatrix(G)
+M=Chop(M)
+Mexp=Chop(Mexp)
+
 
 if((M==Mexp)~=true) then
 	print("Error")
@@ -330,6 +333,8 @@ Mexp = Matrix.Flatten({{ B0c*A1c*B0c+B0v*A1v*B0v,-B0c*A1c*B0v+B0v*A1v*B0c, B1v*B
 											 { B1c*B0c                , -B1c*B0v               , 0      , 0 , A2     , B2 },
 											 { 0                      , 0                      , 0      , 0 , B2     , A3 }})
 M = Chop(ResponseFunction.ToMatrix(G))
+M=Chop(M)
+Mexp=Chop(Mexp)
 
 if((M==Mexp)~=true) then
 	print("Error")
