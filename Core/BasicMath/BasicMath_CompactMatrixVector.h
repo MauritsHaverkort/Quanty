@@ -112,3 +112,4 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &
 CompactMatrixType Submatrix(const CompactMatrixType &M, int rowStart, int rows, int colStart, int cols);
 CompactMatrixType Submatrix(const CompactMatrixType &M, int rows, int cols);
 CompactMatrixType Submatrix(const CompactMatrixType &M, int size);
+OperatorType CompactMatrixToOperator(const CompactMatrixType &M);

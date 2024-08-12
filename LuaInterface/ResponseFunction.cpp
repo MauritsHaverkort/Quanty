@@ -2125,6 +2125,8 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     case 'L':
     case 'l':
     {
+      // make sure to close Lua and trhough an error without an aditional free of unallocated space
+      InitOperator(O);
       return luaL_error(L, "Error in Responsefunction.ToOperator() Can not create Operators for a response function stored as a list of poles\n");
       break;
     }

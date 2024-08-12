@@ -2,11 +2,898 @@ print("--------------------------------------------------------")
 print("-- Responsefunction ToOperator                        --")
 print("--------------------------------------------------------")
 
+print("-- Single valued                                      --")
+
+print("-- Tri                                                --")
+
+Mexp = Matrix.New({ {  11     ,  2      ,  0      ,  0      ,  0      ,  0      } ,
+										{  2      ,  12     ,  3      ,  0      ,  0      ,  0      } ,
+										{  0      ,  3      ,  13     ,  4      ,  0      ,  0      } ,
+										{  0      ,  0      ,  4      ,  14     ,  5      ,  0      } ,
+										{  0      ,  0      ,  0      ,  5      ,  15     ,  6      } ,
+										{  0      ,  0      ,  0      ,  0      ,  6      ,  16     } })
+Oexp = NewOperator(6,0,{{0,-0,11},{1,-1,12},{2,-2,13},{3,-3,14},{4,-4,15},{5,-5,16},
+									      {0,-1,2},{1,-0,2}, {1,-2,3},{2,-1,3}, {2,-3,4},{3,-2,4}, {3,-4,5},{4,-3,5}, {4,-5,6},{5,-4,6} })
+a = {10, 11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G = ResponseFunction.New({a,b,mu=0,type="Tri", name="G"})
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((O==O2)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((OS==O2S)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+print("-- And                                                --")
+
+Mexp = Matrix.New({ {  11     ,  2      ,  3      ,  4      ,  5      ,  6      } ,
+										{  2      ,  12     ,  0      ,  0      ,  0      ,  0      } ,
+										{  3      ,  0      ,  13     ,  0      ,  0      ,  0      } ,
+										{  4      ,  0      ,  0      ,  14     ,  0      ,  0      } ,
+										{  5      ,  0      ,  0      ,  0      ,  15     ,  0      } ,
+										{  6      ,  0      ,  0      ,  0      ,  0      ,  16     } })
+Oexp = NewOperator(6,0,{{0,-0,11},{1,-1,12},{2,-2,13},{3,-3,14},{4,-4,15},{5,-5,16},
+												{0,-1,2},{1,-0,2}, {0,-2,3},{2,-0,3}, {0,-3,4},{3,-0,4}, {0,-4,5},{4,-0,5}, {0,-5,6},{5,-0,6} })
+a = {10, 11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G = ResponseFunction.New({a,b,mu=0,type="And", name="G"})
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((O==O2)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((OS==O2S)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+print("-- Nat                                                --")
+
+acon = {0,  5, 6, 7}
+bcon = {    2, 3, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {    12,   13,   14}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+a0=0
+b0=1
+G = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="D"})
+Mexp = Matrix.New({ { -2140   , -480    ,  156    ,  0      ,  6      ,  0      } ,
+										{ -480    ,  660    ,  26     ,  0      , -36     ,  0      } ,
+										{  156    ,  26     , -16     ,  14     ,  0      ,  0      } ,
+										{  0      ,  0      ,  14     , -17     ,  0      ,  0      } ,
+										{  6      , -36     ,  0      ,  0      ,  6      ,  4      } ,
+										{  0      ,  0      ,  0      ,  0      ,  4      ,  7      } })
+Oexp = NewOperator(6,0,{{0,-0,-2140},{1,-1,660},{2,-2,-16},{3,-3,-17},{4,-4,6},{5,-5,7},
+												{0,-1,-480},{1,-0,-480}, {0,-2,156},{2,-0,156}, {0,-4,  6},{4,-0,  6},
+									                               {1,-2, 26},{2,-1, 26}, {1,-4,-36},{4,-1,-36},
+									      {2,-3,14},{3,-2,14},
+									      {4,-5,4},{5,-4,4}})
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((O==O2)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((OS==O2S)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+print("-- LP                                                 --")
+
+a = {0, -sqrt(2), 0,   sqrt(2)}
+b = {        1/4,1/2,   1/4}
+G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="A"})
+Mexp = Matrix.New({ {  0      ,  1      ,  0      } ,
+										{  1      ,  0      ,  1      } ,
+										{  0      ,  1      ,  0      } })
+--[[
+O = ResponseFunction.ToOperator(G)
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+]]--
+
+
+print("-- Matrix                                             --")
+
+print("-- Tri                                                --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,0 },
+											 {B1,A2,B2},
+											 {0 ,B2,A3}})
+Oexp = NewOperator(9,0,{{0,-0, 1},{0,-1, 2},{0,-2, 3},
+									      {1,-0, 2},{1,-1, 5},{1,-2, 6},
+									      {2,-0, 3},{2,-1, 6},{2,-2, 9},
+									 
+									      {3,-3, 2},{3,-4, 2},{3,-5, 3},
+												{4,-3, 2},{4,-4, 5},{4,-5, 6},
+												{5,-3, 3},{5,-4, 6},{5,-5, 9},
+									 
+												{6,-6, 3},{6,-7, 2},{6,-8, 3},
+												{7,-6, 2},{7,-7, 5},{7,-8, 6},
+												{8,-6, 3},{8,-7, 6},{8,-8, 9},
+									 
+												{0,-3, 11},{0,-4, 24},{0,-5, 36},
+												{1,-3, 24},{1,-4, 62},{1,-5, 87},
+												{2,-3, 36},{2,-4, 87},{2,-5,126},
+									 
+												{3,-0, 11},{3,-1, 24},{3,-2, 36},
+												{4,-0, 24},{4,-1, 62},{4,-2, 87},
+												{5,-0, 36},{5,-1, 87},{5,-2,126},
+									 
+												{3,-6, 13},{3,-7, 18},{3,-8, 33},
+												{4,-6, 18},{4,-7, 61},{4,-8, 84},
+												{5,-6, 33},{5,-7, 84},{5,-8,126},
+									 
+												{6,-3, 13},{6,-4, 18},{6,-5, 33},
+												{7,-3, 18},{7,-4, 61},{7,-5, 84},
+												{8,-3, 33},{8,-4, 84},{8,-5,126}
+									 })
+
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((O==O2)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((OS==O2S)~=true) then
+	print("Error")
+	print("O\n",OS)
+	print(OperatorToMatrix(OS))
+	print("Oexp\n",O2S)
+	print(OperatorToMatrix(O2S))
+	print("Oexp-O\n",OS-O2S)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+
+print("-- And                                                --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,B2 },
+											 {B1,A2, 0 },
+											 {B2, 0,A3 }})
+
+Oexp = NewOperator(9,0,{{0,-0, 1},{0,-1, 2},{0,-2, 3},
+                        {1,-0, 2},{1,-1, 5},{1,-2, 6},
+												{2,-0, 3},{2,-1, 6},{2,-2, 9},
+
+                        {3,-3, 2},{3,-4, 2},{3,-5, 3},
+												{4,-3, 2},{4,-4, 5},{4,-5, 6},
+ 												{5,-3, 3},{5,-4, 6},{5,-5, 9},
+
+												{6,-6, 3},{6,-7, 2},{6,-8, 3},
+												{7,-6, 2},{7,-7, 5},{7,-8, 6},
+												{8,-6, 3},{8,-7, 6},{8,-8, 9},
+
+ 												{0,-3, 11},{0,-4, 24},{0,-5, 36},
+ 												{1,-3, 24},{1,-4, 62},{1,-5, 87},
+ 												{2,-3, 36},{2,-4, 87},{2,-5,126},
+
+ 												{3,-0, 11},{3,-1, 24},{3,-2, 36},
+ 												{4,-0, 24},{4,-1, 62},{4,-2, 87},
+ 												{5,-0, 36},{5,-1, 87},{5,-2,126},
+
+ 												{0,-6, 13},{0,-7, 18},{0,-8, 33},
+ 												{1,-6, 18},{1,-7, 61},{1,-8, 84},
+ 												{2,-6, 33},{2,-7, 84},{2,-8,126},
+
+ 												{6,-0, 13},{6,-1, 18},{6,-2, 33},
+ 												{7,-0, 18},{7,-1, 61},{7,-2, 84},
+ 												{8,-0, 33},{8,-1, 84},{8,-2,126}
+})
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((O==O2)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((OS==O2S)~=true) then
+	print("Error")
+	print("O\n",OS)
+	print(OperatorToMatrix(OS))
+	print("Oexp\n",O2S)
+	print(OperatorToMatrix(O2S))
+	print("Oexp-O\n",OS-O2S)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+
+print("-- Nat                                                --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+A1v=-A1
+A1c= A1
+B1v= B1
+B1c= B1
+Mexp = Matrix.Flatten({{ B0c*A1c*B0c+B0v*A1v*B0v,-B0c*A1c*B0v+B0v*A1v*B0c, B1v*B0v, 0 , B1c*B0c, 0  },
+											 { B0c*A1v*B0v-B0v*A1c*B0c, B0v*A1c*B0v+B0c*A1v*B0c, B1v*B0c, 0 ,-B1c*B0v, 0  },
+											 { B1v*B0v                , B1v*B0c                ,-A2     , B2, 0      , 0  },
+											 { 0                      , 0                      , B2     ,-A3, 0      , 0  },
+											 { B1c*B0c                , -B1c*B0v               , 0      , 0 , A2     , B2 },
+											 { 0                      , 0                      , 0      , 0 , B2     , A3 }})
+t=sqrt(1/2)
+Oexp = NewOperator(18,0,{{ 0, -3, -1},{ 0, -4, -2},{ 0, -5, -3},
+												 { 1, -3, -2},{ 1, -4, -5},{ 1, -5, -6},
+												 { 2, -3, -3},{ 2, -4, -6},{ 2, -5, -9},
+									 
+                         { 3, -0, -1},{ 3, -1, -2},{ 3, -2, -3},
+												 { 4, -0, -2},{ 4, -1, -5},{ 4, -2, -6},
+												 { 5, -0, -3},{ 5, -1, -6},{ 5, -2, -9},
+									 
+				                 { 6, -6, -2},{ 6, -7, -2},{ 6, -8, -3},
+				                 { 7, -6, -2},{ 7, -7, -5},{ 7, -8, -6},
+				                 { 8, -6, -3},{ 8, -7, -6},{ 8, -8, -9},
+									 
+								      	 { 9, -9, -3},{ 9,-10, -2},{ 9,-11, -3},
+							           {10, -9, -2},{10,-10, -5},{10,-11, -6},
+												 {11, -9, -3},{11,-10, -6},{11,-11, -9},
+									 
+												 { 6, -9, 13},{ 6,-10, 18},{ 6,-11, 33},
+												 { 7, -9, 18},{ 7,-10, 61},{ 7,-11, 84},
+												 { 8, -9, 33},{ 8,-10, 84},{ 8,-11,126},
+									 
+												 { 9, -6, 13},{ 9, -7, 18},{ 9, -8, 33},
+												 {10, -6, 18},{10, -7, 61},{10, -8, 84},
+												 {11, -6, 33},{11, -7, 84},{11, -8,126},
+									 
+									       {12,-12,  2},{12,-13,  2},{12,-14,  3},
+												 {13,-12,  2},{13,-13,  5},{13,-14,  6},
+							           {14,-12,  3},{14,-13,  6},{14,-14,  9},
+				
+							           {15,-15,  3},{15,-16,  2},{15,-17,  3},
+							           {16,-15,  2},{16,-16,  5},{16,-17,  6},
+							           {17,-15,  3},{17,-16,  6},{17,-17,  9},
+									 
+												 {12,-15, 13},{12,-16, 18},{12,-17, 33},
+												 {13,-15, 18},{13,-16, 61},{13,-17, 84},
+												 {14,-15, 33},{14,-16, 84},{14,-17,126},
+									 
+												 {15,-12, 13},{15,-13, 18},{15,-14, 33},
+												 {16,-12, 18},{16,-13, 61},{16,-14, 84},
+												 {17,-12, 33},{17,-13, 84},{17,-14,126},
+									 
+												 { 6, -0, 11*t},{ 6, -1, 24*t},{ 6, -2, 36*t},
+												 { 7, -0, 24*t},{ 7, -1, 62*t},{ 7, -2, 87*t},
+												 { 8, -0, 36*t},{ 8, -1, 87*t},{ 8, -2,126*t},
+									 
+												 { 0, -6, 11*t},{ 0, -7, 24*t},{ 0, -8, 36*t},
+												 { 1, -6, 24*t},{ 1, -7, 62*t},{ 1, -8, 87*t},
+												 { 2, -6, 36*t},{ 2, -7, 87*t},{ 2, -8,126*t},
+									 
+												 { 6, -3, 11*t},{ 6, -4, 24*t},{ 6, -5, 36*t},
+												 { 7, -3, 24*t},{ 7, -4, 62*t},{ 7, -5, 87*t},
+												 { 8, -3, 36*t},{ 8, -4, 87*t},{ 8, -5,126*t},
+									 
+												 { 3, -6, 11*t},{ 3, -7, 24*t},{ 3, -8, 36*t},
+												 { 4, -6, 24*t},{ 4, -7, 62*t},{ 4, -8, 87*t},
+												 { 5, -6, 36*t},{ 5, -7, 87*t},{ 5, -8,126*t},
+									 
+												 {12, -0, 11*t},{12, -1, 24*t},{12, -2, 36*t},
+												 {13, -0, 24*t},{13, -1, 62*t},{13, -2, 87*t},
+												 {14, -0, 36*t},{14, -1, 87*t},{14, -2,126*t},
+									 
+												 { 0,-12, 11*t},{ 0,-13, 24*t},{ 0,-14, 36*t},
+												 { 1,-12, 24*t},{ 1,-13, 62*t},{ 1,-14, 87*t},
+												 { 2,-12, 36*t},{ 2,-13, 87*t},{ 2,-14,126*t},
+									 
+												 {12, -3,-11*t},{12, -4,-24*t},{12, -5,-36*t},
+												 {13, -3,-24*t},{13, -4,-62*t},{13, -5,-87*t},
+												 {14, -3,-36*t},{14, -4,-87*t},{14, -5,-126*t},
+									 
+												 { 3,-12,-11*t},{ 3,-13,-24*t},{ 3,-14,-36*t},
+												 { 4,-12,-24*t},{ 4,-13,-62*t},{ 4,-14,-87*t},
+												 { 5,-12,-36*t},{ 5,-13,-87*t},{ 5,-14,-126*t}
+									 })
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((Chop(O-O2)==Chop(0*O))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if(Chop(OS-O2S)==Chop(0*OS)~=true) then
+	print("Error")
+	print("O\n",OS)
+	print(OperatorToMatrix(OS))
+	print("Oexp\n",O2S)
+	print(OperatorToMatrix(O2S))
+	print("Oexp-O\n",OS-O2S)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+
+print("-- LP                                                 --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,-1,-2,-3}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="A"} )
+--[[
+O = ResponseFunction.ToOperator(G)
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+]]--
+
+
+
+print("-- Matrix complex                                     --")
+
+print("-- Tri                                                --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,0 },
+											 {B1,A2,B2},
+											 {0 ,B2,A3}})
+Oexp = NewOperator(9,0,{{0,-0, 1},{0,-1, 2},{0,-2, 3},
+												{1,-0, 2},{1,-1, 5},{1,-2, 6},
+												{2,-0, 3},{2,-1, 6},{2,-2, 9},
+									 
+												{3,-3, 2},{3,-4, 2},{3,-5, 3},
+												{4,-3, 2},{4,-4, 5},{4,-5, 6},
+												{5,-3, 3},{5,-4, 6},{5,-5, 9},
+									 
+												{6,-6, 3},{6,-7, 2},{6,-8, 3},
+												{7,-6, 2},{7,-7, 5},{7,-8, 6},
+												{8,-6, 3},{8,-7, 6},{8,-8, 9},
+									 
+												{0,-3, 11},{0,-4, 24},{0,-5, 36},
+												{1,-3, 24},{1,-4, 62},{1,-5, 87},
+												{2,-3, 36},{2,-4, 87},{2,-5,126},
+									 
+												{3,-0, 11},{3,-1, 24},{3,-2, 36},
+												{4,-0, 24},{4,-1, 62},{4,-2, 87},
+												{5,-0, 36},{5,-1, 87},{5,-2,126},
+									 
+												{3,-6, 13},{3,-7, 18},{3,-8, 33},
+												{4,-6, 18},{4,-7, 61},{4,-8, 84},
+												{5,-6, 33},{5,-7, 84},{5,-8,126},
+									 
+												{6,-3, 13},{6,-4, 18},{6,-5, 33},
+												{7,-3, 18},{7,-4, 61},{7,-5, 84},
+												{8,-3, 33},{8,-4, 84},{8,-5,126}
+									 })
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((Chop(O-O2)==Chop(0*O))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if(Chop(OS-O2S)==Chop(0*OS)~=true) then
+	print("Error")
+	print("O\n",OS)
+	print(OperatorToMatrix(OS))
+	print("Oexp\n",O2S)
+	print(OperatorToMatrix(O2S))
+	print("Oexp-O\n",OS-O2S)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+
+print("-- And                                                --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,B2 },
+											 {B1,A2, 0 },
+											 {B2, 0,A3 }})
+
+Oexp = NewOperator(9,0,{{0,-0, 1},{0,-1, 2},{0,-2, 3},
+												{1,-0, 2},{1,-1, 5},{1,-2, 6},
+												{2,-0, 3},{2,-1, 6},{2,-2, 9},
+
+												{3,-3, 2},{3,-4, 2},{3,-5, 3},
+												{4,-3, 2},{4,-4, 5},{4,-5, 6},
+												{5,-3, 3},{5,-4, 6},{5,-5, 9},
+
+												{6,-6, 3},{6,-7, 2},{6,-8, 3},
+												{7,-6, 2},{7,-7, 5},{7,-8, 6},
+												{8,-6, 3},{8,-7, 6},{8,-8, 9},
+
+												{0,-3, 11},{0,-4, 24},{0,-5, 36},
+												{1,-3, 24},{1,-4, 62},{1,-5, 87},
+												{2,-3, 36},{2,-4, 87},{2,-5,126},
+
+												{3,-0, 11},{3,-1, 24},{3,-2, 36},
+												{4,-0, 24},{4,-1, 62},{4,-2, 87},
+												{5,-0, 36},{5,-1, 87},{5,-2,126},
+
+												{0,-6, 13},{0,-7, 18},{0,-8, 33},
+												{1,-6, 18},{1,-7, 61},{1,-8, 84},
+												{2,-6, 33},{2,-7, 84},{2,-8,126},
+
+												{6,-0, 13},{6,-1, 18},{6,-2, 33},
+												{7,-0, 18},{7,-1, 61},{7,-2, 84},
+												{8,-0, 33},{8,-1, 84},{8,-2,126}
+})
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((Chop(O-O2)==Chop(0*O))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if(Chop(OS-O2S)==Chop(0*OS)~=true) then
+	print("Error")
+	print("O\n",OS)
+	print(OperatorToMatrix(OS))
+	print("Oexp\n",O2S)
+	print(OperatorToMatrix(O2S))
+	print("Oexp-O\n",OS-O2S)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+
+print("-- Nat                                                --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+A1v=-A1
+A1c= A1
+B1v= B1
+B1c= B1
+Mexp = Matrix.Flatten({{ B0c*A1c*B0c+B0v*A1v*B0v,-B0c*A1c*B0v+B0v*A1v*B0c, B1v*B0v, 0 , B1c*B0c, 0  },
+											 { B0c*A1v*B0v-B0v*A1c*B0c, B0v*A1c*B0v+B0c*A1v*B0c, B1v*B0c, 0 ,-B1c*B0v, 0  },
+											 { B1v*B0v                , B1v*B0c                ,-A2     , B2, 0      , 0  },
+											 { 0                      , 0                      , B2     ,-A3, 0      , 0  },
+											 { B1c*B0c                , -B1c*B0v               , 0      , 0 , A2     , B2 },
+											 { 0                      , 0                      , 0      , 0 , B2     , A3 }})
+t=sqrt(1/2)
+Oexp = NewOperator(18,0,{{ 0, -3, -1},{ 0, -4, -2},{ 0, -5, -3},
+												 { 1, -3, -2},{ 1, -4, -5},{ 1, -5, -6},
+												 { 2, -3, -3},{ 2, -4, -6},{ 2, -5, -9},
+									 
+												 { 3, -0, -1},{ 3, -1, -2},{ 3, -2, -3},
+												 { 4, -0, -2},{ 4, -1, -5},{ 4, -2, -6},
+												 { 5, -0, -3},{ 5, -1, -6},{ 5, -2, -9},
+									 
+												 { 6, -6, -2},{ 6, -7, -2},{ 6, -8, -3},
+												 { 7, -6, -2},{ 7, -7, -5},{ 7, -8, -6},
+												 { 8, -6, -3},{ 8, -7, -6},{ 8, -8, -9},
+									 
+												 { 9, -9, -3},{ 9,-10, -2},{ 9,-11, -3},
+												 {10, -9, -2},{10,-10, -5},{10,-11, -6},
+												 {11, -9, -3},{11,-10, -6},{11,-11, -9},
+									 
+												 { 6, -9, 13},{ 6,-10, 18},{ 6,-11, 33},
+												 { 7, -9, 18},{ 7,-10, 61},{ 7,-11, 84},
+												 { 8, -9, 33},{ 8,-10, 84},{ 8,-11,126},
+									 
+												 { 9, -6, 13},{ 9, -7, 18},{ 9, -8, 33},
+												 {10, -6, 18},{10, -7, 61},{10, -8, 84},
+												 {11, -6, 33},{11, -7, 84},{11, -8,126},
+									 
+												 {12,-12,  2},{12,-13,  2},{12,-14,  3},
+												 {13,-12,  2},{13,-13,  5},{13,-14,  6},
+												 {14,-12,  3},{14,-13,  6},{14,-14,  9},
+				
+												 {15,-15,  3},{15,-16,  2},{15,-17,  3},
+												 {16,-15,  2},{16,-16,  5},{16,-17,  6},
+												 {17,-15,  3},{17,-16,  6},{17,-17,  9},
+									 
+												 {12,-15, 13},{12,-16, 18},{12,-17, 33},
+												 {13,-15, 18},{13,-16, 61},{13,-17, 84},
+												 {14,-15, 33},{14,-16, 84},{14,-17,126},
+									 
+												 {15,-12, 13},{15,-13, 18},{15,-14, 33},
+												 {16,-12, 18},{16,-13, 61},{16,-14, 84},
+												 {17,-12, 33},{17,-13, 84},{17,-14,126},
+									 
+												 { 6, -0, 11*t},{ 6, -1, 24*t},{ 6, -2, 36*t},
+												 { 7, -0, 24*t},{ 7, -1, 62*t},{ 7, -2, 87*t},
+												 { 8, -0, 36*t},{ 8, -1, 87*t},{ 8, -2,126*t},
+									 
+												 { 0, -6, 11*t},{ 0, -7, 24*t},{ 0, -8, 36*t},
+												 { 1, -6, 24*t},{ 1, -7, 62*t},{ 1, -8, 87*t},
+												 { 2, -6, 36*t},{ 2, -7, 87*t},{ 2, -8,126*t},
+									 
+												 { 6, -3, 11*t},{ 6, -4, 24*t},{ 6, -5, 36*t},
+												 { 7, -3, 24*t},{ 7, -4, 62*t},{ 7, -5, 87*t},
+												 { 8, -3, 36*t},{ 8, -4, 87*t},{ 8, -5,126*t},
+									 
+												 { 3, -6, 11*t},{ 3, -7, 24*t},{ 3, -8, 36*t},
+												 { 4, -6, 24*t},{ 4, -7, 62*t},{ 4, -8, 87*t},
+												 { 5, -6, 36*t},{ 5, -7, 87*t},{ 5, -8,126*t},
+									 
+												 {12, -0, 11*t},{12, -1, 24*t},{12, -2, 36*t},
+												 {13, -0, 24*t},{13, -1, 62*t},{13, -2, 87*t},
+												 {14, -0, 36*t},{14, -1, 87*t},{14, -2,126*t},
+									 
+												 { 0,-12, 11*t},{ 0,-13, 24*t},{ 0,-14, 36*t},
+												 { 1,-12, 24*t},{ 1,-13, 62*t},{ 1,-14, 87*t},
+												 { 2,-12, 36*t},{ 2,-13, 87*t},{ 2,-14,126*t},
+									 
+												 {12, -3,-11*t},{12, -4,-24*t},{12, -5,-36*t},
+												 {13, -3,-24*t},{13, -4,-62*t},{13, -5,-87*t},
+												 {14, -3,-36*t},{14, -4,-87*t},{14, -5,-126*t},
+									 
+												 { 3,-12,-11*t},{ 3,-13,-24*t},{ 3,-14,-36*t},
+												 { 4,-12,-24*t},{ 4,-13,-62*t},{ 4,-14,-87*t},
+												 { 5,-12,-36*t},{ 5,-13,-87*t},{ 5,-14,-126*t}
+									 })
+
+O = ResponseFunction.ToOperator(G)
+O2= Matrix.ToOperator(Mexp)
+
+OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
+O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
+
+if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if((Chop(O-O2)==Chop(0*O))~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+if(Chop(OS-O2S)==Chop(0*OS)~=true) then
+	print("Error")
+	print("O\n",OS)
+	print(OperatorToMatrix(OS))
+	print("Oexp\n",O2S)
+	print(OperatorToMatrix(O2S))
+	print("Oexp-O\n",OS-O2S)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+
+
+print("-- LP                                                 --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,-1,-2,-3}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="A"} )
+--[[
+O = ResponseFunction.ToOperator(G)
+if((O==Oexp)~=true) then
+	print("Error")
+	print("O\n",O)
+	print("Oexp\n",Oexp)
+	print("Oexp-O\n",Oexp-O)
+	print("G\n",ResponseFunction.ToTable(G))
+	error("Response operator comparison failed\n",1)
+end
+
+]]--
+
+
+
+
+
+
+
+
 
 
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")
 print("--------------------------------------------------------")
+
+
+
 
 

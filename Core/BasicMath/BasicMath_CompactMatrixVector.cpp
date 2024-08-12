@@ -5267,3 +5267,47 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, int size)
 {
   return Submatrix(M, size, size);
 }
+
+OperatorType CompactMatrixToOperator(const CompactMatrixType &M)
+{
+ OperatorType op;
+ InitOperator(&op);
+ InitOperatorFixedLength(&op, 2, 8);
+ op.QComplex = M.QComplex;
+ OperatorChangeNFandNB(&op, M.Ni, 0);
+ uint16_t oadd[2];
+ if ((bool) op.QComplex)
+ {
+   for (uint16_t i = 0; i < (uint16_t) M.Ni; ++i)
+   {
+     for (uint16_t j = 0; j < (uint16_t) M.Nj; ++j)
+     {
+       double VRe = M.V[i * M.Nj + j].Re;
+       double VIm = M.V[i * M.Nj + j].Im;
+       if (fabs(VRe) > 0 || fabs(VIm) > 0)
+       {
+         oadd[1] = i + CrAnMask;
+         oadd[0] = j;
+         OperatorAddLader(&op, oadd, 2, VRe, VIm);
+       }
+     }
+   }
+ }
+ else
+ {
+   for (uint16_t i = 0; i < (uint16_t) M.Ni; ++i)
+   {
+     for (uint16_t j = 0; j < (uint16_t) M.Nj; ++j)
+     {
+       double VRe = M.VRe[i * M.Nj + j];
+       if (fabs(VRe) > 0)
+       {
+         oadd[1] = i + CrAnMask;
+         oadd[0] = j;
+         OperatorAddLader(&op, oadd, 2, VRe, 0.);
+       }
+     }
+   }
+ }
+ return op;
+}

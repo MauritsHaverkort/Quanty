@@ -1,7 +1,7 @@
 directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
 print("Test response functions in directory",directory)
 
---goto skip
+goto skip
 
 dofile(directory.."/__eq.Quanty")
 dofile(directory.."/__add.Quanty")
@@ -13,14 +13,15 @@ dofile(directory.."/__call.Quanty")
 dofile(directory.."/ChangeType.Quanty")
 dofile(directory.."/ReducePoles.Quanty")
 dofile(directory.."/PlaceOnMesh.Quanty")
-
-::skip::
-
 dofile(directory.."/ToMatrix.Quanty")
 dofile(directory.."/ToSpectra.Quanty")
 dofile(directory.."/ToTable.Quanty")
 dofile(directory.."/ToUserdata.Quanty")
 dofile(directory.."/ToTightbinding.Quanty")
+
+
+::skip::
+
 dofile(directory.."/ToOperator.Quanty")
 dofile(directory.."/CalculateSelfEnergy.Quanty")
 dofile(directory.."/CalculateHybridizationFunction.Quanty")

@@ -24,6 +24,7 @@ static int LuaMatrixIndex(lua_State *L);
 static int LuaMatrixDestroy(lua_State * L);
 static int LuaMatrixFlatten(lua_State * L);
 static int LuaMatrixAddSpin(lua_State * L);
+static int LuaMatrixToOperator(lua_State * L);
 static int LuaMatrixEnlarge(lua_State * L);
 static int LuaMatrixExpand(lua_State * L);
 static int LuaSubmatrix(lua_State * L);

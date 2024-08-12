@@ -1613,6 +1613,20 @@ static int LuaMatrixAddSpin(lua_State * L)
 	return 1;
 }
 
+static int LuaMatrixToOperator(lua_State * L)
+{
+  CompactMatrixType M;
+  uint len = (uint) lua_gettop(L);
+  if (len != 1)
+    return luaL_error(L, "MatrixToOperator called with %d arguments, only 1 expected.", len);
+  if (!luaL_isType(L, 1, M))
+    return luaL_error(L, "MatrixToOperator called with an argument that is not a matrix.");
+  lua_check(L, 1, M);
+  lua_push(L, CompactMatrixToOperator(M));
+  FreeCompactMatrix(&M);
+  return 1;
+}
+
 static int LuaMatrixEnlarge(lua_State * L)
 {
 	CompactMatrixType *M;
