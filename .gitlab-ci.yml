@@ -136,3 +136,11 @@ test-job-Responsefunction-ToMatrix:
   - ./Quanty.exe "TestScripts/Responsefunction/ToMatrix.Quanty"
   dependencies:
   - build-job
+
+test-job-Responsefunction-ToOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/ToOperator.Quanty"
+  dependencies:
+  - build-job
