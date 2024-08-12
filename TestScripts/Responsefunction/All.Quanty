@@ -1,7 +1,7 @@
 directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
 print("Test response functions in directory",directory)
 
-goto skip
+--goto skip
 
 dofile(directory.."/__eq.Quanty")
 dofile(directory.."/__add.Quanty")

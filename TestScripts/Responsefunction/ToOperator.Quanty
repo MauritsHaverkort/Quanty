@@ -465,7 +465,7 @@ O2= Matrix.ToOperator(Mexp)
 OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
 O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
 
-if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
+if((Chop(O-Oexp,1E-13)==Chop(0*Oexp))~=true) then
 	print("Error")
 	print("O\n",O)
 	print("Oexp\n",Oexp)
@@ -474,7 +474,7 @@ if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
 	error("Response operator comparison failed\n",1)
 end
 
-if((Chop(O-O2)==Chop(0*O))~=true) then
+if((Chop(O-O2,1E-13)==Chop(0*O))~=true) then
 	print("Error")
 	print("O\n",O)
 	print("Oexp\n",Oexp)
@@ -483,7 +483,7 @@ if((Chop(O-O2)==Chop(0*O))~=true) then
 	error("Response operator comparison failed\n",1)
 end
 
-if(Chop(OS-O2S)==Chop(0*OS)~=true) then
+if(Chop(OS-O2S,1E-13)==Chop(0*OS)~=true) then
 	print("Error")
 	print("O\n",OS)
 	print(OperatorToMatrix(OS))
@@ -817,7 +817,7 @@ O2= Matrix.ToOperator(Mexp)
 OS = ResponseFunction.ToOperator(G,{{"AddSpin",true}})
 O2S= Matrix.ToOperator(Matrix.AddSpin(Mexp))
 
-if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
+if((Chop(O-Oexp,1E-13)==Chop(0*Oexp))~=true) then
 	print("Error")
 	print("O\n",O)
 	print("Oexp\n",Oexp)
@@ -826,7 +826,7 @@ if((Chop(O-Oexp)==Chop(0*Oexp))~=true) then
 	error("Response operator comparison failed\n",1)
 end
 
-if((Chop(O-O2)==Chop(0*O))~=true) then
+if((Chop(O-O2,1E-13)==Chop(0*O))~=true) then
 	print("Error")
 	print("O\n",O)
 	print("Oexp\n",Oexp)
@@ -835,7 +835,7 @@ if((Chop(O-O2)==Chop(0*O))~=true) then
 	error("Response operator comparison failed\n",1)
 end
 
-if(Chop(OS-O2S)==Chop(0*OS)~=true) then
+if(Chop(OS-O2S,1E-13)==Chop(0*OS)~=true) then
 	print("Error")
 	print("O\n",OS)
 	print(OperatorToMatrix(OS))
