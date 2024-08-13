@@ -1,0 +1,296 @@
+print("-------------------------------------------------------")
+print("--                  Braket                           --")
+print("-------------------------------------------------------")
+
+--- Define some wave-functions
+NF=5
+NB=0
+psi1 = NewWavefunction(NF,NB,{ {"11100",1}, {"11010",2}, {"10110",4}, {"01110",8}, {"11001",16} })
+psi2 = NewWavefunction(NF,NB,{ {"10101",1}, {"01101",2}, {"10011",I*4}, {"01011",8}, {"00111",I*16} })
+psi3 = NewWavefunction(NF,NB,{ {"11100",1}, {"10110",2}, {"11001",4}, {"01101",2-8*I}, {"01011",16} })
+psi1.Normalize()
+psi2.Normalize()
+psi3.Normalize()
+psiList = {psi1, psi2, psi3}
+
+-- Define some operators
+Opp1 = NewOperator(NF, NB, {{0, -0, 1, -1, 1}, {0, -0, 1/2}, {1, -1, 1/2}, {3, -2, I}, {2, -3, -I}})
+Opp2 = Matrix.ToOperator({{0.643774, 0.601109, -0.139955, -0.185993, 0.681491}, 
+                          {0.601109, 0.53571, 0.0323266, -0.217606, -0.641618}, 
+                          {-0.139955, 0.0323266, 0.333757, 0.459147, -0.572746}, 
+                          {-0.185993, -0.217606, 0.459147, -0.0612072, 0.0570009}, 
+                          {0.681491, -0.641618, -0.572746, 0.0570009, -0.206424}})
+
+-- Defining results for comparison
+ResPsiPsi11 = 1
+ResPsiPsi22 = 1
+ResPsiPsi33 = 1
+ResPsiPsi12 = 0
+ResPsiPsi13 = 0.21283160644656
+ResPsiPsi23 = 0.38484619247871 - 0.046648023330752*I
+ResPsiPsiTable = {{ResPsiPsi11,            ResPsiPsi12,             ResPsiPsi13},
+                  {Conjugate(ResPsiPsi12), ResPsiPsi22,             ResPsiPsi23},
+                  {Conjugate(ResPsiPsi13), Conjugate(ResPsiPsi23),  ResPsiPsi33}}
+
+ResPsiOPsi111 = 1.6480938416422
+ResPsiOPsi112 = 0
+ResPsiOPsi113 = 0.39067719539505 + 0.005831002916344*I
+ResPsiOPsi212 = 0.14809384164223
+ResPsiOPsi213 = 0.37901518956236 - 0.069972034996128*I
+ResPsiOPsi313 = 1.3159420289855
+ResPsiOPsiTable1 = {{ResPsiOPsi111,            ResPsiOPsi112,            ResPsiOPsi113},
+                    {Conjugate(ResPsiOPsi112), ResPsiOPsi212,            ResPsiOPsi213},
+                    {Conjugate(ResPsiOPsi113), Conjugate(ResPsiOPsi213), ResPsiOPsi313}}
+
+ResPsiOPsi121 = 1.0289384498534
+ResPsiOPsi122 = 0.23315867331378 - 0.11185215249267*I
+ResPsiOPsi123 = 0.64167492996089 - 0.078760014128188*I
+ResPsiOPsi222 = 0.12524842170088
+ResPsiOPsi223 = 0.12149853368012 - 0.3540028973014*I
+ResPsiOPsi323 = 0.54756175362319
+ResPsiOPsiTable2 = {{ResPsiOPsi121,            ResPsiOPsi122,            ResPsiOPsi123},
+                    {Conjugate(ResPsiOPsi122), ResPsiOPsi222,            ResPsiOPsi223},
+                    {Conjugate(ResPsiOPsi123), Conjugate(ResPsiOPsi223), ResPsiOPsi323}}
+
+-- Threshold for comparing the response functions
+threshold = 1E-13
+
+print("------------------------------------------------------")
+print("--                  Braket <psi|psi>                --")
+print("------------------------------------------------------")
+
+print("----------------------------------------------------------------------")
+print("--                  Braket (function times function)                --")
+print("----------------------------------------------------------------------")
+
+dotprod = Braket(psi1, psi1)
+if Chop(dotprod - ResPsiPsiTable[1][1], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi1, psi2)
+if Chop(dotprod - ResPsiPsiTable[1][2], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi1, psi3)
+if Chop(dotprod - ResPsiPsiTable[1][3], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi2, psi1)
+if Chop(dotprod - ResPsiPsiTable[2][1], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi2, psi2)
+if Chop(dotprod - ResPsiPsiTable[2][2], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi2, psi3)
+if Chop(dotprod - ResPsiPsiTable[2][3], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi3, psi1)
+if Chop(dotprod - ResPsiPsiTable[3][1], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi3, psi2)
+if Chop(dotprod - ResPsiPsiTable[3][2], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+dotprod = Braket(psi3, psi3)
+if Chop(dotprod - ResPsiPsiTable[3][3], threshold) ~= 0 then error("Braket for function times function not equal to the expected value\n", 1) end
+
+print("----------------------------------------------------------------------")
+print("--                  Braket (table times function)                   --")
+print("----------------------------------------------------------------------")
+
+dotprod = Braket(psiList, psi1)
+for i = 1, #dotprod do
+    if Chop(dotprod[i] - ResPsiPsiTable[i][1], threshold) ~= 0 then error("Braket for table times function not equal to the expected value\n", 1) end
+end
+
+dotprod = Braket(psiList, psi2)
+for i = 1, #dotprod do
+    if Chop(dotprod[i] - ResPsiPsiTable[i][2], threshold) ~= 0 then error("Braket for table times function not equal to the expected value\n", 1) end
+end
+
+dotprod = Braket(psiList, psi3)
+for i = 1, #dotprod do
+    if Chop(dotprod[i] - ResPsiPsiTable[i][3], threshold) ~= 0 then error("Braket for table times function not equal to the expected value\n", 1) end
+end
+
+print("----------------------------------------------------------------------")
+print("--                  Braket (function times table)                   --")
+print("----------------------------------------------------------------------")
+
+dotprod = Braket(psi1, psiList)
+for i = 1, #dotprod do
+    if Chop(dotprod[i] - ResPsiPsiTable[1][i], threshold) ~= 0 then error("Braket for function times table not equal to the expected value\n", 1) end
+end
+
+dotprod = Braket(psi2, psiList)
+for i = 1, #dotprod do
+    if Chop(dotprod[i] - ResPsiPsiTable[2][i], threshold) ~= 0 then error("Braket for function times table not equal to the expected value\n", 1) end
+end
+
+dotprod = Braket(psi3, psiList)
+for i = 1, #dotprod do
+    if Chop(dotprod[i] - ResPsiPsiTable[3][i], threshold) ~= 0 then error("Braket for function times table not equal to the expected value\n", 1) end
+end
+
+print("----------------------------------------------------------------------")
+print("--                  Braket (table times table)                      --")
+print("----------------------------------------------------------------------")
+
+dotprod = Braket(psiList, {psi1, psi3})
+
+for i = 1, #dotprod do
+    for j, jref in pairs({1, 3}) do
+        if Chop(dotprod[i][j] - ResPsiPsiTable[i][jref], threshold) ~= 0 then error("Braket for function times table not equal to the expected value\n", 1) end
+    end
+end
+
+print("------------------------------------------------------")
+print("--                  Braket <psi|O|psi>              --")
+print("------------------------------------------------------")
+print("-----------------------------------------------------------------------------")
+print("--                  Braket (funtion operator funtion)                      --")
+print("-----------------------------------------------------------------------------")
+
+element = Braket(psi1, Opp1, psi1)
+if Chop(element - ResPsiOPsiTable1[1][1], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi1, Opp1, psi2)
+if Chop(element - ResPsiOPsiTable1[1][2], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi1, Opp1, psi3)
+if Chop(element - ResPsiOPsiTable1[1][3], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi2, Opp1, psi1)
+if Chop(element - ResPsiOPsiTable1[2][1], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi2, Opp1, psi2)
+if Chop(element - ResPsiOPsiTable1[2][2], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi2, Opp1, psi3)
+if Chop(element - ResPsiOPsiTable1[2][3], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi3, Opp1, psi1)
+if Chop(element - ResPsiOPsiTable1[3][1], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi3, Opp1, psi2)
+if Chop(element - ResPsiOPsiTable1[3][2], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi3, Opp1, psi3)
+if Chop(element - ResPsiOPsiTable1[3][3], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+
+element = Braket(psi1, Opp2, psi1)
+if Chop(element - ResPsiOPsiTable2[1][1], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi1, Opp2, psi2)
+if Chop(element - ResPsiOPsiTable2[1][2], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi1, Opp2, psi3)
+if Chop(element - ResPsiOPsiTable2[1][3], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi2, Opp2, psi1)
+if Chop(element - ResPsiOPsiTable2[2][1], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi2, Opp2, psi2)
+if Chop(element - ResPsiOPsiTable2[2][2], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi2, Opp2, psi3)
+if Chop(element - ResPsiOPsiTable2[2][3], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi3, Opp2, psi1)
+if Chop(element - ResPsiOPsiTable2[3][1], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi3, Opp2, psi2)
+if Chop(element - ResPsiOPsiTable2[3][2], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+element = Braket(psi3, Opp2, psi3)
+if Chop(element - ResPsiOPsiTable2[3][3], threshold) ~= 0 then error("Braket for funtion operator funtion not equal to the expected value\n", 1) end
+
+print("-----------------------------------------------------------------------------")
+print("--                  Braket (table operator funtion)                        --")
+print("-----------------------------------------------------------------------------")
+
+
+element = Braket(psiList, Opp1, psi1)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable1[i][1], threshold) ~= 0 then error("Braket for table operator funtion not equal to the expected value\n", 1) end
+end
+
+element = Braket(psiList, Opp1, psi2)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable1[i][2], threshold) ~= 0 then error("Braket for table operator funtion not equal to the expected value\n", 1) end
+end
+
+element = Braket(psiList, Opp1, psi3)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable1[i][3], threshold) ~= 0 then error("Braket for table operator funtion not equal to the expected value\n", 1) end
+end
+
+element = Braket(psiList, Opp2, psi1)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable2[i][1], threshold) ~= 0 then error("Braket for table operator funtion not equal to the expected value\n", 1) end
+end
+
+element = Braket(psiList, Opp2, psi2)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable2[i][2], threshold) ~= 0 then error("Braket for table operator funtion not equal to the expected value\n", 1) end
+end
+
+element = Braket(psiList, Opp2, psi3)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable2[i][3], threshold) ~= 0 then error("Braket for table operator funtion not equal to the expected value\n", 1) end
+end
+
+print("-----------------------------------------------------------------------------")
+print("--                  Braket (funtion operator table)                        --")
+print("-----------------------------------------------------------------------------")
+
+
+element = Braket(psi1, Opp1, psiList)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable1[1][i], threshold) ~= 0 then error("Braket for funtion operator table not equal to the expected value\n", 1) end
+end
+
+element = Braket(psi2, Opp1, psiList)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable1[2][i], threshold) ~= 0 then error("Braket for funtion operator table not equal to the expected value\n", 1) end
+end
+
+element = Braket(psi3, Opp1, psiList)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable1[3][i], threshold) ~= 0 then error("Braket for funtion operator table not equal to the expected value\n", 1) end
+end
+
+element = Braket(psi1, Opp2, psiList)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable2[1][i], threshold) ~= 0 then error("Braket for funtion operator table not equal to the expected value\n", 1) end
+end
+
+element = Braket(psi2, Opp2, psiList)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable2[2][i], threshold) ~= 0 then error("Braket for funtion operator table not equal to the expected value\n", 1) end
+end
+
+element = Braket(psi3, Opp2, psiList)
+for i = 1, #element do
+    if Chop(element[i] - ResPsiOPsiTable2[3][i], threshold) ~= 0 then error("Braket for funtion operator table not equal to the expected value\n", 1) end
+end
+
+
+print("-----------------------------------------------------------------------------")
+print("--                  Braket (table operator table)                          --")
+print("-----------------------------------------------------------------------------")
+
+element = Braket(psiList, Opp1, {psi1, psi3})
+for i = 1, #element do
+    for j, jref in pairs({1, 3}) do
+        if Chop(element[i][j] - ResPsiOPsiTable1[i][jref], threshold) ~= 0 then error("Braket for table operator table not equal to the expected value\n", 1) end
+    end
+end
+
+element = Braket(psiList, Opp2, {psi1, psi3})
+for i = 1, #element do
+    for j, jref in pairs({1, 3}) do
+        if Chop(element[i][j] - ResPsiOPsiTable2[i][jref], threshold) ~= 0 then error("Braket for table operator table not equal to the expected value\n", 1) end
+    end
+end
+
+print("-------------------------------------------------------")
+print("--                  End of Braket                    --")
+print("-------------------------------------------------------")
