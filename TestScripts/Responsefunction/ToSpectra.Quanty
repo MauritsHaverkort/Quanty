@@ -2,11 +2,423 @@ print("--------------------------------------------------------")
 print("-- Responsefunction ToSpectra                         --")
 print("--------------------------------------------------------")
 
+-- these test fail
+-- need attention
+
+print("-- Single valued                                      --")
+
+print("-- Tri                                                --")
+
+Mexp = Matrix.New({ {  11     ,  2      ,  0      ,  0      ,  0      ,  0      } ,
+										{  2      ,  12     ,  3      ,  0      ,  0      ,  0      } ,
+										{  0      ,  3      ,  13     ,  4      ,  0      ,  0      } ,
+										{  0      ,  0      ,  4      ,  14     ,  5      ,  0      } ,
+										{  0      ,  0      ,  0      ,  5      ,  15     ,  6      } ,
+										{  0      ,  0      ,  0      ,  0      ,  6      ,  16     } })
+a = {10, 11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G = ResponseFunction.New({a,b,mu=0,type="Tri", name="G"})
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- And                                                --")
+
+Mexp = Matrix.New({ {  11     ,  2      ,  3      ,  4      ,  5      ,  6      } ,
+										{  2      ,  12     ,  0      ,  0      ,  0      ,  0      } ,
+										{  3      ,  0      ,  13     ,  0      ,  0      ,  0      } ,
+										{  4      ,  0      ,  0      ,  14     ,  0      ,  0      } ,
+										{  5      ,  0      ,  0      ,  0      ,  15     ,  0      } ,
+										{  6      ,  0      ,  0      ,  0      ,  0      ,  16     } })
+a = {10, 11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G = ResponseFunction.New({a,b,mu=0,type="And", name="G"})
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- Nat                                                --")
+
+acon = {0,  5, 6, 7}
+bcon = {    2, 3, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {    12,   13,   14}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+a0=0
+b0=1
+G = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="D"})
+Mexp = Matrix.New({ { -2140   , -480    ,  156    ,  0      ,  6      ,  0      } ,
+										{ -480    ,  660    ,  26     ,  0      , -36     ,  0      } ,
+										{  156    ,  26     , -16     ,  14     ,  0      ,  0      } ,
+										{  0      ,  0      ,  14     , -17     ,  0      ,  0      } ,
+										{  6      , -36     ,  0      ,  0      ,  6      ,  4      } ,
+										{  0      ,  0      ,  0      ,  0      ,  4      ,  7      } })
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- LP                                                 --")
+
+a = {0, -sqrt(2), 0,   sqrt(2)}
+b = {        1/4,1/2,   1/4}
+G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="A"})
+Mexp = Matrix.New({ {  0      ,  1      ,  0      } ,
+										{  1      ,  0      ,  1      } ,
+										{  0      ,  1      ,  0      } })
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+
+print("-- Matrix                                             --")
+
+print("-- Tri                                                --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,0 },
+											 {B1,A2,B2},
+											 {0 ,B2,A3}})
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- And                                                --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,B2 },
+											 {B1,A2, 0 },
+											 {B2, 0,A3 }})
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+print("-- Nat                                                --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+A1v=-A1
+A1c= A1
+B1v= B1
+B1c= B1
+Mexp = Matrix.Flatten({{ B0c*A1c*B0c+B0v*A1v*B0v,-B0c*A1c*B0v+B0v*A1v*B0c, B1v*B0v, 0 , B1c*B0c, 0  },
+											 { B0c*A1v*B0v-B0v*A1c*B0c, B0v*A1c*B0v+B0c*A1v*B0c, B1v*B0c, 0 ,-B1c*B0v, 0  },
+											 { B1v*B0v                , B1v*B0c                ,-A2     , B2, 0      , 0  },
+											 { 0                      , 0                      , B2     ,-A3, 0      , 0  },
+											 { B1c*B0c                , -B1c*B0v               , 0      , 0 , A2     , B2 },
+											 { 0                      , 0                      , 0      , 0 , B2     , A3 }})
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+
+print("-- LP                                                 --")
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,-1,-2,-3}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="A"} )
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+
+
+print("-- Matrix Complex                                     --")
+
+print("-- Tri                                                --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="A"} )
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- And                                                --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="A"} )
+Mexp = Matrix.Flatten({{A1,B1,B2 },
+											 {B1,A2, 0 },
+											 {B2, 0,A3 }})
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- Nat                                                --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+A1v=-A1
+A1c= A1
+B1v= B1
+B1c= B1
+Mexp = Matrix.Flatten({{ B0c*A1c*B0c+B0v*A1v*B0v,-B0c*A1c*B0v+B0v*A1v*B0c, B1v*B0v, 0 , B1c*B0c, 0  },
+											 { B0c*A1v*B0v-B0v*A1c*B0c, B0v*A1c*B0v+B0c*A1v*B0c, B1v*B0c, 0 ,-B1c*B0v, 0  },
+											 { B1v*B0v                , B1v*B0c                ,-A2     , B2, 0      , 0  },
+											 { 0                      , 0                      , B2     ,-A3, 0      , 0  },
+											 { B1c*B0c                , -B1c*B0v               , 0      , 0 , A2     , B2 },
+											 { 0                      , 0                      , 0      , 0 , B2     , A3 }})
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
+print("-- LP                                                 --")
+
+
+A0 = Matrix.New({{0,I,0},{0,-I,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G = ResponseFunction.New( { {A0,-1,-2,-3}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="A"} )
+
+S = ResponseFunction.ToSpectra(G)
+print("S1",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+print("S2",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+print("S3",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+print("S4",S)
+S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+print("S5",S)
+
+
+
 
 
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")
 print("--------------------------------------------------------")
+
 
 
