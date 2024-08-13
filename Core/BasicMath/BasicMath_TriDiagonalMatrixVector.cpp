@@ -192,6 +192,7 @@ uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatri
     M->a[i] = A.a[i + iStart - 1];
     M->b[i] = A.b[i + iStart - 1];
   }
+  M->mu = A.mu;
   M->a[M->N] = A.a[iEnd];
   return 0;
 }
@@ -213,6 +214,7 @@ uint32_t TriDiagonalMatrixCopy(TriDiagonalMatrixType * const M, TriDiagonalMatri
     M->a[i] = A.a[i];
     M->b[i] = A.b[i];
   }
+  M->mu = A.mu;
   M->a[M->N] = A.a[M->N];
   return 0;
 }

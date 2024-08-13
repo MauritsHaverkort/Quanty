@@ -197,6 +197,7 @@ uint32_t AndersonMatrixCopy(AndersonMatrixType * const M, AndersonMatrixType A)
     M->a[i] = A.a[i];
     M->b[i] = A.b[i];
   }
+  M->mu=A.mu;
   M->a[M->N] = A.a[M->N];
   return 0;
 }

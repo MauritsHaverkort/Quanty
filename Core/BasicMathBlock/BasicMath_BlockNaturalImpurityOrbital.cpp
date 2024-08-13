@@ -66,6 +66,7 @@ uint32_t InitBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrix
   A->TMT.Ni=4*A->BlockSize;
   A->TMT.Nj=4*A->BlockSize;
   InitCompactIdentityMatrix(&(A->TMT));
+  A->Epsilon=0;
   return 0;
 }
 
@@ -201,10 +202,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrix
  */
 uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A, BlockNaturalImpurityOrbitalMatrixType *B)
 {
-  strncpy(B->Name, A.Name, MAXStrLength);
-  B->BlockSize = A.BlockSize;
-  B->QComplex = A.QComplex;
-  B->mu = A.mu;
+  *B=A;
   CopyBlockTridiagonalMatrix(A.val, &(B->val));
   CopyBlockTridiagonalMatrix(A.con, &(B->con));
   CompactMatrixCopy(A.TMT, &(B->TMT));

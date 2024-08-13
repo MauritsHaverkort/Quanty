@@ -861,19 +861,31 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
         TwoMu = 2 * ((BlockAndersonMatrixType*)(Gout->data))->mu;
         if((((BlockAndersonMatrixType*)(Gout->data))->QComplex)==0)
         {
-          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockAndersonMatrixType*)(Gout->data))->aRe[i])*=-1;
-            (((BlockAndersonMatrixType*)(Gout->data))->aRe[i])+=TwoMu;
+          }
+          for(int i=0;i<( ((BlockAndersonMatrixType*)(Gout->data))->N);i++)
+          {
+            for(int j=0;j<( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize);j++)
+            {
+              (((BlockAndersonMatrixType*)(Gout->data))->aRe[Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockAndersonMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
+            }
           }
         }
         else
         {
-          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockAndersonMatrixType*)(Gout->data))->a[i].Re)*=-1;
             (((BlockAndersonMatrixType*)(Gout->data))->a[i].Im)*=-1;
-            (((BlockAndersonMatrixType*)(Gout->data))->a[i].Re)+=TwoMu;
+          }
+          for(int i=0;i<( ((BlockAndersonMatrixType*)(Gout->data))->N);i++)
+          {
+            for(int j=0;j<( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize);j++)
+            {
+              (((BlockAndersonMatrixType*)(Gout->data))->a[Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockAndersonMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
+            }
           }
         }
       }
@@ -906,19 +918,31 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
         TwoMu = 2 * ((BlockTriDiagonalMatrixType*)(Gout->data))->mu;
         if((((BlockTriDiagonalMatrixType*)(Gout->data))->QComplex)==0)
         {
-          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[i])*=-1;
-            (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[i])+=TwoMu;
+          }
+          for(int i=0;i<( ((BlockTriDiagonalMatrixType*)(Gout->data))->N);i++)
+          {
+            for(int j=0;j<( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSizeList[i]);j++)
+            {
+              (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
+            }
           }
         }
         else
         {
-          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Re)*=-1;
             (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Im)*=-1;
-            (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Re)+=TwoMu;
+          }
+          for(int i=0;i<( ((BlockTriDiagonalMatrixType*)(Gout->data))->N);i++)
+          {
+            for(int j=0;j<( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSizeList[i]);j++)
+            {
+              (((BlockTriDiagonalMatrixType*)(Gout->data))->a[Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
+            }
           }
         }
       }
@@ -929,36 +953,60 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
         
         if((((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->QComplex)==0)
         {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[i])*=-1;
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[i])+=TwoMu;
+          }
+          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N);i++)
+          {
+            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.BlockSizeList[i]);j++)
+            {
+              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
+            }
           }
         }
         else
         {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Re)*=-1;
             (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Im)*=-1;
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Re)+=TwoMu;
+          }
+          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N);i++)
+          {
+            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.BlockSizeList[i]);j++)
+            {
+              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
+            }
           }
         }
         if((((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->QComplex)==0)
         {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[i])*=-1;
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[i])+=TwoMu;
+          }
+          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N);i++)
+          {
+            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.BlockSizeList[i]);j++)
+            {
+              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
+            }
           }
         }
         else
         {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i <= ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
+          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
           {
             (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Re)*=-1;
             (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Im)*=-1;
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Re)+=TwoMu;
+          }
+          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N);i++)
+          {
+            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.BlockSizeList[i]);j++)
+            {
+              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
+            }
           }
         }
         BlockTriDiagonalMatrixType temp = ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con;
@@ -977,7 +1025,7 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
       case 'a':
       {
         TwoMu = 2 * ((AndersonMatrixType*)(Gout->data))->mu;
-        for(i=0;i<=((AndersonMatrixType*)(Gout->data))->N;i++)
+        for(i=1;i<=((AndersonMatrixType*)(Gout->data))->N;i++)
         {
           ((AndersonMatrixType*)(Gout->data))->a[i]*=- 1;
         }
@@ -995,13 +1043,12 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
           ((ListOfPoles*)(Gout->data))->a[i]*=-1;
           ((ListOfPoles*)(Gout->data))->a[i]+=TwoMu;
         }
-        ((ListOfPoles*)(Gout->data))->a0*=-1;
       }
       break;
       case 't':
       {
         TwoMu = 2 * ((TriDiagonalMatrixType*)(Gout->data))->mu;
-        for(i=0;i<=((TriDiagonalMatrixType*)(Gout->data))->N;i++)
+        for(i=1;i<=((TriDiagonalMatrixType*)(Gout->data))->N;i++)
         {
           ((TriDiagonalMatrixType*)(Gout->data))->a[i]*=-1;
         }
@@ -1013,23 +1060,32 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
       break;
       case 'n':
       {
+        double temp, *tp;
         TwoMu = 2 * ((BADoubleTriDiagonalMatrixType*)(Gout->data))->mu;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->a0*=-1;
         ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB*=-1;
         ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA*=-1;
         ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvBA*=-1;
         ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB+=TwoMu;
         ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA+=TwoMu;
-        for(i=0;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.N;i++)
+        temp = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB = temp;
+        for(i=1;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.N;i++)
         {
           ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a[i]*=-1;
           ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a[i]+=TwoMu;
         }
-        for(i=0;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.N;i++)
+        for(i=1;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.N;i++)
         {
           ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a[i]*=-1;
           ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a[i]+=TwoMu;
         }
+        tp =((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a = tp;
+        tp =((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.b;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.b = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.b;
+        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.b = tp;
       }
       break;
     }

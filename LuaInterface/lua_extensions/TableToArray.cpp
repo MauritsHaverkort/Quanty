@@ -1401,7 +1401,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     }
     else
     {
-      buff->Epsilon=1000*DBL_EPSILON;
+      buff->Epsilon=0;
     }
     lua_pop(L,1);
     /* set aditional values */
