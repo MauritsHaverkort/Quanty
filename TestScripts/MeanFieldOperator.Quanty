@@ -15,7 +15,7 @@ local rho_list = {rho_posdef, rho_possemidef, rho_negdef, rho_negsemidef, rho_in
 local labels   = {"posdef","possemidef","negdef","negsemidef","indef"}
 
 function MeanFieldMatrix(OppMat,rho)
-    local MatMF = Matrix.Zero(NF)
+    local MatMF = Matrix.ToTable(Matrix.Zero(NF))
     local shift = 0
     local c = 0
     for i=1,NF do
