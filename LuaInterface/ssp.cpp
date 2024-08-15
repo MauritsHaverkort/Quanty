@@ -1120,11 +1120,14 @@ static int LuaChop(lua_State * L)
   struct
   {
     bool Distance;
+    bool Deflate;
   } Options;
   LuaOptionsType LuaChopOptions[]={
     {"Distance" ,        "bool",                      &(Options.Distance)},
+    {"Deflate"  ,        "bool",                      &(Options.Deflate)},
     {NULL, NULL, NULL}};
   Options.Distance=false;
+  Options.Deflate=true;
   if(LuaTestOptionsList(L, -1))
   {
     LuaCheckOptions(L, len, LuaChopOptions);
@@ -1261,7 +1264,14 @@ static int LuaChop(lua_State * L)
         ResponsefunctionType *M = (ResponsefunctionType*) luaL_checkudata(L, len, "ResponseFunction_Type");
         ResponsefunctionType Mnew;
         ResponsefunctionCopy(M, &Mnew);
-        ResponsefunctionChop(&Mnew, epsilon);
+        if(Options.Distance==true)
+        {
+          printf("Chop resposne functions according to distance between poles not yet implemented\n");
+        }
+        else
+        {
+          ResponsefunctionChop(&Mnew, epsilon,Options.Deflate);
+        }
         LuaPush_ResponseFunction(L, &Mnew);
         FreeResponsefunction(M);
         FreeResponsefunction(&Mnew);

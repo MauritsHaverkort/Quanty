@@ -267,6 +267,101 @@ uint32_t ChopBlockListOfPoles(BlockListOfPoles *A, double const epsilon)
   return 0;
 }
 
+uint32_t ChopBlockListOfPolesReduceDimension(BlockListOfPoles *A, double const epsilon)
+{
+  int i,j;
+  bool StayComplex=false;
+  bool KeepBlock;
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      KeepBlock=false;
+      for(j=1;j<(1+A->BlockSize*A->BlockSize);j++)
+      {
+        if(fabs(A->V[i*((1+A->BlockSize*A->BlockSize))+j].Re)<epsilon)
+        {
+          A->V[i*((1+A->BlockSize*A->BlockSize))+j].Re=0;
+        }
+        else
+        {
+          KeepBlock=true;
+        }
+        if(fabs(A->V[i*((1+A->BlockSize*A->BlockSize))+j].Im)<epsilon)
+        {
+          A->V[i*((1+A->BlockSize*A->BlockSize))+j].Im=0;
+        }
+        else
+        {
+          KeepBlock=true;
+          StayComplex=true;
+        }
+      }
+      if(KeepBlock==false)
+      {
+        memcpy(&(A->V[i*((1+A->BlockSize*A->BlockSize))]), &(A->V[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16) );
+        i--;
+        A->N--;
+        A->a0 = &(A->V[(A->N)*((1+A->BlockSize*A->BlockSize))]);
+      }
+    }
+    for(j=0;j<(A->BlockSize*A->BlockSize);j++)
+    {
+      if(fabs(A->V[A->N*((1+A->BlockSize*A->BlockSize))+j].Re)<epsilon)
+      {
+        A->V[A->N*((1+A->BlockSize*A->BlockSize))+j].Re=0;
+      }
+      if(fabs(A->V[A->N*((A->BlockSize*A->BlockSize))+j].Im)<epsilon)
+      {
+        A->V[A->N*((1+A->BlockSize*A->BlockSize))+j].Im=0;
+      }
+      else
+      {
+        StayComplex=true;
+      }
+    }
+    if(StayComplex==false)
+    {
+      return MakeComplexBlockListOfPolesReal(A);
+    }
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      KeepBlock=false;
+      for(j=1;j<(1+A->BlockSize*A->BlockSize);j++)
+      {
+        if(fabs(A->VRe[i*((1+A->BlockSize*A->BlockSize))+j])<epsilon)
+        {
+          A->VRe[i*((1+A->BlockSize*A->BlockSize))+j]=0;
+        }
+        else
+        {
+          KeepBlock=true;
+        }
+      }
+      if(KeepBlock==false)
+      {
+        memcpy(&(A->VRe[i*((1+A->BlockSize*A->BlockSize))]), &(A->VRe[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double) );
+        i--;
+        A->N--;
+        A->a0Re = &(A->VRe[(A->N)*((1+A->BlockSize*A->BlockSize))]);
+      }
+    }
+    for(j=0;j<(A->BlockSize*A->BlockSize);j++)
+    {
+      if(fabs(A->VRe[A->N*((1+A->BlockSize*A->BlockSize))+j])<epsilon)
+      {
+        A->VRe[A->N*((1+A->BlockSize*A->BlockSize))+j]=0;
+      }
+    }
+  }
+  return 0;
+}
+
+
+
 uint32_t RealBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
 {
   int i,k;

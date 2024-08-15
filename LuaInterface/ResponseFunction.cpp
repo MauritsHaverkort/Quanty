@@ -2309,6 +2309,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
   {"InvertEnergy", LuaInvertEnergy},
   {"CreateBitMasks", LuaResponseFunctionToBitMask},
+  {"Chop", LuaChop},
   {NULL, NULL}
 };
 

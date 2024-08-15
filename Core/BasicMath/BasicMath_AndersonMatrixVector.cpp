@@ -96,10 +96,27 @@ void AndersonMatrixChop(AndersonMatrixType * const M, double const epsilon)
   uint32_t i;
   for (i = 0; i < M->N; i++)
   {
-    if ((fabs(M->a[i]) < epsilon)) M->a[i] = 0;
     if ((fabs(M->b[i]) < epsilon)) M->b[i] = 0;
   }
-  if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
+}
+void AndersonMatrixChopReduceDimension(AndersonMatrixType * const M, double const epsilon)
+{
+  uint32_t i;
+  if ((fabs(M->b[0]) < epsilon))
+  {
+    M->b[0]=0;
+    M->N=0;
+  }
+  for (i = 1; i < M->N; i++)
+  {
+    if ((fabs(M->b[i]) < epsilon))
+    {
+      memcpy(&(M->b[i]),   &(M->b[i+1]), (M->N-i-1)*sizeof(double));
+      memcpy(&(M->a[i+1]), &(M->a[i+2]), (M->N-i-1)*sizeof(double));
+      M->N--;
+      i--;
+    }
+  }
 }
 
 /*  MI=M^-1

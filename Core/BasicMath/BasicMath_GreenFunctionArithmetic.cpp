@@ -2227,11 +2227,16 @@ Complex16 EvaluateTriDiagonalMatrix(TriDiagonalMatrixType const * A, const doubl
   Complex16 res;
   double denom;
   uint32_t j;
-  
+  if(A->N==0)
+  {
+    res.Re = A->a[0];
+    res.Im=0;
+    return res;
+  }
   denom = (Sqr(Gamma * 0.5) + Sqr(omega - A->a[A->N]));
   res.Re = (omega - A->a[A->N]) / denom;
   res.Im = (-Gamma * 0.5) / denom;
-  for (j = Max(1, A->N) - 1; j >= 1; j--)
+  for (j = A->N - 1; j >= 1; j--)
   {
     denom = Sqr(Gamma * 0.5 - res.Im * Sqr(A->b[j])) + Sqr(omega - A->a[j] - res.Re * Sqr(A->b[j]));
     res.Re = (omega - A->a[j] - res.Re * Sqr(A->b[j])) / denom;
@@ -2328,7 +2333,7 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
     case 't':
     case 'T':
     {
-      return EvaluateTriDiagonalMatrix(A->data, omega, Gamma);
+      return EvaluateTriDiagonalMatrix(((TriDiagonalMatrixType*)(A->data)), omega, Gamma);
     }
     case 'a':
     case 'A':
@@ -2542,18 +2547,25 @@ int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout)
   return ConvertResponsefunction(Min,Mout,Min->type,0,0);
 }
 
-/*
- *
+/*  set elements smaller than epsilon in absolute value to zero
+ *  If Deflate is true also remove a block when all elements are zero
  */
-int ResponsefunctionChop(ResponsefunctionType *M, double epsilon)
-{ //TODO: all
+int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate)
+{
   if(M->Block==true)
   {
     switch (M->type|32)
     {
       case 'l':
       {
-        
+        if(Deflate==true)
+        {
+          ChopBlockListOfPolesReduceDimension((BlockListOfPoles*)(M->data), epsilon);
+        }
+        else
+        {
+          ChopBlockListOfPoles((BlockListOfPoles*)(M->data), epsilon);
+        }
       }
         break;
       case 't':
@@ -2584,22 +2596,50 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon)
     {
       case 'l':
       {
-        ListOfPoleChoped((ListOfPoles*)(M->data), epsilon);
+        if(Deflate==true)
+        {
+          ListOfPoleChopReduceDimension((ListOfPoles*)(M->data), epsilon);
+        }
+        else
+        {
+          ListOfPoleChop((ListOfPoles*)(M->data), epsilon);
+        }
       }
         break;
       case 't':
       {
-        TriDiagonalMatrixChop((TriDiagonalMatrixType *)(M->data), epsilon);
+        if(Deflate==true)
+        {
+          TriDiagonalMatrixChopReduceDimension((TriDiagonalMatrixType *)(M->data), epsilon);
+        }
+        else
+        {
+          TriDiagonalMatrixChop((TriDiagonalMatrixType *)(M->data), epsilon);
+        }
       }
         break;
       case 'a':
       {
-        AndersonMatrixChop((AndersonMatrixType *)(M->data), epsilon);
+        if(Deflate==true)
+        {
+          AndersonMatrixChopReduceDimension((AndersonMatrixType *)(M->data), epsilon);
+        }
+        else
+        {
+          AndersonMatrixChop((AndersonMatrixType *)(M->data), epsilon);
+        }
       }
         break;
       case 'n':
       {
-        BADoubleTriDiagonalMatrixChop((BADoubleTriDiagonalMatrixType *)(M->data), epsilon);
+        if(Deflate==true)
+        {
+          BADoubleTriDiagonalMatrixChopReduceDimension((BADoubleTriDiagonalMatrixType *)(M->data), epsilon);
+        }
+        else
+        {
+          BADoubleTriDiagonalMatrixChop((BADoubleTriDiagonalMatrixType *)(M->data), epsilon);
+        }
       }
         break;
       default:

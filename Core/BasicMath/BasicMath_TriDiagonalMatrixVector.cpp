@@ -22,11 +22,6 @@ void FreeTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 {
   strcpy(M->Name, "Matrix");
-  if (M->N == 0)
-  {
-    printf("Initialized a TriDiagonalMatrix with size zero.\n");
-    fflush(stdout);
-  };
   M->a = (double*)malloc((M->N + 1) * sizeof(double));
   if (M->a == NULL)
   {
@@ -34,7 +29,7 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     fflush(stdout);
     return 1;
   };
-  M->b = (double*)malloc((Max(1, M->N)) * sizeof(double));
+  M->b = (double*)malloc(M->N * sizeof(double));
   if (M->b == NULL)
   {
     free(M->a);
@@ -43,7 +38,7 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   }
   M->a[0] = 0;
-  M->b[0] = 1;
+  if(M->N!=0) M->b[0] = 1;
   M->mu = 0;
   return 0;
 }
@@ -95,6 +90,16 @@ void TriDiagonalMatrixChop(TriDiagonalMatrixType * const M, double const epsilon
   {
     if ((fabs(M->a[i]) < epsilon)) M->a[i] = 0;
     if ((fabs(M->b[i]) < epsilon)) M->b[i] = 0;
+  }
+  if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
+}
+void TriDiagonalMatrixChopReduceDimension(TriDiagonalMatrixType * const M, double const epsilon)
+{
+  uint32_t i;
+  for (i = 0; i < M->N; i++)
+  {
+    if ((fabs(M->a[i]) < epsilon)) M->a[i] = 0;
+    if ((fabs(M->b[i]) < epsilon)) M->N=i;
   }
   if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
 }
