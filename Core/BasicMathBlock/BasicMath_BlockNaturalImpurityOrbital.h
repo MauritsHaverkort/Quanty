@@ -1,5 +1,6 @@
 uint32_t InitBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A);
 uint32_t FreeBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType *const A);
 uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon);
+uint32_t BlockNaturalImpurityOrbitalMatrixChopReduceDimension(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon);
 uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrixType A, BlockNaturalImpurityOrbitalMatrixType *B);
 uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalImpurityOrbitalMatrixType *B);

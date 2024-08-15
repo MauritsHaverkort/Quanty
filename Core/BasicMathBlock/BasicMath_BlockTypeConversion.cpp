@@ -150,40 +150,43 @@ uint32_t EvaluateBlockAndersonMatrix(BlockAndersonMatrixType const *A, CompactMa
     CompactMatrixAdd(Gw, &Gwi);
   }
   // add a1
-  iblock = 1;
-  if(A->QComplex)
+  if(A->N!=0)
   {
-    a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+    iblock = 1;
+    if(A->QComplex)
+    {
+      a.V=&(A->a[iblock    *A->BlockSize*A->BlockSize]);
+    }
+    else
+    {
+      a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
+    }
+    CompactMatrixAdd(Gw, &a);
+    // multipli by -1
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      Gw->V[i].Re*=-1;
+      Gw->V[i].Im*=-1;
+    }
+    // add w
+    for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+    {
+      Gw->V[i].Re+=omega;
+      Gw->V[i].Im+=Gamma/2.0;
+    }
+    // inverse
+    CompactMatrixInverse(Gw);
+    // multiply by b0
+    if(A->QComplex)
+    {
+      b.V=A->b;
+    }
+    else
+    {
+      b.VRe=A->bRe;
+    }
+    TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b^* Gw b^T */
   }
-  else
-  {
-    a.VRe=&(A->aRe[iblock    *A->BlockSize*A->BlockSize]);
-  }
-  CompactMatrixAdd(Gw, &a);
-  // multipli by -1
-  for(i=0;i<A->BlockSize*A->BlockSize;i++)
-  {
-    Gw->V[i].Re*=-1;
-    Gw->V[i].Im*=-1;
-  }
-  // add w
-  for(i=0;i<A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
-  {
-    Gw->V[i].Re+=omega;
-    Gw->V[i].Im+=Gamma/2.0;
-  }
-  // inverse
-  CompactMatrixInverse(Gw);
-  // multiply by b0
-  if(A->QComplex)
-  {
-    b.V=A->b;
-  }
-  else
-  {
-    b.VRe=A->bRe;
-  }
-  TransformCompactMatrixInlinecT(Gw, &b); /* Gw <- b^* Gw b^T */
   // add a0
   if(A->QComplex)
   {

@@ -260,11 +260,45 @@ G2t = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="Tri",
 G1 = Chop(G)
 G2 = Chop(G,{{"Deflate",false}})
 
-print(ResponseFunction.ToTable(G))
-print(ResponseFunction.ToTable(G1))
-print(ResponseFunction.ToTable(G2))
-print(ResponseFunction.ToTable(G1t))
-print(ResponseFunction.ToTable(G2t))
+
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
+
+
+print("-- Tri to zero                                         --")
+
+
+A0 = Matrix.New({{2,0,0},{3,3,0},{4,4,4}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1E-17,0,1E-17},{0,1E-17,1E-17},{1E-17,1E-17,1E-17}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1E-18,1E-18,1E-18},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{1E-17,0,1E-17},{0,1E-17,1E-17},{1E-17,1E-17,1E-17}})
+B2 = B2s * B2s
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+G = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="Tri", name="A"} )
+
+G1t = ResponseFunction.New( { {A0}, {}, mu=0, type="Tri", name="A"} )
+
+B0s = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B2 = B2s * B2s
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+G2t = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="Tri", name="A"} )
+
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
 
 
 
@@ -274,10 +308,10 @@ if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFu
 
 
 
-os.exit()
 
 
 print("-- And                                                --")
+
 
 
 A0 = Matrix.New({{2,0,0},{3,3,0},{4,4,4}})
@@ -287,15 +321,84 @@ A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
 
 B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
 B0 = B0s * B0s
-B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1s = Matrix.New({{1,1,3},{1E-18,1E-18,1E-18},{3,6,9}})
 B1 = B1s * B1s
-B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2s = Matrix.New({{1E-17,0,1E-17},{0,1E-17,1E-17},{1E-17,1E-17,1E-17}})
 B2 = B2s * B2s
-B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
 B3 = B3s * B3s
+G = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="And", name="A"} )
 
-G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="A"} )
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+G1t = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B3}, mu=0, type="And", name="A"} )
 
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B2 = B2s * B2s
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+G2t = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="And", name="A"} )
+
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+
+
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
+
+
+print("-- And to zero                                        --")
+
+
+
+A0 = Matrix.New({{2,0,0},{3,3,0},{4,4,4}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1E-17,0,1E-17},{0,1E-17,1E-17},{1E-17,1E-17,1E-17}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1E-18,1E-18,1E-18},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{1E-17,0,1E-17},{0,1E-17,1E-17},{1E-17,1E-17,1E-17}})
+B2 = B2s * B2s
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+G = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="And", name="A"} )
+
+
+G1t = ResponseFunction.New( { {A0}, {}, mu=0, type="And", name="A"} )
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B2 = B2s * B2s
+B3s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+G2t = ResponseFunction.New( { {A0,A1,A2,A3,A3}, {B0,B1,B2,B3}, mu=0, type="And", name="A"} )
+
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+
+
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
 
 
 
@@ -309,11 +412,11 @@ A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
 
 B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
 B0 = B0s * B0s
-B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1s = Matrix.New({{1,1,3},{1E-18,1E-18,1E-18},{3,6,9}})
 B1 = B1s * B1s
 B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
 B2 = B2s * B2s
-B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3s = Matrix.New({{1E-18,1E-18,1E-18},{1E-18,1E-18,1E-18},{1E-18,1E-18,1E-18}})
 B3 = B3s * B3s
 
 B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
@@ -323,6 +426,109 @@ Gv = ResponseFunction.New( { {A0,-A1/2,-A2/2,-A3/2}, {B0v,B1,B2}, mu=0, type="Tr
 Gc = ResponseFunction.New( { {A0, A1/1, A2/1, A3/1}, {B0c,B2,B3}, mu=0, type="Tri", name="A"} )
 G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
 
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1/2,-A2/2,-A3/2}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1/1, A2/1},       {B0c,B2}, mu=0, type="Tri", name="A"} )
+G1t = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1/2,-A2/2,-A3/2}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1/1, A2/1, A3/1}, {B0c,B2,B3}, mu=0, type="Tri", name="A"} )
+G2t = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+
+
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
+
+
+
+print("-- Nat to zero                                        --")
+
+
+A0 = Matrix.New({{0,0,0},{0,1,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1E-18,1E-18,1E-18},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{1E-18,1E-18,1E-18},{1E-18,1E-18,1E-18},{1E-18,1E-18,1E-18}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{1E-18,1E-18,1E-18},{1E-18,1E-18,1E-18},{1E-18,1E-18,1E-18}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1/2,-A2/2,-A3/2}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1/1, A2/1, A3/1}, {B0c,B2,B3}, mu=0, type="Tri", name="A"} )
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0}, {}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1/1, A2/1},       {B0c,B2}, mu=0, type="Tri", name="A"} )
+G1t = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{0,0,0},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B3 = B3s * B3s
+
+B0v = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1/2,-A2/2,-A3/2}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1/1, A2/1, A3/1}, {B0c,B2,B3}, mu=0, type="Tri", name="A"} )
+G2t = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+
+
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
 
 
 print("-- LP                                                 --")
@@ -351,6 +557,36 @@ G2 = Chop(G,{{"Deflate",false}})
 
 if((G1==G1t)~=true)    then error("Response function comparison failed\n",1) end
 if((G2==G2t)~=true)    then error("Response function comparison failed\n",1) end
+
+
+
+print("-- LP to zero                                         --")
+
+
+A0 = Matrix.New({{0,1E-18,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = (1E-20) * Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = (1E-20) * Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = (1E-20) * Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G   = ResponseFunction.New( { {A0, 1, 2, 3}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="A"} )
+G1t = ResponseFunction.New( { {M0}, {}, mu=0, type="ListOfPoles", name="A"} )
+G2t = ResponseFunction.New( { {M0, 1, 2, 3}, {M0,M0,M0}, mu=0, type="ListOfPoles", name="A"} )
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+if((G1==G1t)~=true)    then error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then error("Response function comparison failed\n",1) end
+
 
 
 collectgarbage()

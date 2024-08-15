@@ -195,6 +195,77 @@ uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrix
   return 0;
 }
 
+uint32_t BlockNaturalImpurityOrbitalMatrixChopReduceDimension(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon)
+{
+  int i,KeepComplex=0;
+  BlockTridiagonalMatrixChopReduceDimension(&(A->val), Epsilon);
+  BlockTridiagonalMatrixChopReduceDimension(&(A->con), Epsilon);
+  if(A->QComplex==true)
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->a0.V[i].Re)<Epsilon)A->a0.V[i].Re=0;
+      if(Abs(A->a0.V[i].Im)<Epsilon)
+      {
+        A->a0.V[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=0;i<4*A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->TMT.V[i].Re)<Epsilon)A->TMT.V[i].Re=0;
+      if(Abs(A->TMT.V[i].Im)<Epsilon)
+      {
+        A->TMT.V[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    if(A->val.QComplex!=0)
+    {
+      KeepComplex=1;
+      if(A->con.QComplex!=0)
+      {
+        // make A->con complex again
+        RealBlockTridiagonalMatrixToComplex(&(A->con));
+      }
+    }
+    if(A->con.QComplex!=0)
+    {
+      KeepComplex=1;
+      if(A->val.QComplex!=0)
+      {
+        // make A->val complex again
+        RealBlockTridiagonalMatrixToComplex(&(A->val));
+      }
+    }
+    if(KeepComplex==0)
+    {
+      if(A->val.QComplex!=0) ComplexBlockTridiagonalMatrixToReal(&A->val);
+      if(A->con.QComplex!=0) ComplexBlockTridiagonalMatrixToReal(&A->con);
+      MakeCompactComplexMatrixReal(&A->a0);
+      MakeCompactComplexMatrixReal(&A->TMT);
+      A->QComplex=0;
+    }
+  }
+  else
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->a0.VRe[i])<Epsilon)A->a0.VRe[i]=0;
+    }
+    for(i=0;i<4*A->BlockSize*A->BlockSize;i++)
+    {
+      if(Abs(A->TMT.VRe[i])<Epsilon)A->TMT.VRe[i]=0;
+    }
+  }
+  return 0;
+}
 
 /*
  *  B <- A
@@ -260,7 +331,6 @@ uint32_t CopyBlockNaturalImpurityOrbitalMatrix(BlockNaturalImpurityOrbitalMatrix
  */
 uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalImpurityOrbitalMatrixType *B)
 {
-  //TODO: test if TMT is correct
   CompactMatrixType M,T;
   uint32_t i,j;
   
@@ -453,7 +523,7 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
       }
     }
   }
-  //TODO: this part has to be checked
+  //TODO: this part has to be checked -- Do we need to????
   CompactMatrixGramSchmidtOrthogonalizeRow(&T, 1000*DBL_EPSILON, false);
   CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
   FreeCompactMatrix(&T);

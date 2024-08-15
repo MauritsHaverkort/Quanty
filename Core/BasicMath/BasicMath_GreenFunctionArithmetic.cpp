@@ -2570,17 +2570,38 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate)
         break;
       case 't':
       {
-        
+        if(Deflate==true)
+        {
+          BlockTridiagonalMatrixChopReduceDimension((BlockTriDiagonalMatrixType*)(M->data), epsilon);
+        }
+        else
+        {
+          BlockTridiagonalMatrixChop((BlockTriDiagonalMatrixType*)(M->data), epsilon);
+        }
       }
         break;
       case 'a':
       {
-        
+        if(Deflate==true)
+        {
+          BlockAndersonMatrixChopReduceDimension((BlockAndersonMatrixType*)(M->data), epsilon);
+        }
+        else
+        {
+          BlockAndersonMatrixChop((BlockAndersonMatrixType*)(M->data), epsilon);
+        }
       }
         break;
       case 'n':
       {
-        
+        if(Deflate==true)
+        {
+          BlockNaturalImpurityOrbitalMatrixChopReduceDimension((BlockNaturalImpurityOrbitalMatrixType*)(M->data), epsilon);
+        }
+        else
+        {
+          BlockNaturalImpurityOrbitalMatrixChop((BlockNaturalImpurityOrbitalMatrixType*)(M->data), epsilon);
+        }
       }
         break;
       default:

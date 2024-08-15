@@ -1176,7 +1176,6 @@ static int LuaChop(lua_State * L)
           res->Im = ((Abs(a->Im)>epsilon)?a->Im:0);
           luaL_setmetatable(L, "Complex_Type");
         }
-
         return 1;
       }
       if (luaL_testudata(L, len, "Spectra_Type") != NULL)
@@ -1279,7 +1278,7 @@ static int LuaChop(lua_State * L)
       }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
     case LUA_TTABLE:
-      // test if the table is a response function, if so chop a resoponse function
+      // TODO: test if the table is a response function, if so chop a resoponse function
       
       
       

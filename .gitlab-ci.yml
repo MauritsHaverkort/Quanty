@@ -152,3 +152,11 @@ test-job-Responsefunction-ToOperator:
   - ./Quanty.exe "TestScripts/Responsefunction/InvertEnergy.Quanty"
   dependencies:
   - build-job
+  
+test-job-Responsefunction-ToOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/Chop.Quanty"
+  dependencies:
+  - build-job

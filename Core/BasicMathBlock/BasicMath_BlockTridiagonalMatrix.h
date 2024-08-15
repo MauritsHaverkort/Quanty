@@ -1,6 +1,8 @@
 uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A);
 uint32_t FreeBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *A);
 uint32_t ComplexBlockTridiagonalMatrixToReal(BlockTriDiagonalMatrixType *const A);
+uint32_t RealBlockTridiagonalMatrixToComplex(BlockTriDiagonalMatrixType *const A);
 uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double const Epsilon);
 void ShiftBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A, double const delta);
 uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagonalMatrixType *B);
+uint32_t BlockTridiagonalMatrixChopReduceDimension(BlockTriDiagonalMatrixType *const A, double const Epsilon);

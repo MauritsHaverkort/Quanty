@@ -22,7 +22,7 @@ uint32_t InitBlockAndersonMatrix(BlockAndersonMatrixType *const A)
       printf("malloc failed in InitBlockTridiagonalMatrix\n");
       return 1;
     }
-    for(i=0;i<A->BlockSize;i++)
+    if(A->N!=0) for(i=0;i<A->BlockSize;i++)
     {
       A->b[i+i*A->BlockSize].Re=1;
     }
@@ -43,7 +43,7 @@ uint32_t InitBlockAndersonMatrix(BlockAndersonMatrixType *const A)
       printf("malloc failed in InitBlockTridiagonalMatrix\n");
       return 1;
     }
-    for(i=0;i<A->BlockSize;i++)
+    if(A->N!=0) for(i=0;i<A->BlockSize;i++)
     {
       A->bRe[i+i*A->BlockSize]=1;
     }
@@ -93,7 +93,19 @@ uint32_t BlockAndersonMatrixChop(BlockAndersonMatrixType *const A, double const 
   uint32_t i,KeepComplex=0;
   if(A->QComplex)
   {
-    for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
+    {
+      if(Abs(A->a[i].Re)<Epsilon)A->a[i].Re=0;
+      if(Abs(A->a[i].Im)<Epsilon)
+      {
+        A->a[i].Im=0;
+      }
+      else
+      {
+        KeepComplex=1;
+      }
+    }
+    for(i=A->BlockSize*A->BlockSize*(A->N);i<A->BlockSize*A->BlockSize*(A->N+1);i++)
     {
       if(Abs(A->a[i].Re)<Epsilon)A->a[i].Re=0;
       if(Abs(A->a[i].Im)<Epsilon)
@@ -109,9 +121,74 @@ uint32_t BlockAndersonMatrixChop(BlockAndersonMatrixType *const A, double const 
   }
   else
   {
-    for(i=0;i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+    for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
     {
       if(Abs(A->aRe[i])<Epsilon)A->aRe[i]=0;
+      if(Abs(A->bRe[i])<Epsilon)A->bRe[i]=0;
+    }
+    for(i=A->BlockSize*A->BlockSize*(A->N);i<A->BlockSize*A->BlockSize*(A->N+1);i++)
+    {
+      if(Abs(A->aRe[i])<Epsilon)A->aRe[i]=0;
+    }
+  }
+  return 0;
+}
+
+uint32_t BlockAndersonMatrixChopReduceDimension(BlockAndersonMatrixType *const A, double const Epsilon)
+{
+  uint32_t i,j;
+  bool KeepComplex=false, KeepBlock;
+  if(A->QComplex)
+  {
+    
+  }
+  else
+  {
+    for(j=0;j<Sqr(A->BlockSize);j++)
+    {
+      if(Abs(A->aRe[j])<Epsilon)A->aRe[j]=0;
+    }
+    if(A->N==0) return 0;
+    KeepBlock=false;
+    for(j=0;j<Sqr(A->BlockSize);j++)
+    {
+      if(Abs(A->aRe[Sqr(A->BlockSize)+j])<Epsilon)A->aRe[Sqr(A->BlockSize)+j]=0;
+      if(Abs(A->bRe[j])<Epsilon)
+      {
+        A->bRe[j]=0;
+      }
+      else
+      {
+        KeepBlock=true;
+      }
+    }
+    if(KeepBlock==false)
+    {
+      A->N=0;
+    }
+    for(i=1;i<A->N;i++)
+    {
+      KeepBlock=false;
+      for(j=0;j<Sqr(A->BlockSize);j++)
+      {
+        if(Abs(A->aRe[(i+1)*Sqr(A->BlockSize) + j])<Epsilon)A->aRe[(i+1)*Sqr(A->BlockSize) + j]=0;
+        if(Abs(A->bRe[i*Sqr(A->BlockSize) + j])<Epsilon)
+        {
+          A->bRe[i*Sqr(A->BlockSize) + j]=0;
+        }
+        else
+        {
+          KeepBlock=true;
+        }
+      }
+      if(KeepBlock==false)
+      {
+        A->N--;
+        if(A->N==i) return 0;
+        memcpy(&(A->aRe[(i+1)*Sqr(A->BlockSize)]), &( A->aRe[(i+2)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
+        memcpy(&(A->bRe[(i  )*Sqr(A->BlockSize)]), &( A->bRe[(i+1)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
+        i--;
+      }
     }
   }
   return 0;

@@ -36,7 +36,7 @@ uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A)
       printf("malloc failed in InitBlockTridiagonalMatrix\n");
       return 1;
     }
-    for(i=0;i<A->BlockSize;i++)
+    if(A->N!=0) for(i=0;i<A->BlockSize;i++)
     {
       A->b[i+i*A->BlockSize].Re=1;
     }
@@ -58,7 +58,7 @@ uint32_t InitBlockTridiagonalMatrix(BlockTriDiagonalMatrixType *const A)
       printf("malloc failed in InitBlockTridiagonalMatrix\n");
       return 1;
     }
-    for(i=0;i<A->BlockSize;i++)
+    if(A->N!=0) for(i=0;i<A->BlockSize;i++)
     {
       A->bRe[i+i*A->BlockSize]=1;
     }
@@ -174,6 +174,93 @@ uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double 
     for(i=0;i<A->BlockSize*A->BlockSize*(A->N);i++)
     {
       if(Abs(A->bRe[i])<Epsilon)A->bRe[i]=0;
+    }
+  }
+  return 0;
+}
+
+
+uint32_t BlockTridiagonalMatrixChopReduceDimension(BlockTriDiagonalMatrixType *const A, double const Epsilon)
+{
+  uint32_t i,j;
+  bool KeepComplex=false, KeepBlock;
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      KeepBlock=false;
+      for(j=0;j<Sqr(A->BlockSize);j++)
+      {
+        if(Abs(A->b[i*Sqr(A->BlockSize)+j].Re)<Epsilon)
+        {
+          A->b[i*Sqr(A->BlockSize)+j].Re=0;
+        }
+        else
+        {
+          KeepBlock=true;
+        }
+        if(Abs(A->b[i*Sqr(A->BlockSize)+j].Im)<Epsilon)
+        {
+          A->b[i*Sqr(A->BlockSize)+j].Im=0;
+        }
+        else
+        {
+          KeepComplex=true;
+          KeepBlock=true;
+        }
+        if(Abs(A->a[i*Sqr(A->BlockSize)+j].Re)<Epsilon)A->a[i*Sqr(A->BlockSize)+j].Re=0;
+        if(Abs(A->a[i*Sqr(A->BlockSize)+j].Im)<Epsilon)
+        {
+          A->a[i*Sqr(A->BlockSize)+j].Im=0;
+        }
+        else
+        {
+          KeepComplex=true;
+        }
+      }
+      if(KeepBlock==false)
+      {
+        A->N=i;
+      }
+    }
+    for(j=0;j<Sqr(A->BlockSize);j++)
+    {
+      if(Abs(A->a[A->N*Sqr(A->BlockSize)+j].Im)<Epsilon)
+      {
+        A->a[A->N*Sqr(A->BlockSize)+j].Im=0;
+      }
+      else
+      {
+        KeepComplex=true;
+      }
+    }
+    if(KeepComplex==false) ComplexBlockTridiagonalMatrixToReal(A);
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      KeepBlock=false;
+      for(j=0;j<Sqr(A->BlockSize);j++)
+      {
+        if(Abs(A->bRe[i*Sqr(A->BlockSize)+j])<Epsilon)
+        {
+          A->bRe[i*Sqr(A->BlockSize)+j]=0;
+        }
+        else
+        {
+          KeepBlock=true;
+        }
+        if(Abs(A->aRe[i*Sqr(A->BlockSize)+j])<Epsilon)A->aRe[i*Sqr(A->BlockSize)+j]=0;
+      }
+      if(KeepBlock==false)
+      {
+        A->N=i;
+      }
+    }
+    for(j=0;j<Sqr(A->BlockSize);j++)
+    {
+      if(Abs(A->aRe[A->N*Sqr(A->BlockSize)+j])<Epsilon)A->aRe[A->N*Sqr(A->BlockSize)+j]=0;
     }
   }
   return 0;
