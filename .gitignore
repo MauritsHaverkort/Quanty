@@ -10,3 +10,7 @@ Makefile
 Martin/QuickTest.cpp
 Martin/quicktest
 .settings/
+TestScripts/Eigensystem_backup.Quanty
+TestScripts/eigensystem.py
+TestScripts/spec.Quanty
+TestScripts/test.Quanty

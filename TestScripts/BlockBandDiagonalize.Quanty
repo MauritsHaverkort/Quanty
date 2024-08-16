@@ -36,6 +36,7 @@ MatR = {{0.8394112643837754, -0.3051612469858809, 0.2861137341873381, 0.30493268
   0.3966233338970524, -0.09915152027005503, -0.969239396666898, -0.653340354973156}, 
  {0.08177620865406676, 0.550152501037166, 0.38339902017858063, -0.1196998876701949, 0.043485025632509444, 0.3580589483997676, 
   0.15744295795149554, 0.5037161918287394, -0.653340354973156, 0.9202338052130075}}
+setmetatable(MatR, MatrixMeta)
 
 -- Random complex, heritian matrix
 MatC = {{0.7500687028400757, -0.17825280283040668 + 0.46611276253581435*I, 0.2533629471545904 + 0.12009101892945684*I, 
@@ -80,6 +81,8 @@ MatC = {{0.7500687028400757, -0.17825280283040668 + 0.46611276253581435*I, 0.253
 -0.2767386872723707 - 0.35363006448597445*I, -0.024318547920034073 - 0.6071746238084785*I, 
 0.5727039471087905 + 0.2549675731631993*I, 0.3358677716444609 + 0.5693388959274723*I, 0.5883331448100639 - 0.038262591792104894*I, 
 -0.4006246670478044 - 0.6588578172944664*I, 0.3305830931942977 + 0.7673109690343742*I, -0.8146297777822618}}
+setmetatable(MatC, MatrixMeta)
+
 
 -- Defining results for comparison
 
@@ -97,6 +100,7 @@ ResMatR = {{0.8394112643837754, -0.3051612469858809, 0.2861137341873381, 0.90034
 0.18391896544114167, -0.25847499939881696, 0.5300460313144052}, {0, 0, 0, -0.31463511989941917, 0.2160413746643521, 
 0.34931856024143176, 0.7985827813518555, -0.2584749993988169, 0.18725348712376028, -0.3230446203211415}, 
 {0, 0, 0, 0, 0, 0, 0.5474948461161305, 0.5300460313144051, -0.32304462032114156, 0.07886723782354346}}
+setmetatable(ResMatR, MatrixMeta)
 
 -- Results, of block-band diagonalization from Matheamtica, for the complex matrix with block size 3
 ResMatC = {{0.7500687028400757, -0.17825280283040668 + 0.46611276253581435*I, 0.2533629471545904 + 0.12009101892945684*I, 1.3342736224999157, 
@@ -123,6 +127,7 @@ ResMatC = {{0.7500687028400757, -0.17825280283040668 + 0.46611276253581435*I, 0.
 0.2498998970850882 + 0.08048480910722494*I, -0.12757745608334878 + 0.400640943214435*I, -0.05146861958628077, 
 0.31391911804602307 - 0.12849276956420258*I}, {0, 0, 0, 0, 0, 0, 0.9135274797849936, 0.4390578708791042 - 0.07508212536324368*I, 
 0.3139191180460232 + 0.12849276956420244*I, -0.13728420241351522}}
+setmetatable(ResMatC, MatrixMeta)
 
 -- Results, of block-band diagonalization from Matheamtica, for the real matrix with block size 3, with option SingularValue 0.5
 ResMatRSingularValue = { { 0.83941126438378 , -0.30516124698588 , 0.28611373418734 , 0.90034842026649 , -0.044014194537854 , 0.21881173768386 , 0 , 0 , 0 } , 
@@ -134,6 +139,7 @@ ResMatRSingularValue = { { 0.83941126438378 , -0.30516124698588 , 0.286113734187
   { 0 , 0 , 0 , 1.1391665690496 , 0.036249057789578 , -0.40230603391791 , -0.60754941276583 , 0.65188595107088 , 0.7276245207166 } , 
   { 0 , 0 , 0 , 0.031588860834263 , 1.0554291187611 , 0.28377041214435 , 0.65188595107088 , 0.11210395150111 , 0.43030994841966 } , 
   { 0 , 0 , 0 , 0.021008714003764 , -0.016230011904146 , 0.058025731767017 , 0.7276245207166 , 0.43030994841966 , -0.011422802940153 } }
+setmetatable(ResMatRSingularValue, MatrixMeta)
 
 ResMatCSingularValue = { { 0.75006870284008 , (-0.17825280283041 + 0.46611276253581*I) , (0.25336294715459 + 0.12009101892946*I) , 1.3342736224999 , (-0.20325701549473 + 0.13877853073563*I) , (-0.012208868118177 - 0.018965331867914*I) , 0 , 0 , 0 , 0 } , 
   { (-0.17825280283041 - 0.46611276253581*I) , 0.45194702059908 , (0.58670877850552 - 0.052685017134112*I) , (-0.20325701549473 - 0.13877853073563*I) , 1.3242705016877 , (-0.093565602017814 + 0.021077695331756*I) , 0 , 0 , 0 , 0 } , 
@@ -145,6 +151,7 @@ ResMatCSingularValue = { { 0.75006870284008 , (-0.17825280283041 + 0.46611276253
   { 0 , 0 , 0 , (0.14744386095781 + 0.69451554854631*I) , (0.3083593974944 + 0.65667269770235*I) , (1.3354011073287 + 0.065165567947126*I) , (0.1920813553656 - 0.16123894505681*I) , 0.13848118014601 , (0.30869346305988 + 0.30114461832793*I) , (-0.04850832169684 - 0.062468117847338*I) } , 
   { 0 , 0 , 0 , (-0.027168392704828 + 0.029111374667096*I) , (-0.072656988652071 + 0.0029244980540946*I) , (0.0058076728668874 - 0.05346435700225*I) , 0.77675237447729 , (0.30869346305988 - 0.30114461832793*I) , -0.44148258334931 , 0.74553721512292 } , 
   { 0 , 0 , 0 , (0.10265052927791 - 0.14539482879287*I) , (0.31997329356308 - 0.057025429632548*I) , (0.0067141607148151 + 0.24027952867944*I) , (0.043496666928578 - 0.006019266576623*I) , (-0.04850832169684 + 0.062468117847338*I) , 0.74553721512292 , -0.66298102689317 } }
+setmetatable(ResMatCSingularValue, MatrixMeta)
 
 ----------------------------------
 ----------------------------------
@@ -299,46 +306,192 @@ name = "Block Tridiagonal Matrix" }
 setmetatable(ResOpp2, ResponseFunctionMeta)
 
 ResOpp1SingularValue = { { { { 0 } } , 
-  { { 1 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } } , 
-  { { { 1 } } , 
-  { { 1.4142135623731 } } , 
-  { { 1.1547005383793 } } , 
-  { { 1.1547005383793 } } , 
-  { { 0.99965724077828 } } , 
-  { { 0.99965724077828 } } , 
-  { { 0.99610058567737 } } , 
-  { { 0.99610058567737 } } , 
-  { { 0.99593268422938 } } , 
-  { { 0.99593268422938 } } , 
-  { { 1.1484388315723 } } } ,
-  mu = 0 ,
-  BlockSize = { 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 } ,
-  type = "Tri" ,
-  name = "Block Tridiagonal Matrix" }
+{ { 1 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } } , 
+{ { { 1 } } , 
+{ { 1.4142135623731 } } , 
+{ { 1.7320508075689 } } , 
+{ { 1.8257418583506 } } , 
+{ { 1.8885620632287 } } , 
+{ { 1.9157487982363 } } , 
+{ { 1.9368856700822 } } , 
+{ { 1.9184412404037 } } , 
+{ { 1.8121242659234 } } , 
+{ { 1.6640561193511 } } , 
+{ { 1.5636750773448 } } , 
+{ { 0.76996692822421 } } , 
+{ { 1.8188340988446 } } , 
+{ { 1.0377281915084 } } , 
+{ { 1.3058865320684 } } , 
+{ { 0.72839001619631 } } , 
+{ { 0.78407118884979 } } , 
+{ { 0.26511645434612 } } , 
+{ { 0.77535438103207 } } } ,
+type = "Tri" ,
+mu = 0 ,
+name = "Block Tridiagonal Matrix" ,
+BlockSize = { 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 } }
 setmetatable(ResOpp1SingularValue, ResponseFunctionMeta)
 
 ResOpp2SingularValue = { { { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } , 
-  { { 0 } } } , 
-  { { { 1 } } , 
-  { { 1.7320508075689 } } , 
-  { { 1.3926212476456 } } } ,
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0 } } , 
+{ { 0.024590163934426 } } , 
+{ { 0.0072766322472542 } } , 
+{ { -0.025551222587497 } } , 
+{ { 0.0090543868389448 } } , 
+{ { 0.0076415346088429 } } , 
+{ { -0.0041325206580964 } } , 
+{ { 0.052664933361884 } } , 
+{ { 0.21375055749128 } } , 
+{ { 0.29624060035737 } } , 
+{ { -0.31146932779323 } } , 
+{ { 0.42867096558617 } } , 
+{ { 0.043929385823331 } } , 
+{ { 0.28296245436254 } } , 
+{ { -0.40878235778926 } } , 
+{ { 0.030947286092674 } } , 
+{ { -0.085544441042176 } } , 
+{ { 0.71043030858422 } } , 
+{ { -0.68563922025162 } } , 
+{ { 0.71796969844467 } } , 
+{ { -0.56916052424574 } } , 
+{ { 0.55978889625525 } } , 
+{ { -0.55746455416843 } } , 
+{ { 0.47844698283303 } } , 
+{ { -0.3887389664704 } } , 
+{ { 0.23674206043352 } } , 
+{ { -0.22045588281599 } } , 
+{ { 0.2335484695081 } } , 
+{ { -0.11921844623063 } } , 
+{ { 0.041502145357146 } } } , 
+{ { { 1 } } , 
+{ { 1.7320508075689 } } , 
+{ { 1.9148542155127 } } , 
+{ { 1.9227505550564 } } , 
+{ { 1.8981496450373 } } , 
+{ { 1.9007953560196 } } , 
+{ { 1.8956357161184 } } , 
+{ { 1.8913600284001 } } , 
+{ { 1.7033670464999 } } , 
+{ { 1.2598871360525 } } , 
+{ { 1.1758037369551 } } , 
+{ { 1.1744606388887 } } , 
+{ { 1.7088564945142 } } , 
+{ { 1.2391782211115 } } , 
+{ { 1.6378100627143 } } , 
+{ { 1.3824080980786 } } , 
+{ { 2.0401283236674 } } , 
+{ { 1.550681187749 } } , 
+{ { 1.0043196866403 } } , 
+{ { 0.46842031923536 } } , 
+{ { 1.4985774855821 } } , 
+{ { 1.3308706986637 } } , 
+{ { 0.87199471984062 } } , 
+{ { 0.81318857660699 } } , 
+{ { 1.2847349272664 } } , 
+{ { 0.38862546110375 } } , 
+{ { 1.0372455939473 } } , 
+{ { 0.66441078430952 } } , 
+{ { 0.7393432559888 } } , 
+{ { 0.40219572629452 } } , 
+{ { 0.34458457690841 } } , 
+{ { 0.48549021410797 } } } ,
+type = "Tri" ,
+mu = 0 ,
+name = "Block Tridiagonal Matrix" ,
+BlockSize = { 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 } }
+setmetatable(ResOpp2SingularValue, ResponseFunctionMeta)
+
+ResOppBlockSingularValue = { { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { 1 , 0 } , 
+  { 0 , 0 } } , 
+  { { 0 , -0.40824829046386 } , 
+  { -0.40824829046386 , 0 } } , 
+  { { 0 , -0.32410186177608 } , 
+  { -0.32410186177608 , 0 } } , 
+  { { 0 , -0.094788775774406 } , 
+  { -0.094788775774406 , 0 } } , 
+  { { 0 , -0.2556956178053 } , 
+  { -0.2556956178053 , 0 } } , 
+  { { 0 , -0.23375704369823 } , 
+  { -0.23375704369823 , 0 } } , 
+  { { 0 , -0.25521880149203 } , 
+  { -0.25521880149203 , 0 } } , 
+  { { 0 , -0.21838562373359 } , 
+  { -0.21838562373359 , 0 } } , 
+  { { 0 , -0.09208828938057 } , 
+  { -0.09208828938057 , 0 } } , 
+  { { 0 , -0.046291722658484 } , 
+  { -0.046291722658484 , 0 } } , 
+  { { 0 , 1.3855607689814 } , 
+  { 1.3855607689814 , 0 } } , 
+  { { 0 , -0.25655812180511 } , 
+  { -0.25655812180511 , 0 } } , 
+  { { 0 , -0.0024286950800758 } , 
+  { -0.0024286950800758 , 0 } } , 
+  { { 0 , -0.50540823003742 } , 
+  { -0.50540823003742 , 0 } } , 
+  { { 0 , 0.59301266730092 } , 
+  { 0.59301266730092 , 0 } } , 
+  { { 0 , 0.69436626994881 } , 
+  { 0.69436626994881 , 0 } } } , 
+  { { { 1 , 0 } , 
+  { 0 , 1 } } , 
+  { { 1.4142135623731 , 0 } , 
+  { 0 , 1.7320508075689 } } , 
+  { { 1.6832508230603 , 0 } , 
+  { 0 , 1.870828693387 } } , 
+  { { 1.6576788469616 , 0 } , 
+  { 0 , 1.8165131125195 } } , 
+  { { 1.7193286557897 , 0 } , 
+  { 0 , 1.8639145509124 } } , 
+  { { 1.7044825082496 , 0 } , 
+  { 0 , 1.8493798599817 } } , 
+  { { 1.6623372349035 , 0 } , 
+  { 0 , 1.8103978526889 } } , 
+  { { 1.615478800721 , 0 } , 
+  { 0 , 1.8049765048925 } } , 
+  { { 1.4046302861447 , 0 } , 
+  { 0 , 1.5893207768237 } } , 
+  { { 0.74797153247873 , 0 } , 
+  { 0 , 0.94682588694533 } } , 
+  { { 1.4566849279814 , 0 } , 
+  { 0 , 0.88698018864888 } } , 
+  { { 0.52561288080432 , 0 } , 
+  { 0 , 0.54250093951189 } } , 
+  { { 1.0191098747282 , 0 } , 
+  { 0 , 0.93308784229535 } } , 
+  { { 0.88640645108029 , 0 } , 
+  { 0 , 0.98529398259041 } } , 
+  { { 0.71655338585185 , 0 } , 
+  { 0 , 0.81892541516901 } } , 
+  { { 0.23776396573099 , 0 } , 
+  { 0 , 0.12323996259424 } } } ,
+  BlockSize = { 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 , 2 } ,
   mu = 0 ,
   name = "Block Tridiagonal Matrix" ,
-  type = "Tri" ,
-  BlockSize = { 1 , 1 , 1 , 1 } }
-setmetatable(ResOpp2SingularValue, ResponseFunctionMeta)
+  type = "Tri" }
+setmetatable(ResOppBlockSingularValue, ResponseFunctionMeta)
 
 ResOpp1NTri = { { { { 0 } } , 
   { { 1 } } , 
@@ -361,6 +514,22 @@ BlockSize = { 1 , 1 , 1 } ,
 mu = 0 ,
 type = "Tri" }
 setmetatable(ResOpp2NTri, ResponseFunctionMeta)
+
+ResOppBlockNTri = { { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { 1 , 0 } , 
+  { 0 , 0 } } , 
+  { { 0 , -0.40824829046386 } , 
+  { -0.40824829046386 , 0 } } } , 
+  { { { 1 , 0 } , 
+  { 0 , 1 } } , 
+  { { 1.4142135623731 , 0 } , 
+  { 0 , 1.7320508075689 } } } ,
+  mu = 0 ,
+  name = "Block Tridiagonal Matrix" ,
+  type = "Tri" ,
+  BlockSize = { 2 , 2 , 2 } }
+setmetatable(ResOppBlockNTri, ResponseFunctionMeta)
 
 
 ----------------------------------
@@ -442,24 +611,14 @@ print("-------------------------------------------------------")
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatR, 3, {{"SingularValue", 1E-6}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatR, rotateMat)
-comp = resRotated - ResMatR
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Real matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatR, threshold) ~= 0*resRotated then
+    error("Real matrix not equal to the expected value\n", 1)
 end
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatC, 3, {{"SingularValue", 1E-6}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatC, rotateMat)
-comp = resRotated - ResMatC
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Complex matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatC, threshold) ~= 0*resRotated then
+    error("Complex matrix not equal to the expected value\n", 1)
 end
 
 print("-------------------------------------------------------------------------")
@@ -468,24 +627,14 @@ print("-------------------------------------------------------------------------
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatR, 3, {{"SingularValue", 0.5}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatR, rotateMat)
-comp = resRotated - ResMatRSingularValue
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j], threshold) ~= 0 then
-            error("Real matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatRSingularValue, threshold) ~= 0*resRotated then
+    error("Real matrix not equal to the expected value\n", 1)
 end
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatC, 3, {{"SingularValue", 0.5}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatC, rotateMat)
-comp = resRotated - ResMatCSingularValue
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j], threshold) ~= 0 then
-            error("Complex matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatCSingularValue, threshold) ~= 0*resRotated then
+    error("Complex matrix not equal to the expected value\n", 1)
 end
 
 print("----------------------------------------------------------------")
@@ -494,24 +643,14 @@ print("----------------------------------------------------------------")
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatR, 3, {{"SingularValue", 1E-6}, {"NTri", 2}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatR, rotateMat)
-comp = resRotated - Matrix.Sub(ResMatR, 6)
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Real matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - Matrix.Sub(ResMatR, 6), threshold) ~= 0*resRotated then
+    error("Real matrix not equal to the expected value\n", 1)
 end
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatC, 3, {{"SingularValue", 1E-6}, {"NTri", 2}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatC, rotateMat)
-comp = resRotated - Matrix.Sub(ResMatC, 6)
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Complex matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - Matrix.Sub(ResMatC, 6), threshold) ~= 0*resRotated then
+    error("Complex matrix not equal to the expected value\n", 1)
 end
 
 print("------------------------------------------------------------------")
@@ -520,24 +659,14 @@ print("------------------------------------------------------------------")
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatR, 3, {{"SingularValue", 1E-6}, {"NTri", 1000}, {"NOrtho", 2}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatR, rotateMat)
-comp = resRotated - ResMatR
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Real matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatR, threshold) ~= 0*resRotated then
+    error("Real matrix not equal to the expected value\n", 1)
 end
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatC, 3, {{"SingularValue", 1E-6}, {"NTri", 1000}, {"NOrtho", 2}, {"ReOrthogonalize", true}})
 resRotated = Rotate(MatC, rotateMat)
-comp = resRotated - ResMatC
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Complex matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatC, threshold) ~= 0*resRotated then
+    error("Complex matrix not equal to the expected value\n", 1)
 end
 
 print("---------------------------------------------------------------------------")
@@ -546,24 +675,14 @@ print("-------------------------------------------------------------------------
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatR, 3, {{"SingularValue", 1E-6}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", false}})
 resRotated = Rotate(MatR, rotateMat)
-comp = resRotated - ResMatR
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Real matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatR, threshold) ~= 0*resRotated then
+    error("Real matrix not equal to the expected value\n", 1)
 end
 
 blockTriMat, rotateMat = BlockBandDiagonalize(MatC, 3, {{"SingularValue", 1E-6}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", false}})
 resRotated = Rotate(MatC, rotateMat)
-comp = resRotated - ResMatC
-for i = 1, #comp do
-    for j = 1, #comp[1] do
-        if Chop(comp[i][j]) ~= 0 then
-            error("Complex matrix not equal to the expected value\n", 1)
-        end
-    end
+if Chop(resRotated - ResMatC, threshold) ~= 0*resRotated then
+    error("Complex matrix not equal to the expected value\n", 1)
 end
 
 
@@ -607,7 +726,7 @@ print("-------------------------------------------------------------------------
 print("--                     Operator with SingularValue                     --")
 print("-------------------------------------------------------------------------")
 
-blockTriMat = BlockBandDiagonalize(H0, psi1, {{"SingularValue", 0.5}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
+blockTriMat = BlockBandDiagonalize(H0, psi1, {{"SingularValue", 0.0001}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
 
 if (blockTriMat ~= ResOpp1SingularValue) then error("Result for operator not equal to the expected value\n", 1) end
@@ -617,27 +736,23 @@ for i, omega in pairs(omegaList) do
     end
 end
 
-blockTriMat = BlockBandDiagonalize(H0, psi2, {{"SingularValue", 0.5}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
+blockTriMat = BlockBandDiagonalize(H0, psi2, {{"SingularValue", 0.0001}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
 
 if (blockTriMat ~= ResOpp2SingularValue) then error("Result for operator not equal to the expected value\n", 1) end
 for i, omega in pairs(omegaList) do
-    if Chop(blockTriMat(omega, 0.1)[1][1] - ResOpp2SingularValue(omega, 0.1)[1][1], threshold) ~= 0 then
+    if Chop(blockTriMat(omega, 0.1)[1][1] - ResOpp2SingularValue(omega, 0.1)[1][1], 1E-9) ~= 0 then
         error("Result for operator not equal to the expected value\n", 1)
     end
 end
 
-blockTriMat = BlockBandDiagonalize(H0, psiList, {{"SingularValue", 0.5}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
+blockTriMat = BlockBandDiagonalize(H0, psiList, {{"SingularValue", 0.0001}, {"NTri", 1000}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
-
--- for i, omega in pairs(omegaList) do
---     if Chop(blockTriMat(omega, 0.1)[1][1] - ResOpp1SingularValue(omega, 0.1)[1][1], 1E-12) ~= 0 then
---         error("Result for operator not equal to the expected value\n", 1)
---     end
---     if Chop(blockTriMat(omega, 0.1)[2][2] - ResOpp2SingularValue(omega, 0.1)[1][1], threshold) ~= 0 then
---         error("Result for operator not equal to the expected value\n", 1)
---     end
--- end
+for i, omega in pairs(omegaList) do
+    if Chop(blockTriMat(omega, 0.1) - ResOppBlockSingularValue(omega, 0.1), 1E-12) ~= Matrix.ToTable(Matrix.Zero(2)) then
+        error("Result for operator not equal to the expected value\n", 1)
+    end
+end
 
 print("-------------------------------------------------------------------------")
 print("--                     Operator with NTri                              --")
@@ -665,15 +780,11 @@ end
 
 blockTriMat = BlockBandDiagonalize(H0, psiList, {{"SingularValue", 1E-6}, {"NTri", 3}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
-
--- for i, omega in pairs(omegaList) do
---     if Chop(blockTriMat(omega, 0.1)[1][1] - ResOpp1NTri(omega, 0.1)[1][1], 1E-12) ~= 0 then
---         error("Result for operator not equal to the expected value\n", 1)
---     end
---     if Chop(blockTriMat(omega, 0.1)[2][2] - ResOpp2NTri(omega, 0.1)[1][1], threshold) ~= 0 then
---         error("Result for operator not equal to the expected value\n", 1)
---     end
--- end
+for i, omega in pairs(omegaList) do
+    if Chop(blockTriMat(omega, 0.1) - ResOppBlockNTri(omega, 0.1), 1E-12) ~= Matrix.ToTable(Matrix.Zero(2)) then
+        error("Result for operator not equal to the expected value\n", 1)
+    end
+end
 
 print("-------------------------------------------------------------------------")
 print("--                     Operator with NOrtho                            --")
@@ -797,5 +908,5 @@ if Chop(OppObj-ResTB) ~= 0*OppObj then error("Result for Tight-Binding not equal
 collectgarbage()
 
 print("--------------------------------------------------------------")
-print("--                  BlockBandDiagonalize                    --")
+print("--                  End of BlockBandDiagonalize             --")
 print("--------------------------------------------------------------")

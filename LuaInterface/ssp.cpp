@@ -5352,7 +5352,7 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
 	{"DeterminantString",LuaDeterminantString},
   {"Eigensystem", LuaEigensystem},
-  {"EvolveToGroundstate", LuaEvolveToGroundstate},
+//  {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"Expand",LuaWavefunctionExpand},
   {"ExpandToBasis",LuaWaveFunctionToDeterminantBasis},
   {"FileReadStuttgartCTRL", LuaFileReadStuttgartCTRL},
