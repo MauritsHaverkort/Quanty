@@ -127,15 +127,32 @@ print("passed")
 
 
 print("===========================================")
-print("Matrix:")
+print("Matrix (Table):")
 
-tab = {{1+2*I},{1e-7+5*I,2+1e-8*I}}
+tab = {{1+2*I,1},{1e-7+5*I,2+1e-8*I}}
 setmetatable(tab,MatrixMeta)
 cTab = Chop(Clone(tab),1e-6)
 for i=1,#tab do
     for j=1,#tab[i] do
         if not (cTab[i][j]==Chop(tab[i][j],1e-6)) then
-            error("",1)
+            error("Chop failed for Matrix (table)",1)
+        end
+    end
+end
+print("passed")
+
+
+print("===========================================")
+print("Matrix (pointer):")
+
+tab = {{1+2*I,1},{1e-7+5*I,2+1e-8*I}}
+setmetatable(tab,MatrixMeta)
+tab = Matrix.ToUserdata(tab)
+cTab = Chop(Clone(tab),1e-6)
+for i=1,#tab do
+    for j=1,#tab[i] do
+        if not (cTab[i][j]==Chop(tab[i][j],1e-6)) then
+            error("Chop failed for Matrix (pointer)",1)
         end
     end
 end
