@@ -87,6 +87,22 @@ test-job-BlockBandDiagonalize:
   - build-job
 
 
+test-job-Clone:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Clone.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Copy:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Copy.Quanty"
+  dependencies:
+  - build-job
+
 test-job-Conjugate:
   stage: test
   script:

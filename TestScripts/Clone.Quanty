@@ -38,6 +38,22 @@ if not checkMat(Matrix.ToTable(t1),t00) then
 end
 
 print("=========================================")
+print("Matrix (Pointer) with ToUserdata")
+
+t00 = {{1,2,3},{4,5,6}}
+t0 = {{1,2,3},{4,5,6}}
+setmetatable(t0,MatrixMeta)
+t0 = Matrix.ToUserdata(t0)
+t1 = Clone(t0)
+t0[1][2] = 0
+
+
+if not checkMat(Matrix.ToTable(t1),t00) then
+    error("Clone of Matrix (Pointer) did not copy the matrix",1)
+end
+
+
+print("=========================================")
 print("Matrix (Pointer):")
 
 t00 = {{1,2,3},{4,5,6}}
