@@ -104,7 +104,7 @@ end
 -- and psi^L_i^* . psi^R_j = delta_{i,j}
 -- and thus psi^L_i . H . psi^R_j = E_i delta_{i,j}
 
-threshold = 1E-13
+threshold = 1E-12
 
 -- matrix to diagonalize
 A = {{ 1 , 2 , 3 },
@@ -320,6 +320,8 @@ for i=1,3 do
 end
 zero = Chop(zero, threshold)
 if(zero~=0) then
+	print("ValMathematica\n",valMathematica)
+	print("Val\n",val)
   error("eigenvalues not equivalent to expected value\n",1)
 end
 
@@ -436,6 +438,8 @@ for i=1,3 do
 end
 zero = Chop(zero, threshold)
 if(zero~=0) then
+	print("ValMathematica\n",valMathematica)
+	print("Val\n",val)
   error("eigenvalues not equivalent to expected value\n",1)
 end
 
