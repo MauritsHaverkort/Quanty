@@ -53,6 +53,38 @@ test-job-TensorProduct:
   dependencies:
   - build-job
 
+test-job-Braket:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Braket.Quanty"
+  dependencies:
+  - build-job
+
+test-job-BraketDiagonal:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/BraketDiagonal.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Eigensystem:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Eigensystem.Quanty"
+  dependencies:
+  - build-job
+
+test-job-BlockBandDiagonalize:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/BlockBandDiagonalize.Quanty"
+  dependencies:
+  - build-job
+
 
 
 
