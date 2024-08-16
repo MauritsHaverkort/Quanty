@@ -2227,17 +2227,16 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
     {"GammaG","double",&(Options.GammaG)},
     {"GammaL","double",&(Options.GammaL)},
     {NULL, NULL, NULL}};
+  A = luaL_checkResponsefunction(L,1);
+  ResponseFunctionEstimateEminAndEmaxPole(A, &(Options.Emin), &(Options.Emax));
   Options.EnergyShift = 0;
-  Options.Emin   =  DBL_MAX;
-  Options.Emax   = -DBL_MAX;
   Options.GammaG = 0;
   Options.GammaL = 0;
-  Options.NE     = 0;
+  Options.NE     = 600;
   if(LuaTestOptionsList(L, -1))
   {
     LuaCheckOptions(L, -1, LuaOptions);
   }
-  A = luaL_checkResponsefunction(L,1);
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
   ResponseFunctionToSpectra(A,Spec, Options.EnergyShift, Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE);

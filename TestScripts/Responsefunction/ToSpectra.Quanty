@@ -2,6 +2,8 @@ print("--------------------------------------------------------")
 print("-- Responsefunction ToSpectra                         --")
 print("--------------------------------------------------------")
 
+DoPlot=true
+
 -- these test fail
 -- need attention
 
@@ -9,81 +11,301 @@ print("-- Single valued                                      --")
 
 print("-- Tri                                                --")
 
-Mexp = Matrix.New({ {  11     ,  2      ,  0      ,  0      ,  0      ,  0      } ,
-										{  2      ,  12     ,  3      ,  0      ,  0      ,  0      } ,
-										{  0      ,  3      ,  13     ,  4      ,  0      ,  0      } ,
-										{  0      ,  0      ,  4      ,  14     ,  5      ,  0      } ,
-										{  0      ,  0      ,  0      ,  5      ,  15     ,  6      } ,
-										{  0      ,  0      ,  0      ,  0      ,  6      ,  16     } })
-a = {10, 11, 12, 13, 14, 15, 16}
+Mexp = Matrix.New({ {  1      ,  2      ,  0      ,  0      ,  0      ,  0      } ,
+										{  2      ,  2      ,  3      ,  0      ,  0      ,  0      } ,
+										{  0      ,  3      ,  3      ,  4      ,  0      ,  0      } ,
+										{  0      ,  0      ,  4      ,  4      ,  5      ,  0      } ,
+										{  0      ,  0      ,  0      ,  5      ,  5      ,  6      } ,
+										{  0      ,  0      ,  0      ,  0      ,  6      ,  6      } })
+a = {0.5, 1, 2 ,  3 , 4, 5,  6}
 b = {     1,  2,  3,  4,  5,  6}
 G = ResponseFunction.New({a,b,mu=0,type="Tri", name="G"})
 S = ResponseFunction.ToSpectra(G)
-print("S1",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
-print("S2",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
-print("S3",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",0.1}})
-print("S4",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",0.1}})
-print("S5",S)
+--print("S1",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
 
-os.exit()
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/TriDiagonalMatrixToSpectra_1.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
+--print("S2",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/TriDiagonalMatrixToSpectra_2.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
+--print("S3",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/TriDiagonalMatrixToSpectra_3.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",1}})
+--print("S4",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/TriDiagonalMatrixToSpectra_4.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",1}})
+--print("S5",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/TriDiagonalMatrixToSpectra_5.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+
+
 
 print("-- And                                                --")
 
-Mexp = Matrix.New({ {  11     ,  2      ,  3      ,  4      ,  5      ,  6      } ,
-										{  2      ,  12     ,  0      ,  0      ,  0      ,  0      } ,
-										{  3      ,  0      ,  13     ,  0      ,  0      ,  0      } ,
-										{  4      ,  0      ,  0      ,  14     ,  0      ,  0      } ,
-										{  5      ,  0      ,  0      ,  0      ,  15     ,  0      } ,
-										{  6      ,  0      ,  0      ,  0      ,  0      ,  16     } })
-a = {10, 11, 12, 13, 14, 15, 16}
-b = {     1,  2,  3,  4,  5,  6}
+a = {0, 1, 1, 3, 4, -2, 3}
+b = {     1,  2,  3,  4,  5,  2}
 G = ResponseFunction.New({a,b,mu=0,type="And", name="G"})
 
+
 S = ResponseFunction.ToSpectra(G)
-print("S1",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
-print("S2",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
-print("S3",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
-print("S4",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
-print("S5",S)
+--print("S1",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/AndDiagonalMatrixToSpectra_1.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
+--print("S2",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/AndDiagonalMatrixToSpectra_2.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
+--print("S3",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/AndDiagonalMatrixToSpectra_3.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",1}})
+--print("S4",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/AndDiagonalMatrixToSpectra_4.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",1}})
+--print("S5",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/AndDiagonalMatrixToSpectra_5.svg",'w')
+	file:write(SVG)
+	file:close()
+end
 
 
 
 print("-- Nat                                                --")
 
-acon = {0,  5, 6, 7}
-bcon = {    2, 3, 4}
+acon = {0,  2, 3, 4}
+bcon = {    sqrt(1/2), 1, 1}
 Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
-aval = {0, -15,  -16,  -17}
-bval = {    12,   13,   14}
+aval = {0, -5,  -5,  -5}
+bval = {    sqrt(1/2),   2,   2}
 Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
 a0=0
 b0=1
 G = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="D"})
-Mexp = Matrix.New({ { -2140   , -480    ,  156    ,  0      ,  6      ,  0      } ,
-										{ -480    ,  660    ,  26     ,  0      , -36     ,  0      } ,
-										{  156    ,  26     , -16     ,  14     ,  0      ,  0      } ,
-										{  0      ,  0      ,  14     , -17     ,  0      ,  0      } ,
-										{  6      , -36     ,  0      ,  0      ,  6      ,  4      } ,
-										{  0      ,  0      ,  0      ,  0      ,  4      ,  7      } })
 
 S = ResponseFunction.ToSpectra(G)
-print("S1",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
-print("S2",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
-print("S3",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
-print("S4",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
-print("S5",S)
+--print("S1",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/NatDiagonalMatrixToSpectra_1.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
+--print("S2",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/NatDiagonalMatrixToSpectra_2.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
+--print("S3",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/NatDiagonalMatrixToSpectra_3.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",1}})
+--print("S4",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/NatDiagonalMatrixToSpectra_4.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",1}})
+--print("S5",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/NatDiagonalMatrixToSpectra_5.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+
 
 
 
@@ -92,21 +314,92 @@ print("-- LP                                                 --")
 a = {0, -sqrt(2), 0,   sqrt(2)}
 b = {        1/4,1/2,   1/4}
 G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="A"})
-Mexp = Matrix.New({ {  0      ,  1      ,  0      } ,
-										{  1      ,  0      ,  1      } ,
-										{  0      ,  1      ,  0      } })
 
 S = ResponseFunction.ToSpectra(G)
-print("S1",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
-print("S2",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
-print("S3",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
-print("S4",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
-print("S5",S)
-
+--print("S1",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/LPDiagonalMatrixToSpectra_1.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
+--print("S2",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/LPDiagonalMatrixToSpectra_2.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
+--print("S3",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/LPDiagonalMatrixToSpectra_3.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",1}})
+--print("S4",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/LPDiagonalMatrixToSpectra_4.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",1}})
+--print("S5",S)
+St=Spectra.ToTable(S)
+print(St[1].Integral)
+dE = St[1][1][1] - St[1][2][1]
+Integral = 0
+for i=1,#St[1] do
+	Integral = Integral + dE * St[1][i][2]
+end
+print(Integral / Pi)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/LPDiagonalMatrixToSpectra_5.svg",'w')
+	file:write(SVG)
+	file:close()
+end
 
 
 
@@ -136,14 +429,52 @@ Mexp = Matrix.Flatten({{A1,B1,0 },
 
 S = ResponseFunction.ToSpectra(G)
 print("S1",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/MTriDiagonalMatrixToSpectra_1.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
 print("S2",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/MTriDiagonalMatrixToSpectra_2.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
 print("S3",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/MTriDiagonalMatrixToSpectra_3.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",1}})
 print("S4",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/MTriDiagonalMatrixToSpectra_4.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",1}})
 print("S5",S)
+if DoPlot then
+	Pl  = Graphics.Plot(S, {{"Frame",{{"Ymin",-1},{"Ymax",1},{"dYTick",10},{"XLabel","X scale [unit]"},{"YLabel","Y scale [unit]"}}}})
+	SVG = Graphics.ToSVG(Pl)
+	file = io.open(directory.."../../../TestPlotOutput/MTriDiagonalMatrixToSpectra_5.svg",'w')
+	file:write(SVG)
+	file:close()
+end
+
+
+os.exit()
 
 
 

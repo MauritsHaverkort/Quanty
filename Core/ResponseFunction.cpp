@@ -6,28 +6,97 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
 {
   int i,j;
   double Rrow;
+  *EminPole= DBL_MAX;
+  *EmaxPole=-DBL_MAX;
   if(M->Block==true)
   { // Block matrices
     switch (M->type|32)
     {
       case 'l':
       {
-        
+        BlockListOfPoles *A=(BlockListOfPoles*)(M->data);
+        if(A->N==0)
+        {
+          *EminPole=-1;
+          *EmaxPole= 1;
+          return 0;
+        }
+        if(A->QComplex==0)
+        {
+          for(i=0;i<A->N;i++)
+          {
+            if(A->N==1)
+            {
+              *EminPole=A->VRe[0]-1;
+              *EmaxPole=A->VRe[0]+1;
+              return 0;
+            }
+            if( A->VRe[i*(1+Sqr(A->N))] < *EminPole ) *EminPole=A->VRe[i*(1+Sqr(A->N))];
+            if( A->VRe[i*(1+Sqr(A->N))] > *EmaxPole ) *EmaxPole=A->VRe[i*(1+Sqr(A->N))];
+          }
+        }
+        else
+        {
+          if(A->N==1)
+          {
+            *EminPole=A->V[0].Re-1;
+            *EmaxPole=A->V[0].Re+1;
+            return 0;
+          }
+          for(i=0;i<A->N;i++)
+          {
+            if( A->V[i*(1+Sqr(A->N))].Re < *EminPole ) *EminPole=A->V[i*(1+Sqr(A->N))].Re;
+            if( A->V[i*(1+Sqr(A->N))].Re > *EmaxPole ) *EmaxPole=A->V[i*(1+Sqr(A->N))].Re;
+          }
+        }
+        return 0;
       }
       break;
       case 't':
       {
+        BlockTriDiagonalMatrixType *A=(BlockTriDiagonalMatrixType*)(M->data);
+        if(A->N==0)
+        {
+          *EminPole=-1;
+          *EmaxPole= 1;
+          return 0;
+        }
+        
+        
+        
         
       }
       break;
       case 'a':
       {
+        BlockAndersonMatrixType *A=(BlockAndersonMatrixType*)(M->data);
+        if(A->N==0)
+        {
+          *EminPole=-1;
+          *EmaxPole= 1;
+          return 0;
+        }
+        
+        
+        
+        
         
       }
       break;
       case 'n':
       {
-        
+        double temp;
+        ResponsefunctionType R;
+        BlockNaturalImpurityOrbitalMatrixType *A=(BlockNaturalImpurityOrbitalMatrixType*)(M->data);
+        R.type='t';
+        R.Block=true;
+        R.SuggestedGrid=NULL;
+        R.NSuggestedGridPoints=0;
+        R.data = (void*)(&(A->con));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, &temp, EmaxPole);
+        R.data = (void*)(&(A->val));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, EminPole, &temp);
+        return 0;
       }
       break;
     }
@@ -38,22 +107,92 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
     {
       case 'l':
       {
-        
+        ListOfPoles *A=(ListOfPoles*)(M->data);
+        if(A->N==0)
+        {
+          *EminPole=-1;
+          *EmaxPole= 1;
+          return 0;
+        }
+        for(i=0;i<A->N;i++)
+        {
+          if(A->a[i]<*EminPole) *EminPole=A->a[i];
+          if(A->a[i]>*EmaxPole) *EmaxPole=A->a[i];
+        }
+        return 0;
       }
       break;
       case 't':
       {
-        
+        TriDiagonalMatrixType *A=(TriDiagonalMatrixType*)(M->data);
+        if(A->N==0)
+        {
+          *EminPole=-1;
+          *EmaxPole= 1;
+          return 0;
+        }
+        if(A->N==1)
+        {
+          *EminPole=A->a[1]-1;
+          *EmaxPole=A->a[1]+1;
+          return 0;
+        }
+        *EminPole = A->a[1] - fabs(A->b[1]);
+        *EmaxPole = A->a[1] + fabs(A->b[1]);
+        for(i=2;i<A->N;i++)
+        {
+          if(*EminPole > A->a[i] - fabs(A->b[i-1]) - fabs(A->b[i])) *EminPole = A->a[i] - fabs(A->b[i-1]) - fabs(A->b[i]);
+          if(*EmaxPole < A->a[i] + fabs(A->b[i-1]) + fabs(A->b[i])) *EmaxPole = A->a[i] + fabs(A->b[i-1]) + fabs(A->b[i]);
+        }
+        if(*EminPole > A->a[A->N] - fabs(A->b[A->N-1])) *EminPole = A->a[A->N] - fabs(A->b[A->N-1]);
+        if(*EmaxPole < A->a[A->N] + fabs(A->b[A->N-1])) *EmaxPole = A->a[A->N] + fabs(A->b[A->N-1]);
+        return 0;
       }
       break;
       case 'a':
       {
-        
+        AndersonMatrixType *A=(AndersonMatrixType*)(M->data);
+        if(A->N==0)
+        {
+          *EminPole=-1;
+          *EmaxPole= 1;
+          return 0;
+        }
+        if(A->N==1)
+        {
+          *EminPole=A->a[1]-1;
+          *EmaxPole=A->a[1]+1;
+          return 0;
+        }
+        *EminPole=A->a[1];
+        *EmaxPole=A->a[1];
+        for(i=1;i<A->N;i++)
+        {
+          *EminPole -= fabs(A->b[i]);
+          *EmaxPole += fabs(A->b[i]);
+        }
+        for(i=2;i<=A->N;i++)
+        {
+          if(*EminPole > A->a[i] - 2*fabs(A->b[i-1]) ) *EminPole = A->a[i] - 2*fabs(A->b[i-1]) ;
+          if(*EmaxPole < A->a[i] + 2*fabs(A->b[i-1]) ) *EmaxPole = A->a[i] + 2*fabs(A->b[i-1]) ;
+        }
+        return 0;
       }
       break;
       case 'n':
       {
-        
+        double temp;
+        ResponsefunctionType R;
+        BADoubleTriDiagonalMatrixType *A=(BADoubleTriDiagonalMatrixType*)(M->data);
+        R.type='t';
+        R.Block=false;
+        R.SuggestedGrid=NULL;
+        R.NSuggestedGridPoints=0;
+        R.data = (void*)(&(A->con));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, &temp, EmaxPole);
+        R.data = (void*)(&(A->val));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, EminPole, &temp);
+        return 0;
       }
       break;
     }
@@ -260,29 +399,26 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
   }
   else // transform to spectra with non-zero Gamma
   {
-    
-    printf("TODO: NoneBlockResponseFunctionToSpectra with Lorentzian broadening\n");
-
     switch (M->type|32)
     {
      case 'l':
      {
-       
+       ListOfPolesToSpectrum(GroundStateEnergy, *(ListOfPoles*)M->data, A);
      }
      break;
      case 't':
      {
-     
+       TriDiagonalMatrixToSpectrum(GroundStateEnergy, *(TriDiagonalMatrixType*)M->data, A);
      }
      break;
      case 'a':
      {
-     
+       AndersonImpurityMatrixToSpectrum(GroundStateEnergy, *(AndersonMatrixType*)M->data, A);
      }
      break;
      case 'n':
      {
-     
+       BADoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(BADoubleTriDiagonalMatrixType*)M->data, A);
      }
      break;
    }

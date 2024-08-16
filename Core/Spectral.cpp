@@ -1448,8 +1448,8 @@ uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, Spectra
         wmin=1-wplus;
       }
       /* add the im part of the lorenzian to energy iEmin and iEplus */
-      G->Im[iEmin]  -=  wmin*P.b[j];
-      G->Im[iEplus] -= wplus*P.b[j];
+      G->Im[iEmin]  -=  Pi*wmin*P.b[j]/G->dE;
+      G->Im[iEplus] -= Pi*wplus*P.b[j]/G->dE;
     }
     /* the im part of the lorenzians is there, we now need to add the real part */
     for(j=0;j<=G->N;j++)
@@ -1462,6 +1462,7 @@ uint32_t ListOfPolesToSpectrum(const double Energy, const ListOfPoles P, Spectra
       {
         G->Re[k]-=G->Im[j]/(Pi*(k-j));
       }
+      G->Re[j]+=P.a0;
     }
   }
   else
