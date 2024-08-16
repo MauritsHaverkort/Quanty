@@ -5,7 +5,7 @@ build-job:
   script:
   - set -x
   - echo "Start"
-  - module load intel/2020
+  - module load intel/2019
   - echo "current working directory $(pwd) "
   - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -ipo -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
   artifacts:
