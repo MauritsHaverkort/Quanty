@@ -86,6 +86,14 @@ test-job-MeanFieldOperator:
   dependencies:
   - build-job
 
+  test-job-OperatorToMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/OperatorToMatrix.Quanty"
+  dependencies:
+  - build-job
+
 
 
 

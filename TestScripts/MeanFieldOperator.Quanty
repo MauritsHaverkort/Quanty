@@ -35,6 +35,24 @@ function MeanFieldMatrix(OppMat,rho)
     return MatMF,shift
 end
 
+function AddDFTSelfInteraction(Op,Opijkl,rho)
+    local Op = Clone(Op)
+
+    local U = 0
+    for i=1,NF do
+        for j=1,NF do
+            U = U + Opijkl[i][j][j][i]-Opijkl[i][j][i][j]
+        end
+    end
+    U = U * 2/(NF*(NF-1))
+    for i=0,NF-1 do
+        for j=0,NF-1 do
+            Op = Op + U*rho[i+1][j+1]*NewOperator(NF,0,{{i,-j,1}})
+        end
+    end
+    return Op
+end
+
 
 
 for irho=1,#rho_list do
@@ -74,7 +92,7 @@ for irho=1,#rho_list do
     --OpMF = MeanFieldOperator(Op,rho,{{"Offset",true}})
 
 
-    print("Default options")
+    print("Options: {}")
 
     OpMF = MeanFieldOperator(Op,rho)
 
@@ -85,8 +103,19 @@ for irho=1,#rho_list do
 
 
 
+    print("Options: {{Offset:False}}")
 
-    print("Option {OffsetAsTrace:true}")
+    OpMFTest = NewOperator(NF,0,coeffListMF)
+    OpMF = MeanFieldOperator(Op,rho,{{"Offset",false}})
+
+
+    if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
+        print(Chop(OpMF-OpMFTest,tol))
+        error("MeanFieldOperator does not reproduce the HF MF operator (with OffsetAsTrace:false) for "..label,1)
+    end
+
+
+    print("Options: {{OffsetAsTrace:True}}")
 
     OpMFTest = NewOperator(NF,0,coeffListMF)
     OpMFTest = OpMFTest + OpMFShift / rhoTrace * OpOne
@@ -102,23 +131,41 @@ for irho=1,#rho_list do
 
 
 
-    print("Option {AddDFTSelfInteraction:True}")
+    print("Options {{AddDFTSelfInteraction:True}}")
 
     OpMF = MeanFieldOperator(Op,rho,{{"AddDFTSelfInteraction",true}})
 
     OpMFTest = NewOperator(NF,0,coeffListMF)
     OpMFTest = OpMFTest + OpMFShift
+    OpMFTest = AddDFTSelfInteraction(OpMFTest,Opijkl,rho)
 
-    local U = 0
-    for i=1,NF do
-        for j=1,NF do
-            U = U + Opijkl[i][j][j][i]-Opijkl[i][j][i][j]
-        end
+
+    if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
+        print(Chop(OpMF-OpMFTest,tol))
+        error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
     end
-    U = U * 2/(NF*(NF-1))
-    for i=0,NF-1 do
-        OpMFTest = OpMFTest + U*rho[i+1][i+1]*NewOperator(NF,0,{{i,-i,1}})
+
+    print("Options {{AddDFTSelfInteraction:True},{Offst:False}}")
+
+    OpMF = MeanFieldOperator(Op,rho,{{"AddDFTSelfInteraction",true},{"Offset",false}})
+
+    OpMFTest = NewOperator(NF,0,coeffListMF)
+    OpMFTest = OpMFTest 
+    OpMFTest = AddDFTSelfInteraction(OpMFTest,Opijkl,rho)
+
+    if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
+        print(Chop(OpMF-OpMFTest,tol))
+        error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
     end
+
+
+    print("Options {{AddDFTSelfInteraction:True},{OffstAsTrace:True}}")
+
+    OpMF = MeanFieldOperator(Op,rho,{{"AddDFTSelfInteraction",true},{"OffsetAsTrace",true}})
+
+    OpMFTest = NewOperator(NF,0,coeffListMF)
+    OpMFTest = OpMFTest + OpMFShift / rhoTrace * OpOne
+    OpMFTest = AddDFTSelfInteraction(OpMFTest,Opijkl,rho)
 
     if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
         print(Chop(OpMF-OpMFTest,tol))
