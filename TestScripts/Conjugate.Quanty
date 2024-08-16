@@ -30,12 +30,23 @@ for i=1,#tc do
     end
 end
 
+print("Matrix (table)")
 setmetatable(t,MatrixMeta)
 tc = Conjugate(t)
 for i=1,#tc do
     for j=1,#tc[i] do
         if (tcheck[i][j]~=tc[i][j]) then 
             error("Conjugate failed for matrix type",1) end
+    end
+end
+
+print("Matrix (pointer)")
+
+tc = Matrix.ToTable(Conjugate(NewMatrix(t)))
+for i=1,#tc do
+    for j=1,#tc[i] do
+        if (tcheck[i][j]~=tc[i][j]) then 
+            error("Conjugate failed for matrix (pointer) type",1) end
     end
 end
 
