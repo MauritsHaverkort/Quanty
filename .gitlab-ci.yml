@@ -86,7 +86,7 @@ test-job-MeanFieldOperator:
   dependencies:
   - build-job
 
-  test-job-OperatorToMatrix:
+test-job-OperatorToMatrix:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
