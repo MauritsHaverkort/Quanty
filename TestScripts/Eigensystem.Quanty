@@ -525,15 +525,15 @@ for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  if Chop(Energy - expectedEn[i], 1E-5)~=0 then print(Energy - expectedEn[i]); error("The eigenvalue not equal to the expected value\n",1) end
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-5)~=0 then print(Energy - expectedEn[i]); error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian1,fun1s)
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
@@ -553,14 +553,15 @@ for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  if Chop(Energy - (expectedEn[i] - E1s), 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i] - E1s)))
+  if Chop(Energy - (expectedEn[i] - E1s), 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1] - E1s)))
+if Chop(Energy - (expectedEn[1] - E1s), 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
 
@@ -578,15 +579,15 @@ for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian3,fun1s)
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -622,15 +623,15 @@ for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
@@ -650,15 +651,15 @@ for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  if Chop(Energy - (expectedEn[i] - E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i] - E1s)))
+  if Chop(Energy - (expectedEn[i] - E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-if Chop(Energy - (expectedEn[1] - E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1] - E1s)))
+if Chop(Energy - (expectedEn[1] - E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
 
@@ -676,15 +677,15 @@ for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
   io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -983,7 +984,6 @@ end
 
 TimePrint()
 
-os.exit()
 
 ::hubbard::
 ------------------------------------------------------------
@@ -995,6 +995,9 @@ print("         Hubbard model 8 sites 1D           ")
 print("============================================")
 print("                    real                    ")
 print("============================================\n\n")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945483798 , -4.7231531376672 , -4.4313578927377 , -4.0692744354563 , -4.0692744352503 , -3.8663093361573 , -3.8663093259782 , -3.6089305392783 , -3.6089305059467 , -3.5591887636111 }
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
@@ -1020,25 +1023,28 @@ TimeStart("Hubbard Eigensystem 1 states")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states")
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian1,fun1s)
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Hubbard Eigensystem 10 states shifted")
 fun1  = Eigensystem(Hamiltonian2,StartRestrictions,10)
@@ -1047,18 +1053,20 @@ TimeStart("Hubbard Eigensystem 1 states shifted")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states shifted")
 valgrd = Braket(fun1s,Hamiltonian2,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
+  if Chop(Energy - (expectedEn[i]-E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
+if Chop(Energy - (expectedEn[1]-E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1073,20 +1081,25 @@ TimeStart("Hubbard Eigensystem 1 states scaled")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states scaled")
 valgrd = Braket(fun1s,Hamiltonian3,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian3,fun1s)
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
+
+os.exit()
+
 
 ------------------------------------------------------------
 --               Complex Hubbard model                    --
