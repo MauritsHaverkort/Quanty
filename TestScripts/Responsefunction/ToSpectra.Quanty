@@ -20,16 +20,16 @@ b = {     1,  2,  3,  4,  5,  6}
 G = ResponseFunction.New({a,b,mu=0,type="Tri", name="G"})
 S = ResponseFunction.ToSpectra(G)
 print("S1",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1}})
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10}})
 print("S2",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100}})
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100}})
 print("S3",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaG",0.1}})
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaG",0.1}})
 print("S4",S)
-S = ResponseFunction.ToSpectra(G,{{"Emin",-1},{"Emax",1},{"NE",100},{"GammaL",0.1}})
+S = ResponseFunction.ToSpectra(G,{{"Emin",-10},{"Emax",10},{"NE",100},{"GammaL",0.1}})
 print("S5",S)
 
-
+os.exit()
 
 print("-- And                                                --")
 
