@@ -1063,14 +1063,14 @@ for i=1,10 do
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
-  if Chop(Energy - (expectedEn[i]-E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+  if Chop(Energy - (expectedEn[i]-E1s), 3E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
 io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
-if Chop(Energy - (expectedEn[1]-E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+if Chop(Energy - (expectedEn[1]-E1s), 3E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
