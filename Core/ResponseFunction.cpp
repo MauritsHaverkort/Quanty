@@ -1,3 +1,67 @@
+/*  Using the Gershgoring Circle Theorem we find bounds for the eigenvalues of a matrix
+ *
+ *
+ */
+uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *const M, double *EminPole, double *EmaxPole)
+{
+  int i,j;
+  double Rrow;
+  if(M->Block==true)
+  { // Block matrices
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        
+      }
+      break;
+      case 't':
+      {
+        
+      }
+      break;
+      case 'a':
+      {
+        
+      }
+      break;
+      case 'n':
+      {
+        
+      }
+      break;
+    }
+  }
+  else
+  { // single valued entries
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        
+      }
+      break;
+      case 't':
+      {
+        
+      }
+      break;
+      case 'a':
+      {
+        
+      }
+      break;
+      case 'n':
+      {
+        
+      }
+      break;
+    }
+  }
+  
+  return 0;
+}
+
 /*  This function takes as imput a pointer to an empty SpectraTypeArray
  *  If GammaL is zero we calcualte the pole energy and add spectral weight to the grid points left and right of this
  *  Otherwise we broaden with a Lorenzian
@@ -440,7 +504,6 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
   return 0;
 }
 
-
 uint32_t EvaluateResponsefunction(ResponsefunctionType const *A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
   if(A->Block==true) return EvaluateBlockResponsefunctionType(A, Gw, omega, Gamma);
@@ -451,9 +514,6 @@ uint32_t EvaluateResponsefunction(ResponsefunctionType const *A, CompactMatrixTy
   Gw->V[0] = EvaluateResponsefunctionType(A, omega, Gamma);
   return 0;
 }
-
-
-
 
 bool ResponseFunctionEq(const ResponsefunctionType *const a, const ResponsefunctionType *const b, double zero)
 {
