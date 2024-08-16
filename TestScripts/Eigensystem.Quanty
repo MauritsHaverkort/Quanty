@@ -1,6 +1,13 @@
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
 -- The function has several options related to the accuracy needed and methods used
 
+--[[
+Reminders:
+1 - Dense method using wavefunction.
+2 - pick one of the models to do options.
+3 - Ask Maurits to check the thresholds in Chop!
+]]
+
 -----------------------------------------------------------
 -----------------------------------------------------------
 -- test different dense methods on a small 3 by 3 matrix --
@@ -48,71 +55,6 @@ if(zero~=0) then
   error("eigenvalues not equivalent to expected value\n",1)
 end
 
-os.exit()
-
-
-
-  -- create a wave-function acording to the eigenstates of mathematica
-  WaveFunMathematica = {}
-  for i=1,3 do
-    WaveFunMathematica[i] = NewWavefunction(3,0,{{"100",funMathematica[i][1]},{"010",funMathematica[i][2]},{"001",funMathematica[i][3]}})
-  end
-  -- create an operator for one electron with 3 orbitals that has the same form as A once put on a basis
-  Hamiltonian = NewOperator("Number",3,{0,0,1,1,1,2,2},{0,1,0,1,2,1,2},{1,1,1,2,1,1,5})
-
-  -- use Quanty to calculate the eigen system using wave-functions and operators, starting from random states
-  print("Eigensystem of operator starting from random states with restrictions")
-  StartRestrictions = {3, 0,  {"111",1,1}}
-  Npsi=3
-  psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
-  valOpp = {}
-  for i=1,3 do
-    valOpp[i] = psiList[i] * Hamiltonian * psiList[i]
-  end
-  -- test if Quanty gets the same answer as Mathematica
-  converged = true
-  for i=1,3 do
-    if(abs(valOpp[i]-valMathematica[i]) / (abs(valOpp[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
-  end
-  for i=1,3 do
-    dot = psiList[i] * WaveFunMathematica[i]
-    if ((abs(dot)-1)>1E-15) then converged=false end
-  end
-  if(converged) then
-    print("worked ok")
-  else
-    print("NOT CONVERGED")
-  end
-  
-  -- use Quanty to calculate the eigen system using wave-functions and operators, starting from a given set of states
-  print("Eigensystem of operator starting from given states")
-  psiList = {NewWavefunction(3,0,{{"100",1}}),NewWavefunction(3,0,{{"010",1}}),NewWavefunction(3,0,{{"001",1}})}
-  Eigensystem(Hamiltonian, psiList)
-  valOpp = {}
-  for i=1,3 do
-    valOpp[i] = psiList[i] * Hamiltonian * psiList[i]
-  end
-  -- test if Quanty gets the same answer as Mathematica
-  converged = true
-  for i=1,3 do
-    if(abs(valOpp[i]-valMathematica[i]) / (abs(valOpp[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
-  end
-  for i=1,3 do
-    dot = psiList[i] * WaveFunMathematica[i]
-    if ((abs(dot)-1)>1E-15) then converged=false end
-  end
-  if(converged) then
-    print("worked ok")
-  else
-    print("NOT CONVERGED")
-  end
-
------------------------------------------------------------
------------------------------------------------------------
--- test different dense methods on a small 3 by 3 matrix --
------------------------------------------------------------
------------------------------------------------------------
-
 -----------------------------------------------------------
   -- test with complex numbers
 -----------------------------------------------------------
@@ -125,94 +67,34 @@ os.exit()
   funMathematica = {{0.848746334166595978803610284444,                                        -0.3042479274598142156935398646058+ 0.1510389638058049332585723380046*I, 0.0510696545513364274783225088671+ 0.402047236866078372297394505147 *I},
                     {0.2321576044814645871816662641286+  0.00509311096740913239874082449471*I, 0.897729033025279384252337292938,                                      -0.2976595470513314739784930950171+ 0.2270644935140554547829254396339*I},
                     {0.02949840760917409557366913416583+ 0.474169179818120951954618894565  *I, 0.2662172211730120010883264567962+ 0.0884952228275222867210074024975*I, 0.834020634964603430948668779872                                      }}
-  -- create a wave-function acording to the eigenstates of mathematica
-  WaveFunMathematica = {}
-  for i=1,3 do
-    WaveFunMathematica[i] = NewWavefunction(3,0,{{"100",funMathematica[i][1]},{"010",funMathematica[i][2]},{"001",funMathematica[i][3]}})
-  end
-  -- create an operator for one electron with 3 orbitals that has the same form as A once put on a basis
-  Hamiltonian = NewOperator("Number",3,{0,0,0,1,1,1,2,2,2},{0,1,2,0,1,2,0,1,2},{1,1+I,3*I,1-I,2,1,-3*I,1,5})
 
-  -- use Quanty to calculate the eigensystem of the matrix
-  print("Eigensystem of matrices")
-  val, fun = Eigensystem(A)
+print("Eigensystem on complex hermitian dense matrix")
+
+val, fun = Eigensystem(A)
 
 -- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,3 do
-  if(abs(val[i]-valMathematica[i]) / (abs(val[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
-end
-for i=1,3 do
-  dot = 0
-  for j=1,3 do
-    dot = dot + fun[i][j] * funMathematica[i][j]
-  end
-  if ((abs(dot)-1)>1E-15) then converged=false end
-end
-if(converged) then
-  print("worked ok")
-  else
-  print("NOT CONVERGED")
+identity = Matrix.Conjugate(fun) * Matrix.Transpose(funMathematica)
+-- remove phase
+identity = Matrix.Conjugate(identity) * identity
+zero = Chop(identity - Matrix.Identity(3))
+
+if(zero~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
 end
 
--- use Quanty to calculate the eigen system using wave-functions and operators, starting from random states
-print("Eigensystem of operator starting from random states with restrictions")
-StartRestrictions = {3, 0,  {"111",1,1}}
-Npsi=3
-psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
-valOpp = {}
+zero=0
 for i=1,3 do
-  valOpp[i] = psiList[i] * Hamiltonian * psiList[i]
+  zero = zero + abs(val[i] - valMathematica[i])
 end
--- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,3 do
-  if(abs(valOpp[i]-valMathematica[i]) / (abs(valOpp[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
-end
-for i=1,3 do
-  dot = psiList[i] * WaveFunMathematica[i]
-  if ((abs(dot)-1)>1E-15) then converged=false end
-end
-if(converged) then
-  print("worked ok")
-  else
-  print("NOT CONVERGED")
+zero = Chop(zero)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
 end
 
--- use Quanty to calculate the eigen system using wave-functions and operators, starting from a given set of states
-print("Eigensystem of operator starting from given states")
-psiList = {NewWavefunction(3,0,{{"100",1}}),NewWavefunction(3,0,{{"010",1}}),NewWavefunction(3,0,{{"001",1}})}
-Eigensystem(Hamiltonian, psiList)
-valOpp = {}
-for i=1,3 do
-  valOpp[i] = psiList[i] * Hamiltonian * psiList[i]
-end
--- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,3 do
-  if(abs(valOpp[i]-valMathematica[i]) / (abs(valOpp[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
-end
-for i=1,3 do
-  dot = psiList[i] * WaveFunMathematica[i]
-  if ((abs(dot)-1)>1E-15) then converged=false end
-end
-if(converged) then
-  print("worked ok")
-  else
-  print("NOT CONVERGED")
-end
-
------------------------------------------------------------
------------------------------------------------------------
--- test different dense methods on a small 3 by 3 matrix --
------------------------------------------------------------
------------------------------------------------------------
 
 -----------------------------------------------------------
 -- test with real non hermitian matrix
 -----------------------------------------------------------
-
-print("Diagonalization of a non Hermitian matrix")
 
 -- for dense matrices, given as tables Quanty can handle non hermitian matrices
 -- For non hermitian matrices one has a left and a right eigensystem
@@ -221,7 +103,8 @@ print("Diagonalization of a non Hermitian matrix")
 --
 -- and psi^L_i^* . psi^R_j = delta_{i,j}
 -- and thus psi^L_i . H . psi^R_j = E_i delta_{i,j}
---
+
+threshold = 1E-12
 
 -- matrix to diagonalize
 A = {{ 1 , 2 , 3 },
@@ -229,45 +112,59 @@ A = {{ 1 , 2 , 3 },
      { 7 , 8 , 0 }}
 setmetatable(A, MatrixMeta)
 
-val, funL, funR = Eigensystem(A)
+-- eigenvalues according to python
+valPython = {-5.734509942225074, -0.3883838424073199, 12.1228937846324}
 
-print("For the matrix\n",A)
-print("We have the eigen-values\n",Chop(val))
-print("The left eigen-functions\n",Chop(funL))
-print("The right eigen-functions\n",Chop(funR))
-
-print("funL^* . funR^T gives the identity matrix\n",Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR),1E-14))
-print("funL^* . H . funR^T gives a diagonal matrix with the eigen energies on the diagonal\n",Chop(Matrix.Conjugate(funL)*(A*Matrix.Transpose(funR)),1E-14))
-
-print("(A * funR^T)^T - Diagonal(val) * funR =\n",Chop(Matrix.Transpose(A*Matrix.Transpose(funR))-Matrix.Diagonal(val)*funR,1E-14))
-
-print("funL^* * A     - Diagonal(val) * funL =\n",Chop(Matrix.Conjugate(funL)*A-Matrix.Diagonal(val)*Matrix.Conjugate(funL),1E-14))
-
-A = {{-0.94369691580976538558285751063767, -0.26655885018001686513181826252401,-0.47973275663639217355658602228578,-0.93888883409875102211551184941750 },
-     { 0.035232984981573930667958670533319, 0.94844600046085771183405188685326,-0.42559954681343403612834277801162, 0.073352687837053094227198770518446},
-     {-0.87360139850468418673374235916250,  0.56941458136408800000138909352172,-0.17711207958743156049799647261450,-0.51551844705731977949707561794563 },
-     { 0.98405787363586084305471226145323, -0.51403962504939073711626053785326,-0.38948047908548839438717888206834, 0.14524927383294995136386323417781 }}
-setmetatable(A, MatrixMeta)
+print("Eigensystem on real non-hermitian dense matrix")
 
 val, funL, funR = Eigensystem(A)
 
-print("For the matrix\n",A)
-print("We have the eigen-values\n",Chop(val))
-print("The left eigen-functions\n",Chop(funL))
-print("The right eigen-functions\n",Chop(funR))
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valPython[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
 
-print("funL^* . funR^T gives the identity matrix\n",Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR),1E-14))
-print("funL^* . H . funR^T gives a diagonal matrix with the eigen energies on the diagonal\n",Chop(Matrix.Conjugate(funL)*(A*Matrix.Transpose(funR)),1E-14))
+-- funL^* . funR^T gives the identity matrix
+identity = Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR),threshold)
+zero = Chop(identity - Matrix.Identity(3))
 
-print("(A * funR^T)^T - Diagonal(val) * funR =\n",Chop(Matrix.Transpose(A*Matrix.Transpose(funR))-Matrix.Diagonal(val)*funR,1E-14))
+if(zero~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
+end
 
-print("funL^* * A     - Diagonal(val) * funL =\n",Chop(Matrix.Conjugate(funL)*A-Matrix.Diagonal(val)*Matrix.Conjugate(funL),1E-14))
+-- funL^* . H . funR^T gives a diagonal matrix with the eigen energies on the diagonal
+valExpected = Chop(Matrix.Conjugate(funL)*(A*Matrix.Transpose(funR)),threshold)
+valExpected = {valExpected[1][1], valExpected[2][2], valExpected[3][3]}
 
+zero=0
+for i=1,3 do
+  zero = zero + abs(valExpected[i] - valPython[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
+
+-- (A * funR^T)^T - Diagonal(val) * funR
+zero = Chop(Matrix.Transpose(A*Matrix.Transpose(funR))-Matrix.Diagonal(val)*funR,threshold)
+if(Matrix.ToUserdata(zero)~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
+end
+
+-- funL^* * A     - Diagonal(val) * funL
+zero = Chop(Matrix.Conjugate(funL)*A-Matrix.Diagonal(val)*Matrix.Conjugate(funL),threshold)
+if(Matrix.ToUserdata(zero)~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
+end
+-----------------------------------------------------------
 
 -----------------------------------------------------------
 -- test with complex non hermitian matrix
 -----------------------------------------------------------
-
 
 -- matrix to diagonalize
 A = {{ I , 2 , 3 },
@@ -275,27 +172,54 @@ A = {{ I , 2 , 3 },
      { 7 , 8 , 9 }}
 setmetatable(A, MatrixMeta)
 
+-- eigenvalues according to python
+valPython = {-1.88575998514644+0.853201479934894*I, -0.119547088095287+0.0459304731689488*I, 16.0053070732417+0.100868046896157*I}
+
+print("Eigensystem on complex non-hermitian dense matrix")
+
 val, funL, funR = Eigensystem(A)
 
-print("For the matrix\n",A)
-print("We have the eigen-values\n",Chop(val))
-print("The left eigen-functions\n",Chop(funL))
-print("The right eigen-functions\n",Chop(funR))
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valPython[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
 
-print("funL^* . funR^T gives the identity matrix\n",Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR),1E-14))
-print("funL^* . H . funR^T gives a diagonal matrix with the eigen energies on the diagonal\n",Chop(Matrix.Conjugate(funL)*(A*Matrix.Transpose(funR)),1E-14))
+-- funL^* . funR^T gives the identity matrix
+identity = Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR),threshold)
+zero = Chop(identity - Matrix.Identity(3))
 
-print("(A * funR^T)^T - Diagonal(val) * funR =\n",Chop(Matrix.Transpose(A*Matrix.Transpose(funR))-Matrix.Diagonal(val)*funR,1E-14))
+if(zero~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
+end
 
-print("funL^* * A     - Diagonal(val) * funL =\n",Chop(Matrix.Conjugate(funL)*A-Matrix.Diagonal(val)*Matrix.Conjugate(funL),1E-14))
+-- funL^* . H . funR^T gives a diagonal matrix with the eigen energies on the diagonal
+valExpected = Chop(Matrix.Conjugate(funL)*(A*Matrix.Transpose(funR)),threshold)
+valExpected = {valExpected[1][1], valExpected[2][2], valExpected[3][3]}
 
+zero=0
+for i=1,3 do
+  zero = zero + abs(valExpected[i] - valPython[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
 
+-- (A * funR^T)^T - Diagonal(val) * funR
+zero = Chop(Matrix.Transpose(A*Matrix.Transpose(funR))-Matrix.Diagonal(val)*funR,threshold)
+if(Matrix.ToUserdata(zero)~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
+end
 
------------------------------------------------------------
------------------------------------------------------------
--- test Eigensystem of sparse response function formats  --
------------------------------------------------------------
------------------------------------------------------------
+-- funL^* * A     - Diagonal(val) * funL
+zero = Chop(Matrix.Conjugate(funL)*A-Matrix.Diagonal(val)*Matrix.Conjugate(funL),threshold)
+if(Matrix.ToUserdata(zero)~=Matrix.Zero(3)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
+end
 
 print("\n========================================================")
 print("            Sparse tables or Response functions");
@@ -320,21 +244,22 @@ funMathematica = {{-0.978297963438677021923170140,   0.2032647531664344555125487
 val, fun = Eigensystem(M)
 
 -- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,4 do
-  if(abs(val[i]-valMathematica[i]) / (abs(val[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
+identity = Matrix.Conjugate(fun) * Matrix.Transpose(funMathematica)
+-- remove phase
+identity = Matrix.Conjugate(identity) * identity
+zero = Chop(identity - Matrix.Identity(4))
+
+if(zero~=Matrix.Zero(4)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
 end
-for i=1,4 do
-  dot = 0
-  for j=1,4 do
-    dot = dot + fun[i][j] * funMathematica[i][j]
-  end
-  if ((abs(dot)-1)>1E-15) then converged=false end
+
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valMathematica[i])
 end
-if(converged) then
-  print("worked ok\n")
-  else
-  print("NOT CONVERGED\n")
+zero = Chop(zero)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
 end
 
 
@@ -380,21 +305,24 @@ funMathematica = {{-0.09286446669517978422397612227002,-0.2755687811923940598690
 val, fun = Eigensystem(MTri)
 
 -- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,9 do
-  if(abs(val[i]-valMathematica[i]) / (abs(val[i])+abs(valMathematica[i])+1E-100)>1E-15) then converged=false end
+identity = Matrix.Conjugate(fun) * Matrix.Transpose(funMathematica)
+-- remove phase
+identity = Matrix.Conjugate(identity) * identity
+zero = Chop(identity - Matrix.Identity(#val), threshold)
+
+if(zero~=Matrix.Zero(#val)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
 end
-for i=1,9 do
-  dot = 0
-  for j=1,9 do
-    dot = dot + fun[i][j] * funMathematica[i][j]
-  end
-  if ((abs(dot)-1)>1E-15) then converged=false end
+
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valMathematica[i])
 end
-if(converged) then
-  print("worked ok\n")
-  else
-  print("NOT CONVERGED\n")
+zero = Chop(zero, threshold)
+if(zero~=0) then
+	print("ValMathematica\n",valMathematica)
+	print("Val\n",val)
+  error("eigenvalues not equivalent to expected value\n",1)
 end
 
 
@@ -436,29 +364,23 @@ funMathematica = {{ 0.2128340170728768190728585064813,  -0.094968905179583547547
 val, fun = Eigensystem(MTri)
 
 -- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,9 do
-  if(abs(val[i]-valMathematica[i]) / (abs(val[i])+abs(valMathematica[i])+1E-100)>1E-14) then
-    print("Eigenvalue differnce (",val[i],valMathematica[i],val[i]-valMathematica[i],") to large at ",i);
-    converged=false
-  end
-end
-for i=1,9 do
-  dot = 0
-  for j=1,9 do
-    dot = dot + fun[i][j] * funMathematica[i][j]
-  end
-  if ((abs(dot)-1)>1E-15) then
-    converged=false
-    print("dot (",dot-1,") to large at ",i);
-  end
-end
-if(converged) then
-  print("worked ok\n")
-  else
-  print("NOT CONVERGED\n")
+identity = Matrix.Conjugate(fun) * Matrix.Transpose(funMathematica)
+-- remove phase
+identity = Matrix.Conjugate(identity) * identity
+zero = Chop(identity - Matrix.Identity(#val), threshold)
+
+if(zero~=Matrix.Zero(#val)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
 end
 
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valMathematica[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
 
 print("Eigensystem of a Complex Block tri diagonal matrix, with each Block Hermitian and off diagonal Blocks positive definit");
 
@@ -501,27 +423,24 @@ funMathematica = {{-0.09158562402540375115545866918825-0.02565322394118405843646
 val, fun = Eigensystem(MTri)
 
 -- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,9 do
-  if(abs(val[i]-valMathematica[i]) / (abs(val[i])+abs(valMathematica[i])+1E-100)>1E-14) then
-    print("Eigenvalue differnce (",val[i],valMathematica[i],val[i]-valMathematica[i],") to large at ",i);
-    converged=false
-  end
+identity = Matrix.Conjugate(fun) * Matrix.Transpose(funMathematica)
+-- remove phase
+identity = Matrix.Conjugate(identity) * identity
+zero = Chop(identity - Matrix.Identity(#val), threshold)
+
+if(zero~=Matrix.Zero(#val)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
 end
-for i=1,9 do
-  dot = 0
-  for j=1,9 do
-    dot = dot + Conjugate(fun[i][j]) * funMathematica[i][j]
-  end
-  if ((abs(dot)-1)>1E-15) then
-    converged=false
-    print("dot (",dot-1,") to large at ",i);
-  end
+
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valMathematica[i])
 end
-if(converged) then
-  print("worked ok\n")
-  else
-  print("NOT CONVERGED\n")
+zero = Chop(zero, threshold)
+if(zero~=0) then
+	print("ValMathematica\n",valMathematica)
+	print("Val\n",val)
+  error("eigenvalues not equivalent to expected value\n",1)
 end
 
 print("Eigensystem of a Complex Block tri diagonal matrix, with off Diagonal Blocks non Hermitian");
@@ -554,27 +473,22 @@ funMathematica = {{0.0944937504078599996846379141873-0.0412148418594533395393236
 val, fun = Eigensystem(MTri)
 
 -- test if Quanty gets the same answer as Mathematica
-converged = true
-for i=1,9 do
-  if(abs(val[i]-valMathematica[i]) / (abs(val[i])+abs(valMathematica[i])+1E-100)>1E-14) then
-    print("Eigenvalue differnce (",val[i],valMathematica[i],val[i]-valMathematica[i],") to large at ",i);
-    converged=false
-  end
+identity = Matrix.Conjugate(fun) * Matrix.Transpose(funMathematica)
+-- remove phase
+identity = Matrix.Conjugate(identity) * identity
+zero = Chop(identity - Matrix.Identity(#val), threshold)
+
+if(zero~=Matrix.Zero(#val)) then
+  error("eigenfunctions not equivalent to expected value\n",1)
 end
-for i=1,9 do
-  dot = 0
-  for j=1,9 do
-    dot = dot + Conjugate(fun[i][j]) * funMathematica[i][j]
-  end
-  if ((abs(dot)-1)>1E-15) then
-    converged=false
-    print("dot (",dot-1,") to large at ",i);
-  end
+
+zero=0
+for i=1,3 do
+  zero = zero + abs(val[i] - valMathematica[i])
 end
-if(converged) then
-  print("worked ok\n")
-  else
-  print("NOT CONVERGED\n")
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
 end
 
 ------------------------------------------------------------
@@ -600,6 +514,9 @@ Basis_up = {1,3,5,7,9,11,13}
 Hamiltonian1 = NewOperator("U",14,Basis_up,Basis_dn,{0,10,6.25,4}) + 0.1 * NewOperator("ldots",14,Basis_up,Basis_dn)
 StartRestrictions = {14,0,{"11111111111111",6,6}}
 
+-- Energy eigenvalues from Mathematica
+expectedEn = {-12.11458547046453,-12.08935739575368,-12.08935739575368,-12.08935739575368,-12.04302371821059,-12.04302371821059,-12.04302371821059,-12.04302371821058,-12.04302371821058,-11.98075902249375}
+
 TimeStart("Eigensystem 10 states")
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10)
 TimeEnd("Eigensystem 10 states")
@@ -607,24 +524,26 @@ TimeStart("Eigensystem 1 states")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states")
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 3E-5)~=0 then print(Energy - expectedEn[i]); error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian1,fun1s)
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Braket(Hfun,Hfun)
 io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
-
+if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Eigensystem 10 states shifted")
 fun1  = Eigensystem(Hamiltonian2,StartRestrictions,10)
@@ -633,18 +552,20 @@ TimeStart("Eigensystem 1 states shifted")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states shifted")
 valgrd = Braket(fun1s,Hamiltonian2,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i] - E1s)))
+  if Chop(Energy - (expectedEn[i] - E1s), 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1] - E1s)))
+if Chop(Energy - (expectedEn[1] - E1s), 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
 
@@ -657,20 +578,23 @@ TimeStart("Eigensystem 1 states scaled")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states scaled")
 valgrd = Braket(fun1s,Hamiltonian3,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian3,fun1s)
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Braket(Hfun,Hfun)
 io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
+
 
 ------------------------------------------------------------
 --                      complex atom                      --
@@ -688,6 +612,9 @@ Basis_up = {1,3,5,7,9,11,13}
 Hamiltonian1 = NewOperator("U",14,Basis_up,Basis_dn,{0,10,6.25,4}) + 0.1 * NewOperator("ldots",14,Basis_up,Basis_dn) + 0.000001 * NewOperator("Ly",14,Basis_up,Basis_dn) + 0.000002 * NewOperator("Sy",14,Basis_up,Basis_dn)
 StartRestrictions = {14,0,{"11111111111111",6,6}}
 
+-- Energy eigenvalues from Mathematica
+expectedEn = {-12.11458548596329,-12.0893723915261,-12.0893573866057,-12.08934240950505,-12.0430536956854,-12.04303870467152,-12.0430237159282,-12.04300872945544,-12.04299374525323,-11.98080397324668}
+
 TimeStart("Eigensystem 10 states complex")
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10)
 TimeEnd("Eigensystem 10 states complex")
@@ -695,23 +622,26 @@ TimeStart("Eigensystem 1 states complex")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Eigensystem 10 states shifted complex")
 fun1  = Eigensystem(Hamiltonian2,StartRestrictions,10)
@@ -720,18 +650,20 @@ TimeStart("Eigensystem 1 states shifted complex")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states shifted complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i] - E1s)))
+  if Chop(Energy - (expectedEn[i] - E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1] - E1s)))
+if Chop(Energy - (expectedEn[1] - E1s), 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 print("\n\n\n\n\n=======================\n    scaled\n========================\n\n\n\n")
 
@@ -744,18 +676,20 @@ TimeStart("Eigensystem 1 states scaled complex")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Eigensystem 1 states scaled complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -769,6 +703,19 @@ print("Ligand Field Theory d shell with 8 electrons")
 print("============================================")
 print("                    real                    ")
 print("============================================\n\n")
+
+
+-- table of expectation values expected 
+valuesExpected = { { -7.0646395149099 , 8.7469996388227 , 0.12739951990121 , 8.8768306592837 , -2.4522069748678 , -0.0012718254420615 , -0.10433350286501 , -0.71440956108272 , -0.71416023721557 , 2.0615871415811 , 3.0326641393185 , 3.9381531377914 , 5.967595581309 , 5.0942512808996 } , 
+{ -7.0646376164912 , 8.7469991285552 , 0.12740036758962 , 8.8768303810305 , -1.471293713048 , -0.00076293690249683 , -0.10434018469482 , -0.71440954747268 , -0.71416019943528 , 2.0615869913366 , 3.0326643026677 , 3.938153124543 , 5.9675955814528 , 5.0942512940043 } , 
+{ -7.0646355740709 , 8.7469997633736 , 0.12739933026869 , 8.8768307354275 , -0.49045791216181 , -0.0002543122039072 , -0.1043318698589 , -0.71440956446011 , -0.71416024641148 , 2.0615871888432 , 3.0326641033336 , 3.9381531314058 , 5.9675955764174 , 5.0942512921769 } , 
+{ -7.0646336117307 , 8.7469997628845 , 0.12739933820455 , 8.8768307316579 , 0.49045789366768 , 0.00025423977294419 , -0.10433186850257 , -0.7144095644706 , -0.7141602463892 , 2.0615871926602 , 3.0326641056681 , 3.9381531274697 , 5.967595574202 , 5.0942512983283 } , 
+{ -7.0646317291449 , 8.7469991319651 , 0.1274003825582 , 8.8768303775282 , 1.4712910456262 , 0.00076286460388111 , -0.10434012473281 , -0.71440954764253 , -0.71416019972374 , 2.061587004849 , 3.0326643078931 , 3.93815311256 , 5.9675955746978 , 5.0942513127422 } , 
+{ -7.0646297028822 , 8.7469996406423 , 0.12739955671882 , 8.8768306561382 , 2.4522096083534 , 0.0012717570122175 , -0.10433345256443 , -0.71440956125879 , -0.71416023740381 , 2.0615871634038 , 3.0326641488471 , 3.9381531172276 , 5.9675955705215 , 5.0942513122509 } , 
+{ -4.3970891187173 , 3.738603957286 , 13.895456096621 , 19.46387507951 , -0.68768912626776 , -0.15353414130057 , -0.37783917645087 , -0.54552471352424 , -0.39880485336415 , 1.2063193484836 , 3.955771722716 , 3.8631703602226 , 5.9747385685778 , 5.1620910711996 } , 
+{ -4.3969222458842 , 3.7390382384289 , 13.894493728761 , 19.448535888133 , 0.29280843247934 , -0.024664675571812 , -0.36996842758465 , -0.54554065703663 , -0.39885436155546 , 1.2065099740506 , 3.9555889289186 , 3.8631521482839 , 5.974748948747 , 5.1620989029692 } , 
+{ -4.3950687511236 , 3.7464473086434 , 13.887028717741 , 19.684456732187 , 0.29221621748039 , 0.1224805087663 , -0.26376482977337 , -0.54558727278455 , -0.39957940702726 , 1.2090077218303 , 3.9529922096584 , 3.8633046419833 , 5.974695426528 , 5.1619999314887 } , 
+{ -4.3947850063004 , 3.7465878601452 , 13.884024061493 , 19.611500768627 , -0.3837565226617 , -0.068152704098173 , -0.25693946257381 , -0.54559705198721 , -0.39957325341133 , 1.2090238074453 , 3.9530065006528 , 3.8632802600627 , 5.9746894318392 , 5.1620303080981 } }
 
 NF=20
 NB=0
@@ -980,6 +927,7 @@ for i = 1,#psiList do
   for j = 1,#oppList do
     expectationvalue = Chop(Complex.Re(Braket(psiList[i],oppList[j],psiList[i])))
     io.write(string.format("%8.3f ",expectationvalue))
+    if Chop(expectationvalue - valuesExpected[i][j], 1E-8)~=0 then error("Expectation value not equal to the expected value\n,1") end
   end
   io.write("\n")
 end
@@ -995,6 +943,19 @@ print("Ligand Field Theory d shell with 8 electrons")
 print("============================================")
 print("                   complex                  ")
 print("============================================\n\n")
+
+
+-- table of expectation values expected 
+valuesExpected = { { -7.0646395149007 , 8.7469996365049 , 0.12739952567545 , 8.8768306658766 , -2.4522069756932 , -0.0012718270267328 , -0.10433353651542 , -0.7144095610206 , -0.71416023702071 , 2.0615871416124 , 3.0326641396001 , 3.9381531373222 , 5.9675955814652 , 5.0942512812125 } , 
+  { -7.0646376164934 , 8.7469991279042 , 0.12740036584091 , 8.8768303778244 , -1.4712937145933 , -0.00076293846545639 , -0.10434019547856 , -0.71440954745658 , -0.71416019938033 , 2.0615869910583 , 3.0326643029533 , 3.9381531247485 , 5.9675955812399 , 5.0942512940115 } , 
+  { -7.064635574078 , 8.7469997669527 , 0.12739932573404 , 8.8768307310933 , -0.49045791212591 , -0.0002543133006519 , -0.10433181393737 , -0.71440956455683 , -0.71416024671947 , 2.06158718903 , 3.0326641026726 , 3.9381531317688 , 5.9675955765286 , 5.0942512917026 } , 
+  { -7.0646336117379 , 8.7469997669245 , 0.12739933432995 , 8.8768307299096 , 0.49045789372103 , 0.00025424122694542 , -0.10433180744659 , -0.71440956458231 , -0.71416024673345 , 2.0615871931644 , 3.0326641048138 , 3.9381531276378 , 5.9675955743841 , 5.0942512979781 } , 
+  { -7.0646317291471 , 8.7469991312855 , 0.12740038701441 , 8.8768303785193 , 1.4712910464519 , 0.00076286457818853 , -0.10434013347688 , -0.71440954762766 , -0.71416019967074 , 2.0615870052758 , 3.0326643078858 , 3.9381531119918 , 5.9675955748466 , 5.0942513131616 } , 
+  { -7.064629702873 , 8.7469996375033 , 0.12739956257028 , 8.8768306621587 , 2.452209609427 , 0.0012717584849248 , -0.10433349887898 , -0.71440956117061 , -0.71416023713888 , 2.0615871632529 , 3.0326641493663 , 3.9381531168019 , 5.9675955705789 , 5.0942513126192 } , 
+  { -4.3970758180647 , 3.7386564864369 , 13.895249887832 , 19.462198285624 , -0.44907690218949 , -0.24971048684536 , -0.37710807897034 , -0.54552550334669 , -0.39880867688329 , 1.2063351217035 , 3.9557521451223 , 3.8631729355309 , 5.9747397976433 , 5.1620872668258 } , 
+  { -4.3968703104088 , 3.7388630318404 , 13.894017557514 , 19.400002443733 , 0.21254132003995 , 0.1995386359892 , -0.36994335931044 , -0.54554395879409 , -0.39882035479056 , 1.2064548763919 , 3.955629684372 , 3.863169036431 , 5.9747464028051 , 5.1620845607639 } , 
+  { -4.3950607495698 , 3.746403636577 , 13.884032526703 , 19.672789158444 , 1.0731198376739 , 0.47078472212704 , -0.26440144468818 , -0.54559636779129 , -0.39955752050909 , 1.2089273714749 , 3.9530969637573 , 3.863275995904 , 5.9746996688638 , 5.1620243352322 } , 
+  { -4.3946873628674 , 3.7468669235197 , 13.882815910892 , 19.594228301189 , -0.90527462984847 , -0.31906490554598 , -0.25234943214365 , -0.54561642818986 , -0.39960922753289 , 1.2091976513637 , 3.9528619273772 , 3.863246551095 , 5.9746938701641 , 5.1620595787409 } }
 
 -- and our Hamiltonian is the sum over several operators
 
@@ -1014,17 +975,19 @@ oppList={Hamiltonian, OppSsqr, OppLsqr, OppJsqr, OppSy_3d, OppLy_3d, Oppldots_3d
 
 -- print of some expectation values
 
-print("  #    <E>      <S^2>    <L^2>    <J^2>    <S_y^3d> <L_y^3d> <l.s>    <F[2]>   <F[4]>   <Neg^3d> <Nt2g^3d><Neg^Ld> <Nt2g^Ld><N^3d>");
+print("  #    <E>      <S^2>    <L^2>    <J^2>    <S_z^3d> <L_z^3d> <l.s>    <F[2]>   <F[4]>   <Neg^3d> <Nt2g^3d><Neg^Ld> <Nt2g^Ld><N^3d>");
 for i = 1,#psiList do
   io.write(string.format("%3i ",i))
   for j = 1,#oppList do
     expectationvalue = Chop(Complex.Re(Braket(psiList[i],oppList[j],psiList[i])))
     io.write(string.format("%8.3f ",expectationvalue))
+    if Chop(expectationvalue - valuesExpected[i][j], 1E-8)~=0 then error("Expectation value not equal to the expected value\n,1") end
   end
   io.write("\n")
 end
 
 TimePrint()
+
 
 ::hubbard::
 ------------------------------------------------------------
@@ -1036,6 +999,9 @@ print("         Hubbard model 8 sites 1D           ")
 print("============================================")
 print("                    real                    ")
 print("============================================\n\n")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945483798 , -4.7231531376672 , -4.4313578927377 , -4.0692744354563 , -4.0692744352503 , -3.8663093361573 , -3.8663093259782 , -3.6089305392783 , -3.6089305059467 , -3.5591887636111 }
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
@@ -1061,25 +1027,28 @@ TimeStart("Hubbard Eigensystem 1 states")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states")
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian1,fun1s)
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Hubbard Eigensystem 10 states shifted")
 fun1  = Eigensystem(Hamiltonian2,StartRestrictions,10)
@@ -1088,18 +1057,20 @@ TimeStart("Hubbard Eigensystem 1 states shifted")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states shifted")
 valgrd = Braket(fun1s,Hamiltonian2,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
+  if Chop(Energy - (expectedEn[i]-E1s), 3E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
+if Chop(Energy - (expectedEn[1]-E1s), 3E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1114,20 +1085,25 @@ TimeStart("Hubbard Eigensystem 1 states scaled")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states scaled")
 valgrd = Braket(fun1s,Hamiltonian3,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian3,fun1s)
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
+
+os.exit()
+
 
 ------------------------------------------------------------
 --               Complex Hubbard model                    --

@@ -5,10 +5,11 @@ build-job:
   script:
   - set -x
   - echo "Start"
-  - module load compiler/2022.1.0
-  - module load mkl/2022.1.0
+  - export LANG=en_US.utf8
+  - export LC_ALL=en_US.utf8
+  - module load intel/2019
   - echo "current working directory $(pwd) "
-  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
+  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -ipo -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty.exe
   artifacts:
     paths:
     - Quanty.exe
@@ -50,6 +51,38 @@ test-job-TensorProduct:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/TensorProduct.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Braket:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Braket.Quanty"
+  dependencies:
+  - build-job
+
+test-job-BraketDiagonal:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/BraketDiagonal.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Eigensystem:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Eigensystem.Quanty"
+  dependencies:
+  - build-job
+
+test-job-BlockBandDiagonalize:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/BlockBandDiagonalize.Quanty"
   dependencies:
   - build-job
 
