@@ -1120,11 +1120,14 @@ static int LuaChop(lua_State * L)
   struct
   {
     bool Distance;
+    bool Deflate;
   } Options;
   LuaOptionsType LuaChopOptions[]={
     {"Distance" ,        "bool",                      &(Options.Distance)},
+    {"Deflate"  ,        "bool",                      &(Options.Deflate)},
     {NULL, NULL, NULL}};
   Options.Distance=false;
+  Options.Deflate=true;
   if(LuaTestOptionsList(L, -1))
   {
     LuaCheckOptions(L, len, LuaChopOptions);
@@ -1173,7 +1176,6 @@ static int LuaChop(lua_State * L)
           res->Im = ((Abs(a->Im)>epsilon)?a->Im:0);
           luaL_setmetatable(L, "Complex_Type");
         }
-
         return 1;
       }
       if (luaL_testudata(L, len, "Spectra_Type") != NULL)
@@ -1261,7 +1263,14 @@ static int LuaChop(lua_State * L)
         ResponsefunctionType *M = (ResponsefunctionType*) luaL_checkudata(L, len, "ResponseFunction_Type");
         ResponsefunctionType Mnew;
         ResponsefunctionCopy(M, &Mnew);
-        ResponsefunctionChop(&Mnew, epsilon);
+        if(Options.Distance==true)
+        {
+          printf("Chop resposne functions according to distance between poles not yet implemented\n");
+        }
+        else
+        {
+          ResponsefunctionChop(&Mnew, epsilon,Options.Deflate);
+        }
         LuaPush_ResponseFunction(L, &Mnew);
         FreeResponsefunction(M);
         FreeResponsefunction(&Mnew);
@@ -1269,7 +1278,7 @@ static int LuaChop(lua_State * L)
       }
       return luaL_error(L, "Error: Chop an object of unrecognised type\n");
     case LUA_TTABLE:
-      // test if the table is a response function, if so chop a resoponse function
+      // TODO: test if the table is a response function, if so chop a resoponse function
       
       
       

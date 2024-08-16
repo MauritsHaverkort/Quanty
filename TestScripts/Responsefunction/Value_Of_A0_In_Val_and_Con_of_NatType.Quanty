@@ -1,0 +1,75 @@
+-- A0total of the full response funcion is A0 + A0val + A0con
+
+A0    = Matrix.New({{1,0,0},{0,0,0},{0,0,0}})
+A0val = Matrix.New({{0,1,0},{0,0,0},{0,0,0}})
+A0con = Matrix.New({{0,0,1},{0,0,0},{0,0,0}})
+
+A0sum = Matrix.ToTable(A0 + A0val + A0con)
+
+
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0val,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0con, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+G2=ResponseFunction.ToTable(G)
+
+GA=Chop((G(1E10,0.1)+G(-1E10,0.1))/2)
+GB=Chop((G2(1E10,0.1)+G2(-1E10,0.1))/2)
+if((GA==GB)~=true)    then error("Response function comparison failed\n",1) end
+if((GA==A0sum)~=true) then error("Response function comparison failed\n",1) end
+if((A0sum==GB)~=true) then error("Response function comparison failed\n",1) end
+
+
+A0    = Matrix.New({{1,I,0},{-I,0,0},{0,0,0}})
+A0val = Matrix.New({{0,1,0},{0,0,0},{0,0,0}})
+A0con = Matrix.New({{0,0,1},{0,0,0},{0,0,0}})
+
+A0sum = Matrix.ToTable(A0+A0val+A0con)
+
+Gv = ResponseFunction.New( { {A0val,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0con, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+G2=ResponseFunction.ToTable(G)
+
+GA=Chop((G(1E10,0.1)+G(-1E10,0.1))/2)
+GB=Chop((G2(1E10,0.1)+G2(-1E10,0.1))/2)
+if((GA==GB)~=true)    then error("Response function comparison failed\n",1) end
+if((GA==A0sum)~=true) then error("Response function comparison failed\n",1) end
+if((A0sum==GB)~=true) then error("Response function comparison failed\n",1) end
+
+
+
+
+A0    = Matrix.New({{1,I,0},{-I,0,0},{0,0,0}})
+A0val = Matrix.New({{0,1,0},{0,0,0},{0,I,0}})
+A0con = Matrix.New({{0,I,1},{0,0,0},{0,I,0}})
+
+A0sum = Matrix.ToTable(A0+A0val+A0con)
+
+Gv = ResponseFunction.New( { {A0val,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0con, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+G = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="A"} )
+
+G2=ResponseFunction.ToTable(G)
+
+GA=Chop((G(1E10,0.1)+G(-1E10,0.1))/2)
+GB=Chop((G2(1E10,0.1)+G2(-1E10,0.1))/2)
+if((GA==GB)~=true)    then error("Response function comparison failed\n",1) end
+if((GA==A0sum)~=true) then error("Response function comparison failed\n",1) end
+if((A0sum==GB)~=true) then error("Response function comparison failed\n",1) end
+

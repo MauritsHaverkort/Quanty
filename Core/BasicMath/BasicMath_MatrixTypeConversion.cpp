@@ -3939,7 +3939,7 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, B
   ListOfPolesDetermineOccupation(A, mu, &muOccupation);
   printf("An occupation of     %22.15E is found at mu=      %22.15E\n\n", muOccupation, mu);
 
-  ListOfPoleCopyChoped(A, &Achop, 0.01);
+  ListOfPoleCopyChopReduceDimension(A, &Achop, 0.01);
   PrintListOfPoles(Achop);
   FreeListOfPoles(&Achop);
 

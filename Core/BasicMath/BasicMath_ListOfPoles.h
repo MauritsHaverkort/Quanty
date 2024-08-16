@@ -26,8 +26,8 @@ uint32_t ListOfPolesCopyCon(ListOfPoles * M, ListOfPoles B, double Ef, double Ep
 uint32_t ListOfPolesCopyValOccupation(ListOfPoles * M, ListOfPoles B, double *Ef, double occupation);
 uint32_t ListOfPolesCopyConOccupation(ListOfPoles * M, ListOfPoles B, double *Ef, double occupation);
 uint32_t ListOfPolesDetermineOccupation(ListOfPoles M, double const Ef, double *const occupation);
-uint32_t ListOfPoleChoped(ListOfPoles * A, double Epsilon);
-uint32_t ListOfPoleCopyChoped(ListOfPoles M, ListOfPoles * A, double Epsilon);
+uint32_t ListOfPoleChopReduceDimension(ListOfPoles * A, double Epsilon);
+uint32_t ListOfPoleCopyChopReduceDimension(ListOfPoles M, ListOfPoles * A, double Epsilon);
 uint32_t ShiftListOfPolesToMakeChemPotZeroMetal(ListOfPoles * const M, double const occupation);
 uint32_t ShiftListOfPolesToMakeChemPotZeroInsulator(ListOfPoles * const M, double const occupation);
 uint32_t ShiftListOfPolesToMakeChemPotZero(ListOfPoles * const M, double const occupation, double const epsilon);

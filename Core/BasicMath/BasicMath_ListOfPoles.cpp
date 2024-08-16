@@ -1405,7 +1405,7 @@ uint32_t ListOfPolesDetermineOccupation(ListOfPoles M, double const Ef, double *
 }
 
 
-uint32_t ListOfPoleChoped(ListOfPoles * A, double Epsilon)
+uint32_t ListOfPoleChopReduceDimension(ListOfPoles * A, double Epsilon)
 {
   uint32_t i, shift;
   shift = 0;
@@ -1429,10 +1429,21 @@ uint32_t ListOfPoleChoped(ListOfPoles * A, double Epsilon)
   return 0;
 }
 
-uint32_t ListOfPoleCopyChoped(ListOfPoles M, ListOfPoles * A, double Epsilon)
+uint32_t ListOfPoleChop(ListOfPoles * A, double Epsilon)
+{
+  uint32_t i;
+  if(fabs(A->a0)<Epsilon) A->a0=0;
+  for (i = 0; i < A->N; i++)
+  {
+    if (A->b[i] < Epsilon) A->b[i]=0;
+  }
+  return 0;
+}
+
+uint32_t ListOfPoleCopyChopReduceDimension(ListOfPoles M, ListOfPoles * A, double Epsilon)
 {
   ListOfPolesCopy(A, M);
-  ListOfPoleChoped(A, Epsilon);
+  ListOfPoleChopReduceDimension(A, Epsilon);
   return 0;
 }
 

@@ -221,6 +221,46 @@ void BADoubleTriDiagonalMatrixChop(BADoubleTriDiagonalMatrixType * const M, doub
   if ((fabs(M->bcA0) < epsilon))
     M->bcA0 = 0;
 }
+void BADoubleTriDiagonalMatrixChopReduceDimension(BADoubleTriDiagonalMatrixType * const M, double const epsilon)
+{
+  uint32_t i;
+  for (i = 0; i < M->val.N; i++)
+  {
+    if ((fabs(M->val.a[i]) < epsilon)) M->val.a[i] = 0;
+    if ((fabs(M->val.b[i]) < epsilon))
+    {
+      M->val.b[i] = 0;
+      M->val.N = i;
+    }
+  }
+  if ((fabs(M->val.a[M->val.N]) < epsilon)) M->val.a[M->val.N] = 0;
+  for (i = 0; i < M->con.N; i++)
+  {
+    if ((fabs(M->con.a[i]) < epsilon)) M->con.a[i] = 0;
+    if ((fabs(M->con.b[i]) < epsilon)) 
+    {
+      M->con.b[i] = 0;
+      M->con.N = i;
+    }
+  }
+  if ((fabs(M->con.a[M->con.N]) < epsilon)) M->con.a[M->con.N] = 0;
+  if ((fabs(M->a0) < epsilon)) M->a0 = 0;
+  if ((fabs(M->b0) < epsilon)) M->b0 = 0;
+  if ((fabs(M->acvB) < epsilon))
+    M->acvB = 0;
+  if ((fabs(M->acvA) < epsilon))
+    M->acvA = 0;
+  if ((fabs(M->acvBA) < epsilon))
+    M->acvBA = 0;
+  if ((fabs(M->bvB0) < epsilon))
+    M->bvB0 = 0;
+  if ((fabs(M->bvA0) < epsilon))
+    M->bvA0 = 0;
+  if ((fabs(M->bcB0) < epsilon))
+    M->bcB0 = 0;
+  if ((fabs(M->bcA0) < epsilon))
+    M->bcA0 = 0;
+}
 
 /*  MI=M^-1
  *  MI not initiallized on call
