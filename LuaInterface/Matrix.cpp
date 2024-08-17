@@ -1502,6 +1502,14 @@ static int LuaMatrixIndex(lua_State *L)
 /*
  *
  */
+static int LuaMatrixNewIndex(lua_State *L)
+{
+  return luaL_error(L, "Error: Setting / changing the element of a matrix stored as userdata at the moment not implemented.\n Work in progress\n");
+}
+
+/*
+ *
+ */
 static int LuaMatrixDestroy(lua_State * L)
 {
   CompactMatrixType *A;
@@ -1907,6 +1915,7 @@ static const struct luaL_Reg Matrix_meta[] = {
 	{"__len", LuaMatrixLen},
   {"__tostring", LuaMatrixToString},
   {"__index", LuaMatrixIndex},
+  {"__newindex", LuaMatrixNewIndex},
   {"__gc", LuaMatrixDestroy},
   {NULL, NULL}
 };
