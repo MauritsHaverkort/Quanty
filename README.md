@@ -16,8 +16,7 @@ You need to compile the file quanty/LuaInterface/main.cpp this will link all hea
 
 Possible compile commands for the intel compiler on linux are:
 
-
-icc quanty/LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -o Quanty
+icc quanty/LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -ipo -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty
 
 
 i.e. we link to openmp, blas, lapack and the standard libraries 
