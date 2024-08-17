@@ -236,7 +236,7 @@ test-job-Responsefunction-Chop:
   dependencies:
   - build-job
 
-test-job-Responsefunction-ToOperator:
+test-job-Responsefunction-ToSpectra:
   stage: test
   script:
   - export OMP_NUM_THREADS=8

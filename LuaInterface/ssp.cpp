@@ -1079,6 +1079,51 @@ static int Luacopy(lua_State * L)
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
+      if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+      {
+        CompactMatrixType *M = (CompactMatrixType*) luaL_checkudata(L, len, "Matrix_Type");
+        CompactMatrixType *MNew;
+        MNew = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        CompactMatrixCopy(*M, MNew);
+        luaL_setmetatable(L, "Matrix_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "TightBinding_Type") != NULL)
+      {
+        TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, len, "TightBinding_Type");
+        TightBindingDef *TBNew;
+        TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+        CopyTightBindingDef(TB, TBNew);
+        luaL_setmetatable(L, "TightBinding_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "ResponseFunction_Type") != NULL)
+      {
+        ResponsefunctionType *R = (ResponsefunctionType*) luaL_checkudata(L, len, "ResponseFunction_Type");
+        ResponsefunctionType *RNew;
+        RNew = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+        ResponsefunctionCopy(R, RNew);
+        luaL_setmetatable(L, "ResponseFunction_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "Graphics_Type") != NULL)
+      {
+        GraphicsType *G = (GraphicsType*) luaL_checkudata(L, len, "Graphics_Type");
+        GraphicsType *GNew;
+        GNew = (GraphicsType *) lua_newuserdata(L, sizeof(GraphicsType));
+        CopyGraphics(G, GNew);
+        luaL_setmetatable(L, "Graphics_Type");
+        return 1;
+      }
+      if (luaL_testudata(L, len, "Tensor_Type") != NULL)
+      {
+        CompactTensorType *M = (CompactTensorType*) luaL_checkudata(L, len, "Tensor_Type");
+        CompactTensorType *MNew;
+        MNew = (CompactTensorType *) lua_newuserdata(L, sizeof(CompactTensorType));
+        CompactTensorCopy(M, MNew);
+        luaL_setmetatable(L, "Tensor_Type");
+        return 1;
+      }
       return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
@@ -1365,7 +1410,11 @@ static int Luaconjugate(lua_State * L)
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
-      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
+      if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+      {
+        return LuaMatrixConjugate(L);
+      }
+      return luaL_error(L, "Error: complex conjugate an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
       lua_pushnil(L);
@@ -1384,7 +1433,7 @@ static int Luaconjugate(lua_State * L)
       }
       break;
     default:
-      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
+      return luaL_error(L, "Error: complex conjugate an object of unrecognised type\n");
   }
   return 1;
 }
@@ -1442,7 +1491,11 @@ static int Luaconjugatetranspose(lua_State * L)
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
-      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
+      if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+      {
+        return LuaMatrixConjugateTranspose(L);
+      }
+      return luaL_error(L, "Error: conjugate transpose of an object of unrecognised type\n");
     case LUA_TTABLE:
       // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
       Ni=(uint32_t)lua_objlen(L, len);
@@ -1511,7 +1564,7 @@ static int Luaconjugatetranspose(lua_State * L)
       }
       break;
     default:
-      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
+      return luaL_error(L, "Error: conjugate transpose an object of unrecognised type\n");
   }
   return 1;
 }
@@ -1568,7 +1621,11 @@ static int Luatranspose(lua_State * L)
         luaL_setmetatable(L, "Operator_Type");
         return 1;
       }
-      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
+      if (luaL_testudata(L, len, "Matrix_Type") != NULL)
+      {
+        return LuaMatrixTranspose(L);
+      }
+      return luaL_error(L, "Error: transpose of an object of unrecognised type\n");
     case LUA_TTABLE:
       // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
       Ni=(uint32_t)lua_objlen(L, len);
@@ -1637,7 +1694,7 @@ static int Luatranspose(lua_State * L)
       }
       break;
     default:
-      return luaL_error(L, "Error: copying or cloning an object of unrecognised type\n");
+      return luaL_error(L, "Error: transpose of an object of unrecognised type\n");
       break;
   }
   return 1;
