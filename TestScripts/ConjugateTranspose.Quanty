@@ -1,0 +1,135 @@
+
+I = Complex.I()
+
+print("=========================================")
+print("Table of real numbers")
+
+t0 = {{1,2,3},{4,5,6}}
+tTest = {{1,4},{2,5},{3,6}} -- t0.T
+
+tTr = Transpose(t0)
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("TRanspose failed for real table",1) end
+    end
+end
+
+
+print("=========================================")
+print("Table of complex numbers")
+
+t0 = {{1*I,2,3*I},{4+1e-3*I,5-7*I,6}}
+tTest = {{-1*I,4-1e-3*I},{2,5+7*I},{-3*I,6}} -- t0.T
+
+tTr = ConjugateTranspose(t0)
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("TRanspose failed for complex table",1) end
+    end
+end
+
+print("=========================================")
+print("Table with complex numbers and nil")
+
+t0 = {{nil,2,3*I},{4+1e-3*I,5-7*I,6}}
+tTest = {{nil,4-1e-3*I},{2,5+7*I},{-3*I,6}} -- t0.T
+
+tTr = ConjugateTranspose(t0)
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("TRanspose failed for complex table with a nil entry",1) end
+    end
+end
+
+
+print("=========================================")
+print("Matrix of real numbers")
+
+t0 = {{1,2,3},{4,5,6}}
+setmetatable(t0,MatrixMeta)
+tTest = {{1,4},{2,5},{3,6}} -- t0.T
+
+tTr = Matrix.ToTable( ConjugateTranspose(t0) )
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("ConjugateTRanspose failed for real matrix (table)",1) end
+    end
+end
+
+print("Matrix (pointer) of real numbers")
+
+t0 = NewMatrix({{1,2,3},{4,5,6}})
+tTest = {{1,4},{2,5},{3,6}} -- t0.T
+
+tTr = Matrix.ToTable( ConjugateTranspose(t0) )
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("ConjugateTRanspose failed for real matrix (pointer)",1) end
+    end
+end
+
+print("=========================================")
+print("Matrix (table) of complex numbers")
+
+t0 = {{1*I,2,3*I},{4+1e-3*I,5-7*I,6}}
+setmetatable(t0,MatrixMeta)
+tTest = {{-1*I,4-1e-3*I},{2,5+7*I},{-3*I,6}} -- t0.T
+
+
+tTr = Matrix.ToTable( ConjugateTranspose(t0) )
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("ConjugateTRanspose failed for complex matrix (table)",1) end
+    end
+end
+
+print("Matrix (pointer) of complex numbers")
+
+t0 = NewMatrix({{1*I,2,3*I},{4+1e-3*I,5-7*I,6}})
+tTest = {{-1*I,4-1e-3*I},{2,5+7*I},{-3*I,6}} -- t0.T
+
+
+tTr = Matrix.ToTable( ConjugateTranspose(t0) )
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("ConjugateTranspose failed for complex matrix (pointer)",1) end
+    end
+end
+
+print("=========================================")
+print("Matrix with complex numbers and nil")
+
+t0 = {{nil,2,3*I},{4+1e-3*I,5-7*I,6}}
+tTest = {{nil,4-1e-3*I},{2,5+7*I},{-3*I,6}} -- t0.T#
+setmetatable(t0,MatrixMeta)
+setmetatable(t0,MatrixMeta)
+
+tTr = ConjugateTranspose(t0)
+for i=1,#tTest do
+    for j=1,#tTest[i] do
+        if tTr[i][j]~=tTest[i][j] then error("TRanspose failed for complex table with a nil matrix",1) end
+    end
+end
+
+print("=========================================")
+print("Complex Operator")
+
+NF = 3
+NB = 0
+
+O = NewOperator(NF,NB,{{0,-0,1},{1,-0,2},{2,-1,2+5*I},    {1,0,-1,-0,6},{0,1,-2,-1,8+2*I},{0,1,2,3*I}})
+OTest = NewOperator(NF,NB,{{0,-0,1},{0,-1,2},{1,-2,2-5*I},   {1,0,-1,-0,6},{2,1,-0,-1,8-2*I},{-2,-1,-0,-3*I}})
+
+if ConjugateTranspose(O)~=OTest then error("Transpose failed for Operator_Type") end
+
+print("=========================================")
+print("Complex Wavefunction")
+
+psi = NewWavefunction(NF, NB, {{"110",sqrt(1/4)+2*I},{"101",sqrt(1/4)},{"011",I*sqrt(1/4)}})
+psi.Normalize()
+psiTest = NewWavefunction(NF, NB, {{"110",sqrt(1/4)-2*I},{"101",sqrt(1/4)},{"011",-I*sqrt(1/4)}})
+psiTest.Normalize()
+
+if ConjugateTranspose(psi)~=psiTest then error("Transpose failed for Wavefunction_Type") end
+
+print("All Tests passed!")

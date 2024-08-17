@@ -1,0 +1,69 @@
+--[[
+/*  copy or clone the last element on the lua stack and place it on the stack
+*  works recursively on tables
+*  allocates new memory for user types
+*  complex conjugates user types that can be conjugated
+*/
+]]
+
+I = Complex.I()
+
+-- ##############################################################
+-- Numbers and Tables
+
+a = 1258
+
+if (Conjugate(a)~=a) then error("Conjugate failed for number type",1) end
+
+z = 1.2672e4+I*6.35673
+
+if (Conjugate(z)~=1.2672e4-I*6.35673) then error("Conjugate failed for complex type",1) end
+
+t =  { { 1 + 2*I , 2 } , { 2 - 1e-7*I , 0 } }
+tcheck = { { 1 - 2*I , 2 } , { 2 + 1e-7*I , 0 } }
+tc = Conjugate(t)
+
+for i=1,#tc do
+    for j=1,#tc[i] do
+        if (tcheck[i][j]~=tc[i][j]) then 
+            error("Conjugate failed for table",1) end
+    end
+end
+
+print("Matrix (table)")
+setmetatable(t,MatrixMeta)
+tc = Conjugate(t)
+for i=1,#tc do
+    for j=1,#tc[i] do
+        if (tcheck[i][j]~=tc[i][j]) then 
+            error("Conjugate failed for matrix type",1) end
+    end
+end
+
+print("Matrix (pointer)")
+
+tc = Matrix.ToTable(Conjugate(NewMatrix(t)))
+for i=1,#tc do
+    for j=1,#tc[i] do
+        if (tcheck[i][j]~=tc[i][j]) then 
+            error("Conjugate failed for matrix (pointer) type",1) end
+    end
+end
+
+-- ##############################################################
+-- Wavefunction and Operator 
+
+NF = 3
+NB = 0
+
+psi = NewWavefunction(NF, NB, {{"110",sqrt(1/4)*I},{"101",sqrt(1/4)},{"011",2+sqrt(1/4)*I}})
+psi.Normalize()
+psicheck = NewWavefunction(NF, NB, {{"110",-sqrt(1/4)*I},{"101",sqrt(1/4)},{"011",2-sqrt(1/4)*I}})
+psicheck.Normalize()
+
+if Conjugate(psi)~=psicheck then error("Conjugate failed for wavefunction",1) end
+
+
+O = NewOperator(NF,NB,{{3.4},{0,-0,1.2+1*I},{1,-2,2.5},{1,-1,2*I}})
+Ocheck = NewOperator(NF,NB,{{3.4},{0,-0,1.2-1*I},{1,-2,2.5},{1,-1,-2*I}})
+if Conjugate(O)~=Ocheck then error("Conjugate failed for opertaor type",1) end
