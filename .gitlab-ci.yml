@@ -78,6 +78,62 @@ test-job-BlockBandDiagonalize:
   - build-job
 
 
+test-job-Clone:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Clone.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Copy:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Copy.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Conjugate:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Conjugate.Quanty"
+  dependencies:
+  - build-job
+
+test-job-ConjugateTranspose:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/ConjugateTranspose.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Chop:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Chop.Quanty"
+  dependencies:
+  - build-job
+
+test-job-MeanFieldOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/MeanFieldOperator.Quanty"
+  dependencies:
+  - build-job
+
+test-job-OperatorToMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/OperatorToMatrix.Quanty"
+  dependencies:
+  - build-job
+
 
 
 
@@ -164,7 +220,7 @@ test-job-Responsefunction-ToOperator:
   dependencies:
   - build-job
   
-test-job-Responsefunction-ToOperator:
+test-job-Responsefunction-InvertEnergy:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
@@ -172,7 +228,7 @@ test-job-Responsefunction-ToOperator:
   dependencies:
   - build-job
   
-test-job-Responsefunction-ToOperator:
+test-job-Responsefunction-Chop:
   stage: test
   script:
   - export OMP_NUM_THREADS=8

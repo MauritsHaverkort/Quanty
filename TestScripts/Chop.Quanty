@@ -1,0 +1,203 @@
+--[[
+ *  copy or clone the one but last element on the lua stack and place it on the stack
+ *  set values smaller then epsilon to zero
+ *  works recursively on tables
+ *  allocates new memory for user types
+ *
+ *  if there is one ellement on the stack use epsilon=10*DBL_EPSILON
+ *  if there are two ellements on the stack and the last is a number use the last as epsilon
+ ]]
+
+
+I = Complex.I()
+
+print("===========================================")
+print("Numbers:")
+
+a = 1.2535899
+b = 1.46793e-15
+
+if not (Chop(a)==a) then
+    error("Chop changed number of O(1)",1)
+end
+if not (Chop(b)==0) then
+    error("Chop did not reduce 1.46793e-15 to 0",1)
+end
+
+print("passed")
+
+
+
+print("===========================================")
+print("epsilon:")
+
+a = 1e-5
+if not (Chop(a,1e-4)==0) then
+    error("Chop did not reduce 1e-5 to 0 for epsilon = 1e-4",1)
+end
+
+if (Chop(a,1e-6)==0) then
+    error("Chop reduced 1e-5 to 0 for epsilon = 1e-6",1)
+end
+print("passed")
+
+
+
+print("===========================================")
+print("Complex Numbers:")
+
+a = 1.2535899
+b = 1.46793e-15
+
+z = a+I*b
+
+if not (Chop(z)==a) then
+    error("Chop did not chop small imag part",1)
+end
+if (Chop(z,1e-17)==a) then
+    error("Chop did chop small imag part despite larger epsilon",1)
+end
+if not (Chop(1e-14+1e-14*I,1e-10)==0) then
+    error("Chop did not chop small imag part",1)
+end
+
+z = z*I
+if not (Chop(z)==a*I) then
+    error("Chop did not chop small real part",1)
+end
+
+print("passed")
+
+
+
+print("===========================================")
+print("Wavefunctions:")
+
+NF = 3
+NB = 0
+
+psi = NewWavefunction(NF, NB, {{"110",sqrt(1/4)},{"101",sqrt(1/4)},{"011",(1+0.0000001*I)*sqrt(1/4)}})
+psi2 = NewWavefunction(NF, NB, {{"110",sqrt(1/4)},{"101",sqrt(1/4)},{"011",(1)*sqrt(1/4)}})
+psi.Chop(0.00001)
+
+if not (psi==psi2) then
+    error("Chop did not chop wavefunction",1)
+end
+
+psi = NewWavefunction(NF, NB, {{"110",sqrt(1/4)},{"101",sqrt(1/4)},{"011",(1+0.0000001*I)*sqrt(1/4)}})
+if not (Chop(psi,1e-5)==psi2) then
+    error("Chop did not chop wavefunction",1)
+end
+
+print("passed")
+
+
+print("===========================================")
+print("Operators:")
+
+O = NewOperator(NF,NB,{{3.4},{0,-0,1.2},{1,-2,2.5+0.0000000001*I}})
+O2 = NewOperator(NF,NB,{{3.4},{0,-0,1.2},{1,-2,2.5}})
+
+O.Chop(0.00001)
+
+if not (O==O2) then
+    error("Chop did not chop Operator",1)
+end
+
+O = NewOperator(NF,NB,{{3.4},{0,-0,1.2},{1,-2,2.5+0.0000000001*I}})
+if not (Chop(O,1e-5)==O2) then
+    error("Chop did not chop Operator",1)
+end
+print("passed")
+
+
+print("===========================================")
+print("Tables:")
+
+tab = {{1+2*I},{1e-7+5*I,2+1e-8*I}}
+cTab = Chop(Clone(tab),1e-6)
+for i=1,#tab do
+    for j=1,#tab[i] do
+        if not (cTab[i][j]==Chop(tab[i][j],1e-6)) then
+            error("",1)
+        end
+    end
+end
+print("passed")
+
+
+print("===========================================")
+print("Matrix (Table):")
+
+tab = {{1+2*I,1},{1e-7+5*I,2+1e-8*I}}
+setmetatable(tab,MatrixMeta)
+cTab = Chop(Clone(tab),1e-6)
+for i=1,#tab do
+    for j=1,#tab[i] do
+        if not (cTab[i][j]==Chop(tab[i][j],1e-6)) then
+            error("Chop failed for Matrix (table)",1)
+        end
+    end
+end
+print("passed")
+
+
+print("===========================================")
+print("Matrix (pointer):")
+
+tab = {{1+2*I,1},{1e-7+5*I,2+1e-8*I}}
+setmetatable(tab,MatrixMeta)
+tab = Matrix.ToUserdata(tab)
+cTab = Chop(Clone(tab),1e-6)
+for i=1,#tab do
+    for j=1,#tab[i] do
+        if not (cTab[i][j]==Chop(tab[i][j],1e-6)) then
+            error("Chop failed for Matrix (pointer)",1)
+        end
+    end
+end
+print("passed")
+
+
+print("===========================================")
+print("Spectra:")
+-- Define some model Hamiltonian: impurity coupled to a 1D chain
+NBath = 5
+NF = 2 + 2*NBath
+
+-- some parameters
+t = 1
+U = 3
+H1 = U*NewOperator(NF, 0, {{0, -0, 1, -1, 1}})
+for i = 1, NBath do
+		H1 = H1 + NewOperator(NF, 0, {{2*i,       -2*(i-1),     I*t}})
+						+ NewOperator(NF, 0, {{2*i+1,     -(2*(i-1)+1), I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1),   -2*i,        -I*t}})
+						+ NewOperator(NF, 0, {{2*(i-1)+1, -(2*i+1),    -I*t}})
+end
+H1 = H1*1e-6
+
+-- Defining 2 transition operators
+TDn = NewOperator("Cr", NF, 0)
+TUp = NewOperator("Cr", NF, 1)
+
+-- Defining 2 starting states (real and complex)
+str1 = "10"
+for i = 1, NBath do
+		str1 = str1.."00"
+end
+str2 = "01"
+for i = 1, NBath do
+		str2 = str2.."00"
+end
+psi1 = NewWavefunction(NF, 0, {{str1, 1}, {str2, 1}})
+psi1.Normalize()
+psi2 = NewWavefunction(NF, 0, {{str1, 1}, {str2, -2*I+1}})
+psi2.Normalize()
+
+spec, G = CreateSpectra(H1, TDn, psi2, {{"DenseBorder", 1}, {"Tensor", false}, {"NE",5}})
+
+print(type(spec))
+
+print(spec)
+print(Chop(spec,1e-5))
