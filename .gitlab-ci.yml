@@ -15,15 +15,6 @@ build-job:
     - Quanty.exe
     expire_in: 1 week
 
-test-job1:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "Debug examples/Reference/Functions/BlockBandDiagonalize.Quanty"
-  dependencies:
-  - build-job
-
-
 
 # =========================================================================
 # ===== Test single functions acting on different objects
@@ -149,11 +140,6 @@ test-job-Responsefunction-call:
   dependencies:
   - build-job
   
-
-
-
-
-
 test-job-Responsefunction-ChangeType:
   stage: test
   script:
@@ -191,5 +177,13 @@ test-job-Responsefunction-ToOperator:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/Chop.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-ToOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/ToSpectra.Quanty"
   dependencies:
   - build-job

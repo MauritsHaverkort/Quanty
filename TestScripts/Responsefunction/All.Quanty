@@ -3,6 +3,7 @@ print("Test response functions in directory",directory)
 
 goto skip
 
+::skip::
 
 
 dofile(directory.."/__eq.Quanty")
@@ -22,12 +23,10 @@ dofile(directory.."/ToOperator.Quanty")
 dofile(directory.."/Value_Of_A0_In_Val_and_Con_of_NatType.Quanty")
 dofile(directory.."/InvertEnergy.Quanty")
 dofile(directory.."/Chop.Quanty")
-
-
-
-::skip::
-
 dofile(directory.."/ToSpectra.Quanty")
+
+
+
 
 
 

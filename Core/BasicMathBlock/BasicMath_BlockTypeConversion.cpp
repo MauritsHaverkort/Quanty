@@ -2224,25 +2224,12 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(double GroundS
     SpectrumAllocate(G[0], &(G[i]));
   }
 
-  if(A->QComplex)
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
   {
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    for(j=0;j<=N;j++)
     {
-      for(j=0;j<=N;j++)
-      {
-        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-        G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
-      }
-    }
-  }
-  else
-  {
-    for(i=0;i<A->BlockSize*A->BlockSize;i++)
-    {
-      for(j=0;j<=N;j++)
-      {
-        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-      }
+      G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
+      G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
     }
   }
 
@@ -2275,27 +2262,14 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToSpectra(double GroundStateEnergy, Bl
    SpectrumAllocate(G[0], &(G[i]));
  }
 
- if(A->QComplex)
- {
-   for(i=0;i<A->BlockSize*A->BlockSize;i++)
-   {
-     for(j=0;j<=N;j++)
-     {
-       G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-       G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
-     }
-   }
- }
- else
- {
-   for(i=0;i<A->BlockSize*A->BlockSize;i++)
-   {
-     for(j=0;j<=N;j++)
-     {
-       G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-     }
-   }
- }
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    for(j=0;j<=N;j++)
+    {
+      G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
+      G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
+    }
+  }
 
  for(i=0;i<A->BlockSize*A->BlockSize;i++)
  {

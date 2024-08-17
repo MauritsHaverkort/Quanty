@@ -1,0 +1,32 @@
+t = sqrt(1/2)
+
+B0s = Matrix.New({{t,t*I,0},{-t*I,t,0},{0,0,1}})
+B0 = B0s * B0s
+
+print(B0s)
+print(B0)
+
+B0s = nil
+B0 = nil
+
+collectgarbage()
+
+t = sqrt(1/2)
+
+B0s = Matrix.New({{t,t*I,0},{-t*I,t,0},{0,0,1}})
+B0 = B0s * B0s
+
+B0s = nil
+B0 = nil
+
+collectgarbage()
+
+t = sqrt(1/2)
+
+B0s = Matrix.New({{t,t*I,0},{-t*I,t,0},{0,0,1}})
+B0 = B0s * B0s
+
+B0s = nil
+B0 = nil
+
+collectgarbage()

@@ -4,7 +4,7 @@
  */
 uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *const M, double *EminPole, double *EmaxPole)
 {
-  int i,j;
+  int i,j,k;
   double Rrow;
   *EminPole= DBL_MAX;
   *EmaxPole=-DBL_MAX;
@@ -61,10 +61,74 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
           *EmaxPole= 1;
           return 0;
         }
-        
-        
-        
-        
+        if(A->QComplex==0)
+        { //real
+          for(i=0;i<A->N;i++)
+          {
+            for(j=0;j<A->BlockSize;j++)
+            {
+              Rrow=0;
+              if(i!=0)
+              {
+                for(k=0;k<A->BlockSize;k++)
+                {
+                  Rrow += fabs(A->bRe[i * Sqr(A->BlockSize) + j * A->BlockSize + k]);
+                }
+              }
+              for(k=0;k<j;k++)
+              {
+                Rrow += fabs(A->aRe[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k]);
+              }
+              for(k=j+1;k<A->BlockSize;k++)
+              {
+                Rrow += fabs(A->aRe[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k]);
+              }
+              if(i!=A->N-1)
+              {
+                for(k=0;k<A->BlockSize;k++)
+                {
+                  Rrow += fabs(A->bRe[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k]);
+                }
+              }
+              if(A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] - Rrow < *EminPole) *EminPole = A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] - Rrow;
+              if(A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] + Rrow > *EmaxPole) *EmaxPole = A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] + Rrow;
+            }
+          }
+        }
+        else
+        { //complex
+          for(i=0;i<A->N;i++)
+          {
+            for(j=0;j<A->BlockSize;j++)
+            {
+              Rrow=0;
+              if(i!=0)
+              {
+                for(k=0;k<A->BlockSize;k++)
+                {
+                  Rrow += sqrt(Sqr(A->b[i * Sqr(A->BlockSize) + j * A->BlockSize + k].Re)+Sqr(A->b[i * Sqr(A->BlockSize) + j * A->BlockSize + k].Im));
+                }
+              }
+              for(k=0;k<j;k++)
+              {
+                Rrow += sqrt(Sqr(A->a[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k].Re) + Sqr(A->a[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k].Im));
+              }
+              for(k=j+1;k<A->BlockSize;k++)
+              {
+                Rrow += sqrt(Sqr(A->a[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k].Re) + Sqr(A->a[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k].Im));
+              }
+              if(i!=A->N-1)
+              {
+                for(k=0;k<A->BlockSize;k++)
+                {
+                  Rrow += sqrt(Sqr(A->b[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k].Re) + Sqr(A->b[(i+1) * Sqr(A->BlockSize) + j * A->BlockSize + k].Im));
+                }
+              }
+              if(A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re - Rrow < *EminPole) *EminPole = A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re - Rrow;
+              if(A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re + Rrow > *EmaxPole) *EmaxPole = A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re + Rrow;
+            }
+          }
+        }
       }
       break;
       case 'a':
@@ -76,11 +140,96 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
           *EmaxPole= 1;
           return 0;
         }
-        
-        
-        
-        
-        
+        if(A->QComplex==0)
+        { //real
+          for(j=0;j<A->BlockSize;j++) // loop over all rows in A0
+          {
+            Rrow=0;
+            for(i=1;i<j;i++)
+            {
+              Rrow += fabs(A->aRe[(1)*Sqr(A->BlockSize)+i+j*A->BlockSize]);
+            }
+            for(i=j+1;i<A->BlockSize;i++)
+            {
+              Rrow += fabs(A->aRe[(1)*Sqr(A->BlockSize)+i+j*A->BlockSize]);
+            }
+            for(i=1;i<A->N;i++) // loop over all blocks in B
+            {
+              for(k=0;k<A->BlockSize;k++) // loop over all Columns in Bi
+              {
+                Rrow += fabs(A->bRe[(i)*Sqr(A->BlockSize)+k+j*A->BlockSize]);
+              }
+            }
+            if(A->aRe[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize] - Rrow < *EminPole) *EminPole = A->aRe[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize] - Rrow;
+            if(A->aRe[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize] + Rrow > *EmaxPole) *EmaxPole = A->aRe[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize] + Rrow;
+          }
+          for(i=1;i<A->N;i++) // loop over all blocks in B
+          {
+            for(j=0;j<A->BlockSize;j++) // loop over all rows in Ai+1
+            {
+              Rrow=0;
+              for(k=0;k<j;k++)
+              {
+                Rrow += fabs(A->aRe[(i+1)*Sqr(A->BlockSize)+k+j*A->BlockSize]);
+              }
+              for(k=j+1;k<A->BlockSize;k++)
+              {
+                Rrow += fabs(A->aRe[(i+1)*Sqr(A->BlockSize)+k+j*A->BlockSize]);
+              }
+              for(k=0;k<A->BlockSize;k++)
+              {
+                Rrow += fabs(A->bRe[(i)*Sqr(A->BlockSize)+k+j*A->BlockSize]);
+              }
+              if(A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] - Rrow < *EminPole) *EminPole = A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] - Rrow;
+              if(A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] + Rrow > *EmaxPole) *EmaxPole = A->aRe[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize] + Rrow;
+            }
+          }
+        }
+        else
+        { // complex
+          for(j=0;j<A->BlockSize;j++) // loop over all rows in A0
+          {
+            Rrow=0;
+            for(i=1;i<j;i++)
+            {
+              Rrow += sqrt(Sqr(A->a[(1)*Sqr(A->BlockSize)+i+j*A->BlockSize].Re) + Sqr(A->a[(1)*Sqr(A->BlockSize)+i+j*A->BlockSize].Im));
+            }
+            for(i=j+1;i<A->BlockSize;i++)
+            {
+              Rrow += sqrt(Sqr(A->a[(1)*Sqr(A->BlockSize)+i+j*A->BlockSize].Re) + Sqr(A->a[(1)*Sqr(A->BlockSize)+i+j*A->BlockSize].Im));
+            }
+            for(i=1;i<A->N;i++) // loop over all blocks in B
+            {
+              for(k=0;k<A->BlockSize;k++) // loop over all Columns in Bi
+              {
+                Rrow += sqrt(Sqr(A->b[(i)*Sqr(A->BlockSize)+k+j*A->BlockSize].Re) + Sqr(A->b[(i)*Sqr(A->BlockSize)+k+j*A->BlockSize].Im));
+              }
+            }
+            if(A->a[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re - Rrow < *EminPole) *EminPole = A->a[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re - Rrow;
+            if(A->a[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re + Rrow > *EmaxPole) *EmaxPole = A->a[(1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re + Rrow;
+          }
+          for(i=1;i<A->N;i++) // loop over all blocks in B
+          {
+            for(j=0;j<A->BlockSize;j++) // loop over all rows in Ai+1
+            {
+              Rrow=0;
+              for(k=0;k<j;k++)
+              {
+                Rrow += sqrt(Sqr(A->a[(i+1)*Sqr(A->BlockSize)+k+j*A->BlockSize].Re) + Sqr(A->a[(i+1)*Sqr(A->BlockSize)+k+j*A->BlockSize].Im));
+              }
+              for(k=j+1;k<A->BlockSize;k++)
+              {
+                Rrow += sqrt(Sqr(A->a[(i+1)*Sqr(A->BlockSize)+k+j*A->BlockSize].Re) + Sqr(A->a[(i+1)*Sqr(A->BlockSize)+k+j*A->BlockSize].Im));
+              }
+              for(k=0;k<A->BlockSize;k++)
+              {
+                Rrow += sqrt(Sqr(A->b[(i)*Sqr(A->BlockSize)+k+j*A->BlockSize].Re) + Sqr(A->b[(i)*Sqr(A->BlockSize)+k+j*A->BlockSize].Im));
+              }
+              if(A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re - Rrow < *EminPole) *EminPole = A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re - Rrow;
+              if(A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re + Rrow > *EmaxPole) *EmaxPole = A->a[(i+1)*Sqr(A->BlockSize)+j+j*A->BlockSize].Re + Rrow;
+            }
+          }
+        }
       }
       break;
       case 'n':

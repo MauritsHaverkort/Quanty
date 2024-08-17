@@ -138,10 +138,6 @@ Complex16 Conjugate(const Complex16 z)
 }
 
 
-
-
-
-
 /*abs*/
 double Cabs(const Complex16 z)
 {

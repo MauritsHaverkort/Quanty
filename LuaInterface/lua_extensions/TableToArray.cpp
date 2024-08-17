@@ -1519,7 +1519,14 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     //read A0 from stack
     lua_rawgeti(L, -1, 1);
     tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
-    buff->a0 = *tempM;
+    if(tempM->OnLuaStack==true)
+    {
+      CompactMatrixCopy(*tempM, &(buff->a0));
+    }
+    else
+    {
+      buff->a0 = *tempM;
+    }
     lua_pop(L,1);
     // read B0 from stack.
     lua_rawgeti(L, -1, 2);
