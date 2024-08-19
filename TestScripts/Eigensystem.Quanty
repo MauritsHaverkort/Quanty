@@ -1990,12 +1990,14 @@ Hamiltonian2 = NewOperator(20,0,crtable)
 
 Hamiltonian = Hamiltonian1 + Hamiltonian2
 
+print(Hamiltonian)
+
 
 TimeStart("1D tight binding shifted")
-Eigensystem(Hamiltonian,funstart1,{{"DenseBorder",1}})
+Eigensystem(Hamiltonian,funstart1,{{"DenseBorder",1},{"Zero",1E-10},{"Epsilon",0}})
 TimeEnd("1D tight binding shifted")
 TimeStart("1D tight binding non-shifted")
-Eigensystem(Hamiltonian,funstart2,{{"DenseBorder",1},{"ShiftScheme","None"}})
+Eigensystem(Hamiltonian,funstart2,{{"DenseBorder",1},{"Zero",1E-10},{"Epsilon",0},{"ShiftScheme","None"}})
 TimeEnd("1D tight binding non-shifted")
 
 Hpsi1 = Hamiltonian*funstart1
@@ -2022,8 +2024,8 @@ print("The density matrix is wihtout shift")
 print(DensityMatrix(funstart2,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}))
 
 
-if Chop(Braket(funstart1,Hpsi1) - expectedEn)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
-if Chop(Braket(funstart2,Hpsi1) - expectedEn)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+if Chop(Braket(funstart1,Hpsi1) - expectedEn,1E-11)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+if Chop(Braket(funstart2,Hpsi2) - expectedEn,1E-11)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 
 TimeEnd("1D tight binding")
