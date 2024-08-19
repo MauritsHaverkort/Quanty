@@ -16,7 +16,7 @@ setmetatable(rho_complex_mat,MatrixMeta)
 rho_complex_mat = rho_complex_mat+ConjugateTranspose(rho_complex_mat)
 rho_complex_herm = Matrix.ToTable(rho_complex_mat)
 
-local rho_list = {rho_posdef, rho_possemidef, rho_negdef, rho_negsemidef, rho_indef,rho_complex_herm,rho_complex}
+local rho_list = {rho_posdef, rho_possemidef, rho_negdef, rho_negsemidef, rho_indef, rho_complex_herm, rho_complex}
 local labels   = {"posdef","possemidef","negdef","negsemidef","indef","hermitian complex","complex"}
 
 local indices_list = {{0,1},{3},{2,3,4},{0,1,2,3,4}}
@@ -121,7 +121,7 @@ for iIndices=1,#indices_list do
 
         if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
             print(Chop(OpMF-OpMFTest,tol))
-            error("MeanFieldOperator does not reproduce the HF MF operator (with all options default) for "..label,1)
+            error("PartialMeanFieldOperator does not reproduce the HF MF operator (with all options default) for "..label,1)
         end
 
         
@@ -135,7 +135,7 @@ for iIndices=1,#indices_list do
 
         if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
             print(Chop(OpMF-OpMFTest,tol))
-            error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
+            error("PartialMeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
         end
 
     end
