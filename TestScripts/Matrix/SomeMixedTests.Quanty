@@ -1,3 +1,18 @@
+
+
+Op = NewOperator(2,0,{{0,-0,2},{1,-0,.01}})
+Mat = OperatorToMatrix(Op,{{"UserData",true}})
+
+Op = NewOperator(2,0,{{0,-0,2},{1,-0,.01}})
+Mat = OperatorToMatrix(Op,{{"UserData",false}})
+
+Op = NewOperator(2,0,{{0,-0,2},{1,-0,.01}})
+rho = {{1,0},{0,1}}
+Mat = OperatorToMatrix(Op,rho,{{"UserData",false}})
+
+
+
+
 t = sqrt(1/2)
 
 M = Matrix.New({{t,t*I,0},{-t*I,t,0},{7,8,1},{5,6,1}})
