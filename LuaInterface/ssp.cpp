@@ -5548,6 +5548,9 @@ int luaopen_ssp(lua_State * L)
   lua_newtable(L);
   luaL_setfuncs(L, MatrixTable_meta, 0);
   lua_setglobal(L, "MatrixMeta");
+  lua_newtable(L);
+  luaL_setfuncs(L, Matrix_Row_meta, 0);
+  lua_setglobal(L, "MatrixRowMeta");
   
   luaL_newmetatable(L, "Tensor_Type");
   luaL_setfuncs(L, Tensor_meta, 0);

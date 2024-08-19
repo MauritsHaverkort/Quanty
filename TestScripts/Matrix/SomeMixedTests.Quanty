@@ -1,5 +1,91 @@
 t = sqrt(1/2)
 
+M = Matrix.New({{t,t*I,0},{-t*I,t,0},{7,8,1},{5,6,1}})
+
+B = M[1]
+print(B)
+print(M)
+M[2]={3,3,4+100*I}
+print(M)
+print(B)
+print(M[1][2])
+print(B[2])
+print(M[1][{2,2,1,-1}])
+print("=======")
+print(M[{1,3}][2])
+print("=======")
+print(M[{1,3}][{2,3}])
+print("=======")
+M[1][1] = 123456
+print(M)
+print("=======")
+M[3][3] = 33
+print(M)
+print("=======")
+M[2][{1,2,3}] = {11,12,13}
+print(M)
+print("=======")
+M[{1,3,4}][2] = {21,22,23}
+M[{1,3,4}][{1,2}] = {{321,322},{421,422},{123,124}}
+print(M)
+print("=======")
+M[{1,3}]={{3211,3221},{4211,4221}}
+os.exit()
+
+
+
+
+
+
+
+
+
+
+
+B = M[1]
+print(B)
+C = M[{1,2,3,-2,-1,1}]
+print(C)
+print(M.Ni)
+print(M.Nj)
+
+print(M.NRow)
+print(M.NCol)
+
+print(M.Dim)
+
+
+print(M.elem(2,2))
+
+
+os.exit()
+
+
+M[1][1] = 3.12
+print(M)
+B[2] = 123
+print(M)
+M=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+print(B[2])
+
+
+A={{1,2,3,4},{11,12,13,14}}
+setmetatable(A, MatrixMeta)
+print(A[2])
+print(A[{1,2}])
+print(A[-1])
+
+os.exit()
+
+
+t = sqrt(1/2)
+
 B0s = Matrix.New({{t,t*I,0},{-t*I,t,0},{0,0,1}})
 B0 = B0s * B0s
 
