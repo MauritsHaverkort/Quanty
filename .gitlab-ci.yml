@@ -29,6 +29,14 @@ test-job-CreateSpectra:
   dependencies:
   - build-job
 
+test-job-CreateFluorescenceYield:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateFluorescenceYield.Quanty"
+  dependencies:
+  - build-job
+
 test-job-DensityMatrix:
   stage: test
   script:
@@ -74,6 +82,14 @@ test-job-BlockBandDiagonalize:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/BlockBandDiagonalize.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Rotate:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Rotate.Quanty"
   dependencies:
   - build-job
 
