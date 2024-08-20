@@ -3347,6 +3347,11 @@ static int LuaOperatorToMatrix(lua_State *L)
     {"UserData","bool",&(OnLuaStack)},
     {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
+  if (LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
   H = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
   if(len==1)
   {
@@ -3365,12 +3370,8 @@ static int LuaOperatorToMatrix(lua_State *L)
     free(Rho);
     return 1;
   }
-  else if ((len==2)||(len==3))
+  else if (len==2)
   {
-    if(len==3)
-    {
-      LuaCheckOptions(L, -1, LuaOptions);
-    }
     switch (lua_type(L,2))
     {
       case LUA_TUSERDATA:
@@ -5548,6 +5549,9 @@ int luaopen_ssp(lua_State * L)
   lua_newtable(L);
   luaL_setfuncs(L, MatrixTable_meta, 0);
   lua_setglobal(L, "MatrixMeta");
+  lua_newtable(L);
+  luaL_setfuncs(L, Matrix_Row_meta, 0);
+  lua_setglobal(L, "MatrixRowMeta");
   
   luaL_newmetatable(L, "Tensor_Type");
   luaL_setfuncs(L, Tensor_meta, 0);

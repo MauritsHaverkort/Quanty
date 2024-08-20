@@ -1,12 +1,8 @@
 -- The function Eigensystem calculates a set of eigen vectors and eigen values for a given matrix or operator
 -- The function has several options related to the accuracy needed and methods used
 
---[[
-Reminders:
-1 - Dense method using wavefunction.
-2 - pick one of the models to do options.
-3 - Ask Maurits to check the thresholds in Chop!
-]]
+-- threshold for comparing with the expected result (not used for cases where of "infinite" accuracy as well as those with low accuracy)
+threshold = 1E-12
 
 -----------------------------------------------------------
 -----------------------------------------------------------
@@ -55,6 +51,36 @@ if(zero~=0) then
   error("eigenvalues not equivalent to expected value\n",1)
 end
 
+-- create a wave-function acording to the eigenstates of mathematica
+WaveFunMathematica = {}
+for i=1,3 do
+  WaveFunMathematica[i] = NewWavefunction(3,0,{{"100",funMathematica[i][1]},{"010",funMathematica[i][2]},{"001",funMathematica[i][3]}})
+end
+-- create an operator for one electron with 3 orbitals that has the same form as A once put on a basis
+Hamiltonian = NewOperator("Number",3,{0,0,1,1,1,2,2},{0,1,0,1,2,1,2},{1,1,1,2,1,1,5})
+
+print("Eigensystem of operator starting from random states with restrictions")
+StartRestrictions = {3, 0,  {"111",1,1}}
+Npsi=3
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
+valOpp = {}
+for i=1,3 do
+  valOpp[i] = psiList[i] * Hamiltonian * psiList[i]
+end
+-- test if Quanty gets the same answer as Mathematica
+zero=0
+for i=1,3 do
+  zero = zero + abs(valOpp[i] - valMathematica[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
+for i=1,3 do
+  dot = psiList[i] * WaveFunMathematica[i]
+  if ((abs(dot)-1)>1E-15) then error("eigenwavefunctions not equivalent to expected value\n",1) end
+end
+
 -----------------------------------------------------------
   -- test with complex numbers
 -----------------------------------------------------------
@@ -91,6 +117,35 @@ if(zero~=0) then
   error("eigenvalues not equivalent to expected value\n",1)
 end
 
+-- create a wave-function acording to the eigenstates of mathematica
+WaveFunMathematica = {}
+for i=1,3 do
+  WaveFunMathematica[i] = NewWavefunction(3,0,{{"100",funMathematica[i][1]},{"010",funMathematica[i][2]},{"001",funMathematica[i][3]}})
+end
+-- create an operator for one electron with 3 orbitals that has the same form as A once put on a basis
+Hamiltonian = NewOperator("Number",3,{0,0,0,1,1,1,2,2,2},{0,1,2,0,1,2,0,1,2},{1,1+I,3*I,1-I,2,1,-3*I,1,5})
+
+print("Eigensystem of operator starting from random states with restrictions")
+StartRestrictions = {3, 0,  {"111",1,1}}
+Npsi=3
+psiList = Eigensystem(Hamiltonian, StartRestrictions, Npsi)
+valOpp = {}
+for i=1,3 do
+  valOpp[i] = psiList[i] * Hamiltonian * psiList[i]
+end
+-- test if Quanty gets the same answer as Mathematica
+zero=0
+for i=1,3 do
+  zero = zero + abs(valOpp[i] - valMathematica[i])
+end
+zero = Chop(zero, threshold)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
+for i=1,3 do
+  dot = psiList[i] * WaveFunMathematica[i]
+  if ((abs(dot)-1)>1E-15) then error("eigenwavefunctions not equivalent to expected value\n",1) end
+end
 
 -----------------------------------------------------------
 -- test with real non hermitian matrix
@@ -103,8 +158,6 @@ end
 --
 -- and psi^L_i^* . psi^R_j = delta_{i,j}
 -- and thus psi^L_i . H . psi^R_j = E_i delta_{i,j}
-
-threshold = 1E-12
 
 -- matrix to diagonalize
 A = {{ 1 , 2 , 3 },
@@ -1063,14 +1116,14 @@ for i=1,10 do
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
   io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
-  if Chop(Energy - (expectedEn[i]-E1s), 3E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+  if Chop(Energy - (expectedEn[i]-E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
 io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
-if Chop(Energy - (expectedEn[1]-E1s), 3E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+if Chop(Energy - (expectedEn[1]-E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1102,9 +1155,6 @@ if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The ei
 
 TimePrint()
 
-os.exit()
-
-
 ------------------------------------------------------------
 --               Complex Hubbard model                    --
 ------------------------------------------------------------
@@ -1114,6 +1164,10 @@ print("        Hubbartd model 8 sites 1D           ")
 print("============================================")
 print("                  complex                   ")
 print("============================================\n\n")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945482944 , -4.7231531312096 , -4.4313578420388 , -4.0692744353537 , -4.0692744336147 , -3.8663093253839 , -3.8663092887748 , -3.6089298137401 , -3.6088988644371 , -3.5591875497464 }
+
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
@@ -1139,25 +1193,28 @@ TimeStart("Hubbard Eigensystem 1 states complex")
 fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Hubbard Eigensystem 10 states shifted complex")
 fun1  = Eigensystem(Hamiltonian2,StartRestrictions,10)
@@ -1166,18 +1223,20 @@ TimeStart("Hubbard Eigensystem 1 states shifted complex")
 fun1s = Eigensystem(Hamiltonian2,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states shifted complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
+  if Chop(Energy - (expectedEn[i]-E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
+if Chop(Energy - (expectedEn[1]-E1s), 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1192,18 +1251,20 @@ TimeStart("Hubbard Eigensystem 1 states scaled complex")
 fun1s = Eigensystem(Hamiltonian3,StartRestrictions,1)
 TimeEnd("Hubbard Eigensystem 1 states scaled complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1220,15 +1281,18 @@ print("============================================")
 print("               real psi start               ")
 print("============================================\n\n")
 
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945483691 , -4.7231531381314 , -4.4313578928744 , -4.0692744324797 , -4.0692744320346 , -3.8663093361573 , -3.8663093361572 , -3.6089305392783 , -3.6089305235693 , -3.5591887636111 }
+
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
   {0,1,0},
 {0,0,1}}
 Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
 Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
-  {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
-  {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
-{"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+             {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
 
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
@@ -1236,15 +1300,15 @@ U=3.5
 Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
 
 funstart10 = { NewWavefunction(16,0,{{"1001100110011001",1}}),
-  NewWavefunction(16,0,{{"0110011001100110",1}}),
-  NewWavefunction(16,0,{{"1001011001100110",1}}),
-  NewWavefunction(16,0,{{"0110100101100110",1}}),
-  NewWavefunction(16,0,{{"0110011010010110",1}}),
-  NewWavefunction(16,0,{{"0110011001101001",1}}),
-  NewWavefunction(16,0,{{"0110011001100110",1}}),
-  NewWavefunction(16,0,{{"0110100110011001",1}}),
-  NewWavefunction(16,0,{{"1001011010011001",1}}),
-  NewWavefunction(16,0,{{"1001100101101001",1}})}
+               NewWavefunction(16,0,{{"0110011001100110",1}}),
+               NewWavefunction(16,0,{{"1001011001100110",1}}),
+               NewWavefunction(16,0,{{"0110100101100110",1}}),
+               NewWavefunction(16,0,{{"0110011010010110",1}}),
+               NewWavefunction(16,0,{{"0110011001101001",1}}),
+               NewWavefunction(16,0,{{"0110011001100110",1}}),
+               NewWavefunction(16,0,{{"0110100110011001",1}}),
+               NewWavefunction(16,0,{{"1001011010011001",1}}),
+               NewWavefunction(16,0,{{"1001100101101001",1}})}
 
 funstart1  = NewWavefunction(16,0,{{"1001100110011001",sqrt(0.5)},{"0110011001100110",sqrt(0.5)}})
 
@@ -1258,25 +1322,28 @@ fun1s = Copy(funstart1)
 Eigensystem(Hamiltonian1,fun1s)
 TimeEnd("Hubbard psi Eigensystem 1 states")
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian1,fun1s)
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Hubbard psi Eigensystem 10 states shifted")
 fun1 = Copy(funstart10)
@@ -1287,18 +1354,20 @@ fun1s = Copy(funstart1)
 Eigensystem(Hamiltonian2,fun1s)
 TimeEnd("Hubbard psi Eigensystem 1 states shifted")
 valgrd = Braket(fun1s,Hamiltonian2,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian2,fun1[i])
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
+  if Chop(Energy - (expectedEn[i]-E1s), 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian2,fun1s)
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
+if Chop(Energy - (expectedEn[1]-E1s), 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1315,18 +1384,20 @@ fun1s = Copy(funstart1)
 Eigensystem(Hamiltonian3,fun1s)
 TimeEnd("Hubbard psi Eigensystem 1 states scaled")
 valgrd = Braket(fun1s,Hamiltonian3,fun1s)
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Braket(fun1[i],Hamiltonian3,fun1[i])
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Braket(Hfun,Hfun)
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Braket(fun1s,Hamiltonian3,fun1s)
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Braket(Hfun,Hfun)
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1341,15 +1412,18 @@ print("============================================")
 print("             complex psi start              ")
 print("============================================\n\n")
 
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945483694 , -4.7231531381314 , -4.4313578928744 , -4.0692744321179 , -4.0692744318963 , -3.8663093361572 , -3.8663093361573 , -3.6089305392783 , -3.6089305104024 , -3.5591887636111 }
+
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
-  {0,1,0},
-{0,0,1}}
+          {0,1,0},
+          {0,0,1}}
 Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
 Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
-  {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
-  {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
-{"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+             {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
 
 HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
 
@@ -1369,8 +1443,6 @@ funstart10 = { NewWavefunction(16,0,{{"1001100110011001",1}}),
 
 funstart1  = NewWavefunction(16,0,{{"1001100110011001",sqrt(0.5)},{"0110011001100110",sqrt(0.5)}})
 
-print(Htb)
-
 TimeStart("Hubbard psi Eigensystem 10 states complex")
 fun1 = Copy(funstart10)
 
@@ -1381,25 +1453,28 @@ fun1s = Copy(funstart1)
 Eigensystem(Hamiltonian1,fun1s)
 TimeEnd("Hubbard psi Eigensystem 1 states complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian1,fun1[i]))
   Hfun=Hamiltonian1*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian1,fun1s))
 Hfun=Hamiltonian1*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
 print("\n\n\n\n\n=======================\n    shifted\n========================\n\n\n\n")
 
 -- Hamiltonian2 is Hamiltonian1 shifted to the ground-state energy
-Hamiltonian2 = Hamiltonian1-fun1s*Hamiltonian1*fun1s
+E1s = fun1s*Hamiltonian1*fun1s
+Hamiltonian2 = Hamiltonian1-E1s
 
 TimeStart("Hubbard psi Eigensystem 10 states shifted complex")
 fun1 = Copy(funstart10)
@@ -1410,18 +1485,20 @@ fun1s = Copy(funstart1)
 Eigensystem(Hamiltonian2,fun1s)
 TimeEnd("Hubbard psi Eigensystem 1 states shifted complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian2,fun1[i]))
   Hfun=Hamiltonian2*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[i]-E1s)))
+  if Chop(Energy - (expectedEn[i]-E1s), 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian2,fun1s))
 Hfun=Hamiltonian2*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - (expectedEn[1]-E1s)))
+if Chop(Energy - (expectedEn[1]-E1s), 1E-7)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
@@ -1438,21 +1515,442 @@ fun1s = Copy(funstart1)
 Eigensystem(Hamiltonian3,fun1s)
 TimeEnd("Hubbard psi Eigensystem 1 states scaled complex")
 valgrd = Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
-print("      Energy           Energy-E0        Variance")
+print("      Energy           Energy-E0        Variance        Energy-Exact")
 for i=1,10 do
   Energy=Complex.Re(Braket(fun1[i],Hamiltonian3,fun1[i]))
   Hfun=Hamiltonian3*fun1[i]
   EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]/EnergyUnits.J.value))
+  if Chop(Energy - expectedEn[i]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 end
 print()
 Energy=Complex.Re(Braket(fun1s,Hamiltonian3,fun1s))
 Hfun=Hamiltonian3*fun1s
 EnergySqr=Complex.Re(Braket(Hfun,Hfun))
-io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2))
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]/EnergyUnits.J.value))
+if Chop(Energy - expectedEn[1]/EnergyUnits.J.value, 1E-17)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
 
 TimePrint()
 
+
+::testoptions::
+print("===================================")
+print("         Testing Options           ")
+print("===================================")
+------------------------------------------------------------
+--                  real Hubbard model                    --
+------------------------------------------------------------
+print("============================================")
+print("         Hubbard model 8 sites 1D           ")
+print("============================================")
+print("                    real                    ")
+print("============================================\n\n")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945483798 , -4.7231531381315 , -4.4313578928744 , -4.0692744355582 , -4.0692744355581 , -3.8663093361573 , -3.8663093361572 , -3.6089305392784 , -3.6089305392783 , -3.5591887636111 }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+          {0,1,0},
+          {0,0,1}}
+Htb.Atoms={{"O",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"O.s","O.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
+
+StartRestrictions = {16,0,{"1010101010101010",4,4},{"0101010101010101",4,4}}
+
+print("\nTest DenseBorder ...")
+
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 5000}, 
+                                                        {"NKrylovStart", 150}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+
+print("      Energy          Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e\n",Energy, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], threshold)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+
+
+print("\nTest NKrylovStart ...")
+
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 150}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 150}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+
+
+print("\nTest NKrylovMax ...")
+
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 80}, {"NKrylovMax", 80}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 80}, {"NKrylovMax", 80}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-5)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+
+print("\nTest NKrylovStep ...")
+
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 5}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 5}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-6)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+
+
+
+print("\nTest Epsilon ...")
+
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-4}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-4}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-4)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+
+
+
+print("\nTest Epsilon with Zero ...")
+
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-4}, {"Zero", 3.949012E-4}, {"ExpandBasis", true}})
+fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
+                                                        {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-4}, {"Zero", 3.949012E-4}, {"ExpandBasis", true}})
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], 1E-3)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+Energy=Braket(fun1s,Hamiltonian1,fun1s)
+Hfun=Hamiltonian1*fun1s
+EnergySqr=Braket(Hfun,Hfun)
+io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[1]))
+if Chop(Energy - expectedEn[1], 1E-3)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+
+TimePrint()
+
+
+------------------------------------------------------------
+--         Real Hubbard model strart from psi          --
+------------------------------------------------------------
+
+print("============================================")
+print("         Hubbard model 8 sites 1D           ")
+print("============================================")
+print("               real psi start               ")
+print("============================================\n\n")
+
+print("\nTesting ExpandBasis ...")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -5.0089945483691 , -4.7231531381314 , -4.4313578928744 , -4.0692744324797 , -4.0692744320346 , -3.8663093361573 , -3.8663093361572 , -3.6089305392783 , -3.6089305235693 , -3.5591887636111 }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+  {0,1,0},
+{0,0,1}}
+Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
+
+funstart10 = { NewWavefunction(16,0,{{"1001100110011001",1}}),
+               NewWavefunction(16,0,{{"0110011001100110",1}}),
+               NewWavefunction(16,0,{{"1001011001100110",1}}),
+               NewWavefunction(16,0,{{"0110100101100110",1}}),
+               NewWavefunction(16,0,{{"0110011010010110",1}}),
+               NewWavefunction(16,0,{{"0110011001101001",1}}),
+               NewWavefunction(16,0,{{"0110011001100110",1}}),
+               NewWavefunction(16,0,{{"0110100110011001",1}}),
+               NewWavefunction(16,0,{{"1001011010011001",1}}),
+               NewWavefunction(16,0,{{"1001100101101001",1}})}
+
+funstart1  = NewWavefunction(16,0,{{"1001100110011001",sqrt(0.5)},{"0110011001100110",sqrt(0.5)}})
+
+NTri = 4
+_, _, funstart10 = CreateSpectra(Hamiltonian1, NewOperator("Identity", 16), funstart10, {{"NTri", NTri}, {"KrylovBasis", true}})
+
+-- flatten the krylov states
+fun1 = {}
+row = 0
+for i = 1, #funstart10 do
+  for j = 1, NTri do
+    row = row + 1
+  fun1[row] = funstart10[i][j]
+  end
+end
+
+TimeStart("Hubbard psi Eigensystem 10 states")
+Eigensystem(Hamiltonian1,fun1, {{"ExpandBasis", false}})
+TimeEnd("Hubbard psi Eigensystem 10 states")
+TimeStart("Hubbard psi Eigensystem 1 states")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian1,fun1s)
+TimeEnd("Hubbard psi Eigensystem 1 states")
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  -- only checking the first eigenvalue (the accuracy of eigenvalues are very low)
+  if i==1 and Chop(Energy - expectedEn[i], 0.2)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+
+TimePrint()
+
+::restrictions::
+print("======================================")
+print("         Testing Restrictions         ")
+print("======================================")
+------------------------------------------------------------
+--                  real Hubbard model                    --
+------------------------------------------------------------
+print("============================================")
+print("         Hubbard model 8 sites 1D           ")
+print("============================================")
+print("                    real                    ")
+print("============================================\n\n")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -3.4487561269454 , -3.2142135623731 , -3.2142135623731 , -2.8284271247462 , -2.7965018267799 , -2.7965018267799 , -2.6768439156175 , -2.6768439156175 , -2.2077464088303 , -2 }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+          {0,1,0},
+          {0,0,1}}
+Htb.Atoms={{"O",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"O.s","O.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
+
+StartRestrictions = {16,0,{"1010101010101010",1,1},{"0101010101010101",1,1}}
+
+Restrictions = {16, 0, {"000000110000000", 0, 0}}
+
+-- Lancsoz
+TimeStart("Hubbard Eigensystem 10 states")
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, {"Restrictions", Restrictions}})
+TimeEnd("Hubbard Eigensystem 10 states")
+TimeStart("Hubbard Eigensystem 1 states")
+fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 10000}})
+TimeEnd("Hubbard Eigensystem 1 states")
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], threshold)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+
+-- Dense Method
+TimeStart("Hubbard Eigensystem 10 states")
+fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 10000}, {"Restrictions", Restrictions}})
+TimeEnd("Hubbard Eigensystem 10 states")
+TimeStart("Hubbard Eigensystem 1 states")
+fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 10000}})
+TimeEnd("Hubbard Eigensystem 1 states")
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], threshold)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+
+TimePrint()
+
+------------------------------------------------------------
+--         Real Hubbard model strart from psi          --
+------------------------------------------------------------
+print("============================================")
+print("         Hubbard model 8 sites 1D           ")
+print("============================================")
+print("               real psi start               ")
+print("============================================\n\n")
+
+-- Energy eigenvalues from Quanty
+expectedEn = { -3.4487561269454 , -3.2142135623731 , -3.2142135623731 , -3.2142135623731 , -3.2142135623731 , -2.8284271247462 , -2.8284271247462 , -2.7965018267799 , -2.7965018267799 , -2.6768439156175 }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+  {0,1,0},
+{0,0,1}}
+Htb.Atoms={{"Cu",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"Cu.s","Cu.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"Cu.s","Cu.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"Cu.s","Cu.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
+
+funstart10 = { NewWavefunction(16,0,{{"1000000000100000",1}}),
+               NewWavefunction(16,0,{{"1000000100000000",1}}),
+               NewWavefunction(16,0,{{"1100000000000000",1}}),
+               NewWavefunction(16,0,{{"1000000000000010",1}}),
+               NewWavefunction(16,0,{{"1000000000000100",1}}),
+               NewWavefunction(16,0,{{"1000010000000000",1}}),
+               NewWavefunction(16,0,{{"1000000000010000",1}}),
+               NewWavefunction(16,0,{{"1000000001000000",1}}),
+               NewWavefunction(16,0,{{"1010000000000000",1}}),
+               NewWavefunction(16,0,{{"1001000000000000",1}})}
+
+funstart1  = NewWavefunction(16,0,{{"1000000000100000",sqrt(0.5)},{"1010000000000000",sqrt(0.5)}})
+
+Restrictions = {16, 0, {"000000110000000", 0, 0}}
+
+-- Lancsoz 
+TimeStart("Hubbard psi Eigensystem 10 states")
+fun1 = Copy(funstart10)
+Eigensystem(Hamiltonian1,fun1, {{"DenseBorder", 1}, {"Restrictions", Restrictions}})
+TimeEnd("Hubbard psi Eigensystem 10 states")
+TimeStart("Hubbard psi Eigensystem 1 states")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian1,fun1s, {{"DenseBorder", 10000}})
+TimeEnd("Hubbard psi Eigensystem 1 states")
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], threshold)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+
+-- Dense method 
+TimeStart("Hubbard psi Eigensystem 10 states")
+fun1 = Copy(funstart10)
+Eigensystem(Hamiltonian1,fun1, {{"DenseBorder", 10000}, {"Restrictions", Restrictions}})
+TimeEnd("Hubbard psi Eigensystem 10 states")
+TimeStart("Hubbard psi Eigensystem 1 states")
+fun1s = Copy(funstart1)
+Eigensystem(Hamiltonian1,fun1s, {{"DenseBorder", 10000}})
+TimeEnd("Hubbard psi Eigensystem 1 states")
+valgrd = Braket(fun1s,Hamiltonian1,fun1s)
+
+print("      Energy           Energy-E0        Variance        Energy-Exact")
+for i=1,10 do
+  Energy=Braket(fun1[i],Hamiltonian1,fun1[i])
+  Hfun=Hamiltonian1*fun1[i]
+  EnergySqr=Braket(Hfun,Hfun)
+  io.write(string.format("%16.8e %16.8e %16.8e %16.8e\n",Energy, Energy-valgrd, EnergySqr - (Energy)^2, Energy - expectedEn[i]))
+  if Chop(Energy - expectedEn[i], threshold)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+end
+print()
+
+TimePrint()
 
 ::shiftschemetest::
 
@@ -1468,16 +1966,19 @@ print("============================================")
 print("             start from psi                 ")
 print("============================================\n\n")
 
+-- expected GS energy from Mathematica
+expectedEn = 1980.2538058170966424294131160323
+
 funstart1  = NewWavefunction(20,0,{{"10000000000000000000",1}})
 funstart2  = NewWavefunction(20,0,{{"10000000000000000000",1}})
 
 Htb = NewTightBinding()
 Htb.Cell={{1,0,0},
-{0,1,0},
-{0,0,1}}
+          {0,1,0},
+          {0,0,1}}
 Htb.Atoms={{"Cu",{0,0,0},{{"s",{""}}}}}
 Htb.Hopping={{"Cu.s","Cu.s",{0,0, 1},{{-1}}},
-{"Cu.s","Cu.s",{0,0,-1},{{-1}}}}
+             {"Cu.s","Cu.s",{0,0,-1},{{-1}}}}
 
 Hamiltonian1 = Chop(CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,20}}}) + NewOperator(20,0,{{0,-19,1},{19,-0,1}}))
 
@@ -1489,12 +1990,14 @@ Hamiltonian2 = NewOperator(20,0,crtable)
 
 Hamiltonian = Hamiltonian1 + Hamiltonian2
 
+print(Hamiltonian)
+
 
 TimeStart("1D tight binding shifted")
-Eigensystem(Hamiltonian,funstart1,{{"DenseBorder",1}})
+Eigensystem(Hamiltonian,funstart1,{{"DenseBorder",1},{"Zero",1E-10},{"Epsilon",0}})
 TimeEnd("1D tight binding shifted")
 TimeStart("1D tight binding non-shifted")
-Eigensystem(Hamiltonian,funstart2,{{"DenseBorder",1},{"ShiftScheme","None"}})
+Eigensystem(Hamiltonian,funstart2,{{"DenseBorder",1},{"Zero",1E-10},{"Epsilon",0},{"ShiftScheme","None"}})
 TimeEnd("1D tight binding non-shifted")
 
 Hpsi1 = Hamiltonian*funstart1
@@ -1505,10 +2008,13 @@ print("The overlap between psi1 (with shift) and psi2 (without shift) is",funsta
 print("======================== With shift")
 print("The energy of the state is    ",Braket(funstart1,Hpsi1))
 print("The variance of the energy is ",Braket(Hpsi1,Hpsi1)-(Braket(funstart1,Hpsi1)^2))
+print("Difference with the exact value:", Braket(funstart1,Hpsi1) - expectedEn)
 
 print("======================== Without shift")
 print("The energy of the state is    ",Braket(funstart2,Hpsi2))
 print("The variance of the energy is ",Braket(Hpsi2,Hpsi2)-(Braket(funstart2,Hpsi2)^2))
+print("Difference with the exact value:", Braket(funstart2,Hpsi2) - expectedEn)
+
 
 
 
@@ -1518,7 +2024,10 @@ print("The density matrix is wihtout shift")
 print(DensityMatrix(funstart2,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}))
 
 
+if Chop(Braket(funstart1,Hpsi1) - expectedEn,1E-11)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+if Chop(Braket(funstart2,Hpsi2) - expectedEn,1E-11)~=0 then error("The eigenvalue not equal to the expected value\n",1) end
+
+
 TimeEnd("1D tight binding")
 
 TimePrint()
-

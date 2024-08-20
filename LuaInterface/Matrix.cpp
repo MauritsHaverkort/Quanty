@@ -1409,104 +1409,633 @@ static int LuaMatrixElem(lua_State *L)
 	return 1;
 }
 
-
-
-/*
+/*  Index can be either: an integer in the range 1 to Ni or from -1 to -Ni.
+ *                       a table of integers in the set [-Ni, ... ,-1,1,..., Ni]
+ *                          -- these two options return an MatrixRow object
+ *                       the string "Ni", "Nj", "NRow", "NCol", "NColumn", "dim", "Dim", "elem", "Elem"
+ *                          -- these return integers ("Ni", "Nj", "NRow", "NCol", "NColumn")
+ *                                          a table of two integers ("dim", "Dim")
+ *                                          a double or complex value ("elem", "Elem")
  *
+ *   On stack we have at position 1 the matrix (for sure)
+ *   On position two the index --  which needs to be checked.
+ *                                 wrong indices thorugh an error
  */
 static int LuaMatrixIndex(lua_State *L)
 {
-	uint32_t i, j;
-	double n=0;
-	string str;
-	CompactMatrixType *A, *B;
-	Complex16 *res;
-	A = (CompactMatrixType*) luaL_checkCompactMatrix(L, 1);
-	if (luaL_isType(L, 2, n))
-	{
-
-		n = luaL_checknumber(L, 2);
-		i = (uint32_t) n;
-		if (Abs(n - (double) i) > (1 + Abs(n)) * DBL_EPSILON * 10) return luaL_error(L, "Index of an Array should be an integer\n");
-		if (i == 0) return luaL_error(L, "Index of an Array should be positive (non-zero)\n");
-		if (A->Ni == 1)
-		{
-			if (i > A->Nj) luaL_error(L, "Index %i larger then size of Array %i\n", i, A->Nj);
-			if (A->QComplex == 0)
-			{
-				lua_pushnumber(L, A->VRe[i - 1]);
-			}
-			else
-			{
-				res = (Complex16*) lua_newuserdata(L, sizeof(Complex16));
-				res->Re = A->V[i - 1].Re;
-				res->Im = A->V[i - 1].Im;
-				luaL_setmetatable(L, "Complex_Type");
-			}
-		}
-		else
-		{
-			if (i > A->Ni) luaL_error(L, "Index %i larger then size of Array %i\n", i, A->Ni);
-			B = (CompactMatrixType*) lua_newuserdata(L, sizeof(CompactMatrixType));
-			luaL_setmetatable(L, "Matrix_Type");
-			B->Ni = 1;
-			B->Nj = A->Nj;
-			B->QComplex = A->QComplex;
-			InitCompactMatrix(B);
-			B->OnLuaStack = true;
-			if (A->QComplex == 0)
-			{
-				for (j = 0; j < A->Nj; j++)
-				{
-					B->VRe[j] = A->VRe[(i - 1) * A->Nj + j];
-				}
-			}
-			else
-			{
-				for (j = 0; j < A->Nj; j++)
-				{
-					B->V[j] = A->V[(i - 1) * A->Nj + j];
-				}
-			}
-		}
-		return 1;
-	}
-	else if (luaL_isType(L, 2, str))
-	{
-		lua_check(L, 2, str);
-		if (str.compare("dim") == 0 || str.compare("Dim") == 0)
-		{
-			vector < uint32_t > dim;
-			dim.push_back(A->Ni);
-			dim.push_back(A->Nj);
-			lua_push(L, dim);
-			return 1;
-		}
-		else if (str.compare("elem") == 0 || str.compare("Elem") == 0)
-		{
-			lua_pushvalue(L, 1);
-			lua_pushcclosure(L, LuaMatrixElem, 1);
-			return 1;
-		}
-		else
-		{
-			return luaL_error(L, "Error: Matrix indexed with unrecognised string \"%s\"", str.c_str());
-		}
-	}
-	else
-	{
-		return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
-	}
+  CompactMatrixType* A = (CompactMatrixType*)luaL_checkudata(L, 1, "Matrix_Type");
+  switch (lua_type(L,2))
+  {
+    case LUA_TNUMBER:
+    {
+      int i = luaL_checkint(L,2);
+      if(i==0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+      if(i> (int)A->Ni) return luaL_error(L, "Error: Matrix indexed with number %d. Indices can not be larger than the number of rows (%d) in the matrix\n",i,A->Ni);
+      if(i<-((int)A->Ni)) return luaL_error(L, "Error: Matrix indexed with number %d. Indices can not be smaller than minus the number of rows (%d) in the matrix\n",i,A->Ni);
+      // we now return a table with the elements __Matrix that contains a pointer to the original matrix and the elment __Row that contains the number i
+      //                       this table has the meta method MatrixRowMeta set
+      lua_createtable(L, 0, 2);
+      lua_pushvalue(L, 1);
+      lua_setfield(L,-2,"__Matrix");
+      lua_pushnumber(L, i);
+      lua_setfield(L,-2,"__Row");
+      lua_getglobal(L, "MatrixRowMeta");
+      lua_setmetatable(L, -2);
+      return 1;
+    }
+    break;
+    case LUA_TTABLE:
+    {
+      int i,j;
+      int len = (int)lua_objlen(L, 2);
+      lua_createtable(L, 0, 2);
+      lua_pushvalue(L, 1);
+      lua_setfield(L,-2,"__Matrix");
+      lua_createtable(L, len, 0);
+      for(i=1;i<=len;i++)
+      {
+        // get number 1 from the table at position 2 of the stack.
+        // check if the element in the table containgin the indices are in the range [-Ni,...,-1,1,...Ni]
+        // push the elment to the table at position -1 on the stack
+        lua_rawgeti(L,2, i);
+        j=(int)luaL_checkint(L, -1);
+        if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+        if(j<-((int)A->Ni)) return luaL_error(L, "Error: Matrix indexed with number %d. Indices can not be smaller than minus the number of rows (%d) in the matrix\n",j,A->Ni);
+        if(j> (int)A->Ni) return luaL_error(L, "Error: Matrix indexed with number %d. Indices can not be larger than the number of rows (%d) in the matrix\n",j,A->Ni);
+        lua_rawseti(L, -2, i);
+      }
+      lua_setfield(L,-2,"__Row");
+      lua_getglobal(L, "MatrixRowMeta");
+      lua_setmetatable(L, -2);
+      return 1;
+    }
+    break;
+    case LUA_TSTRING:
+    {
+      // strings allowed: "Ni"=="NRow", "Nj"=="Ncol"=="Ncolumn", "dim"=="Dim", "elem"=="Elem",
+      const char *lua_string = lua_tostring(L, 2);
+      if ((strcmp(lua_string, "Ni") == 0)||(strcmp(lua_string, "NRow") == 0)||(strcmp(lua_string, "Nrow") == 0))
+      {
+        lua_pushnumber(L, A->Ni);
+        return 1;
+      }
+      if ((strcmp(lua_string, "Nj") == 0)||(strcmp(lua_string, "NCol") == 0)||(strcmp(lua_string, "Ncol") == 0)||(strcmp(lua_string, "NColumn") == 0)||(strcmp(lua_string, "Ncolumn") == 0))
+      {
+        lua_pushnumber(L, A->Nj);
+        return 1;
+      }
+      if ((strcmp(lua_string, "Dim") == 0)||(strcmp(lua_string, "dim") == 0))
+      {
+        lua_createtable(L, 2, 0);
+        lua_pushnumber(L, A->Ni);
+        lua_rawseti(L, -2, 1);
+        lua_pushnumber(L, A->Nj);
+        lua_rawseti(L, -2, 2);
+        return 1;
+      }
+      if  ((strcmp(lua_string, "Elem") == 0)||(strcmp(lua_string, "elem") == 0))
+      {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaMatrixElem, 1);
+        return 1;
+      }
+      return luaL_error(L, "Error: Matrix indexed with unrecognised string %s",lua_string);
+    }
+    break;
+    default:
+      return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+    break;
+  }
 }
 
-/*
+/* the first position on the Lua stack is a userdata of Matrix_Type
+ *   index must be an integer or a table of integers
+ *   the integers must be unique and in the range [-Ni, ... ,-1,1,...,Ni]
+ *   or a string Ni, Nrow, Nj, Ncol
+ *
+ *   the right hand side must be a table of numbers (real or complex) with the length equal to Nj
+ *      or a table of tables of numbers with the  number of rows equal to the nubmers in the index and the length equal to Nj.
  *
  */
 static int LuaMatrixNewIndex(lua_State *L)
 {
-  return luaL_error(L, "Error: Setting / changing the element of a matrix stored as userdata at the moment not implemented.\n Work in progress\n");
+  CompactMatrixType* A = (CompactMatrixType*)luaL_checkudata(L, 1, "Matrix_Type");
+  switch (lua_type(L,2))
+  {
+    case LUA_TNUMBER:
+    {
+      int j;
+      int i = luaL_checkint(L,2);
+      if(i==0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+      if(i> (int)A->Ni) return luaL_error(L, "Error: Matrix indexed with number %d. Indices can not be larger than the number of rows (%d) in the matrix\n",i,A->Ni);
+      if(i<-((int)A->Ni)) return luaL_error(L, "Error: Matrix indexed with number %d. Indices can not be smaller than minus the number of rows (%d) in the matrix\n",i,A->Ni);
+      // we now read a table of length Nj
+      if(lua_type(L,3)!=LUA_TTABLE) return luaL_error(L, "Error: Matrix you try to set row %d equal to somehting that is not a table\n",i);
+      int len = (int)lua_objlen(L, 3);
+      if(len!=A->Nj) return luaL_error(L, "Error: Matrix you try to set row %d equal to a table of length %d whereas the matrix has %d columns\n",i,len,A->Nj);
+      for(j=1;j<=len;j++)
+      {
+        lua_rawgeti(L, 3, j);
+        if(lua_isnumber(L, -1))
+        {
+          if(A->QComplex==0)
+          {
+            A->VRe[(i-1)*A->Nj +(j-1)] = (double)luaL_checknumber(L, -1);
+          }
+          else
+          {
+            A->V[(i-1)*A->Nj +(j-1)].Re = (double)luaL_checknumber(L, -1);
+            A->V[(i-1)*A->Nj +(j-1)].Im = 0;
+          }
+          lua_pop(L, 1);
+        }
+        else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+        {
+          if(A->QComplex==0)
+          {
+            MakeCompactRealMatrixComplex(A);
+          }
+          A->V[(i-1)*A->Nj +(j-1)] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+          lua_pop(L, 1);
+        }
+        else
+        {
+          luaL_error(L, "Error in reading table at position %d real or complex number expected \n",j);
+        }
+      }
+      return 0;
+    }
+    break;
+    case LUA_TTABLE:
+    {
+      int i,j,leni,lenj,k,l;
+      
+      
+      
+      //TODO: Matrix indexed with a table set equal to a table of tables or matrix.
+      return luaL_error(L, "Error: Matrix indexed with a table. Needs to be implemented");
+      
+      
+      
+      
+      return 0;
+    }
+    break;
+    case LUA_TSTRING:
+    {
+      return luaL_error(L, "Error: Matrix indexed with a string assigned to a value. That is not an option.");
+    }
+    break;
+    default:
+      return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+    break;
+  }
+}
+/*   the index of MatrixRow can be a number or table
+ *     the indices in the index must be in range of 1 to Nj at the moment this call is evaluated.
+ *     the indices stored in Matrix row must be in range of 1 to Ni at the moment his call is evaluated.
+ *     in particularly the matrix stored in __Matrix might have changed between the call to Matrix index and MatrixRow index
+ *
+ *     returned is a table or a table of tables with meta method matrix set
+ */
+static int LuaMatrixRowIndex(lua_State *L)
+{
+  int i,j,k,l;
+  CompactMatrixType* A;
+  lua_getfield(L, 1, "__Matrix");
+  A = (CompactMatrixType*)luaL_checkudata(L, -1, "Matrix_Type");
+  lua_pop(L, 1);
+  lua_getfield(L, 1, "__Row");
+  switch (lua_type(L,-1))
+  {
+    case LUA_TNUMBER:
+    { // the rows are indexed with a single number
+      i = luaL_checkint(L,-1);
+      lua_pop(L, 1);
+      switch (lua_type(L,2))
+      {
+        case LUA_TNUMBER:
+        { // the columns and rows are indexed with a single number
+          j = luaL_checkint(L,2);
+          // check if both i and j are in range
+          if(i==0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+          if(j==0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+          if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+          if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+          if(i<0) i = (int)(A->Ni) +1 + i;
+          if(j<0) j = (int)(A->Nj) +1 + j;
+          // push a single number to the stack
+          if(A->QComplex==0)
+          {
+            lua_pushnumber(L, A->VRe[j-1 + (i-1) * A->Nj]);
+          }
+          else
+          {
+            Complex16 * res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+            res->Re=A->V[j-1 + (i-1) * A->Nj].Re;
+            res->Im=A->V[j-1 + (i-1) * A->Nj].Im;
+            luaL_setmetatable(L, "Complex_Type");
+          }
+          return 1;
+        }
+        break;
+        case LUA_TTABLE:
+        { // the columns are indexed with a table (at position 2 on the stack) the rows with a number (i)
+          int len = (int)lua_objlen(L, 2);
+          lua_createtable(L, len, 0);
+          for(k=1;k<=len;k++)
+          {
+            lua_rawgeti(L,2, k);
+            j=(int)luaL_checkint(L, -1);
+            lua_pop(L, 1);
+            if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+            if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+            if(j<0) j = (int)(A->Nj) +1 + j;
+            if(A->QComplex==0)
+            {
+              lua_pushnumber(L, A->VRe[j-1 + (i-1) * A->Nj]);
+            }
+            else
+            {
+              Complex16 * res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+              res->Re=A->V[j-1 + (i-1) * A->Nj].Re;
+              res->Im=A->V[j-1 + (i-1) * A->Nj].Im;
+              luaL_setmetatable(L, "Complex_Type");
+            }
+            lua_rawseti(L, -2, k);
+          }
+          return 1;
+        }
+        break;
+        default:
+          return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+        break;
+      }
+    }
+    break;
+    case LUA_TTABLE:
+    { // the rows are indexed with a table
+      switch (lua_type(L,2))
+      {
+        case LUA_TNUMBER:
+        { // the columns are indexed with a single number the rows with a table (at positon 3==-1 on the stack)
+          j = luaL_checkint(L,2);
+          if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+          if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+          
+          int len = (int)lua_objlen(L, 3);
+          lua_createtable(L, len, 0);
+          for(k=1;k<=len;k++)
+          {
+            lua_rawgeti(L,3, k);
+            i=(int)luaL_checkint(L, -1);
+            lua_pop(L, 1);
+            if(i ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+            if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+            if(i<0) i = (int)(A->Ni) +1 + i;
+            if(A->QComplex==0)
+            {
+              lua_pushnumber(L, A->VRe[j-1 + (i-1) * A->Nj]);
+            }
+            else
+            {
+              Complex16 * res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+              res->Re=A->V[j-1 + (i-1) * A->Nj].Re;
+              res->Im=A->V[j-1 + (i-1) * A->Nj].Im;
+              luaL_setmetatable(L, "Complex_Type");
+            }
+            lua_rawseti(L, -2, k);
+          }
+          return 1;
+        }
+        break;
+        case LUA_TTABLE:
+        { // the columns (at position 2 on the stack) and the rows (at positon 3==-1 on the stack) are indexed with a table
+          int lenj = (int)lua_objlen(L, 2);
+          int leni = (int)lua_objlen(L, 3);
+          lua_createtable(L, leni, 0);
+          lua_getglobal(L, "MatrixMeta");
+          lua_setmetatable(L, -2);
+          for(k=1;k<=leni;k++)
+          {
+            lua_rawgeti(L,3, k);
+            i=(int)luaL_checkint(L, -1);
+            lua_pop(L, 1);
+            if(i ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+            if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+            if(i<0) i = (int)(A->Ni) +1 + i;
+            lua_createtable(L, lenj, 0);
+            for(l=1;l<=lenj;l++)
+            {
+              lua_rawgeti(L,2, l);
+              j=(int)luaL_checkint(L, -1);
+              lua_pop(L, 1);
+              if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+              if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+              if(j<0) j = (int)(A->Nj) +1 +j;
+              if(A->QComplex==0)
+              {
+                lua_pushnumber(L, A->VRe[j-1 + (i-1) * A->Nj]);
+              }
+              else
+              {
+                Complex16 * res = (Complex16 *) lua_newuserdata(L, sizeof(Complex16));
+                res->Re=A->V[j-1 + (i-1) * A->Nj].Re;
+                res->Im=A->V[j-1 + (i-1) * A->Nj].Im;
+                luaL_setmetatable(L, "Complex_Type");
+              }
+              lua_rawseti(L, -2, l);
+            }
+            lua_rawseti(L, -2, k);
+          }
+          return 1;
+        }
+        break;
+        default:
+          return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+        break;
+      }
+    }
+    break;
+    default:
+      return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+    break;
+  }
 }
 
+/*   On stack a MatrixRow object, an index and a new value to assign to the MatrixRow
+ *   The index can either be a number or a table
+ *   The value to assign must be either a number a table, a table of tables or a matrix
+ *   The dimenstion of the object to assign is given by the index and __Row in the MatrixRow
+ */
+static int LuaMatrixRowNewIndex(lua_State *L)
+{
+  int i,j,k,l;
+  int len,leni,lenj;
+  CompactMatrixType* A;
+  lua_getfield(L, 1, "__Matrix");
+  A = (CompactMatrixType*)luaL_checkudata(L, -1, "Matrix_Type");
+  lua_pop(L, 1);
+  lua_getfield(L, 1, "__Row");
+  switch (lua_type(L,4))
+  {
+    case LUA_TNUMBER:
+    { // the rows are indexed with a single number
+      i = luaL_checkint(L,4);
+      lua_pop(L, 1);
+      switch (lua_type(L,2))
+      {
+        case LUA_TNUMBER:
+        { // the columns and rows are indexed with a single number
+          j = luaL_checkint(L,2);
+          // check if both i and j are in range
+          if(i==0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+          if(j==0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+          if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+          if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+          if(i<0) i = (int)(A->Ni) +1 + i;
+          if(j<0) j = (int)(A->Nj) +1 + j;
+          // read a single number from the stack position 3 and set element i,j
+          if(lua_isnumber(L, 3))
+          {
+            if(A->QComplex==0)
+            {
+              A->VRe[j-1 + (i-1) * A->Nj]=(double)luaL_checknumber(L, 3);
+            }
+            else
+            {
+              A->V[j-1 + (i-1) * A->Nj].Re=(double)luaL_checknumber(L, 3);
+              A->V[j-1 + (i-1) * A->Nj].Im=0;
+            }
+          }
+          else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+          {
+            if(A->QComplex==0)
+            {
+              MakeCompactRealMatrixComplex(A);
+            }
+            A->V[j-1 + (i-1) * A->Nj] = *(Complex16 *)luaL_checkudata(L, 3, "Complex_Type");
+          }
+          else
+          {
+            return luaL_error(L, "Error trying to set matrix element %d,%d to a value of unknown type\n",i,j);
+          }
+          return 0;
+        }
+        break;
+        case LUA_TTABLE:
+        { // the columns are indexed with a table (at position 2 on the stack) the rows with a number (i)
+          lenj = (int)lua_objlen(L, 2);
+          if(lua_type(L,3)!=LUA_TTABLE) return luaL_error(L, "Error: Matrix indexed with a number (%d) and a table. You try to set this to be equal to something that is not a table\n",i);
+          int  len = (int)lua_objlen(L, 3);
+          if(len!=lenj) return luaL_error(L, "Error: Matrix indexed with a number (%d) and a table of length (%d). You try to set this to be equal to a table of length (%d)\n",i,lenj,len);
+          for(k=1;k<=lenj;k++)
+          {
+            lua_rawgeti(L,2, k);
+            j=(int)luaL_checkint(L, -1);
+            lua_pop(L, 1);
+            if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+            if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+            if(j<0) j = (int)(A->Nj) +1 + j;
+            lua_rawgeti(L,3, k);
+            if(lua_isnumber(L, -1))
+            {
+              if(A->QComplex==0)
+              {
+                A->VRe[j-1 + (i-1) * A->Nj]=(double)luaL_checknumber(L, -1);
+              }
+              else
+              {
+                A->V[j-1 + (i-1) * A->Nj].Re=(double)luaL_checknumber(L, -1);
+                A->V[j-1 + (i-1) * A->Nj].Im=0;
+              }
+            }
+            else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+            {
+              if(A->QComplex==0)
+              {
+                MakeCompactRealMatrixComplex(A);
+              }
+              A->V[j-1 + (i-1) * A->Nj] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+            }
+            else
+            {
+              return luaL_error(L, "Error trying to set matrix element %d,%d to a value of unknown type\n",i,j);
+            }
+            lua_pop(L,1);
+          }
+          return 0;
+        }
+        break;
+        default:
+          return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+        break;
+      }
+    }
+    break;
+    case LUA_TTABLE:
+    { // the rows are indexed with a table
+      switch (lua_type(L,2))
+      {
+        case LUA_TNUMBER:
+        { // the columns are indexed with a single number the rows with a table (at positon 4 on the stack)
+          j = luaL_checkint(L,2);
+          if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+          if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+          leni = (int)lua_objlen(L, 4);
+          if(lua_type(L,3)!=LUA_TTABLE) return luaL_error(L, "Error: Matrix indexed with a table and a number (%d). You try to set this to be equal to something that is not a table\n",j);
+          len = (int)lua_objlen(L, 3);
+          if(len!=leni) return luaL_error(L, "Error: Matrix indexed with a table of length (%d) and a number (%d). You try to set this to be equal to a table of length (%d)\n",leni,j,len);
+          for(k=1;k<=leni;k++)
+          {
+            lua_rawgeti(L,4, k);
+            i=(int)luaL_checkint(L, -1);
+            lua_pop(L, 1);
+            if(i ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+            if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+            if(i<0) i = (int)(A->Ni) +1 + i;
+            lua_rawgeti(L,3, k);
+            if(lua_isnumber(L, -1))
+            {
+              if(A->QComplex==0)
+              {
+                A->VRe[j-1 + (i-1) * A->Nj]=(double)luaL_checknumber(L, -1);
+              }
+              else
+              {
+                A->V[j-1 + (i-1) * A->Nj].Re=(double)luaL_checknumber(L, -1);
+                A->V[j-1 + (i-1) * A->Nj].Im=0;
+              }
+            }
+            else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+            {
+              if(A->QComplex==0)
+              {
+                MakeCompactRealMatrixComplex(A);
+              }
+              A->V[j-1 + (i-1) * A->Nj] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+            }
+            else
+            {
+              return luaL_error(L, "Error trying to set matrix element %d,%d to a value of unknown type\n",i,j);
+            }
+            lua_pop(L,1);
+          }
+          return 0;
+        }
+        break;
+        case LUA_TTABLE:
+        { // the columns (at position 2 on the stack) and the rows (at positon 4 on the stack) are indexed with a table
+          lenj = (int)lua_objlen(L, 2);
+          leni = (int)lua_objlen(L, 4);
+          if (luaL_testudata(L, 3, "Matrix_Type") != NULL)
+          {
+            CompactMatrixType *M = (CompactMatrixType*)luaL_checkudata(L, 3, "Matrix_Type");
+            if(M->Ni!=leni) luaL_error(L, "Error trying to set matrix elements for %d rows by %d numbers\n",leni,M->Ni);
+            if(M->Nj!=lenj) luaL_error(L, "Error trying to set matrix elements for %d columns by %d numbers\n",lenj,M->Nj);
+            if((M->QComplex!=0)&&(A->QComplex==0)) MakeCompactRealMatrixComplex(A);
+            for(k=1;k<=leni;k++)
+            {
+              lua_rawgeti(L,4, k);
+              i=(int)luaL_checkint(L, -1);
+              lua_pop(L, 1);
+              if(i ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+              if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+              if(i<0) i = (int)(A->Ni) +1 + i;
+              for(l=1;l<=lenj;l++)
+              {
+                lua_rawgeti(L,2, l);
+                j=(int)luaL_checkint(L, -1);
+                lua_pop(L, 1);
+                if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+                if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+                if(j<0) j = (int)(A->Nj) +1 + j;
+                if(A->QComplex==0)
+                {
+                  A->VRe[j-1 + (i-1) * A->Nj]=M->VRe[l-1 + (k-1) * M->Nj];
+                }
+                else
+                {
+                  if(M->QComplex==0)
+                  {
+                    A->V[j-1 + (i-1) * A->Nj].Re=M->VRe[l-1 + (k-1) * M->Nj];
+                    A->V[j-1 + (i-1) * A->Nj].Re=0;
+                  }
+                  else
+                  {
+                    A->V[j-1 + (i-1) * A->Nj]=M->V[l-1 + (k-1) * M->Nj];
+                  }
+                }
+              }
+            }
+          }
+          if(lua_type(L,3)!=LUA_TTABLE) return luaL_error(L, "Error: Matrix indexed with a table and a table. You try to set this to be equal to something that is not a table of tables or a matrix\n");
+          
+          int  len = (int)lua_objlen(L, 3);
+          if(len!=leni) return luaL_error(L, "Error: Matrix indexed with tables of length %d and %d. You try to set this to be equal to a table of length (%d)\n",leni,lenj,len);
+          for(k=1;k<=leni;k++)
+          {
+            lua_rawgeti(L,4, k);
+            i=(int)luaL_checkint(L, -1);
+            lua_pop(L, 1);
+            if(i ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",A->Ni);
+            if(Abs(i)>A->Ni) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Nrow(%d), ..., -1,1,...,Nrow] in the matrix\n",i,A->Ni);
+            if(i<0) i = (int)(A->Ni) +1 + i;
+            lua_rawgeti(L,3, k);
+            if(lua_type(L,-1)!=LUA_TTABLE) return luaL_error(L, "Error: Matrix indexed with a table and a table. You try to set this to be equal to something that is not a table of tables or a matrix at row %d\n",k);
+            len = (int)lua_objlen(L, -1);
+            if(len!=lenj) return luaL_error(L, "Error: Matrix indexed with tables of length %d and %d. You try to set row %d to be equal to a table of length (%d)\n",leni,lenj,k,len);
+            for(l=1;l<=lenj;l++)
+            {
+              lua_rawgeti(L,2, l);
+              j=(int)luaL_checkint(L, -1);
+              lua_pop(L, 1);
+              if(j ==   0) return luaL_error(L, "Error: Matrix indexed with zero. Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",A->Nj);
+              if(Abs(j)>A->Nj) return luaL_error(L, "Error: Matrix index out of range (%d). Indices must be in the range [-Ncol(%d), ..., -1,1,...,Ncol] in the matrix\n",j,A->Nj);
+              if(j<0) j = (int)(A->Nj) +1 + j;
+              lua_rawgeti(L,-1, l);
+              if(lua_isnumber(L, -1))
+              {
+                if(A->QComplex==0)
+                {
+                  A->VRe[j-1 + (i-1) * A->Nj]=(double)luaL_checknumber(L, -1);
+                }
+                else
+                {
+                  A->V[j-1 + (i-1) * A->Nj].Re=(double)luaL_checknumber(L, -1);
+                  A->V[j-1 + (i-1) * A->Nj].Im=0;
+                }
+              }
+              else if (luaL_testudata(L, -1, "Complex_Type") != NULL)
+              {
+                if(A->QComplex==0)
+                {
+                  MakeCompactRealMatrixComplex(A);
+                }
+                A->V[j-1 + (i-1) * A->Nj] = *(Complex16 *)luaL_checkudata(L, -1, "Complex_Type");
+              }
+              else
+              {
+                return luaL_error(L, "Error trying to set matrix element %d,%d to a value of unknown type\n",i,j);
+              }
+              lua_pop(L, 1);
+            }
+            lua_pop(L, 1);
+          }
+          return 0;
+        }
+        break;
+        default:
+          return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+        break;
+      }
+    }
+    break;
+    default:
+      return luaL_error(L, "Error: Matrix indexed with unrecognised type!");
+    break;
+  }
+}
 /*
  *
  */
@@ -1919,6 +2448,15 @@ static const struct luaL_Reg Matrix_meta[] = {
   {"__gc", LuaMatrixDestroy},
   {NULL, NULL}
 };
+
+static const struct luaL_Reg Matrix_Row_meta[] = {
+  {"__index", LuaMatrixRowIndex},
+  {"__newindex", LuaMatrixRowNewIndex},
+  {NULL, NULL}
+};
+
+
+//TODO: Matrices stored as tables do not behave the same way as matrices stored as userdata when indexed.........
 
 static const struct luaL_Reg MatrixTable_meta[] = {
   {"__unm", LuaMatrixUnm},
