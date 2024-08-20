@@ -244,6 +244,11 @@ for iIndices=1,#indices_list do
                 mode = "conserve"
 
 
+                function checkConserve(i,j)
+                    return ( not ( checkInList(indices,i) or checkInList(indices,j)) or (i==j))
+                end
+
+
                 local partialCoeff1cCr = {}
                 local partialCoeff1cAn = {}
                 local partialCoeff2c = {}
@@ -256,7 +261,7 @@ for iIndices=1,#indices_list do
                         partialCoeff1cAn[#partialCoeff1cAn+1] = {-i,-Mat1c[i+1]}
                     end
                     for j=0,NF-1 do
-                        if ( not ( checkInList(indices,i) or checkInList(indices,j)) or (i==j)) then
+                        if checkConserve(i,j) then
                             partialCoeff2c[#partialCoeff2c+1] = {i,-j,Mat2c[i+1][j+1]}
                         end
                         for k=0,NF-1 do
