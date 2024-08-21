@@ -38,6 +38,8 @@ uint32_t TransformCompactMatrixInlineTc(CompactMatrixType * const A, CompactMatr
 uint32_t TransformCompactMatrixcT(CompactMatrixType const *A, CompactMatrixType const *T, CompactMatrixType * const TcATT);
 uint32_t TransformCompactMatrixPreAllocatedcT(CompactMatrixType const *A, CompactMatrixType const *T, CompactMatrixType * const TcATT);
 uint32_t TransformCompactMatrixInlinecT(CompactMatrixType * const A, CompactMatrixType const *T);
+int FunTrDotFunCCPreAllocated(CompactMatrixType const * const fun, int i, CompactMatrixType * Out);
+int FunTrDotFunCC(CompactMatrixType const * const fun, int i, CompactMatrixType * Out);
 uint32_t CompactMatrixTranspose(CompactMatrixType * const M);
 uint32_t CompactMatrixConjugate(CompactMatrixType * const M);
 uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M);

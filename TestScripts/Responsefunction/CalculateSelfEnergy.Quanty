@@ -2,6 +2,63 @@ print("--------------------------------------------------------")
 print("-- Responsefunction CalculateSelfEnergy               --")
 print("--------------------------------------------------------")
 
+a = {0,  11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G = ResponseFunction.New({a,b,mu=0,type="And", name="G"})
+
+a = {0,  11, 12, 13, 15, 16}
+b = {     1,  2,  3,  5,  6}
+G0 = ResponseFunction.New({a,b,mu=0,type="And", name="G0"})
+
+Sigma = ResponseFunction.New( { { 0 , 14 } ,
+														        { 16 } ,
+							                      name = "Self energy" ,
+							                      type = "ListOfPoles" ,
+							                      mu   = 0 } )
+
+if(not(Sigma == ResponseFunction.CalculateSelfEnergy(G0,G))) then
+	error("Incorrect self energy for singel valued function\n",1)
+end
+
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s
+
+G  = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="G"} )
+G0 = ResponseFunction.New( { {A0,A1   ,A3}, {B0   ,B2}, mu=0, type="And", name="G0"} )
+
+Sigma = ResponseFunction.New( { { A0 , 0.62613645756624 , 1 , 14.373863542434 } ,
+							 { { {    3.6668569957303  ,    5.2412958857883 ,   10.494744748694 } ,
+							     {    5.2412958857883  ,    7.491751817529  ,   15.000874737624 } ,
+							     {   10.494744748694   ,   15.000874737624  ,   30.036531958703 } } ,
+							   { {    0.8              ,    5.6             ,    6.0            } ,
+							     {    5.6              ,   39.2             ,   42              } ,
+							     {    6.0              ,   42               ,   45              } } ,
+							   { { 1988.5331430043     , 4873.1587041142    , 7003.5052552513   } ,
+							     { 4873.1587041142     , 11942.308248182    , 17162.999125262   } ,
+							     { 7003.5052552513     , 17162.999125262    , 24665.963468041   } } } ,
+							 type = "ListOfPoles" ,
+							 mu = 0 ,
+							 name = "Self energy" } )
+
+if(not(Chop(Sigma-ResponseFunction.CalculateSelfEnergy(G0,G),1E-9) == Chop(ResponseFunction.CalculateSelfEnergy(G0,G)-Sigma,1E-9))) then
+	error("Incorrect self energy for singel valued function\n",1)
+end
+
+
+
+
 
 
 collectgarbage()

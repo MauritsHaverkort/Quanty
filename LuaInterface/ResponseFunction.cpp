@@ -389,14 +389,15 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
  *  We transform G0 and G to an anderson form
  *  Inverting gives a list of poles
  *  we subtract list of poles and return sigma as a list of poles
+ *
+ *  epsilon is the minimal distance between two poles that belong to the same block in the anderson matrix representation to be considered different in energy
  */
 static int LuaCalculateSelfEnergy(lua_State *L)
 {
   ResponsefunctionType *G0,*G,*Sigma;
-  double SingularValue,T;
+  double epsilon = 1000*DBL_EPSILON;
   LuaOptionsType CalculateSelfEnergyOptions[]={
-    {"SingularValue","double",&(SingularValue)},
-    {"EffectivekBT","double",&(T)},
+    {"epsilon","double",&(epsilon)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t)lua_gettop(L);
   if( LuaTestOptionsList(L,-1) )
@@ -411,7 +412,7 @@ static int LuaCalculateSelfEnergy(lua_State *L)
   G0 = luaL_checkResponsefunction(L,1);
   G  = luaL_checkResponsefunction(L,2);
   Sigma = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  CalculateSelfenergy(G0, G, Sigma);
+  CalculateSelfenergy(G0, G, Sigma, epsilon);
   luaL_setmetatable(L, "ResponseFunction_Type");
   FreeResponsefunction(G0);
   FreeResponsefunction(G);
