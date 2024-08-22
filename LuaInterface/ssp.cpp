@@ -2569,7 +2569,7 @@ static int LuaCreateSpectra(lua_State *L)
         if(TpsiSameBasis[i].QComplex) GTri.QComplex=1;
       }
       InitBlockTridiagonalMatrix(&GTri);
-      GTri.mu=psiEn[0];
+      GTri.mu=0;//psiEn[0];
       
       if(Options.Settings.restrictions.N==0)
       {
