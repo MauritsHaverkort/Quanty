@@ -38,7 +38,7 @@ uint32_t InitAndersonMatrix(AndersonMatrixType * const M)
     return 1;
   };
   M->b = (double*)malloc((M->N) * sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc failed in InitAndersonMatrix\n");
@@ -46,7 +46,7 @@ uint32_t InitAndersonMatrix(AndersonMatrixType * const M)
     return 1;
   }
   M->a[0] = 0;
-  M->b[0] = 1;
+  if(M->N!=0) M->b[0] = 1;
   M->mu = 0;
   return 0;
 }
