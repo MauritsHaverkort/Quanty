@@ -31,7 +31,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   ResponsefunctionType *Min, Mout;
   char const * convert;
   char type;
-  double T=sqrt(DBL_MIN);
+  double T=0;
   double SingularValue=1000*DBL_EPSILON;
   bool deflate=true;
   //TODO: implement deflation when possible and deflate=true
@@ -431,10 +431,9 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
 {
   ResponsefunctionType *D0,*D,*Sigma;
   CompactVectorType Grid={0,0,NULL};
-  double SingularValue=0,T=0;
+  double Epsilon=1000*DBL_EPSILON;
   LuaOptionsType CalculateSelfEnergyOptions[]={
-    {"SingularValue","double",&(SingularValue)},
-    {"EffectivekBT","double",&(T)},
+    {"Epsilon","double",&(Epsilon)},
     {"EnergyGrid","Vector",&Grid},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -449,14 +448,16 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
   }
   D0    = luaL_checkResponsefunction(L,1);
   Sigma = luaL_checkResponsefunction(L,2);
+  if(D0->Block!=Sigma->Block) return luaL_error(L, "CalculateHybridizationFunction should be called with D0 and Sigma either both as block response functions or both as single valued response functions\n");
+  if(BlockResponseFunctionGetBlockSize(D0) != BlockResponseFunctionGetBlockSize(Sigma)) return luaL_error(L, "CalculateHybridizationFunction should be called with D0 and Sigma with same dimension of BlockSize\n");
   D     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   if(Grid.Ni==0)
   {
-    CalculateGBath(D0, Sigma, D);
+    CalculateGBath(D0, Sigma, D, Epsilon);
   }
   else
   {
-    CalculateGBathOnGrid(D0, Sigma, &Grid, D);
+    CalculateGBathOnGrid(D0, Sigma, &Grid, D, Epsilon);
     free(Grid.VRe);
     Grid.Ni=0;
     Grid.QComplex=0;

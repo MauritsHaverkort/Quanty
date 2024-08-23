@@ -1698,7 +1698,7 @@ uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalM
     A->VRe[(j    )*A->Nj + j - 1] = M->val.b[i];
     A->VRe[(j - 1)*A->Nj + j    ] = M->val.b[i];
   }
-  A->VRe[(M->val.N  ) * A->Nj + M->val.N ] = M->val.a[M->val.N];
+  if(M->val.N>1) A->VRe[(M->val.N  ) * A->Nj + M->val.N ] = M->val.a[M->val.N];
   
   for (i = 2; i < M->con.N; i++)
   {
@@ -1707,7 +1707,7 @@ uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalM
     A->VRe[(j    )*A->Nj + j - 1] = M->con.b[i];
     A->VRe[(j - 1)*A->Nj + j    ] = M->con.b[i];
   }
-  A->VRe[(M->con.N +M->val.N - 1) * A->Nj + M->con.N + M->val.N -1] = M->con.a[M->con.N];
+  if(M->con.N>1) A->VRe[(M->con.N +M->val.N - 1) * A->Nj + M->con.N + M->val.N -1] = M->con.a[M->con.N];
   
   return 0;
 }

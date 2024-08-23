@@ -3079,7 +3079,7 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
   CompactMatrixEigensystem(A, &fun, val);
   for(i=0;i<fun.Ni;i++)
   {
-    if(val[i]<0)
+    if(val[i]<=0)
     {
       sumval=0;
       for(j=0;j<A->Ni;j++)
@@ -3092,6 +3092,21 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
         retval++;
       }
       val[i]=0;
+      if(A->QComplex==0)
+      {
+        for(j=0;j<A->Nj;j++)
+        {
+          fun.VRe[j+i*A->Nj]=0;
+        }
+      }
+      else
+      {
+        for(j=0;j<A->Nj;j++)
+        {
+          fun.V[j+i*A->Nj].Re=0;
+          fun.V[j+i*A->Nj].Im=0;
+        }
+      }
     }
     val[i]=sqrt(val[i]);
   }
@@ -3571,6 +3586,22 @@ uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixTy
   FreeCompactMatrix(&funvec);
   return 0;
 }
+/*  assume that vec is an identity matrix with Nrow rows
+ *
+ */
+uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, BlockListOfPoles *L, uint32_t NRow)
+{
+  CompactMatrixType vec;
+  vec.Ni=NRow;
+  vec.Nj=A->Nj;
+  vec.QComplex=0;
+  InitCompactMatrix(&vec);
+  for(int i=0;i<NRow;i++) vec.VRe[i + i *vec.Nj] = 1;
+  HermitianCompactMatrixToBlockListOfPoles(A, L, &vec);
+  FreeCompactMatrix(&vec);
+  return 0;
+}
+
 
 
 /*
@@ -3596,6 +3627,30 @@ uint32_t ResponseFunctionGetA0(ResponsefunctionType const *A, double *a0)
     *a0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->a0;
   }
   return 0;
+}
+
+
+uint32_t BlockResponseFunctionGetBlockSize(ResponsefunctionType const *A)
+{
+  if(A->Block==false) return 1;
+  switch ((32|A->type)) 
+  {
+    case 't':
+      return ((BlockTriDiagonalMatrixType*)(A->data))->BlockSize;
+    break;
+    case 'a':
+      return ((BlockAndersonMatrixType*)(A->data))->BlockSize;
+    break;
+    case 'l':
+      return ((BlockListOfPoles*)(A->data))->BlockSize;
+    break;
+    case 'n':
+      return ((BlockNaturalImpurityOrbitalMatrixType*)(A->data))->BlockSize;
+    break;
+    default:
+      return 0;
+    break;
+  }
 }
 
 /*

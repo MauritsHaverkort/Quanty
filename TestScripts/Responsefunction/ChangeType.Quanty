@@ -28,7 +28,7 @@ acon = {0,         1,   1,   1,   1,   1,  1}
 bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
 Gcon = {acon,bcon,mu=0,type="Tri"}
 setmetatable(Gcon, ResponseFunctionMeta)
-aval = {0,        -1,  -1,  -1,  -1,  -1, -1}
+aval = {0,        -1,  -1,  -2,  -1,  -1, -1}
 bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
 Gval = {aval,bval,mu=0,type="Tri"}
 setmetatable(Gval, ResponseFunctionMeta)

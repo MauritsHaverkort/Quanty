@@ -1192,9 +1192,12 @@ int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionTy
 }
 
 
-
-
-int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, ResponsefunctionType * const G)
+/*  Adds a self energy to all sites except for the impurity site
+ *  G0 is converted to an Anderson Impurity Matrix
+ *  Sigma to a lsit of poles type
+ *
+ */
+int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, ResponsefunctionType * const G, double Epsilon)
 {
  if(G0->Block==false)
  {
@@ -1236,15 +1239,47 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
  }
  else
  {
-   printf("Hybridization function for Block response functions not yet implemented\n Trivial to do \n");
-   
-   
+   ResponsefunctionType G0And, SigmaLP;
+   BlockAndersonMatrixType *G0AndData;
+   BlockListOfPoles        *SigmaLPData;
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     G0AndData = (BlockAndersonMatrixType*)G0And.data;
+   }
+   else
+   {
+     G0AndData = (BlockAndersonMatrixType*)G0->data;
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
+   }
+   else
+   {
+     SigmaLPData = (BlockListOfPoles*)Sigma->data;
+   }
+   G->type='a';
+   G->Block=true;
+   G->NSuggestedGridPoints=0;
+   G->SuggestedGrid=NULL;
+   G->data = (void*)malloc(sizeof(BlockAndersonMatrixType));
+   BlockGBathAndListAndRepresentation(G0AndData, G0AndData->mu, SigmaLPData, (BlockAndersonMatrixType *)(G->data), Epsilon);
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     FreeResponsefunction(&G0And);
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     FreeResponsefunction(&SigmaLP);
+   }
  }
  return 0;
 }
 
 
-int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, CompactVectorType *const Grid, ResponsefunctionType * const G)
+int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, CompactVectorType *const Grid, ResponsefunctionType * const G, double Epsilon)
 {
  if(G0->Block==false)
  {
@@ -1286,9 +1321,41 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
  }
  else
  {
-   printf("Hybridization function for Block response functions not yet implemented\n Trivial to do \n");
-   
-   
+   ResponsefunctionType G0And, SigmaLP;
+   BlockAndersonMatrixType *G0AndData;
+   BlockListOfPoles        *SigmaLPData;
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     G0AndData = (BlockAndersonMatrixType*)G0And.data;
+   }
+   else
+   {
+     G0AndData = (BlockAndersonMatrixType*)G0->data;
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
+   }
+   else
+   {
+     SigmaLPData = (BlockListOfPoles*)Sigma->data;
+   }
+   G->type='a';
+   G->Block=true;
+   G->NSuggestedGridPoints=0;
+   G->SuggestedGrid=NULL;
+   G->data = (void*)malloc(sizeof(BlockAndersonMatrixType));
+   BlockGBathAndListAndRepresentationOnGrid(G0AndData, G0AndData->mu, SigmaLPData, Grid->VRe, Grid->Ni, (BlockAndersonMatrixType *)(G->data) );
+   if(!((G0->type=='a')||(G0->type=='A')))
+   {
+     FreeResponsefunction(&G0And);
+   }
+   if(!((Sigma->type=='l')||(Sigma->type=='L')))
+   {
+     FreeResponsefunction(&SigmaLP);
+   }
  }
  return 0;
 }
@@ -1411,6 +1478,11 @@ uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiago
  */
 uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma, AndersonMatrixType * const G)
 {
+  if(G0.N==0)
+  {
+    AndersonMatrixCopy(G, G0);
+    return 0;
+  }
   uint32_t i, j;
   ListOfPoles bSigmaPole;
   AndersonMatrixType bSigma;
@@ -1434,7 +1506,7 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
     bSigma.a[1] = G0.a[i + 1] + Sigma.a0;
     for (j = 0; j < Sigma.N; j++)
     {
-      bSigma.a[j + 2] = G0.a[i + 1] + Sigma.a[j];
+      bSigma.a[j + 2] = Sigma.a[j];
       bSigma.b[j + 1] = sqrt(Sigma.b[j]);
     }
     if (AndersonMatrixToListOfPoles(bSigma, &bSigmaPole))
@@ -1467,9 +1539,14 @@ uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const
  */
 uint32_t GBathAndListAndRepresentationOnGrid(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma, double *Grid, uint32_t NGridPoints, AndersonMatrixType * const G)
 {
+  if(G0.N==0)
+  {
+    AndersonMatrixCopy(G, G0);
+    return 0;
+  }
   if(NGridPoints==0)
   {
-    printf("Zero gridpoints not yet implemented\n");
+    printf("Zero gridpoints in GBathAndListAndRepresentationOnGrid. That does not make sence.\n");
     return 1;
   }
   uint32_t i, j;
@@ -1497,7 +1574,7 @@ uint32_t GBathAndListAndRepresentationOnGrid(AndersonMatrixType const G0, double
     bSigma.a[1] = G0.a[i + 1] + Sigma.a0;
     for (j = 0; j < Sigma.N; j++)
     {
-      bSigma.a[j + 2] = G0.a[i + 1] + Sigma.a[j];
+      bSigma.a[j + 2] =  Sigma.a[j];
       bSigma.b[j + 1] = sqrt(Sigma.b[j]);
     }
     if (AndersonMatrixToListOfPoles(bSigma, &bSigmaPole))
@@ -1532,6 +1609,340 @@ uint32_t GBathAndListAndRepresentationOnGrid(AndersonMatrixType const G0, double
   OrderAndersonMatrix(G);
   return 0;
 }
+
+
+
+/*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *    G_0(w-Sigma(w))                     = 1 / (w - S - A1 - sum_i B_i . ( 1 / (w - A_{i+1} - S) ) . B_i^+ )
+ *    G_0(w-Sigma(w))^{-1}                =     (w - S - A1 - sum_i B_i . ( 1 / (w - A_{i+1} - S) ) . B_i^+ )
+ *    G_0(w-Sigma(w))^{-1} + Sigma        =     (w     - A1 - sum_i B_i . ( 1 / (w - A_{i+1} - S) ) . B_i^+ )
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - A1 - sum_i B_i . ( 1 / (w - A_{i+1} - S) ) . B_i^+ )
+ *  ( G_0(w-Sigma(w))^{-1} + Sigma )^{-1} = 1 / (w     - A1 - sum_i B_i . ( 1 / (w - A_{i+1} - AS0 - sum_j BS_j^2 /(w-aS_j) ) . B_i^+ )
+ *
+ *  Epsilon determines if two poles in the same block have the same energy or not.
+ */
+uint32_t BlockGBathAndListAndRepresentation(BlockAndersonMatrixType const * const G0, double const mu, BlockListOfPoles const * const Sigma, BlockAndersonMatrixType * const G, double Epsilon)
+{
+  if(G0->N==0)
+  {
+    CopyBlockAndersonMatrix(*G0, G);
+    return 0;
+  }
+  int i,j,k,l;
+  CompactMatrixType SigmaInv,G0Bi,GBiSqr,GBi;
+  BlockListOfPoles G0iWithSigma;
+  // write the inverse of Sigma as a matrix
+  BlockListOfPolesInversedToCompactMatrix(Sigma, &SigmaInv);
+  if((G0->QComplex!=0)&&(Sigma->QComplex==0)) MakeCompactRealMatrixComplex(&SigmaInv);
+  // we use G0Bi and GBiSqr as a dummie pointer Compact matrix to elements in G0
+  G0Bi.Ni=G0->BlockSize;
+  G0Bi.Nj=G0->BlockSize;
+  G0Bi.QComplex=G0->QComplex;
+  G0Bi.Name=SigmaInv.Name;
+  GBiSqr.Ni=G0->BlockSize;
+  GBiSqr.Nj=G0->BlockSize;
+  GBiSqr.QComplex=SigmaInv.QComplex;
+  GBiSqr.Name=SigmaInv.Name;
+  // initialize G -- this can be very large
+  G->BlockSize = G0->BlockSize;
+  G->QComplex = SigmaInv.QComplex;
+  G->N = 1 + (G0->N-1) * (Sigma->N+1) * G0->BlockSize;
+  InitBlockAndersonMatrix(G);
+  // set G.A0 and G.B0
+  if(G->QComplex==0)
+  {
+    memcpy(G->aRe, G0->aRe, 2*Sqr(G0->BlockSize)*sizeof(double));
+    memcpy(G->bRe, G0->bRe, Sqr(G0->BlockSize)*sizeof(double));
+  }
+  else if(G0->QComplex==0)
+  {
+    for(i=0;i<Sqr(G0->BlockSize);i++)
+    {
+      G->b[i].Re = G0->bRe[i];
+      G->b[i].Im = 0;
+    }
+    for(i=0;i<2*Sqr(G0->BlockSize);i++)
+    {
+      G->a[i].Re = G0->aRe[i];
+      G->a[i].Im = 0;
+    }
+  }
+  else
+  {
+    memcpy(G->a, G0->a, 2*Sqr(G0->BlockSize)*sizeof(Complex16));
+    memcpy(G->b, G0->b, Sqr(G0->BlockSize)*sizeof(Complex16));
+  }
+  G->mu=G0->mu;
+  G->N=1;
+  // loop over all blocks in G0 (i=1;i<G0.N;i++ )
+  for(i=1;i<G0->N;i++)
+  {
+    // Set the left top block of SigmaInv equal to G0.A[i+1] + Sigma.A[0]
+    if(SigmaInv.QComplex==0)
+    {
+      for(k=0;k<G0->BlockSize;k++)
+      {
+        for(l=0;l<G0->BlockSize;l++)
+        {
+          SigmaInv.VRe[l + k*SigmaInv.Nj] = G0->aRe[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)] + Sigma->a0Re[l + k*(G0->BlockSize)];
+        }
+      }
+    }
+    else
+    {
+      if(Sigma->QComplex==0)
+      {
+        for(k=0;k<G0->BlockSize;k++)
+        {
+          for(l=0;l<G0->BlockSize;l++)
+          {
+            SigmaInv.V[l + k*SigmaInv.Nj].Re = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Re + Sigma->a0Re[l + k*(G0->BlockSize)];
+            SigmaInv.V[l + k*SigmaInv.Nj].Im = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Im;
+          }
+        }
+      }
+      else if(G0->QComplex==0)
+      {
+        for(k=0;k<G0->BlockSize;k++)
+        {
+          for(l=0;l<G0->BlockSize;l++)
+          {
+            SigmaInv.V[l + k*SigmaInv.Nj].Re = G0->aRe[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)] + Sigma->a0[l + k*(G0->BlockSize)].Re;
+            SigmaInv.V[l + k*SigmaInv.Nj].Im =                                                               Sigma->a0[l + k*(G0->BlockSize)].Im;
+          }
+        }
+      }
+      else
+      { // all complex
+        for(k=0;k<G0->BlockSize;k++)
+        {
+          for(l=0;l<G0->BlockSize;l++)
+          {
+            SigmaInv.V[l + k*SigmaInv.Nj].Re = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Re + Sigma->a0[l + k*(G0->BlockSize)].Re;
+            SigmaInv.V[l + k*SigmaInv.Nj].Im = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Im + Sigma->a0[l + k*(G0->BlockSize)].Im;
+          }
+        }
+      }
+    }
+    // SigmaInv to BlockListOfPoles
+    HermitianCompactMatrixToBlockListOfPoles(&SigmaInv, &G0iWithSigma, G0->BlockSize);
+    // Merge poles with energy differences smaller than Epsilon
+    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon);
+    // rotate BlockListOpPoles by G0.B[i]
+    if(G0->QComplex==0)
+    {
+      G0Bi.VRe = &(G0->bRe[i*Sqr(G0->BlockSize)]);
+    }
+    else
+    {
+      G0Bi.V = &(G0->b[i*Sqr(G0->BlockSize)]);
+    }
+    BlockListOfPolesTransformInlineNC(&G0iWithSigma, &G0Bi);
+    // List of Poles to AndersonImpurity matrix part
+    if(G->QComplex==0)
+    {
+      for(j=0;j<G0iWithSigma.N;j++)
+      {
+        GBiSqr.VRe = &(G0iWithSigma.VRe[1 + j * (Sqr(G0iWithSigma.BlockSize)+1)]);
+        CompactMatrixSqrt(&GBiSqr, &GBi);
+        memcpy(&(G->bRe[G->N * Sqr(G->BlockSize)]), GBi.VRe, Sqr(G->BlockSize)*sizeof(double));
+        FreeCompactMatrix(&GBi);
+        G->N++;
+        for(k=0;k<G->BlockSize;k++)
+        {
+          G->aRe[G->N*Sqr(G->BlockSize) + k * (1+G->BlockSize)] = G0iWithSigma.VRe[j * (Sqr(G0iWithSigma.BlockSize)+1)];
+        }
+      }
+    }
+    else
+    {
+      for(j=0;j<G0iWithSigma.N;j++)
+      {
+        GBiSqr.V = &(G0iWithSigma.V[1 + j * (Sqr(G0iWithSigma.BlockSize)+1)]);
+        CompactMatrixSqrt(&GBiSqr, &GBi);
+        memcpy(&(G->b[G->N * Sqr(G->BlockSize)]), GBi.V, Sqr(G->BlockSize)*sizeof(double));
+        FreeCompactMatrix(&GBi);
+        G->N++;
+        for(k=0;k<G->BlockSize;k++)
+        {
+          G->a[G->N*Sqr(G->BlockSize) + k * (1+G->BlockSize)] = G0iWithSigma.V[j * (Sqr(G0iWithSigma.BlockSize)+1)];
+        }
+      }
+    }
+    FreeBlockListOfPoles(&G0iWithSigma);
+  }
+  FreeCompactMatrix(&SigmaInv);
+  return 0;
+}
+/*
+ *
+ */
+uint32_t BlockGBathAndListAndRepresentationOnGrid(BlockAndersonMatrixType const * const G0, double const mu, BlockListOfPoles const * const Sigma, double const * const Grid, uint32_t NGridPoints, BlockAndersonMatrixType * const G)
+{
+  int i,k,l;
+  BlockListOfPoles G0iWithSigma,GInv;
+  CompactMatrixType G0Bi,GBiSqr,GBi;
+  if(G0->N==0)
+  {
+    CopyBlockAndersonMatrix(*G0, G);
+    return 0;
+  }
+  CompactMatrixType SigmaInv;
+  // write the inverse of Sigma as a matrix
+  BlockListOfPolesInversedToCompactMatrix(Sigma, &SigmaInv);
+  if((G0->QComplex!=0)&&(Sigma->QComplex==0)) MakeCompactRealMatrixComplex(&SigmaInv);
+  // we use G0Bi and GBiSqr as a dummie pointer Compact matrix to elements in G0 and G
+  G0Bi.Ni=G0->BlockSize;
+  G0Bi.Nj=G0->BlockSize;
+  G0Bi.QComplex=G0->QComplex;
+  G0Bi.Name=SigmaInv.Name;
+  // initialize G
+  G->BlockSize = G0->BlockSize;
+  G->QComplex = SigmaInv.QComplex;
+  G->N = 1 + NGridPoints;
+  InitBlockAndersonMatrix(G);
+  GBiSqr.Ni=G->BlockSize;
+  GBiSqr.Nj=G->BlockSize;
+  GBiSqr.QComplex=G->QComplex;
+  GBiSqr.Name=G->Name;
+  // initialize Ginv
+  GInv.N = NGridPoints;
+  GInv.QComplex = G->QComplex;
+  GInv.BlockSize = G->BlockSize;
+  InitBlockListOfPoles(&GInv);
+  if(GInv.QComplex==0)
+  {
+    for(i=0;i<NGridPoints;i++)
+    {
+      GInv.VRe[i*(1+Sqr(GInv.BlockSize))] = Grid[i];
+    }
+  }
+  else
+  {
+    for(i=0;i<NGridPoints;i++)
+    {
+      GInv.V[i*(1+Sqr(GInv.BlockSize))].Re = Grid[i];
+    }
+  }
+  // set G.A0 and G.B0
+  if(G->QComplex==0)
+  {
+    memcpy(G->aRe, G0->aRe, 2*Sqr(G0->BlockSize)*sizeof(double));
+    memcpy(G->bRe, G0->bRe, Sqr(G0->BlockSize)*sizeof(double));
+  }
+  else if(G0->QComplex==0)
+  {
+    for(i=0;i<Sqr(G0->BlockSize);i++)
+    {
+      G->b[i].Re = G0->bRe[i];
+      G->b[i].Im = 0;
+    }
+    for(i=0;i<2*Sqr(G0->BlockSize);i++)
+    {
+      G->a[i].Re = G0->aRe[i];
+      G->a[i].Im = 0;
+    }
+  }
+  else
+  {
+    memcpy(G->a, G0->a, 2*Sqr(G0->BlockSize)*sizeof(Complex16));
+    memcpy(G->b, G0->b, Sqr(G0->BlockSize)*sizeof(Complex16));
+  }
+  G->mu=G0->mu;
+  // loop over all blocks in G0 (i=1;i<G0.N;i++ )
+  for(i=1;i<G0->N;i++)
+  {
+    // Set the left top block of SigmaInv equal to G0.A[i+1] + Sigma.A[0]
+    if(SigmaInv.QComplex==0)
+    {
+      for(k=0;k<G0->BlockSize;k++)
+      {
+        for(l=0;l<G0->BlockSize;l++)
+        {
+          SigmaInv.VRe[l + k*SigmaInv.Nj] = G0->aRe[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)] + Sigma->a0Re[l + k*(G0->BlockSize)];
+        }
+      }
+    }
+    else
+    {
+      if(Sigma->QComplex==0)
+      {
+        for(k=0;k<G0->BlockSize;k++)
+        {
+          for(l=0;l<G0->BlockSize;l++)
+          {
+            SigmaInv.V[l + k*SigmaInv.Nj].Re = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Re + Sigma->a0Re[l + k*(G0->BlockSize)];
+            SigmaInv.V[l + k*SigmaInv.Nj].Im = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Im;
+          }
+        }
+      }
+      else if(G0->QComplex==0)
+      {
+        for(k=0;k<G0->BlockSize;k++)
+        {
+          for(l=0;l<G0->BlockSize;l++)
+          {
+            SigmaInv.V[l + k*SigmaInv.Nj].Re = G0->aRe[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)] + Sigma->a0[l + k*(G0->BlockSize)].Re;
+            SigmaInv.V[l + k*SigmaInv.Nj].Im =                                                               Sigma->a0[l + k*(G0->BlockSize)].Im;
+          }
+        }
+      }
+      else
+      { // all complex
+        for(k=0;k<G0->BlockSize;k++)
+        {
+          for(l=0;l<G0->BlockSize;l++)
+          {
+            SigmaInv.V[l + k*SigmaInv.Nj].Re = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Re + Sigma->a0[l + k*(G0->BlockSize)].Re;
+            SigmaInv.V[l + k*SigmaInv.Nj].Im = G0->a[(i+1) * Sqr(G0->BlockSize) + l + k*(G0->BlockSize)].Im + Sigma->a0[l + k*(G0->BlockSize)].Im;
+          }
+        }
+      }
+    }
+    // SigmaInv to BlockListOfPoles
+    HermitianCompactMatrixToBlockListOfPoles(&SigmaInv, &G0iWithSigma, G0->BlockSize);
+    // rotate BlockListOpPoles by G0.B[i]
+    if(G0->QComplex==0)
+    {
+      G0Bi.VRe = &(G0->bRe[i*Sqr(G0->BlockSize)]);
+    }
+    else
+    {
+      G0Bi.V = &(G0->b[i*Sqr(G0->BlockSize)]);
+    }
+    BlockListOfPolesTransformInlineNC(&G0iWithSigma, &G0Bi);
+    // Add ListofPoles on Grid
+    AddBlockListOfPolesOnMeshOfA(&GInv, &G0iWithSigma);
+    FreeBlockListOfPoles(&G0iWithSigma);
+  }
+  FreeCompactMatrix(&SigmaInv);
+  // add GInv into G (GInv.A0 = 0 by construction)
+  if(G->QComplex==0)
+  {
+    for(i=0;i<NGridPoints;i++)
+    {
+      GBiSqr.VRe = &(GInv.VRe[i * (1+Sqr(G->BlockSize)) + 1]);
+      CompactMatrixSqrt(&GBiSqr, &GBi);
+      for(k=0;k<G->BlockSize;k++) G->aRe[k*(1+G->BlockSize) + (i+2)*Sqr(G->BlockSize)] = GInv.VRe[i * (1+Sqr(G->BlockSize))];
+      memcpy(&(G->bRe[(i+1)*Sqr(G->BlockSize)]), GBi.VRe, Sqr(G->BlockSize)*sizeof(double));
+      FreeCompactMatrix(&GBi);
+    }
+  }
+  else
+  {
+    for(i=0;i<NGridPoints;i++)
+    {
+      GBiSqr.V = &(GInv.V[i * (1+Sqr(G->BlockSize)) + 1]);
+      CompactMatrixSqrt(&GBiSqr, &GBi);
+      for(k=0;k<G->BlockSize;k++) G->a[k*(1+G->BlockSize) + (i+2)*Sqr(G->BlockSize)].Re = GInv.V[i * (1+Sqr(G->BlockSize))].Re;
+      memcpy(&(G->b[(i+1)*Sqr(G->BlockSize)]), GBi.V, Sqr(G->BlockSize)*sizeof(double));
+      FreeCompactMatrix(&GBi);
+    }
+  }
+  return 0;
+}
+
+
 
 
 /*  GBath(w) = 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )

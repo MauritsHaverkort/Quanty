@@ -2570,7 +2570,6 @@ static int LuaCreateSpectra(lua_State *L)
       }
       InitBlockTridiagonalMatrix(&GTri);
       GTri.mu=0;//psiEn[0];
-      
       if(Options.Settings.restrictions.N==0)
       {
         if(Options.KrylovBasis==true)
