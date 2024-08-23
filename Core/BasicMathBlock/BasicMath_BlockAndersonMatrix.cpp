@@ -253,18 +253,119 @@ uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A, BlockAndersonMatrixT
  *  DiagonalMatrix({ a^{i+1}_0, a^{i+1}_1, ..., a^{i+1}_{BlockSize-1} }) = T_{i+1}^* . A_{i+1} . T_{i+1}^T
  *
  */
-int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType *A, BlockListOfPoles *B)
+int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType const * const A, BlockListOfPoles * const B, double epsilon)
 {
-  int i;
-  // we assume a0=0 and b0=1
-  B->N=Max(0,-1+A->N);
+  CompactMatrixType Ai,Aifun,AifunSqr,Bi,Ci;
+  double val[A->BlockSize];
+  int i,j,ToDiv;
+  // we assume A0=0 and B0=1
+  B->N=Max(0,(int)(A->N)-1)*A->BlockSize;
   B->QComplex=A->QComplex;
   B->BlockSize=A->BlockSize;
-  if(InitBlockListOfPoles(B)) {printf("InitBlockListOfPoles failed in CopyBlockListOfPoles\n");return 1;}
+  if(InitBlockListOfPoles(B))
+  {
+    printf("InitBlockListOfPoles failed in BlockAndersonMatrixInverseToListOfPoles\n");
+    return 1;
+  }
   strcpy(B->Name, A->Name);
-  
-  //TODO:
-  
-  
+  B->mu=A->mu;
+  if(A->N==0)
+  {
+    printf("BlockAndersonMatrixInverseToListOfPoles failed on inverting a matrix with zero poles\n");
+    return 1;
+  }
+  // add Bi . 1/(w-A_{i+1} . Bi^+
+  Ai.Ni=A->BlockSize;
+  Ai.Nj=A->BlockSize;
+  Ai.QComplex=A->QComplex;
+  Ai.Name=(char*)malloc((MAXStrLength+1)*sizeof(char));
+  Ai.Name[0]='A'; Ai.Name[1]='\0';
+  Bi.Ni=A->BlockSize;
+  Bi.Nj=A->BlockSize;
+  Bi.QComplex=A->QComplex;
+  Bi.Name=(char*)malloc((MAXStrLength+1)*sizeof(char));
+  Ai.Name[0]='B'; Ai.Name[1]='\0';
+  Ci.Ni=A->BlockSize;
+  Ci.Nj=A->BlockSize;
+  Ci.QComplex=A->QComplex;
+  Ci.Name=(char*)malloc((MAXStrLength+1)*sizeof(char));
+  Ci.Name[0]='C'; Ai.Name[1]='\0';
+  // we use B->N to count the actual number of poles added. Note that we need to set a0 to the correct pointer in the end
+  B->N=0;
+  AifunSqr.Ni=A->BlockSize;
+  AifunSqr.Nj=A->BlockSize;
+  AifunSqr.QComplex=A->QComplex;
+  // we reuse the memory for fun_i^T . fun_i^*
+  InitCompactMatrix(&AifunSqr);
+  // and now the actual loop
+  if(A->QComplex==0)
+  {
+    for(i=1;i<A->N;i++)
+    {
+      Ai.VRe=&(A->aRe[(i+1)*Sqr(A->BlockSize)]);
+      Bi.VRe=&(A->bRe[(i  )*Sqr(A->BlockSize)]);
+      CompactMatrixEigensystem(&Ai, &Aifun, val);
+      for(j=0;j<A->BlockSize;j++)
+      {
+        ToDiv=1;
+        B->VRe[B->N * (1+Sqr(B->BlockSize))] = val[j];
+        SetCompactMatrixToZero(&AifunSqr);
+        FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr);
+        while((j<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
+        {
+          j++;
+          ToDiv++;
+          B->VRe[B->N * (1+Sqr(B->BlockSize))] += val[j];
+          FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr); // adds spectral weight to the pole
+        }
+        B->VRe[B->N * (1+Sqr(B->BlockSize))] /= ToDiv;
+        Ci.VRe=&(B->VRe[B->N * (1+Sqr(B->BlockSize)) + 1]);
+        CompactMatrixMultiply3PreAllocated('N', 'N', 'C', &Bi, &AifunSqr, &Bi, &Ci);
+        B->N++;
+      }
+      FreeCompactMatrix(&Aifun);
+    }
+    // set a0 to the correct pointer
+    B->a0Re = &(B->VRe[B->N * (1+Sqr(B->BlockSize))]);
+    //B.a0 becomes A.a1
+    memcpy(B->a0Re, &(A->aRe[Sqr(A->BlockSize)]), Sqr(A->BlockSize)*sizeof(double));
+  }
+  else
+  {
+    for(i=1;i<A->N;i++)
+    {
+      Ai.V=&(A->a[(i+1)*Sqr(A->BlockSize)]);
+      Bi.V=&(A->b[(i  )*Sqr(A->BlockSize)]);
+      CompactMatrixEigensystem(&Ai, &Aifun, val);
+      for(j=0;j<A->BlockSize;j++)
+      {
+        ToDiv=1;
+        B->V[B->N * (1+Sqr(B->BlockSize))].Re = val[j];
+        B->V[B->N * (1+Sqr(B->BlockSize))].Im = 0;
+        SetCompactMatrixToZero(&AifunSqr);
+        FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr);
+        while((j<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
+        {
+          j++;
+          ToDiv++;
+          B->V[B->N * (1+Sqr(B->BlockSize))].Re += val[j];
+          FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr); // adds spectral weight to the pole
+        }
+        B->V[B->N * (1+Sqr(B->BlockSize))].Re /= ToDiv;
+        Ci.V=&(B->V[B->N * (1+Sqr(B->BlockSize)) + 1]);
+        CompactMatrixMultiply3PreAllocated('N', 'N', 'C', &Bi, &AifunSqr, &Bi, &Ci);
+        B->N++;
+      }
+      FreeCompactMatrix(&Aifun);
+    }
+    // set a0 to the correct pointer
+    B->a0 = &(B->V[B->N * (1+Sqr(B->BlockSize))]);
+    //B.a0 becomes A.a1
+    memcpy(B->a0, &(A->a[Sqr(A->BlockSize)]), Sqr(A->BlockSize)*sizeof(Complex16));
+  }
+  FreeCompactMatrix(&AifunSqr);
+  free(Ai.Name);
+  free(Bi.Name);
+  free(Ci.Name);
   return 0;
 }

@@ -3,7 +3,6 @@ print("Test response functions in directory",directory)
 
 goto skip
 
-::skip::
 
 
 dofile(directory.."/__eq.Quanty")
@@ -27,12 +26,12 @@ dofile(directory.."/ToSpectra.Quanty")
 
 
 
-
+::skip::
+dofile(directory.."/CalculateSelfEnergy.Quanty")
 
 
 dofile(directory.."/ToTightbinding.Quanty")
 
-dofile(directory.."/CalculateSelfEnergy.Quanty")
 dofile(directory.."/CalculateHybridizationFunction.Quanty")
 dofile(directory.."/CreateBitMasks.Quanty")
 

@@ -1300,6 +1300,52 @@ uint32_t TransformCompactMatrixInlinecT(CompactMatrixType * const A, CompactMatr
   return 0;
 }
 
+/*  For matrix fun
+ *    sets all rows except row i to zero and calculates
+ *    Out = Out + fun^T . fun^*
+ */
+int FunTrDotFunCCPreAllocated(CompactMatrixType const * const fun, int i, CompactMatrixType * Out)
+{
+  int j1,j2;
+  if(fun->QComplex==0)
+  {
+    for(j1=0;j1<fun->Nj;j1++)
+    {
+      for(j2=0;j2<fun->Nj;j2++)
+      {
+        Out->VRe[j2 + j1*(fun->Nj)] += fun->VRe[j1 + i * (fun->Nj)] * fun->VRe[j2 + i * (fun->Nj)];
+      }
+    }
+  }
+  else
+  {
+    for(j1=0;j1<fun->Nj;j1++)
+    {
+      for(j2=0;j2<fun->Nj;j2++)
+      {
+        Out->V[j2 + j1*(fun->Nj)].Re += fun->V[j1 + i * (fun->Nj)].Re * fun->V[j2 + i * (fun->Nj)].Re + fun->V[j1 + i * (fun->Nj)].Im * fun->V[j2 + i * (fun->Nj)].Im;
+        Out->V[j2 + j1*(fun->Nj)].Im += fun->V[j1 + i * (fun->Nj)].Im * fun->V[j2 + i * (fun->Nj)].Re - fun->V[j1 + i * (fun->Nj)].Re * fun->V[j2 + i * (fun->Nj)].Im;
+      }
+    }
+  }
+  return 0;
+}
+/*  For matrix fun
+ *    sets all rows except row i to zero and calculates
+ *    Out =  fun^T . fun^*
+ */
+int FunTrDotFunCC(CompactMatrixType const * const fun, int i, CompactMatrixType * Out)
+{
+  Out->Ni=fun->Nj;
+  Out->Nj=fun->Nj;
+  Out->QComplex = fun->QComplex;
+  InitCompactMatrix(Out);
+  return FunTrDotFunCCPreAllocated(fun, i, Out);
+}
+
+
+
+
 /* M=M^{T}
  */
 uint32_t CompactMatrixTranspose(CompactMatrixType * const M)

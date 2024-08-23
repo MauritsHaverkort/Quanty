@@ -792,10 +792,39 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
   return 0;
 }
 
+
+uint32_t BlockSelfEnergyListOfPolesFromAndersonRepresentation(BlockAndersonMatrixType const G0, BlockAndersonMatrixType const G, BlockListOfPoles * const Sigma, double epsilon)
+{
+  uint32_t i;
+  BlockListOfPoles IG0;
+  if (BlockAndersonMatrixInverseToListOfPoles(&G, Sigma, epsilon))
+  {
+    printf("BlockAndersonMatrixInverseToBlockListOfPoles failed in BlockSelfEnergyListOfPolesFromAndersonRepresentation\n");
+    return 1;
+  }
+  if (BlockAndersonMatrixInverseToListOfPoles(&G0, &IG0, epsilon))
+  {
+    printf("BlockAndersonMatrixInverseToBlockListOfPoles failed in BlockSelfEnergyListOfPolesFromAndersonRepresentation\n");
+    return 1;
+  }
+  if (SubtractBlockListOfPoles(Sigma, &IG0))
+  {
+    printf("SubtractBlockListOfPoles failed in BlockSelfEnergyListOfPolesFromAndersonRepresentation\n");
+    return 1;
+  }
+  Sigma->mu = G.mu;
+  strcpy(Sigma->Name, "Self energy");
+  //printf("Self energy moments\n");
+  //PrintListOfPolesEssentials(*Sigma);
+  FreeBlockListOfPoles(&IG0);
+  return 0;
+}
 /*
  *  Sigma must point to a Responsefunction object that is not initiallized.
+ *  either both G and G0 are Block response functions or they are both single valued response functions
+ *  epsilon the smallest energy difference for which two poles in the same block of the anderson matrix with different eigenenergies will be considered different
  */
-int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  * const G, ResponsefunctionType * const Sigma)
+int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  * const G, ResponsefunctionType * const Sigma, double epsilon)
 {
   if(G0->Block==false)
   {
@@ -836,9 +865,40 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
   }
   else
   {
-    printf("Self energy on Block response functions not yet implemented\n Trivial to do \n");
-    
-    
+    ResponsefunctionType G0And, GAnd;
+    BlockAndersonMatrixType *G0AndData,*GAndData;
+    if(!((G0->type=='a')||(G0->type=='A')))
+    {
+      ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+      G0AndData = (BlockAndersonMatrixType*)G0And.data;
+    }
+    else
+    {
+      G0AndData = (BlockAndersonMatrixType*)G0->data;
+    }
+    if(!((G->type=='a')||(G->type=='A')))
+    {
+      ConvertResponsefunction(G, &GAnd, 'A', 0, 0);
+      GAndData = (BlockAndersonMatrixType*)GAnd.data;
+    }
+    else
+    {
+      GAndData = (BlockAndersonMatrixType*)G->data;
+    }
+    Sigma->type='l';
+    Sigma->Block=true;
+    Sigma->NSuggestedGridPoints=0;
+    Sigma->SuggestedGrid=NULL;
+    Sigma->data = (void*)malloc(sizeof(BlockListOfPoles));
+    BlockSelfEnergyListOfPolesFromAndersonRepresentation(*G0AndData, *GAndData, (BlockListOfPoles*)Sigma->data,epsilon);
+    if(!((G0->type=='a')||(G0->type=='A')))
+    {
+      FreeResponsefunction(&G0And);
+    }
+    if(!((G->type=='a')||(G->type=='A')))
+    {
+      FreeResponsefunction(&GAnd);
+    }
   }
   return 0;
 }

@@ -853,6 +853,9 @@ BlockNaturalImpurityOrbitalMatrixType;
  *  reading a user type will read the pointer
  *  reading a lua table will regenerate the ResponsefunctionType
  *
+ *  Uppercase -- C controls the allocations
+ *  Lowercase -- Lua controls the allocations
+ *
  *  The array SuggestedGrid contains NSuggestedGridPoints in ascending order.
  *  The Suggested Grid is used for transformations of Matrix types and functions acting on them
  *  The actual grid used can be different and will be different in several cases.

@@ -259,3 +259,11 @@ test-job-Responsefunction-ToSpectra:
   - ./Quanty.exe "TestScripts/Responsefunction/ToSpectra.Quanty"
   dependencies:
   - build-job
+  
+test-job-Responsefunction-CalculateSelfEnergy:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/CalculateSelfEnergy.Quanty"
+  dependencies:
+  - build-job
