@@ -1,0 +1,26 @@
+local labels = {"1","2","3"}
+local sleeps = {1,10,70}
+
+function sleep (a) 
+    local sec = tonumber(os.clock() + a); 
+    while (os.clock() < sec) do 
+    end 
+end
+
+for i=1,#labels do
+    print("Start timer "..labels[i])
+    TimeStart(labels[i])
+    sleep(sleeps[i])
+end
+
+
+
+for i=1,#labels do
+    print("End timer "..labels[i])
+    TimeEnd(labels[i])
+    TimePrint()
+end
+
+TimePrint()
+
+os.exit(0)

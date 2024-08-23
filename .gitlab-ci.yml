@@ -150,6 +150,22 @@ test-job-OperatorToMatrix:
   dependencies:
   - build-job
 
+test-job-PartialOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/PartialOperator.Quanty"
+  dependencies:
+  - build-job
+
+test-job-TimeStartStopPrint:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TimeStartStopPrint.Quanty"
+  dependencies:
+  - build-job
+
 
 
 
