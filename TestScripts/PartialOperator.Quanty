@@ -12,7 +12,7 @@ local Mat2cComplex_1 = {{3.869581266493041+1*I,4.410991186438207,-2.990067599777
 local Mat1cReal_1 = {1,2,-5.4574,9,4.682169}
 local Mat1cComplex_1 = {1,2-I*7,-5.4574,9+I,4.682169*I}
 
-local indices_list = {{0,1},{3},{2,3,4},{0,1,2,3,4}}
+local indices_list = {{0,1},{3},{2,3,4},{0,1,2,3,4},{{0,1}}}
 local Mat4c_list = {Mat4cReal_1}
 local Mat2c_list = {Mat2cReal_1,Mat2cComplex_1}
 local Mat1c_list = {Mat1cReal_1,Mat1cComplex_1}
@@ -46,7 +46,7 @@ for iIndices=1,#indices_list do
 
 
 ------------------------------------------------------------------------------------------------
-
+                
 
                 print("\n\n=================================================")
                 print("Mat1c:",i1c)
@@ -79,185 +79,206 @@ for iIndices=1,#indices_list do
 
 
 ------------------------------------------------------------------------------------------------
-                
-
-                print("\n-------------------------------------------------")
-                print("Mode: INCLUDE")
-                mode = "include"
-
-                local partialCoeff1cCr = {}
-                local partialCoeff1cAn = {}
-                local partialCoeff2c = {}
-                local partialCoeff4c = {}
-                for i=0,NF-1 do
-                    if (checkInList(indices,i)) then
-                        partialCoeff1cCr[#partialCoeff1cCr+1] = {i,Mat1c[i+1]}
+                local isTableOfTables = false 
+                for iI = 1,#indices do
+                    if type(indices[iI])=="table" then 
+                        isTableOfTables = true 
+                        break
                     end
-                    if (checkInList(indices,i)) then
-                        partialCoeff1cAn[#partialCoeff1cAn+1] = {-i,-Mat1c[i+1]}
-                    end
+                end
 
-                    for j=0,NF-1 do
-                        if (checkInList(indices,i) or checkInList(indices,j)) then
-                            partialCoeff2c[#partialCoeff2c+1] = {i,-j,Mat2c[i+1][j+1]}
+                if not isTableOfTables then
+                    print("\n-------------------------------------------------")
+                    print("Mode: INCLUDE")
+                    mode = "include"
+
+                    local partialCoeff1cCr = {}
+                    local partialCoeff1cAn = {}
+                    local partialCoeff2c = {}
+                    local partialCoeff4c = {}
+                    for i=0,NF-1 do
+                        if (checkInList(indices,i)) then
+                            partialCoeff1cCr[#partialCoeff1cCr+1] = {i,Mat1c[i+1]}
+                        end
+                        if (checkInList(indices,i)) then
+                            partialCoeff1cAn[#partialCoeff1cAn+1] = {-i,-Mat1c[i+1]}
                         end
 
-                        for k=0,NF-1 do
-                            for l=0,NF-1 do
-                                
-                                if (checkInList(indices,i) or checkInList(indices,j) or checkInList(indices,k) or checkInList(indices,l)) then
-                                    partialCoeff4c[#partialCoeff4c+1] = {i,j,-k,-l,Mat4c[i+1][j+1][k+1][l+1]}
+                        for j=0,NF-1 do
+                            if (checkInList(indices,i) or checkInList(indices,j)) then
+                                partialCoeff2c[#partialCoeff2c+1] = {i,-j,Mat2c[i+1][j+1]}
+                            end
+
+                            for k=0,NF-1 do
+                                for l=0,NF-1 do
+                                    
+                                    if (checkInList(indices,i) or checkInList(indices,j) or checkInList(indices,k) or checkInList(indices,l)) then
+                                        partialCoeff4c[#partialCoeff4c+1] = {i,j,-k,-l,Mat4c[i+1][j+1][k+1][l+1]}
+                                    end
                                 end
                             end
                         end
                     end
-                end
 
-                local PartOp1cCrTest = Chop( NewOperator(NF,0,partialCoeff1cCr) , tol )
-                local PartOp1cAnTest = Chop( NewOperator(NF,0,partialCoeff1cAn) , tol )
-                local PartOp2cTest = Chop( NewOperator(NF,0,partialCoeff2c) , tol )
-                local PartOp4cTest = Chop( NewOperator(NF,0,partialCoeff4c) , tol )
-                
+                    local PartOp1cCrTest = Chop( NewOperator(NF,0,partialCoeff1cCr) , tol )
+                    local PartOp1cAnTest = Chop( NewOperator(NF,0,partialCoeff1cAn) , tol )
+                    local PartOp2cTest = Chop( NewOperator(NF,0,partialCoeff2c) , tol )
+                    local PartOp4cTest = Chop( NewOperator(NF,0,partialCoeff4c) , tol )
+                    
 
-                print("1c Cr")
-                local PartOp1cCr = PartialOperator(Op1cCr,indices,mode)
-                if (Chop(PartOp1cCr-PartOp1cCrTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp1cCr-PartOp1cCrTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
-                
-                print("1c An")
-                local PartOp1cAn = PartialOperator(Op1cAn,indices,mode)
-                if (Chop(PartOp1cAn-PartOp1cAnTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp1cAn-PartOp1cAnTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
+                    print("1c Cr")
+                    local PartOp1cCr = PartialOperator(Op1cCr,indices,mode)
+                    if (Chop(PartOp1cCr-PartOp1cCrTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp1cCr-PartOp1cCrTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
+                    
+                    print("1c An")
+                    local PartOp1cAn = PartialOperator(Op1cAn,indices,mode)
+                    if (Chop(PartOp1cAn-PartOp1cAnTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp1cAn-PartOp1cAnTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
 
-                print("2c")
-                local PartOp2c = PartialOperator(Op2c,indices,mode)
-                if (Chop(PartOp2c-PartOp2cTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp2c-PartOp2cTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
+                    print("2c")
+                    local PartOp2c = PartialOperator(Op2c,indices,mode)
+                    if (Chop(PartOp2c-PartOp2cTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp2c-PartOp2cTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
 
-                print("4c")
-                local PartOp4c = PartialOperator(Op4c,indices,mode)
-                if (Chop(PartOp4c-PartOp4cTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp4c-PartOp4cTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
+                    print("4c")
+                    local PartOp4c = PartialOperator(Op4c,indices,mode)
+                    if (Chop(PartOp4c-PartOp4cTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp4c-PartOp4cTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
 
-                print("1c+2c+4c")
-                local Part1c2c4cOp = PartialOperator(Op2c+Op4c+Op1cCr+Op1cAn,indices,mode)
-                local PartOp1c2c4cTest = PartOp2cTest+PartOp4cTest+PartOp1cAnTest+PartOp1cCrTest
-                if (Chop(Part1c2c4cOp-PartOp1c2c4cTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp1c2c4c-PartOp1c2c4cTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
+                    print("1c+2c+4c")
+                    local Part1c2c4cOp = PartialOperator(Op2c+Op4c+Op1cCr+Op1cAn,indices,mode)
+                    local PartOp1c2c4cTest = PartOp2cTest+PartOp4cTest+PartOp1cAnTest+PartOp1cCrTest
+                    if (Chop(Part1c2c4cOp-PartOp1c2c4cTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp1c2c4c-PartOp1c2c4cTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
 
-                collectgarbage()
+                    collectgarbage()
+
+
+    ------------------------------------------------------------------------------------------------
+
+
+                    print("\n-------------------------------------------------")
+                    print("Mode: EXCLUDE")
+                    mode = "exclude"
+
+                    local partialCoeff1cCr = {}
+                    local partialCoeff1cAn = {}
+                    local partialCoeff2c = {}
+                    local partialCoeff4c = {}
+                    for i=0,NF-1 do
+                        if not (checkInList(indices,i)) then
+                            partialCoeff1cCr[#partialCoeff1cCr+1] = {i,Mat1c[i+1]}
+                        end
+                        if not (checkInList(indices,i)) then
+                            partialCoeff1cAn[#partialCoeff1cAn+1] = {-i,-Mat1c[i+1]}
+                        end
+                        for j=0,NF-1 do
+                            if not (checkInList(indices,i) or checkInList(indices,j)) then
+                                partialCoeff2c[#partialCoeff2c+1] = {i,-j,Mat2c[i+1][j+1]}
+                            end
+                            for k=0,NF-1 do
+                                for l=0,NF-1 do
+                                    if not (checkInList(indices,i) or checkInList(indices,j) or checkInList(indices,k) or checkInList(indices,l)) then
+                                        partialCoeff4c[#partialCoeff4c+1] = {i,j,-k,-l,Mat4c[i+1][j+1][k+1][l+1]}
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    local PartOp1cCrTest = Chop( NewOperator(NF,0,partialCoeff1cCr) , tol )
+                    local PartOp1cAnTest = Chop( NewOperator(NF,0,partialCoeff1cAn) , tol )
+                    local PartOp2cTest = Chop( NewOperator(NF,0,partialCoeff2c) , tol )
+                    local PartOp4cTest = Chop( NewOperator(NF,0,partialCoeff4c) , tol )
+                    
+                    
+                    
+                    print("1c Cr")
+                    local PartOp1cCr = PartialOperator(Op1cCr,indices,mode)
+                    if (Chop(PartOp1cCr-PartOp1cCrTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp1cCr-PartOp1cCrTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
+                    
+                    print("1c An")
+                    local PartOp1cAn = PartialOperator(Op1cAn,indices,mode)
+                    if (Chop(PartOp1cAn-PartOp1cAnTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp1cAn-PartOp1cAnTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
+
+                    print("2c")
+                    local PartOp2c = PartialOperator(Op2c,indices,mode)
+                    if (Chop(PartOp2c-PartOp2cTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp2c-PartOp2cTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
+
+                    print("4c")
+                    local PartOp4c = PartialOperator(Op4c,indices,mode)
+                    if (Chop(PartOp4c-PartOp4cTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp4c-PartOp4cTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
+
+                    print("1c+2c+4c")
+                    local Part1c2c4cOp = PartialOperator(Op2c+Op4c+Op1cCr+Op1cAn,indices,mode)
+                    local PartOp1c2c4cTest = PartOp2cTest+PartOp4cTest+PartOp1cAnTest+PartOp1cCrTest
+                    if (Chop(Part1c2c4cOp-PartOp1c2c4cTest,tol)~=ZeroOp) then
+                        print( Chop(PartOp1c2c4c-PartOp1c2c4cTest,tol) )
+                        error("PartialOperator does not reproduce the given definition for mode="..mode,1)
+                    end
+
+                    collectgarbage()
+                else
+                    print("Indices are table of tables -> only checking conserve mode")
+                end
 
 
 ------------------------------------------------------------------------------------------------
 
 
                 print("\n-------------------------------------------------")
-                print("Mode: EXCLUDE")
-                mode = "exclude"
-
-                local partialCoeff1cCr = {}
-                local partialCoeff1cAn = {}
-                local partialCoeff2c = {}
-                local partialCoeff4c = {}
-                for i=0,NF-1 do
-                    if not (checkInList(indices,i)) then
-                        partialCoeff1cCr[#partialCoeff1cCr+1] = {i,Mat1c[i+1]}
-                    end
-                    if not (checkInList(indices,i)) then
-                        partialCoeff1cAn[#partialCoeff1cAn+1] = {-i,-Mat1c[i+1]}
-                    end
-                    for j=0,NF-1 do
-                        if not (checkInList(indices,i) or checkInList(indices,j)) then
-                            partialCoeff2c[#partialCoeff2c+1] = {i,-j,Mat2c[i+1][j+1]}
-                        end
-                        for k=0,NF-1 do
-                            for l=0,NF-1 do
-                                if not (checkInList(indices,i) or checkInList(indices,j) or checkInList(indices,k) or checkInList(indices,l)) then
-                                    partialCoeff4c[#partialCoeff4c+1] = {i,j,-k,-l,Mat4c[i+1][j+1][k+1][l+1]}
-                                end
-                            end
-                        end
-                    end
-                end
-
-                local PartOp1cCrTest = Chop( NewOperator(NF,0,partialCoeff1cCr) , tol )
-                local PartOp1cAnTest = Chop( NewOperator(NF,0,partialCoeff1cAn) , tol )
-                local PartOp2cTest = Chop( NewOperator(NF,0,partialCoeff2c) , tol )
-                local PartOp4cTest = Chop( NewOperator(NF,0,partialCoeff4c) , tol )
-                
-                
-                
-                print("1c Cr")
-                local PartOp1cCr = PartialOperator(Op1cCr,indices,mode)
-                if (Chop(PartOp1cCr-PartOp1cCrTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp1cCr-PartOp1cCrTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
-                
-                print("1c An")
-                local PartOp1cAn = PartialOperator(Op1cAn,indices,mode)
-                if (Chop(PartOp1cAn-PartOp1cAnTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp1cAn-PartOp1cAnTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
-
-                print("2c")
-                local PartOp2c = PartialOperator(Op2c,indices,mode)
-                if (Chop(PartOp2c-PartOp2cTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp2c-PartOp2cTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
-
-                print("4c")
-                local PartOp4c = PartialOperator(Op4c,indices,mode)
-                if (Chop(PartOp4c-PartOp4cTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp4c-PartOp4cTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
-
-                print("1c+2c+4c")
-                local Part1c2c4cOp = PartialOperator(Op2c+Op4c+Op1cCr+Op1cAn,indices,mode)
-                local PartOp1c2c4cTest = PartOp2cTest+PartOp4cTest+PartOp1cAnTest+PartOp1cCrTest
-                if (Chop(Part1c2c4cOp-PartOp1c2c4cTest,tol)~=ZeroOp) then
-                    print( Chop(PartOp1c2c4c-PartOp1c2c4cTest,tol) )
-                    error("PartialOperator does not reproduce the given definition for mode="..mode,1)
-                end
-
-                collectgarbage()
-
-
-------------------------------------------------------------------------------------------------
-
-
-                print("\n-------------------------------------------------")
-                print("Mode: CONSERVE, 1 list")
+                print("Mode: CONSERVE")
                 mode = "conserve"
 
-
-                function checkConserve(i,j)
-                    return ( not ( checkInList(indices,i) or checkInList(indices,j)) or (i==j))
+                local inds = indices
+                if not isTableOfTables then
+                    function checkConserve(i,j)
+                        return ( not ( checkInList(indices,i) or checkInList(indices,j)) or (i==j))
+                    end
+                else
+                    inds = indices[1]
+                    function checkConserve(i,j)
+                        local indices = indices[1]
+                        local a = checkInList(indices,i)
+                        local b = checkInList(indices,j)
+                        return not ((not a and b) or (a and not b))
+                    end
                 end
 
 
+                
                 local partialCoeff1cCr = {}
                 local partialCoeff1cAn = {}
                 local partialCoeff2c = {}
                 local partialCoeff4c = {}
                 for i=0,NF-1 do
-                    if not (checkInList(indices,i)) then
+                    if not (checkInList(inds,i)) then
                         partialCoeff1cCr[#partialCoeff1cCr+1] = {i,Mat1c[i+1]}
                     end
-                    if not (checkInList(indices,i)) then
+                    if not (checkInList(inds,i)) then
                         partialCoeff1cAn[#partialCoeff1cAn+1] = {-i,-Mat1c[i+1]}
                     end
                     for j=0,NF-1 do
@@ -266,7 +287,7 @@ for iIndices=1,#indices_list do
                         end
                         for k=0,NF-1 do
                             for l=0,NF-1 do
-                                if ( ( not ( checkInList(indices,i) or checkInList(indices,k)) or (i==k)) and ( not ( checkInList(indices,k) or checkInList(indices,l)) or (k==l)) ) or ( ( not ( checkInList(indices,j) or checkInList(indices,k)) or (j==k)) and ( not ( checkInList(indices,i) or checkInList(indices,l)) or (i==l)) ) then
+                                if (checkConserve(i,k) and checkConserve(j,l)) or (checkConserve(j,k) and checkConserve(i,l)) then
                                     partialCoeff4c[#partialCoeff4c+1] = {i,j,-k,-l,Mat4c[i+1][j+1][k+1][l+1]}
                                 end
                             end
@@ -302,7 +323,7 @@ for iIndices=1,#indices_list do
                     error("PartialOperator does not reproduce the given definition for mode="..mode,1)
                 end
 
-                --[[
+                
                 print("4c")
                 local PartOp4c = PartialOperator(Op4c,indices,mode)
                 if (Chop(PartOp4c-PartOp4cTest,tol)~=ZeroOp) then
@@ -317,7 +338,7 @@ for iIndices=1,#indices_list do
                     print( Chop(PartOp1c2c4c-PartOp1c2c4cTest,tol) )
                     error("PartialOperator does not reproduce the given definition for mode="..mode,1)
                 end
-                ]]
+                
 
                 collectgarbage()
 
