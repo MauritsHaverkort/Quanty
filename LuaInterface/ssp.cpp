@@ -3256,7 +3256,7 @@ static int LuaMeanFieldOperator(lua_State *L)
       if (HMF->l[0].QComplex)
       {
         HMF->l[0].V[0].Re = 0;
-        HMF->l[0].V[0].Re = 0;
+        HMF->l[0].V[0].Im = 0;
       }
       else
       {
