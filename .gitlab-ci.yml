@@ -158,11 +158,11 @@ test-job-PartialOperator:
   dependencies:
   - build-job
 
-test-job-TimeStartStopPrint:
+test-job-TimeStartStopPrintSet:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TimeStartStopPrint.Quanty"
+  - ./Quanty.exe "TestScripts/TimeStartStopPrintSet.Quanty"
   dependencies:
   - build-job
 

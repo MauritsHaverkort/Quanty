@@ -1,5 +1,6 @@
 local labels = {"1","2","3"}
 local sleeps = {1,10,70}
+--sleeps = {1,1,1}
 
 function sleep (a) 
     local sec = tonumber(os.clock() + a); 
@@ -7,19 +8,27 @@ function sleep (a)
     end 
 end
 
+
+
 for i=1,#labels do
     print("Start timer "..labels[i])
     TimeStart(labels[i])
     sleep(sleeps[i])
 end
 
-
+TimeStart("Before TimeSet")
+TimeSet(17)
+TimeStart("After TimeSet")
+sleep(2)
 
 for i=1,#labels do
     print("End timer "..labels[i])
     TimeEnd(labels[i])
     TimePrint()
 end
+
+TimeEnd("Before TimeSet")
+TimeEnd("After TimeSet")
 
 TimePrint()
 
