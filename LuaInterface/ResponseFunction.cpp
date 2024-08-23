@@ -31,7 +31,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   ResponsefunctionType *Min, Mout;
   char const * convert;
   char type;
-  double T=0;
+  double T=sqrt(DBL_MIN);
   double SingularValue=1000*DBL_EPSILON;
   bool deflate=true;
   //TODO: implement deflation when possible and deflate=true
