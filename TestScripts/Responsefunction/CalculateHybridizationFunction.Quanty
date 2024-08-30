@@ -4,6 +4,273 @@ print("--------------------------------------------------------")
 
 
 
+
+
+a = {0, 0, 2.5,  3.0, 3.5}
+b = {   1, 0.5,  0.6, 0.7}
+D0 = {a,b,mu=0,type="And", name="D0"}
+setmetatable(D0, ResponseFunctionMeta)
+
+a = {1.0, 1.5, 2.0}
+b = {     0.2, 0.3}
+Sigma = {a,b,mu=0,type="Tri", name="Sigma"}
+setmetatable(Sigma, ResponseFunctionMeta)
+
+Dmat = {{0  , 0.5, 0  , 0  , 0.6, 0  , 0  , 0.7, 0  , 0  },
+				{0.5, 3.5, 0.2, 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0.6, 0  , 0  , 0  , 4.0, 0.2, 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  },
+				{0.7, 0  , 0  , 0  , 0  , 0  , 0  , 4.5, 0.2, 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3},
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0}}
+setmetatable(Dmat, MatrixMeta)
+
+HBath = {
+		 {3.5, 0.2, 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+		 {0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  },
+		 { 0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  },
+		 {0  , 0  , 0  , 4.0, 0.2, 0  , 0  , 0  , 0  },
+		 {0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  },
+		 {0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  },
+		 {0  , 0  , 0  , 0  , 0  , 0  , 4.5, 0.2, 0  },
+		 {0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3},
+		 {0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0}}
+
+
+--print("Non-interacting Hybridization function\n",D0)
+
+--print("Local self energy\n",Sigma)
+
+--print("Full Hybridization function\n",Dmat)
+
+DTri = Matrix.Tridiagonalize(Dmat)
+DAnd = ResponseFunction.ChangeType(DTri,"And")
+DMatOrig = ResponseFunction.ChangeType(DAnd,"Dense")
+--print("Full Hybridization function in Anderson format\n",DMatOrig)
+
+D0L = ResponseFunction.ChangeType(D0,"LP")
+D0T = ResponseFunction.ChangeType(D0,"Tri")
+D0A = ResponseFunction.ChangeType(D0,"And")
+D0N = ResponseFunction.ChangeType(D0,"Nat")
+D0NA = ResponseFunction.ChangeType(D0N,"And")
+D0U = ResponseFunction.ChangeType(D0,"Userdata")
+D0T = ResponseFunction.ChangeType(D0,"Table")
+
+SigmaL = ResponseFunction.ChangeType(Sigma,"LP")
+SigmaT = ResponseFunction.ChangeType(Sigma,"Tri")
+SigmaA = ResponseFunction.ChangeType(Sigma,"And")
+SigmaN = ResponseFunction.ChangeType(Sigma,"Nat")
+SigmaU = ResponseFunction.ChangeType(Sigma,"Userdata")
+SigmaT = ResponseFunction.ChangeType(Sigma,"Table")
+
+D = ResponseFunction.CalculateHybridizationFunction(D0,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0L,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0A,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0N,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0U,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+	
+
+D = ResponseFunction.CalculateHybridizationFunction(D0,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0L,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0A,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0N,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0U,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+	
+		
+	
+print("-------------------------------------------------------")
+print("----- Test Hybridization function with selfenergy -----")
+print("---------------------- On Grid ------------------------")
+print("-------------------------------------------------------")
+
+-- for the test we chose a perfect grid
+val,fun = Eigensystem(HBath)
+GridPoints=val
+
+D     = ResponseFunction.CalculateHybridizationFunction(D0,Sigma)
+Dgrid = ResponseFunction.CalculateHybridizationFunction(D0,Sigma,{{"EnergyGrid",GridPoints}})
+if( not( D==Dgrid )) then error("Hybridization function with self energy failed\n",1) end
+
+
+
+
+print("-------------------------------------------------------")
+print("----- Test Hybridization function with selfenergy -----")
+print("---------------------- Matrix -------------------------")
+print("-------------------------------------------------------")
+
+
+print("Dimension 1")
+
+a = {{{0}}, {{0}}, {{2.5}},  {{3.0}}, {{3.5}}}
+b = {   {{1}}, {{0.5}},  {{0.6}}, {{0.7}}}
+D0 = {a,b,mu=0,type="And", name="D0"}
+setmetatable(D0, ResponseFunctionMeta)
+
+a = {{{1.0}}, {{1.5}}, {{2.0}}}
+b = {     {{0.2}}, {{0.3}}}
+Sigma = {a,b,mu=0,type="Tri", name="Sigma"}
+setmetatable(Sigma, ResponseFunctionMeta)
+
+Dmat = {{0  , 0.5, 0  , 0  , 0.6, 0  , 0  , 0.7, 0  , 0  },
+				{0.5, 3.5, 0.2, 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0.6, 0  , 0  , 0  , 4.0, 0.2, 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  },
+				{0.7, 0  , 0  , 0  , 0  , 0  , 0  , 4.5, 0.2, 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3},
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0}}
+setmetatable(Dmat, MatrixMeta)
+
+HBath = {
+	   {3.5, 0.2, 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+		 {0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  },
+		 { 0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  },
+		 {0  , 0  , 0  , 4.0, 0.2, 0  , 0  , 0  , 0  },
+		 {0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  },
+		 {0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  },
+		 {0  , 0  , 0  , 0  , 0  , 0  , 4.5, 0.2, 0  },
+		 {0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3},
+		 {0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0}}
+
+
+--print("Non-interacting Hybridization function\n",D0)
+
+--print("Local self energy\n",Sigma)
+
+--print("Full Hybridization function\n",Dmat)
+
+DTri = Matrix.Tridiagonalize(Dmat)
+DAnd = ResponseFunction.ChangeType(DTri,"And")
+DMatOrig = ResponseFunction.ChangeType(DAnd,"Dense")
+--print("Full Hybridization function in Anderson format\n",DMatOrig)
+
+D0L = ResponseFunction.ChangeType(D0,"LP")
+D0T = ResponseFunction.ChangeType(D0,"Tri")
+D0A = ResponseFunction.ChangeType(D0,"And")
+D0N = ResponseFunction.ChangeType(D0,"Nat")
+D0U = ResponseFunction.ChangeType(D0,"Userdata")
+D0T = ResponseFunction.ChangeType(D0,"Table")
+
+SigmaL = ResponseFunction.ChangeType(Sigma,"LP")
+SigmaT = ResponseFunction.ChangeType(Sigma,"Tri")
+SigmaA = ResponseFunction.ChangeType(Sigma,"And")
+
+D = ResponseFunction.CalculateHybridizationFunction(D0,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0L,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0A,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0N,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0U,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,Sigma)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+	
+
+D = ResponseFunction.CalculateHybridizationFunction(D0,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0L,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0A,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0N,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0U,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+D = ResponseFunction.CalculateHybridizationFunction(D0T,SigmaL)
+if( not( D==DAnd )) then error("Hybridization function with self energy failed\n",1) end
+
+	
+print("-------------------------------------------------------")
+print("----- Test Hybridization function with selfenergy -----")
+print("---------------------- On Grid ------------------------")
+print("-------------------------------------------------------")
+
+
+val,fun = Eigensystem(HBath)
+GridPoints=val
+
+D     = ResponseFunction.CalculateHybridizationFunction(D0,Sigma)
+Dgrid = ResponseFunction.CalculateHybridizationFunction(D0,Sigma,{{"EnergyGrid",GridPoints}})
+if( not( D==Dgrid )) then error("Hybridization function with self energy failed\n",1) end
+
+
+
+
+
+
+
+print("-------------------------------------------------------")
+print("----- Test Hybridization function with selfenergy -----")
+print("----------------- Larger Matrix -----------------------")
+print("-------------------------------------------------------")
+
+A0 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(A0, MatrixMeta)
+a1 = -1
+a2 = 0
+a3 = 0
+a4 = 2
+a5 = 3
+
+
+Azero = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(Azero, MatrixMeta)
+
+B1s = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1s, MatrixMeta)
+B1 = B1s * B1s
+B2s = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2s, MatrixMeta)
+B2 = B2s * B2s
+B3s = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3s, MatrixMeta)
+B3 = B3s * B3s
+B4s = {{3,0,3},{0,5,2},{3,2,1}}
+setmetatable(B4s, MatrixMeta)
+B4 = B4s * B4s
+B5s = {{3,0,3},{0,1,2},{3,2,1}}
+setmetatable(B5s, MatrixMeta)
+B5 = B5s * B5s
+
+G0 = ResponseFunction.New({ {Azero,-2,2}, {B1,B2}, mu=0, type="ListOfPoles", name="A"})
+
+Sigma = ResponseFunction.New({ {A0,10}, {B3}, mu=0, type="ListOfPoles", name="A"})
+
+Gbath = ResponseFunction.CalculateHybridizationFunction(G0,Sigma)
+
+
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

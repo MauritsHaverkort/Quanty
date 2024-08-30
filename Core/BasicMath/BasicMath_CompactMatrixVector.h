@@ -79,6 +79,7 @@ uint32_t HermitianCompactMatrixToListOfPoles(CompactMatrixType const *A, ListOfP
 uint32_t HermitianCompactMatrixToListOfPolesWithEigenstates(CompactMatrixType const *A, ListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);
 uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec);
 uint32_t HermitianCompactMatrixToBlockListOfPolesWithEigenstates(CompactMatrixType const *A, BlockListOfPoles *L, CompactMatrixType *vec, CompactMatrixType *fun);
+uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, BlockListOfPoles *L, uint32_t NRow);
 uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrixType * const A0);
 uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrixType * const B0);
 uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, CompactMatrixType * const B, const bool deflate, const double SingularValue);

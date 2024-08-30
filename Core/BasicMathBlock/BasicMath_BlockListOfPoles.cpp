@@ -449,6 +449,7 @@ uint32_t ComplexBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double
 }
 uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
 {
+  //TODO: do not shift spectral weight through the chemical potential
   if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, epsilon);
   return ComplexBlockListOfPolesMergeDegeneratePoles(A, epsilon);
 }
@@ -527,6 +528,222 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   }
   A->N+=B.N;
   return 0;
+}
+
+
+/*
+ *  A <- A + B
+ *  Mesh of A needs to be ordered
+ *
+ *  We do not shift spectral weight trhough the chemical potential.
+ *
+ *  --- The folowing behaviour is wanted but not implemented
+ *  --- In order to conserve the first moment we allow the energy of the poles next to the chemical potential and the lowest and largest energy to move.
+ *      This would require 4 aditional input parameters, namely the optimal pole position for these 4 points so that we can shift the energies back by poles in the neighbouring interval.
+ *
+ */
+uint32_t AddBlockListOfPolesOnMeshOfAReal(BlockListOfPoles * const A, BlockListOfPoles const * const B)
+{
+  int i,j,k;
+  double WL,WR;
+  for(k=0;k<Sqr(A->BlockSize);k++)
+  {
+    A->a0Re[k] += B->a0Re[k];
+  }
+  for(i=0;i<B->N;i++)
+  {
+    j=A->N;
+    while((j>0)&&(B->VRe[i*(1+Sqr(B->BlockSize))]<A->VRe[(j-1)*(1+Sqr(A->BlockSize))]))j--;
+    if(j==0)
+    {
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        A->VRe[k+1] += B->VRe[k + 1 + i*(1+Sqr(B->BlockSize))];
+      }
+      continue;
+    }
+    if(j==A->N)
+    {
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        A->VRe[k + 1 + (A->N-1)*(1+Sqr(B->BlockSize))] += B->VRe[k + 1 + i*(1+Sqr(B->BlockSize))];
+      }
+      continue;
+    }
+    if((A->VRe[(j-1)*(1+Sqr(A->BlockSize))] < A->mu) && (A->VRe[(j)*(1+Sqr(A->BlockSize))] > A->mu) )
+    {
+      if(B->VRe[i*(1+Sqr(B->BlockSize))] < A->mu)
+      {
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          A->VRe[k + 1 + (j-1)*(1+Sqr(B->BlockSize))] += B->VRe[k + 1 + i+(1*Sqr(B->BlockSize))];
+        }
+        continue;
+      }
+      if(B->VRe[i*(1+Sqr(B->BlockSize))] > A->mu)
+      {
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          A->VRe[k + 1 + (j)*(1+Sqr(B->BlockSize))] += B->VRe[k + 1 + i*(1+Sqr(B->BlockSize))];
+        }
+        continue;
+      }
+      // the case where the pole energy of B==mu is treated such that we shift spectral weight to the neighboring poles and thus falls through here to the next treated case
+    }
+    // The general case where the pole weight is split between the left and right pole
+    WR = B->VRe[i*(Sqr(B->BlockSize)+1)] - A->VRe[(j-1)*(Sqr(B->BlockSize)+1)];
+    WL = A->VRe[(j)*(Sqr(B->BlockSize)+1)] - B->VRe[i*(Sqr(B->BlockSize)+1)];
+    if(WR <= DBL_MIN + DBL_EPSILON * (fabs(A->VRe[(j-1)*(Sqr(B->BlockSize)+1)]) + fabs(A->VRe[(j)*(Sqr(B->BlockSize)+1)])))
+    {
+      if(WR > WL)
+      { // both are neglegible, equal seperation
+        WR=0.5;
+        WL=0.5;
+      }
+      else
+      { // all weigth to the left
+        WL=1;
+        WR=0;
+      }
+    }
+    else if(WL <= DBL_MIN + DBL_EPSILON * (fabs(A->VRe[(j-1)*(Sqr(B->BlockSize)+1)]) + fabs(A->VRe[(j)*(Sqr(B->BlockSize)+1)])))
+    { // all weight to the right
+      WL=0;
+      WR=1;
+    }
+    else
+    {
+      WL = WL / (WL + WR);
+      WR = 1 - WL;
+    }
+    for(k=0;k<Sqr(A->BlockSize);k++)
+    {
+      A->VRe[(j-1)*(Sqr(B->BlockSize)+1)+k+1] += WL * B->VRe[i*(Sqr(B->BlockSize)+1)+k+1];
+      A->VRe[(j  )*(Sqr(B->BlockSize)+1)+k+1] += WR * B->VRe[i*(Sqr(B->BlockSize)+1)+k+1];
+    }
+  }
+  return 0;
+}
+uint32_t AddBlockListOfPolesOnMeshOfAComplex(BlockListOfPoles * const A, BlockListOfPoles const * const B)
+{
+  int i,j,k;
+  double WL,WR;
+  for(k=0;k<Sqr(A->BlockSize);k++)
+  {
+    A->a0[k].Re += B->a0[k].Re;
+    A->a0[k].Im += B->a0[k].Im;
+  }
+  for(i=0;i<B->N;i++)
+  {
+    j=A->N;
+    while((j>0)&&(B->V[i*(1+Sqr(B->BlockSize))].Re < A->V[(j-1)*(1+Sqr(A->BlockSize))].Re))j--;
+    if(j==0)
+    {
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        A->V[k+1].Re += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Re;
+        A->V[k+1].Im += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Im;
+      }
+      continue;
+    }
+    if(j==A->N)
+    {
+      for(k=0;k<Sqr(A->BlockSize);k++)
+      {
+        A->V[k + 1 + (A->N-1)*(1+Sqr(B->BlockSize))].Re += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Re;
+        A->V[k + 1 + (A->N-1)*(1+Sqr(B->BlockSize))].Im += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Im;
+      }
+      continue;
+    }
+    if((A->V[(j-1)*(1+Sqr(A->BlockSize))].Re < A->mu) && (A->V[(j)*(1+Sqr(A->BlockSize))].Re > A->mu) )
+    {
+      if(B->V[i*(1+Sqr(B->BlockSize))].Re < A->mu)
+      {
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          A->V[k + 1 + (j-1)*(1+Sqr(B->BlockSize))].Re += B->V[k + 1 + i+(1*Sqr(B->BlockSize))].Re;
+          A->V[k + 1 + (j-1)*(1+Sqr(B->BlockSize))].Im += B->V[k + 1 + i+(1*Sqr(B->BlockSize))].Im;
+        }
+        continue;
+      }
+      if(B->V[i*(1+Sqr(B->BlockSize))].Re > A->mu)
+      {
+        for(k=0;k<Sqr(A->BlockSize);k++)
+        {
+          A->V[k + 1 + (j)*(1+Sqr(B->BlockSize))].Re += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Re;
+        }
+        continue;
+      }
+      // the case where the pole energy of B==mu is treated such that we shift spectral weight to the neighboring poles and thus falls through here to the next treated case
+    }
+    // The general case where the pole weight is split between the left and right pole
+    WR = B->V[i*(Sqr(B->BlockSize)+1)].Re - A->V[(j-1)*(Sqr(B->BlockSize)+1)].Re;
+    WL = A->V[(j)*(Sqr(B->BlockSize)+1)].Re - B->V[i*(Sqr(B->BlockSize)+1)].Re;
+    if(WR <= DBL_MIN + DBL_EPSILON * (fabs(A->V[(j-1)*(Sqr(B->BlockSize)+1)].Re) + fabs(A->V[(j)*(Sqr(B->BlockSize)+1)].Re)))
+    {
+      if(WR > WL)
+      { // both are neglegible, equal seperation
+        WR=0.5;
+        WL=0.5;
+      }
+      else
+      { // all weigth to the left
+        WL=1;
+        WR=0;
+      }
+    }
+    else if(WL <= DBL_MIN + DBL_EPSILON * (fabs(A->V[(j-1)*(Sqr(B->BlockSize)+1)].Re) + fabs(A->V[(j)*(Sqr(B->BlockSize)+1)].Re)))
+    { // all weight to the right
+      WL=0;
+      WR=1;
+    }
+    else
+    {
+      WL = WL / (WL + WR);
+      WR = 1 - WL;
+    }
+    for(k=0;k<Sqr(A->BlockSize);k++)
+    {
+      A->V[(j-1)*(Sqr(B->BlockSize)+1)+k+1].Re += WL * B->V[i*(Sqr(B->BlockSize)+1)+k+1].Re;
+      A->V[(j-1)*(Sqr(B->BlockSize)+1)+k+1].Im += WL * B->V[i*(Sqr(B->BlockSize)+1)+k+1].Im;
+      A->V[(j  )*(Sqr(B->BlockSize)+1)+k+1].Re += WR * B->V[i*(Sqr(B->BlockSize)+1)+k+1].Re;
+      A->V[(j  )*(Sqr(B->BlockSize)+1)+k+1].Im += WR * B->V[i*(Sqr(B->BlockSize)+1)+k+1].Im;
+    }
+  }
+  return 0;
+}
+uint32_t AddRealBlockListOfPolesOnMeshOfAComplex(BlockListOfPoles * const A, BlockListOfPoles const * const B)
+{
+  
+  printf("TODO AddRealBlockListOfPolesOnMeshOfAComplex\n");
+  
+  return 1;
+}
+uint32_t AddBlockListOfPolesOnMeshOfA(BlockListOfPoles * const A, BlockListOfPoles const * const B)
+{
+  if(A->QComplex==0)
+  {
+    if(B->QComplex==0)
+    {
+      return AddBlockListOfPolesOnMeshOfAReal(A, B);
+    }
+    else
+    {
+      MakeRealBlockListOfPolesComplex(A);
+      return AddBlockListOfPolesOnMeshOfAComplex(A, B);
+    }
+  }
+  else
+  {
+    if(B->QComplex==0)
+    {
+      return AddRealBlockListOfPolesOnMeshOfAComplex(A, B);
+    }
+    else
+    {
+      return AddBlockListOfPolesOnMeshOfAComplex(A, B);
+    }
+  }
 }
 
 /* A <- alpha A + (1-alpha) B
@@ -1019,7 +1236,7 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
   {
     if(mesh[i]-mesh[i-1]<DBL_EPSILON)
     {
-      printf("The mesh are two dense or not in correct order:\nNo. %d - %15.10E \nNo. %d - %15.10E\n", i-1, mesh[i-1], i, mesh[i]);
+      printf("The mesh points are two dense or not in correct order:\nNo. %d - %15.10E \nNo. %d - %15.10E\n", i-1, mesh[i-1], i, mesh[i]);
       return 1;
     }
   }
@@ -1050,8 +1267,6 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
       tempRe[i*bs] = mesh[i];
     }
   }
-
-
   if(A->QComplex)
   {
     for(i=0;i<A->N;i++)
@@ -1078,9 +1293,25 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
         {
           if( (A->V[i*bs].Re>=mesh[j]) && (A->V[i*bs].Re<mesh[j+1]) )
           {
-            de = mesh[j+1] - mesh[j];
-            rr = (A->V[i*bs].Re-mesh[j])/de;
-            rl = 1.0 - rr;
+            if((mesh[j]<A->mu)&&(mesh[j+1]>A->mu))
+            {
+              if(A->V[i*bs].Re>A->mu)
+              {
+                rr = 1.0;
+                rl = 0.0;
+              }
+              else
+              {
+                rr = 0.0;
+                rl = 1.0;
+              }
+            }
+            else
+            {
+              de = mesh[j+1] - mesh[j];
+              rr = (A->V[i*bs].Re-mesh[j])/de;
+              rl = 1.0 - rr;
+            }
             for(k=1;k<bs;k++)
             {
               temp[j*bs    +k].Re += rl * A->V[i*bs+k].Re;
@@ -1122,7 +1353,7 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
         {
           if( (A->VRe[i*bs]>=mesh[j]) && (A->VRe[i*bs]<mesh[j+1]) )
           {
-            if(mesh[j]<A->mu&&mesh[j+1]>=A->mu)
+            if(mesh[j]<A->mu&&mesh[j+1]>A->mu)
             {
               if(A->VRe[i*bs]>A->mu)
               {
@@ -1137,9 +1368,9 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
             }
             else
             {
-            de = mesh[j+1] - mesh[j];
-            rr = (A->VRe[i*bs]-mesh[j])/de;
-            rl = 1.0 - rr;
+              de = mesh[j+1] - mesh[j];
+              rr = (A->VRe[i*bs]-mesh[j])/de;
+              rl = 1.0 - rr;
             }
             for(k=1;k<bs;k++)
             {
@@ -1156,7 +1387,6 @@ uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *m
     A->VRe = tempRe;
     A->a0Re=&(A->VRe[A->N*bs]);
   }
-
   return 0;
 }
 

@@ -1170,8 +1170,9 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
   }
   if (A->b[0] < 0)
   {
-    printf("SubtractListOfPoles returned with A->b[0]=%24.17E and A->N=%i\n", A->b[0], A->N);
-    return 2;
+    printf("WARNING: SubtractListOfPoles returned with A->b[0]=%24.17E and A->N=%i\n", A->b[0], A->N);
+    printf("You thus have one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
+    return 0;
   };
   return 0;
 }

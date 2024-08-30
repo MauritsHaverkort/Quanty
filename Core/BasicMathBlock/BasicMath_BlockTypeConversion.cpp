@@ -2369,11 +2369,11 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalI
 
 
 /*  Turn a block list of poles into a matrix
- *       ( a0   b1  b2  b3  ..  bn  )
- *       ( b1^+ a1  0   0   ..  0   )
- *   B = ( b2^+ 0   a2  0   ..  0   )
+ *       ( A0   B1  B2  B3  ..  Bn  )
+ *       ( B1^+ a1  0   0   ..  0   )
+ *   B = ( B2^+ 0   a2  0   ..  0   )
  *       ( ..   ..  ..  ..  ..  ..  )
- *       ( bn^+ 0   0   0   ..  an  )
+ *       ( Bn^+ 0   0   0   ..  an  )
  *
  *   The greensfunction (w-B)^-1_[blocksize,blocksize] is equal to the inverse of the greensfunction defined by BlockListOfPoles
  *
@@ -2454,6 +2454,7 @@ uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const 
       kA+=A->BlockSize*A->BlockSize+1;
     }
   }
+  free(Anow.Name);
   return 0;
 }
 
@@ -3935,6 +3936,11 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, true);
+    if(Tnow.Ni==0)
+    { // we should return a TriDiagonal matrix with zero poles
+      ABlock->N = 0;
+      return 0;
+    }
     zgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.V,&psi->Nj,psi->V,&psi->Nj,&zero,ABlock->b,&ABlock->BlockSize);
     for(i=0;i<ABlock->BlockSize*ABlock->BlockSize;i++)
     {
@@ -4077,9 +4083,11 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType co
     Tnow.Nj=psi->Nj;
     /* orthonormalize Tnow */
     CompactMatrixGramSchmidtOrthogonalizeRow(&Tnow, SingularValue, true);
-    
-    
-    
+    if(Tnow.Ni==0)
+    { // we should return a TriDiagonal matrix with zero poles
+      ABlock->N = 0;
+      return 0;
+    }
     dgemm(charC,charN,&ABlock->BlockSize,&ABlock->BlockSize,&psi->Nj,&one,Tnow.VRe,&psi->Nj,psi->VRe,&psi->Nj,&zero,ABlock->bRe,&ABlock->BlockSize);
     /* loop over psi_{n+1} = A psi_{n} and orthonormalization */
     oldindex=0;

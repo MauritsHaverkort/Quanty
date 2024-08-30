@@ -60,8 +60,8 @@ for i=1,#GAList do
 			print("Error at i=",i,"j=",j)
 			print("GA\n",GAList[i])
 			print("GB\n",GBList[j])
-			print("G\n",G)
-			print("GAB\n",GAB)
+			print("G\n",ResponseFunction.ToTable(G))
+			print("GAB\n",ResponseFunction.ToTable(GAB))
 			error("Response function comparison failed\n",1)
 		end
 	end

@@ -210,7 +210,7 @@ uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A, BlockAndersonMatrixT
       return 1;
     }
     B->b= (Complex16*)malloc((B->N)*(B->BlockSize*B->BlockSize)*sizeof(Complex16));
-    if(B->b==NULL)
+    if((B->b==NULL)&&(B->N!=0))
     {
       free(B->a);
       printf("malloc failed in CopyBlockAndersonMatrix\n");
@@ -228,7 +228,7 @@ uint32_t CopyBlockAndersonMatrix(BlockAndersonMatrixType A, BlockAndersonMatrixT
       return 1;
     }
     B->bRe= (double*)malloc((B->N)*(B->BlockSize*B->BlockSize)*sizeof(double));
-    if(B->bRe==NULL)
+    if((B->bRe==NULL)&&(B->N!=0))
     {
       free(B->aRe);
       printf("malloc failed in CopyBlockAndersonMatrix\n");

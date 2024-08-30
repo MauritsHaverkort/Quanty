@@ -153,6 +153,10 @@ for iOp4c=1,#Op4c_list do
 
 
         if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
+			print(Op)
+			print(rho)
+			print(OpMF)
+			print(OpMFTest)
             print(Chop(OpMF-OpMFTest,tol))
             error("MeanFieldOperator does not reproduce the HF MF operator (with OffsetAsTrace:false) for Operator "..Op4c_label.." with density "..label,1)
         end
@@ -185,6 +189,10 @@ for iOp4c=1,#Op4c_list do
 
 
         if (Chop(OpMF-OpMFTest,tol)~=ZeroOp) then
+			print(Op)
+			print(rho)
+			print(OpMF)
+			print(OpMFTest)
             print(Chop(OpMF-OpMFTest,tol))
             error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for Operator "..Op4c_label.." with density "..label,1)
         end
