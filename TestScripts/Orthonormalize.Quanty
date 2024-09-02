@@ -5,6 +5,7 @@
 I = Complex.I()
 
 NF1 = 3
+NF2 = 10
 
 sv = 1e-8
 tol = 1e-10
@@ -37,6 +38,65 @@ local vectors_simple_singular = {{1,0,0},{0,1,0},{1,0,0}}
 local vectors_list = {vectors_simple_singular,vectors_fullRank,vectors_nonSquare,vectors_random_square,vectors_random_nonSquare,vectors_random_square_complex}
 local labels       = {"Singular 1","full Rank 1", "dim < NF","random dim=NF","random dim<NF", "random complex dim=NF"}
 
+
+local wf_1e = { NewWavefunction(NF1,0,{{"100",1}}),NewWavefunction(NF1,0,{{"010",1},{"001",1}}),NewWavefunction(NF1,0,{{"001",1}}) }
+
+function checkInList(elem,tab)
+    for i=1,#tab do
+        if elem == tab[i] then return true end
+    end
+    return false
+end
+
+function randomNeWF(NF,Ne,maxDet,complex)
+    local det_list = {}
+    for iMaxDet=1,maxDet do
+        if (math.random()>.5)or(#det_list==0) then
+            local pos = {}
+            for i=1,Ne do
+                local newPos = math.random( 1,NF )-1
+                while checkInList(newPos,pos) do
+                    newPos = math.random( 1,NF )-1
+                end
+                pos[i] = newPos 
+            end
+            local coeff = (math.random()-.5)*math.random(10)
+            if complex then coeff = coeff + (math.random()-.5)*math.random( 10 ) * Complex.I() end
+            det_list[#det_list+1] = {DeterminantString(NF,pos),coeff}
+        end
+    end
+    local wf = NewWavefunction(NF,0,det_list)
+    return wf
+end
+
+function randomNeWFList(NF,Ne,maxDet,complex,nList)
+    local wf_list = {}
+    for i=1,nList do
+        wf_list[i] = randomNeWF(NF,Ne,maxDet,complex)
+    end
+    return wf_list
+end
+
+local wf_list = {
+    wf_1e,
+    randomNeWFList(3,1,3,false,3), 
+    randomNeWFList(10,2,20,false,10),
+    randomNeWFList(10,2,20,true,10),
+    randomNeWFList(100,10,1000,false,100),
+    randomNeWFList(100,10,1000,true,100)
+    }
+local wf_labels = {
+    "1e",
+    "1e random",
+    "2e random",
+    "2e random complex",
+    "10e random",
+    "10e random complex"
+}
+
+
+
+
 function checkMatrix(M1,M2,tol)
 
     local M1 = Matrix.ToTable(M1)
@@ -55,12 +115,27 @@ function checkMatrix(M1,M2,tol)
     return true
 end
 
+function checkListOfWavefunctions(l1,l2,tol)
+    local tol2 = tol*tol
+    if #l1 ~= #l2 then 
+        return false 
+    end
+    for i=1,#l1 do
+        local diff = l1[i]-l2[i]
+        local diff_norm = diff*diff
+        if diff_norm>tol2 then
+            return false
+        end
+    end
+    return true
+end
 
+function checkBasis(V,tol,isWf)
 
-function checkBasis(V,tol)
-
-    local V = Matrix.ToTable(V)
-    local S = getS(V,1e-15)
+    if not isWf then 
+        V = Matrix.ToTable(V)
+    end
+    local S = getS(V,1e-15,isWf)
 
     for i=1,#S do
         for j=1,#S[i] do
@@ -81,16 +156,20 @@ function checkBasis(V,tol)
 end
 
 
-function getS(vectors,tol)
+function getS(vectors,tol,isWf)
 
     local S = Matrix.ToUserdata(Matrix.Zero(#vectors))
     for i=1,#S do
         for j=1,#S do
-            local v1 = Conjugate(vectors[i])
-            local v2 = Conjugate(vectors[j])
             local sp = 0
-            for k=1,#v1 do
-                sp = sp + v1[k]*v2[k]
+            if isWf then
+                sp = vectors[i]*vectors[j]
+            else
+                local v1 = Conjugate(vectors[i])
+                local v2 = vectors[j]
+                for k=1,#v1 do
+                    sp = sp + v1[k]*v2[k]
+                end
             end
 
             S[i][j] = sp
@@ -100,23 +179,41 @@ function getS(vectors,tol)
     return Chop(S,tol)
 end
 
-function RotateListOfVectors(vectors,U)
-    return Chop( U*vectors , tol)
+
+function RotateListOfVectors(U,vectors,isWf)
+    local isWf = false or isWf
+    local newWfList = {}
+    if isWf then
+        for i=1,#vectors do
+            local newWf = Chop(Clone(vectors[i])*0)
+            for j=1,#U[i] do
+                newWf = newWf + vectors[j]*U[i][j]
+            end
+            newWfList[i] = Chop( newWf , tol)
+        end
+    else
+        newWfList = Chop( U*vectors , tol)
+    end
+    return newWfList
 end
 
+function lowdinONVectors(vectors,isWf)
 
-function lowdinONVectors(vectors)
+    local isWf = false or isWf
+    print(isWf)
 
     local vectors = Copy(vectors)
-    local S = getS(vectors,sv)
+    local S = getS(vectors,sv,isWf)
 
     local val,fun = Eigensystem(S)
     fun = Matrix.ToTable(fun)
 
     local rankS = 0
     for i=1,#val do
-        if math.abs(val[i])>sv then 
+        if val[i]>sv then 
             rankS = rankS + 1 
+        elseif val[i] < -sv then
+            error("Overlap Matrix is not positive semi definite",1)
         else 
             val[i] = 0 
         end
@@ -125,27 +222,8 @@ function lowdinONVectors(vectors)
     print("Rank of Overlap Matrix = "..tostring(rankS).." (for "..tostring(#vectors).." vectors)")
 
     if rankS<#vectors then
-
         print("Overlap Matrix is singular -> Löwdin ON is ill defined") 
-   
-        --[[
-        vectors_S = RotateListOfVectors(vectors,fun)
-        local vectors_reduced = {}
-        for i=1,#val do
-            if val[i]>sv then
-                vectors_reduced[#vectors_reduced+1] = vectors_S[i]
-            else val[i] = 0 end
-        end
-
-        setmetatable(vectors_reduced,MatrixMeta)
-        vectors = Clone(vectors_reduced)
-        
-        S = getS(vectors,sv)
-        val,fun = Eigensystem(S)
-        fun = Matrix.ToTable(fun)
-        ]]
         return nil
-
     else 
         print("Overlap Matrix is full rank!") 
     end
@@ -157,14 +235,18 @@ function lowdinONVectors(vectors)
 
     local diag_sqrt_inv = Matrix.Diagonal(val_sqrt_inv)
     local S_sqrt_inv = Rotate(diag_sqrt_inv,Transpose(fun))
-    local vectors_LON_test = S_sqrt_inv*vectors
-
+    local vectors_LON_test = RotateListOfVectors(S_sqrt_inv,vectors,isWf)
 
     return vectors_LON_test
 
 end
 
+print("\n")
+print("#####################################################")
+print("\n")
+print("Checking Vectors:\n\n")
 for iVec=1,#vectors_list do
+    local isWf = false
 
     local vectors = vectors_list[iVec]
     local label = labels[iVec]
@@ -173,7 +255,7 @@ for iVec=1,#vectors_list do
     print("Basis type: "..tostring(label))
 
     
-    local vectors_LON_test = lowdinONVectors(vectors)
+    local vectors_LON_test = lowdinONVectors(vectors,isWf)
     
     if vectors_LON_test ~= nil then 
     
@@ -184,15 +266,7 @@ for iVec=1,#vectors_list do
         print(options)
 
         local vectors_LON_Quanty = Orthonormalize(vectors,options)
-        if not (checkBasis(vectors_LON_Quanty, tol) and checkMatrix(vectors_LON_test,vectors_LON_Quanty,tol)) then
-            print(checkMatrix(vectors_LON_test,vectors_LON_Quanty,tol))
-            
-            
-            print(vectors_LON_test)
-            print("'------------------------'")
-            print(vectors_LON_Quanty)
-
-
+        if not (checkBasis(vectors_LON_Quanty, tol, isWf) and checkMatrix(vectors_LON_test,vectors_LON_Quanty,tol)) then 
             error("Lowdin ON failed for vectors ("..label..") with options: "..tostring(options),1)
         else
             print("Passed")
@@ -206,13 +280,49 @@ for iVec=1,#vectors_list do
         print(options)
 
         local vectors_LON_Quanty = Transpose(Orthonormalize(Transpose(vectors),options))
-        if not (checkBasis(vectors_LON_Quanty, tol) and checkMatrix(vectors_LON_test,vectors_LON_Quanty,tol)) then
+        if not (checkBasis(vectors_LON_Quanty, tol, isWf) and checkMatrix(vectors_LON_test,vectors_LON_Quanty,tol)) then
             error("Lowdin ON failed for vectors ("..label..") with options: "..tostring(options),1)
         else
             print("Passed")
         end
 
         ----------------------------------------------------------------------------
+
+    end
+
+end
+
+print("\n")
+print("#####################################################")
+print("\n")
+print("Checking Wavefunctions:\n\n")
+for iVec=1,#wf_list do
+
+    local isWf = true
+
+    local vectors = wf_list[iVec]
+    local label = wf_labels[iVec]
+
+    print("\n=================================")
+    print("Basis type: "..tostring(label))
+
+    
+    local vectors_LON_test = lowdinONVectors(vectors,isWf)
+    
+    if vectors_LON_test ~= nil then 
+    
+        ----------------------------------------------------------------------------
+        options = {{"Method","Lowdin"},{"SingularValue",sv},{"ReduceDimension",true}}
+        print("\n-----------------")
+        print("Options:")
+        print(options)
+
+        local vectors_LON_Quanty = Orthonormalize(vectors,options)
+        if not (checkBasis(vectors_LON_Quanty, tol, isWf) and checkListOfWavefunctions(vectors_LON_test,vectors_LON_Quanty,tol)) then 
+            error("Lowdin ON failed for list of wavefunctions ("..label..") with options: "..tostring(options),1)
+        else
+            print("Passed")
+        end
 
     end
 
