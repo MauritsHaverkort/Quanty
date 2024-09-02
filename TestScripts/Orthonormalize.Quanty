@@ -121,7 +121,7 @@ function checkListOfWavefunctions(l1,l2,tol)
         return false 
     end
     for i=1,#l1 do
-        local diff = l1[i]-l2[i]
+        local diff = Chop( l1[i]-l2[i] )
         local diff_norm = diff*diff
         if diff_norm>tol2 then
             return false
