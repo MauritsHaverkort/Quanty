@@ -166,6 +166,14 @@ test-job-TimeStartStopPrintSet:
   dependencies:
   - build-job
 
+test-job-Orthonormalize:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Orthonormalize.Quanty"
+  dependencies:
+  - build-job
+
 
 
 
@@ -284,7 +292,7 @@ test-job-Responsefunction-CalculateSelfEnergy:
   dependencies:
   - build-job
   
-test-job-Responsefunction-CalculateSelfEnergy:
+test-job-Responsefunction-CalculateHybridizationFunction:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
