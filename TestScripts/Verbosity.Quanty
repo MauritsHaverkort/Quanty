@@ -1,0 +1,6 @@
+-- For maximal verbosity
+Verbosity(0xFFFF)
+-- For minimal verbosity
+Verbosity(0x0)
+-- For standard verbosity
+Verbosity(0xF)

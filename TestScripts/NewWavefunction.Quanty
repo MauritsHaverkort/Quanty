@@ -1,0 +1,133 @@
+tol = 1e-10
+I = Complex.I()
+
+
+function checkWF(f1,f2,tol)
+    local diff = f1-f2
+    local norm = diff*diff
+    if norm > tol then 
+        return false 
+    else
+        return true
+    end
+end
+
+function checkInList(elem,tab)
+    for i=1,#tab do
+        if elem == tab[i] then return true end
+    end
+    return false
+end
+
+function randomDetList(NF,Ne,maxDet,complex)
+    local det_list = {}
+    for iMaxDet=1,maxDet do
+        if (math.random()>.5)or(#det_list==0) then
+            local pos = {}
+            for i=1,Ne do
+                local newPos = math.random( 1,NF )-1
+                while checkInList(newPos,pos) do
+                    newPos = math.random( 1,NF )-1
+                end
+                pos[i] = newPos 
+            end
+            local coeff = (math.random()-.5)*math.random(10)
+            if complex then coeff = coeff + (math.random()-.5)*math.random( 10 ) * Complex.I() end
+            det_list[#det_list+1] = {DeterminantString(NF,pos),coeff}
+        end
+    end
+    return det_list
+end
+
+function randomNeWF(NF,Ne,maxDet,complex)
+    local det_list = randomDetList(NF,Ne,maxDet,complex)
+    local wf = NewWavefunction(NF,0,det_list)
+    return wf
+end
+
+
+function testChangingNF(NF,dNF,Ne,maxDet,complex)
+
+    print()
+    print("NF:",NF,"dNF:",dNF,"Ne:",Ne,"maxDet:",maxDet,"complex:",complex)
+    local sAdd = ""
+    for k=1,dNF do sAdd = sAdd.."0" end
+
+    detlist0 = randomDetList(NF,Ne,maxDet,complex)
+    detList0_nfmin = Clone(detlist0)
+    detList0_nfplus = Clone(detlist0)
+    detList0_nfmp = Clone(detlist0)
+    for i=1,#detList0_nfmin do
+        detList0_nfmin[i][1]  = string.sub( detList0_nfmin[i][1], 1, NF-dNF )
+        detList0_nfplus[i][1] = detList0_nfplus[i][1]..sAdd
+        detList0_nfmp[i][1]   = string.sub( detList0_nfmin[i][1], 1, NF-2 )..sAdd
+    end
+
+    print("Reducing NF")
+    psi0 = NewWavefunction(NF,0,detlist0)
+    psi0.NF = NF-dNF
+    if not checkWF(psi0,NewWavefunction(NF-dNF,0,detList0_nfmin),tol) then 
+        error("Reducing NF does not have the expected effect",1)
+    else
+        print("Passed")
+    end
+
+    print("Increasing NF")
+    psi0 = NewWavefunction(NF,0,detlist0)
+    psi0.NF = NF+dNF
+    if not checkWF(psi0,NewWavefunction(NF+dNF,0,detList0_nfplus),tol) then 
+        error("Increasing NF does not have the expected effect",1)
+    else
+        print("Passed")
+    end
+
+    print("First decreasing and then increasing NF")
+    psi0 = NewWavefunction(NF,0,detlist0)
+    psi0.NF = NF-dNF
+    psi0.NF = NF
+    if not checkWF(psi0,NewWavefunction(NF,0,detList0_nfmp),tol) then 
+        error("First decreasing and then increasing NF does not behave as expected",1)
+    else
+        print("Passed")
+    end
+
+end
+
+
+print("---------------------")
+print("---- Changing NF ----")
+print("---------------------")
+
+testChangingNF(10,2,3,10,true)
+testChangingNF(100,5,10,1000,true)
+testChangingNF(100,5,10,1000,false)
+testChangingNF(500,20,100,5000,false)
+testChangingNF(500,20,100,5000,true)
+
+print("\n\n")
+print("---------------------")
+print("---- Normalizing ----")
+print("---------------------")
+
+psiList = {randomNeWF(10,3,10,true),randomNeWF(100,10,1000,true),randomNeWF(100,10,1000,false),randomNeWF(500,100,5000,false),randomNeWF(500,100,5000,true)}
+
+for i=1,#psiList do
+
+    local psi1 = Clone(psiList[i])
+    local psi2 = Clone(psiList[i])
+    local norm = math.sqrt( psi1*psi1 )
+    psi1 = psi1/norm
+
+    psi2.Normalize()
+    if not checkWF(psi1,psi2,tol) then
+        error("",1)
+    end
+end
+
+print("Passed")
+
+
+print("\n\n")
+print("---------------------")
+print("---- Normalizing ----")
+print("---------------------")
