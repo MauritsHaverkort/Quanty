@@ -32,7 +32,7 @@ local vectors_random_square = Matrix.Random({-1,1},{100,100})
 local vectors_random_square_complex = Matrix.Random({-1,1},{NF1,NF1})+Matrix.Random({-1,1},{NF1,NF1})*I
 local vectors_random_nonSquare = Matrix.Random({-1,1},{100,300})
 local vectors_random_nonSquare = Matrix.Random({-1,1},{30,10})
-local vectors_simple_singular = {{1,0,0},{0,1,0},{1,0,0}}
+local vectors_simple_singular = {{1,0,0},{1,0,0},{0,1,0}}
 
 
 local vectors_list = {vectors_simple_singular,vectors_fullRank,vectors_nonSquare,vectors_random_square,vectors_random_nonSquare,vectors_random_square_complex}
@@ -155,24 +155,43 @@ function checkBasis(V,tol,isWf)
 
 end
 
+function multiply(v1,v2,isWf)
+
+    if isWf == nil then error("Gigsd",1) end
+    if isWf then
+        return v1*v2
+    else
+        local mul = 0
+        if #v1~=#v2 then error("Error in multiply: non matching dimensions",1) end
+        for k=1,#v1 do
+            mul = mul + Conjugate(v1[k])*v2[k]
+        end
+        return mul
+    end
+end
+
+function normalize(v,isWf)
+    local v = Clone(v)
+    if isWf then
+        v.Normalize()
+    else
+        local norm = math.sqrt( Chop(multiply(v,v,isWf),sv) )
+        if norm < sv then
+            for i=1,#v do v[i] = 0 end
+        else
+            for i=1,#v do v[i] = v[i]/norm end
+        end
+    end
+    return v
+end
+
 
 function getS(vectors,tol,isWf)
 
     local S = Matrix.ToUserdata(Matrix.Zero(#vectors))
     for i=1,#S do
         for j=1,#S do
-            local sp = 0
-            if isWf then
-                sp = vectors[i]*vectors[j]
-            else
-                local v1 = Conjugate(vectors[i])
-                local v2 = vectors[j]
-                for k=1,#v1 do
-                    sp = sp + v1[k]*v2[k]
-                end
-            end
-
-            S[i][j] = sp
+            S[i][j] = multiply(vectors[i],vectors[j],isWf)
         end
     end
     S = (ConjugateTranspose(S)+S)/2
@@ -235,11 +254,38 @@ function lowdinONVectors(vectors,isWf)
 
     local diag_sqrt_inv = Matrix.Diagonal(val_sqrt_inv)
     local S_sqrt_inv = Rotate(diag_sqrt_inv,Transpose(fun))
-    local vectors_LON_test = RotateListOfVectors(S_sqrt_inv,vectors,isWf)
 
-    return vectors_LON_test
+    return RotateListOfVectors(S_sqrt_inv,vectors,isWf)
 
 end
+
+function GramSchidt(vectors,isWf)
+
+    local sv2 = sv*sv
+    local new_vectors = {}
+    for i=1,#vectors do
+        local new_v = Clone(vectors[i])
+        for j=1,#new_vectors do
+            local ovlp = multiply(new_vectors[j],new_v,isWf)
+            if isWf then
+                new_v = new_v-ovlp*new_vectors[j]
+            else
+                for k=1,#new_v do
+                    new_v[k] = new_v[k]-ovlp*new_vectors[j][k]
+                end
+            end
+        end
+        local norm2 = multiply(new_v,new_v,isWf)
+        if math.abs(norm2)>sv2 then
+            new_v = normalize(new_v,isWf)
+            new_vectors[#new_vectors+1] = Clone(new_v)
+        end
+    end
+    return new_vectors
+end
+            
+   
+    
 
 print("\n")
 print("#####################################################")
@@ -287,8 +333,73 @@ for iVec=1,#vectors_list do
         end
 
         ----------------------------------------------------------------------------
-
     end
+
+    --########################################################################
+    local vectors_GS_test = GramSchidt(vectors,isWf)
+
+    ----------------------------------------------------------------------------
+    options = {{"Method","GramSchmidt"},{"SingularValue",sv},{"Order","Row"},{"ReduceDimension",true}}
+    print("\n-----------------")
+    print("Options:")
+    print(options)
+
+    local vectors_GS_Quanty = Orthonormalize(vectors,options)
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol)) then 
+        error("Gram Schmidt failed for vectors ("..label..") with options: "..tostring(options),1)
+    else
+        print("Passed")
+    end
+
+    ----------------------------------------------------------------------------
+    options = {{"Method","GramSchmidt"},{"SingularValue",sv},{"Order","Column"},{"ReduceDimension",true}}
+    print("\n-----------------")
+    print("Options:")
+    print(options)
+
+    local vectors_GS_Quanty = Transpose(Orthonormalize(Transpose(vectors),options))
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol)) then
+        error("Lowdin ON failed for vectors ("..label..") with options: "..tostring(options),1)
+    else
+        print("Passed")
+    end
+
+    ---------------------------------------------------------------------------
+
+    local zero_vec = {}
+    for k=1,#vectors[1] do zero_vec[k] = 0 end
+    for k=#vectors_GS_test+1,#vectors do
+        vectors_GS_test[k] = Clone(zero_vec)
+    end
+    ----------------------------------------------------------------------------
+    options = {{"Method","GramSchmidt"},{"SingularValue",sv},{"Order","Row"},{"ReduceDimension",false}}
+    print("\n-----------------")
+    print("Options:")
+    print(options)
+
+    local vectors_GS_Quanty = Orthonormalize(vectors,options)
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol)) then 
+        print(vectors_GS_Quanty)
+        print()
+        print(vectors_GS_test)
+        error("Gram Schmidt failed for vectors ("..label..") with options: "..tostring(options),1)
+    else
+        print("Passed")
+    end
+
+    ----------------------------------------------------------------------------
+    options = {{"Method","GramSchmidt"},{"SingularValue",sv},{"Order","Column"},{"ReduceDimension",false}}
+    print("\n-----------------")
+    print("Options:")
+    print(options)
+
+    local vectors_GS_Quanty = Transpose(Orthonormalize(Transpose(vectors),options))
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol)) then
+        error("Lowdin ON failed for vectors ("..label..") with options: "..tostring(options),1)
+    else
+        print("Passed")
+    end
+    
 
 end
 
@@ -324,6 +435,48 @@ for iVec=1,#wf_list do
             print("Passed")
         end
 
+    end
+
+
+
+
+
+    --########################################################################
+    local vectors_GS_test = GramSchidt(vectors,isWf)
+
+    ----------------------------------------------------------------------------
+    options = {{"Method","GramSchmidt"},{"SingularValue",sv},{"Order","Row"},{"ReduceDimension",true}}
+    print("\n-----------------")
+    print("Options:")
+    print(options)
+
+    local vectors_GS_Quanty = Orthonormalize(vectors,options)
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkListOfWavefunctions(vectors_GS_test,vectors_GS_Quanty,tol)) then 
+        error("Gram Schmidt failed for vectors ("..label..") with options: "..tostring(options),1)
+    else
+        print("Passed")
+    end
+
+    ---------------------------------------------------------------------------
+
+    local zero_vec = Chop( Clone(vectors[1])*0, 1)
+    for k=#vectors_GS_test+1,#vectors do
+        vectors_GS_test[k] = Clone(zero_vec)
+    end
+    ----------------------------------------------------------------------------
+    options = {{"Method","GramSchmidt"},{"SingularValue",sv},{"Order","Row"},{"ReduceDimension",false}}
+    print("\n-----------------")
+    print("Options:")
+    print(options)
+
+    local vectors_GS_Quanty = Orthonormalize(vectors,options)
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkListOfWavefunctions(vectors_GS_test,vectors_GS_Quanty,tol)) then 
+        print(vectors_GS_Quanty)
+        print()
+        print(vectors_GS_test)
+        error("Gram Schmidt failed for vectors ("..label..") with options: "..tostring(options),1)
+    else
+        print("Passed")
     end
 
 end
