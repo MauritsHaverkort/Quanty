@@ -182,7 +182,13 @@ test-job-Verbosity:
   dependencies:
   - build-job
 
-
+test-job-NewWavefunction:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/NewWavefunction.Quanty"
+  dependencies:
+  - build-job
 
 
 
