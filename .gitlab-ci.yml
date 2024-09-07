@@ -1,3 +1,9 @@
+stages:
+  - build
+  - test
+  - test_matrix
+  - test_responsefunction
+
 build-job:
   stage: build
   variables:
@@ -92,7 +98,6 @@ test-job-Rotate:
   - ./Quanty.exe "TestScripts/Rotate.Quanty"
   dependencies:
   - build-job
-
 
 test-job-Clone:
   stage: test
@@ -202,7 +207,7 @@ test-job-NewWavefunction:
 #
 
 test-job-Responsefunction-eq:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/__eq.Quanty"
@@ -210,7 +215,7 @@ test-job-Responsefunction-eq:
   - build-job
 
 test-job-Responsefunction-add:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/__add.Quanty"
@@ -218,7 +223,7 @@ test-job-Responsefunction-add:
   - build-job
 
 test-job-Responsefunction-sub:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/__sub.Quanty"
@@ -226,7 +231,7 @@ test-job-Responsefunction-sub:
   - build-job
 
 test-job-Responsefunction-mul:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/__mul.Quanty"
@@ -234,7 +239,7 @@ test-job-Responsefunction-mul:
   - build-job
 
 test-job-Responsefunction-div:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/__div.Quanty"
@@ -242,7 +247,7 @@ test-job-Responsefunction-div:
   - build-job
 
 test-job-Responsefunction-call:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/__call.Quanty"
@@ -250,7 +255,7 @@ test-job-Responsefunction-call:
   - build-job
   
 test-job-Responsefunction-ChangeType:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/ChangeType.Quanty"
@@ -258,7 +263,7 @@ test-job-Responsefunction-ChangeType:
   - build-job
 
 test-job-Responsefunction-ToMatrix:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/ToMatrix.Quanty"
@@ -266,7 +271,7 @@ test-job-Responsefunction-ToMatrix:
   - build-job
 
 test-job-Responsefunction-ToOperator:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/ToOperator.Quanty"
@@ -274,7 +279,7 @@ test-job-Responsefunction-ToOperator:
   - build-job
   
 test-job-Responsefunction-InvertEnergy:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/InvertEnergy.Quanty"
@@ -282,7 +287,7 @@ test-job-Responsefunction-InvertEnergy:
   - build-job
   
 test-job-Responsefunction-Chop:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/Chop.Quanty"
@@ -290,7 +295,7 @@ test-job-Responsefunction-Chop:
   - build-job
 
 test-job-Responsefunction-ToSpectra:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/ToSpectra.Quanty"
@@ -298,7 +303,7 @@ test-job-Responsefunction-ToSpectra:
   - build-job
   
 test-job-Responsefunction-CalculateSelfEnergy:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/CalculateSelfEnergy.Quanty"
@@ -306,9 +311,14 @@ test-job-Responsefunction-CalculateSelfEnergy:
   - build-job
   
 test-job-Responsefunction-CalculateHybridizationFunction:
-  stage: test
+  stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/CalculateHybridizationFunction.Quanty"
   dependencies:
   - build-job
+
+# =========================================================================
+# ===== Test functions related to Matrix objects
+# ===== These functions are registered in Matrix.cpp
+#

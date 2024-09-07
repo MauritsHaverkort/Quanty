@@ -13,8 +13,6 @@ dofile(directory.."/__div.Quanty")
 dofile(directory.."/__call.Quanty")
 
 dofile(directory.."/ChangeType.Quanty")
-dofile(directory.."/ReducePoles.Quanty")
-dofile(directory.."/PlaceOnMesh.Quanty")
 dofile(directory.."/ToMatrix.Quanty")
 dofile(directory.."/ToTable.Quanty")
 dofile(directory.."/ToUserdata.Quanty")
@@ -34,5 +32,7 @@ dofile(directory.."/ToTightbinding.Quanty")
 dofile(directory.."/CreateBitMasks.Quanty")
 
 
+dofile(directory.."/ReducePoles.Quanty")
+dofile(directory.."/PlaceOnMesh.Quanty")
 
 

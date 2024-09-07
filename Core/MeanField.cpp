@@ -983,7 +983,8 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 					OperatorAddLaderNormalOrder(OMF, oadd, 2, U.Re * Rho.VRe[n][m] - U.Im * Rho.VIm[n][m], U.Re * Rho.VIm[n][m] + U.Im * Rho.VRe[n][m], &QDetNotOrderedFcFaBcBa);
 				}
 			}
-		} else // Rho real O complex OMF complex
+		} 
+    else // Rho real O complex OMF complex
 		{
 			for (m = 0; m < O->l[4].N; m++)
 			{
@@ -1033,7 +1034,8 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 				}
 			}
 		}
-	} else // O->l[4] real
+	} 
+  else // O->l[4] real
 	{
 		double U = 0;
 		if (AddDFTSelfInteraction)
@@ -1106,7 +1108,8 @@ uint32_t MeanFieldOperator(const OperatorType * const O, OperatorType * const OM
 					OperatorAddLaderNormalOrder(OMF, oadd, 2, U * Rho.VRe[n][m], U * Rho.VIm[n][m], &QDetNotOrderedFcFaBcBa);
 				}
 			}
-		} else // Rho real O->l[4] real
+		} 
+    else // Rho real O->l[4] real
 		{
 			for (m = 0; m < O->l[4].N; m++)
 			{
