@@ -2,6 +2,461 @@ print("-----------------------------------------------------------------")
 print("--                  CreateResonantSpectra                      --")
 print("-----------------------------------------------------------------")
 
+Verbosity(0)
+
+print("--------------------------------------------------------")
+print("--                Ligand field Model                  --")
+print("--------------------------------------------------------")
+
+function TestIfSpectrumIsZero(Spec)
+	local SpecTable=Spectra.ToTable(Spec)
+	for i=1,#SpecTable do
+		for j=1,#SpecTable[i] do
+			if(not ( Chop(SpecTable[i][j][2])==0) ) then
+				print("Test failed at i=",i,"j=",j,"val=",SpecTable[i][j][2])
+				return false
+			end
+		end
+	end
+	return true
+end
+
+-- define a set of Hamiltonians, H1 and H2 and operators T1 and T2 that all yield the same RIXS spectrum
+do
+	-- define a set of rotation matrices
+	do
+		matp = {}
+		for i=1,6 do
+			matp[i]={}
+			for j=1,6 do
+				matp[i][j] = i + sin(j+i) + sin(j) * sin(i+j*2) + cos(i) + cos(j*2) + I * ( (i-3)*j + cos(j) * (j-2)*i)
+			end
+      for j=1,i-1 do
+				matp[i][j]=0
+			end
+		end
+		matp = Orthonormalize(matp)
+		matp = Orthonormalize(matp,{{"Method","GramSchmidt"}})
+		matp = Orthonormalize(matp,{{"Method","GramSchmidt"}})
+		matd = {}
+		for i=1,10 do
+			matd[i]={}
+			for j=1,10 do
+				matd[i][j] = i + sin(i*j) + sin(j) * sin(i+j) - cos(i) + cos(2*j) + I * ( (i-3)*j - sin(j)*(j-3)*cos(i+j))
+			end
+		end
+		matd = Orthonormalize(matd)
+		matd = Orthonormalize(matd,{{"Method","GramSchmidt"}})
+		matd = Orthonormalize(matd,{{"Method","GramSchmidt"}})
+		matdL = {}
+		for i=1,10 do
+			matdL[i]={}
+			for j=1,10 do
+				matdL[i][j] = i + cos(j) + sin(j) * sin(i*j) - cos(i) + cos(j) + I * ( (i-3)*j + cos(i) * (j-3)*i)
+			end
+		end
+		matdL = Orthonormalize(matdL)
+		matdL = Orthonormalize(matdL,{{"Method","GramSchmidt"}})
+		matdL = Orthonormalize(matdL,{{"Method","GramSchmidt"}})
+		
+		rotmat1 = Matrix.Flatten({{matp,0,0},{0,matd,0},{0,0,matdL}})
+		rotmat2 = Matrix.Flatten({{YtojjzMatrix(1),0,0},{0,YtoZMatrix(2),0},{0,0,YtoZMatrix(2)}})
+		
+	end
+	-- define a set of operators that we can use in the next section
+  do
+		-- this example calculates the resonant inelastic x-ray scattering in NiO we look at the
+		-- Ni L23M45 edge, i.e. we make an excitation from 2p to 3d (L23) and decay from the
+		-- 3d shell back to the 2p shell (final "hole" in the 3d shell M45 edge). These spectra
+		-- measure d-d excitations and or magnons.
+
+		NF=26
+		NB=0
+		IndexDn_2p={ 0, 2, 4}
+		IndexUp_2p={ 1, 3, 5}
+		IndexDn_3d={ 6, 8,10,12,14}
+		IndexUp_3d={ 7, 9,11,13,15}
+		IndexDn_Ld={16,18,20,22,24}
+		IndexUp_Ld={17,19,21,23,25}
+
+		-- angular momentum operators on the d-shell
+
+		OppSx_3d   =NewOperator("Sx"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppSy_3d   =NewOperator("Sy"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppSz_3d   =NewOperator("Sz"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppSsqr_3d =NewOperator("Ssqr" ,NF, IndexUp_3d, IndexDn_3d)
+		OppSplus_3d=NewOperator("Splus",NF, IndexUp_3d, IndexDn_3d)
+		OppSmin_3d =NewOperator("Smin" ,NF, IndexUp_3d, IndexDn_3d)
+
+		OppLx_3d   =NewOperator("Lx"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppLy_3d   =NewOperator("Ly"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppLz_3d   =NewOperator("Lz"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppLsqr_3d =NewOperator("Lsqr" ,NF, IndexUp_3d, IndexDn_3d)
+		OppLplus_3d=NewOperator("Lplus",NF, IndexUp_3d, IndexDn_3d)
+		OppLmin_3d =NewOperator("Lmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+		OppJx_3d   =NewOperator("Jx"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppJy_3d   =NewOperator("Jy"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppJz_3d   =NewOperator("Jz"   ,NF, IndexUp_3d, IndexDn_3d)
+		OppJsqr_3d =NewOperator("Jsqr" ,NF, IndexUp_3d, IndexDn_3d)
+		OppJplus_3d=NewOperator("Jplus",NF, IndexUp_3d, IndexDn_3d)
+		OppJmin_3d =NewOperator("Jmin" ,NF, IndexUp_3d, IndexDn_3d)
+
+		Oppldots_3d=NewOperator("ldots",NF, IndexUp_3d, IndexDn_3d)
+
+		-- Angular momentum operators on the Ligand shell
+
+		OppSx_Ld   =NewOperator("Sx"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppSy_Ld   =NewOperator("Sy"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppSz_Ld   =NewOperator("Sz"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppSsqr_Ld =NewOperator("Ssqr" ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppSplus_Ld=NewOperator("Splus",NF, IndexUp_Ld, IndexDn_Ld)
+		OppSmin_Ld =NewOperator("Smin" ,NF, IndexUp_Ld, IndexDn_Ld)
+
+		OppLx_Ld   =NewOperator("Lx"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppLy_Ld   =NewOperator("Ly"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppLz_Ld   =NewOperator("Lz"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppLsqr_Ld =NewOperator("Lsqr" ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppLplus_Ld=NewOperator("Lplus",NF, IndexUp_Ld, IndexDn_Ld)
+		OppLmin_Ld =NewOperator("Lmin" ,NF, IndexUp_Ld, IndexDn_Ld)
+
+		OppJx_Ld   =NewOperator("Jx"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppJy_Ld   =NewOperator("Jy"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppJz_Ld   =NewOperator("Jz"   ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppJsqr_Ld =NewOperator("Jsqr" ,NF, IndexUp_Ld, IndexDn_Ld)
+		OppJplus_Ld=NewOperator("Jplus",NF, IndexUp_Ld, IndexDn_Ld)
+		OppJmin_Ld =NewOperator("Jmin" ,NF, IndexUp_Ld, IndexDn_Ld)
+
+		-- total angular momentum
+		OppSx = OppSx_3d + OppSx_Ld
+		OppSy = OppSy_3d + OppSy_Ld
+		OppSz = OppSz_3d + OppSz_Ld
+		OppSsqr = OppSx * OppSx + OppSy * OppSy + OppSz * OppSz
+		OppLx = OppLx_3d + OppLx_Ld
+		OppLy = OppLy_3d + OppLy_Ld
+		OppLz = OppLz_3d + OppLz_Ld
+		OppLsqr = OppLx * OppLx + OppLy * OppLy + OppLz * OppLz
+		OppJx = OppJx_3d + OppJx_Ld
+		OppJy = OppJy_3d + OppJy_Ld
+		OppJz = OppJz_3d + OppJz_Ld
+		OppJsqr = OppJx * OppJx + OppJy * OppJy + OppJz * OppJz
+
+		-- define the coulomb operator
+		-- we here define the part depending on F0 seperately from the part depending on F2
+		-- when summing we can put in the numerical values of the slater integrals
+
+		OppF0_3d =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {1,0,0})
+		OppF2_3d =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,1,0})
+		OppF4_3d =NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {0,0,1})
+
+		-- define onsite energies - crystal field
+		-- Akm = {{k1,m1,Akm1},{k2,m2,Akm2}, ... }
+
+		Akm = PotentialExpandedOnClm("Oh", 2, {0.6,-0.4})
+		OpptenDq_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+		OpptenDq_Ld = NewOperator("CF", NF, IndexUp_Ld, IndexDn_Ld, Akm)
+
+		Akm = PotentialExpandedOnClm("Oh", 2, {1,0})
+		OppNeg_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+		OppNeg_Ld = NewOperator("CF", NF, IndexUp_Ld, IndexDn_Ld, Akm)
+		Akm = PotentialExpandedOnClm("Oh", 2, {0,1})
+		OppNt2g_3d = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, Akm)
+		OppNt2g_Ld = NewOperator("CF", NF, IndexUp_Ld, IndexDn_Ld, Akm)
+
+		OppNUp_2p = NewOperator("Number", NF, IndexUp_2p, IndexUp_2p, {1,1,1})
+		OppNDn_2p = NewOperator("Number", NF, IndexDn_2p, IndexDn_2p, {1,1,1})
+		OppN_2p = OppNUp_2p + OppNDn_2p
+		OppNUp_3d = NewOperator("Number", NF, IndexUp_3d, IndexUp_3d, {1,1,1,1,1})
+		OppNDn_3d = NewOperator("Number", NF, IndexDn_3d, IndexDn_3d, {1,1,1,1,1})
+		OppN_3d = OppNUp_3d + OppNDn_3d
+		OppNUp_Ld = NewOperator("Number", NF, IndexUp_Ld, IndexUp_Ld, {1,1,1,1,1})
+		OppNDn_Ld = NewOperator("Number", NF, IndexDn_Ld, IndexDn_Ld, {1,1,1,1,1})
+		OppN_Ld = OppNUp_Ld + OppNDn_Ld
+
+		-- define L-d interaction
+
+		Akm = PotentialExpandedOnClm("Oh", 2, {1,0})
+		OppVeg  = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_Ld, IndexDn_Ld,Akm) +  NewOperator("CF", NF, IndexUp_Ld, IndexDn_Ld, IndexUp_3d, IndexDn_3d, Akm)
+		Akm = PotentialExpandedOnClm("Oh", 2, {0,1})
+		OppVt2g = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_Ld, IndexDn_Ld,Akm) +  NewOperator("CF", NF, IndexUp_Ld, IndexDn_Ld, IndexUp_3d, IndexDn_3d, Akm)
+
+		-- core valence interaction 2p to 3d
+
+		Oppcldots= NewOperator("ldots", NF, IndexUp_2p, IndexDn_2p)
+		OppUpdF0 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {1,0}, {0,0})
+		OppUpdF2 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,1}, {0,0})
+		OppUpdG1 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {1,0})
+		OppUpdG3 = NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {0,0}, {0,1})
+
+		-- next we define the dipole operator. The dipole operator is given as epsilon.r
+		-- with epsilon the polarization vector of the light and r the unit position vector
+		-- We can expand the position vector on (renormalized) spherical harmonics and use
+		-- the crystal-field operator to create the dipole operator.
+
+		-- we both define the dipole operator between the 2p and 3d shell as well as the dipole
+		-- operator between the 3s and 2p shell
+
+		-- x polarized light is defined as x = Cos[phi]Sin[theta] = sqrt(1/2) ( C_1^{(-1)} - C_1^{(1)})
+		Akm = {{1,-1,sqrt(1/2)},{1, 1,-sqrt(1/2)}}
+		T2p3dx = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+		-- y polarized light is defined as y = Sin[phi]Sin[theta] = sqrt(1/2) I ( C_1^{(-1)} + C_1^{(1)})
+		Akm = {{1,-1,sqrt(1/2)*I},{1, 1,sqrt(1/2)*I}}
+		T2p3dy = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+		-- z polarized light is defined as z = Cos[theta] = C_1^{(0)}
+		Akm = {{1,0,1}}
+		T2p3dz = NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, IndexUp_2p, IndexDn_2p, Akm)
+
+		-- besides linear polarized light one can define circular polarized light as the sum of
+		-- x and y polarizations with complex prefactors
+		T2p3dr = sqrt(1/2)*(T2p3dx - I * T2p3dy)
+		T2p3dl =-sqrt(1/2)*(T2p3dx + I * T2p3dy)
+
+		-- we can remove zero's from the dipole operator by chopping it.
+		T2p3dr.Chop()
+		T2p3dl.Chop()
+
+		-- the 3d to 2p dipole transition is the conjugate transpose of the 2p to 3d dipole transition
+		T3d2px = ConjugateTranspose(T2p3dx)
+		T3d2py = ConjugateTranspose(T2p3dy)
+		T3d2pz = ConjugateTranspose(T2p3dz)
+		T3d2pl = ConjugateTranspose(T2p3dl)
+		T3d2pr = ConjugateTranspose(T2p3dr)
+
+		-- The parameters and scheme needed is the same as the one used for XAS
+
+		-- We follow the energy definitions as introduced in the group of G.A. Sawatzky (Groningen)
+		-- J. Zaanen, G.A. Sawatzky, and J.W. Allen PRL 55, 418 (1985)
+		-- for parameters of specific materials see
+		-- A.E. Bockquet et al. PRB 55, 1161 (1996)
+		-- After some initial discussion the energies U and Delta refer to the center of a configuration
+		-- The L^10 d^n   configuration has an energy 0
+		-- The L^9  d^n+1 configuration has an energy Delta
+		-- The L^8  d^n+2 configuration has an energy 2*Delta+Udd
+		--
+		-- If we relate this to the onsite energy of the L and d orbitals we find
+		-- 10 eL +  n    ed + n(n-1)     U/2 == 0
+		--  9 eL + (n+1) ed + (n+1)n     U/2 == Delta
+		--  8 eL + (n+2) ed + (n+1)(n+2) U/2 == 2*Delta+U
+		-- 3 equations with 2 unknowns, but with interdependence yield:
+		-- ed = (10*Delta-nd*(19+nd)*U/2)/(10+nd)
+		-- eL = nd*((1+nd)*Udd/2-Delta)/(10+nd)
+		--
+		-- For the final state we/they defined
+		-- The 2p^5 L^10 d^n+1 configuration has an energy 0
+		-- The 2p^5 L^9  d^n+2 configuration has an energy Delta + Udd - Upd
+		-- The 2p^5 L^8  d^n+3 configuration has an energy 2*Delta + 3*Udd - 2*Upd
+		--
+		-- If we relate this to the onsite energy of the p and d orbitals we find
+		-- 6 ep + 10 eL +  n    ed + n(n-1)     Udd/2 + 6 n     Upd == 0
+		-- 6 ep +  9 eL + (n+1) ed + (n+1)n     Udd/2 + 6 (n+1) Upd == Delta
+		-- 6 ep +  8 eL + (n+2) ed + (n+1)(n+2) Udd/2 + 6 (n+2) Upd == 2*Delta+Udd
+		-- 5 ep + 10 eL + (n+1) ed + (n+1)(n)   Udd/2 + 5 (n+1) Upd == 0
+		-- 5 ep +  9 eL + (n+2) ed + (n+2)(n+1) Udd/2 + 5 (n+2) Upd == Delta+Udd-Upd
+		-- 5 ep +  8 eL + (n+3) ed + (n+3)(n+2) Udd/2 + 5 (n+3) Upd == 2*Delta+3*Udd-2*Upd
+		-- 6 equations with 3 unknowns, but with interdependence yield:
+		-- epfinal = (10*Delta + (1+nd)*(nd*Udd/2-(10+nd)*Upd) / (16+nd)
+		-- edfinal = (10*Delta - nd*(31+nd)*Udd/2-90*Upd) / (16+nd)
+		-- eLfinal = ((1+nd)*(nd*Udd/2+6*Upd)-(6+nd)*Delta) / (16+nd)
+		--
+		--
+		--
+		-- note that ed-ep = Delta - nd * U and not Delta
+		-- note furthermore that ep and ed here are defined for the onsite energy if the system had
+		-- locally nd electrons in the d-shell. In DFT or Hartree Fock the d occupation is in the end not
+		-- nd and thus the onsite energy of the Kohn-Sham orbitals is not equal to ep and ed in model
+		-- calculations.
+		--
+		-- note furthermore that ep and eL actually should be different for most systems. We happily ignore this fact
+		--
+		-- We normally take U and Delta as experimentally determined parameters
+
+		-- number of electrons (formal valence)
+		nd = 8
+		-- parameters from experiment (core level PES)
+		Udd     =  7.3
+		Upd     =  8.5
+		Delta   =  4.7
+		-- parameters obtained from DFT (PRB 85, 165113 (2012))
+		F2dd    = 11.14
+		F4dd    =  6.87
+		F2pd    =  6.67
+		G1pd    =  4.92
+		G3pd    =  2.80
+		tenDq   =  0.56
+		tenDqL  =  1.44
+		Veg     =  2.06
+		Vt2g    =  1.21
+		zeta_3d =  0.081
+		zeta_2p = 11.51
+
+		ed      = (10*Delta-nd*(19+nd)*Udd/2)/(10+nd)
+		eL      = nd*((1+nd)*Udd/2-Delta)/(10+nd)
+
+		epfinal = (10*Delta + (1+nd)*(nd*Udd/2-(10+nd)*Upd)) / (16+nd)
+		edfinal = (10*Delta - nd*(31+nd)*Udd/2-90*Upd) / (16+nd)
+		eLfinal = ((1+nd)*(nd*Udd/2+6*Upd) - (6+nd)*Delta) / (16+nd)
+
+		F0dd    = Udd + (F2dd+F4dd) * 2/63
+		F0pd    = Upd + (1/15)*G1pd + (3/70)*G3pd
+
+		Hamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d  + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + ed * OppN_3d + eL * OppN_Ld
+								
+		XASHamiltonian =  F0dd*OppF0_3d + F2dd*OppF2_3d + F4dd*OppF4_3d + zeta_3d*Oppldots_3d + tenDq*OpptenDq_3d + tenDqL*OpptenDq_Ld + Veg * OppVeg + Vt2g * OppVt2g + edfinal * OppN_3d + eLfinal * OppN_Ld + epfinal * OppN_2p + zeta_2p * Oppcldots + F0pd * OppUpdF0 + F2pd * OppUpdF2 + G1pd * OppUpdG1 + G3pd * OppUpdG3
+
+		-- in order to make sure we have a filling of 8 electrons we need to define some restrictions
+		StartRestrictions = {NF, NB, {"000000 1111111111 0000000000",8,8}, {"111111 0000000000 1111111111",16,16}}
+	end
+	Hex = 0.12
+	TestList =
+	{
+		{"S//z, zin, xout", Hamiltonian + Hex * OppSz_3d, XASHamiltonian + Hex * OppSz_3d,  T2p3dz, T3d2px},
+	  {"S//z, zin, yout", Hamiltonian + Hex * OppSz_3d, XASHamiltonian + Hex * OppSz_3d,  T2p3dz, T3d2py},
+	  {"S//x, xin, zout", Hamiltonian + Hex * OppSx_3d, XASHamiltonian + Hex * OppSx_3d,  T2p3dx, T3d2pz},
+  	{"S//x, xin, yout", Hamiltonian + Hex * OppSx_3d, XASHamiltonian + Hex * OppSx_3d,  T2p3dx, T3d2py},
+  	{"S//y, yin, zout", Hamiltonian + Hex * OppSy_3d, XASHamiltonian + Hex * OppSy_3d,  T2p3dy, T3d2pz},
+  	{"S//y, yin, xout", Hamiltonian + Hex * OppSy_3d, XASHamiltonian + Hex * OppSy_3d,  T2p3dy, T3d2px},
+	
+  	{"S//z, zin, xout + ofset A", Hamiltonian + Hex * OppSz_3d + 1, XASHamiltonian + Hex * OppSz_3d,  T2p3dz, T3d2px},
+  	{"S//z, zin, yout + ofset A", Hamiltonian + Hex * OppSz_3d + 1, XASHamiltonian + Hex * OppSz_3d,  T2p3dz, T3d2py},
+	  {"S//x, xin, zout + ofset A", Hamiltonian + Hex * OppSx_3d + 1, XASHamiltonian + Hex * OppSx_3d,  T2p3dx, T3d2pz},
+	  {"S//x, xin, yout + ofset A", Hamiltonian + Hex * OppSx_3d + 1, XASHamiltonian + Hex * OppSx_3d,  T2p3dx, T3d2py},
+	  {"S//y, yin, zout + ofset A", Hamiltonian + Hex * OppSy_3d + 1, XASHamiltonian + Hex * OppSy_3d,  T2p3dy, T3d2pz},
+	  {"S//y, yin, xout + ofset A", Hamiltonian + Hex * OppSy_3d + 1, XASHamiltonian + Hex * OppSy_3d,  T2p3dy, T3d2px},
+	
+	  {"S//z, zin, xout + ofset B", Hamiltonian + Hex * OppSz_3d, XASHamiltonian + Hex * OppSz_3d + 1,  T2p3dz, T3d2px},
+	  {"S//z, zin, yout + ofset B", Hamiltonian + Hex * OppSz_3d, XASHamiltonian + Hex * OppSz_3d + 1,  T2p3dz, T3d2py},
+	  {"S//x, xin, zout + ofset B", Hamiltonian + Hex * OppSx_3d, XASHamiltonian + Hex * OppSx_3d + 1,  T2p3dx, T3d2pz},
+	  {"S//x, xin, yout + ofset B", Hamiltonian + Hex * OppSx_3d, XASHamiltonian + Hex * OppSx_3d + 1,  T2p3dx, T3d2py},
+	  {"S//y, yin, zout + ofset B", Hamiltonian + Hex * OppSy_3d, XASHamiltonian + Hex * OppSy_3d + 1,  T2p3dy, T3d2pz},
+	  {"S//y, yin, xout + ofset B", Hamiltonian + Hex * OppSy_3d, XASHamiltonian + Hex * OppSy_3d + 1,  T2p3dy, T3d2px},
+	
+	  {"S//z, zin, xout + ofset C", Hamiltonian + Hex * OppSz_3d + 1, XASHamiltonian + Hex * OppSz_3d + 1,  T2p3dz, T3d2px},
+	  {"S//z, zin, yout + ofset C", Hamiltonian + Hex * OppSz_3d + 1, XASHamiltonian + Hex * OppSz_3d + 1,  T2p3dz, T3d2py},
+	  {"S//x, xin, zout + ofset C", Hamiltonian + Hex * OppSx_3d + 1, XASHamiltonian + Hex * OppSx_3d + 1,  T2p3dx, T3d2pz},
+	  {"S//x, xin, yout + ofset C", Hamiltonian + Hex * OppSx_3d + 1, XASHamiltonian + Hex * OppSx_3d + 1,  T2p3dx, T3d2py},
+	  {"S//y, yin, zout + ofset C", Hamiltonian + Hex * OppSy_3d + 1, XASHamiltonian + Hex * OppSy_3d + 1,  T2p3dy, T3d2pz},
+	  {"S//y, yin, xout + ofset C", Hamiltonian + Hex * OppSy_3d + 1, XASHamiltonian + Hex * OppSy_3d + 1,  T2p3dy, T3d2px},
+		
+		{"S//z, zin, xout", Rotate(Hamiltonian + Hex * OppSz_3d,rotmat1), Rotate(XASHamiltonian + Hex * OppSz_3d,rotmat1),  Rotate(T2p3dz,rotmat1), Rotate(T3d2px,rotmat1)},
+		{"S//z, zin, xout", Rotate(Hamiltonian + Hex * OppSz_3d,rotmat2), Rotate(XASHamiltonian + Hex * OppSz_3d,rotmat2),  Rotate(T2p3dz,rotmat2), Rotate(T3d2px,rotmat2)}
+		
+	}
+	OptionsList =
+  {
+	  {{"DenseBorder",0},    {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1}},
+	  {{"DenseBorder",5000}, {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"Epsilon",1E-12}}
+	}
+end
+
+
+
+print("--------------------------------------------------------")
+print("--                   Single state                     --")
+print("--------------------------------------------------------")
+
+-- create the spectrum we compare to
+i=1
+j=1
+psi0 = Eigensystem(TestList[i][2], StartRestrictions, 1,{{"zero",1E-12},{"Epsilon",1E-12}})
+RIXSSpectraComp = CreateResonantSpectra(TestList[i][3], TestList[i][2], TestList[i][4], TestList[i][5], psi0, OptionsList[j])
+
+accuracy = 1E-12
+
+-- test E0
+E1 = Braket(psi0,TestList[i][3],psi0)
+E2 = Braket(psi0,TestList[i][2],psi0)
+OptionsListE0 =
+{
+	{{"DenseBorder",0},    {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1}},
+	{{"DenseBorder",5000}, {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"Epsilon",1E-12}},
+	{{"DenseBorder",0},    {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"E0_1",E1}},
+	{{"DenseBorder",5000}, {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"E0_1",E1},{"Epsilon",1E-12}},
+	{{"DenseBorder",0},    {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"E0_2",E2}},
+	{{"DenseBorder",5000}, {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"E0_2",E2},{"Epsilon",1E-12}},
+	{{"DenseBorder",0},    {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"E0_1",E1},{"E0_2",E2}},
+	{{"DenseBorder",5000}, {"NE1", 10}, {"NE2", 400}, {"Emin1", -10}, {"Emax1", 0}, {"Gamma1", 1}, {"Emin2", -0.5}, {"Emax2", 7.5}, {"Gamma2", 0.1},{"E0_1",E1},{"E0_2",E2},{"Epsilon",1E-12}},
+}
+
+for j=1,#OptionsListE0 do
+	print("\n=========================================================")
+	print("Start with options ",j)
+	print("=========================================================\n")
+	RIXSSpectra = CreateResonantSpectra(TestList[i][3], TestList[i][2], TestList[i][4], TestList[i][5], psi0, OptionsListE0[j])
+	RIXSSpectra = Chop(RIXSSpectra - RIXSSpectraComp, accuracy)
+	if TestIfSpectrumIsZero(RIXSSpectra)==false then
+		print(RIXSSpectra)
+		os.exit()
+	end
+end
+
+-- test rotations
+
+for i=1,#TestList do
+	print("\n=========================================================")
+	print("Start with test ",i,TestList[i][1])
+	print("=========================================================\n")
+	psi0 = Eigensystem(TestList[i][2], StartRestrictions, 1)
+	for j=1,#OptionsList do
+		print("\n=========================================================")
+	  print("Start with options ",j)
+	  print("=========================================================\n")
+		RIXSSpectra = CreateResonantSpectra(TestList[i][3], TestList[i][2], TestList[i][4], TestList[i][5], psi0, OptionsList[j])
+		RIXSSpectra = Chop(RIXSSpectra - RIXSSpectraComp, accuracy)
+		if TestIfSpectrumIsZero(RIXSSpectra)==false then
+			print(RIXSSpectra)
+			os.exit()
+		end
+	end
+end
+
+
+
+
+print("--------------------------------------------------------")
+print("--                      3 states                      --")
+print("--------------------------------------------------------")
+
+-- create the spectrum we compare to
+i=1
+j=1
+psi0 = Eigensystem(TestList[i][2], StartRestrictions, 3)
+RIXSSpectraComp = CreateResonantSpectra(TestList[i][3], TestList[i][2], TestList[i][4], TestList[i][5], psi0, OptionsList[j])
+
+accuracy = 1E-11
+
+for i=1,#TestList do
+	print("\n=========================================================")
+	print("Start with test ",i,TestList[i][1])
+	print("=========================================================\n")
+	psi0 = Eigensystem(TestList[i][2], StartRestrictions, 3)
+	for j=1,#OptionsList do
+		print("\n=========================================================")
+		print("Start with options ",j)
+		print("=========================================================\n")
+		RIXSSpectra = CreateResonantSpectra(TestList[i][3], TestList[i][2], TestList[i][4], TestList[i][5], psi0, OptionsList[j])
+		RIXSSpectra = Chop(RIXSSpectra - RIXSSpectraComp, accuracy)
+		if TestIfSpectrumIsZero(RIXSSpectra)==false then
+			print(RIXSSpectra)
+			os.exit()
+		end
+	end
+end
+
+
+
+
+
+
+
+
+os.exit()
+
+print("--------------------------------------------------------")
+print("--            Anderson Impurity Model                 --")
+print("--------------------------------------------------------")
+
+
+
 -- Function for comparing all elements of two spectral tables
 function CmpSpectra(s1, s2, threshold)
 	if #s1 ~= #s2 then print("\nSize not equal\n"); return false end
