@@ -4,10 +4,6 @@ print("-----------------------------------------------------------------")
 
 Verbosity(0)
 
-print("--------------------------------------------------------")
-print("--                Ligand field Model                  --")
-print("--------------------------------------------------------")
-
 function TestIfSpectrumIsZero(Spec)
 	local SpecTable=Spectra.ToTable(Spec)
 	for i=1,#SpecTable do
@@ -20,6 +16,81 @@ function TestIfSpectrumIsZero(Spec)
 	end
 	return true
 end
+
+print("--------------------------------------------------------")
+print("--    One particle Hamiltonian on eigen basis         --")
+print("--------------------------------------------------------")
+
+accuracy = 1E-10
+
+NF = 6
+H0vec={}
+for i=1,NF do
+	H0vec[i] = {(i-1),-(i-1),i + i*i/NF - 10/6}
+end
+H0 = NewOperator(NF,0,H0vec)
+strlist={}
+psilist={}
+for i=1,NF do
+	strlist[i]=""
+	for j=1,NF do
+		if i==j then
+			strlist[i] = strlist[i].."1"
+		else
+			strlist[i] = strlist[i].."0"
+		end
+	end
+	psilist[i] = NewWavefunction(NF, 0, {{strlist[i], 1}})
+end
+
+psi0 = NewWavefunction(NF, 0, {{strlist[1], sqrt(0.4)},{strlist[2], sqrt(0.3)},{strlist[3], sqrt(0.2)},{strlist[4], sqrt(0.1)}})
+
+OppT = 0
+for i=1,NF do
+	OppT = OppT + NewOperator("Cr", NF, i-1)
+end
+
+print("Comaper Dens and Lanczos simple H 1")
+
+specLan = CreateResonantSpectra(H0+10, H0, OppT, ConjugateTranspose(OppT), psilist, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 2000}, {"Emin1", 0}, {"Emax1", 10}, {"Gamma1", 0.1}, {"Emin2", -5}, {"Emax2", 15}, {"Gamma2", 0.1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1E-10}})
+specDen = CreateResonantSpectra(H0+10, H0, OppT, ConjugateTranspose(OppT), psilist, {{"DenseBorder", 1},     {"NE1", 5}, {"NE2", 2000}, {"Emin1", 0}, {"Emax1", 10}, {"Gamma1", 0.1}, {"Emin2", -5}, {"Emax2", 15}, {"Gamma2", 0.1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1E-10}})
+
+TestIfSpectrumIsZero(Chop(specLan-specDen,accuracy))
+
+print("Comaper Dens and Lanczos simple H 2")
+
+specLan = CreateResonantSpectra(H0+10, H0, OppT, ConjugateTranspose(OppT), psi0, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 2000}, {"Emin1", 0}, {"Emax1", 10}, {"Gamma1", 0.1}, {"Emin2", -5}, {"Emax2", 15}, {"Gamma2", 0.1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1E-10}})
+specDen = CreateResonantSpectra(H0+10, H0, OppT, ConjugateTranspose(OppT), psi0, {{"DenseBorder", 1},     {"NE1", 5}, {"NE2", 2000}, {"Emin1", 0}, {"Emax1", 10}, {"Gamma1", 0.1}, {"Emin2", -5}, {"Emax2", 15}, {"Gamma2", 0.1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1E-10}})
+
+TestIfSpectrumIsZero(Chop(specLan-specDen,accuracy))
+
+
+	matp = {}
+	for i=1,NF do
+		matp[i]={}
+		for j=1,NF do
+			matp[i][j] = i + sin(j+i) + sin(j) * sin(i+j*2) + cos(i) + cos(j*2) + I * ( (i-3)*j + cos(j) * (j-2)*i)
+		end
+		for j=1,i-1 do
+			matp[i][j]=0
+		end
+	end
+	matp = Orthonormalize(matp)
+	matp = Orthonormalize(matp,{{"Method","GramSchmidt"}})
+	matp = Orthonormalize(matp,{{"Method","GramSchmidt"}})
+
+
+  print("Comaper Dens and Lanczos simple H 1 rotated")
+  specLanR = CreateResonantSpectra(Rotate(H0+10,matp), Rotate(H0,matp), Rotate(OppT,matp), Rotate(ConjugateTranspose(OppT),matp), Rotate(psi0,matp), {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 2000}, {"Emin1", 0}, {"Emax1", 10}, {"Gamma1", 0.1}, {"Emin2", -5}, {"Emax2", 15}, {"Gamma2", 0.1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1E-10}})
+  specDenR = CreateResonantSpectra(Rotate(H0+10,matp), Rotate(H0,matp), Rotate(OppT,matp), Rotate(ConjugateTranspose(OppT),matp), Rotate(psi0,matp), {{"DenseBorder", 1},     {"NE1", 5}, {"NE2", 2000}, {"Emin1", 0}, {"Emax1", 10}, {"Gamma1", 0.1}, {"Emin2", -5}, {"Emax2", 15}, {"Gamma2", 0.1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1E-10}})
+
+  TestIfSpectrumIsZero(Chop(specLanR-specDenR,accuracy))
+  TestIfSpectrumIsZero(Chop(specLan-specLanR,accuracy))
+
+print("--------------------------------------------------------")
+print("--                Ligand field Model                  --")
+print("--------------------------------------------------------")
+
 
 -- define a set of Hamiltonians, H1 and H2 and operators T1 and T2 that all yield the same RIXS spectrum
 do
@@ -443,14 +514,6 @@ for i=1,#TestList do
 end
 
 
-
-
-
-
-
-
-os.exit()
-
 print("--------------------------------------------------------")
 print("--            Anderson Impurity Model                 --")
 print("--------------------------------------------------------")
@@ -667,151 +730,302 @@ specRefH0H0BathBathPsi2 = {
 {{-2.000000000000000E+00,-1.737533219750568E-01 - I *  8.957296667679022E-02},{-1.800000000000000E+00,-1.805716974780005E-01 - I *  1.207337061077885E-01},{-1.600000000000000E+00,-1.787086214580487E-01 - I *  1.600736830759658E-01},{-1.400000000000000E+00,-1.560044610338512E-01 - I *  2.051569841368400E-01},{-1.200000000000000E+00,-1.079818666579063E-01 - I *  2.294628907378924E-01},{-1.000000000000000E+00,-7.076772501035886E-02 - I *  2.216685008619488E-01},{-7.999999999999999E-01,-5.762620529097132E-02 - I *  2.175627926193250E-01},{-5.999999999999999E-01,-3.770008886609360E-02 - I *  2.307877462364935E-01},{-3.999999999999999E-01, 4.763919718407699E-03 - I *  2.304791046671406E-01},{-1.999999999999999E-01, 3.540892892294584E-02 - I *  1.984415364264115E-01},{ 1.110223024625157E-16, 3.471652349071314E-02 - I *  1.653992582820832E-01},{ 2.000000000000001E-01, 2.012377691372496E-02 - I *  1.511053450690600E-01},{ 4.000000000000001E-01, 7.902549792229527E-03 - I *  1.517175780021517E-01},{ 6.000000000000001E-01,-1.315776622068318E-03 - I *  1.584483271573545E-01},{ 8.000000000000002E-01,-1.068443393619225E-02 - I *  1.769544844912620E-01},{ 1.000000000000000E+00,-4.537409578412608E-03 - I *  2.141666883493346E-01},{ 1.200000000000000E+00, 3.867768596010093E-02 - I *  2.490107435049126E-01},{ 1.400000000000000E+00, 9.909545883725929E-02 - I *  2.445438889049929E-01},{ 1.600000000000000E+00, 1.387585412151218E-01 - I *  2.153751355673761E-01},{ 1.800000000000000E+00, 1.660916303288894E-01 - I *  1.835632174305590E-01},{ 2.000000000000000E+00, 1.829687913038579E-01 - I *  1.430343682358677E-01},["Name"]="Spectrum wres 4/5 T2 0/1 T1 0/1 psi 0/1",["EminPole"]=-1.801937735804838E+00,["EmaxPole"]= 1.801937735804838E+00,["Gamma"]= 1.000000000000000E+00,["Integral"]= 3.237359611481411E-01},
 {{-2.000000000000000E+00,-2.157156118082243E-01 - I *  9.052082918670418E-02},{-1.800000000000000E+00,-2.292086381121778E-01 - I *  1.204550621033726E-01},{-1.600000000000000E+00,-2.368804538985267E-01 - I *  1.597578571911216E-01},{-1.400000000000000E+00,-2.284109063888073E-01 - I *  2.073207211124417E-01},{-1.200000000000000E+00,-1.997963319146699E-01 - I *  2.433048377542248E-01},{-1.000000000000000E+00,-1.782819029241902E-01 - I *  2.619347137200875E-01},{-7.999999999999999E-01,-1.668304839751303E-01 - I *  2.959186375313400E-01},{-5.999999999999999E-01,-1.239149887841674E-01 - I *  3.497502815210648E-01},{-3.999999999999999E-01,-3.366241966156970E-02 - I *  3.666619217469319E-01},{-1.999999999999999E-01, 3.584209453972357E-02 - I *  3.168930768963721E-01},{ 1.110223024625157E-16, 4.741826052317027E-02 - I *  2.593792143409436E-01},{ 2.000000000000001E-01, 3.289398120219472E-02 - I *  2.313441043179373E-01},{ 4.000000000000001E-01, 2.194258225806841E-02 - I *  2.254556796869827E-01},{ 6.000000000000001E-01, 1.486706974922081E-02 - I *  2.239578662358114E-01},{ 8.000000000000002E-01, 1.817357867005194E-03 - I *  2.339527979233644E-01},{ 1.000000000000000E+00,-6.080858660340838E-04 - I *  2.684154649860813E-01},{ 1.200000000000000E+00, 3.332329085575245E-02 - I *  3.089220978531528E-01},{ 1.400000000000000E+00, 8.923976214182183E-02 - I *  3.199796021594506E-01},{ 1.600000000000000E+00, 1.391267483318412E-01 - I *  3.134025877708397E-01},{ 1.800000000000000E+00, 1.979410727006605E-01 - I *  2.937387332636239E-01},{ 2.000000000000000E+00, 2.471578230289170E-01 - I *  2.379205578419997E-01},["Name"]="Spectrum wres 5/5 T2 0/1 T1 0/1 psi 0/1",["EminPole"]=-1.801937735804838E+00,["EmaxPole"]= 1.801937735804838E+00,["Gamma"]= 1.000000000000000E+00,["Integral"]= 4.379987105745756E-01}}
 
+print("Shifted the Hamiltonian")
+do
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
 
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpUpPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
 end
 
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpUpPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
+print("without shifting the Hamiltonian")
+do
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
 end
 
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpDnPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
 
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpDnPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnUpPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnUpPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnDnPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnDnPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathUpPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathUpPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathDnPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathDnPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpBathPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpBathPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnBathPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnBathPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TBathAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathBathPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TBathAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathBathPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
+print("multiple states and transition operators at once")
 
 spec = CreateResonantSpectra(H0, H0, {TUpCr, TDnCr}, {TUpAn, TDnAn, TBathAn}, {psi1, psi2}, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
 spec = Spectra.ToTable(spec)
@@ -887,71 +1101,144 @@ specRefH0H2DnUpPsi2 = {
 {{-2.000000000000000E+00,-8.129288941129668E-02 - I *  8.410080723796352E-02},{-1.800000000000000E+00,-6.617153996975086E-02 - I *  1.064391904246256E-01},{-1.600000000000000E+00,-4.596788619148855E-02 - I *  1.197097235747997E-01},{-1.400000000000000E+00,-2.334431068135072E-02 - I *  1.300051339361802E-01},{-1.200000000000000E+00, 7.136762349989919E-03 - I *  1.298834936430160E-01},{-1.000000000000000E+00, 2.920932408289403E-02 - I *  1.130303407723603E-01},{-7.999999999999999E-01, 3.545558549035942E-02 - I *  9.737911012180482E-02},{-5.999999999999999E-01, 3.963247354065071E-02 - I *  9.120612402781723E-02},{-3.999999999999999E-01, 4.994773004970082E-02 - I *  8.448432432843581E-02},{-1.999999999999999E-01, 5.719890487590432E-02 - I *  7.041400803353101E-02},{ 1.110223024625157E-16, 5.608098945861117E-02 - I *  5.760206712843838E-02},{ 2.000000000000001E-01, 5.288593265773078E-02 - I *  5.125115942053655E-02},{ 4.000000000000001E-01, 5.350075283216559E-02 - I *  4.789392031928488E-02},{ 6.000000000000001E-01, 5.613098372085779E-02 - I *  4.146068325940481E-02},{ 8.000000000000002E-01, 5.550329271880647E-02 - I *  3.331856972471847E-02},{ 1.000000000000000E+00, 5.258225498889861E-02 - I *  2.744214595130393E-02},{ 1.200000000000000E+00, 5.026780364274766E-02 - I *  2.358302367979633E-02},{ 1.400000000000000E+00, 4.868606234412100E-02 - I *  1.963639856727812E-02},{ 1.600000000000000E+00, 4.641883075551551E-02 - I *  1.561936300110868E-02},{ 1.800000000000000E+00, 4.363512535856946E-02 - I *  1.241235187894223E-02},{ 2.000000000000000E+00, 4.084146310591740E-02 - I *  9.969488422008298E-03},["Name"]="Spectrum wres 4/5 T2 0/1 T1 0/1 psi 0/1",["EminPole"]=-1.801937735804838E+00,["EmaxPole"]= 1.801937735804838E+00,["Gamma"]= 1.000000000000000E+00,["Integral"]= 1.139718921908725E-01},
 {{-2.000000000000000E+00,-9.850924634089146E-02 - I *  1.049670611979063E-01},{-1.800000000000000E+00,-7.792225899833964E-02 - I *  1.317209999956673E-01},{-1.600000000000000E+00,-5.176538662654747E-02 - I *  1.452122206632803E-01},{-1.400000000000000E+00,-2.536192613670189E-02 - I *  1.542297752114188E-01},{-1.200000000000000E+00, 8.137094697581311E-03 - I *  1.525318560825837E-01},{-1.000000000000000E+00, 3.180136802700391E-02 - I *  1.334604944830475E-01},{-7.999999999999999E-01, 3.821807887618080E-02 - I *  1.169161548959241E-01},{-5.999999999999999E-01, 4.368946849923980E-02 - I *  1.115614385241684E-01},{-3.999999999999999E-01, 5.754368611087109E-02 - I *  1.044741695154815E-01},{-1.999999999999999E-01, 6.747814533518076E-02 - I *  8.722537961935543E-02},{ 1.110223024625157E-16, 6.645210147095888E-02 - I *  7.106002375349303E-02},{ 2.000000000000001E-01, 6.226111309194200E-02 - I *  6.283841070755541E-02},{ 4.000000000000001E-01, 6.218580647754077E-02 - I *  5.865407158968621E-02},{ 6.000000000000001E-01, 6.440760395559481E-02 - I *  5.149512682906590E-02},{ 8.000000000000002E-01, 6.309039214175062E-02 - I *  4.296179687190584E-02},{ 1.000000000000000E+00, 5.977491443219449E-02 - I *  3.758333064151624E-02},{ 1.200000000000000E+00, 5.830218507292072E-02 - I *  3.443604003265283E-02},{ 1.400000000000000E+00, 5.823601796681239E-02 - I *  3.009303000449669E-02},{ 1.600000000000000E+00, 5.695146400367460E-02 - I *  2.499251751417894E-02},{ 1.800000000000000E+00, 5.495349922897383E-02 - I *  2.059698737400320E-02},{ 2.000000000000000E+00, 5.264451243304676E-02 - I *  1.649713114226626E-02},["Name"]="Spectrum wres 5/5 T2 0/1 T1 0/1 psi 0/1",["EminPole"]=-1.801937735804838E+00,["EmaxPole"]= 1.801937735804838E+00,["Gamma"]= 1.000000000000000E+00,["Integral"]= 1.419853634502672E-01}}	
 
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpUpPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
+print("Whith shifted Hamiltonian")
+do
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+	 
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
 end
 
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpUpPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
+
+print("Whithout shifted Hamiltonian")
+do
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+	 
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
 end
 
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpDnPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpDnPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnDnPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnDnPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-	
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnUpPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnUpPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-
+print("Multiple states and transitio operators at once")
 spec = CreateResonantSpectra(H0, H2, {TUpCr, TDnCr}, {TUpAn, TDnAn}, {psi1, psi2}, {{"DenseBorder", 10000}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
 spec = Spectra.ToTable(spec)
 
@@ -971,152 +1258,307 @@ print("--------------------------------------------------------")
 print("--                     Lancsoz                        --")
 print("--------------------------------------------------------")
 
+print("With shifted Hamiltonian")
+do
+	
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
 
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpUpPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
 end
 
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpUpPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
+
+print("Without shifted Hamiltonian")
+do
+	
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathUpPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathDnPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TUpCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0UpBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TDnCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0DnBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi1[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
+ spec = CreateResonantSpectra(H0, H0, TBathCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+		 if not CmpSpectra(spec[s], specRefH0H0BathBathPsi2[s], threshold) then
+				 error("Spectrum not equal to the expected one\n",1)
+		 end
+ end
+
 end
 
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpDnPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
 
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpDnPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnUpPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnUpPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnDnPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnDnPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathUpPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathUpPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathDnPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathDnPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TUpCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpBathPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TUpCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0UpBathPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TDnCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnBathPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TDnCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0DnBathPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H0-E0psi1, TBathCr, TBathAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathBathPsi1[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H0-E0psi2, TBathCr, TBathAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-    if not CmpSpectra(spec[s], specRefH0H0BathBathPsi2[s], threshold) then
-        error("Spectrum not equal to the expected one\n",1)
-    end
-end
-
-
+print("Multiple states and transition operators at once")
 spec = CreateResonantSpectra(H0, H0, {TUpCr, TDnCr}, {TUpAn, TDnAn, TBathAn}, {psi1, psi2}, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
 spec = Spectra.ToTable(spec)
 
@@ -1132,73 +1574,145 @@ for i = 1, 12 do
 	end
 end
 
-
-
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpUpPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpUpPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpDnPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2UpDnPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnDnPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
-
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnDnPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
-end
+print("With shifted Hamiltonian")
+do
 	
-spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnUpPsi1[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TUpCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TUpCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+	 
+ spec = CreateResonantSpectra(H0-E0psi1, H2-E2psi1, TDnCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
 end
 
-spec = CreateResonantSpectra(H0-E0psi2, H2-E2psi2, TDnCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
-spec = Spectra.ToTable(spec)
-for s = 1, #spec do
-	if not CmpSpectra(spec[s], specRefH0H2DnUpPsi2[s], threshold) then
-		error("Spectrum not equal to the expected one\n",1)
-	end
+print("Without shifted Hamiltonian")
+do
+	
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TUpCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2UpDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TDnAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TDnAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnDnPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+	 
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TUpAn, psi1, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi1[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
+ spec = CreateResonantSpectra(H0, H2, TDnCr, TUpAn, psi2, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
+ spec = Spectra.ToTable(spec)
+ for s = 1, #spec do
+	 if not CmpSpectra(spec[s], specRefH0H2DnUpPsi2[s], threshold) then
+		 error("Spectrum not equal to the expected one\n",1)
+	 end
+ end
+
 end
 
-
+print("Multiple states and transition operators at once")
 spec = CreateResonantSpectra(H0, H2, {TUpCr, TDnCr}, {TUpAn, TDnAn}, {psi1, psi2}, {{"DenseBorder", 1}, {"NE1", 5}, {"NE2", 20}, {"Emin1", -1}, {"Emax1", 1}, {"Gamma1", 1}, {"Emin2", -2}, {"Emax2", 2}, {"Gamma2", 1}, {"NTri1", 200}, {"NTri2", 200}, {"epsilon", 1.49E-8}})
 spec = Spectra.ToTable(spec)
 

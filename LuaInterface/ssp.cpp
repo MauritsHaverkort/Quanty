@@ -2905,6 +2905,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
         WaveFunctionFree(&HTpsiDenseBasis);
         goto EndOfUseDenseTest;
       }
+      WaveFunctionAddMultipliedUnionBasis(&Opsi, HTpsiDenseBasis, 0);
       WaveFunctionFree(&HTpsiDenseBasis);
       if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
       {
@@ -2955,6 +2956,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
         WaveFunctionFree(&HTpsiDenseBasis);
         goto EndOfUseDenseTest;
       }
+      WaveFunctionAddMultipliedUnionBasis(&Opsi, HTHTpsiDenseBasis, 0);
       WaveFunctionFree(&HTHTpsiDenseBasis);
       if (Options.DenseMethod==false) if(Opsi.N>Options.Settings.DenseBorder)
       {

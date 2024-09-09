@@ -27,38 +27,14 @@ build-job:
 # ===== These functions are registered in ssp.cpp 
 #
 
-test-job-CreateSpectra:
+test-job-BlockBandDiagonalize:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateSpectra.Quanty"
+  - ./Quanty.exe "TestScripts/BlockBandDiagonalize.Quanty"
   dependencies:
   - build-job
-
-test-job-CreateFluorescenceYield:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateFluorescenceYield.Quanty"
-  dependencies:
-  - build-job
-
-test-job-DensityMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/DensityMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-TensorProduct:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TensorProduct.Quanty"
-  dependencies:
-  - build-job
-
+  
 test-job-Braket:
   stage: test
   script:
@@ -75,27 +51,11 @@ test-job-BraketDiagonal:
   dependencies:
   - build-job
 
-test-job-Eigensystem:
+test-job-Chop:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Eigensystem.Quanty"
-  dependencies:
-  - build-job
-
-test-job-BlockBandDiagonalize:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/BlockBandDiagonalize.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Rotate:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Rotate.Quanty"
+  - ./Quanty.exe "TestScripts/Chop.Quanty"
   dependencies:
   - build-job
 
@@ -104,14 +64,6 @@ test-job-Clone:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Clone.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Copy:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Copy.Quanty"
   dependencies:
   - build-job
 
@@ -131,11 +83,67 @@ test-job-ConjugateTranspose:
   dependencies:
   - build-job
 
-test-job-Chop:
+test-job-Copy:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Chop.Quanty"
+  - ./Quanty.exe "TestScripts/Copy.Quanty"
+  dependencies:
+  - build-job
+
+test-job-CreateFluorescenceYield:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateFluorescenceYield.Quanty"
+  dependencies:
+  - build-job
+
+test-job-CreateResonantSpectra:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateResonantSpectra.Quanty"
+  dependencies:
+  - build-job
+
+test-job-CreateSpectra:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateSpectra.Quanty"
+  dependencies:
+  - build-job
+
+test-job-DensityMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/DensityMatrix.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Eigensystem:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Eigensystem.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Inverse:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Inverse.Quanty"
+  dependencies:
+  - build-job
+
+test-job-MeanFieldGroundstate:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/MeanFieldGroundstate.Quanty"
   dependencies:
   - build-job
 
@@ -147,27 +155,19 @@ test-job-MeanFieldOperator:
   dependencies:
   - build-job
 
+test-job-NewWavefunction:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/NewWavefunction.Quanty"
+  dependencies:
+  - build-job
+
 test-job-OperatorToMatrix:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/OperatorToMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-PartialOperator:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/PartialOperator.Quanty"
-  dependencies:
-  - build-job
-
-test-job-TimeStartStopPrintSet:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TimeStartStopPrintSet.Quanty"
   dependencies:
   - build-job
 
@@ -179,19 +179,59 @@ test-job-Orthonormalize:
   dependencies:
   - build-job
 
+test-job-PartialMeanFieldOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/PartialMeanFieldOperator.Quanty"
+  dependencies:
+  - build-job
+
+test-job-PartialOperator:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/PartialOperator.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Rotate:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Rotate.Quanty"
+  dependencies:
+  - build-job
+
+test-job-TensorProduct:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TensorProduct.Quanty"
+  dependencies:
+  - build-job
+
+test-job-TimeStartStopPrintSet:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TimeStartStopPrintSet.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Transpose:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Transpose.Quanty"
+  dependencies:
+  - build-job
+
 test-job-Verbosity:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Verbosity.Quanty"
-  dependencies:
-  - build-job
-
-test-job-NewWavefunction:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/NewWavefunction.Quanty"
   dependencies:
   - build-job
 
