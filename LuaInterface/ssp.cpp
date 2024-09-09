@@ -2108,6 +2108,7 @@ static int LuaCreateSpectra(lua_State *L)
 				{
 					luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
 				}
+        WaveFunctionAddMultipliedUnionBasis(&OpsiDenseBasis, psiDenseBasis, 0);
 				if ((Options.DenseMethod == false) && (OpsiDenseBasis.N > Options.Settings.DenseBorder))
 				{
 					WaveFunctionFree(&OpsiDenseBasis);
