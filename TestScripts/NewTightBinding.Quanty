@@ -1,0 +1,272 @@
+--Bugs Found:
+--1. If you use not defined variables in the methods, you get a sigfault.
+
+--TO DO: 
+--1. undertans the format of the tight binding object
+--2. Make further tests
+
+
+print("--------------------------------------------------------")
+print("--                  NewTightBinding                   --")
+print("--------------------------------------------------------")
+
+--some vectors operation
+function crossProd(a,b)
+  local c = {}
+  c[1] = a[2]*b[3]-a[3]*b[2]
+  c[2] = a[3]*b[1]-a[1]*b[3]
+  c[3] = a[1]*b[2]-a[2]*b[1]
+  return c
+end
+
+function dotProd(a,b)
+  local c = 0
+  for i=1,#a do
+    c = c + a[i]*b[i]
+  end
+  return c
+end
+
+function scalarMult(b,a)
+  local c = {}
+  for i=1,#a do
+    c[i] = a[i]*b
+  end
+  return c
+end
+
+function getReciprocalLatticeVectors(a1,a2,a3,scaling)
+  
+  local V = dotProd(a1,(crossProd(a2,a3)))
+  
+  local b1 = scalarMult((scaling/V),crossProd(a2,a3))
+  local b2 = scalarMult((scaling/V),crossProd(a3,a1))
+  local b3 = scalarMult((scaling/V),crossProd(a1,a2))
+  
+  return b1,b2,b3
+end
+
+--function checking that three vetors are linera independent
+function checkLinearIndep(a1,a2,a3)
+  local V = dotProd(a1,(crossProd(a2,a3)))
+  if V == 0 then
+    return false
+  else
+    return true
+  end
+end 
+
+--function comparing two tables
+function deepCompare(t1, t2)
+  if t1 == t2 then return true end
+  if type(t1) ~= "table" or type(t2) ~= "table" then return false end
+  for k, v in pairs(t1) do
+      if not deepCompare(v, t2[k]) then return false end
+  end
+  for k, v in pairs(t2) do
+      if not deepCompare(v, t1[k]) then return false end
+  end
+  return true
+end
+
+
+
+
+
+--set Hoppings
+--random numbers between 0 and 10 
+t1 = math.random()*10               
+t2 = math.random()*10   
+
+
+print("=====================")
+print("check functionalities")
+print("=====================")
+
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+
+
+--Gererate linearly independent vectors for the basis
+rVectorsFound=false
+while rVectorsFound==false do
+  r1={math.random()*10 ,math.random()*10 ,math.random()*10 }
+  r2={math.random()*10 ,math.random()*10 ,math.random()*10 }
+  r3={math.random()*10 ,math.random()*10 ,math.random()*10 }
+  rVectorsFound = checkLinearIndep(r1,r2,r3)
+end
+rCell={r1,r2,r3}
+
+HTB.Name = "Test Random Vectors"
+HTB.Cell = rCell
+HTB.Units= {"2Pi","Angstrom","Absolute"}
+
+
+print("check Units scaling of reciprocal lattice vectors")
+g1,g2,g3=getReciprocalLatticeVectors(r1,r2,r3,2*math.pi)  
+gCell={g1,g2,g3}
+
+--for 2Pi
+for i=1,3 do
+  for j=1,3 do
+  assert(HTB.ReciprocalCell[i][j]-gCell[i][j]<1e-10,"Wrong computation of the reciprocal lattice vectors")
+  end
+end
+
+--for NoPi
+HTB.Units= {"NoPi","Angstrom","Absolute"}
+g1,g2,g3=getReciprocalLatticeVectors(r1,r2,r3,1)  
+gCell={g1,g2,g3}
+
+--check that the lattice vectors are correct
+for i=1,3 do
+  for j=1,3 do
+  assert(HTB.ReciprocalCell[i][j]-gCell[i][j]<1e-10,"Wrong computation of the reciprocal lattice vectors")
+  end
+end
+
+print("check the conversion of units of length")
+
+Ang=10^-10
+nm=10^-9
+Bohr=5.29177210903*10^-11
+
+UnitsLs={"Angstrom","Bohr","nm"}
+for k,v in pairs(UnitsLs) do
+  HTB.Units={v}
+  print(HTB.Units[2],UnitsLs[k])
+  assert(HTB.Units[2]==UnitsLs[k],"Could not set the units of length")
+end
+
+HTB.Units={"Angstrom"}
+--check that the lattice vectors are correct
+HTB.Cell = rCell
+
+--[[
+ToDO:Once the lattice vectors are set for a specific unit of length, the vectors are not changed
+when the unit of length is changed. It would be nice to have a method that changes the lattice vectors
+when the unit of length is changed.
+
+for i=1,3 do
+  for j=1,3 do
+    scale=Bohr/Ang
+    --assert(HTB.Cell[i][j]-scale*rCell[i][j]<1e-10,"Wrong units conversion")
+    --assert(HTB.ReciprocalCell[i][j]-(1/scale)*gCell[i][j]<1e-10,"Wrong units conversion")
+  end
+end
+
+]]
+
+print("Check absolute versus relative coordinats")
+
+HTB2=Clone(HTB)
+
+HTB.Units={"Absolute"}
+--All the atoms positions and hoppings translations are set in absolute coordinates.
+
+rA={0,0,0}
+rB={0.5*r1[1],0.5*r1[1],0.5*r1[1]}
+
+setAtomsHTB={ {"A", rA,{{"s", {"0"}}}},
+{"B", rB,{{"s", {"0"}}}}
+    }
+HTB.Atoms =  setAtomsHTB
+HTB.Hopping = {{"A.s","B.s",rB,{{t1}}},
+}
+
+--check if the two tablelib are the same
+assert(deepCompare(HTB.Atoms,setAtomsHTB),"setting of atoms position did Not work")
+
+
+HTB2.Units={"Relative"}
+--All the atoms positions and hoppings translations are set in relative coordinates.
+--The relative coordinates are set in the basis of the lattice vectors. 
+--While the position of the atoms can be set to be real numbers,
+--the hopping translations are set in the basis of the lattice vectors and the hopping between A and B inside the same cell has 
+--translation (0,0,0). It would be interesting if, for the case where we would cut all hopping with jumps longer than epsilon, 
+--if then the hopping between A and B would be cut.
+
+setAtomsHTB2={ {"A", {0,0,0},         {{"s", {"0"}}}},
+              {"B", {0.5,0,0},         {{"s", {"0"}}}}
+                  }
+HTB2.Atoms = setAtomsHTB2 
+HTB2.Hopping = {{"A.s","B.s",{0,0,0},{{t1}}},
+}
+
+--check if the two tablelib are the same
+assert(deepCompare(HTB2.Atoms,setAtomsHTB2),"setting of atoms position did Not work")
+
+--[[
+TODO: Would be nice tohave the functionality to switch from relative to absolute coordinates with actual conversion of the values.
+
+HTB2.Units={"Absolute"}
+assert(deepCompare(HTB2.Atoms,setAtomsHTB),"changing from Relative to Absolute did not work")
+HTB.Units={"Relative"}
+assert(deepCompare(HTB.Atoms,setAtomsHTB2),"changing from Relative to Absolute did not work")
+]]
+
+
+
+
+--TODO: Test deeper the functionaly to set atom positions.
+
+
+ 
+-- we cannot check the setting for the Hopping since print(HTB.Hopping) justs prints "Hopping" and not the values.
+-- We need to use another function to check for this functionality and does not allow to isolate the testscript.
+
+
+print("Check the setting of the hopping by using the hopping function. Compare the crated H operater with the one expected to be")
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+
+HTB.Name = "Test periodic"
+HTB.Units= {"2Pi","Angstrom","Absolute"}
+HTB.Cell = {{1,0,0},
+            {0,1,0},
+            {0,0,1}}
+
+HTB.Atoms = { {"A", {0,0,0},         {{"s", {"0"}}}}}
+HTB.Hopping = {{"A.s","A.s",{1,0,0},{{t1}}},
+            }
+
+
+print("Single site")
+HCl, HClTB, Cellpos, Kvec = CreateClusterHamiltonian(HTB, {"periodic", {{1,0,0},{0,1,0},{0,0,1}}}, 
+    {{"ReturnTBSuperCell",true},{"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true} })
+
+--oppN Valence band
+OppList={}
+for i=0,0 do
+  OppList[#OppList+1] = {i,-(i),t1}
+end
+OppHtest = NewOperator(1,0,OppList)
+
+--assert if HClTB is same as OppHtest
+assert(HCl==OppHtest,"Error: HClTB is not the same as OppHtest")
+
+
+
+Nx=10
+print("many sites")
+HCl, HClTB, Cellpos, Kvec = CreateClusterHamiltonian(HTB, {"periodic", {{Nx,0,0},{0,1,0},{0,0,1}}}, 
+    {{"ReturnTBSuperCell",true},{"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true} })
+
+--oppN Valence band
+OppList={}
+for i=1,Nx do
+  OppList[#OppList+1] = {i%10,-((i+1)%10),t1}
+  --OppList[#OppList+1] = {-((i+1)%10),i%10,1}
+end
+
+print(OppList)
+OppHtest = NewOperator(10,0,OppList)
+
+print(OppHtest)
+--assert if HClTB is same as OppHtest
+assert(HCl==OppHtest,"Error: HClTB is not the same as OppHtest")
+
+--TO DO: test for more random systems
+
+print("NewTightBinding() test passed")
+
