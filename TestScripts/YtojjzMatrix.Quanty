@@ -1,0 +1,49 @@
+print("------------------------------------------------")
+print("--                  YtojjzMatrix              --")
+print("------------------------------------------------")
+
+expectedMatL0 = { { 1 , 0 } , { 0 , 1 } }
+setmetatable(expectedMatL0, MatrixMeta)
+expectedMatL1 = {{0,-0.81649658092772603273242802490196,0.57735026918962576450914878050196,0,0,0},{0,0,0,-0.57735026918962576450914878050196,0.81649658092772603273242802490196,0},{1.0000000000000000000000000000000,0,0,0,0,0},{0,0.57735026918962576450914878050196,0.81649658092772603273242802490196,0,0,0},{0,0,0,0.81649658092772603273242802490196,0.57735026918962576450914878050196,0},{0,0,0,0,0,1.0000000000000000000000000000000}}
+setmetatable(expectedMatL1, MatrixMeta)
+expectedMatL2 = {{0,-0.89442719099991587856366946749251,0.44721359549995793928183473374626,0,0,0,0,0,0,0},{0,0,0,-0.77459666924148337703585307995648,0.63245553203367586639977870888654,0,0,0,0,0},{0,0,0,0,0,-0.63245553203367586639977870888654,0.77459666924148337703585307995648,0,0,0},{0,0,0,0,0,0,0,-0.44721359549995793928183473374626,0.89442719099991587856366946749251,0},{1.0000000000000000000000000000000,0,0,0,0,0,0,0,0,0},{0,0.44721359549995793928183473374626,0.89442719099991587856366946749251,0,0,0,0,0,0,0},{0,0,0,0.63245553203367586639977870888654,0.77459666924148337703585307995648,0,0,0,0,0},{0,0,0,0,0,0.77459666924148337703585307995648,0.63245553203367586639977870888654,0,0,0},{0,0,0,0,0,0,0,0.89442719099991587856366946749251,0.44721359549995793928183473374626,0},{0,0,0,0,0,0,0,0,0,1.0000000000000000000000000000000}}
+setmetatable(expectedMatL2, MatrixMeta)
+expectedMatL3 = {{0,-0.92582009977255146156656677658400,0.37796447300922722721451653623418,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,-0.84515425472851657750961832736595,0.53452248382484876936910696175951,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,-0.75592894601845445442903307246836,0.65465367070797714379829245624686,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,-0.65465367070797714379829245624686,0.75592894601845445442903307246836,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,-0.53452248382484876936910696175951,0.84515425472851657750961832736595,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,-0.37796447300922722721451653623418,0.92582009977255146156656677658400,0},{1.0000000000000000000000000000000,0,0,0,0,0,0,0,0,0,0,0,0,0},{0,0.37796447300922722721451653623418,0.92582009977255146156656677658400,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,0.53452248382484876936910696175951,0.84515425472851657750961832736595,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0.65465367070797714379829245624686,0.75592894601845445442903307246836,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0.75592894601845445442903307246836,0.65465367070797714379829245624686,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0.84515425472851657750961832736595,0.53452248382484876936910696175951,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0.92582009977255146156656677658400,0.37796447300922722721451653623418,0},{0,0,0,0,0,0,0,0,0,0,0,0,0,1.0000000000000000000000000000000}}
+setmetatable(expectedMatL3, MatrixMeta)
+
+print("\nUsing numbers as inputs")
+
+if Chop(Matrix.ToUserdata(YtojjzMatrix(0)) - expectedMatL0) ~= Matrix.ToUserdata(Matrix.Zero(2)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(YtojjzMatrix(1)) - expectedMatL1) ~= Matrix.ToUserdata(Matrix.Zero(6)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(YtojjzMatrix(2)) - expectedMatL2) ~= Matrix.ToUserdata(Matrix.Zero(10)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(YtojjzMatrix(3)) - expectedMatL3) ~= Matrix.ToUserdata(Matrix.Zero(14)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+
+print("\nUsing string as inputs")
+
+if Chop(Matrix.ToUserdata(YtojjzMatrix("1s")) - expectedMatL0) ~= Matrix.ToUserdata(Matrix.Zero(2)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(YtojjzMatrix("2p")) - expectedMatL1) ~= Matrix.ToUserdata(Matrix.Zero(6)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(YtojjzMatrix("3d")) - expectedMatL2) ~= Matrix.ToUserdata(Matrix.Zero(10)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(YtojjzMatrix("4f")) - expectedMatL3) ~= Matrix.ToUserdata(Matrix.Zero(14)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+
+print("-------------------------------------------------------")
+print("--                  End of YtojjzMatrix              --")
+print("-------------------------------------------------------")
+
+
+

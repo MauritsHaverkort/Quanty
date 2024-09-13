@@ -1,0 +1,92 @@
+print("------------------------------------------------")
+print("--                  Statistics                --")
+print("------------------------------------------------")
+
+
+print("============================================")
+print("         Hubbard model 8 sites 1D           ")
+print("============================================")
+print("                    real                    ")
+print("============================================\n\n")
+
+expectedHist = { 0 , 0 , 2 , 56 , 116 , 400 , 768 , 824 , 876 , 1560 }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+          {0,1,0},
+          {0,0,1}}
+Htb.Atoms={{"O",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"O.s","O.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU)
+
+StartRestrictions = {16,0,{"1010101010101010",4,4},{"0101010101010101",4,4}}
+
+TimeStart("Hubbard Eigensystem 1 states")
+fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
+TimeEnd("Hubbard Eigensystem 1 states")
+TimePrint()
+
+base=2.0
+nstep=10
+
+hist = Statistics(fun1s,base,nstep)
+
+print("   min       max     #states   expected    ")
+for i=1,nstep do
+    io.write(string.format("%7.4f to %7.4f | %7.4f %7.4f \n",base^-(i-1),base^-(i),hist[i],expectedHist[i]))
+    if Chop(hist[i]-expectedHist[i])~=0 then error("The resulted number of states not equal to the expected one\n",1) end
+end
+
+
+print("============================================")
+print("        Hubbartd model 8 sites 1D           ")
+print("============================================")
+print("                  complex                   ")
+print("============================================\n\n")
+
+expectedHist = { 0 , 0 , 2 , 56 , 116 , 400 , 768 , 824 , 876 , 1537 }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+          {0,1,0},
+          {0,0,1}}
+Htb.Atoms={{"O",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"O.s","O.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,8}}},U*HlocU,{{"k",{0,0,Pi/2}}})
+
+StartRestrictions = {16,0,{"1010101010101010",4,4},{"0101010101010101",4,4}}
+
+TimeStart("Hubbard Eigensystem 1 states complex")
+fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
+TimeEnd("Hubbard Eigensystem 1 states complex")
+TimePrint()
+
+base=2.0
+nstep=10
+
+hist = Statistics(fun1s,base,nstep)
+
+print("   min       max     #states   expected    ")
+for i=1,nstep do
+    io.write(string.format("%7.4f to %7.4f | %7.4f %7.4f \n",base^-(i-1),base^-(i),hist[i],expectedHist[i]))
+    if Chop(hist[i]-expectedHist[i])~=0 then error("The resulted number of states not equal to the expected one\n",1) end
+end
+
+
+print("-------------------------------------------------------")
+print("--                  End of Statistics                --")
+print("-------------------------------------------------------")

@@ -123,6 +123,30 @@ test-job-CreateSpectra:
   dependencies:
   - build-job
 
+test-job-CreateClusterHamiltonian:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateClusterHamiltonian.Quanty"
+  dependencies:
+  - build-job
+
+test-job-CreateAtomicIndicesDict:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateAtomicIndicesDict.Quanty"
+  dependencies:
+  - build-job
+
+test-job-CreateAtomicIndicesList:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CreateAtomicIndicesList.Quanty"
+  dependencies:
+  - build-job
+
 test-job-DensityMatrix:
   stage: test
   script:
@@ -219,6 +243,14 @@ test-job-Rotate:
   dependencies:
   - build-job
 
+test-job-Statistics:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Statistics.Quanty"
+  dependencies:
+  - build-job
+
 test-job-TensorProduct:
   stage: test
   script:
@@ -248,6 +280,38 @@ test-job-Verbosity:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Verbosity.Quanty"
+  dependencies:
+  - build-job
+
+test-job-YtoKMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/YtoKMatrix.Quanty"
+  dependencies:
+  - build-job
+
+test-job-YtoZMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/YtoZMatrix.Quanty"
+  dependencies:
+  - build-job
+
+test-job-YtojjzMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/YtojjzMatrix.Quanty"
+  dependencies:
+  - build-job
+
+test-job-ZtoKMatrix:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/ZtoKMatrix.Quanty"
   dependencies:
   - build-job
 

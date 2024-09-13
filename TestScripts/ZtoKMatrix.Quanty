@@ -1,0 +1,46 @@
+print("------------------------------------------------")
+print("--                  ZtoKMatrix                --")
+print("------------------------------------------------")
+
+expectedMatL0 = { { 1 , 0 } , { 0 , 1 } }
+setmetatable(expectedMatL0, MatrixMeta)
+expectedMatL1 = {{0.,0.,0.,0.,1.,0.},{0.,0.,0.,0.,0.,1.},{1.,0.,0.,0.,0.,0.},{0.,1.,0.,0.,0.,0.},{0.,0.,1.,0.,0.,0.},{0.,0.,0.,1.,0.,0.}}
+setmetatable(expectedMatL1, MatrixMeta)
+expectedMatL2 = {{0.,0.,0.,0.,0.,0.,0.,0.,1.,0.},{0.,0.,0.,0.,0.,0.,0.,0.,0.,1.},{0.,0.,0.,0.,1.,0.,0.,0.,0.,0.},{0.,0.,0.,0.,0.,1.,0.,0.,0.,0.},{0.,0.,1.,0.,0.,0.,0.,0.,0.,0.},{0.,0.,0.,1.,0.,0.,0.,0.,0.,0.},{0.,0.,0.,0.,0.,0.,1.,0.,0.,0.},{0.,0.,0.,0.,0.,0.,0.,1.,0.,0.},{1.,0.,0.,0.,0.,0.,0.,0.,0.,0.},{0.,1.,0.,0.,0.,0.,0.,0.,0.,0.}}
+setmetatable(expectedMatL2, MatrixMeta)
+expectedMatL3 = {{0,0,1.0000000000000000000000000000000,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,1.0000000000000000000000000000000,0,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,-0.61237243569579452454932101867647,0,0,0,0.79056941504209483299972338610818,0},{0,0,0,0,0,0,0,0,0,-0.61237243569579452454932101867647,0,0,0,0.79056941504209483299972338610818},{-0.79056941504209483299972338610818,0,0,0,-0.61237243569579452454932101867647,0,0,0,0,0,0,0,0,0},{0,-0.79056941504209483299972338610818,0,0,0,-0.61237243569579452454932101867647,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,1.0000000000000000000000000000000,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,1.0000000000000000000000000000000,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,-0.79056941504209483299972338610818,0,0,0,-0.61237243569579452454932101867647,0},{0,0,0,0,0,0,0,0,0,-0.79056941504209483299972338610818,0,0,0,-0.61237243569579452454932101867647},{-0.61237243569579452454932101867647,0,0,0,0.79056941504209483299972338610818,0,0,0,0,0,0,0,0,0},{0,-0.61237243569579452454932101867647,0,0,0,0.79056941504209483299972338610818,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0,1.0000000000000000000000000000000,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,1.0000000000000000000000000000000,0,0}}
+setmetatable(expectedMatL3, MatrixMeta)
+
+print("\nUsing numbers as inputs")
+
+if Chop(Matrix.ToUserdata(ZtoKMatrix(0)) - expectedMatL0) ~= Matrix.ToUserdata(Matrix.Zero(2)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(ZtoKMatrix(1)) - expectedMatL1) ~= Matrix.ToUserdata(Matrix.Zero(6)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(ZtoKMatrix(2)) - expectedMatL2) ~= Matrix.ToUserdata(Matrix.Zero(10)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(ZtoKMatrix(3)) - expectedMatL3) ~= Matrix.ToUserdata(Matrix.Zero(14)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+
+print("\nUsing string as inputs")
+
+if Chop(Matrix.ToUserdata(ZtoKMatrix("1s")) - expectedMatL0) ~= Matrix.ToUserdata(Matrix.Zero(2)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(ZtoKMatrix("2p")) - expectedMatL1) ~= Matrix.ToUserdata(Matrix.Zero(6)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(ZtoKMatrix("3d")) - expectedMatL2) ~= Matrix.ToUserdata(Matrix.Zero(10)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+if Chop(Matrix.ToUserdata(ZtoKMatrix("4f")) - expectedMatL3) ~= Matrix.ToUserdata(Matrix.Zero(14)) then
+    error("The rotation matrix not equal to the expected value\n",1)
+end
+
+print("-------------------------------------------------------")
+print("--                  End of ZtoKMatrix                --")
+print("-------------------------------------------------------")
