@@ -61,7 +61,6 @@ static int LuaFileReadDresdenFPLO(lua_State * L)
   FPLO = (DresdenFPLO*) lua_newuserdata(L, sizeof(DresdenFPLO));
   if(FileReadDresdenFPLO(FPLO, flname)) return luaL_error(L, "Error while reading or opening file %s in FileReadDresdenFPLO(arg).",flname);
   luaL_setmetatable(L, "DresdenFPLO_Type");
-
   return 1;
 }
 
@@ -1177,6 +1176,10 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
     if(QOptions==true)
     {
       LuaCheckOptions(L, len, LuaCreateClusterHamiltonianOptions);
+      if(k.Ni!=3)
+      {
+        return luaL_error(L, "Error CreateClusterHamiltonian optional k-vector should have a length of 3\n");
+      }
     }
     // loop over all atoms and shells for creation and annihilation site
     // search for connecting vector in TD definition

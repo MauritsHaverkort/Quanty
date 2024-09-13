@@ -70,6 +70,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
   double tmpvec[3];
   uint32_t Nphrase, Nwandef, i, j, ihop=0, iatom;
   int NhopMax=1024;
+  O->lDOS.N=0;
   O->Lattice.Molecule=false;
   O->Lattice.Units=0; // Use Angstrom, g.r = 1, and atom positions witin the unit cell are in angstrom units
   ReadLine[1023] = '\0';
