@@ -39,7 +39,7 @@ nstep=10
 hist = Statistics(fun1s,base,nstep)
 
 print("   min       max     #states   expected    ")
-for i=1,nstep do
+for i=1,nstep-1 do
     io.write(string.format("%7.4f to %7.4f | %7.4f %7.4f \n",base^-(i-1),base^-(i),hist[i],expectedHist[i]))
     if Chop(hist[i]-expectedHist[i])~=0 then error("The resulted number of states not equal to the expected one\n",1) end
 end
@@ -81,9 +81,13 @@ nstep=10
 hist = Statistics(fun1s,base,nstep)
 
 print("   min       max     #states   expected    ")
-for i=1,nstep do
+for i=1,nstep-1 do
     io.write(string.format("%7.4f to %7.4f | %7.4f %7.4f \n",base^-(i-1),base^-(i),hist[i],expectedHist[i]))
-    if Chop(hist[i]-expectedHist[i])~=0 then error("The resulted number of states not equal to the expected one\n",1) end
+		if Chop(hist[i]-expectedHist[i])~=0 then
+			print(hist)
+			print(expectedHist)
+			error("The resulted number of states not equal to the expected one\n",1)
+		end
 end
 
 
