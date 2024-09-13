@@ -1,0 +1,213 @@
+--Bugs Found:
+--1. The function CalculateRho does not check if the input Hamiltonian is Hermitian. It just runs the calculation. A warning would be cool
+--2. If the Tight binding model used is too big, we get a sigfault withouth any warning.
+
+--TO DO
+--1. check positive definite, Hermitian and that trace is one.
+
+
+
+
+print("--------------------------------------------------------")
+print("--                  Calculate Rho                     --")
+print("--------------------------------------------------------")
+
+-- Helper function to print the line number where the function is called
+local function printCallerLine()
+   local info = debug.getinfo(3, "l")
+   print("Function called from line: " .. info.currentline)
+end
+
+function IsPositiveDefinite(M)
+   local val,fun=Eigensystem(M)
+   for i=1,#val do
+      if val[i]<0 then
+         return false
+      end
+   end
+   return true
+end
+
+function IsHermitian(M)
+   local M=Matrix.ToTable(M)
+   if ConjugateTranspose(M)~=M then
+         return false
+      end
+   return true
+end
+
+function Trace(M)
+   local M=Matrix.ToTable(M)
+   local sum=0
+   for i=1,#M do
+      sum=sum+M[i][i]
+   end
+   print("Computed Trace:",sum)
+   return sum
+end
+
+--define function where we check if the matrix is positive definite, if the trace is q and if it is hermitian
+function checkPhysicalRho(Rho,Nsize)
+      io.flush()
+      printCallerLine()
+      --convert to table
+      Rho=Matrix.ToTable(Rho)
+      --check if size of rho is correct
+      assert(#Rho == Nsize,"Error: Wrong size of Rho")
+      assert(#Rho[1] == Nsize,"Error: Wrong size of Rho")
+      --Check if the matrix is positive definite
+      assert(IsPositiveDefinite(Rho),"Error: Rho is not positive definite")
+      --Check if the trace is 1|In a many body system this is not mandatory
+      --assert(Chop(Trace(Rho)-1)==0,"Error: Trace of Rho is not 1")
+      --Check if the matrix is hermitian
+      assert(IsHermitian(Rho),"Error: Rho is not hermitian")
+   
+end
+
+
+
+
+-- set parameters
+epsilon = 0.0
+tnn = 1
+
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "1s 1D chain"
+HTB.Cell = {{1,0,0},
+            {0,1,0},
+            {0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},         {{"s", {"0"}}}}}
+HTB.Hopping = {{"A.s","A.s",{0,0,0},{{epsilon}}},
+                {"A.s","A.s",{1,0,0},{{ tnn}}},
+            }
+
+
+--Start with a small lattice 
+Nx,Ny,Nz=2,1,1
+-- create a cluster Hamiltonian
+HCl, HClTB, Cellpos, Kvec = CreateClusterHamiltonian(HTB, {"periodic", {{Nx,0,0},{0,Ny,0},{0,0,Nz}}}, 
+{{"ReturnTBSuperCell",true},{"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true} })
+
+--Calculate the density matrix
+Rho=Chop(CalculateRho(HClTB))
+
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+
+--Check that the matrix is the expected one
+RhoExpected =Matrix.ToUserdata(0.5*Matrix.Identity(Nx*Ny*Nz))
+Zero =Matrix.ToUserdata(0.*Matrix.Identity(Nx*Ny*Nz))
+assert(Chop(Rho-RhoExpected)==Zero ,"Error: Wrong Value of Rho") 
+
+
+--test Nk otpion 
+Rho=CalculateRho(HClTB,{{"Nk",{Nx,Ny,Nz}}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+
+--check the mu parameter. All states occupied
+Rho=CalculateRho(HClTB,{{"mu",1.01}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+RhoExpected =Matrix.ToUserdata(Matrix.Identity(Nx))
+Zero =Matrix.ToUserdata(0.*Matrix.Identity(Nx))
+assert(Chop(Rho-RhoExpected)==Zero ,"Error: Wrong Value of Rho") 
+
+--check the the mu parameter. All states empty
+Rho=CalculateRho(HClTB,{{"mu",-1.01}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+RhoExpected =Matrix.ToUserdata(Matrix.Identity(Nx))
+Zero =Matrix.ToUserdata(0.*Matrix.Identity(Nx))
+assert(Chop(Rho)==Zero ,"Error: Wrong Value of Rho") 
+
+--check the the kBT parameter
+Rho=CalculateRho(HClTB,{{"kBT",1000}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+
+
+
+--Repeat with larger size. 
+Nx,Ny,Nz=6,6,6
+
+-- create a cluster Hamiltonian
+HCl, HClTB, Cellpos, Kvec = CreateClusterHamiltonian(HTB, {"periodic", {{Nx,0,0},{0,Ny,0},{0,0,Nz}}}, 
+{{"ReturnTBSuperCell",true},{"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true} })
+
+--test otpions
+Rho=CalculateRho(HClTB,{{"Nk",{Nx,Ny,Nz}}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+
+--check the the mu parameter
+Rho=CalculateRho(HClTB,{{"mu",1},{"Nk",{Nx,Ny,Nz}}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+
+--check the the kBT parameter
+Rho=CalculateRho(HClTB,{{"kBT",1000},{"Nk",{Nx,Ny,Nz}}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz)
+
+
+
+
+
+--set abc to random real values between 0.1 and 10
+a,b,c=math.random()*10,math.random()*10,math.random()*10 
+
+epsilon=math.random()
+t1=math.random()*10
+t2=math.random()*10
+t3=math.random()*10
+
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "more random Hamiltonian"
+HTB.Cell = {{a,0,0},
+            {0,b,0},
+            {0,0,c}}
+HTB.Atoms = { {"A", {0,0,0},{{"s", {"0"}}}},{"B", {0,0.345*b,0.565*c},{{"p0", {"0"}},{"pp1", {"1"}},{"pm1", {"-1"}}}}}
+
+--test not hermitian hopping
+HTB.Hopping = {{"A.s","A.s",{0,0,0},{{epsilon}}},
+               {"A.s","B.p0",{0,0.345*b,0.565*c},{{I*t1}}},
+               {"B.p0","A.s",{0,-0.345*b,-0.565*c},{{I*t1}}},
+               {"A.s","B.p0",{0,0.345*b,0.565*c},{{t2}}},
+               {"B.p0","A.s",{0,b-0.345*b,c-0.565*c},{{t2}}}
+            }
+--#Orbitals per units cell
+Norbs=4
+
+--The hopping is not hermitian. Should it give a warning? We just get the Matrix to be 
+Rho=CalculateRho(HTB)
+print(Rho)
+--Check some basics of Rho
+checkPhysicalRho(Rho,Norbs)
+
+
+
+-- create the tight binding Hamiltonian hermitian
+HTB.Hopping = {{"A.s","A.s",{0,0,0},{{0.01}}},
+               {"A.s","B.p0",{0,0.345*b,0.565*c},{{I*t1}}},
+               {"B.p0","A.s",{0,-0.345*b,-0.565*c},{{-I*t1}}},
+               {"A.s","B.p0",{0,0.345*b,0.565*c},{{t2}}},
+               {"B.p0","A.s",{0,-0.345*b,-0.565*c},{{t2}}},
+               {"B.p0","A.s",{0,b-0.345*b,c-0.565*c},{{t3}}},
+               {"A.s","B.p0",{0,-b+0.345*b,-c+0.565*c},{{t3}}}
+            }
+
+
+--Start with a small lattice 
+Nx,Ny,Nz=3,4,2
+-- create a cluster Hamiltonian
+HCl, HClTB, Cellpos, Kvec = CreateClusterHamiltonian(HTB, {"periodic", {{Nx,0,0},{0,Ny,0},{0,0,Nz}}}, 
+{{"ReturnTBSuperCell",true},{"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true} })
+--Compute Rho
+Rho=CalculateRho(HClTB,{{"Nk",{Nx,Ny,Nz}}})
+--Check some basics of Rho
+checkPhysicalRho(Rho,Nx*Ny*Nz*Norbs)
+
+print("Test for Calculate Rho is passed")

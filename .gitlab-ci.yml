@@ -51,6 +51,14 @@ test-job-BraketDiagonal:
   dependencies:
   - build-job
 
+test-job-CalculateRho:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/CalculateRho.Quanty"
+  dependencies:
+  - build-job
+
 test-job-Chop:
   stage: test
   script:
@@ -152,6 +160,14 @@ test-job-MeanFieldOperator:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/MeanFieldOperator.Quanty"
+  dependencies:
+  - build-job
+
+test-job-NewTightBinding:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/NewTightBinding.Quanty"
   dependencies:
   - build-job
 
