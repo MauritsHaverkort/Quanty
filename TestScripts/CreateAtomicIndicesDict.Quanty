@@ -1,0 +1,105 @@
+
+print("-----------------------------------------------------------")
+print("--                  CreateAtomicIndicesDict              --")
+print("-----------------------------------------------------------")
+
+-- Function to compare two tables
+local function compareTables(t1, t2)
+    if #t1 ~= #t2 then
+        return false
+    end
+    
+    for i = 1, #t1 do
+        if t1[i] ~= t2[i] then
+            return false
+        end
+    end
+    
+    return true
+end
+
+-- Function to compare two dictionaries
+local function compareDictionaries(dict1, dict2)
+    -- First, check if both dictionaries have the same set of keys
+    for key in pairs(dict1) do
+        if dict2[key] == nil then
+            return false
+        end
+    end
+    
+    for key in pairs(dict2) do
+        if dict1[key] == nil then
+            return false
+        end
+    end
+
+    -- Now compare the values for each key
+    for key, value in pairs(dict1) do
+        local value2 = dict2[key]
+
+        if type(value) == "table" and type(value2) == "table" then
+            if not compareTables(value, value2) then
+                -- print(key)
+                -- print(value)
+                -- print(value2)
+                return false
+            end
+        else
+            if value ~= value2 then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+-- define some references for comparison
+refNF = 22
+refIndRel = { All = { 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 } ,
+Fe_2s12 = { 2 , 3 } ,
+Fe_2p32 = { 8 , 9 , 10 , 11 } ,
+Fe_3s12 = { 4 , 5 } ,
+H_1s12 = { 0 , 1 } ,
+all = { 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 } ,
+Fe_3d32 = { 12 , 13 , 14 , 15 } ,
+Fe_3d52 = { 16 , 17 , 18 , 19 , 20 , 21 } ,
+Fe_2p12 = { 6 , 7 } }
+
+refIndNonRel = { Fe_3d_Up = { 13 , 15 , 17 , 19 , 21 } ,
+Fe_2s_Dn = { 2 } ,
+Fe_3s_Dn = { 10 } ,
+All = { 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 } ,
+Fe_3s_Up = { 11 } ,
+H_1s_Up = { 1 } ,
+Fe_2s = { 2 , 3 } ,
+Fe_2s_Up = { 3 } ,
+Fe_3s = { 10 , 11 } ,
+Fe_2p_Up = { 5 , 7 , 9 } ,
+Fe_2p_Dn = { 4 , 6 , 8 } ,
+all = { 0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 } ,
+H_states = { 0 , 1 } ,
+Fe_3d_Dn = { 12 , 14 , 16 , 18 , 20 } ,
+H_1s_Dn = { 0 } ,
+Fe_2p = { 4 , 5 , 6 , 7 , 8 , 9 } ,
+H_1s = { 0 , 1 } ,
+Fe_states = { 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 } ,
+Fe_3d = { 12 , 13 , 14 , 15 , 16 , 17 , 18 , 19 , 20 , 21 } }
+
+orbitalsNonRel = {"H_1s","Fe_2s","Fe_2p","Fe_3s","Fe_3d"}
+orbitalsRel = {"H_1s12","Fe_2s12","Fe_3s12","Fe_2p12","Fe_2p32","Fe_3d32","Fe_3d52"}
+ 
+groupingsNonRel = { {"H_states", {"H_1s"} }, {"Fe_states", {"Fe_2s","Fe_2p","Fe_3s","Fe_3d"}} }
+ 
+IndNonRel, NFNonRel = CreateAtomicIndicesDict(orbitalsNonRel,groupingsNonRel)
+IndRel, NFRel = CreateAtomicIndicesDict(orbitalsRel)
+
+if NFNonRel ~= refNF then error("The number of fermions not equal to the correct value\n",1) end
+if NFRel ~= refNF then error("The number of fermions not equal to the correct value\n",1) end
+
+if not compareDictionaries(IndNonRel,refIndNonRel) then error("The orbital dict not equal to the expected dict\n",1) end
+if not compareDictionaries(IndRel,refIndRel) then error("The orbital dict not equal to the expected dict\n",1) end
+
+print("------------------------------------------------------------------")
+print("--                  End of CreateAtomicIndicesDict              --")
+print("------------------------------------------------------------------")
