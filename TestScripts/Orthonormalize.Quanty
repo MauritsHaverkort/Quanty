@@ -2,6 +2,8 @@
 **  Test for Orthonormalize acting on vectors **
 ]]
 
+math.randomseed(7)
+
 I = Complex.I()
 
 NF1 = 3
