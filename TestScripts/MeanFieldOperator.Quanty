@@ -120,7 +120,8 @@ os.exit()
 -- the following test does not pass
 -- this might be an error for weird operators and densities in the code
 -- it might also be an error in the test
-
+-- Error while executing the script:
+-- ...grams/Quanty/quanty/TestScripts/MeanFieldOperator.Quanty:326: MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for Operator Real with density hermitian complex
 
 
 print("--------------------------------------------------------")
