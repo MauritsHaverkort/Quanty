@@ -373,12 +373,84 @@ test-job-Responsefunction-call:
   - ./Quanty.exe "TestScripts/Responsefunction/__call.Quanty"
   dependencies:
   - build-job
-  
+
+test-job-Responsefunction-CalculateHybridizationFunction:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/CalculateHybridizationFunction.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Responsefunction-CalculateSelfEnergy:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/CalculateSelfEnergy.Quanty"
+  dependencies:
+  - build-job
+ 
 test-job-Responsefunction-ChangeType:
   stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Responsefunction/ChangeType.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-Chop:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/Chop.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-CreateBitMasks:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/CreateBitMasks.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-Deflation:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/Deflation.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-InvertEnergy:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/InvertEnergy.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-LengthZero:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/LengthZero.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-PlaceOnMesh:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/PlaceOnMesh.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-ReducePoles:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/ReducePoles.Quanty"
   dependencies:
   - build-job
 
@@ -397,22 +469,6 @@ test-job-Responsefunction-ToOperator:
   - ./Quanty.exe "TestScripts/Responsefunction/ToOperator.Quanty"
   dependencies:
   - build-job
-  
-test-job-Responsefunction-InvertEnergy:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/InvertEnergy.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Responsefunction-Chop:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/Chop.Quanty"
-  dependencies:
-  - build-job
 
 test-job-Responsefunction-ToSpectra:
   stage: test_responsefunction
@@ -421,22 +477,39 @@ test-job-Responsefunction-ToSpectra:
   - ./Quanty.exe "TestScripts/Responsefunction/ToSpectra.Quanty"
   dependencies:
   - build-job
-  
-test-job-Responsefunction-CalculateSelfEnergy:
+
+test-job-Responsefunction-ToTable:
   stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/CalculateSelfEnergy.Quanty"
+  - ./Quanty.exe "TestScripts/Responsefunction/ToTable.Quanty"
   dependencies:
   - build-job
-  
-test-job-Responsefunction-CalculateHybridizationFunction:
+
+test-job-Responsefunction-ToTightbinding:
   stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/CalculateHybridizationFunction.Quanty"
+  - ./Quanty.exe "TestScripts/Responsefunction/ToTightbinding.Quanty"
   dependencies:
   - build-job
+
+test-job-Responsefunction-ToUserdata:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/ToUserdata.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Responsefunction-Value_Of_A0_in_Val_and_Con_of_NatType:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/Value_Of_A0_in_Val_and_Con_of_NatType.Quanty"
+  dependencies:
+  - build-job
+
 
 # =========================================================================
 # ===== Test functions related to Matrix objects
