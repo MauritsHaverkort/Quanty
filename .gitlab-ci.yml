@@ -506,7 +506,7 @@ test-job-Responsefunction-Value_Of_A0_in_Val_and_Con_of_NatType:
   stage: test_responsefunction
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/Value_Of_A0_in_Val_and_Con_of_NatType.Quanty"
+  - ./Quanty.exe "TestScripts/Responsefunction/Value_Of_A0_In_Val_and_Con_of_NatType.Quanty"
   dependencies:
   - build-job
 
