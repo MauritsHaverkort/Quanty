@@ -909,6 +909,23 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
  */
 uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax)
 {
+  if(A.N==0)
+  {
+    B->N=0;
+    B->BlockSize = A.BlockSize;
+    B->QComplex = A.QComplex;
+    InitBlockAndersonMatrix(B);
+    B->mu = A.mu;
+    if(A.QComplex==0)
+    {
+      memcpy(B->aRe, &(A.a0Re), Sqr(A.BlockSize)*sizeof(double));
+    }
+    else
+    {
+      memcpy(B->a, &(A.a0), Sqr(A.BlockSize)*sizeof(Complex16));
+    }
+    return 0;
+  }
   BlockTriDiagonalMatrixType ATri;
   if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, DBL_EPSILON))
   {
@@ -1031,6 +1048,23 @@ uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A,
 
 uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G)
 {
+  if(A->N==0)
+  {
+    G->N=0;
+    G->BlockSize=A->BlockSize;
+    G->QComplex=A->QComplex;
+    InitBlockListOfPoles(G);
+    G->mu=A->mu;
+    if(A->QComplex==0)
+    {
+      memcpy(G->a0Re, A->aRe, Sqr(A->BlockSize)*sizeof(double));
+    }
+    else
+    {
+      memcpy(G->a0, A->a, Sqr(A->BlockSize)*sizeof(Complex16));
+    }
+    return 0;
+  }
   uint32_t i,j;
   double BandWidth;
   CompactMatrixType Afull, vec;
@@ -1652,6 +1686,23 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
 
 uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G)
 {
+  if(A->N==0)
+  {
+    G->N=0;
+    G->QComplex=A->QComplex;
+    G->BlockSize=A->BlockSize;
+    InitBlockListOfPoles(G);
+    G->mu = A->mu;
+    if(A->QComplex==0)
+    {
+      memcpy(G->a0Re, A->aRe, Sqr(A->BlockSize)*sizeof(double));
+    }
+    else
+    {
+      memcpy(G->a0, A->a, Sqr(A->BlockSize)*sizeof(Complex16));
+    }
+    return 0;
+  }
   uint32_t i,j;
   double BandWidth;
   CompactMatrixType Afull, vec;
@@ -1997,6 +2048,25 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(BlockTriDiagonalMatri
  */
 uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B)
 {
+  if(ATri.N==0)
+  {
+    B->N=0;
+    B->QComplex=ATri.QComplex;
+    B->BlockSize=ATri.BlockSize;
+    InitBlockAndersonMatrix(B);
+    B->mu = ATri.mu;
+    if(ATri.QComplex==0)
+    {
+      memcpy(B->aRe, ATri.aRe, Sqr(ATri.BlockSize)*sizeof(double));
+    }
+    else
+    {
+      memcpy(B->a, ATri.a, Sqr(ATri.BlockSize)*sizeof(Complex16));
+    }
+    return 0;
+  }
+  
+  
   int i,j,bpos,cpos,k;
   CompactMatrixType Afull, Afun, C,D,E;
   double *Aval;

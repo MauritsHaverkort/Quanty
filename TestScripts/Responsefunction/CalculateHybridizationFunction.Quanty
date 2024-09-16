@@ -231,44 +231,58 @@ print("----- Test Hybridization function with selfenergy -----")
 print("----------------- Larger Matrix -----------------------")
 print("-------------------------------------------------------")
 
-A0 = {{1,0,0},{0,1,0},{0,0,1}}
-setmetatable(A0, MatrixMeta)
-a1 = -1
-a2 = 0
-a3 = 0
-a4 = 2
-a5 = 3
+M1 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(M1, MatrixMeta)
+M0 = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(M0, MatrixMeta)
 
+A1 = {{1,0,0},{0,2,0},{0,0,3}}
+setmetatable(A1, MatrixMeta)
+A2 = {{-1,0,0},{0,-2,1},{0,1,-2}}
+setmetatable(A2, MatrixMeta)
+A3 = {{-1,1,0},{1,-2,1},{0,1,-2}}
+setmetatable(A3, MatrixMeta)
+A4 = {{0,1,0},{1,0,1},{0,1,0}}
+setmetatable(A4, MatrixMeta)
 
-Azero = {{0,0,0},{0,0,0},{0,0,0}}
-setmetatable(Azero, MatrixMeta)
+B1 = {{1,0,0},{1,5,6},{3,6,9}}
+setmetatable(B1, MatrixMeta)
+B2 = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2, MatrixMeta)
+B3 = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3, MatrixMeta)
+B4 = {{3,0,3},{0,5,2},{3,2,1}}
+setmetatable(B4, MatrixMeta)
+B5 = {{3,0,3},{0,1,2},{3,2,1}}
+setmetatable(B5, MatrixMeta)
 
-B1s = {{1,1,3},{1,5,6},{3,6,9}}
-setmetatable(B1s, MatrixMeta)
-B1 = B1s * B1s
-B2s = {{2,0,3},{0,5,6},{3,6,9}}
-setmetatable(B2s, MatrixMeta)
-B2 = B2s * B2s
-B3s = {{3,0,3},{0,5,6},{3,6,9}}
-setmetatable(B3s, MatrixMeta)
-B3 = B3s * B3s
-B4s = {{3,0,3},{0,5,2},{3,2,1}}
-setmetatable(B4s, MatrixMeta)
-B4 = B4s * B4s
-B5s = {{3,0,3},{0,1,2},{3,2,1}}
-setmetatable(B5s, MatrixMeta)
-B5 = B5s * B5s
+-- test for a self energy that contains no poles and a greens function that contains one pole
 
-G0 = ResponseFunction.New({ {Azero,-2,2}, {B1,B2}, mu=0, type="ListOfPoles", name="A"})
+G0 = ResponseFunction.New({ {M0,A2,-M1}, {M1,B1}, mu=0, type="And", name="G0"})
+Sigma = ResponseFunction.New({ {A3}, {}, mu=0, type="ListOfPoles", name="Sigma"})
 
-Sigma = ResponseFunction.New({ {A0,10}, {B3}, mu=0, type="ListOfPoles", name="A"})
+Gbath  = ResponseFunction.CalculateHybridizationFunction(G0,Sigma)
+Gbath2 = Matrix.Flatten({{A2,Conjugate(B1)},{Transpose(B1),-M1+A3}})
+G2 = BlockBandDiagonalize(Gbath2,3)
+G2 = ResponseFunction.ToUserdata(G2)
+if( not( G2==Gbath )) then error("Hybridization function with self energy failed\n",1) end
 
-Gbath = ResponseFunction.CalculateHybridizationFunction(G0,Sigma)
+-- Same with several poles
 
-print(ResponseFunction.ToTable(G0))
-print(ResponseFunction.ToTable(Sigma))
-print(ResponseFunction.ToTable(Gbath))
+G0 = ResponseFunction.New({ {M0,A1,A2,A3}, {M1,B1,B2}, mu=0, type="And", name="G0"})
+Sigma = ResponseFunction.New({ {A3,A4,A2}, {B4,B5}, mu=0, type="Tri", name="Sigma"})
 
+Gbath  = ResponseFunction.CalculateHybridizationFunction(G0,Sigma)
+Gbath2 = Matrix.Flatten({{A1,           B1,           0,            0,            B2,           0,            0 },
+												 {Transpose(B1),A2+A3,        B4,           0,            0,            0,            0 },
+												 {0,            Transpose(B4),A4,           B5,           0,            0,            0 },
+												 {0,            0,            Transpose(B5),A2,           0,            0,            0 },
+												 {Transpose(B2),0,            0,            0,            A3+A3,        B4,           0 },
+												 {0,            0,            0,            0,            Transpose(B4),A4,           B5},
+												 {0,            0,            0,            0,            0,            Transpose(B5),A2}})
+G2 = BlockBandDiagonalize(Gbath2,3)
+G2 = ResponseFunction.ToUserdata(G2)
+if( not( G2==Gbath )) then error("Hybridization function with self energy failed\n",1) end
 
 
 collectgarbage()

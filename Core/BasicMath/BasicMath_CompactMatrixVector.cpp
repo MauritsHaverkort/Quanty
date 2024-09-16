@@ -2810,6 +2810,21 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
  */
 int CompactMatrixTriDiagonalize(CompactMatrixType *H, CompactMatrixType *T, TriDiagonalMatrixType *HTri)
 {
+  if(H->Ni==0)
+  {
+    if(T!=NULL)
+    {
+      T->Ni=0;
+      T->Nj=0;
+      T->QComplex=0;
+      InitCompactMatrix(T);
+    }
+    HTri->N=0;
+    InitTriDiagonalMatrix(HTri);
+    HTri->a[0]=H->a0;
+    HTri->mu=H->mu;
+    return 0;
+  }
   CompactMatrixType *HCopy;
   double *work=NULL, *tau=NULL;
   Complex16 *Cwork=NULL, *Ctau=NULL;
@@ -3926,7 +3941,25 @@ uint32_t BlockListOfPolesToCompactMatrixWithDeflation(BlockListOfPoles const *A,
  */
 uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, CompactMatrixType * const B)
 {
-  //TODO: test after changing compact matrix order
+  if((A->val.N==0)&&(A->con.N==0))
+  {
+    B->Ni=0;
+    B->Nj=0;
+    B->QComplex=0;
+    InitCompactMatrix(B);
+    B->mu=A->mu;
+    return 0;
+  }
+  if(A->val.N==0)
+  {
+    BlockTriDiagonalMatrixToCompactMatrix(&(A->con), B);
+    return 0;
+  }
+  if(A->con.N==0)
+  {
+    BlockTriDiagonalMatrixToCompactMatrix(&(A->val), B);
+    return 0;
+  }
   int i,j,k,apos,bposL,bposR;
   B->QComplex=A->QComplex;
   B->Ni=(Max(1,A->val.N)+Max(1,A->con.N))*A->BlockSize;
@@ -4104,7 +4137,8 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrixWithDeflation(BlockNatu
  */
 uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, CompactMatrixType * const B)
 {
-  uint32_t i,j,k,Ai,BBi,BAi,BBdagi,BBdagiold,BBiold;
+  uint32_t i,j,Ai,BBi,BAi,BBdagi,BBdagiold,BBiold;
+  int k;
   B->QComplex=A->QComplex;
   B->Ni = (A->N) * A->BlockSize;
   B->Nj = (A->N) * A->BlockSize;
@@ -4117,7 +4151,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
   BAi    = 0;
   if(A->QComplex)
   {
-    for(k=0;k<A->N-1;k++)
+    for(k=0;k<((int)A->N)-1;k++)
     {
       BBiold = BBi;
       for(i=0;i<A->BlockSize;i++)
@@ -4142,7 +4176,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
       BBi     = BBiold + A->BlockSize;
       BBdagi += A->BlockSize * B->Nj - A->BlockSize;
     }
-    for(k=A->N-1;k<A->N;k++)
+    for(k=Max(0,((int)A->N)-1);k<A->N;k++)
     {
       BBiold = BBi;
       for(i=0;i<A->BlockSize;i++)
@@ -4161,7 +4195,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
   }
   else
   {
-    for(k=0;k<A->N-1;k++)
+    for(k=0;k<(((int)A->N)-1);k++)
     {
       BBiold = BBi;
       for(i=0;i<A->BlockSize;i++)
@@ -4185,7 +4219,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
       BBi     = BBiold + A->BlockSize;
       BBdagi += A->BlockSize * B->Nj - A->BlockSize;
     }
-    for(k=A->N-1;k<A->N;k++)
+    for(k=Max(0,((int)A->N)-1);k<A->N;k++)
     {
       BBiold = BBi;
       for(i=0;i<A->BlockSize;i++)

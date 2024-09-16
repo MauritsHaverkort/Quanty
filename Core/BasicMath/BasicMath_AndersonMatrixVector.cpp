@@ -24,12 +24,6 @@ void FreeAndersonMatrix(AndersonMatrixType * const M)
 uint32_t InitAndersonMatrix(AndersonMatrixType * const M)
 {
   strcpy(M->Name, "Matrix");
-  if (M->N == 0)
-  {
-    printf("can't initialize an AndersonMatrix of size 0\nError in InitAndersonMatrix\n");
-    fflush(stdout);
-    return 2;
-  };
   M->a = (double*)malloc((M->N + 1) * sizeof(double));
   if (M->a == NULL)
   {
@@ -58,12 +52,6 @@ uint32_t InitIdentityAndersonMatrix(AndersonMatrixType * const M)
 {
   uint32_t i;
   strcpy(M->Name, "I_Matrix");
-  if (M->N == 0)
-  {
-    printf("can't initialize an AndersonMatrix of size 0\nError in InitIdentityAndersonMatrix\n");
-    fflush(stdout);
-    return 2;
-  };
   M->a = (double*)malloc((M->N + 1) * sizeof(double));
   if (M->a == NULL)
   {
@@ -84,7 +72,7 @@ uint32_t InitIdentityAndersonMatrix(AndersonMatrixType * const M)
     M->a[i] = 1;
   }
   M->a[0] = 0;
-  M->b[0] = 1;
+  if(M->N!=0) M->b[0] = 1;
   M->mu = 0;
   return 0;
 }

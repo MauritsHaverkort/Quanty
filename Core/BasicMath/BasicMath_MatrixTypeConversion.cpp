@@ -138,6 +138,31 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
  */
 uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
+  if(M.N==0)
+  {
+    T->QComplex = 0;
+    T->Ni = 0;
+    T->Nj = 0;
+    if (InitMatrix(T))
+    {
+      printf("InitMatrix failed in AndersonMatrixToTriDiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    };
+    H->N = 0;
+    if (InitTriDiagonalMatrix(H))
+    {
+      FreeMatrix(T);
+      printf("InitTriDiagonalMatrix failed in AndersonMatrixToTriDiagonalMatrix\n");
+      return 1;
+    }
+    strncpy(H->Name, M.Name, MAXStrLength);
+    strcpy(T->Name, "TriDiagonalizer of ");
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 20));
+    H->a[0] = M.a[0];
+    H->mu = M.mu;
+    return 0;
+  }
   uint32_t i, j;
   double tempRe;
   T->QComplex = 0;
@@ -1175,6 +1200,21 @@ uint32_t TriDiagonalMatrixToEigenvalues(TriDiagonalMatrixType const M, double *v
 
 uint32_t TriDiagonalMatrixToEigensystem(TriDiagonalMatrixType const M, MatrixType * const T, double *val)
 {
+  if(M.N==0)
+  {
+    T->Ni = 0;
+    T->Nj = 0;
+    T->QComplex = 0;
+    strcpy(T->Name, "Eigenvectors of ");
+    strncat(T->Name, M.Name, Max(0, MAXStrLength - 18));
+    if (InitMatrix(T))
+    {
+      printf("InitMatrix(T) failed in TriDiagonalMatrixToEigensystem\n");
+      fflush(stdout);
+      return 1;
+    }
+    return 0;
+  }
   int    i, info;
   const char *jobz = "V";
   double e[M.N];
@@ -1511,7 +1551,7 @@ uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType * c
 }
 
 
-uint32_t TriDiagonalMatrixToCompactMatrix(TriDiagonalMatrixType * const M, CompactMatrixType * const A)
+uint32_t TriDiagonalMatrixToCompactMatrix(const TriDiagonalMatrixType * const M, CompactMatrixType * const A)
 {
   uint32_t i;
   A->QComplex = 0;
@@ -1523,7 +1563,14 @@ uint32_t TriDiagonalMatrixToCompactMatrix(TriDiagonalMatrixType * const M, Compa
     return 1;
   }
   A->a0 = M->a[0];
-  A->b0 = M->b[0];
+  if(M->N!=0)
+  {
+    A->b0 = M->b[0];
+  }
+  else
+  {
+    A->b0 = 0;
+  }
   A->mu = M->mu;
   for (i = 1; i < M->N; i++)
   {
@@ -1531,7 +1578,7 @@ uint32_t TriDiagonalMatrixToCompactMatrix(TriDiagonalMatrixType * const M, Compa
     A->VRe[(i    )*M->N + i - 1] = M->b[i];
     A->VRe[(i - 1)*M->N + i    ] = M->b[i];
   }
-  A->VRe[(M->N - 1) * M->N + M->N - 1] = M->a[M->N];
+  if(M->N!=0) A->VRe[(M->N - 1) * M->N + M->N - 1] = M->a[M->N];
   return 0;
 }
 
@@ -1664,6 +1711,33 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
 
 uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalMatrixType * const M, CompactMatrixType * const A)
 {
+  if((M->val.N==0)&&(M->con.N==0))
+  {
+    A->Ni=0;
+    A->Nj=0;
+    A->QComplex=0;
+    InitCompactMatrix(A);
+    A->a0 = M->a0;
+    A->b0 = 0;
+    A->mu = M->mu;
+    return 0;
+  }
+  if(M->val.N==0)
+  {
+    TriDiagonalMatrixToCompactMatrix(&(M->con), A);
+    A->a0 = M->a0;
+    A->b0*= M->b0;
+    A->mu = M->mu;
+    return 0;
+  }
+  if(M->con.N==0)
+  {
+    TriDiagonalMatrixToCompactMatrix(&(M->val), A);
+    A->a0 = M->a0;
+    A->b0*= M->b0;
+    A->mu = M->mu;
+    return 0;
+  }
   uint32_t i,j;
   A->QComplex = 0;
   A->Ni = M->val.N+M->con.N;
@@ -1708,7 +1782,6 @@ uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalM
     A->VRe[(j - 1)*A->Nj + j    ] = M->con.b[i];
   }
   if(M->con.N>1) A->VRe[(M->con.N +M->val.N - 1) * A->Nj + M->con.N + M->val.N -1] = M->con.a[M->con.N];
-  
   return 0;
 }
 
@@ -3000,6 +3073,18 @@ uint32_t MatrixToAndersonMatrix(MatrixType const M, MatrixType * const T, Anders
 */
 uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatrixType * const T, AndersonMatrixType * const H)
 {
+  if(M->Ni==0)
+  {
+    T->Ni=0;
+    T->Nj=0;
+    T->QComplex=0;
+    InitCompactMatrix(T);
+    H->N=0;
+    InitAndersonMatrix(H);
+    H->a[0]=M->a0;
+    H->mu=M->mu;
+    return 0;
+  }
   int    info;
   uint32_t i,j;
   const char jobz  = 'V';

@@ -184,8 +184,7 @@ uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatri
   uint32_t i;
   if ((iEnd < iStart) || (iEnd > A.N))
   {
-    printf("TriDiagonalMatrixPart called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,
-           A.N);
+    printf("TriDiagonalMatrixPart called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
     return 1;
   }
   M->N = 1 + iEnd - iStart;

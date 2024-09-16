@@ -153,8 +153,6 @@ int ConvertBlockMatrix(ResponsefunctionType *Min, ResponsefunctionType *Mout, co
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          //TODO: get res->data->N right for block list of poles
-          //TODO: allow flexible set of states in tri-diag form with options
           BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
         }
         break;

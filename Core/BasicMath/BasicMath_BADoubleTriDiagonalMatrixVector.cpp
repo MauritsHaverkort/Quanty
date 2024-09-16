@@ -374,7 +374,20 @@ uint32_t BADoubleTriDiagonalMatrixPart(BADoubleTriDiagonalMatrixType * const M, 
  */
 uint32_t BADoubleTriDiagonalMatrixCopy(BADoubleTriDiagonalMatrixType * const M, BADoubleTriDiagonalMatrixType A)
 {
-  BADoubleTriDiagonalMatrixPart(M, A, A.val.N, A.con.N);
+  TriDiagonalMatrixCopy(&(M->val), A.val);
+  TriDiagonalMatrixCopy(&(M->con), A.con);
+  M->mu = A.mu;
+  M->Epsilon = A.Epsilon;
+  M->a0 = A.a0;
+  M->b0 = A.b0;
+  M->acvB = A.acvB;
+  M->acvA = A.acvA;
+  M->acvBA = A.acvBA;
+  M->bvB0 = A.bvB0;
+  M->bvA0 = A.bvA0;
+  M->bcB0 = A.bcB0;
+  M->bcA0 = A.bcA0;
+  strcpy(M->Name, A.Name);
   return 0;
 }
 
