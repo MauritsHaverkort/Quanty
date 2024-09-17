@@ -1,0 +1,271 @@
+function script_path()
+    local str = debug.getinfo(2, "S").source:sub(2)
+    local out = str:match("(.*/)")
+    if out ~= nil then
+        return out
+    end
+    return "./"
+end
+
+-- Function to compare two tables
+local function compareTables(t1, t2, threshold)
+    if #t1 ~= #t2 then
+        return false
+    end
+    if threshold == nil then
+        for i = 1, #t1 do
+            if (type(t1[i]) == "table") and (type(t2[i]) == "table") then
+                if #t1[i] ~= #t2[i] then
+                    return false
+                end
+                for j = 1, #t1[i] do
+                    if t1[i][j] ~= t2[i][j] then
+                        return false
+                    end
+                end
+            else
+                if t1[i] ~= t2[i] then
+                    return false
+                end
+            end
+        end
+    else
+        for i = 1, #t1 do
+            if (type(t1[i]) == "table") and (type(t2[i]) == "table") then
+                if #t1[i] ~= #t2[i] then
+                    return false
+                end
+                for j = 1, #t1[i] do
+                    if Chop(t1[i][j] - t2[i][j], threshold) ~= 0 then
+                        return false
+                    end
+                end
+            else
+                if Chop(t1[i] - t2[i], threshold) ~= 0 then
+                    return false
+                end
+            end
+        end
+    end
+    
+    return true
+end
+
+-- compare two cluster (list of atoms, their positions and their spin-orbitals)
+function compareClusters(cl1, cl2)
+    if #cl1 ~= #cl2 then
+        print("Number of atoms not equal!")
+        return false
+    end
+
+    for i, atom in pairs(cl1) do
+        if atom[1] ~= cl2[i][1] then print("Name of Atom "..i.." not equal"); return false end
+        if not compareTables(atom[2], cl2[i][2], 1E-14) then print("Position of atoms not equal!"); return false end
+        for ishell, shell in pairs(atom[3]) do
+            if shell[1] ~= cl2[i][3][ishell][1] then print("Shell of atoms not equal!", shell[1] ,cl2[i][3][ishell][1]); return false end
+            for is, str in pairs(shell[2]) do
+                if str ~= cl2[i][3][ishell][2][is] then print("spin-orbs of atoms not equal!"); return false end
+            end
+        end
+    end
+    return true
+end
+
+print("-----------------------------------------------------------")
+print("--                  FindAllAtomsInsideSphere             --")
+print("-----------------------------------------------------------")
+
+print("--------------------------------------")
+print("--                  NiO             --")
+print("--------------------------------------")
+
+
+RefCluster = { { "Ni" , 
+  { 0 , 0 , 0 } , 
+  { { "3d" , 
+  { "d_{xy}" , "d_{yz}" , "d_{3z^2-r^2}" , "d_{xz}" , "d_{x^2-y^2}" } } } } , 
+  { "O" , 
+  { 0 , 0 , -3.947637875111609 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { 0 , -3.947637875111609 , 0 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { 3.947637875111609 , 0 , 0 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { -3.947637875111609 , 0 , 0 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { 0 , 3.947637875111609 , 0 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { 0 , 0 , 3.947637875111609 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } }
+
+FPLOOut = FileReadDresdenFPLO(script_path().."DFT/NiO/out.wan")
+TB = TightBindingDefFromDresdenFPLO(FPLOOut)
+NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4.1)
+print("Generated cluster:")
+print(NewCluster)
+
+if not compareClusters(NewCluster, RefCluster) then error("Clusters not equal to the expected one\n",1) end
+
+print("---------------------------------------")
+print("--                  CrF4             --")
+print("---------------------------------------")
+
+RefCluster = { { "Cr" , 
+  { 0 , 0 , 0 } , 
+  { { "3d" , 
+  { "d_{xy}" , "d_{yz}" , "d_{3z^2-r^2}" , "d_{xz}" , "d_{x^2-y^2}" } } } } , 
+  { "F" , 
+  { 1.85684718114471 , 1.85684718114471 , 1.85684718114471 } , 
+  { { "3p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "F" , 
+  { -1.85684718114471 , 1.85684718114471 , -1.85684718114471 } , 
+  { { "3p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "F" , 
+  { 1.85684718114471 , -1.85684718114471 , -1.85684718114471 } , 
+  { { "3p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "F" , 
+  { -1.85684718114471 , -1.85684718114471 , 1.85684718114471 } , 
+  { { "3p" , 
+  { "p_y" , "p_z" , "p_x" } } } } }
+
+FPLOOut = FileReadDresdenFPLO(script_path().."DFT/CrF4/out.wan")
+TB = TightBindingDefFromDresdenFPLO(FPLOOut)
+NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4.1)
+print("Generated cluster:")
+print(NewCluster)
+
+if not compareClusters(NewCluster, RefCluster) then error("Clusters not equal to the expected one\n",1) end
+
+print("--------------------------------------")
+print("--                  UO2             --")
+print("--------------------------------------")
+
+RefCluster = { { "O" , 
+  { 2.583350099172487 , -2.583350099172487 , -2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , 2.583350099172487 , -2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , -2.583350099172487 , 2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "U" , 
+  { 0 , 0 , 0 } , 
+  { { "5f" , 
+  { "f_{y^3-3x^2y}" , "f_{xyz}" , "f_{5z^2y-yr^2}" , "f_{5z^3-3zr^2}" , "f_{5z^2x-xr^2}" , "f_{x^2z-y^2z}" , "f_{x^3-3xy^2}" } } } } , 
+  { "O" , 
+  { 2.583350099172487 , 2.583350099172487 , 2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , -2.583350099172487 , -2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { 2.583350099172487 , 2.583350099172487 , -2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { 2.583350099172487 , -2.583350099172487 , 2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , 2.583350099172487 , 2.583350099172487 } , 
+  { { "2p" , 
+  { "p_y" , "p_z" , "p_x" } } } } }
+
+FPLOOut = FileReadDresdenFPLO(script_path().."DFT/UO2/out.wan")
+TB = TightBindingDefFromDresdenFPLO(FPLOOut)
+NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},5)
+print("Generated cluster:")
+print(NewCluster)
+
+if not compareClusters(NewCluster, RefCluster) then error("Clusters not equal to the expected one\n",1) end
+
+print("-----------------------------------------------------")
+print("--                  UO2 (relativistic)             --")
+print("-----------------------------------------------------")
+
+RefCluster = { { "O" , 
+  { 2.583350099172487 , -2.583350099172487 , -2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , 2.583350099172487 , -2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , -2.583350099172487 , 2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "U" , 
+  { 0 , 0 , 0 } , 
+  { { "5f7/2" , 
+  { "f7/2-7/2" , "f7/2-5/2" , "f7/2-3/2" , "f7/2-1/2" , "f7/2+1/2" , "f7/2+3/2" , "f7/2+5/2" , "f7/2+7/2" } } , 
+  { "5f5/2" , 
+  { "f5/2-5/2" , "f5/2-3/2" , "f5/2-1/2" , "f5/2+1/2" , "f5/2+3/2" , "f5/2+5/2" } } } } , 
+  { "O" , 
+  { 2.583350099172487 , 2.583350099172487 , 2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , -2.583350099172487 , -2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "O" , 
+  { 2.583350099172487 , 2.583350099172487 , -2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "O" , 
+  { 2.583350099172487 , -2.583350099172487 , 2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } , 
+  { "O" , 
+  { -2.583350099172487 , 2.583350099172487 , 2.583350099172487 } , 
+  { { "2p3/2" , 
+  { "p3/2-3/2" , "p3/2-1/2" , "p3/2+1/2" , "p3/2+3/2" } } , 
+  { "2p1/2" , 
+  { "p1/2-1/2" , "p1/2+1/2" } } } } }
+
+FPLOOut = FileReadDresdenFPLO(script_path().."DFT/UO2_full_relativistic/out.wan")
+TB = TightBindingDefFromDresdenFPLO(FPLOOut)
+NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4.6)
+print("Generated cluster:")
+print(NewCluster)
+
+if not compareClusters(NewCluster, RefCluster) then error("Clusters not equal to the expected one\n",1) end
+
+print("-----------------------------------------------------------------")
+print("--                 End of FindAllAtomsInsideSphere             --")
+print("-----------------------------------------------------------------")

@@ -507,7 +507,7 @@ RefHCl = NewOperator( 23, 0,{
 RefNAtoms = 7
 RefNF = 23
 
-FPLOOut = FileReadDresdenFPLO(script_path().."DFT/out.wan")
+FPLOOut = FileReadDresdenFPLO(script_path().."DFT/NiO/out.wan")
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4.1)
 
@@ -1975,7 +1975,7 @@ RefOppU = NewOperator( 64, 0,{
 {   49,   48,-  49,-  48,-1.000000000000000E+00 }},
 {{"Name","Operator"},{"NBitsKey",{0,23,0,6}}})
 
-FPLOOut = FileReadDresdenFPLO(script_path().."DFT/out.wan")
+FPLOOut = FileReadDresdenFPLO(script_path().."DFT/NiO/out.wan")
 TB = TightBindingDefFromDresdenFPLO(FPLOOut)
 NewCluster = FindAllAtomsInsideSphere(TB.Atoms,TB.Cell,{0,0,0},4.1)
 

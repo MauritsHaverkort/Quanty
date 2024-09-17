@@ -1,0 +1,183 @@
+print("-----------------------------------------------------")
+print("--                  ExpandToBasis                  --")
+print("-----------------------------------------------------")
+
+-- compare two list of wavefunctions, which are not ordered in the same way
+local function compareUnorderedLists(list1, list2, threshold)
+    if threshold == nil then threshold = 1E-14 end
+
+    -- Check if the lengths are the same
+    if #list1 ~= #list2 then
+        return false
+    end
+
+    local n = #list2
+
+    local idx = 0
+    for i = 1, n do
+        local fun = list2[i]
+        for j = 1, n do
+            if Chop(fun - list1[j], threshold) == 0*fun then
+                idx = idx + 1
+            end
+        end
+    end
+
+    if idx == n then return true end
+    return false
+end
+
+
+RefPsi = { NewWavefunction( 22, 0,{
+{"0000000000001111111111", 1.000000000000000E+00}},
+{{"Name","Wave Function 0000000000001111111111"},{"NBitsKey",2}}) , NewWavefunction( 22, 0,{
+{"1111000000000000000000", 1.000000000000000E+00}},
+{{"Name","Wave Function 1111000000000000000000"},{"NBitsKey",2}}) , NewWavefunction( 22, 0,{
+{"0000111111000000000000", 1.000000000000000E+00}},
+{{"Name","Wave Function 0000111111000000000000"},{"NBitsKey",2}}) }
+
+orbitals = {"H_1s","Fe_2s","Fe_2p","Fe_3s","Fe_3d"}
+groupings = { {"H_states", {"H_1s"} }, {"Fe_states", {"Fe_2s","Fe_2p","Fe_3s","Fe_3d"}} }
+Ind, NF = CreateAtomicIndicesDict(orbitals,groupings)
+
+psi = NewWavefunction(NF,0,{{DeterminantString(NF, Ind["Fe_3d"]) , 1}, {DeterminantString(NF, {0,1,2,3}), I}, {DeterminantString(NF, Ind["Fe_2p"]), 1+0.5*I}})
+psi.Normalize()
+print(psi)
+
+print("\npsiExpanded = ExpandToBasis(psi):")
+psiExpanded = ExpandToBasis(psi)
+print(psiExpanded)
+
+if #psiExpanded ~= #RefPsi then error("Result not equal to the expected one\n",1) end
+for i = 1, #psiExpanded do
+    if psiExpanded[i] ~= RefPsi[i] then error(i.."-th Result not equal to the expected one\n",1) end
+end
+
+print("============================================")
+print("         Hubbard model 4 sites 1D           ")
+print("============================================")
+print("                    real                    ")
+print("============================================\n\n")
+
+RefPsi = { NewWavefunction( 8, 0,{
+{"10001101", 1.000000000000000E+00}},
+{{"Name","Wave Function 10001101"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01101100", 1.000000000000000E+00}},
+{{"Name","Wave Function 01101100"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"10100101", 1.000000000000000E+00}},
+{{"Name","Wave Function 10100101"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01101001", 1.000000000000000E+00}},
+{{"Name","Wave Function 01101001"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"00111001", 1.000000000000000E+00}},
+{{"Name","Wave Function 00111001"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"00111100", 1.000000000000000E+00}},
+{{"Name","Wave Function 00111100"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"00100111", 1.000000000000000E+00}},
+{{"Name","Wave Function 00100111"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"00001111", 1.000000000000000E+00}},
+{{"Name","Wave Function 00001111"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01100110", 1.000000000000000E+00}},
+{{"Name","Wave Function 01100110"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"11000110", 1.000000000000000E+00}},
+{{"Name","Wave Function 11000110"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"11100100", 1.000000000000000E+00}},
+{{"Name","Wave Function 11100100"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01110010", 1.000000000000000E+00}},
+{{"Name","Wave Function 01110010"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"00110110", 1.000000000000000E+00}},
+{{"Name","Wave Function 00110110"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01001110", 1.000000000000000E+00}},
+{{"Name","Wave Function 01001110"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01100011", 1.000000000000000E+00}},
+{{"Name","Wave Function 01100011"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"11000011", 1.000000000000000E+00}},
+{{"Name","Wave Function 11000011"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"10011001", 1.000000000000000E+00}},
+{{"Name","Wave Function 10011001"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"10110001", 1.000000000000000E+00}},
+{{"Name","Wave Function 10110001"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"00011011", 1.000000000000000E+00}},
+{{"Name","Wave Function 00011011"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"11110000", 1.000000000000000E+00}},
+{{"Name","Wave Function 11110000"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"11011000", 1.000000000000000E+00}},
+{{"Name","Wave Function 11011000"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"10010011", 1.000000000000000E+00}},
+{{"Name","Wave Function 10010011"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"10010110", 1.000000000000000E+00}},
+{{"Name","Wave Function 10010110"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"10011100", 1.000000000000000E+00}},
+{{"Name","Wave Function 10011100"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"11001001", 1.000000000000000E+00}},
+{{"Name","Wave Function 11001001"},{"NBitsKey",2}}) , NewWavefunction( 8, 0,{
+{"01011010", 1.000000000000000E+00}},
+{{"Name","Wave Function 01011010"},{"NBitsKey",2}}) }
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+          {0,1,0},
+          {0,0,1}}
+Htb.Atoms={{"O",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"O.s","O.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,4}}},U*HlocU)
+
+StartRestrictions = {8,0,{"10101010",2,2}, {"01010101",2,2}}
+
+TimeStart("Hubbard Eigensystem 1 states")
+fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
+TimeEnd("Hubbard Eigensystem 1 states")
+TimePrint()
+
+print("\npsiExpanded = ExpandToBasis(fun1s):")
+psiExpanded = ExpandToBasis(fun1s)
+print(psiExpanded)
+
+if not compareUnorderedLists(psiExpanded, RefPsi) then error("Result not equal to the expected one\n",1) end
+
+print("============================================")
+print("        Hubbartd model 4 sites 1D           ")
+print("============================================")
+print("                  complex                   ")
+print("============================================\n\n")
+
+Htb = NewTightBinding()
+Htb.Cell={{1,0,0},
+          {0,1,0},
+          {0,0,1}}
+Htb.Atoms={{"O",{0,0,0},{{"s",{"^{dn}","^{up}"}}}}}
+Htb.Hopping={{"O.s","O.s",{0,0, 1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0,-1},{{1  ,0},{0,1  }}},
+             {"O.s","O.s",{0,0, 2},{{0.1,0},{0,0.1}}},
+             {"O.s","O.s",{0,0,-2},{{0.1,0},{0,0.1}}}}
+
+HlocU = NewOperator("Number",2,0,0)*NewOperator("Number",2,1,1)
+
+U=3.5
+Hamiltonian1 = CreateClusterHamiltonian(Htb,{"periodic",{{1,0,0},{0,1,0},{0,0,4}}},U*HlocU,{{"k",{0,0,Pi/2}}})
+
+StartRestrictions = {8,0,{"10101010",2,2}, {"01010101",2,2}}
+
+TimeStart("Hubbard Eigensystem 1 states")
+fun1s = Eigensystem(Hamiltonian1,StartRestrictions,1)
+TimeEnd("Hubbard Eigensystem 1 states")
+TimePrint()
+
+print(fun1s)
+
+print("\npsiExpanded = ExpandToBasis(fun1s):")
+psiExpanded = ExpandToBasis(fun1s)
+print(psiExpanded)
+
+if not compareUnorderedLists(psiExpanded, RefPsi) then error("Result not equal to the expected one\n",1) end
+
+
+print("------------------------------------------------------------")
+print("--                  End of ExpandToBasis                  --")
+print("------------------------------------------------------------")
