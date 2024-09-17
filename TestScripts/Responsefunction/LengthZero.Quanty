@@ -292,7 +292,7 @@ Ga = ResponseFunction.New({ {{{0}},{{0}}}, {{{0}}}, mu=0, type="And", name="Ga"}
 GA = ResponseFunction.ToTable(Ga)
 --print(GA)
 
-Gt = ResponseFunction.New({ {{{0}}}, {}, mu=0, type="Tri", name="Gt"})
+Gt = ResponseFunction.New({ {{{0}},{{0}}}, {{{0}}}, mu=0, type="Tri", name="Gt"})
 GT = ResponseFunction.ToTable(Gt)
 --print(GT)
 
