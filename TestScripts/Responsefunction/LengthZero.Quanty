@@ -36,6 +36,18 @@ Glu = ResponseFunction.ChangeType(Gl,"Userdata")
 Glt = ResponseFunction.ChangeType(Gl,"Table")
 Glm = ResponseFunction.ToMatrix(Gl)
 
+Glt=nil
+Gla=nil
+Gln=nil
+Gld=nil
+Glu=nil
+Glt=nil
+Glm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType L                                       --")
 GLT = ResponseFunction.ChangeType(GL,"Tri")
 GLA = ResponseFunction.ChangeType(GL,"And")
@@ -44,6 +56,18 @@ GLD = ResponseFunction.ChangeType(GL,"Dense")
 GLU = ResponseFunction.ChangeType(GL,"Userdata")
 GLT = ResponseFunction.ChangeType(GL,"Table")
 GLM = ResponseFunction.ToMatrix(GL)
+
+GLT=nil
+GLA=nil
+GLN=nil
+GLD=nil
+GLU=nil
+GLT=nil
+GLM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType a                                       --")
 Gat = ResponseFunction.ChangeType(Ga,"Tri")
@@ -54,6 +78,18 @@ Gau = ResponseFunction.ChangeType(Ga,"Userdata")
 Gat = ResponseFunction.ChangeType(Ga,"Table")
 Gam = ResponseFunction.ToMatrix(Ga)
 
+Gat=nil
+Gaa=nil
+Gan=nil
+Gad=nil
+Gau=nil
+Gat=nil
+Gam=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType A                                       --")
 GAT = ResponseFunction.ChangeType(GA,"Tri")
 GAA = ResponseFunction.ChangeType(GA,"And")
@@ -62,6 +98,18 @@ GAD = ResponseFunction.ChangeType(GA,"Dense")
 GAU = ResponseFunction.ChangeType(GA,"Userdata")
 GAT = ResponseFunction.ChangeType(GA,"Table")
 GAM = ResponseFunction.ToMatrix(GA)
+
+GAT=nil
+GAA=nil
+GAN=nil
+GAD=nil
+GAU=nil
+GAT=nil
+GAM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType t                                       --")
 Gtt = ResponseFunction.ChangeType(Gt,"Tri")
@@ -72,6 +120,18 @@ Gtu = ResponseFunction.ChangeType(Gt,"Userdata")
 Gtt = ResponseFunction.ChangeType(Gt,"Table")
 Gtm = ResponseFunction.ToMatrix(Gt)
 
+Gtt=nil
+Gta=nil
+Gtn=nil
+Gtd=nil
+Gtu=nil
+Gtt=nil
+Gtm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType T                                       --")
 GTT = ResponseFunction.ChangeType(GT,"Tri")
 GTA = ResponseFunction.ChangeType(GT,"And")
@@ -80,6 +140,18 @@ GTD = ResponseFunction.ChangeType(GT,"Dense")
 GTU = ResponseFunction.ChangeType(GT,"Userdata")
 GTT = ResponseFunction.ChangeType(GT,"Table")
 GTM = ResponseFunction.ToMatrix(GT)
+
+GTT=nil
+GTA=nil
+GTN=nil
+GTD=nil
+GTU=nil
+GTT=nil
+GTM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType n                                       --")
 Gnt = ResponseFunction.ChangeType(Gn,"Tri")
@@ -90,6 +162,18 @@ Gnu = ResponseFunction.ChangeType(Gn,"Userdata")
 Gnt = ResponseFunction.ChangeType(Gn,"Table")
 Gnm = ResponseFunction.ToMatrix(Gn)
 
+Gnt=nil
+Gna=nil
+Gnn=nil
+Gnd=nil
+Gnu=nil
+Gnt=nil
+Gnm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType N                                       --")
 GNT = ResponseFunction.ChangeType(GN,"Tri")
 GNA = ResponseFunction.ChangeType(GN,"And")
@@ -98,6 +182,18 @@ GND = ResponseFunction.ChangeType(GN,"Dense")
 GNU = ResponseFunction.ChangeType(GN,"Userdata")
 GNT = ResponseFunction.ChangeType(GN,"Table")
 GNM = ResponseFunction.ToMatrix(GN)
+
+GNT=nil
+GNA=nil
+GNN=nil
+GND=nil
+GNU=nil
+GNT=nil
+GNM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 
 print("-- ChangeType n                                       --")
@@ -109,6 +205,18 @@ Gvnu = ResponseFunction.ChangeType(Gvn,"Userdata")
 Gvnt = ResponseFunction.ChangeType(Gvn,"Table")
 Gvnm = ResponseFunction.ToMatrix(Gvn)
 
+Gvnt=nil
+Gvna=nil
+Gvnn=nil
+Gvnd=nil
+Gvnu=nil
+Gvnt=nil
+Gvnm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType N                                       --")
 GvNT = ResponseFunction.ChangeType(GvN,"Tri")
 GvNA = ResponseFunction.ChangeType(GvN,"And")
@@ -117,6 +225,18 @@ GvND = ResponseFunction.ChangeType(GvN,"Dense")
 GvNU = ResponseFunction.ChangeType(GvN,"Userdata")
 GvNT = ResponseFunction.ChangeType(GvN,"Table")
 GvNM = ResponseFunction.ToMatrix(GvN)
+
+GvNT=nil
+GvNA=nil
+GvNN=nil
+GvND=nil
+GvNU=nil
+GvNT=nil
+GvNM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType n                                       --")
 Gcnt = ResponseFunction.ChangeType(Gcn,"Tri")
@@ -127,6 +247,18 @@ Gcnu = ResponseFunction.ChangeType(Gcn,"Userdata")
 Gcnt = ResponseFunction.ChangeType(Gcn,"Table")
 Gcnm = ResponseFunction.ToMatrix(Gcn)
 
+Gcnt=nil
+Gcna=nil
+Gcnn=nil
+Gcnd=nil
+Gcnu=nil
+Gcnt=nil
+Gcnm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType N                                       --")
 GcNT = ResponseFunction.ChangeType(GcN,"Tri")
 GcNA = ResponseFunction.ChangeType(GcN,"And")
@@ -136,6 +268,17 @@ GcNU = ResponseFunction.ChangeType(GcN,"Userdata")
 GcNT = ResponseFunction.ChangeType(GcN,"Table")
 GcNM = ResponseFunction.ToMatrix(GcN)
 
+GcNT=nil
+GcNA=nil
+GcNN=nil
+GcND=nil
+GcNU=nil
+GcNT=nil
+GcNM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("--------------------------------------------------------")
 print("-- Matrix valued                                      --")
@@ -173,6 +316,18 @@ Glu = ResponseFunction.ChangeType(Gl,"Userdata")
 Glt = ResponseFunction.ChangeType(Gl,"Table")
 Glm = ResponseFunction.ToMatrix(Gl)
 
+Glt=nil
+Gla=nil
+Gln=nil
+Gld=nil
+Glu=nil
+Glt=nil
+Glm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType L                                       --")
 GLT = ResponseFunction.ChangeType(GL,"Tri")
 GLA = ResponseFunction.ChangeType(GL,"And")
@@ -181,6 +336,18 @@ GLD = ResponseFunction.ChangeType(GL,"Dense")
 GLU = ResponseFunction.ChangeType(GL,"Userdata")
 GLT = ResponseFunction.ChangeType(GL,"Table")
 GLM = ResponseFunction.ToMatrix(GL)
+
+GLT=nil
+GLA=nil
+GLN=nil
+GLD=nil
+GLU=nil
+GLT=nil
+GLM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType a                                       --")
 Gat = ResponseFunction.ChangeType(Ga,"Tri")
@@ -191,6 +358,18 @@ Gau = ResponseFunction.ChangeType(Ga,"Userdata")
 Gat = ResponseFunction.ChangeType(Ga,"Table")
 Gam = ResponseFunction.ToMatrix(Ga)
 
+Gat=nil
+Gaa=nil
+Gan=nil
+Gad=nil
+Gau=nil
+Gat=nil
+Gam=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType A                                       --")
 GAT = ResponseFunction.ChangeType(GA,"Tri")
 GAA = ResponseFunction.ChangeType(GA,"And")
@@ -199,6 +378,18 @@ GAD = ResponseFunction.ChangeType(GA,"Dense")
 GAU = ResponseFunction.ChangeType(GA,"Userdata")
 GAT = ResponseFunction.ChangeType(GA,"Table")
 GAM = ResponseFunction.ToMatrix(GA)
+
+GAT=nil
+GAA=nil
+GAN=nil
+GAD=nil
+GAU=nil
+GAT=nil
+GAM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType t                                       --")
 Gtt = ResponseFunction.ChangeType(Gt,"Tri")
@@ -209,6 +400,18 @@ Gtu = ResponseFunction.ChangeType(Gt,"Userdata")
 Gtt = ResponseFunction.ChangeType(Gt,"Table")
 Gtm = ResponseFunction.ToMatrix(Gt)
 
+Gtt=nil
+Gta=nil
+Gtn=nil
+Gtd=nil
+Gtu=nil
+Gtt=nil
+Gtm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType T                                       --")
 GTT = ResponseFunction.ChangeType(GT,"Tri")
 GTA = ResponseFunction.ChangeType(GT,"And")
@@ -217,6 +420,18 @@ GTD = ResponseFunction.ChangeType(GT,"Dense")
 GTU = ResponseFunction.ChangeType(GT,"Userdata")
 GTT = ResponseFunction.ChangeType(GT,"Table")
 GTM = ResponseFunction.ToMatrix(GT)
+
+GTT=nil
+GTA=nil
+GTN=nil
+GTD=nil
+GTU=nil
+GTT=nil
+GTM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType n                                       --")
 Gnt = ResponseFunction.ChangeType(Gn,"Tri")
@@ -227,6 +442,18 @@ Gnu = ResponseFunction.ChangeType(Gn,"Userdata")
 Gnt = ResponseFunction.ChangeType(Gn,"Table")
 Gnm = ResponseFunction.ToMatrix(Gn)
 
+Gnt=nil
+Gna=nil
+Gnn=nil
+Gnd=nil
+Gnu=nil
+Gnt=nil
+Gnm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType N                                       --")
 GNT = ResponseFunction.ChangeType(GN,"Tri")
 GNA = ResponseFunction.ChangeType(GN,"And")
@@ -235,6 +462,18 @@ GND = ResponseFunction.ChangeType(GN,"Dense")
 GNU = ResponseFunction.ChangeType(GN,"Userdata")
 GNT = ResponseFunction.ChangeType(GN,"Table")
 GNM = ResponseFunction.ToMatrix(GN)
+
+GNT=nil
+GNA=nil
+GNN=nil
+GND=nil
+GNU=nil
+GNT=nil
+GNM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 
 print("-- ChangeType n                                       --")
@@ -246,6 +485,18 @@ Gvnu = ResponseFunction.ChangeType(Gvn,"Userdata")
 Gvnt = ResponseFunction.ChangeType(Gvn,"Table")
 Gvnm = ResponseFunction.ToMatrix(Gvn)
 
+Gvnt=nil
+Gvna=nil
+Gvnn=nil
+Gvnd=nil
+Gvnu=nil
+Gvnt=nil
+Gvnm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType N                                       --")
 GvNT = ResponseFunction.ChangeType(GvN,"Tri")
 GvNA = ResponseFunction.ChangeType(GvN,"And")
@@ -254,6 +505,18 @@ GvND = ResponseFunction.ChangeType(GvN,"Dense")
 GvNU = ResponseFunction.ChangeType(GvN,"Userdata")
 GvNT = ResponseFunction.ChangeType(GvN,"Table")
 GvNM = ResponseFunction.ToMatrix(GvN)
+
+GvNT=nil
+GvNA=nil
+GvNN=nil
+GvND=nil
+GvNU=nil
+GvNT=nil
+GvNM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
 
 print("-- ChangeType n                                       --")
 Gcnt = ResponseFunction.ChangeType(Gcn,"Tri")
@@ -264,6 +527,18 @@ Gcnu = ResponseFunction.ChangeType(Gcn,"Userdata")
 Gcnt = ResponseFunction.ChangeType(Gcn,"Table")
 Gcnm = ResponseFunction.ToMatrix(Gcn)
 
+Gcnt=nil
+Gcna=nil
+Gcnn=nil
+Gcnd=nil
+Gcnu=nil
+Gcnt=nil
+Gcnm=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
 print("-- ChangeType N                                       --")
 GcNT = ResponseFunction.ChangeType(GcN,"Tri")
 GcNA = ResponseFunction.ChangeType(GcN,"And")
@@ -272,6 +547,22 @@ GcND = ResponseFunction.ChangeType(GcN,"Dense")
 GcNU = ResponseFunction.ChangeType(GcN,"Userdata")
 GcNT = ResponseFunction.ChangeType(GcN,"Table")
 GcNM = ResponseFunction.ToMatrix(GcN)
+
+GcNT=nil
+GcNA=nil
+GcNN=nil
+GcND=nil
+GcNU=nil
+GcNT=nil
+GcNM=nil
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+collectgarbage("collect")
+
+
+
+
 
 
 

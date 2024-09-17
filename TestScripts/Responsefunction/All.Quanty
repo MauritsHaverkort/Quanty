@@ -24,17 +24,15 @@ dofile(directory.."/CalculateSelfEnergy.Quanty")
 dofile(directory.."/CalculateHybridizationFunction.Quanty")
 
 ::skip::
+dofile(directory.."/LengthZero.Quanty")
 
 
-
-
-
-dofile(directory.."/ToTightbinding.Quanty")
+dofile(directory.."/Deflation.Quanty")
 
 dofile(directory.."/CreateBitMasks.Quanty")
 
+dofile(directory.."/ToTightbinding.Quanty")
+
 dofile(directory.."/ReducePoles.Quanty")
 dofile(directory.."/PlaceOnMesh.Quanty")
-dofile(directory.."/Deflation.Quanty")
-dofile(directory.."/LengthZero.Quanty")
 
