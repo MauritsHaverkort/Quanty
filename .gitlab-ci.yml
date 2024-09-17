@@ -1,8 +1,8 @@
 stages:
   - build
-  - test
   - test_matrix
   - test_responsefunction
+  - test
 
 build-job:
   stage: build

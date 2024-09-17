@@ -350,13 +350,21 @@ collectgarbage("collect")
 collectgarbage("collect")
 
 print("-- ChangeType a                                       --")
+print("Gat")
 Gat = ResponseFunction.ChangeType(Ga,"Tri")
+print("Gaa"); Gat=nil; collectgarbage("collect"); collectgarbage("collect"); collectgarbage("collect")
 Gaa = ResponseFunction.ChangeType(Ga,"And")
+print("Gan"); Gaa=nil; collectgarbage("collect"); collectgarbage("collect"); collectgarbage("collect")
 Gan = ResponseFunction.ChangeType(Ga,"Nat")
+print("Gad"); Gan=nil; collectgarbage("collect"); collectgarbage("collect"); collectgarbage("collect")
 Gad = ResponseFunction.ChangeType(Ga,"Dense")
+print("Gau"); Gad=nil; collectgarbage("collect"); collectgarbage("collect"); collectgarbage("collect")
 Gau = ResponseFunction.ChangeType(Ga,"Userdata")
+print("Gat"); Gau=nil; collectgarbage("collect"); collectgarbage("collect"); collectgarbage("collect")
 Gat = ResponseFunction.ChangeType(Ga,"Table")
+print("Gam"); Gat=nil; collectgarbage("collect"); collectgarbage("collect"); collectgarbage("collect")
 Gam = ResponseFunction.ToMatrix(Ga)
+print("Ga all finished")
 
 Gat=nil
 Gaa=nil
