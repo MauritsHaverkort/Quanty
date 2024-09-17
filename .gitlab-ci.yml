@@ -155,11 +155,51 @@ test-job-DensityMatrix:
   dependencies:
   - build-job
 
+test-job-DeterminantString:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/DeterminantString.Quanty"
+  dependencies:
+  - build-job
+
 test-job-Eigensystem:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Eigensystem.Quanty"
+  dependencies:
+  - build-job
+
+test-job-Expand:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Expand.Quanty"
+  dependencies:
+  - build-job
+
+test-job-ExpandToBasis:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/ExpandToBasis.Quanty"
+  dependencies:
+  - build-job
+
+test-job-FileReadDresdenFPLO:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/FileReadDresdenFPLO.Quanty"
+  dependencies:
+  - build-job
+
+test-job-FindAllAtomsInsideSphere:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/FindAllAtomsInsideSphere.Quanty"
   dependencies:
   - build-job
 

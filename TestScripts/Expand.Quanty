@@ -1,0 +1,59 @@
+print("--------------------------------------------")
+print("--                  Expand                --")
+print("--------------------------------------------")
+
+RefPsi = { NewWavefunction( 22, 0,{
+{"0000000000001111111111", 5.547001962252291E-01 + I *  0.000000000000000E+00},
+{"0000111111000000000000", 5.547001962252291E-01 + I *  2.773500981126146E-01}},
+{{"Name","Wave Function 0000"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1000"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0100"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1100"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0010"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1010"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0110"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1110"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0001"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1001"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0101"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1101"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0011"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 1011"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+},
+{{"Name","Wave Function 0111"},{"NBitsKey",16}}) , NewWavefunction( 22, 0,{
+{"1111000000000000000000", 0.000000000000000E+00 + I *  5.547001962252291E-01}},
+{{"Name","Wave Function 1111"},{"NBitsKey",16}}) }
+
+orbitals = {"H_1s","Fe_2s","Fe_2p","Fe_3s","Fe_3d"}
+groupings = { {"H_states", {"H_1s"} }, {"Fe_states", {"Fe_2s","Fe_2p","Fe_3s","Fe_3d"}} }
+Ind, NF = CreateAtomicIndicesDict(orbitals,groupings)
+
+psi = NewWavefunction(NF,0,{{DeterminantString(NF, Ind["Fe_3d"]) , 1}, {DeterminantString(NF, {0,1,2,3}), I}, {DeterminantString(NF, Ind["Fe_2p"]), 1+0.5*I}})
+psi.Normalize()
+print(psi)
+
+print("\npsiExpanded = Expand(psi, {0,1,2,3}):")
+psiExpanded = Expand(psi, {0,1,2,3})
+print(psiExpanded)
+
+if #psiExpanded ~= #RefPsi then error("Result not equal to the expected one\n",1) end
+for i = 1, #psiExpanded do
+    if psiExpanded[i] ~= RefPsi[i] then error(i.."-th Result not equal to the expected one\n",1) end
+end
+
+print("------------------------------------------------")
+print("--                  End of Expand             --")
+print("------------------------------------------------")

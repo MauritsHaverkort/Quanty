@@ -1,0 +1,44 @@
+print("----------------------------------------------------")
+print("--                  DeterminantString             --")
+print("----------------------------------------------------")
+
+
+orbitals = {"H_1s","Fe_2s","Fe_2p","Fe_3s","Fe_3d"}
+groupings = { {"H_states", {"H_1s"} }, {"Fe_states", {"Fe_2s","Fe_2p","Fe_3s","Fe_3d"}} }
+Ind, NF = CreateAtomicIndicesDict(orbitals,groupings)
+
+
+RefStr01234 = "1111000000000000000000"
+RefStrFe_2p = "0000111111000000000000"
+RefStrH_states = "1100000000000000000000"
+RefStrFe_states = "0011111111111111111111"
+RefStrMix = "1100111111001111111111"
+RefPsi = NewWavefunction(22, 0, {{"0000000000001111111111", 1}})
+ 
+str = DeterminantString(NF, {0,1,2,3})
+print("\nDeterminantString({0,1,2,3},NF):" )
+print(str)
+if str ~= RefStr01234 then error("Result not equal to the expected value\n",1) end
+
+str = DeterminantString(NF, Ind["Fe_2p"]) 
+print("\nDeterminantString(NF, Ind[\"Fe_2p\"]):")
+print(str)
+if str ~= RefStrFe_2p then error("Result not equal to the expected value\n",1) end
+
+str = DeterminantString(NF, Ind["H_states"]) 
+print("\nDeterminantString(NF, Ind[\"H_states\"]):")
+print(str)
+if str ~= RefStrH_states then error("Result not equal to the expected value\n",1) end
+
+str = DeterminantString(NF, Ind["H_1s"], Ind["Fe_2p"], Ind["Fe_3d"]) 
+print("\nDeterminantString(NF, Ind[\"H_1s\"], Ind[\"Fe_2p\"], Ind[\"Fe_3d\"]):" )
+print(str)
+if str ~= RefStrMix then error("Result not equal to the expected value\n",1) end
+ 
+psi = NewWavefunction(NF,0,{{DeterminantString(NF, Ind["Fe_3d"]) , 1}})
+print(psi)
+if psi~=RefPsi then error("Result not equal to the expected value\n",1) end
+
+print("-----------------------------------------------------------")
+print("--                  End of DeterminantString             --")
+print("-----------------------------------------------------------")
