@@ -4145,6 +4145,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
   InitCompactMatrix(B);
   B->mu=A->mu;
   strcpy(B->Name, A->Name);
+  if(A->N==0) return 0;
   Ai     = A->BlockSize*A->BlockSize;
   BBi    = A->BlockSize;
   BBdagi = A->BlockSize * B->Nj;
@@ -4254,6 +4255,7 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const 
     printf("InitCompactMatrix failed in BlockTriDiagonalMatrixToCompactMatrix\n");
     return 1;
   }
+  strcpy(B->Name, A->Name);
   B->mu=A->mu;
   bpos=0;
   apos=A->BlockSize*A->BlockSize;
