@@ -602,6 +602,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    if (buffRes->Block==false) luaL_error(L, "Encountered a single valued response function where I expected a Block response function");
     ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
     buff = ((BlockTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
@@ -638,9 +639,13 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
         Mtemp = luaL_checkCompactMatrix(L, -1);
         buff->BlockSize = Mtemp->Ni;
       }
-      else
+      else if (lua_istable(L,-1)==1)
       {
         buff->BlockSize = (uint32_t)lua_objlen(L, -1);
+      }
+      else
+      {
+        luaL_error(L, "Errorr reading Block Greens function element A0 must be a matrix or table of tables\n");
       }
       lua_pop(L, 1);
       // init tridiagonal matrix
@@ -682,7 +687,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
             }
           }
         }
-        else
+        else  if (lua_istable(L,-1)==1)
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
@@ -720,6 +725,10 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
             }
             lua_pop(L, 1);
           }
+        }
+        else
+        {
+          luaL_error(L, "Errorr reading Block Greens function element A[%d] must be a matrix or table of tables of size %d\n",i,buff->BlockSize);
         }
         lua_pop(L, 1);
       }
@@ -770,7 +779,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
         {
           if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
           {
-            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
+            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks in B must be equal in size. BlockSize (%d), size at i=%d is %d",buff->BlockSize,i+1,lua_objlen(L, -1));
           }
           for(j=0;j<buff->BlockSize;j++)
           {
@@ -778,7 +787,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
             {
               if((uint32_t)lua_objlen(L, -1)!=buff->BlockSize)
               {
-                luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
+                luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks in B must be equal in size. BlockSize (%d), size at i=%d j=%d is %d",buff->BlockSize,i+1,j+1,lua_objlen(L, -1));
               }
               for(k=0;k<buff->BlockSize;k++)
               {
@@ -1564,6 +1573,11 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     CompactMatrixAdd(&(buff->a0), &tempA0);
     FreeCompactMatrix(&tempA0);
     SetCompactMatrixToZero(&tempCM);
+    if(buff->a0.QComplex)
+    {
+      RealBlockTridiagonalMatrixToComplex(&(buff->con));
+      RealBlockTridiagonalMatrixToComplex(&(buff->val));
+    }
     // use B0 to rescale B0con and B0val
     if(tempM->QComplex)
     {

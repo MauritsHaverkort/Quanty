@@ -3972,30 +3972,76 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
   B->mu=A->mu;
   if(A->QComplex)
   {
-    for(i=0;i<3*A->BlockSize;i++)
+    if((A->val.N==1)&&(A->con.N==1))
     {
-      memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(Complex16));
-    }
-    for(i=0;i<A->BlockSize;i++)
-    {
-      memcpy(&(B->V[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(Complex16));
-    }
-    for(i=0;i<2*A->BlockSize;i++)
-    {
-      memcpy(&(B->V[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.V[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(Complex16));
-    }
-    for(k=2;k<=A->val.N;k++)
-    {
-      for(i=0;i<A->BlockSize;i++)
+      for(i=0;i<2*A->BlockSize;i++)
       {
-        memcpy(&(B->V[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 2*A->BlockSize*sizeof(Complex16));
       }
     }
-    for(k=2;k<=A->con.N;k++)
+    else if (A->val.N==1)
     {
+      for(i=0;i<2*A->BlockSize;i++)
+      {
+        memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 2*A->BlockSize*sizeof(Complex16));
+      }
       for(i=0;i<A->BlockSize;i++)
       {
-        memcpy(&(B->V[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        memcpy(&(B->V[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(Complex16));
+      }
+      for(i=0;i<2*A->BlockSize;i++)
+      {
+        memcpy(&(B->V[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.V[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+      }
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->V[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        }
+      }
+      for(k=2;k<=A->con.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->V[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        }
+      }
+    }
+    else if (A->con.N==1)
+    {
+      for(i=0;i<3*A->BlockSize;i++)
+      {
+        memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(Complex16));
+      }
+    }
+    else
+    {
+      for(i=0;i<3*A->BlockSize;i++)
+      {
+        memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(Complex16));
+      }
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->V[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.V[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(Complex16));
+      }
+      for(i=0;i<2*A->BlockSize;i++)
+      {
+        memcpy(&(B->V[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.V[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+      }
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->V[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        }
+      }
+      for(k=2;k<=A->con.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->V[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        }
       }
     }
     apos=2*A->BlockSize*A->BlockSize;
@@ -4048,30 +4094,76 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
   }
   else //real
   {
-    for(i=0;i<3*A->BlockSize;i++)
+    if((A->val.N==1)&&(A->con.N==1))
     {
-      memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
-    }
-    for(i=0;i<A->BlockSize;i++)
-    {
-      memcpy(&(B->VRe[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
-    }
-    for(i=0;i<2*A->BlockSize;i++)
-    {
-      memcpy(&(B->VRe[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.VRe[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(double));
-    }
-    for(k=2;k<=A->val.N;k++)
-    {
-      for(i=0;i<A->BlockSize;i++)
+      for(i=0;i<2*A->BlockSize;i++)
       {
-        memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
       }
     }
-    for(k=2;k<=A->con.N;k++)
+    else if (A->val.N==1)
     {
+      for(i=0;i<2*A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
+      }
       for(i=0;i<A->BlockSize;i++)
       {
-        memcpy(&(B->VRe[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        memcpy(&(B->VRe[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
+      }
+      for(i=0;i<2*A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.VRe[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(double));
+      }
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        }
+      }
+      for(k=2;k<=A->con.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->VRe[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        }
+      }
+    }
+    else if (A->con.N==1)
+    {
+      for(i=0;i<3*A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
+      }
+    }
+    else
+    {
+      for(i=0;i<3*A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
+      }
+      for(i=0;i<A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[(i+A->BlockSize*Max(2,A->val.N+1))*B->Nj]), &(A->TMT.VRe[(i+3*A->BlockSize)*A->TMT.Nj]), 2*A->BlockSize*sizeof(double));
+      }
+      for(i=0;i<2*A->BlockSize;i++)
+      {
+        memcpy(&(B->VRe[(i*B->Nj+A->BlockSize*Max(2,A->val.N+1))]), &(A->TMT.VRe[(i)*A->TMT.Nj+3*A->BlockSize]), A->BlockSize*sizeof(double));
+      }
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        }
+      }
+      for(k=2;k<=A->con.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->VRe[(k+Max(1,A->val.N)-1)*A->BlockSize*B->Nj+(k+Max(1,A->val.N)-1)*A->BlockSize+i*B->Nj]), &(A->con.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        }
       }
     }
     apos=2*A->BlockSize*A->BlockSize;

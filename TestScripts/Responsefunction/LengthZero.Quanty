@@ -1,6 +1,125 @@
+
+
+print("--------------------------------------------------------")
+print("-- Responsefunction of zero one                       --")
+print("--------------------------------------------------------")
+
+print("size 3+3 natural")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5,-6}, {sqrt(1/2),2,2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6,7}, {sqrt(1/2),3,3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}},{{-6}}}, {{{sqrt(1/2)}},{{2}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}},{{7}}}, {{{sqrt(1/2)}},{{3}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(6)) then error("Response matrix comparison failed\n",1) end
+
+print("size 2+2 natural")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(4)) then error("Response matrix comparison failed\n",1) end
+
+print("size 1+2 natural")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
+print("size 2+1 natural")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
+print("size 1+1 natural")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(2)) then error("Response matrix comparison failed\n",1) end
+
+
+print("size 3+3 natural complex")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5,-6}, {sqrt(1/2),2,2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6,7}, {sqrt(1/2),3,3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}},{{-6}}}, {{{sqrt(1/2)}},{{2}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}},{{7}}}, {{{sqrt(1/2)}},{{3}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(6)) then error("Response matrix comparison failed\n",1) end
+
+print("size 2+2 natural complex")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(4)) then error("Response matrix comparison failed\n",1) end
+
+print("size 1+2 natural complex")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
+print("size 2+1 natural complex")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
+print("size 1+1 natural complex")
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(2)) then error("Response matrix comparison failed\n",1) end
+
+G = ResponseFunction.New({ {0,-4}, {1}, mu=0, type="Tri", name="Gv"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+
+G = ResponseFunction.New({ {{{0}},{{-4}}}, {{{1}}}, mu=0, type="Tri", name="Gv"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
+G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+M = ResponseFunction.ToMatrix(G)
+print(M)
+
 print("--------------------------------------------------------")
 print("-- Responsefunction of zero length                    --")
 print("--------------------------------------------------------")
+
 print("--------------------------------------------------------")
 print("-- Single valued                                      --")
 print("--------------------------------------------------------")
@@ -16,15 +135,17 @@ Gt = ResponseFunction.New({ {0}, {}, mu=0, type="Tri", name="Gt"})
 GT = ResponseFunction.ToTable(Gt)
 --print(GT)
 
-Gn = ResponseFunction.New({ {0,0}, val=Gt, con=Gt, mu=0, type="Nat", name="Gn"})
+Gn = ResponseFunction.New({ {0,1}, val=Gt, con=Gt, mu=0, type="Nat", name="Gn"})
 GN = ResponseFunction.ToTable(Gn)
 --print(GN)
 
-Gvn = ResponseFunction.New({ {0,0}, val=ResponseFunction.New({ {0,-1,-1}, {1,1}, mu=0, type="Tri", name="Gv"}), con=Gt, mu=0, type="Nat", name="Gvn"})
+Gvn = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-1,-1}, {1,1}, mu=0, type="Tri", name="Gv"}), con=Gt, mu=0, type="Nat", name="Gvn"})
 GvN = ResponseFunction.ToTable(Gvn)
 
-Gcn = ResponseFunction.New({ {0,0}, val=Gt, con=ResponseFunction.New({ {0,1,1}, {1,1}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
+Gcn = ResponseFunction.New({ {0,1}, val=Gt, con=ResponseFunction.New({ {0,1,1}, {1,1}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 GcN = ResponseFunction.ToTable(Gcn)
+
+
 
 
 print("-- ChangeType l                                       --")
