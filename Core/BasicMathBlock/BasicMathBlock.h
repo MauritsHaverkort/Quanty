@@ -7,4 +7,5 @@
 
 uint32_t FreeBlockMatrix(ResponsefunctionType *M);
 uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M);
-int ConvertBlockMatrix(ResponsefunctionType *Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue);
+int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue);
+int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot);

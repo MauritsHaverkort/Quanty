@@ -446,10 +446,7 @@ static int LuaCalculateG(lua_State *L)
     uint32_t NE;
     const char* Type;
   } Options;
-  Options.Nk = (int*)malloc(3*sizeof(int));
-  Options.Nk[0]=40;
-  Options.Nk[1]=40;
-  Options.Nk[2]=40;
+  Options.Nk = NULL;
   //Options.Method    = "Mesh";
   Options.Emin=-10;
   Options.Emax=10;
@@ -474,7 +471,13 @@ static int LuaCalculateG(lua_State *L)
   {
     LuaCheckOptions(L, 2, LuaCalculateGOptions);
   }
-
+  if(Options.Nk==NULL)
+  {
+    Options.Nk = (int*)malloc(3*sizeof(int));
+    Options.Nk[0]=40;
+    Options.Nk[1]=40;
+    Options.Nk[2]=40;
+  }
   lua_settop(L, 0);
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");

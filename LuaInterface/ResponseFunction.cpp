@@ -41,12 +41,12 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {"EffectivekBT","double",&(T)},
     {"Deflate","bool",&deflate},
     {NULL, NULL, NULL}};
-  if(!(len==2)||(len==3)) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
   if(LuaTestOptionsList(L,-1)==1)
   {
     LuaCheckOptions(L, -1, LuaChangeTypeResponseFunctionOptions);
     len=len-1;
   }
+  if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
   Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
   if(strcmp(convert, "Dense")==0)
@@ -2052,6 +2052,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       else
       {
         //TODO: andersonmatrixToTightbinding
+        return luaL_error(L, "Error in Responsefunction.ToTightBinding() Not yet implemented for this case\n");
       }
       break;
     }
@@ -2065,6 +2066,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       else
       {
         //TODO: tridiagonal matrix to TB
+        return luaL_error(L, "Error in Responsefunction.ToTightBinding() Not yet implemented for this case\n");
       }
       break;
     }
@@ -2078,6 +2080,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       else
       {
         //TODO: NatrualImpuritiOrbitalMatrixType to TB
+        return luaL_error(L, "Error in Responsefunction.ToTightBinding() Not yet implemented for this case\n");
       }
       break;
     }
@@ -2245,6 +2248,32 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
   return 1;
 }
 
+
+/*
+ *
+ */
+static int LuaResponseFunctionRotate(lua_State * L)
+{
+  ResponsefunctionType *G, GRot;
+  CompactMatrixType *U;
+  
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=2) luaL_error(L, "ResponseFunction.Rotate called with %d arguments, two arguments expected",len);
+  G = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  U=luaL_checkCompactMatrix(L, 2);
+  if(G->Block==false)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Rotate(). Rotate rotates the elements in the matrix or Block representation of the response function. Can not rotate singel valued functions\n", len);
+  }
+  if(ResponseFunctionGetBlockSize(G)!=U->Nj) return luaL_error(L, "Error in ResponseFunction.Rotate(). Number of columns in roation matrix (Nj = %d) should be equal to the blocksize of the response function (%d)\n", U->Nj, ResponseFunctionGetBlockSize(G));
+  if(BlockResponseFunctionRotate(G,U,&GRot)!=0) return luaL_error(L, "Error in ResponseFunction.Rotate()\n", len);
+  LuaPush_ResponseFunction(L, &GRot);
+  FreeResponsefunction(G);
+  FreeResponsefunction(&GRot);
+  FreeCompactMatrix(U);
+  return 1;
+}
+
 /*  compare two response functions
  *  two response functions are considered equal when evaluating them returns the same answer for all values of omega and gamma
  */
@@ -2277,6 +2306,7 @@ static int LuaResponseFunctionDestroy(lua_State * L)
   FreeResponsefunction(a);  
   return 0;
 }
+
 
 /* on stack a table
  *

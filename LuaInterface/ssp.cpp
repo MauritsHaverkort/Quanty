@@ -1792,6 +1792,10 @@ static int Luarotate(lua_State *L)
   {
     return LuaMatrixRotate(L);
   }
+  if ((luaL_testudata(L, 1, "ResponseFunction_Type") != NULL) || (lua_istable(L, 1)==1))
+  {
+    return LuaResponseFunctionRotate(L);
+  }
   return luaL_error(L, "Rotate called unrecognized type. Can only rotate wavefunctions operators and tight binding objects\n");
 }
 

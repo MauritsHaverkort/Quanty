@@ -1084,7 +1084,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
           Mtemp = luaL_checkCompactMatrix(L, -1);
           if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
           {
-            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+            luaL_error(L, "Errorr reading Greens function as block anderson matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
           }
           if(Mtemp->QComplex==0)
           {
@@ -1964,7 +1964,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
           Mtemp = luaL_checkCompactMatrix(L, -1);
           if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
           {
-            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
+            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,i+1,Mtemp->Ni,Mtemp->Nj);
           }
           if(Mtemp->QComplex==0)
           {
@@ -2076,7 +2076,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
           Mtemp = luaL_checkCompactMatrix(L, -1);
           if((Mtemp->Ni != buff->BlockSize)||(Mtemp->Nj != buff->BlockSize))
           {
-            luaL_error(L, "Errorr reading Greens function as block tridiagonal matrix, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,1,Mtemp->Ni,Mtemp->Nj);
+            luaL_error(L, "Errorr reading Greens function as block list of poles, but all blocks must be equal in size. BlockSize (%d), size at i=%d is %d by %d",buff->BlockSize,1,Mtemp->Ni,Mtemp->Nj);
           }
           if(Mtemp->QComplex==0)
           {

@@ -262,6 +262,18 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
   }
   if(lua_type(L,narg)==LUA_TTABLE)
   {
+    // check for specific meta data and then print differently
+    if (lua_getmetatable(L, narg))
+    {
+      lua_getglobal(L, "ResponseFunctionMeta");
+      if(lua_rawequal(L, -1, -2)==1)
+      {
+        lua_pop(L, 2);
+        goto ExportResponseFunction;
+      }
+      lua_pop(L, 2);
+    }
+    // print a table without meta data
     bool FirstElement=false;
     size_t i,tablelen = lua_objlen(L, narg);
     fprintf(stream, "{ ");
@@ -531,6 +543,20 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         fprintf(stream,"[\"Integral\"]=%22.15E}",Sqr(n->Spec[i].b[0]));
       }
       fprintf(stream,"})");
+      return 0;
+    }
+    if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+    {
+      ExportResponseFunction:
+      fprintf(stream,"ResponseFunction.New(");
+      // turn the response funciton in a table
+      lua_remove(L, 1);
+      lua_remove(L, 1);
+      LuaResponseFunctionToTable(L);
+      lua_pushnil(L);
+      lua_setmetatable(L, 2);
+      LuaASCIIStreamPrint(L, 2, stream);
+      fprintf(stream,")\n");
       return 0;
     }
     return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of user data\n");

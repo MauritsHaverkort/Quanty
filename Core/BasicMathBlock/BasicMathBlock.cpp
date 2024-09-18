@@ -110,7 +110,7 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 /*
  * change the type of a Block response function from M->type to type
  */
-int ConvertBlockMatrix(ResponsefunctionType *Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
+int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
 {
   if(Min->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
   Mout->NSuggestedGridPoints = 0;
@@ -297,6 +297,129 @@ int ConvertBlockMatrix(ResponsefunctionType *Min, ResponsefunctionType *Mout, co
     default:
     {
       printf("Error in ConvertBlockMatrix unrecognized type of M: %c",Min->type);
+    }
+    break;
+  }
+  return 0;
+}
+
+int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot)
+{
+  GRot->type  = G->type;
+  GRot->Block = G->Block;
+  GRot->NSuggestedGridPoints = G->NSuggestedGridPoints;
+  if(GRot->NSuggestedGridPoints==0)
+  {
+    GRot->SuggestedGrid=NULL;
+  }
+  else
+  {
+    GRot->SuggestedGrid= (double*)malloc(GRot->NSuggestedGridPoints*sizeof(double));
+    memcpy(GRot->SuggestedGrid, G->SuggestedGrid, GRot->NSuggestedGridPoints*sizeof(double));
+  }
+  switch (G->type|32)      // original type
+  {
+    case 'l': // original list of poles
+    {
+      char Name[MAXStrLength];
+      BlockListOfPoles *GRotData, *GData;
+      CompactMatrixType Gi, GRoti;
+      GData = ((BlockListOfPoles*)(G->data));
+      GRotData = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
+      GRot->data = GRotData;
+      GRotData->BlockSize = U->Ni;
+      GRotData->QComplex = GData->QComplex;
+      if(U->QComplex!=0) GRotData->QComplex = 1;
+      GRotData->N = GData->N;
+      InitBlockListOfPoles(GRotData);
+      strcpy(GRotData->Name, GData->Name);
+      GRotData->mu = GData->mu;
+      Gi.QComplex = GData->QComplex;
+      Gi.Ni = GData->BlockSize;
+      Gi.Nj = GData->BlockSize;
+      Gi.Name = Name;
+      GRoti.QComplex = GRotData->QComplex;
+      GRoti.Ni = GRotData->BlockSize;
+      GRoti.Nj = GRotData->BlockSize;
+      GRoti.Name = Name;
+      // Rotate a0
+      if(Gi.QComplex==0)
+      {
+        Gi.VRe = GData->a0Re;
+      }
+      else
+      {
+        Gi.V = GData->a0;
+      }
+      if(GRoti.QComplex==0)
+      {
+        GRoti.VRe = GRotData->a0Re;
+      }
+      else
+      {
+        GRoti.V = GRotData->a0;
+      }
+      TransformCompactMatrixcT(&Gi, U, &GRoti);
+      // Rotate the residus of the poles
+      for(int i=0; i<GData->N; i++)
+      {
+        if(Gi.QComplex==0)
+        {
+          Gi.VRe = &(GData->VRe[i*(Sqr(GData->BlockSize)+1)+1]);
+        }
+        else
+        {
+          Gi.V = &(GData->V[i*(Sqr(GData->BlockSize)+1)+1]);
+          GRotData->V[i*(Sqr(GRotData->BlockSize)+1)]=GData->V[i*(Sqr(GData->BlockSize)+1)];
+        }
+        if(GRoti.QComplex==0)
+        {
+          GRoti.VRe = &(GRotData->VRe[i*(Sqr(GRotData->BlockSize)+1)+1]);
+          GRotData->VRe[i*(Sqr(GRotData->BlockSize)+1)]=GData->VRe[i*(Sqr(GData->BlockSize)+1)];
+        }
+        else
+        {
+          GRoti.V = &(GRotData->V[i*(Sqr(GRotData->BlockSize)+1)+1]);
+          if(Gi.QComplex==0)
+          {
+            GRotData->V[i*(Sqr(GRotData->BlockSize)+1)].Re=GData->VRe[i*(Sqr(GData->BlockSize)+1)];
+            GRotData->V[i*(Sqr(GRotData->BlockSize)+1)].Im=0;
+          }
+        }
+        CompactMatrixMultiply3PreAllocated('*', 'N', 'T', U, &Gi, U, &GRoti);
+      }
+    }
+    break;
+    case 't': // original tri-diagonal
+    {
+      ResponsefunctionType Gp;
+      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
+      BlockResponseFunctionRotate(&Gp, U, GRot);
+      FreeResponsefunction(&Gp);
+      return 0;
+    }
+    break;
+    case 'a': // original anderson matrix
+    {
+      ResponsefunctionType Gp;
+      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
+      BlockResponseFunctionRotate(&Gp, U, GRot);
+      FreeResponsefunction(&Gp);
+      return 0;
+    }
+    break;
+    case 'n': // original natural impurity orbitals
+    {
+      ResponsefunctionType Gp;
+      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
+      BlockResponseFunctionRotate(&Gp, U, GRot);
+      FreeResponsefunction(&Gp);
+      return 0;
+    }
+    break;
+    default:
+    {
+      printf("Error in BlockResponseFunctionRotate unrecognized type of G: %c",G->type);
     }
     break;
   }

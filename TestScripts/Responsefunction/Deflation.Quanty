@@ -1,0 +1,46 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction Deflation                         --")
+print("--------------------------------------------------------")
+
+A0 = Matrix.New({{0,0},{0,0}})
+A1 = Matrix.New({{1,0},{0,1}})
+A2 = Matrix.New({{2,0},{0,2}})
+A3 = Matrix.New({{3,0},{0,3}})
+A4 = Matrix.New({{4,0},{0,4}})
+A5 = Matrix.New({{5,0},{0,5}})
+
+B0 = Matrix.New({{1,0},{0,1}})
+B1 = Matrix.New({{1,0},{0,1}})
+B2 = Matrix.New({{1,0},{0,1}})
+B3 = Matrix.New({{1,0},{0,0}})
+B4 = Matrix.New({{1,0},{0,0}})
+
+G0And = ResponseFunction.New({ {A0,A1,A2,A3,A4,A5}, {B0,B1,B2,B3,B4}, mu=0, type="And", name="G0ANd"})
+print(ResponseFunction.ToTable(G0And))
+
+G0Tri = ResponseFunction.New({ {A0,A1,A2,A3,A4,A5}, {B0,B1,B2,B3,B4}, mu=0, type="Tri", name="G0Tri"})
+print(ResponseFunction.ToTable(G0Tri))
+
+
+H0, bit0 = ResponseFunction.ToOperator(G0Tri)
+print(H0)
+print(bit0)
+
+M0 = ResponseFunction.ChangeType(G0Tri,"Dense")
+print(M0)
+G1Tri = BlockBandDiagonalize(M0,2,{{"NTri",5}})
+print(G1Tri)
+M0 = ResponseFunction.ChangeType(G1Tri,"Dense")
+print(M0)
+H1, bit1 = ResponseFunction.ToOperator(G1Tri)
+print(H1)
+print(bit1)
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End Responsefunction Deflation                     --")
+print("--------------------------------------------------------")
