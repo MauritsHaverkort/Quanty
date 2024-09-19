@@ -4493,11 +4493,13 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatr
           bposR+=B->Nj;
           apos++;
         }
-        bposL+=B->Nj-A->BlockSize;
-        bposR+=(1-A->BlockSize*B->Nj);
+        apos+=A->BlockSize-A->BlockSizeList[k+1];
+        bposL+=B->Nj-A->BlockSizeList[k+1];
+        bposR+=(1-A->BlockSizeList[k+1]*B->Nj);
       }
-      bposL+=A->BlockSize;
-      bposR+=(A->BlockSize*B->Nj);
+      apos+=(A->BlockSize-A->BlockSizeList[k])*A->BlockSize;
+      bposL+=A->BlockSizeList[k+1];
+      bposR+=(A->BlockSizeList[k+1]*B->Nj);
     }
   }
   else
@@ -4534,11 +4536,13 @@ uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatr
           bposR+=B->Nj;
           apos++;
         }
-        bposL+=B->Nj-A->BlockSize;
-        bposR+=(1-A->BlockSize*B->Nj);
+        apos+=A->BlockSize-A->BlockSizeList[k+1];
+        bposL+=B->Nj-A->BlockSizeList[k+1];
+        bposR+=(1-A->BlockSizeList[k+1]*B->Nj);
       }
-      bposL+=A->BlockSize;
-      bposR+=(A->BlockSize*B->Nj);
+      apos+=(A->BlockSize-A->BlockSizeList[k])*A->BlockSize;
+      bposL+=A->BlockSizeList[k+1];
+      bposR+=(A->BlockSizeList[k+1]*B->Nj);
     }
   }
   return 0;

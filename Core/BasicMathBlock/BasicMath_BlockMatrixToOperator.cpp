@@ -922,18 +922,27 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
  */
 uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *const H, BlockNaturalImpurityOrbitalMatrixType const *A, bool const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
+  bool Deflation=false; // this should be a parameter in the function, but then we should also implement it when the operator is created
   uint32_t i,j,k,ia,ifer,jfer,ib;
   uint16_t oadd[2];
   InitNamedOperator(H, "Impurity Hamiltonian");
   H->NBoson=0;
   H->NFermion=NFermionShift;
-  for(i=1;i<=A->val.N;i++)
+  if (Deflation==true)
   {
-    H->NFermion+=A->val.BlockSizeList[i];
+    for(i=1;i<=A->val.N;i++)
+    {
+      H->NFermion+=A->val.BlockSizeList[i];
+    }
+    for(i=1;i<=A->con.N;i++)
+    {
+      H->NFermion+=A->con.BlockSizeList[i];
+    }
   }
-  for(i=1;i<=A->con.N;i++)
+  else
   {
-    H->NFermion+=A->con.BlockSizeList[i];
+    H->NFermion += A->val.N * A->BlockSize;
+    H->NFermion += A->con.N * A->BlockSize;
   }
   if(Spin==true)
   {

@@ -33,8 +33,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   char type;
   double T=sqrt(DBL_MIN);
   double SingularValue=1000*DBL_EPSILON;
-  bool deflate=true;
-  //TODO: implement deflation when possible and deflate=true
+  bool deflate=false;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaChangeTypeResponseFunctionOptions[]={
     {"SingularValue","double",&(SingularValue)},
@@ -651,7 +650,7 @@ static int LuaResponseFunctionToString(lua_State * L)
  *         Bath       BathUp     BathDn           -- Up and Dn only present if AddSpin = True
  *
  */
-static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, bool AddSpin, uint32_t FermionShift)
+static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, bool AddSpin, uint32_t FermionShift, bool Deflate)
 {
   int i,j,k;
   uint32_t NF,NB=0;
@@ -1291,9 +1290,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           NCore     = FermionShift;
           NImpurity = 2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
           NBath     = 0;
-          for(k=2;k<((BlockTriDiagonalMatrixType*)(M->data))->N+1;k++)
+          if(Deflate==true)
           {
-            NBath+=2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSizeList[k];
+            for(k=2;k<((BlockTriDiagonalMatrixType*)(M->data))->N+1;k++)
+            {
+              NBath+=2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSizeList[k];
+            }
+          }
+          else
+          {
+            NBath = 2 * (((BlockTriDiagonalMatrixType*)(M->data))->N-1) * ((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
           }
           NF = NCore + NImpurity + NBath;
           Core       = (char*)malloc((NF+1)*sizeof(char));
@@ -1355,9 +1361,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           NCore     = FermionShift;
           NImpurity = ((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
           NBath     = 0;
-          for(k=2;k<((BlockTriDiagonalMatrixType*)(M->data))->N+1;k++)
+          if(Deflate==true)
           {
-            NBath+=((BlockTriDiagonalMatrixType*)(M->data))->BlockSizeList[k];
+            for(k=2;k<((BlockTriDiagonalMatrixType*)(M->data))->N+1;k++)
+            {
+              NBath+=((BlockTriDiagonalMatrixType*)(M->data))->BlockSizeList[k];
+            }
+          }
+          else
+          {
+            NBath = (((BlockTriDiagonalMatrixType*)(M->data))->N-1) * ((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
           }
           NBathVal  = 0;
           NBathCon  = 0;
@@ -1543,15 +1556,23 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           NCore     = FermionShift;
           NImpurity = 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
           NBathExt  = NImpurity;
-          NBathVal  = 0;
-          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+          if(Deflate==true)
           {
-            NBathVal+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+            NBathVal  = 0;
+            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+            {
+              NBathVal+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+            }
+            NBathCon  = 0;
+            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+            {
+              NBathCon+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+            }
           }
-          NBathCon  = 0;
-          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+          else
           {
-            NBathCon+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+            NBathVal = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N-1) * 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NBathCon = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N-1) * 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
           }
           NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
@@ -1618,21 +1639,21 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           }
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
-            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0';
+            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
             k++;
-            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1';
+            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
-            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0';
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
             k++;
-            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1';
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
           {
-            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0';
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
             k++;
-            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1';
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
           }
           lua_pushstring(L, ImpurityUp);
           lua_setfield(L,-2,"ImpurityUp");
@@ -1670,15 +1691,23 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           NCore     = FermionShift;
           NImpurity = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
           NBathExt  = NImpurity;
-          NBathVal  = 0;
-          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+          if(Deflate==true)
           {
-            NBathVal+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+            NBathVal  = 0;
+            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+            {
+              NBathVal+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+            }
+            NBathCon  = 0;
+            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+            {
+              NBathCon+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+            }
           }
-          NBathCon  = 0;
-          for(k=1;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+          else
           {
-            NBathCon+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+            NBathVal = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N-1) * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NBathCon = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N-1) * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
           }
           NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
@@ -1714,14 +1743,17 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
             BathExt[k]='1';
+            Bath[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
             BathVal[k]='1';
+            Bath[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt+NBathVal;k<NCore+NImpurity+NBathExt+NBathVal+NBathCon;k++)
           {
             BathCon[k]='1';
+            Bath[k]='1';
           }
         }
         lua_pushinteger(L, NCore);
@@ -2005,8 +2037,10 @@ static int LuaResponseFunctionToBitMask(lua_State *L)
 {
   ResponsefunctionType *M;
   bool AddSpin=false;
+  bool Deflate=false;
   uint32_t FermionShift=0;
   LuaOptionsType LuaOptions[]={
+    {"Deflate","bool",&Deflate},
     {"AddSpin","bool",&AddSpin},
     {"FermionShift","uint32_t",&FermionShift},
     {"NCore","uint32_t",&FermionShift},
@@ -2019,7 +2053,7 @@ static int LuaResponseFunctionToBitMask(lua_State *L)
   }
   if(len!=1) return luaL_error(L, "Error in ResponseFunction.CreateBitMasks() It should be called with 1 argument, not with %d\n",len);
   M = luaL_checkResponsefunction(L,1);
-  ResponseFunctionToLuaBitMask(L, M, AddSpin, FermionShift);
+  ResponseFunctionToLuaBitMask(L, M, AddSpin, FermionShift, Deflate);
   FreeResponsefunctionIncludingOriginalPointer(M);
   return 1;
 }
@@ -2105,8 +2139,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   struct
   {
     bool AddSpin;
+    bool Deflation;
     uint32_t FermionShift;
   } Options;
+  Options.Deflation=false;
   Options.AddSpin=false;
   Options.FermionShift=0;
   LuaOptionsType LuaOptions[]={
@@ -2180,7 +2216,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       return 0;
     }
   }
-  ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift);
+  ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
   FreeResponsefunctionIncludingOriginalPointer(M);
   return 2;
 }

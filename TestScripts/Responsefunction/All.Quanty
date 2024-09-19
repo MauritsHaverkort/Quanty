@@ -13,7 +13,7 @@ dofile(directory.."/__call.Quanty")
 
 dofile(directory.."/ChangeType.Quanty")
 dofile(directory.."/Chop.Quanty")
-dofile(directory.."/ToMatrix.Quanty")/Users/haverkort/Documents/Posters and Talks
+dofile(directory.."/ToMatrix.Quanty")
 dofile(directory.."/ToTable.Quanty")
 dofile(directory.."/ToUserdata.Quanty")
 dofile(directory.."/ToOperator.Quanty")
@@ -22,18 +22,17 @@ dofile(directory.."/InvertEnergy.Quanty")
 dofile(directory.."/ToSpectra.Quanty")
 dofile(directory.."/CalculateSelfEnergy.Quanty")
 dofile(directory.."/CalculateHybridizationFunction.Quanty")
-dofile(directory.."/LengthZero.Quanty")
 
+dofile(directory.."/CreateBitMasks.Quanty")
+dofile(directory.."/Deflation.Quanty")
 
 ::skip::
 
 
-dofile(directory.."/Deflation.Quanty")
+dofile(directory.."/LengthZero.Quanty")
 
-dofile(directory.."/CreateBitMasks.Quanty")
 
 dofile(directory.."/ToTightbinding.Quanty")
-
 dofile(directory.."/ReducePoles.Quanty")
 dofile(directory.."/PlaceOnMesh.Quanty")
 

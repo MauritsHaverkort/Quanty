@@ -847,6 +847,27 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
       luaL_error(L, "Reading Block tridiagonal matrix without name correctly defined");
     }
     lua_pop(L,1);
+    lua_getfield(L, narg, "BlockSize");
+    if(lua_istable(L, -1)==1)
+    {
+      len = (uint32_t)lua_objlen(L, -1);
+      if(len!=(1+buff->N)) luaL_error(L, "Errorr reading Greens function of block tridiagonal matrix. Length of BlockSize(%d) should be equal to the length of A(%d)",len,1+buff->N);
+      for(i=0;i<len;i++)
+      {
+        lua_rawgeti(L, -1, i+1);
+        buff->BlockSizeList[i] =  (uint32_t)luaL_checkinteger(L, -1);
+        lua_pop(L, 1);
+      }
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      // fine keep full rank blocks
+    }
+    else
+    {
+      luaL_error(L, "Reading Block tridiagonal matrix without BlockSize correctly defined");
+    }
+    lua_pop(L,1);
     return buff;
   }
   if(strcmp(type, "And")==0)
