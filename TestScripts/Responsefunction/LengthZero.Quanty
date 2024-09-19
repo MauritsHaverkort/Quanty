@@ -10,12 +10,20 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}},{{-6}}}, {{{sqrt(1/2)}},{{2}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}},{{7}}}, {{{sqrt(1/2)}},{{3}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(6)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(6)) then error("Response matrix comparison failed\n",1) end
 
 print("size 2+2 natural")
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(4)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(4)) then error("Response matrix comparison failed\n",1) end
 
 print("size 1+2 natural")
@@ -24,6 +32,11 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
 
 print("size 2+1 natural")
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
@@ -31,6 +44,11 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
 
 print("size 1+1 natural")
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
@@ -38,6 +56,11 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(2)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(2)) then error("Response matrix comparison failed\n",1) end
+
 
 
 print("size 3+3 natural complex")
@@ -46,12 +69,21 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}},{{-6}}}, {{{sqrt(1/2)}},{{2}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}},{{7}}}, {{{sqrt(1/2)}},{{3}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(6)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(6)) then error("Response matrix comparison failed\n",1) end
+
 
 print("size 2+2 natural complex")
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(4)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(4)) then error("Response matrix comparison failed\n",1) end
 
 print("size 1+2 natural complex")
@@ -60,6 +92,11 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
 
 print("size 2+1 natural complex")
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
@@ -67,6 +104,11 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(3)) then error("Response matrix comparison failed\n",1) end
+
 
 print("size 1+1 natural complex")
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
@@ -74,79 +116,92 @@ M = ResponseFunction.ToMatrix(G)
 G = ResponseFunction.New({ {{{0+I}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M =  Chop(M - ResponseFunction.ToMatrix(G),1E-15)
 if not(M==Matrix.Zero(2)) then error("Response matrix comparison failed\n",1) end
+O, bitmask = ResponseFunction.ToOperator(G)
+if not(O.NF==bitmask.NF) then error("Responsefunction to Operator failed\n",1) end
+M = Chop(OperatorToMatrix(O) - ResponseFunction.ToMatrix(G),1E-15)
+if not(M==Matrix.Zero(2)) then error("Response matrix comparison failed\n",1) end
 
-
-print("---------------")
+print("--------------- 1")
 
 G = ResponseFunction.New({ {0,-4}, {1}, mu=0, type="Tri", name="Gv"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 2")
 
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 3")
 
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3,6}, {sqrt(1/2),3}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 4")
 
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4,-5}, {sqrt(1/2),2}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 5")
 
 G = ResponseFunction.New({ {0,1}, val=ResponseFunction.New({ {0,-4}, {sqrt(1/2)}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {0,3}, {sqrt(1/2)}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 6")
 
 
 G = ResponseFunction.New({ {{{0}},{{-4}}}, {{{1}}}, mu=0, type="Tri", name="Gv"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 7")
 
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 8")
 
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}},{{6}}}, {{{sqrt(1/2)}},{{3}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 9")
 
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}},{{-5}}}, {{{sqrt(1/2)}},{{2}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
-print("---------------")
+print(B)
+print("--------------- 10")
 
 G = ResponseFunction.New({ {{{0}},{{1}}}, val=ResponseFunction.New({ {{{0}},{{-4}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gv"}), con=ResponseFunction.New({ {{{0}},{{3}}}, {{{sqrt(1/2)}}}, mu=0, type="Tri", name="Gc"}), mu=0, type="Nat", name="Gcn"})
 M = ResponseFunction.ToMatrix(G)
 print(M)
-O = ResponseFunction.ToOperator(G)
+O, B = ResponseFunction.ToOperator(G)
 print(O)
+print(B)
 
 print("--------------------------------------------------------")
 print("-- Responsefunction of zero length                    --")

@@ -210,122 +210,126 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
     oadd[0] = 1 + FermionShift;
     RealOperatorAddLaderNormalOrder(O, oadd, 2, M->acvBA, &QDetNotOrderedFcFaBcBa);
     
-    oadd[1] = CrAnMask + 4 + FermionShift;
-    oadd[0] = 0 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 0 + FermionShift;
-    oadd[0] = 4 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 5 + FermionShift;
-    oadd[0] = 1 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 1 + FermionShift;
-    oadd[0] = 5 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
-    
-    oadd[1] = CrAnMask + 4 + FermionShift;
-    oadd[0] = 2 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 2 + FermionShift;
-    oadd[0] = 4 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 5 + FermionShift;
-    oadd[0] = 3 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 3 + FermionShift;
-    oadd[0] = 5 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
-    
-    
-    oadd[1] = CrAnMask + 2*M->val.N + 2 + FermionShift;
-    oadd[0] = 0 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 0 + FermionShift;
-    oadd[0] = 2*M->val.N + 2 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 2*M->val.N + 3 + FermionShift;
-    oadd[0] = 1 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 1 + FermionShift;
-    oadd[0] = 2*M->val.N + 3 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
-    
-    oadd[1] = CrAnMask + 2*M->val.N + 2 + FermionShift;
-    oadd[0] = 2 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 2 + FermionShift;
-    oadd[0] = 2*M->val.N + 2 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 2*M->val.N + 3 + FermionShift;
-    oadd[0] = 3 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 3 + FermionShift;
-    oadd[0] = 2*M->val.N + 3 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
-    
     k=FermionShift+4;
-    for(i=2;i<M->val.N;i++)
-    {
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k+2;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k+2;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
-      k++;
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k+2;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k+2;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
-      k++;
-    }
-    oadd[1] = CrAnMask + k;
-    oadd[0] = k;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[M->val.N], &QDetNotOrderedFcFaBcBa);
-    k++;
-    oadd[1] = CrAnMask + k;
-    oadd[0] = k;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[M->val.N], &QDetNotOrderedFcFaBcBa);
-    k++;
     
-    for(i=2;i<M->con.N;i++)
+    if(M->val.N>1)
     {
+      oadd[1] = CrAnMask + 4 + FermionShift;
+      oadd[0] = 0 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 0 + FermionShift;
+      oadd[0] = 4 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 5 + FermionShift;
+      oadd[0] = 1 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1 + FermionShift;
+      oadd[0] = 5 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
+      
+      oadd[1] = CrAnMask + 4 + FermionShift;
+      oadd[0] = 2 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 2 + FermionShift;
+      oadd[0] = 4 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 5 + FermionShift;
+      oadd[0] = 3 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 3 + FermionShift;
+      oadd[0] = 5 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
+      for(i=2;i<M->val.N;i++)
+      {
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k+2;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k+2;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+        k++;
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k+2;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k+2;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+        k++;
+      }
       oadd[1] = CrAnMask + k;
       oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k+2;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k+2;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[M->val.N], &QDetNotOrderedFcFaBcBa);
       k++;
       oadd[1] = CrAnMask + k;
       oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k+2;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k+2;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[M->val.N], &QDetNotOrderedFcFaBcBa);
       k++;
     }
-    oadd[1] = CrAnMask + k;
-    oadd[0] = k;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[M->con.N], &QDetNotOrderedFcFaBcBa);
-    k++;
-    oadd[1] = CrAnMask + k;
-    oadd[0] = k;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[M->con.N], &QDetNotOrderedFcFaBcBa);
+    
+    if(M->con.N>1)
+    {
+      oadd[1] = CrAnMask + 2*M->val.N + 2 + FermionShift;
+      oadd[0] = 0 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 0 + FermionShift;
+      oadd[0] = 2*M->val.N + 2 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 2*M->val.N + 3 + FermionShift;
+      oadd[0] = 1 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1 + FermionShift;
+      oadd[0] = 2*M->val.N + 3 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
+      
+      oadd[1] = CrAnMask + 2*M->val.N + 2 + FermionShift;
+      oadd[0] = 2 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 2 + FermionShift;
+      oadd[0] = 2*M->val.N + 2 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 2*M->val.N + 3 + FermionShift;
+      oadd[0] = 3 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 3 + FermionShift;
+      oadd[0] = 2*M->val.N + 3 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
+      for(i=2;i<M->con.N;i++)
+      {
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k+2;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k+2;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+        k++;
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k+2;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k+2;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+        k++;
+      }
+      oadd[1] = CrAnMask + k;
+      oadd[0] = k;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[M->con.N], &QDetNotOrderedFcFaBcBa);
+      k++;
+      oadd[1] = CrAnMask + k;
+      oadd[0] = k;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[M->con.N], &QDetNotOrderedFcFaBcBa);
+    }
   }
   else
   {
@@ -341,67 +345,71 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
     oadd[1] = CrAnMask + 1 + FermionShift;
     oadd[0] = 0 + FermionShift;
     RealOperatorAddLaderNormalOrder(O, oadd, 2, M->acvBA, &QDetNotOrderedFcFaBcBa);
-    
-    oadd[1] = CrAnMask + 2 + FermionShift;
-    oadd[0] = 0 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 0 + FermionShift;
-    oadd[0] = 2 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 2 + FermionShift;
-    oadd[0] = 1 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 1 + FermionShift;
-    oadd[0] = 2 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
-    
-    oadd[1] = CrAnMask + M->val.N + 1 + FermionShift;
-    oadd[0] = 0 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 0 + FermionShift;
-    oadd[0] = M->val.N + 1 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + M->val.N + 1 + FermionShift;
-    oadd[0] = 1 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
-    oadd[1] = CrAnMask + 1 + FermionShift;
-    oadd[0] = M->val.N + 1 + FermionShift;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
-    
     k=FermionShift+2;
-    for(i=2;i<M->val.N;i++)
+    if(M->val.N>1)
     {
+      oadd[1] = CrAnMask + 2 + FermionShift;
+      oadd[0] = 0 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 0 + FermionShift;
+      oadd[0] = 2 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 2 + FermionShift;
+      oadd[0] = 1 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1 + FermionShift;
+      oadd[0] = 2 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bvA0, &QDetNotOrderedFcFaBcBa);
+      
+      for(i=2;i<M->val.N;i++)
+      {
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k+1;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k+1;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+        k++;
+      }
       oadd[1] = CrAnMask + k;
       oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k+1;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i], &QDetNotOrderedFcFaBcBa);
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[M->val.N], &QDetNotOrderedFcFaBcBa);
       k++;
     }
-    oadd[1] = CrAnMask + k;
-    oadd[0] = k;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[M->val.N], &QDetNotOrderedFcFaBcBa);
-    k++;
-    for(i=2;i<M->con.N;i++)
+    if(M->con.N>1)
     {
+      oadd[1] = CrAnMask + M->val.N + 1 + FermionShift;
+      oadd[0] = 0 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 0 + FermionShift;
+      oadd[0] = M->val.N + 1 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcB0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + M->val.N + 1 + FermionShift;
+      oadd[0] = 1 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + 1 + FermionShift;
+      oadd[0] = M->val.N + 1 + FermionShift;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->bcA0, &QDetNotOrderedFcFaBcBa);
+      for(i=2;i<M->con.N;i++)
+      {
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k+1;
+        oadd[0] = k;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+        oadd[1] = CrAnMask + k;
+        oadd[0] = k+1;
+        RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
+        k++;
+      }
       oadd[1] = CrAnMask + k;
       oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k+1;
-      oadd[0] = k;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
-      oadd[1] = CrAnMask + k;
-      oadd[0] = k+1;
-      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i], &QDetNotOrderedFcFaBcBa);
-      k++;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[M->con.N], &QDetNotOrderedFcFaBcBa);
     }
-    oadd[1] = CrAnMask + k;
-    oadd[0] = k;
-    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[M->con.N], &QDetNotOrderedFcFaBcBa);
   }
   return 0;
 }

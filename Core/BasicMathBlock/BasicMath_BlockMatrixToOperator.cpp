@@ -963,6 +963,84 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
   }
   H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   InitOperatorFixedLength(H, 2, 8);
+  if((A->val.N==0)&&(A->con.N==0))
+  {
+    return 0;
+  }
+  if(A->val.N==0)
+  {
+    FreeOperator(H);
+    return BlockTridiagonalMatrixToImpurityHamiltonian(H, &(A->con), Spin, NFermionShift, NFermion);
+  }
+  if(A->con.N==0)
+  {
+    FreeOperator(H);
+    return BlockTridiagonalMatrixToImpurityHamiltonian(H, &(A->val), Spin, NFermionShift, NFermion);
+  }
+  if((A->val.N==1)&&(A->con.N==1))
+  {
+    if(A->QComplex)
+    {
+      if(Spin==0)
+      {
+        for(i=0;i<2*A->BlockSize;i++)
+        {
+          for(j=0;j<2*A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j].Re, A->TMT.V[i*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      else
+      {
+        for(i=0;i<2*A->BlockSize;i++)
+        {
+          for(j=0;j<2*A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+NFermionShift+2*i;
+            oadd[0]=NFermionShift+2*j;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j].Re, A->TMT.V[i*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+2*i+1;
+            oadd[0]=NFermionShift+2*j+1;
+            ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[i*A->TMT.Nj+j].Re, A->TMT.V[i*A->TMT.Nj+j].Im, &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+    else
+    {
+      if(Spin==0)
+      {
+        for(i=0;i<2*A->BlockSize;i++)
+        {
+          for(j=0;j<2*A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+NFermionShift+i;
+            oadd[0]=NFermionShift+j;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+      else
+      {
+        for(i=0;i<2*A->BlockSize;i++)
+        {
+          for(j=0;j<2*A->BlockSize;j++)
+          {
+            oadd[1]=CrAnMask+NFermionShift+2*i;
+            oadd[0]=NFermionShift+2*j;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+            oadd[1]=CrAnMask+NFermionShift+2*i+1;
+            oadd[0]=NFermionShift+2*j+1;
+            RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[i*A->TMT.Nj+j], &QDetNotOrderedFcFaBcBa);
+          }
+        }
+      }
+    }
+    return 0;
+  }
   if(A->QComplex)
   {
     MakeRealOperatorFixedLengthComplex(H, 2);
@@ -985,7 +1063,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
           oadd[0]=NFermionShift+j+A->BlockSize;
           ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
-          if(A->val.N!=0)
+          if(A->val.N>1)
           {
             oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
             oadd[0]=NFermionShift+j;
@@ -1000,7 +1078,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
             oadd[0]=NFermionShift+j+2*A->BlockSize;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Re, A->TMT.V[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize].Im, &QDetNotOrderedFcFaBcBa);
           }
-          if(A->con.N!=0)
+          if(A->con.N>1)
           {
             oadd[1]=CrAnMask+NFermionShift+i+(1+A->val.N)*A->BlockSize;
             oadd[0]=NFermionShift+j;
@@ -1310,7 +1388,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
           oadd[1]=CrAnMask+NFermionShift+i+A->BlockSize;
           oadd[0]=NFermionShift+j+A->BlockSize;
           RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+A->BlockSize], &QDetNotOrderedFcFaBcBa);
-          if(A->val.N!=0)
+          if(A->val.N>1)
           {
             oadd[1]=CrAnMask+NFermionShift+i+2*A->BlockSize;
             oadd[0]=NFermionShift+j;
@@ -1325,7 +1403,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(OperatorType *co
             oadd[0]=NFermionShift+j+2*A->BlockSize;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->TMT.VRe[(i+A->BlockSize)*A->TMT.Nj+j+2*A->BlockSize], &QDetNotOrderedFcFaBcBa);
           }
-          if(A->con.N!=0)
+          if(A->con.N>1)
           {
             oadd[1]=CrAnMask+NFermionShift+i+(1+A->val.N)*A->BlockSize;
             oadd[0]=NFermionShift+j;
