@@ -2283,11 +2283,12 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
     if (buff==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
     return buff;
   }
-  // Block Matrix stored as lua table read sugested grid, type and allocate structure
+  // Response funciton stored as lua table test if the elements of this table are of the correct type
   if(lua_istable(L, narg)==0)
   {
     luaL_error(L, "Error Green's function should be represented by a table or udata of \"ResponseFunction_type\"");
   }
+  // Response funciton stored as lua table read sugested grid, type and allocate structure
   buff= (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
   // test if there is a suggested grid present. If present Stored in field SuggestedGrid
   lua_getfield(L, narg, "SuggestedGrid");
@@ -2308,7 +2309,11 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
   lua_pop(L,1);
   // check if Response function is of Block type or not
   lua_rawgeti(L, narg, 1); // puts table a on the stack
-  if(lua_objlen(L,-1)==0) luaL_error(L,"Error reading Green's function the length of the table is 0");
+  if(lua_istable(L, -1)==0)
+  {
+    luaL_error(L, "Error When a Green's function is represented as a table the first element of that table should be a table.");
+  }
+  if(lua_objlen(L,-1)==0) luaL_error(L,"Error reading Green's function the length of the table is 0, when at least A0 or a0 needs to be defined");
   lua_rawgeti(L,-1,1); // puts element A0 or a0 or the stack
   buff->Block = false;
   if(lua_istable(L,-1)) buff->Block = true; // A0 is a table
