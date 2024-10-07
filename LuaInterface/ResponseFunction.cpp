@@ -2361,6 +2361,39 @@ static int LuaResponseFunctionNew(lua_State *L)
   return 1;
 }
 
+static int LuaResponseFunctionIndex(lua_State *L)
+{         
+  const char* index = lua_tostring(L,-1);  // -1 is string, -2 is userdata
+  static const luaL_Reg methods[] = {
+      {"InvertEnergy", LuaInvertEnergy},
+      {"ChangeType", LuaChangeTypeResponseFunction},
+      {"New", LuaResponseFunctionNew},
+      {"ReducePoles", LuaReducePolesResponseFunction},
+      {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
+      {"ToTable", LuaResponseFunctionToTable},
+      {"ToMatrix", LuaResponseFunctionToCompactMatrix},
+      {"ToSpectra", LuaResponseFunctionToSpectra},
+      {"ToUserdata", LuaResponseFunctionToUserdata},
+      {"ToTightBinding", LuaResponseFunctionToTightBinding},
+      {"ToOperator", LuaResponseFunctionToOperator},
+      {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
+      {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
+      {"CreateBitMasks", LuaResponseFunctionToBitMask},
+      {"Chop", LuaChop},
+      {NULL, NULL} 
+  };
+    //Search for the method in the methods array
+  for (const luaL_Reg* l = methods; l->name != NULL; l++) {
+      if (strcmp(index, l->name) == 0) {
+          //If the method is found, push the corresponding function to the Lua stack
+          lua_pushcfunction(L, l->func);
+          return 1;  // Return the function to Lua
+      }
+  }
+  // If no method was found, raise error (method not found)
+  return luaL_error(L, "ResponseFunction has no method %s \n",index);
+}
+
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
   {"New", LuaResponseFunctionNew},
@@ -2403,5 +2436,4 @@ static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__eq",   LuaResponseFunctionEq},
   {NULL, NULL}
 };
-
 
