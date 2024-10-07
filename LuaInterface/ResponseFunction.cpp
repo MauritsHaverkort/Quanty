@@ -2423,6 +2423,7 @@ static const struct luaL_Reg ResponseFunction_meta[] = {
   {"__eq",   LuaResponseFunctionEq},
   {"__tostring", LuaResponseFunctionToString},
   {"__gc", LuaResponseFunctionDestroy},
+  {"__index", LuaResponseFunctionIndex},
   {NULL, NULL}
 };
 
