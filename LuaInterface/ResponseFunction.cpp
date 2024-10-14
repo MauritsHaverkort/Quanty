@@ -632,8 +632,27 @@ static int LuaResponseFunctionCall(lua_State * L)
  */
 static int LuaResponseFunctionToString(lua_State * L)
 {
-  lua_pushfstring(L, "ResponseFunction in userdata format use ToTable() in order to get a table form");
-  return 1;
+    ResponsefunctionType *res;
+    res = luaL_checkResponsefunction(L,1);
+    
+    lua_pushcfunction(L, LuaResponseFunctionToTable);
+    lua_pushvalue(L,1);
+    lua_pcall(L, 1, 1, 0);
+    
+    if(lua_istable(L, -1)==0)
+    {
+      luaL_error(L, "Error in LuaResponseFunctionToString: Failed to convert ResponseFunction to a table");
+    }
+
+    lua_setglobal(L, "__temptable");
+    if (luaL_dostring(L, "local result = tostring(__temptable); __temptable = nil; return result;") != LUA_OK)
+    {
+      luaL_error(L, "Error in LuaResponseFunctionToString: Successfuly converted userdata to table, but failed to convert table to string");
+    }
+    printf("ResponseFunction in UserData format: use .ToTable() to access individual elements\n");
+    // Do I need to free res? With FreeResponsefunction(); or FreeResponsefunctionIncludingOriginalPointer()?
+    FreeResponsefunction(res);
+    return 1;
 }
 
 /*  Given a Response function M
@@ -2363,35 +2382,62 @@ static int LuaResponseFunctionNew(lua_State *L)
 
 static int LuaResponseFunctionIndex(lua_State *L)
 {         
-  const char* index = lua_tostring(L,-1);  // -1 is string, -2 is userdata
-  static const luaL_Reg methods[] = {
-      {"InvertEnergy", LuaInvertEnergy},
-      {"ChangeType", LuaChangeTypeResponseFunction},
-      {"New", LuaResponseFunctionNew},
-      {"ReducePoles", LuaReducePolesResponseFunction},
-      {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
-      {"ToTable", LuaResponseFunctionToTable},
-      {"ToMatrix", LuaResponseFunctionToCompactMatrix},
-      {"ToSpectra", LuaResponseFunctionToSpectra},
-      {"ToUserdata", LuaResponseFunctionToUserdata},
-      {"ToTightBinding", LuaResponseFunctionToTightBinding},
-      {"ToOperator", LuaResponseFunctionToOperator},
-      {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
-      {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
-      {"CreateBitMasks", LuaResponseFunctionToBitMask},
-      {"Chop", LuaChop},
-      {NULL, NULL} 
-  };
-    //Search for the method in the methods array
-  for (const luaL_Reg* l = methods; l->name != NULL; l++) {
-      if (strcmp(index, l->name) == 0) {
-          //If the method is found, push the corresponding function to the Lua stack
-          lua_pushcfunction(L, l->func);
-          return 1;  // Return the function to Lua
-      }
-  }
-  // If no method was found, raise error (method not found)
-  return luaL_error(L, "ResponseFunction has no method %s \n",index);
+    const char* index = lua_tostring(L, -1);  // -1 is string, -2 is userdata
+    // Switch based on string comparison
+    switch (index[0]) {
+        case 'I':
+            if (strcmp(index, "InvertEnergy") == 0)
+            {
+                lua_pushcfunction(L, LuaInvertEnergy);
+                return 1;
+            }
+            break;
+        case 'C':
+            if (strcmp(index, "ChangeType") == 0) {
+                lua_pushcfunction(L, LuaChangeTypeResponseFunction);
+                return 1;
+            } else if (strcmp(index, "CreateBitMasks") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToBitMask);
+                return 1;
+            }
+            break;
+        case 'R':
+            if (strcmp(index, "ReducePoles") == 0) {
+                lua_pushcfunction(L, LuaReducePolesResponseFunction);
+                return 1;
+            }
+            break;
+        case 'P':
+            if (strcmp(index, "PlaceOnMesh") == 0) {
+                lua_pushcfunction(L, LuaPlaceOnMeshResponseFunction);
+                return 1;
+            }
+            break;
+        case 'T':
+            if (strcmp(index, "ToTable") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToTable);
+                return 1;
+            } else if (strcmp(index, "ToMatrix") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToCompactMatrix);
+                return 1;
+            } else if (strcmp(index, "ToSpectra") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToSpectra);
+                return 1;
+            } else if (strcmp(index, "ToUserdata") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToUserdata);
+                return 1;
+            } else if (strcmp(index, "ToTightBinding") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToTightBinding);
+                return 1;
+            } else if (strcmp(index, "ToOperator") == 0) {
+                lua_pushcfunction(L, LuaResponseFunctionToOperator);
+                return 1;
+            }
+            break;
+    }
+
+    // If no method was found, raise an error (method not found)
+    return luaL_error(L, "ResponseFunction has no method %s\n", index);
 }
 
 static const struct luaL_Reg ResponseFunction_func[] = {
