@@ -26,8 +26,10 @@ vector<vector<double> > PutRelativisticSplineOnGrid(const vector<Interpolation::
 std::vector<int> ConvertArray(uint16_t *a, const int n);
 
 std::vector<double> ReadBasisfunction(std::ifstream &file, std::vector<double> &x);
+std::vector<double> ReadBasisfunctionDirac(std::ifstream &file, std::vector<double> &x);
 
 string GetOrbitalName(std::ifstream &file, uint32_t len);
+string GetOrbitalNameDirac(std::ifstream &file);
 
 static int LuaReadFPLOBasisFunctions(lua_State *L);
 

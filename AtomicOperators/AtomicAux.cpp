@@ -61,6 +61,35 @@ vector<int> ConvertArray(uint16_t *a, const int n)
 	return res;
 }
 
+
+int ReadAllEmptyLines(std::ifstream &file)
+{
+  std::string line;
+  int emptyLineCount = 0;
+  // Save the initial position before reading any line
+  std::streampos initialPos = file.tellg();
+  // Read lines until a non-empty line (or whitespace-only line) is encountered or EOF is reached
+  while (std::getline(file, line))
+  {
+    // Remove any whitespace from the line
+    line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+    if (line.empty())
+    {
+      emptyLineCount++;  // Count the empty (or whitespace-only) lines
+      // Update the saved position to mark the end of empty lines
+      initialPos = file.tellg();
+    }
+    else
+    {
+      // Move the file pointer back to the start of the first non-empty line
+      file.seekg(initialPos);
+      break;
+    }
+  }
+  return emptyLineCount;
+}
+
+
 vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
 {
 	double val;
@@ -82,6 +111,31 @@ vector<double> ReadBasisfunction(ifstream &file, vector<double> &x)
 		file >> word;
 	return y;
 }
+
+
+vector<double>  ReadBasisfunctionDirac(ifstream &file, vector<double> &x)
+{
+  double Xval, Yval;
+  vector<double> y;
+  string line;
+  // Read lines until an empty line is encountered
+  while (std::getline(file, line))
+  {
+    std::istringstream iss(line);
+    // Try to read exactly two doubles from the line
+    if (!(iss >> Xval >> Yval))
+    {
+      break;  // Stop reading if the line does not contain exactly two double values
+    }
+    // Add values to x and y
+    if(x.size() == y.size()) x.push_back(Xval);
+    y.push_back(Yval);
+  }
+  return y;
+}
+
+
+
 
 void ReadLenaBasisfunction(ifstream &file, vector<double> &x, vector<double> &G, vector<double> &F)
 {
@@ -151,6 +205,22 @@ string GetOrbitalName(ifstream &file, uint32_t len)
 	return "empty";
 }
 
+string GetOrbitalNameDirac(ifstream &file)
+{
+  string word, name;
+  while (file >> word)
+  {
+    if (word == "#")
+    {
+      file >> name;
+      // set pointer to next line
+      std::getline(file, word);
+      return name;
+    }
+  }
+  return "empty";
+}
+
 static int LuaReadLenaBasisFunctions(lua_State *L)
 {
 	std::map<string,vector<double> > G, F;
@@ -167,10 +237,10 @@ static int LuaReadLenaBasisFunctions(lua_State *L)
 		bool ReduceGrid;
     } Options;
     LuaOptionsType LuaEDOptions[]={
-        {"Method","char*",&(Options.Method)},
-		{"Degree","uint32_t",&(Options.degree)},
-		{"ReduceGrid","bool",&(Options.ReduceGrid)},
-        {NULL, NULL, NULL}};
+      {"Method","char*",&(Options.Method)},
+		  {"Degree","uint32_t",&(Options.degree)},
+		  {"ReduceGrid","bool",&(Options.ReduceGrid)},
+      {NULL, NULL, NULL}};
     Options.Method = (char*)"CubicSpline";
     Options.degree = 7;
     Options.ReduceGrid = false;
@@ -178,7 +248,7 @@ static int LuaReadLenaBasisFunctions(lua_State *L)
     bool QOptions = LuaTestOptionsList(L,-1);
     if (QOptions)
     {
-         LuaCheckOptions(L,-1,LuaEDOptions);
+      LuaCheckOptions(L,-1,LuaEDOptions);
     }
 
 
@@ -250,24 +320,27 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	uint32_t Norbitals;
 	uint32_t len = (uint32_t)lua_gettop(L);
-    struct
-    {
-		char * Method;
-		uint32_t degree;
-    } Options;
-    LuaOptionsType LuaEDOptions[]={
-        {"Method","char*",&(Options.Method)},
-		    {"Degree","uint32_t",&(Options.degree)},
-        {NULL, NULL, NULL}};
-    Options.Method = (char*)"CubicSpline";
-    Options.degree = 7;
+  struct
+  {
+    char * Method;
+    uint32_t degree;
+    bool Dirac;
+  } Options;
+  LuaOptionsType LuaEDOptions[]={
+    {"Method","char*",&(Options.Method)},
+    {"Degree","uint32_t",&(Options.degree)},
+    {"Dirac","bool",&(Options.Dirac)},
+    {NULL, NULL, NULL}};
+  Options.Method = (char*)"CubicSpline";
+  Options.degree = 7;
+  Options.Dirac = false;
 
-    bool QOptions = LuaTestOptionsList(L,-1);
-    if (QOptions)
-    {
-         LuaCheckOptions(L,-1,LuaEDOptions);
-         len--;
-    }
+  bool QOptions = LuaTestOptionsList(L,-1);
+  if (QOptions)
+  {
+    LuaCheckOptions(L,-1,LuaEDOptions);
+    len--;
+  }
 	if (len < 2)
 	{
 		return luaL_error(L,"Error in ReadFPLOBasisFunctions: 2 or 3 arguments expected, got %d",len);
@@ -290,15 +363,28 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	// Read raw data
 	while (!file1.eof())
 	{
-		name = GetOrbitalName(file1,len);
+    if(Options.Dirac==true)
+    {
+      name = GetOrbitalNameDirac(file1);
+    }
+    else
+    {
+      name = GetOrbitalName(file1,len);
+    }
 		if(name == "empty")
 		{
-			return luaL_error(L,"Error in ReadFPLOBasisFunctions: empty or wrong file\n");
-
+			return luaL_error(L,"Error in ReadFPLOBasisFunctions: wrong file format for large part in header\n");
 		}
-		y1 = ReadBasisfunction(file1,x);
-
+    if(Options.Dirac==true)
+    {
+      y1 = ReadBasisfunctionDirac(file1,x);
+    }
+    else
+    {
+      y1 = ReadBasisfunction(file1,x);
+    }
 		funsG[name] = y1;
+    ReadAllEmptyLines(file1);
 	}
 	file1.close();
 
@@ -374,10 +460,28 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 		while (!file2.eof())
 		{
-			name = GetOrbitalName(file2,len);
-			y2 = ReadBasisfunction(file2,x);
-
+      if(Options.Dirac==true)
+      {
+        name = GetOrbitalNameDirac(file2);
+      }
+      else
+      {
+        name = GetOrbitalName(file2,len);
+      }
+      if(name == "empty")
+      {
+        return luaL_error(L,"Error in ReadFPLOBasisFunctions: wrong file format for small part in header\n");
+      }
+      if(Options.Dirac==true)
+      {
+        y2 = ReadBasisfunctionDirac(file2,x);
+      }
+      else
+      {
+        y2 = ReadBasisfunction(file2,x);
+      }
 			funsF[name] = y2;
+      ReadAllEmptyLines(file2);
 		}
 		file2.close();
 
