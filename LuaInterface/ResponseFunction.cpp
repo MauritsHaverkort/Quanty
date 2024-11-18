@@ -1611,6 +1611,9 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathValDn  = (char*)malloc((NF+1)*sizeof(char));
           BathConDn  = (char*)malloc((NF+1)*sizeof(char));
           BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExt   = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtUp   = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtDn   = (char*)malloc((NF+1)*sizeof(char));
           for(k=0;k<NF;k++)
           {
             Core[k]       ='0';
@@ -1629,6 +1632,10 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
             BathValDn[k]  ='0';
             BathConDn[k]  ='0';
             BathExtDn[k]  ='0';
+            ImpurityExt[k]   ='0';
+            ImpurityExtUp[k]   ='0';
+            ImpurityExtDn[k]   ='0';
+
           }
           Core[NF]       ='\0';
           Impurity[NF]   ='\0';
@@ -1646,21 +1653,24 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathValDn[NF]  ='\0';
           BathConDn[NF]  ='\0';
           BathExtDn[NF]  ='\0';
+          ImpurityExt[NF]   ='\0';
+          ImpurityExtUp[NF]   ='\0';
+          ImpurityExtDn[NF]   ='\0';
           for(k=0;k<NCore;k++)
           {
             Core[k]='1';
           }
           for(k=NCore;k<NCore+NImpurity;k++)
           {
-            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0'; ImpurityExt[k]='1'; ImpurityExtDn[k]='1'; ImpurityExtUp[k]='0';
             k++;
-            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='0'; ImpurityExtUp[k]='1';
           }
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
-            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
+            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='1'; ImpurityExtUp[k]='0';
             k++;
-            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
+            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1'; Bath[k]='1'; BathUp[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='0'; ImpurityExtUp[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
@@ -1680,6 +1690,12 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           lua_pushstring(L, ImpurityDn);
           lua_setfield(L,-2,"ImpurityDn");
           free(ImpurityDn);
+          lua_pushstring(L, ImpurityExtUp);
+          lua_setfield(L,-2,"ImpurityExtUp");
+          free(ImpurityExtUp);
+          lua_pushstring(L, ImpurityExtDn);
+          lua_setfield(L,-2,"ImpurityExtDn");
+          free(ImpurityExtDn);
           lua_pushstring(L, BathUp);
           lua_setfield(L,-2,"BathUp");
           free(BathUp);
