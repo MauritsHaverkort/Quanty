@@ -900,6 +900,49 @@ void ReduceListOfPolesSpacing(ListOfPoles * M, double da)
   M->N = iRed + 1;
 }
 
+void MergeListOfPolesInInterval(ListOfPoles * M, double Emin, double Emax)
+{
+  int i, nMerged;
+  nMerged=0;
+  double bnew;
+  OrderListOfPoles(M);
+  for (i=0;i<M->N;i++)
+  {
+    if(M->a[i]>Emax)
+    {
+      if(nMerged>1)
+      {
+        M->a[i-(nMerged-1)]=M->a[i];
+        M->b[i-(nMerged-1)]=M->b[i];
+      }
+    }
+    else if(M->a[i]>=Emin)
+    {
+      nMerged++;
+      if(nMerged>1)
+      {
+        // Merge pole i with pole i-nMerged and store the result at i-nMerged
+        bnew = M->b[i] + M->b[i-(nMerged-1)];
+        if(bnew==0)
+        {
+          M->b[i-(nMerged-1)]=0;
+        }
+        else
+        {
+          M->a[i-(nMerged-1)] = (M->a[i-(nMerged-1)] * M->b[i-(nMerged-1)] + M->a[i] * M->b[i])/bnew;
+          M->b[i-(nMerged-1)] = bnew;
+        }
+      }
+    }
+  }
+  if(nMerged>1)
+  {
+    M->N-=(nMerged-1);
+  }
+}
+
+
+
 uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const mu)
 {
   uint32_t i, npoleshift = 0;
