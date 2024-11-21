@@ -211,7 +211,7 @@ test-job-Inverse:
   dependencies:
   - build-job
 
-test-job-Inverse:
+test-job-ioGetPut:
   stage: test
   script:
   - export OMP_NUM_THREADS=8
