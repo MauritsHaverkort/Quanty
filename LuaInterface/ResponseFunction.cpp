@@ -268,6 +268,40 @@ static int LuaReducePolesResponseFunction(lua_State *L)
   return 1;
 }
 
+/*  On stack ResponseFunction, Emin, Emax
+ *  Returns a ResponseFunction Whereby all poles in the window Emin to Emax are merged in a single pole
+ */
+static int LuaMergePolesInIntervalResponseFunction(lua_State *L)
+{
+  ResponsefunctionType *M, MRed;
+  double Emin,Emax;
+  
+  
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=3) return luaL_error(L, "Error in MergePolesInInterval: %d argument(s), 3 expected (response function, Emin, Emax.\n", len);
+
+  M = luaL_checkResponsefunction(L,1);
+  if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in MergePolesInInterval: 2nd argument should be the Emin.\n");
+  Emin=(double)luaL_checknumber(L, 2);
+  if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in MergePolesInInterval: 3rd argument should be the Emax.\n");
+  Emax=(double)luaL_checknumber(L, 3);
+  
+  
+  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  if(MRed.Block==true)
+  {
+    return luaL_error(L, "Error in MergePolesInInterval not yet implemented for Block response functions.\n");
+  }
+  else
+  {
+    MergeListOfPolesInInterval((ListOfPoles *)MRed.data, Emin,  Emax);
+  }
+  LuaPush_ResponseFunction(L, &MRed);
+  FreeResponsefunction(M);
+  FreeResponsefunction(&MRed);
+  return 1;
+}
+
 /*
  *
  */
@@ -2460,6 +2494,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
   {"New", LuaResponseFunctionNew},
   {"ReducePoles", LuaReducePolesResponseFunction},
+  {"MergePolesInInterval", LuaMergePolesInIntervalResponseFunction},
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},
   {"ToMatrix", LuaResponseFunctionToCompactMatrix},
