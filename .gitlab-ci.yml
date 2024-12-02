@@ -25,10 +25,14 @@ build-job:
 sync_to_public:
   stage: deploy
   script:
+  - echo "Using token: $PUBLIC_REPO_TOKEN"
+  - echo "Public remote URL: https://$PUBLIC_REPO_TOKEN@git.quanty.org:4443/QuantyTest/quantytest.git"
   - git fetch origin develop
   - git checkout develop
+  - git pull origin develop
   - git remote remove public || true
   - git remote add public https://$PUBLIC_REPO_TOKEN@git.quanty.org:4443/QuantyTest/quantytest.git
+  - git remote -v
   - git push public develop:develop
   only:
     - develop
