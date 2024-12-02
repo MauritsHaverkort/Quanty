@@ -2,7 +2,6 @@ stages:
   - build
   - test_matrix
   - test_responsefunction
-  - ttest
   - deploy
 
 build-job:
