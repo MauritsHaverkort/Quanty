@@ -28,6 +28,8 @@ sync_to_public:
     - echo "$SYNC_PRIVATE_KEY" > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -H git.quanty.org >> ~/.ssh/known_hosts
+    - git fetch origin develop
+    - git checkout develop
     - git remote add public git@git.quanty.org:QuantyTest/quantytest.git
     - git push public develop:develop
   only:
