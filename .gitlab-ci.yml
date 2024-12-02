@@ -32,8 +32,6 @@ sync_to_public:
     - git push public develop:develop
   only:
     - develop
-  dependencies:
-    - test
 
 # =========================================================================
 # ===== Test single functions acting on different objects
