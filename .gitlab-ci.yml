@@ -25,8 +25,6 @@ build-job:
 sync_to_public:
   stage: deploy
   script:
-  - export GIT_TRACE=1
-  - export GIT_CURL_VERBOSE=1
   - echo "Using token: $PUBLIC_REPO_TOKEN"
   - echo "Public remote URL: https://$PUBLIC_REPO_TOKEN@git.quanty.org:4443/QuantyTest/quantytest.git"
   - git fetch origin develop
