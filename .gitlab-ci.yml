@@ -2,7 +2,7 @@ stages:
   - build
   - test_matrix
   - test_responsefunction
-  - test
+  - ttest
   - deploy
 
 build-job:
@@ -27,8 +27,8 @@ sync_to_public:
   script:
   - git fetch origin develop
   - git checkout develop
-  - git remote remove public || true  
-  - git remote add public https://$PUBLIC_REPO_TOKEN@git.quanty.org/QuantyTest/quantytest.git
+  - git remote remove public || true
+  - git remote add public https://$PUBLIC_REPO_TOKEN@git.quanty.org/quantytest/quantytest.git
   - git push public develop:develop
   only:
     - develop
