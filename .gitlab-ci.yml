@@ -3,6 +3,7 @@ stages:
   - test_matrix
   - test_responsefunction
   - test
+  - deploy
 
 build-job:
   stage: build
@@ -21,6 +22,18 @@ build-job:
     - Quanty.exe
     expire_in: 1 week
 
+sync_to_public:
+  stage: deploy
+  script:
+    - echo "$SYNC_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H git.quanty.org >> ~/.ssh/known_hosts
+    - git remote add public git@git.quanty.org:QuantyTest/quantytest.git
+    - git push public develop:develop
+  only:
+    - develop
+  dependencies:
+    - test
 
 # =========================================================================
 # ===== Test single functions acting on different objects
