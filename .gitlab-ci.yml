@@ -31,7 +31,7 @@ sync_to_public:
   - git checkout develop
   - git pull origin develop
   - git remote remove public || true
-  - git remote add public https://$PUBLIC_REPO_TOKEN@git.quanty.org:4443/QuantyTest/quantytest.git
+  - git remote add public https://PUBLIC_REPO_TOKEN:${PUBLIC_REPO_TOKEN}@git.quanty.org:4443/QuantyTest/quantytest.git
   - git remote -v
   - git push public develop:develop
   only:
