@@ -1,9 +1,9 @@
 stages:
   - build
-  - deploy
   - test_matrix
   - test_responsefunction
   - test
+  - deploy
 
 build-job:
   stage: build
@@ -22,17 +22,31 @@ build-job:
     - Quanty.exe
     expire_in: 1 week
 
-sync_to_public:
+sync_develop_to_public:
   stage: deploy
   script:
+  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
   - git fetch origin develop
   - git checkout develop
   - git pull origin develop
   - git remote remove public || true
-  - git remote add public https://PUBLIC_REPO_TOKEN:${PUBLIC_REPO_TOKEN}@git.quanty.org:4443/QuantyTest/quantytest.git
-  - git push public develop:develop
+  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
+  - git push public develop:main
   only:
     - develop
+    
+sync_release_to_public:
+  stage: deploy
+  script:
+  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+  - git fetch origin master
+  - git checkout master
+  - git pull origin master
+  - git remote remove public || true
+  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
+  - git push public master:main
+  only:
+    - master
 
 # =========================================================================
 # ===== Test single functions acting on different objects
