@@ -1,0 +1,17 @@
+M = Matrix.Zero(3)
+M1 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+if not(M1==M) then
+	error("Error in Matrix Zero\n",1)
+end
+
+M = Matrix.Zero(3,{{"Userdata",false}})
+M1 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}},{{"Userdata",false}})
+if not(M1==M) then
+	error("Error in Matrix Zero\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Zero")

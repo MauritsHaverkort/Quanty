@@ -1,0 +1,92 @@
+M1 = {{ 1, 2, 3, 4},
+      { 5, 6, 7, 8},
+      { 9,10,11,12},
+      {13,14,15,16}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = M1 + I*M1
+M1CD = Matrix.New(M1C)
+
+M2 = {{ 1, 2, 3, 4},
+      { 5, 6, 7, 8},
+       { 3, 3, 3, 3},
+      {13,14,15,16}}
+setmetatable(M2, MatrixMeta)
+M2D = Matrix.New(M2)
+
+M2C = M2 + I*M2
+M2CD = Matrix.New(M2C)
+
+-- new index for rows
+M1[3] = {3,3,3,3}
+if not(M1 == M2) then
+  error("Error in Matrix index\n",1)
+end
+
+M1D[3] = {3,3,3,3}
+if not(M1D == M2D) then
+  error("Error in Matrix index\n",1)
+end
+
+M1C[3] = {3+3*I,3+3*I,3+3*I,3+3*I}
+if not(M1C == M2C) then
+  error("Error in Matrix index\n",1)
+end
+
+M1CD[3] = {3+3*I,3+3*I,3+3*I,3+3*I}
+if not(M1CD == M2CD) then
+  error("Error in Matrix index\n",1)
+end
+
+-- new index for elemets
+
+M2 = {{ 1, 2, 3,22},
+      { 5, 6, 7, 8},
+      { 3, 3, 3, 3},
+      {13,14,15,16}}
+setmetatable(M2, MatrixMeta)
+M2D = Matrix.New(M2)
+
+M2C = M2 + I*M2
+M2CD = Matrix.New(M2C)
+
+M1[1][4] = 22
+if not(M1 == M2) then
+  error("Error in Matrix index\n",1)
+end
+
+M1D[1][4] = 22
+if not(M1D == M2D) then
+  error("Error in Matrix index\n",1)
+end
+
+M1C[1][4] = 22+22*I
+if not(M1C == M2C) then
+  error("Error in Matrix index\n",1)
+end
+
+M1CD[1][4] = 22+22*I
+if not(M1CD == M2CD) then
+  error("Error in Matrix index\n",1)
+end
+
+-- matrix index for elements
+if not(M1[2][3] == 7) then
+  error("Error in Matrix index\n",1)
+end
+if not(M1D[2][3] == 7) then
+  error("Error in Matrix index\n",1)
+end
+if not(M1C[2][3] == 7+7*I) then
+  error("Error in Matrix index\n",1)
+end
+if not(M1CD[2][3] == 7+7*I) then
+  error("Error in Matrix index\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished newindex")

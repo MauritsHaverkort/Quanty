@@ -1,0 +1,34 @@
+M = {{5, 1, 2, 0},
+		 {1, 5, 0, 2},
+		 {2, 0, 5, 1},
+		 {0, 2, 1, 5}}
+setmetatable(M, MatrixMeta)
+MD = Matrix.New(M)
+
+Mp= {{5, 2},
+		 {2, 5}}
+setmetatable(Mp, MatrixMeta)
+MpD = Matrix.New(Mp)
+
+M2=Matrix.RemoveSpin(M)
+M2D=Matrix.RemoveSpin(MD)
+
+if not(M2==Mp) then
+	error("Error in Matrix Random\n",1)
+end
+if not(M2D==MpD) then
+	error("Error in Matrix Random\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished RemoveSpin")
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished RemoveSpin")

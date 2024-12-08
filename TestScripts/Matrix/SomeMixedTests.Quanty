@@ -131,3 +131,9 @@ B0s = nil
 B0 = nil
 
 collectgarbage()
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished SomeMixedTests")

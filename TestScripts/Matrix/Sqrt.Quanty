@@ -1,0 +1,40 @@
+M1 = {{5, 1, 2, 0},
+			{1, 5, 0, 2},
+			{2, 0, 5, 1},
+			{0, 2, 1, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = {{5,-I, 2, 0},
+			 {I, 5, 0, 2},
+			 {2, 0, 5,-I},
+			 {0, 2, I, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+
+Msqrt = Matrix.Sqrt(M1)
+if not(Chop(Msqrt * Msqrt - M1,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
+	error("Error in Matrix Sqrt\n",1)
+end
+
+Msqrt = Matrix.Sqrt(M1D)
+if not(Chop(Msqrt * Msqrt - M1D,1E-14)==Matrix.Zero(4)) then
+	error("Error in Matrix Sqrt\n",1)
+end
+
+Msqrt = Matrix.Sqrt(M1C)
+if not(Chop(Msqrt * Msqrt - M1C,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
+	error("Error in Matrix Sqrt\n",1)
+end
+
+Msqrt = Matrix.Sqrt(M1CD)
+if not(Chop(Msqrt * Msqrt - M1CD,1E-14)==Matrix.Zero(4)) then
+	error("Error in Matrix Sqrt\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Sqrt")

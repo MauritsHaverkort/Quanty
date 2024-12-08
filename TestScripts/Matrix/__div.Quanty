@@ -1,0 +1,52 @@
+M1 = {{ 1, 2, 3, 4},
+			{ 5, 6, 7, 8},
+			{ 9,10,11,12},
+			{13,14,15,16}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = M1 + I*M1
+M1CD = Matrix.New(M1C)
+
+M2 = {{ 2, 4, 6, 8},
+			{10,12,14,16},
+			{18,20,22,24},
+			{26,28,30,32}}
+setmetatable(M2, MatrixMeta)
+M2D = Matrix.New(M2)
+
+M2C = M2 + I*M2
+M2CD = Matrix.New(M2C)
+
+if not(M2/2 == M1) then
+	error("Error in Matrix div\n",1)
+end
+
+if not(M2D/2 == M1D) then
+	error("Error in Matrix div\n",1)
+end
+
+M3 = M1 + Matrix.Identity(4)
+M3Inv = {{ -2/9, -6/9,  -1/9,  4/9},
+	       {-6/10,  6/10, -2/10, 0},
+	       {2/90,-1/10-3/90,6/10+1/9,-4/9},
+         {6/10+4/90,1/10+3/90,-3/10-7/90,1/9}}
+setmetatable(M3Inv, MatrixMeta)
+
+if not(Chop(M3Inv-1/M3)==Matrix.Zero(4)) then
+	error("Error in Matrix div\n",1)
+end
+
+M3C = I*M1 + I*Matrix.Identity(4)
+if not(Chop(I*M3Inv+1/M3C)==Matrix.Zero(4)) then
+	error("Error in Matrix div\n",1)
+end
+if not(Chop(M3Inv-I/M3C)==Matrix.Zero(4)) then
+	error("Error in Matrix div\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished div")

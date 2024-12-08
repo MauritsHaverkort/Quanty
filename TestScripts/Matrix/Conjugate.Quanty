@@ -1,0 +1,26 @@
+M1 = {{ 1, 2, 3, 4},
+			{ 5, 6, 7, 8},
+			{ 9,10,11,12},
+			{13,14,15,16}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = M1 + I*M1
+M1CD = Matrix.New(M1C)
+
+M2C = M1 - I*M1
+M2CD = Matrix.New(M2C)
+
+if not(Matrix.Conjugate(M1C) == M2C) then
+	error("Error in Matrix Conjugate\n",1)
+end
+
+if not(Matrix.Conjugate(M1CD) == M2CD) then
+	error("Error in Matrix Conjugate\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Conjugate")

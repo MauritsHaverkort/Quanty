@@ -1,0 +1,31 @@
+M = {{1, 2, 3, 4},
+		 {5, 6, 7, 8},
+		 {9, 0, 1, 2},
+		 {0, 2, 1, 5}}
+setmetatable(M, MatrixMeta)
+MD = Matrix.New(M)
+
+OTable={}
+for i=1,4 do
+	for j=1,4 do
+		OTable[#OTable+1]={(i-1),-(j-1),M[i][j]}
+	end
+end
+
+O = Chop(NewOperator(4,0,OTable))
+
+O1 = Matrix.ToOperator(M)
+O1D = Matrix.ToOperator(MD)
+
+if not(O==O1) then
+	error("Error in Matrix ToOperator\n",1)
+end
+if not(O==O1D) then
+	error("Error in Matrix ToOperator\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished ToOperator")

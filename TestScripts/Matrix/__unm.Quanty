@@ -1,0 +1,23 @@
+M1 = {{ 1, 2, 3, 4},
+			{ 5, 6, 7, 8},
+			{ 9,10,11,12},
+			{13,14,15,16}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = M1 + I*M1
+M1CD = Matrix.New(M1C)
+
+if not(-M1 == M1*(-1)) then
+	error("Error in Matrix add\n",1)
+end
+
+if not(-M1C == M1C*(-1)) then
+	error("Error in Matrix add\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished unm")

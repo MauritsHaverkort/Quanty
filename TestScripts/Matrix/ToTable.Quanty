@@ -1,0 +1,17 @@
+M1 = {{5, 1, 2, 0},
+			{1, 5, 0, 2},
+			{2, 0, 5, 1},
+			{0, 2, 1, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+M1T = Matrix.ToTable(M1D)
+
+if not(M1==M1T) then
+	error("Error in Matrix ToTable\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished ToTable")

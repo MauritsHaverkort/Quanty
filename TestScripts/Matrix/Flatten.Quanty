@@ -1,0 +1,54 @@
+M1 = { { 1 , 2 } ,
+			 { 3 , 4 } }
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M11 = { { 1 , 2 , 1 , 2} ,
+			  { 3 , 4 , 3 , 4} ,
+				{ 1 , 2 , 1 , 2} ,
+        { 3 , 4 , 3 , 4} }
+setmetatable(M11, MatrixMeta)
+M11D = Matrix.New(M11)
+
+M10 = { { 1 , 2 , 1 , 2} ,
+				{ 3 , 4 , 3 , 4} ,
+				{ 1 , 2 , 0 , 0} ,
+				{ 3 , 4 , 0 , 0} }
+setmetatable(M10, MatrixMeta)
+M10D = Matrix.New(M10)
+
+
+
+if not(Matrix.Flatten({{M1,M1},{M1,M1}})==M11 ) then
+	error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Flatten({{M1D,M1},{M1,M1}})==M11D ) then
+	error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Flatten({{M1,M1D},{M1,M1}})==M11D ) then
+	error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Flatten({{M1,M1},{M1D,M1}})==M11D ) then
+	error("Error in Matrix Expand\n",1)
+end
+
+if not(Matrix.Flatten({{M1,M1},{M1,0}})==M10 ) then
+	error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Flatten({{M1D,M1},{M1,0}})==M10D ) then
+	error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Flatten({{M1,M1D},{M1,0}})==M10D ) then
+	error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Flatten({{M1,M1},{M1D,0}})==M10D ) then
+	error("Error in Matrix Expand\n",1)
+end
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Flatten")
+
