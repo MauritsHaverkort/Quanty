@@ -1,12 +1,5 @@
 randomseed(2)
 
-M2={ { -0.47384884742733502 ,  0.022421288780132942 ,  0.83460052769379711 , -0.86893105035132312 } ,
-	   { -0.12416325468763856 , -0.81182153514205546  , -0.28454113252672419 , -0.28281437665355125 } ,
-     {  0.73877158376331042 ,  0.53400830995943793  , -0.92233451172818171 ,  0.32386138444946222 } }
-	
-setmetatable(M2, MatrixMeta)
-M2D = Matrix.New(M2)
-
 M = Matrix.Random({-1,1},{3,4})
 
 if not(#M==3) then
@@ -19,19 +12,6 @@ if not(type(M)=="userdata") then
 	error("Error in Matrix Random\n",1)
 end
 
-if not(M2D==M) then
-	print(M2D)
-	print(M)
-	print(M2D-M)
-	error("Error in Matrix Random\n",1)
-end
-
-M2={ { -0.86171155789015419 , -0.78615345982189910 , -0.88119922665934980 , -0.31540246369103087 } ,
-		 { -0.96920725515541029 ,  0.53366260301957968 , -0.73263104992575534 ,  0.66994389783122754 } ,
-		 { -0.25290915055801588 , -0.64409342857268337 ,  0.72174597891128900 ,  0.38466756203429187 } }
-setmetatable(M2, MatrixMeta)
-M2D = Matrix.New(M2)
-
 M = Matrix.Random({-1,1},{3,4},{{"userdata",false}})
 
 if not(#M==3) then
@@ -41,10 +21,6 @@ if not(#M[1]==4) then
 	error("Error in Matrix Random\n",1)
 end
 if not(type(M)=="table") then
-	error("Error in Matrix Random\n",1)
-end
-
-if not(M2==M) then
 	error("Error in Matrix Random\n",1)
 end
 

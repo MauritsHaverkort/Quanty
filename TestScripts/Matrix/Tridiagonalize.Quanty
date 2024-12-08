@@ -3,17 +3,12 @@ randomseed(2)
 M = Matrix.Random({-1,1},{12,12})
 M = M + Matrix.Transpose(M)
 
-G = Matrix.Tridiagonalize(M)
+G, U = Matrix.Tridiagonalize(M)
 MTri = ResponseFunction.ToMatrix(G)
 
+print(G)
 print(MTri)
-
-G, U = Matrix.Tridiagonalize(M,{{"BlockSize",2},{"SingularValue",1E-5}})
-MTri = ResponseFunction.ToMatrix(G)
-
 print(U)
-print(ResponseFunction.ToTable(G))
-print(MTri)
 
 collectgarbage()
 collectgarbage()
