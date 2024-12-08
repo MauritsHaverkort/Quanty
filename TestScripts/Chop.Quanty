@@ -149,9 +149,17 @@ tab = {{1+2*I,1},{1e-7+5*I,2+1e-8*I}}
 setmetatable(tab,MatrixMeta)
 tab = Matrix.ToUserdata(tab)
 cTab = Chop(Clone(tab),1e-6)
+
 for i=1,#tab do
     for j=1,#tab[i] do
-        if not (cTab[i][j]==Chop(tab[i][j],1e-6)) then
+        if not ( (Complex.Re(cTab[i][j])==Complex.Re(Chop(tab[i][j],1e-6))) and (Complex.Im(cTab[i][j])==Complex.Im(Chop(tab[i][j],1e-6))) ) then
+						print(tab)
+			      print(cTab)
+						print(cTab[i][j])
+						print(tab[i][j])
+						print(Chop(tab[i][j],1e-6))
+						print(type(cTab[i][j]))
+						print(type(Chop(tab[i][j],1e-6)))
             error("Chop failed for Matrix (pointer)",1)
         end
     end

@@ -167,8 +167,11 @@ for irho=1,#rho_list do
     MatOpMFTestDFTSI = MatOpMFTest + AddDFTSelfInteractionMatrix(Opijkl,rho)
 
     if not checkMat(MatOpMF, MatOpMFTestDFTSI,tol) then
-        print(Chop(MatOpMF-MatOpMFTestDFTSI,tol))
-        error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
+			print(MatOpMF)
+			print(MatOpMFTestDFTSI)
+			print(AddDFTSelfInteractionMatrix(Opijkl,rho))
+			print(Chop(MatOpMF-MatOpMFTestDFTSI,tol))
+			error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
     end
 
 end

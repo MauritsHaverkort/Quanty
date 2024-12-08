@@ -110,6 +110,7 @@ function checkMatrix(M1,M2,tol)
         if #M1[i] ~= #M2[i] then return false end
         for j=1,#M1[i] do
             if math.abs(M1[i][j]-M2[i][j])>tol then
+							  print(i,j,M1[i][j],M2[i][j],M1[i][j]-M2[i][j],math.abs(M1[i][j]-M2[i][j]))
                 return false
             end
         end
@@ -142,12 +143,18 @@ function checkBasis(V,tol,isWf)
     for i=1,#S do
         for j=1,#S[i] do
             if i==j then
-                if math.abs(S[i][i]-1)>tol then 
+                if math.abs(S[i][i]-1)>tol then
+									  print("checkBasis fails for S=")
+										print(S)
+									  print("At element ",i,j,"with shifted value:",S[i][j]-1,math.abs(S[i][j]-1),type(S[i][j]))
                     return false
                 end
             else
-                if math.abs(S[i][j]-0)>tol then 
-                    return false
+                if math.abs(S[i][j]-0)>tol then
+									print("checkBasis fails for S=")
+									print(S)
+									print("At element ",i,j,"with shifted value:",S[i][j]-0,math.abs(S[i][j]-1),type(S[i][j]))
+									return false
                 end
             end
         end
@@ -380,10 +387,14 @@ for iVec=1,#vectors_list do
     print(options)
 
     local vectors_GS_Quanty = Orthonormalize(vectors,options)
-    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol)) then 
-        print(vectors_GS_Quanty)
+    if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol)) then
+        print(vectors)
+				print()
+				print(vectors_GS_Quanty)
         print()
         print(vectors_GS_test)
+				print("Which of the two tests fails")
+				print(checkBasis(vectors_GS_Quanty, tol, isWf), checkMatrix(vectors_GS_test,vectors_GS_Quanty,tol))
         error("Gram Schmidt failed for vectors ("..label..") with options: "..tostring(options),1)
     else
         print("Passed")
@@ -473,7 +484,9 @@ for iVec=1,#wf_list do
 
     local vectors_GS_Quanty = Orthonormalize(vectors,options)
     if not (checkBasis(vectors_GS_Quanty, tol, isWf) and checkListOfWavefunctions(vectors_GS_test,vectors_GS_Quanty,tol)) then 
-        print(vectors_GS_Quanty)
+        print(vectors)
+				print()
+				print(vectors_GS_Quanty)
         print()
         print(vectors_GS_test)
         error("Gram Schmidt failed for vectors ("..label..") with options: "..tostring(options),1)
