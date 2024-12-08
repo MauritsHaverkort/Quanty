@@ -20,6 +20,9 @@ if not(type(M)=="userdata") then
 end
 
 if not(M2D==M) then
+	print(M2D)
+	print(M)
+	print(M2D-M)
 	error("Error in Matrix Random\n",1)
 end
 
