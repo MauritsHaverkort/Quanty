@@ -143,7 +143,8 @@ function checkBasis(V,tol,isWf)
     for i=1,#S do
         for j=1,#S[i] do
             if i==j then
-                if math.abs(S[i][i]-1)>tol then
+                if ( (math.abs(S[i][i]-1)>tol) and (math.abs(S[i][j]-0)>tol) ) then
+									  -- The diagonal must either be 1 or 0. The late is true for singular matrices
 									  print("checkBasis fails for S=")
 										print(S)
 									  print("At element ",i,j,"with shifted value:",S[i][j]-1,math.abs(S[i][j]-1),type(S[i][j]))
@@ -303,7 +304,7 @@ print("Checking Vectors:\n\n")
 for iVec=1,#vectors_list do
     local isWf = false
 
-    local vectors = vectors_list[iVec]
+    local vectors = Matrix.ToTable( vectors_list[iVec] )
     local label = labels[iVec]
 
     print("\n=================================")
