@@ -58,16 +58,19 @@ for i=1,5 do
 	end
 end
 -- compare the two ways of calculating rho
-if not(rhoS1-rho1 == Matrix.Zero(5,{{"userdata",false}})) then
+if not(Chop(rhoS1-rho1) == Matrix.Zero(5,{{"userdata",false}})) then
+	print(rhoS1)
+	print(rho1)
+	print(rhoS1-rho1)
 	error("Error in DensityMatrix",1)
 end
-if not(rhoS2-rho2 == Matrix.Zero(5,{{"userdata",false}})) then
+if not(Chop(rhoS2-rho2) == Matrix.Zero(5,{{"userdata",false}})) then
 	error("Error in DensityMatrix",1)
 end
-if not(rhoS1b-rho1 == Matrix.Zero(5,{{"userdata",false}})) then
+if not(Chop(rhoS1b-rho1) == Matrix.Zero(5,{{"userdata",false}})) then
 	error("Error in DensityMatrix",1)
 end
-if not(rhoS2b-rho2 == Matrix.Zero(5,{{"userdata",false}})) then
+if not(Chop(rhoS2b-rho2) == Matrix.Zero(5,{{"userdata",false}})) then
 	error("Error in DensityMatrix",1)
 end
 
