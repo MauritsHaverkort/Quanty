@@ -4357,6 +4357,14 @@ static int LuaOperatorNewCreate(lua_State * L)
     {
       return luaL_error(L, "Error in LuaOperatorNewCreate, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOpp,NNum);
     }
+        // Check if each CrIndex element is smaller than NFermion
+    for (i = 0; i < NOpp; i++)
+    {
+      if (CrIndex[i] >= NFermion)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCreate, CrIndex[%d] (%d) is larger than or equal to NFermion\n", i,CrIndex[i]);
+      }
+    }
     double PrefactorsRe[NOpp],PrefactorsIm[NOpp];
     for(i=0;i<NOpp;i++)
     {
@@ -4403,6 +4411,14 @@ static int LuaOperatorNewAnnihilate(lua_State * L)
     if(NOpp!=NNum)
     {
       return luaL_error(L, "Error in LuaOperatorNewAnnihilate, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOpp,NNum);
+    }
+    // Check if each CrIndex element is smaller than NFermion
+    for (i = 0; i < NOpp; i++)
+    {
+      if (CrIndex[i] >= NFermion)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewCreate, CrIndex[%d] (%d) is larger than or equal to NFermion\n", i, CrIndex[i]);
+      }
     }
     double PrefactorsRe[NOpp],PrefactorsIm[NOpp];
     for(i=0;i<NOpp;i++)
@@ -4451,6 +4467,10 @@ static int LuaOperatorNewNumber(lua_State * L)
     uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
     uint16_t Crindex = (uint16_t)luaL_checkunsigned(L, 2);
     uint16_t Anindex = (uint16_t)luaL_checkunsigned(L, 3);
+    if (Crindex >= NFermion || Anindex >= NFermion) // Check if Cr or An index are larger than NFermion 
+    {
+      return luaL_error(L, "Error in LuaOperatorNewNumber, Crindex (%d) and Anindex (%d) cannot be larger than or equal to NFermion (%d)\n", Crindex, Anindex, NFermion);
+    }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
     double one=1;
     double zero=0;
@@ -4471,6 +4491,13 @@ static int LuaOperatorNewNumber(lua_State * L)
     if(NOppCr!=NNum)
     {
       return luaL_error(L, "Error in LuaOperatorNewNumber, Lenght of Index (%d) is not equal to lenght of prefactors (%d)\n",NOppCr,NNum);
+    }
+    for (i = 0; i < NOppCr; i++)
+    {
+      if (CrIndex[i] >= NFermion || AnIndex[i] >= NFermion)
+      {
+        return luaL_error(L, "Error in LuaOperatorNewNumber, CrIndex[%d] (%d) or AnIndex[%d] (%d) is larger than or equal to NFermion (%d)\n", i, CrIndex[i], i, AnIndex[i], NFermion);
+      }
     }
     double PrefactorsRe[NOppCr],PrefactorsIm[NOppCr];
     for(i=0;i<NOppCr;i++)
