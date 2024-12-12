@@ -1351,14 +1351,19 @@ static int LuaMatrixToString(lua_State * L)
 			{
 				colWidth = 16;
 				string tmpStr = numberToStringMaxWidth(A->V[j + i * (A->Nj)].Re, colWidth / 2 - 1);
-				if (A->V[j + i * (A->Nj)].Im < 0)
-					tmpStr += " -";
-				else
-					tmpStr += " +";
-				tmpStr += numberToStringMaxWidth(Abs(A->V[j + i * (A->Nj)].Im), colWidth - (int)tmpStr.length() - 1);
-				sstream << tmpStr << " I";
+        if (A->V[j + i * (A->Nj)].Im != 0)
+        {
+          if (A->V[j + i * (A->Nj)].Im < 0)
+            tmpStr += " -";
+          else
+            tmpStr += " +";
+          tmpStr += numberToStringMaxWidth(Abs(A->V[j + i * (A->Nj)].Im), colWidth - (int)tmpStr.length() - 1);
+          tmpStr +=  " I";
+        }
+        sstream << tmpStr;
 				sstream << blankFill(colWidth, tmpStr.length());
-			} else
+			}
+      else
 			{
 				colWidth = 8;
 				string tmpStr = numberToStringMaxWidth(A->VRe[j + i * (A->Nj)], colWidth - 1);
