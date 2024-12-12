@@ -50,6 +50,9 @@ if not(tostring(M1D)==M1DStr) then
 	error("Error in Matrix tostring\n",1)
 end
 if not(tostring(M1CD)==M1CDStr) then
+	M1CD[1][1] = 0.123456789 + I * 0.123456789
+	print(M1CD)
+	print(M1CDStr)
 	error("Error in Matrix tostring\n",1)
 end
 

@@ -273,6 +273,7 @@ static int LuaMatrixTridiagonalize(lua_State * L)
     {"BlockSize",        "uint32_t",      &(Options.BlockSize)},
     {"NTri",             "uint32_t",      &(Options.NTri)},
     {"SingularValue",    "double",        &(Options.SingularValue)},
+    {"ReturnU",          "bool",          &(Options.ReturnU)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L,-1)==1)
   {
@@ -1351,17 +1352,20 @@ static int LuaMatrixToString(lua_State * L)
 			{
 				colWidth = 16;
 				string tmpStr = numberToStringMaxWidth(A->V[j + i * (A->Nj)].Re, colWidth / 2 - 1);
-        if (A->V[j + i * (A->Nj)].Im != 0)
+        if (A->V[j + i * (A->Nj)].Im == 0)
+        {
+          sstream << tmpStr << "  ";
+        }
+        else
         {
           if (A->V[j + i * (A->Nj)].Im < 0)
             tmpStr += " -";
           else
             tmpStr += " +";
           tmpStr += numberToStringMaxWidth(Abs(A->V[j + i * (A->Nj)].Im), colWidth - (int)tmpStr.length() - 1);
-          tmpStr +=  " I";
+          sstream << tmpStr << " I";
         }
-        sstream << tmpStr;
-				sstream << blankFill(colWidth, tmpStr.length());
+        sstream << blankFill(colWidth, tmpStr.length());
 			}
       else
 			{
