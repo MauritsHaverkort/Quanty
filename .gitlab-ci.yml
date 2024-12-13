@@ -3,6 +3,7 @@ stages:
   - test_matrix
   - test_responsefunction
   - test
+  - deploy
 
 build-job:
   stage: build
@@ -21,6 +22,31 @@ build-job:
     - Quanty.exe
     expire_in: 1 week
 
+sync_develop_to_public:
+  stage: deploy
+  script:
+  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+  - git fetch origin develop
+  - git checkout develop
+  - git pull origin develop
+  - git remote remove public || true
+  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
+  - git push public develop:main
+  only:
+    - develop
+    
+sync_release_to_public:
+  stage: deploy
+  script:
+  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+  - git fetch origin master
+  - git checkout master
+  - git pull origin master
+  - git remote remove public || true
+  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
+  - git push public master:main
+  only:
+    - master
 
 # =========================================================================
 # ===== Test single functions acting on different objects
@@ -208,6 +234,14 @@ test-job-Inverse:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/Inverse.Quanty"
+  dependencies:
+  - build-job
+
+test-job-ioGetPut:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/ioGetPut.Quanty"
   dependencies:
   - build-job
 
@@ -555,3 +589,280 @@ test-job-Responsefunction-Value_Of_A0_in_Val_and_Con_of_NatType:
 # ===== Test functions related to Matrix objects
 # ===== These functions are registered in Matrix.cpp
 #
+
+test-job-Matrix-__add:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__add.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__div:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__div.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__eq:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__eq.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__index:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__index.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__len:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__len.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__mul:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__mul.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__newindex:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__newindex.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__pow:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__pow.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__sub:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__sub.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__tostring:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__tostring.Quanty"
+  dependencies:
+  - build-job
+  
+test-job-Matrix-__unm:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/__unm.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-AddSpin:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/AddSpin.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Conjugate:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Conjugate.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-ConjugateTranspose:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/ConjugateTranspose.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Diagonal:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Diagonal.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Eigensystem:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Eigensystem.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Enlarge:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Enlarge.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Exp:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Exp.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Expand:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Expand.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Flatten:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Flatten.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Identity:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Identity.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Inverse:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Inverse.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-New:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/New.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Random:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Random.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-RemoveSpin:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/RemoveSpin.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Rotate:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Rotate.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Sqrt:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Sqrt.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Sub:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Sub.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-ToOperator:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/ToOperator.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-toTable:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/ToTable.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-ToUserdata:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/ToUserdata.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Transpose:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Transpose.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Tridiagonalize:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Tridiagonalize.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-Matrix-Zero:
+  stage: test_matrix
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Matrix/Zero.Quanty"
+  dependencies:
+  - build-job
+
+
+
+
+

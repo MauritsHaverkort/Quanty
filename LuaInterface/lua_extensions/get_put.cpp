@@ -199,9 +199,9 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     double n;
     n = lua_tonumber(L, narg);
     // test if integer
-    if((Abs((n-round(n))/n)<10*DBL_EPSILON)&&(n<INT32_MAX)&&(n>INT32_MIN))
+    if((Abs(n)<=DBL_MIN) || ((Abs((n-round(n))/n)<10*DBL_EPSILON)&&(n<INT32_MAX)&&(n>INT32_MIN)))
     {
-      fprintf(stream,"%d",(int32_t)n);
+      fprintf(stream,"%d",(int32_t)round(n));
     }
     else
     {
@@ -327,9 +327,9 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       n = (Complex16 *) luaL_checkudata(L, narg, "Complex_Type");
       if(Abs(n->Im)<10*DBL_MIN)
       {
-        if((Abs((n->Re-round(n->Re))/n->Re)<10*DBL_EPSILON)&&(n->Re<INT32_MAX)&&(n->Re>INT32_MIN))
+        if((Abs(n->Re)<=DBL_MIN) || ((Abs((n->Re-round(n->Re))/n->Re)<10*DBL_EPSILON)&&(n->Re<INT32_MAX)&&(n->Re>INT32_MIN)))
         {
-          fprintf(stream,"%d",(int32_t)n->Re);
+          fprintf(stream,"%d",(int32_t)round(n->Re));
         }
         else
         {
@@ -339,9 +339,9 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       else
       {
         fprintf(stream,"( ");
-        if((Abs((n->Re-round(n->Re))/n->Re)<10*DBL_EPSILON)&&(n->Re<INT32_MAX)&&(n->Re>INT32_MIN))
+        if((Abs(n->Re)<=DBL_MIN) || ((Abs((n->Re-round(n->Re))/n->Re)<10*DBL_EPSILON)&&(n->Re<INT32_MAX)&&(n->Re>INT32_MIN)))
         {
-          fprintf(stream,"%d",(int32_t)n->Re);
+          fprintf(stream,"%d",(int32_t)round(n->Re));
         }
         else
         {
@@ -355,9 +355,9 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         {
           fprintf(stream," - I * ");
         }
-        if((Abs((n->Im-round(n->Im))/n->Im)<10*DBL_EPSILON)&&(n->Im<INT32_MAX)&&(n->Im>INT32_MIN))
+        if((Abs(n->Im)<=DBL_MIN) || ((Abs((n->Im-round(n->Im))/n->Im)<10*DBL_EPSILON)&&(n->Im<INT32_MAX)&&(n->Im>INT32_MIN)))
         {
-          fprintf(stream,"%d",(int32_t)Abs(n->Im));
+          fprintf(stream,"%d",(int32_t)Abs(round(n->Im)));
         }
         else
         {
@@ -582,6 +582,13 @@ uint32_t LuaPutASCII(lua_State *L, const char * const DirName, const char * cons
   sprintf(FullName, "%s/%s.Quanty",DirName,FileName);
   free(FileName);
   fp=fopen(FullName, "w");
+  if(fp==NULL)
+  {
+    printf("Open of file \"%s\" failed\n",FullName);
+    printf("Could not save variable \"%s\"\n",VariableName);
+    free(FullName);
+    return 1;
+  }
   free(FullName);
   fprintf(fp, "%s = ",VariableName);
   LuaASCIIStreamPrint(L,3,fp);

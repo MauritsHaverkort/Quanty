@@ -145,7 +145,7 @@ CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M)
 
 CompactMatrixType removeSpin(const CompactMatrixType &M)
 {
-	CompactMatrixType out = CompactMatrixType();
+	CompactMatrixType out;
 	out.Ni = M.Ni / 2;
 	out.Nj = M.Nj / 2;
 	out.QComplex = M.QComplex;
@@ -175,14 +175,18 @@ CompactMatrixType removeSpin(const CompactMatrixType &M)
 
 static int LuaRemoveSpin(lua_State *L)
 {
-	CompactMatrixType M;
+	CompactMatrixType M, Mout;
 	uint len = (uint) lua_gettop(L);
 	if (len != 1)
 		return luaL_error(L, "Error: LuaRemoveSpin called with %d argmuents, only 1 expected, a Matrix.", len);
 	lua_check(L, 1, M);
 	if (M.Ni % 2 != 0 || M.Nj % 2 != 0)
 		return luaL_error(L, "Error: LuaRemoveSpin called with a matrix of dimension %d times %d. Number of rows and columns must each be even.", M.Ni, M.Nj);
-	lua_push(L, removeSpin(M));
+  Mout = removeSpin(M);
+  Mout.OnLuaStack = M.OnLuaStack;
+  lua_push(L, Mout);
+  FreeCompactMatrix(&M);
+  FreeCompactMatrix(&Mout);
 	return 1;
 }
 

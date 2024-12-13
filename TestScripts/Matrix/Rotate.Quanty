@@ -1,0 +1,14 @@
+randomseed(1)
+
+M = Matrix.Random({-1,1},{4,4})
+M = M + Matrix.Transpose(M)
+val, fun = Matrix.Eigensystem(M)
+if not(Chop(Matrix.Rotate(M,fun) - Matrix.Diagonal(val))==Matrix.Zero(4)) then
+	error("Error in Matrix Rotate\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Rotate")

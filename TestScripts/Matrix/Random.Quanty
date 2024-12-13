@@ -1,0 +1,32 @@
+randomseed(2)
+
+M = Matrix.Random({-1,1},{3,4})
+
+if not(#M==3) then
+	error("Error in Matrix Random\n",1)
+end
+if not(#M[1]==4) then
+	error("Error in Matrix Random\n",1)
+end
+if not(type(M)=="userdata") then
+	error("Error in Matrix Random\n",1)
+end
+
+M = Matrix.Random({-1,1},{3,4},{{"userdata",false}})
+
+if not(#M==3) then
+	error("Error in Matrix Random\n",1)
+end
+if not(#M[1]==4) then
+	error("Error in Matrix Random\n",1)
+end
+if not(type(M)=="table") then
+	error("Error in Matrix Random\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Random")
+

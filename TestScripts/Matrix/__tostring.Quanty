@@ -1,0 +1,63 @@
+M1 = {{ 1, 2, 3, 4},
+			{ 5, 6, 7, 8},
+			{ 9,10,11,12},
+			{13,14,15,16}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = M1 + I*M1
+M1CD = Matrix.New(M1C)
+
+M2 = {{ 2, 4, 6, 8},
+			{10,12,14,16},
+			{18,20,22,24},
+			{26,28,30,32}}
+setmetatable(M2, MatrixMeta)
+M2D = Matrix.New(M2)
+
+M2C = M2 + I*M2
+M2CD = Matrix.New(M2C)
+
+M1Str = [[{ { 1 , 2 , 3 , 4 } , 
+  { 5 , 6 , 7 , 8 } , 
+  { 9 , 10 , 11 , 12 } , 
+  { 13 , 14 , 15 , 16 } }]]
+
+M1CStr = [[{ { (1 + 1 I) , (2 + 2 I) , (3 + 3 I) , (4 + 4 I) } , 
+  { (5 + 5 I) , (6 + 6 I) , (7 + 7 I) , (8 + 8 I) } , 
+  { (9 + 9 I) , (10 + 10 I) , (11 + 11 I) , (12 + 12 I) } , 
+  { (13 + 13 I) , (14 + 14 I) , (15 + 15 I) , (16 + 16 I) } }]]
+
+M1DStr = [[{ {  1      ,  2      ,  3      ,  4      } ,
+  {  5      ,  6      ,  7      ,  8      } ,
+  {  9      ,  10     ,  11     ,  12     } ,
+  {  13     ,  14     ,  15     ,  16     } }
+]]
+
+M1CDStr = [[{ {  1 + 1 I          ,  2 + 2 I          ,  3 + 3 I          ,  4 + 4 I          } ,
+  {  5 + 5 I          ,  6 + 6 I          ,  7 + 7 I          ,  8 + 8 I          } ,
+  {  9 + 9 I          ,  10 + 10 I        ,  11 + 11 I        ,  12 + 12 I        } ,
+  {  13 + 13 I        ,  14 + 14 I        ,  15 + 15 I        ,  16 + 16 I        } }
+]]
+
+if not(tostring(M1)==M1Str) then
+	error("Error in Matrix tostring\n",1)
+end
+if not(tostring(M1C)==M1CStr) then
+	error("Error in Matrix tostring\n",1)
+end
+if not(tostring(M1D)==M1DStr) then
+	error("Error in Matrix tostring\n",1)
+end
+if not(tostring(M1CD)==M1CDStr) then
+	M1CD[1][1] = 0.123456789 + I * 0.123456789
+	print(M1CD)
+	print(M1CDStr)
+	error("Error in Matrix tostring\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished tostring")

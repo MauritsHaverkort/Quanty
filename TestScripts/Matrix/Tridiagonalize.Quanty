@@ -1,0 +1,17 @@
+
+randomseed(2)
+M = Matrix.Random({-1,1},{12,12})
+M = M + Matrix.Transpose(M)
+
+G, U = Matrix.Tridiagonalize(M)
+MTri = ResponseFunction.ToMatrix(G)
+
+print(G)
+print(MTri)
+print(U)
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Tridiagonalize")

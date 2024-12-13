@@ -1,0 +1,51 @@
+M1 = { { 1 , 2 } ,
+       { 3 , 4 } }
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1a = { { 1 , 2 , 0 } ,
+        { 3 , 4 , 0 } ,
+        { 0 , 0 , 0 } }
+setmetatable(M1a, MatrixMeta)
+M1aD = Matrix.New(M1a)
+
+M1b = { { 1 , 2 , 0 , 0 } ,
+        { 3 , 4 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 } ,
+        { 0 , 0 , 0 , 0 } }
+setmetatable(M1b, MatrixMeta)
+M1bD = Matrix.New(M1b)
+
+M1c = { { 1 , 2 , 0 , 0 } ,
+        { 3 , 4 , 0 , 0 } ,
+        { 0 , 0 , 2 , 0 } ,
+        { 0 , 0 , 0 , 2 } }
+setmetatable(M1c, MatrixMeta)
+M1cD = Matrix.New(M1c)
+
+
+if not(Matrix.Expand(M1,3)==M1a) then
+  error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Expand(M1,4,0)==M1b) then
+  error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Expand(M1,4,2)==M1c) then
+  error("Error in Matrix Expand\n",1)
+end
+
+if not(Matrix.Expand(M1D,3)==M1aD) then
+  error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Expand(M1D,4,0)==M1bD) then
+  error("Error in Matrix Expand\n",1)
+end
+if not(Matrix.Expand(M1D,4,2)==M1cD) then
+  error("Error in Matrix Expand\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Expand")

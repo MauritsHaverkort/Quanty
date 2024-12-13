@@ -1,0 +1,40 @@
+M1 = { { 1 , 2 } ,
+			 { 3 , 4 } }
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+M2 = { { 1 , 0 , 2 , 0 } ,
+	     { 0 , 1 , 0 , 2 } ,
+       { 3 , 0 , 4 , 0 } ,
+       { 0 , 3 , 0 , 4 } }
+setmetatable(M2, MatrixMeta)
+M2D = Matrix.New(M2)
+M3 = { { 1 , 0 , 0 , 2 , 0 , 0 } ,
+	     { 0 , 1 , 0 , 0 , 2 , 0 } ,
+       { 0 , 0 , 1 , 0 , 0 , 2 } ,
+       { 3 , 0 , 0 , 4 , 0 , 0 } ,
+       { 0 , 3 , 0 , 0 , 4 , 0 } ,
+       { 0 , 0 , 3 , 0 , 0 , 4 } }
+setmetatable(M3, MatrixMeta)
+M3D = Matrix.New(M3)
+
+if not(Matrix.Enlarge(M1,2)==M2) then
+	error("Error in Matrix Enlarge\n",1)
+end
+
+if not(Matrix.Enlarge(M1D,2)==M2D) then
+	error("Error in Matrix Enlarge\n",1)
+end
+
+if not(Matrix.Enlarge(M1,3)==M3) then
+	error("Error in Matrix Enlarge\n",1)
+end
+
+if not(Matrix.Enlarge(M1D,3)==M3D) then
+	error("Error in Matrix Enlarge\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Enlarge")

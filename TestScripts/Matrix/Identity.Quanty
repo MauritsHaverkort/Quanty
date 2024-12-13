@@ -1,0 +1,19 @@
+M1 = { { 1 , 0 , 0 } ,
+	     { 0 , 1 , 0 } ,
+       { 0 , 0 , 1 } }
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+if not(Matrix.Identity(3)==M1D ) then
+	error("Error in Matrix Identity\n",1)
+end
+
+if not(Matrix.Identity(3, {{"Userdata",false}})==M1 ) then
+	error("Error in Matrix Identity\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Identity")

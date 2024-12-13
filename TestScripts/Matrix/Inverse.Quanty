@@ -1,0 +1,104 @@
+function TestIfMatrixIsZero(M)
+	for i=1,#M do
+		for j=1,#M[i] do
+			if not(M[i][j]==0) then
+				error("Matrix non-zero at i,j = "..tostring(i).." , "..tostring(j).." with val "..tostring(M[i][j]).."\n",1)
+			end
+		end
+	end
+end
+
+-- hermitian
+
+M1 = {{5, 1, 2, 0},
+			{1, 5, 0, 2},
+			{2, 0, 5, 1},
+			{0, 2, 1, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = {{5,-I, 2, 0},
+			 {I, 5, 0, 2},
+			 {2, 0, 5,-I},
+			 {0, 2, I, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+M1inv = {{25, -7, -11,   5},
+	       {-7, 25,   5, -11},
+				 {-11, 5,  25,  -7},
+				 {5, -11,  -7,  25}}
+setmetatable(M1inv, MatrixMeta)
+M1inv = M1inv / 96
+M1invD = Matrix.New(M1inv)
+
+M1C = {{5,-I, 2, 0},
+			 {I, 5, 0, 2},
+			 {2, 0, 5,-I},
+			 {0, 2, I, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+M1Cinv = {{  25,  7*I,   -11,  -5*I},
+				  {-7*I,   25,   5*I,   -11},
+				  { -11, -5*I,    25,   7*I},
+				  { 5*I,  -11,  -7*I,    25}}
+setmetatable(M1Cinv, MatrixMeta)
+M1Cinv = M1Cinv / 96
+M1CinvD = Matrix.New(M1Cinv)
+
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1)-M1inv))
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1C)-M1Cinv))
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1D)-M1invD))
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1CD)-M1CinvD))
+
+
+-- non hermitian
+
+M1 = {{5, 1, 2, 0},
+			{0, 5, 0, 2},
+			{2, 0, 5, 1},
+			{0, 2, 1, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = {{5,-I, 2, 0},
+			 {0, 5, 0, 2},
+			 {2, 0, 5,-I},
+			 {0, 2, I, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+M1inv = {{ 100, -28,  -44,  20},
+	       {  -4, 100,   10, -42},
+				 { -42,  20,	105, -29},
+         {  10, -44,  -25, 105}}
+setmetatable(M1inv, MatrixMeta)
+M1inv = M1inv / 412
+M1invD = Matrix.New(M1inv)
+
+M1C = {{5,-I, 2, 0},
+			 {0, 5, 0, 2},
+			 {2, 0, 5,-I},
+			 {0, 2, I, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+M1Cinv = {{   100,  28*I,    -44, -20*I},
+        	{  -4*I,   100,   10*I,   -42},
+	        {   -42, -20*I,	   105,  29*I},
+	        {  10*I,   -44,  -25*I,   105}}
+setmetatable(M1Cinv, MatrixMeta)
+M1Cinv = M1Cinv / 412
+M1CinvD = Matrix.New(M1Cinv)
+
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1)-M1inv))
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1C)-M1Cinv))
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1D)-M1invD))
+TestIfMatrixIsZero(Chop(Matrix.Inverse(M1CD)-M1CinvD))
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Inverse")

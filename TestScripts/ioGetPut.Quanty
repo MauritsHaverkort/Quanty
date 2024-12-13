@@ -1,0 +1,82 @@
+-- integer number
+
+a = 1
+io.put("ioGetPut","a")
+a=nil
+
+io.get("ioGetPut","a")
+if(a~=1) then
+	error("io.get io.put for complex numbers did not return original value\n",1)
+end
+
+-- real number
+
+x = 1.23
+io.put("ioGetPut","x")
+x=nil
+
+io.get("ioGetPut","x")
+if(x~=1.23) then
+	error("io.get io.put for complex numbers did not return original value\n",1)
+end
+
+-- complex number
+
+b = 1+I
+io.put("ioGetPut","b")
+b=nil
+
+io.get("ioGetPut","b")
+if(b~=1+I) then
+	error("io.get io.put for complex numbers did not return original value\n",1)
+end
+
+-- Response Functions
+GLP  = ResponseFunction.New({ {1,2,3} ,
+																{4,5} ,
+							mu= 0 ,
+							type= "ListOfPoles" ,
+							name= "GLP" })
+io.put("ioGetPut","GLP")
+test = Copy(GLP)
+GLP=nil
+io.get("ioGetPut","GLP")
+if(test~=GLP) then
+	error("io.Get + io.Put failed",1)
+end
+
+GLPTable  = ResponseFunction.ToTable(GLP)
+io.put("ioGetPut","GLPTable")
+test = Copy(GLPTable)
+GLPTable=nil
+io.get("ioGetPut","GLPTable")
+if(test~=ResponseFunction.ToTable(GLP)) then
+	print(test)
+  print(GLP)
+	error("io.Get + io.Put failed",1)
+end
+
+GAnd = ResponseFunction.New({ {1,2,3} ,
+															{4,5} ,
+							mu= 0 ,
+							type= "And" ,
+							name= "GNat" })
+io.put("ioGetPut","GAnd")
+test = Copy(GAnd)
+GAnd=nil
+io.get("ioGetPut","GAnd")
+if(test~=GAnd) then
+	error("io.Get + io.Put failed",1)
+end
+
+
+GAndTable = ResponseFunction.ToTable(GAnd)
+io.put("ioGetPut","GAndTable")
+test = Copy(GAndTable)
+GAndTable=nil
+io.get("ioGetPut","GAndTable")
+if(test~=ResponseFunction.ToTable(GAndTable)) then
+	error("io.Get + io.Put failed",1)
+end
+
+

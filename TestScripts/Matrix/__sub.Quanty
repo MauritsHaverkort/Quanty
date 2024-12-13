@@ -1,0 +1,41 @@
+M1 = {{ 1, 2, 3, 4},
+      { 5, 6, 7, 8},
+      { 9,10,11,12},
+      {13,14,15,16}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = M1 + I*M1
+M1CD = Matrix.New(M1C)
+
+M2 = {{ 2, 4, 6, 8},
+      {10,12,14,16},
+      {18,20,22,24},
+      {26,28,30,32}}
+setmetatable(M2, MatrixMeta)
+M2D = Matrix.New(M2)
+
+M2C = M2 + I*M2
+M2CD = Matrix.New(M2C)
+
+if not(M2-M1 == M1) then
+  error("Error in Matrix sub\n",1)
+end
+
+if not(M2C - M1C == M1C) then
+  error("Error in Matrix sub\n",1)
+end
+
+if not(M2D-M1D == M1D) then
+  error("Error in Matrix sub\n",1)
+end
+
+if not(M2CD-M1CD == M1CD) then
+  error("Error in Matrix sub\n",1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished sub")

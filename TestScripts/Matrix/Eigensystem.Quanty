@@ -1,0 +1,101 @@
+function TestIfMatrixIsZero(M)
+	for i=1,#M do
+		for j=1,#M[i] do
+			if not(M[i][j]==0) then
+				error("Matrix non-zero at i,j = "..tostring(i).." , "..tostring(j).." with val "..tostring(M[i][j]).."\n",1)
+			end
+		end
+	end
+end
+
+print("Start of test Matrix Eigensystem")
+
+-- hermitian
+
+M1 = {{5, 1, 2, 0},
+	    {1, 5, 0, 2},
+	    {2, 0, 5, 1},
+      {0, 2, 1, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = {{5,-I, 2, 0},
+	     {I, 5, 0, 2},
+	     {2, 0, 5,-I},
+	     {0, 2, I, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+val1 = {2,4,6,8}
+fun1 = {{ 1,-1,-1, 1},
+	      { 1, 1,-1,-1},
+	      {-1, 1,-1, 1},
+	      { 1, 1, 1, 1}}
+setmetatable(fun1, MatrixMeta)
+fun1 = fun1 / 2
+
+val1C = {2,4,6,8}
+fun1C = {{-I, 1, I,-1},
+				 { I, 1,-I,-1},
+				 {-I, 1,-I, 1},
+				 { I, 1, I, 1}}
+setmetatable(fun1C, MatrixMeta)
+fun1C = fun1C / 2
+
+val, fun = Eigensystem(M1)
+MatI = fun * Matrix.ConjugateTranspose(fun1)
+MatI = MatI * Matrix.ConjugateTranspose(MatI)
+TestIfMatrixIsZero(Chop(MatI-Matrix.Identity(4)))
+
+val, fun = Eigensystem(M1D)
+MatI = fun * Matrix.ConjugateTranspose(fun1)
+MatI = MatI * Matrix.ConjugateTranspose(MatI)
+TestIfMatrixIsZero(Chop(MatI-Matrix.Identity(4)))
+
+val, fun = Eigensystem(M1C)
+MatI = fun * Matrix.ConjugateTranspose(fun1C)
+MatI = MatI * Matrix.ConjugateTranspose(MatI)
+TestIfMatrixIsZero(Chop(MatI-Matrix.Identity(4)))
+
+val, fun = Eigensystem(M1CD)
+MatI = fun * Matrix.ConjugateTranspose(fun1C)
+MatI = MatI * Matrix.ConjugateTranspose(MatI)
+TestIfMatrixIsZero(Chop(MatI-Matrix.Identity(4)))
+
+-- non hermitian
+
+M1 = {{5, 1, 2, 0},
+			{0, 5, 0, 2},
+			{2, 0, 5, 1},
+			{0, 2, 1, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = {{5,-I, 2, 0},
+			 {0, 5, 0, 2},
+			 {2, 0, 5,-I},
+			 {0, 2, I, 5}}
+M1CD = Matrix.New(M1C)
+
+val, funL, funR = Eigensystem(M1)
+print(val)
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR)-Matrix.Identity(4)))
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*M1*Matrix.Transpose(funR)-Matrix.Diagonal(val),1E-13))
+
+val, funL, funR = Eigensystem(M1D)
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR)-Matrix.Identity(4)))
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*M1D*Matrix.Transpose(funR)-Matrix.Diagonal(val),1E-13))
+
+val, funL, funR = Eigensystem(M1C)
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR)-Matrix.Identity(4)))
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*M1C*Matrix.Transpose(funR)-Matrix.Diagonal(val),1E-13))
+
+val, funL, funR = Eigensystem(M1CD)
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR)-Matrix.Identity(4)))
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*M1CD*Matrix.Transpose(funR)-Matrix.Diagonal(val),1E-13))
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("Finished Eigensystem")
