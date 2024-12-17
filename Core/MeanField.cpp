@@ -628,7 +628,7 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
   //  -< a^dag_i a_l >< a^dag_j a_k >
   //  +< a^dag_i a_k >< a^dag_j a_l >
   //
-  //  with the DFT correction being a^dag_i a_j <a^dag_j a_i>
+  //  with the DFT correction being a^dag_i a_j <a^dag_i a_j>
   if(Oo.l[4].QComplex)
   {
     /* calcualte U as the average between all electrons needed for the DFT correction */
@@ -697,7 +697,8 @@ uint32_t MeanFieldOperatorOneElectronMatrixWithDFTInteraction(const OperatorType
       {
         for(j=0;j<O->NFermion;j++)
         {
-          MO->V[j+i*O->NFermion]+=U.Re*Rho.V[i+j*O->NFermion];
+          MO->V[j+i*O->NFermion].Re+= U.Re*Rho.V[i+j*O->NFermion].Re - U.Im*Rho.V[i+j*O->NFermion].Im ;
+          MO->V[j+i*O->NFermion].Im+= U.Im*Rho.V[i+j*O->NFermion].Re + U.Re*Rho.V[i+j*O->NFermion].Im ;
         }
       }
     }

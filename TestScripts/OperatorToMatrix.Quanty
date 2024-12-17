@@ -1,3 +1,8 @@
+-- This script generates a random 1 and 2 partilce interaction Hamiltonian
+-- It furthermore generated several random matrices representing a random charge density
+-- and it generates two random unitary transformations
+
+
 Verbosity(0xFFFFFF)
 
 tol = 1e-12
@@ -21,10 +26,13 @@ local rho_complex = {{3.869581266493041+1*I,4.410991186438207,-2.990067599777351
 local rho_complex_mat = Clone(rho_complex)
 setmetatable(rho_complex_mat,MatrixMeta)
 rho_complex_mat = rho_complex_mat+ConjugateTranspose(rho_complex_mat)
-rho_complex_herm = Matrix.ToTable(rho_complex_mat)
+local rho_complex_herm = Matrix.ToTable(rho_complex_mat)
 
-local rho_list = {rho_posdef, rho_possemidef, rho_negdef, rho_negsemidef, rho_indef,rho_complex_herm,rho_complex}
-local labels   = {"posdef","possemidef","negdef","negsemidef","indef","hermitian complex","complex"}
+local U_real    = {{-0.14990633779917228890437568845515,0.52467218229710301116531490959303,-0.22485950669875843335656353268273,0.74953168899586144452187844227576,0.29981267559834457780875137691030},{-0.12848452137090599516173081141388,0.49898514549649267948585974605134,-0.14343746135803729632279431101809,-0.63909973130183413110619550160182,0.55270496693174216884227305944421},{-0.081393068499365921869398570614120,0.63915604317265900730664622249711,0.51164277859577046466663998947128,-0.085417715447844409252556460572509,-0.56194323723539735208995903114227},{0.96504523379707568146387461995938,0.22272988829587044728133735221403,-0.13761863011929129687916495585036,0.00054388529083794298496370138214417,-0.011828373435798772132186026737986},{-0.15192986138851938616315357382527,0.13267959539062012438440511310728,-0.80507557203112408396505248039570,-0.14985759479384467809631946190662,-0.53731691466657627848727644038060}}
+local U_complex = {{-0.39477101697586139303035699236467 + 0.39477101697586139303035699236467 *I, -0.13159033899195379767678566412156 - 0.39477101697586139303035699236467 *I, 0.19738550848793069651517849618233 + 0.26318067798390759535357132824311 *I, -0.26318067798390759535357132824311 + 0.13159033899195379767678566412156 *I, -0.46056618647183829186874982442544 + 0.32897584747988449419196416030389 *I}, {0.16152197724256606502952567792065 - 0.20190247155320758128690709740081 *I, -0.64278635912096652608448033147352 - 0.07923719638314561680693712501768 *I, 0.28190156405542190594775707938981 + 0.44139181831380475003351513872026 *I, 0.26107640346754389127413898884029 - 0.24025124287966587660052089829077 *I, -0.12749061725749711422141806653485 - 0.31186947807212441486832945359521 *I}, {0.060473172399719590827033835920300 + 0.085820972098153748888467860152725 *I, 0.00894584976123266359341571342150 - 0.46029769866068839053070202207441 *I, 0.46191427455240898383877868530724 - 0.53308037503636342579683695369715 *I, -0.22001423270388095325010632439701 - 0.01617678729168043400157215817190 *I, 0.09123590396513370100398104933287 - 0.47169092852405405013287734560907 *I}, {0.43700201199746677738167478421640 + 0.22324614556052530366377180237533 *I, 0.28810705943010978123987085706175 - 0.17034947750981332057813556240877 *I, -0.011523979644936980601594414272135 - 0.133174963223749503177191005043715 *I, 0.31643783056949853202867187985475 - 0.57256490976361674864046163467519 *I, -0.40060271401384681756867444776235 + 0.20211727759221946764935662962830 *I}, {-0.60773608177944895239437889620911 - 0.01681494079638045554336417581889 *I, -0.23016129265857255622344279605978 - 0.17445385532370666931625050761515 *I, -0.10717276498633831657551709165775 - 0.30097475792518349629698012062915 *I, 0.40915548512959220292842435172320 - 0.37881225786397475506060833110195 *I, 0.30567724526147920503355019484702 + 0.20136638731572511650675204607278 *I}}
+
+local rho_list = {rho_posdef, rho_possemidef, rho_negdef, rho_negsemidef, rho_indef,rho_complex_herm} --,rho_complex
+local labels   = {"posdef","possemidef","negdef","negsemidef","indef","hermitian complex"} -- ,"complex"
 
 function checkMat(M1,M2,tol)
     tol = tol or 1e-15
@@ -50,7 +58,7 @@ function AddDFTSelfInteractionMatrix(Opijkl,rho)
     U = U * 2/(NF*(NF-1))
     for i=1,NF do
         for j=1,NF do
-            M[i][j] = M[i][j] + U*rho[i][j]
+            M[i][j] = M[i][j] + U * rho[j][i]
         end
     end
     return M
@@ -115,14 +123,6 @@ if not checkMat(MatOP, MatOpTest,tol) then
     error("MeanFieldOperator fails for 1p Operator",1)
 end
 
---[[
-print("Check ToUserdata")
-Op = NewOperator(5,0,{{0,-0,2},{1,-2,.01}})
-Mat = OperatorToMatrix(Op,{{"UserData",false}})
-print(type(Mat))
-os.exit()
-]]
-
 
 ------------------------------------------------------------------------------------
 for irho=1,#rho_list do
@@ -147,22 +147,48 @@ for irho=1,#rho_list do
     OpOP = NewOperator(NF,0,coeffListOP)
     Op = Op + OpOP
 
-
     MatOpMFTest = MatOpMFTest + Matrix.Identity(NF) * OpMFShift / rhoTrace + onePartOperator
 
     print("Options: {}")
 
-    MatOpMF = OperatorToMatrix(Op,rho) 
-
+		MatOpMF  = OperatorToMatrix(Op,rho)
+		MatOpMF1 = Rotate( OperatorToMatrix(Rotate(Op,U_real   ),Rotate(rho,Matrix.Conjugate(U_real   ))) , Matrix.ConjugateTranspose(U_real))
+		MatOpMF2 = Rotate( OperatorToMatrix(Rotate(Op,U_complex),Rotate(rho,Matrix.Conjugate(U_complex))) , Matrix.ConjugateTranspose(U_complex))
+		
+		if not checkMat(MatOpMF, MatOpMF1, tol) then
+			print(Chop(MatOpMF-MatOpMF1,tol))
+			error("Operator not rotational invariant",1)
+		end
+		
+		if not checkMat(MatOpMF, MatOpMF2, tol) then
+			print(Chop(MatOpMF-MatOpMF2,tol))
+			error("Operator not rotational invariant",1)
+		end
+		
     if not checkMat(MatOpMF, MatOpMFTest,tol) then
-        print(Chop(MatOpMF-MatOpMFTest,tol))
-        error("MeanFieldOperator does not reproduce the HF MF operator (with all options default) for "..label,1)
+			print(Chop(MatOpMF-MatOpMFTest,tol))
+			print(OpMFShift)
+			print(rhoTrace)
+			print(MatOpMF)
+			print(MatOpMFTest)
+			error("MeanFieldOperator does not reproduce the HF MF operator (with all options default) for "..label.." at rho "..irho,1)
     end
 
 
     print("Options {{AddDFTSelfInteraction:True}}")
 
     MatOpMF = OperatorToMatrix(Op,rho,{{"AddDFTSelfInteraction",true}})
+		MatOpMF1 = Rotate( OperatorToMatrix(Rotate(Op,U_real   ),Rotate(rho,Matrix.Conjugate(U_real   )),{{"AddDFTSelfInteraction",true}}) , Matrix.ConjugateTranspose(U_real))
+		MatOpMF2 = Rotate( OperatorToMatrix(Rotate(Op,U_complex),Rotate(rho,Matrix.Conjugate(U_complex)),{{"AddDFTSelfInteraction",true}}) , Matrix.ConjugateTranspose(U_complex))
+		
+		if not checkMat(MatOpMF, MatOpMF1, tol) then
+			print(Chop(MatOpMF-MatOpMF1,tol))
+		end
+		
+		if not checkMat(MatOpMF, MatOpMF2, tol) then
+			print(Chop(MatOpMF-MatOpMF2,tol))
+		end
+		
 
     MatOpMFTestDFTSI = MatOpMFTest + AddDFTSelfInteractionMatrix(Opijkl,rho)
 
@@ -171,7 +197,7 @@ for irho=1,#rho_list do
 			print(MatOpMFTestDFTSI)
 			print(AddDFTSelfInteractionMatrix(Opijkl,rho))
 			print(Chop(MatOpMF-MatOpMFTestDFTSI,tol))
-			error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label,1)
+			error("MeanFieldOperator does not reproduce the HF-MF operator (with AddDFTSelfInteraction:True) for "..label.." at rho "..irho,1)
     end
 
 end
