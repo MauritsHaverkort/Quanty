@@ -1,0 +1,60 @@
+a = {0,1,2,3,4,5}
+b = {1,2,3,4,5}
+G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="A"})
+GAnd = ResponseFunction.ChangeType(G,"And")
+GBlock = ResponseFunction.New({    {{{0}},1,2,3},{{{1}},{{2}},{{3}}},mu=0,type="ListOfPoles", name="A"})
+GBlockAnd = ResponseFunction.ChangeType(GBlock,"And")
+
+
+print("InvertEnergy")
+if((ResponseFunction.InvertEnergy(G)~=G:InvertEnergy())) then
+     error("__index for InvertEnergy failed \n",1) 
+end
+
+print("ChangeType")
+if((ResponseFunction.ChangeType(G,"And")~=G:ChangeType("And"))) then
+    error("__index for ChangeType failed \n",1) 
+end
+
+print("CreateBitMasks")
+if(table.concat(ResponseFunction.CreateBitMasks(GAnd))~=table.concat(GAnd:CreateBitMasks())) then
+    error("__index for CreateBitMasks failed \n",1) 
+end
+
+print("ReducePoles")
+if((ResponseFunction.ReducePoles(G,10)~=G:ReducePoles(10))) then
+    error("__index for ReducePoles failed \n",1) 
+end
+
+print("PlaceOnMesh")
+if((ResponseFunction.PlaceOnMesh(G,{1,2,3})~=G:PlaceOnMesh({1,2,3}))) then
+    error("__index for PlaceOnMesh failed \n",1) 
+end
+
+print("ToTable")
+if((ResponseFunction.ToTable(G)~=G:ToTable())) then
+    error("__index for ToTable failed \n",1) 
+end
+
+print("ToSpectra")
+if((tostring(ResponseFunction.ToSpectra(G))~=tostring(G:ToSpectra()))) then
+    error("__index for ToSpectra failed \n",1) 
+end
+
+print("ToUserdata")
+if((ResponseFunction.ToUserdata(G)~=G:ToUserdata())) then
+    error("__index for ToUserdata failed \n",1) 
+end
+
+print("ToTightBinding")
+if tostring(ResponseFunction.ToTightBinding(GBlockAnd))~=tostring(GBlockAnd:ToTightBinding()) then
+    error("__index for ToTightBinding failed \n",1) 
+end
+
+print("ToOperator")
+if((ResponseFunction.ToOperator(GAnd)~=GAnd:ToOperator())) then
+    error("__index for ToOperator failed \n",1) 
+end
+
+
+--CalculateSelfEnegy(); CalculateHybridizationFunction() and Chop() are not included

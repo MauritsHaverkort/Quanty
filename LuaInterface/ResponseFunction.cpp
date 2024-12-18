@@ -666,8 +666,27 @@ static int LuaResponseFunctionCall(lua_State * L)
  */
 static int LuaResponseFunctionToString(lua_State * L)
 {
-  lua_pushfstring(L, "ResponseFunction in userdata format use ToTable() in order to get a table form");
-  return 1;
+    ResponsefunctionType *res;
+    res = luaL_checkResponsefunction(L,1);
+    
+    lua_pushcfunction(L, LuaResponseFunctionToTable);
+    lua_pushvalue(L,1);
+    lua_pcall(L, 1, 1, 0);
+    
+    if(lua_istable(L, -1)==0)
+    {
+      luaL_error(L, "Error in LuaResponseFunctionToString: Failed to convert ResponseFunction to a table");
+    }
+
+    lua_setglobal(L, "__temptable");
+    if (luaL_dostring(L, "local result = tostring(__temptable); __temptable = nil; return result;") != LUA_OK)
+    {
+      luaL_error(L, "Error in LuaResponseFunctionToString: Successfuly converted userdata to table, but failed to convert table to string");
+    }
+    printf("ResponseFunction in UserData format: use .ToTable() to access individual elements\n");
+    // Do I need to free res? With FreeResponsefunction(); or FreeResponsefunctionIncludingOriginalPointer()?
+    FreeResponsefunction(res);
+    return 1;
 }
 
 /*  Given a Response function M
@@ -1626,6 +1645,9 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathValDn  = (char*)malloc((NF+1)*sizeof(char));
           BathConDn  = (char*)malloc((NF+1)*sizeof(char));
           BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExt   = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtUp   = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtDn   = (char*)malloc((NF+1)*sizeof(char));
           for(k=0;k<NF;k++)
           {
             Core[k]       ='0';
@@ -1644,6 +1666,10 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
             BathValDn[k]  ='0';
             BathConDn[k]  ='0';
             BathExtDn[k]  ='0';
+            ImpurityExt[k]   ='0';
+            ImpurityExtUp[k]   ='0';
+            ImpurityExtDn[k]   ='0';
+
           }
           Core[NF]       ='\0';
           Impurity[NF]   ='\0';
@@ -1661,21 +1687,24 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathValDn[NF]  ='\0';
           BathConDn[NF]  ='\0';
           BathExtDn[NF]  ='\0';
+          ImpurityExt[NF]   ='\0';
+          ImpurityExtUp[NF]   ='\0';
+          ImpurityExtDn[NF]   ='\0';
           for(k=0;k<NCore;k++)
           {
             Core[k]='1';
           }
           for(k=NCore;k<NCore+NImpurity;k++)
           {
-            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0'; ImpurityExt[k]='1'; ImpurityExtDn[k]='1'; ImpurityExtUp[k]='0';
             k++;
-            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='0'; ImpurityExtUp[k]='1';
           }
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
-            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
+            BathExt[k]='1'; BathExtDn[k]='1'; BathExtUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='1'; ImpurityExtUp[k]='0';
             k++;
-            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
+            BathExt[k]='1'; BathExtDn[k]='0'; BathExtUp[k]='1'; Bath[k]='1'; BathUp[k]='1'; ImpurityExt[k]='1'; ImpurityExtDn[k]='0'; ImpurityExtUp[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
@@ -1695,6 +1724,12 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           lua_pushstring(L, ImpurityDn);
           lua_setfield(L,-2,"ImpurityDn");
           free(ImpurityDn);
+          lua_pushstring(L, ImpurityExtUp);
+          lua_setfield(L,-2,"ImpurityExtUp");
+          free(ImpurityExtUp);
+          lua_pushstring(L, ImpurityExtDn);
+          lua_setfield(L,-2,"ImpurityExtDn");
+          free(ImpurityExtDn);
           lua_pushstring(L, BathUp);
           lua_setfield(L,-2,"BathUp");
           free(BathUp);
@@ -2395,6 +2430,82 @@ static int LuaResponseFunctionNew(lua_State *L)
   return 1;
 }
 
+static int LuaResponseFunctionIndex(lua_State *L)
+{
+    ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+    const char *str = lua_tostring(L, 2);
+
+    if (strcmp(str, "InvertEnergy") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaInvertEnergy, 1);
+        return 1;
+    }
+    if (strcmp(str, "ChangeType") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaChangeTypeResponseFunction, 1);
+        return 1;
+    }
+    if (strcmp(str, "CreateBitMasks") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToBitMask, 1);
+        return 1;
+    }
+    if (strcmp(str, "ReducePoles") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaReducePolesResponseFunction, 1);
+        return 1;
+    }
+    if (strcmp(str, "PlaceOnMesh") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaPlaceOnMeshResponseFunction, 1);
+        return 1;
+    }
+    if (strcmp(str, "ToTable") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToTable, 1);
+        return 1;
+    }
+    if (strcmp(str, "ToMatrix") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToCompactMatrix, 1);
+        return 1;
+    }
+    if (strcmp(str, "ToSpectra") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToSpectra, 1);
+        return 1;
+    }
+    if (strcmp(str, "ToUserdata") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToUserdata, 1);
+        return 1;
+    }
+    if (strcmp(str, "ToTightBinding") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToTightBinding, 1);
+        return 1;
+    }
+    if (strcmp(str, "ToOperator") == 0)
+    {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, LuaResponseFunctionToOperator, 1);
+        return 1;
+    }
+
+    return luaL_error(L, "ResponseFunction has no method %s\n", str);
+}
+
+
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
   {"New", LuaResponseFunctionNew},
@@ -2425,6 +2536,7 @@ static const struct luaL_Reg ResponseFunction_meta[] = {
   {"__eq",   LuaResponseFunctionEq},
   {"__tostring", LuaResponseFunctionToString},
   {"__gc", LuaResponseFunctionDestroy},
+  {"__index", LuaResponseFunctionIndex},
   {NULL, NULL}
 };
 
@@ -2438,5 +2550,4 @@ static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__eq",   LuaResponseFunctionEq},
   {NULL, NULL}
 };
-
 
