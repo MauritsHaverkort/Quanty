@@ -666,27 +666,25 @@ static int LuaResponseFunctionCall(lua_State * L)
  */
 static int LuaResponseFunctionToString(lua_State * L)
 {
-    ResponsefunctionType *res;
-    res = luaL_checkResponsefunction(L,1);
+  ResponsefunctionType *res;
+  res = luaL_checkResponsefunction(L,1);
     
-    lua_pushcfunction(L, LuaResponseFunctionToTable);
-    lua_pushvalue(L,1);
-    lua_pcall(L, 1, 1, 0);
+  lua_pushcfunction(L, LuaResponseFunctionToTable);
+  lua_pushvalue(L,1);
+  lua_pcall(L, 1, 1, 0);
     
-    if(lua_istable(L, -1)==0)
-    {
-      luaL_error(L, "Error in LuaResponseFunctionToString: Failed to convert ResponseFunction to a table");
-    }
+  if(lua_istable(L, -1)==0)
+  {
+    luaL_error(L, "Error in LuaResponseFunctionToString: Failed to convert ResponseFunction to a table");
+  }
 
-    lua_setglobal(L, "__temptable");
-    if (luaL_dostring(L, "local result = tostring(__temptable); __temptable = nil; return result;") != LUA_OK)
-    {
-      luaL_error(L, "Error in LuaResponseFunctionToString: Successfuly converted userdata to table, but failed to convert table to string");
-    }
-    printf("ResponseFunction in UserData format: use .ToTable() to access individual elements\n");
-    // Do I need to free res? With FreeResponsefunction(); or FreeResponsefunctionIncludingOriginalPointer()?
-    FreeResponsefunction(res);
-    return 1;
+  lua_setglobal(L, "__temptable");
+  if (luaL_dostring(L, "local result = tostring(__temptable); __temptable = nil; return result;") != LUA_OK)
+  {
+    luaL_error(L, "Error in LuaResponseFunctionToString: Successfuly converted userdata to table, but failed to convert table to string");
+  }
+  FreeResponsefunctionIncludingOriginalPointer(res);
+  return 1;
 }
 
 /*  Given a Response function M
@@ -2435,72 +2433,6 @@ static int LuaResponseFunctionIndex(lua_State *L)
     ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
     const char *str = lua_tostring(L, 2);
 
-    if (strcmp(str, "InvertEnergy") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaInvertEnergy, 1);
-        return 1;
-    }
-    if (strcmp(str, "ChangeType") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaChangeTypeResponseFunction, 1);
-        return 1;
-    }
-    if (strcmp(str, "CreateBitMasks") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToBitMask, 1);
-        return 1;
-    }
-    if (strcmp(str, "ReducePoles") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaReducePolesResponseFunction, 1);
-        return 1;
-    }
-    if (strcmp(str, "PlaceOnMesh") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaPlaceOnMeshResponseFunction, 1);
-        return 1;
-    }
-    if (strcmp(str, "ToTable") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToTable, 1);
-        return 1;
-    }
-    if (strcmp(str, "ToMatrix") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToCompactMatrix, 1);
-        return 1;
-    }
-    if (strcmp(str, "ToSpectra") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToSpectra, 1);
-        return 1;
-    }
-    if (strcmp(str, "ToUserdata") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToUserdata, 1);
-        return 1;
-    }
-    if (strcmp(str, "ToTightBinding") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToTightBinding, 1);
-        return 1;
-    }
-    if (strcmp(str, "ToOperator") == 0)
-    {
-        lua_pushvalue(L, 1);
-        lua_pushcclosure(L, LuaResponseFunctionToOperator, 1);
-        return 1;
-    }
 
     return luaL_error(L, "ResponseFunction has no method %s\n", str);
 }
