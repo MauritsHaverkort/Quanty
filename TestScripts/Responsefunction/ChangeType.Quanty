@@ -922,13 +922,9 @@ MC_BL = ResponseFunction.ChangeType(MC_B,"LP")
 MD_T = ResponseFunction.ChangeType(MD_N,"Tri")
 MD_A = ResponseFunction.ChangeType(MD_N,"And")
 MD_N = ResponseFunction.ChangeType(MD_N,"Nat")
-print("Hello")
---MD_D = ResponseFunction.ChangeType(MD_N,"Dense")
-print("Hello")
+MD_D = ResponseFunction.ChangeType(MD_N,"Dense")
 MD_U = ResponseFunction.ChangeType(MD_N,"Userdata")
-print("Hello")
 MD_B = ResponseFunction.ChangeType(MD_N,"Table")
-print("Hello")
 
 MD_TL = ResponseFunction.ChangeType(MD_T,"LP")
 MD_AL = ResponseFunction.ChangeType(MD_A,"LP")
@@ -969,7 +965,7 @@ MB_bl = ResponseFunction.ChangeType(MB_b,"LP")
 MC_t = ResponseFunction.ChangeType(MC_a,"Tri")
 MC_a = ResponseFunction.ChangeType(MC_a,"And")
 MC_n = ResponseFunction.ChangeType(MC_a,"Nat")
---MC_d = ResponseFunction.ChangeType(MC_a,"Dense")
+MC_d = ResponseFunction.ChangeType(MC_a,"Dense")
 MC_u = ResponseFunction.ChangeType(MC_a,"Userdata")
 MC_b = ResponseFunction.ChangeType(MC_a,"Table")
 
@@ -1224,12 +1220,8 @@ MD_ul=nil
 MD_bl=nil
 
 collectgarbage()
-
-
-
-
-
-
+collectgarbage()
+collectgarbage()
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

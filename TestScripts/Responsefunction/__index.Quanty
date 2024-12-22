@@ -1,1 +1,105 @@
+-- Definitions of response functions
+
+a = {10, -1,-0.5, 0,   0.5,  1,  1.5}
+b = {  0.1, 0.1, 0.1, 0.1, 0.2, 0.3}
+GL = ResponseFunction.New( {a,b,mu=0,type="ListOfPoles", name="GL"} )
+
+a = {0, 1,   1,   1,   1,   1,  1}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+GT = ResponseFunction.New( {a,b,mu=0,type="Tri", name="GT"} )
+
+a = {0, 1, 1.5,   2, 2.5,   3, 3.5}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+GA = ResponseFunction.New( {a,b,mu=0,type="And", name="GA"} )
+
+acon = {0,         1,   1,   1,   1,   1,  1}
+bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gcon = ResponseFunction.New(  {acon,bcon,mu=0,type="Tri"} )
+aval = {0,        -1,  -1,  -2,  -1,  -1, -1}
+bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gval = ResponseFunction.New( {aval,bval,mu=0,type="Tri"} )
+a0=0
+b0=1
+GN = ResponseFunction.New( {{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="GD"} )
+
+A0 = Matrix.New( {{0,0,0},{0,0,0},{0,0,0}} )
+A1 = Matrix.New( {{1,2,3},{2,5,6},{3,6,9}} )
+A2 = Matrix.New( {{2,2,3},{2,5,6},{3,6,9}} )
+A3 = Matrix.New( {{3,2,3},{2,5,6},{3,6,9}} )
+a1 = -1
+a2 = 1/2
+a3 = 1
+av1 = -0.5
+av2 = -1.0
+av3 = -1.5
+ac1 = 0.5
+ac2 = 1.0
+ac3 = 1.5
+B0s = Matrix.New( {{1,0,0},{0,1,0},{0,0,1}} )
+t=sqrt(0.5)
+B0vs = Matrix.New( {{t,0,0},{0,t,0},{0,0,t}} )
+B0cs = Matrix.New( {{t,0,0},{0,t,0},{0,0,t}} )
+B0 = B0s * B0s
+B0v = B0vs * B0vs
+B0c = B0cs * B0cs
+B1s = Matrix.New( {{1,1,3},{1,5,6},{3,6,9}} )
+B1 = B1s * B1s
+B2s = Matrix.New( {{2,0,3},{0,5,6},{3,6,9}} )
+B2 = B2s * B2s
+B3s = Matrix.New( {{3,0,3},{0,5,6},{3,6,9}} )
+B3 = B3s * B3s
+
+ML = ResponseFunction.New( { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="ML"} )
+
+MT = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="MT"} )
+
+MA = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="MA"} )
+
+Mval = ResponseFunction.New( { {A0,av1,av2,av3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Mval"} )
+
+Mcon = ResponseFunction.New( { {A0,ac1,ac2,ac3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="Mcon"} )
+
+MN = ResponseFunction.New( {{A0,B0},val=Mval,con=Mcon,mu=0,type="Nat", name="MN"} )
+
+responsfunctionList = {GL,GT,GA,GN,ML,MT,MA,MN}
+responsfunctionListType = {"ListOfPoles","Tri","And","Nat","ListOfPoles","Tri","And","Nat"}
+
+-- test mu
+for i=1,#responsfunctionList do
+	responsfunctionList[i].mu = 12
+	if(responsfunctionList[i].mu~=12) then
+		print(responsfunctionList[i])
+		error("Response set mu failed in loop ",i,",\n",1)
+	end
+end
+
+-- test name
+for i=1,#responsfunctionList do
+	responsfunctionList[i].name = "Hello World"
+	if(responsfunctionList[i].name~="Hello World") then
+		print(responsfunctionList[i])
+		error("Response set name failed in loop ",i,",\n",1)
+	end
+end
+
+-- test type
+for i=1,#responsfunctionList do
+	if(responsfunctionList[i].type~=responsfunctionListType[i]) then
+		print(responsfunctionList[i])
+		error("Response type failed in loop ",i,",\n",1)
+	end
+end
+
+-- test Chop
+for i=1,#responsfunctionList do
+	temp  = Chop(responsfunctionList[i],0.2)
+	temp2 = Chop(responsfunctionList[i])
+	temp2.Chop(0.2)
+	if(temp2~=temp) then
+		print(responsfunctionList[i])
+		error("Response type failed in loop ",i,",\n",1)
+	end
+end
+
+
 

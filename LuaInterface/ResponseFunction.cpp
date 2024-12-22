@@ -2428,15 +2428,454 @@ static int LuaResponseFunctionNew(lua_State *L)
   return 1;
 }
 
-static int LuaResponseFunctionIndex(lua_State *L)
+
+
+/*  Returns the length of a responsefunction object if it was transformed to a table
+ *  This is quite a useless object. For natural orbitals the returned value is 1, for tri, and and list of poles it returns 2.
+ */
+static int LuaResponseFunctionLen(lua_State *L)
 {
-    ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
-    const char *str = lua_tostring(L, 2);
-
-
-    return luaL_error(L, "ResponseFunction has no method %s\n", str);
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      lua_pushinteger(L, 2);
+      return 1;
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      lua_pushinteger(L, 2);
+      return 1;
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      lua_pushinteger(L, 2);
+      return 1;
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      lua_pushinteger(L, 1);
+      return 1;
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return 0;
+    }
+  }
 }
 
+static int LuaResponseFunctionIndexMu(lua_State *L)
+{
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(a->Block==true)
+      {
+        lua_pushnumber(L, ((BlockListOfPoles*)(a->data))->mu);
+        return 1;
+      }
+      else
+      {
+        lua_pushnumber(L, ((ListOfPoles*)(a->data))->mu);
+        return 1;
+      }
+    }
+    case 'A':
+    case 'a':
+    {
+      if(a->Block==true)
+      {
+        lua_pushnumber(L, ((BlockAndersonMatrixType*)(a->data))->mu);
+        return 1;
+      }
+      else
+      {
+        lua_pushnumber(L, ((AndersonMatrixType*)(a->data))->mu);
+        return 1;
+      }
+    }
+    case 'T':
+    case 't':
+    {
+      if(a->Block==true)
+      {
+        lua_pushnumber(L, ((BlockTriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+      else
+      {
+        lua_pushnumber(L, ((TriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+    }
+    case 'N':
+    case 'n':
+    {
+      if(a->Block==true)
+      {
+        lua_pushnumber(L, ((BlockNaturalImpurityOrbitalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+      else
+      {
+        lua_pushnumber(L, ((BADoubleTriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+    }
+    default:
+    {
+      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+    }
+  }
+}
+static int LuaResponseFunctionIndexType(lua_State *L)
+{
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      lua_pushstring(L, "ListOfPoles");
+      return 1;
+      break;
+    }
+    case 'A':
+    case 'a':
+    {
+      lua_pushstring(L, "And");
+      return 1;
+      break;
+    }
+    case 'T':
+    case 't':
+    {
+      lua_pushstring(L, "Tri");
+      return 1;
+      break;
+    }
+    case 'N':
+    case 'n':
+    {
+      lua_pushstring(L, "Nat");
+      return 1;
+      break;
+    }
+    default:
+    {
+      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return 0;
+    }
+  }
+}
+
+static int LuaResponseFunctionIndexName(lua_State *L)
+{
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(a->Block==true)
+      {
+        lua_pushstring(L, ((BlockListOfPoles*)(a->data))->Name);
+        return 1;
+      }
+      else
+      {
+        lua_pushstring(L, ((ListOfPoles*)(a->data))->Name);
+        return 1;
+      }
+    }
+    case 'A':
+    case 'a':
+    {
+      if(a->Block==true)
+      {
+        lua_pushstring(L, ((BlockAndersonMatrixType*)(a->data))->Name);
+        return 1;
+      }
+      else
+      {
+        lua_pushstring(L, ((AndersonMatrixType*)(a->data))->Name);
+        return 1;
+      }
+    }
+    case 'T':
+    case 't':
+    {
+      if(a->Block==true)
+      {
+        lua_pushstring(L, ((BlockTriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+      else
+      {
+        lua_pushstring(L, ((TriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+    }
+    case 'N':
+    case 'n':
+    {
+      if(a->Block==true)
+      {
+        lua_pushstring(L, ((BlockNaturalImpurityOrbitalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+      else
+      {
+        lua_pushstring(L, ((BADoubleTriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+    }
+    default:
+    {
+      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+    }
+  }
+}
+
+static int LuaResponseFunctionChop(lua_State *L)
+{
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "ResponseFunction_Type");
+  uint32_t len = (uint32_t)lua_gettop(L);
+  double epsilon;
+  bool Deflate = true;
+  switch (len)
+  {
+    case 0:
+      epsilon=10*DBL_EPSILON;
+    break;
+    case 1:
+      epsilon=luaL_checknumber(L, 1);
+    break;
+    default:
+      return luaL_error(L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
+    break;
+  }
+  ResponsefunctionChop(a, epsilon, Deflate);
+  return 0;
+}
+
+static int LuaResponseFunctionIndexChop(lua_State *L)
+{
+  lua_pushvalue(L, 1);
+  lua_pushcclosure(L, LuaResponseFunctionChop,1);
+  return 1;
+}
+
+
+static const struct luaL_Reg ResponseFunction_Index[] = {
+  {"mu",     LuaResponseFunctionIndexMu},
+  {"type",   LuaResponseFunctionIndexType},
+  {"name",   LuaResponseFunctionIndexName},
+  {"Chop",   LuaResponseFunctionIndexChop},
+  {NULL, NULL}
+};
+
+static int LuaResponseFunctionNewIndexMu(lua_State *L)
+{
+  double mu = luaL_checknumber(L, 3);
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(a->Block==true)
+      {
+        ((BlockListOfPoles*)(a->data))->mu = mu;
+        return 0;
+      }
+      else
+      {
+        ((ListOfPoles*)(a->data))->mu = mu;
+        return 0;
+      }
+    }
+    case 'A':
+    case 'a':
+    {
+      if(a->Block==true)
+      {
+        ((BlockAndersonMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+      else
+      {
+        ((AndersonMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+    }
+    case 'T':
+    case 't':
+    {
+      if(a->Block==true)
+      {
+        ((BlockTriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+      else
+      {
+        ((TriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+    }
+    case 'N':
+    case 'n':
+    {
+      if(a->Block==true)
+      {
+        ((BlockNaturalImpurityOrbitalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+      else
+      {
+        ((BADoubleTriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+    }
+    default:
+    {
+      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+    }
+  }
+}
+static int LuaResponseFunctionNewIndexName(lua_State *L)
+{
+  const char* name = luaL_checkstring(L, 3);
+  ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(a->Block==true)
+      {
+        strncpy(((BlockListOfPoles*)(a->data))->Name, name, MAXStrLength);
+        ((BlockListOfPoles*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+      else
+      {
+        strncpy(((ListOfPoles*)(a->data))->Name, name, MAXStrLength);
+        ((ListOfPoles*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+    }
+    case 'A':
+    case 'a':
+    {
+      if(a->Block==true)
+      {
+        strncpy(((BlockAndersonMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((BlockAndersonMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+      else
+      {
+        strncpy(((AndersonMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((AndersonMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+    }
+    case 'T':
+    case 't':
+    {
+      if(a->Block==true)
+      {
+        strncpy(((BlockTriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((BlockTriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+      else
+      {
+        strncpy(((TriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((TriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+    }
+    case 'N':
+    case 'n':
+    {
+      if(a->Block==true)
+      {
+        strncpy(((BlockNaturalImpurityOrbitalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((BlockNaturalImpurityOrbitalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+      else
+      {
+        strncpy(((BADoubleTriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((BADoubleTriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+    }
+    default:
+    {
+      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+    }
+  }
+}
+
+static const struct luaL_Reg ResponseFunction_NewIndex[] = {
+  {"mu",     LuaResponseFunctionNewIndexMu},
+  {"name",   LuaResponseFunctionNewIndexName},
+  {NULL, NULL}
+};
+
+static int LuaResponseFunctionIndex(lua_State *L)
+{
+  // the index key is at position 2 in the lua stack
+  const char *key = lua_tostring(L, 2);
+  if (key != NULL)
+  {
+    // Search the mapping table
+    for (int i = 0; ResponseFunction_Index[i].name != NULL; ++i)
+    {
+      if (strcmp(key, ResponseFunction_Index[i].name) == 0)
+      {
+        // Match found, evaluate function
+        return ResponseFunction_Index[i].func(L);
+      }
+    }
+  }
+  return luaL_error(L, "ResponseFunction has no valid index %s\n", key);
+}
+
+static int LuaResponseFunctionNewIndex(lua_State *L)
+{
+  // the index key is at position 2 in the lua stack
+  const char *key = lua_tostring(L, 2);
+  if (key != NULL)
+  {
+    // Search the mapping table
+    for (int i = 0; ResponseFunction_NewIndex[i].name != NULL; ++i)
+    {
+      if (strcmp(key, ResponseFunction_NewIndex[i].name) == 0)
+      {
+        // Match found, evaluate function
+        return ResponseFunction_NewIndex[i].func(L);
+      }
+    }
+  }
+  return luaL_error(L, "ResponseFunction has no valid index %s that can be changed\n", key);
+}
 
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
@@ -2469,6 +2908,8 @@ static const struct luaL_Reg ResponseFunction_meta[] = {
   {"__tostring", LuaResponseFunctionToString},
   {"__gc", LuaResponseFunctionDestroy},
   {"__index", LuaResponseFunctionIndex},
+  {"__newindex", LuaResponseFunctionNewIndex},
+  {"__len", LuaResponseFunctionLen},
   {NULL, NULL}
 };
 
