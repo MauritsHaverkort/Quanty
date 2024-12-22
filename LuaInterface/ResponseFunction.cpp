@@ -2650,7 +2650,7 @@ static int LuaResponseFunctionIndexName(lua_State *L)
   }
 }
 
-static int LuaResponseFunctionChop(lua_State *L)
+static int LuaResponseFunctionIndexChop(lua_State *L)
 {
   ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "ResponseFunction_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -2672,18 +2672,15 @@ static int LuaResponseFunctionChop(lua_State *L)
   return 0;
 }
 
-static int LuaResponseFunctionIndexChop(lua_State *L)
-{
-  lua_pushvalue(L, 1);
-  lua_pushcclosure(L, LuaResponseFunctionChop,1);
-  return 1;
-}
-
 
 static const struct luaL_Reg ResponseFunction_Index[] = {
   {"mu",     LuaResponseFunctionIndexMu},
   {"type",   LuaResponseFunctionIndexType},
   {"name",   LuaResponseFunctionIndexName},
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg ResponseFunction_Method[] = {
   {"Chop",   LuaResponseFunctionIndexChop},
   {NULL, NULL}
 };
@@ -2845,13 +2842,23 @@ static int LuaResponseFunctionIndex(lua_State *L)
   const char *key = lua_tostring(L, 2);
   if (key != NULL)
   {
-    // Search the mapping table
+    // Search the mapping table for index
     for (int i = 0; ResponseFunction_Index[i].name != NULL; ++i)
     {
       if (strcmp(key, ResponseFunction_Index[i].name) == 0)
       {
         // Match found, evaluate function
         return ResponseFunction_Index[i].func(L);
+      }
+    }
+    // Search the mapping table for methods
+    for (int i = 0; ResponseFunction_Method[i].name != NULL; ++i)
+    {
+      if (strcmp(key, ResponseFunction_Method[i].name) == 0)
+      {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, ResponseFunction_Method[i].func,1);
+        return 1;
       }
     }
   }
