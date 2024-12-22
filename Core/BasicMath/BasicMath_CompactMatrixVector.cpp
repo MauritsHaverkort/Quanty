@@ -4842,7 +4842,11 @@ uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A
         if(veclist[i+1].Ni==0) break;
       }
     }
-    if(veclist[i+1].Ni==0) break;
+    if(veclist[i+1].Ni==0)
+    {
+      B->N=i;
+      break;
+    }
     if(ReOrthogonalize==true)
     {
       CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, false);
@@ -4970,7 +4974,11 @@ uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * cons
         if(veclist[i+1].Ni==0) break;
       }
     }
-    if(veclist[i+1].Ni==0) break;
+    if(veclist[i+1].Ni==0)
+    {
+      B->N = i;
+      break;
+    }
     if(ReOrthogonalize==true)
     {
       CompactMatrixGramSchmidtOrthogonalizeRow(&veclist[i+1], SingularValue, false);

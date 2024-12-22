@@ -326,6 +326,8 @@ static int LuaMatrixTridiagonalize(lua_State * L)
     HTri->type='t';
     HTri->Block=true;
     HTri->data=(void*)malloc(sizeof(BlockTriDiagonalMatrixType));
+    HTri->NSuggestedGridPoints=0;
+    HTri->SuggestedGrid=NULL;
     if(Options.NTri==UINT32_MAX) Options.NTri=H->Ni;
     if(Options.StartingVectors.Ni==0)
     {
