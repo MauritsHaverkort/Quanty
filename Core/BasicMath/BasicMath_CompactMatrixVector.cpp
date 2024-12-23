@@ -5010,6 +5010,16 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
 {
   uint32_t ret;
   CompactMatrixType Acopy;
+  if(A->Ni==0)
+  {
+    B->BlockSize=vec->Ni;
+    B->N=0;
+    B->QComplex=0;
+    InitBlockTridiagonalMatrix(B);
+    B->mu=A->mu;
+    strncpy(B->Name, A->Name, MAXStrLength);
+    return 0;
+  }
   if(A->QComplex==0)
   {
     if(vec->QComplex==0)

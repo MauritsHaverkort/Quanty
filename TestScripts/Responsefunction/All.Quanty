@@ -2,7 +2,7 @@ directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
 print("Test response functions in directory",directory)
 
 goto skip
-
+::skip::
 
 dofile(directory.."/__eq.Quanty")
 dofile(directory.."/__add.Quanty")
@@ -26,7 +26,7 @@ dofile(directory.."/CalculateHybridizationFunction.Quanty")
 dofile(directory.."/CreateBitMasks.Quanty")
 dofile(directory.."/Deflation.Quanty")
 
-::skip::
+
 
 
 dofile(directory.."/LengthZero.Quanty")
