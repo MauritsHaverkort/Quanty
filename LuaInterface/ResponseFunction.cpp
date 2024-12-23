@@ -2176,6 +2176,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     {
       if(M->Block==true)
       {
+        return luaL_error(L, "Error in Responsefunction.ToTightBinding() Not yet implemented for this case\n");
         BlockNaturalImpurityOrbitalMatrixToTightBinding((BlockNaturalImpurityOrbitalMatrixType *)(M->data),TB);
       }
       else
@@ -2654,24 +2655,77 @@ static int LuaResponseFunctionIndexChop(lua_State *L)
 {
   ResponsefunctionType *a = (ResponsefunctionType *) luaL_checkudata(L, lua_upvalueindex(1), "ResponseFunction_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
-  double epsilon;
+  double epsilon=10*DBL_EPSILON;
   bool Deflate = true;
-  switch (len)
+  LuaOptionsType LuaOptions[]={
+    {"deflate","bool",&Deflate},
+    {NULL, NULL, NULL}};
+  if(len!=0)
+  { // check for options if options found reduce len by one
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaOptions);
+      len--;
+    }
+  }
+  if(len==1)
   {
-    case 0:
-      epsilon=10*DBL_EPSILON;
-    break;
-    case 1:
-      epsilon=luaL_checknumber(L, 1);
-    break;
-    default:
-      return luaL_error(L, "Errorr, call to chop with %d arguments, expected 0 or 1\n",len);
-    break;
+    epsilon=luaL_checknumber(L, 1);
+  }
+  if(len>1)
+  {
+    return luaL_error(L, "Errorr, call to Chop with %d arguments, expected 0 or 1 with possible options\n",len);
   }
   ResponsefunctionChop(a, epsilon, Deflate);
   return 0;
 }
 
+/*  on stack we have a response function represented as a table
+ *  we need to chop this table inline
+ *  we read the table into a struct, chop the struct and then overwrite the table with the struct
+ */
+static int LuaResponseFunctionTableIndexChop(lua_State *L)
+{
+  ResponsefunctionType *a = luaL_checkResponsefunction(L, lua_upvalueindex(1));
+  
+  
+  
+  uint32_t len = (uint32_t)lua_gettop(L);
+  double epsilon=10*DBL_EPSILON;
+  bool Deflate = true;
+  LuaOptionsType LuaOptions[]={
+    {"deflate","bool",&Deflate},
+    {NULL, NULL, NULL}};
+  if(len!=0)
+  { // check for options if options found reduce len by one
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaOptions);
+      len--;
+    }
+  }
+  if(len==1)
+  {
+    epsilon=luaL_checknumber(L, 1);
+  }
+  if(len>1)
+  {
+    return luaL_error(L, "Errorr, call to Chop with %d arguments, expected 0 or 1 with possible options\n",len);
+  }
+  ResponsefunctionChop(a, epsilon, Deflate);
+  LuaPush_ResponseFunction(L, a);
+  // loop over all keys and values of the new table and set the values of the old table accordingly
+  lua_pushnil(L);
+  while (lua_next(L, -2) != 0)
+  {
+    lua_pushvalue(L, -2);
+    lua_insert(L, -2);
+    lua_settable(L, lua_upvalueindex(1));
+  }
+  lua_pop(L, 1);
+  FreeResponsefunctionIncludingOriginalPointer(a);
+  return 0;
+}
 
 static const struct luaL_Reg ResponseFunction_Index[] = {
   {"mu",     LuaResponseFunctionIndexMu},
@@ -2680,8 +2734,17 @@ static const struct luaL_Reg ResponseFunction_Index[] = {
   {NULL, NULL}
 };
 
+static const struct luaL_Reg ResponseFunctionTable_Index[] = {
+  {NULL, NULL}
+};
+
 static const struct luaL_Reg ResponseFunction_Method[] = {
   {"Chop",   LuaResponseFunctionIndexChop},
+  {NULL, NULL}
+};
+
+static const struct luaL_Reg ResponseFunctionTable_Method[] = {
+  {"Chop",   LuaResponseFunctionTableIndexChop},
   {NULL, NULL}
 };
 
@@ -2865,6 +2928,38 @@ static int LuaResponseFunctionIndex(lua_State *L)
   return luaL_error(L, "ResponseFunction has no valid index %s\n", key);
 }
 
+
+static int LuaResponseFunctionTableIndex(lua_State *L)
+{
+  // the index key is at position 2 in the lua stack
+  const char *key = lua_tostring(L, 2);
+  if (key != NULL)
+  {
+    // Search the mapping table for index
+    for (int i = 0; ResponseFunctionTable_Index[i].name != NULL; ++i)
+    {
+      if (strcmp(key, ResponseFunctionTable_Index[i].name) == 0)
+      {
+        // Match found, evaluate function
+        return ResponseFunctionTable_Index[i].func(L);
+      }
+    }
+    // Search the mapping table for methods
+    for (int i = 0; ResponseFunctionTable_Method[i].name != NULL; ++i)
+    {
+      if (strcmp(key, ResponseFunctionTable_Method[i].name) == 0)
+      {
+        lua_pushvalue(L, 1);
+        lua_pushcclosure(L, ResponseFunctionTable_Method[i].func,1);
+        return 1;
+      }
+    }
+  }
+  // Fallback to original table
+  lua_rawget(L, 1);
+  return 1;
+}
+
 static int LuaResponseFunctionNewIndex(lua_State *L)
 {
   // the index key is at position 2 in the lua stack
@@ -2927,6 +3022,7 @@ static const struct luaL_Reg ResponseFunctionTable_meta[] = {
   {"__mul", LuaResponseFunctionMul},
   {"__div", LuaResponseFunctionDiv},
   {"__call", LuaResponseFunctionCall},
+  {"__index", LuaResponseFunctionTableIndex},
   {"__eq",   LuaResponseFunctionEq},
   {NULL, NULL}
 };
