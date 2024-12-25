@@ -2529,7 +2529,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
         printf("Fatal Error: allocation failed in SubtractBlockListOfPoles\n");
         return 1;
       }
-      A->a0Re = &(A->VRe[2*(1+Sqr(A->BlockSize))]);
+      A->a0Re = &(A->VRe[(1+Sqr(A->BlockSize))]);
       for(i=0;i<Sqr(A->BlockSize);i++)
       {
         A->a0Re[i]=A->VRe[i];
@@ -2545,7 +2545,7 @@ uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles c
         printf("Fatal Error: allocation failed in SubtractBlockListOfPoles\n");
         return 1;
       }
-      A->a0 = &(A->V[2*(1+Sqr(A->BlockSize))]);
+      A->a0 = &(A->V[(1+Sqr(A->BlockSize))]);
       for(i=0;i<Sqr(A->BlockSize);i++)
       {
         A->a0[i]=A->V[i];
