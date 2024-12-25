@@ -2066,7 +2066,26 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
     return 0;
   }
   
-  
+  if(ATri.N==1)
+  {
+    B->N=1;
+    B->QComplex=ATri.QComplex;
+    B->BlockSize=ATri.BlockSize;
+    InitBlockAndersonMatrix(B);
+    B->mu = ATri.mu;
+    if(ATri.QComplex==0)
+    {
+      memcpy(B->aRe, ATri.aRe, 2*Sqr(ATri.BlockSize)*sizeof(double));
+      memcpy(B->bRe, ATri.bRe,   Sqr(ATri.BlockSize)*sizeof(double));
+    }
+    else
+    {
+      memcpy(B->a, ATri.a, 2*Sqr(ATri.BlockSize)*sizeof(Complex16));
+      memcpy(B->b, ATri.b,   Sqr(ATri.BlockSize)*sizeof(Complex16));
+    }
+    return 0;
+  }
+
   int i,j,bpos,cpos,k;
   CompactMatrixType Afull, Afun, C,D,E;
   double *Aval;
