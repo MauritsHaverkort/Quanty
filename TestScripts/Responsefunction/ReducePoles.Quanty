@@ -2,6 +2,226 @@ print("--------------------------------------------------------")
 print("-- Responsefunction ReducePoles                       --")
 print("--------------------------------------------------------")
 
+-- Define response functions of different type
+-- singel valued tri-diagonal
+a = {10, 11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G1 = ResponseFunction.New({a,b,mu=0,type="Tri", name="G Tri"})
+
+-- single valued anderson
+a = {10, 11, 12, 13, 14, 15, 16}
+b = {     1,  2,  3,  4,  5,  6}
+G2 = ResponseFunction.New({a,b,mu=0,type="And", name="G And"})
+
+-- single valued Natural
+acon = {0,  10, 11, 12}
+bcon = {     2,  3,  4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {     2,    3,    4}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+a0=3
+b0=1
+G3 = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="G Nat"})
+
+-- single valued list of poles
+a = {0, 10,  11,  12,  13,  14,  15,  16}
+b = {  1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7}
+G4 = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="G LP"})
+
+-- Matrix valued tri-diagonal
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})/3
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})/3
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})/3
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s / 100
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s / 100
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s / 100
+
+G5 = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="G Mat Tri"} )
+
+-- Matrix valued anderson
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})/3
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})/3
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})/3
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s/100
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s/100
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s/100
+
+G6 = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="G Mat And"} )
+
+-- Matrix valued Natural
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})/3
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})/3
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})/3
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s/100
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s/100
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s/100
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+
+G7 = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="G Mat Nat"} )
+
+-- Matrix valued list of poles
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{0,1,3},{1,5,0},{3,0,0}})
+B1 = B1s * B1s/100
+B2s = Matrix.New({{2,0,3},{0,0,2},{3,2,0}})
+B2 = B2s * B2s/100
+B3s = Matrix.New({{3,0,3},{0,5,1},{3,1,0}})
+B3 = B3s * B3s/100
+
+G8 = ResponseFunction.New( { {A0,-5,7,10}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="G Mat LP"} )
+
+
+
+print(G1.name)
+G1p = ResponseFunction.ReducePoles(G1, 2)
+if( (Chop(G1-G1p)==Chop(G1-G1)) ~= true) then
+	print(G1)
+	print(G1p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G1(0,1E8)-G1p(0,1E8))==Chop(G1(0,0)-G1(0,0))) ~= true) then
+	print(G1)
+	print(G1p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+print(G2.name)
+G2p = ResponseFunction.ReducePoles(G2, 2)
+if( (Chop(G2-G2p)==Chop(G2-G2)) ~= true) then
+	print(G2)
+	print(G2p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G2(0,1E8)-G2p(0,1E8))==Chop(G2(0,0)-G2(0,0))) ~= true) then
+	print(G2)
+	print(G2p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+print(G3.name)
+G3p = ResponseFunction.ReducePoles(G3, 2)
+if( (Chop(G3-G3p)==Chop(G3-G3)) ~= true) then
+	print(G3)
+	print(G3p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G3(0,1E8)-G3p(0,1E8))==Chop(G3(0,0)-G3(0,0))) ~= true) then
+	print(G3)
+	print(G3p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+print(G4.name)
+G4p = ResponseFunction.ReducePoles(G4, 2)
+if( (Chop(G4-G4p)==Chop(G4-G4)) ~= true) then
+	print(G4)
+	print(G4p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G4(0,1E8)-G4p(0,1E8))==Chop(G4(0,0)-G4(0,0))) ~= true) then
+	print(G4)
+	print(G4p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+
+
+
+
+
+
+print(G5.name)
+G5p = ResponseFunction.ReducePoles(G5, 2)
+if( (Chop(G5-G5p)==Chop(G5-G5)) ~= true) then
+	print(G5)
+	print(G5p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G5(0,1E8)-G5p(0,1E8))==Chop(G5(0,0)-G5(0,0))) ~= true) then
+	print(G5)
+	print(G5p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+print(G6.name)
+G6p = ResponseFunction.ReducePoles(G6, 1,1)
+if( (Chop(G6-G6p)==Chop(G6-G6)) ~= true) then
+	print(G6)
+	print(G6p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G6(0,1E8)-G6p(0,1E8))==Chop(G6(0,0)-G6(0,0))) ~= true) then
+	print(G6)
+	print(G6p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+
+
+print(G7.name)
+G7p = ResponseFunction.ReducePoles(G7, 2)
+if( (Chop(G7-G7p)==Chop(G7-G7)) ~= true) then
+	print(G7)
+	print(G7p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G7(0,1E8)-G7p(0,1E8))==Chop(G7(0,0)-G7(0,0))) ~= true) then
+	print(G7)
+	print(G7p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+print(G8.name)
+G8p = ResponseFunction.ReducePoles(G8, 1,1)
+if( (Chop(G8-G8p)==Chop(G8-G8)) ~= true) then
+	print(G8)
+	print(G8p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+if( (Chop(G8(0,1E8)-G8p(0,1E8))==Chop(G8(0,0)-G8(0,0))) ~= true) then
+	print(G8)
+	print(G8p)
+	error("ResponseFunction.ReducePoles failed",1)
+end
+
+
+
 
 
 collectgarbage()

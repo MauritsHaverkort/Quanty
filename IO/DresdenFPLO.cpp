@@ -646,8 +646,8 @@ uint32_t ReadDresdenFPLOlDOS(DresdenFPLO * O, const char *const dirname)
   for(isite=1;isite<=O->Atoms.Natom;isite++)
   {
     inl=1;
-    sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
-    while ((stream = fopen(flname, "r")) != NULL)
+    while (((void)(sprintf(flname,       "%s/+ldos.site%03d.nl%03d",dirname,isite,inl)) , ((stream = fopen(flname, "r")) != NULL) ) or
+           ((void)(sprintf(flname, "%s/+ldos/+ldos.site%03d.nl%03d",dirname,isite,inl)) , ((stream = fopen(flname, "r")) != NULL) ) )
     {
       while(fgets(ReadLine, buffSize, stream) != NULL)
       {
@@ -687,7 +687,6 @@ uint32_t ReadDresdenFPLOlDOS(DresdenFPLO * O, const char *const dirname)
       }
       fclose(stream);
       inl++;
-      sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
     }
   }
   if(O->lDOS.N == 0)
@@ -708,8 +707,8 @@ uint32_t ReadDresdenFPLOlDOS(DresdenFPLO * O, const char *const dirname)
   for(isite=1;isite<=O->Atoms.Natom;isite++)
   {
     inl=1;
-    sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
-    while ((stream = fopen(flname, "r")) != NULL)
+    while (((void)(sprintf(flname,       "%s/+ldos.site%03d.nl%03d",dirname,isite,inl)) , ((stream = fopen(flname, "r")) != NULL) ) or
+           ((void)(sprintf(flname, "%s/+ldos/+ldos.site%03d.nl%03d",dirname,isite,inl)) , ((stream = fopen(flname, "r")) != NULL) ) )
     {
       while(fgets(ReadLine, buffSize, stream) != NULL)
       {
@@ -724,7 +723,6 @@ uint32_t ReadDresdenFPLOlDOS(DresdenFPLO * O, const char *const dirname)
       }
       fclose(stream);
       inl++;
-      sprintf(flname, "%s/+ldos.site%03d.nl%03d",dirname,isite,inl);
     }
   }
   return 0;

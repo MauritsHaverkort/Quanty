@@ -220,6 +220,8 @@ B3 = B3s * B3s
 
 G = ResponseFunction.New( { {A0,-1,-2,-3}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="A"} )
 M = ResponseFunction.ToMatrix(G)
+-- we don't know a simple expression for what to expect
+-- the list of poles is transformed to a tri-diagonal form and then transformed to a matrix
 --[[
 if((M==Mexp)~=true) then
 	print("Error")

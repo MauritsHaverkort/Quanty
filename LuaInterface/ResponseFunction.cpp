@@ -322,6 +322,9 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
   }
   mesh = luaL_checkarray_double(L, 2, &NE);
   ResponsefunctionCopy(M,&MRed);
+  
+  
+  
   BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed.data, mesh, NE);
   LuaPush_ResponseFunction(L, &MRed);
   FreeResponsefunction(M);

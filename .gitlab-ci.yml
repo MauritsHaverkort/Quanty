@@ -512,6 +512,14 @@ test-job-Responsefunction-LengthZero:
   dependencies:
   - build-job
 
+test-job-Responsefunction-MergePolesInInterval:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/MergePolesInInterval.Quanty"
+  dependencies:
+  - build-job
+  
 test-job-Responsefunction-PlaceOnMesh:
   stage: test_responsefunction
   script:
