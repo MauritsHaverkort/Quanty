@@ -156,19 +156,26 @@ static int LuaHybridizationFunctionFromFPLO(lua_State * L)
     bool Normalize=true;
     bool SetNegativeToZero=true;
     bool MergeNegativeToNeighbour=false;
+    CompactVectorType EnergyWindow={0,0,NULL};
   }Options;
   LuaOptionsType LuaOptions[]={
-    {"Normalize",                "bool", &(Options.Normalize)},
-    {"SetNegativeToZero",        "bool", &(Options.SetNegativeToZero)},
-    {"MergeNegativeToNeighbour", "bool", &(Options.MergeNegativeToNeighbour)},
+    {"Normalize",                "bool",   &(Options.Normalize)},
+    {"SetNegativeToZero",        "bool",   &(Options.SetNegativeToZero)},
+    {"MergeNegativeToNeighbour", "bool",   &(Options.MergeNegativeToNeighbour)},
+    {"EnergyWindow",             "Vector", &(Options.EnergyWindow)},
     {NULL, NULL, NULL}};
   if(len==4)
   {
     LuaCheckOptions(L, 4, LuaOptions);
-    return luaL_error(L, "Error in HybridizationFunctionFromFPLO(arg).\nOptions not yet implemented.\n");
     len--;
   }
   if(len!=3) luaL_error(L, "Error in HybridizationFunctionFromFPLO, expected on stack an FPLO input, the site number and a definition of the orbitals to include and possible a list of options\n");
+  // check if energy window is a valid window
+  if(Options.EnergyWindow.Ni!=0)
+  {
+    if(Options.EnergyWindow.Ni!=2) return luaL_error(L, "ERROR: Energy window should be a list of two real numbers related to the minimal and maximum energy used of the DOS to generate the hybridization function\n");
+    if(Options.EnergyWindow.QComplex!=0) return luaL_error(L, "ERROR: Energy window should be a list of two real numbers related to the minimal and maximum energy used of the DOS to generate the hybridization function. Numbers are not real\n");
+  }
   // read the FPLO input from the first position of the stack
   FPLO = (DresdenFPLO *) luaL_checkudata(L, 1, "DresdenFPLO_Type");
   // read the site from the stack
@@ -255,7 +262,7 @@ static int LuaHybridizationFunctionFromFPLO(lua_State * L)
   Hyb->NSuggestedGridPoints=0;
   // set the dimension in LP to the number of orbitals;
   LP->BlockSize=NOrbitals;
-  HybridizationFunctionFromFPLO(FPLO, LP, OrbitalList, Options.MergeNegativeToNeighbour, Options.SetNegativeToZero, Options.Normalize);
+  HybridizationFunctionFromFPLO(FPLO, LP, OrbitalList, Options.MergeNegativeToNeighbour, Options.SetNegativeToZero, Options.Normalize, Options.EnergyWindow);
   luaL_setmetatable(L, "ResponseFunction_Type");
   free(OrbitalList);
   return 1;

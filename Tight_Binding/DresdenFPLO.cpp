@@ -567,12 +567,14 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 	return 0;
 }
 
-uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, int *OrbitalList, bool MergeNegativeToNeighbour, bool SetNegativeToZero, bool Normalize)
+uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, int *OrbitalList, bool MergeNegativeToNeighbour, bool SetNegativeToZero, bool Normalize, CompactVectorType EnergyWindow)
 {
-  int i,j;
+  int i,j,jMin,jMax;
   int const stepsize = 1 + Sqr( LP->BlockSize );
   ListOfPoles lDOSin;
   LP->N=FPLO->lDOS.NE;
+  jMin = 0;
+  jMax = FPLO->lDOS.NE;
   if(SetNegativeToZero==true)
   {
     LP->QComplex=0;
@@ -590,18 +592,37 @@ uint32_t HybridizationFunctionFromFPLO(DresdenFPLO *FPLO, BlockListOfPoles *LP, 
     lDOSin.a[j] = (((double) j ) /  (LP->N-1) ) * FPLO->lDOS.Emax + (((double) (LP->N-1-j) ) /  (LP->N-1) ) * FPLO->lDOS.Emin;
     LP->VRe[j * stepsize] = lDOSin.a[j];
   }
+  // determine jMin and jMax from energy window
+  if(EnergyWindow.Ni==2)
+  {
+    for(j=0;j<FPLO->lDOS.NE;j++)
+    {
+      lDOSin.b[j]=0;
+      if(lDOSin.a[j] <  EnergyWindow.VRe[0]) jMin = j;
+      if(lDOSin.a[j] <= EnergyWindow.VRe[1]) jMax = j;
+    }
+    jMin++;
+    jMax++;
+  }
   //loop over all lDOSes
   for(i=0;i<LP->BlockSize;i++)
   {
     // read lDOS to lDOSin
-    for(j=0;j<FPLO->lDOS.NE;j++)
+    for(j=jMin;j<jMax;j++)
     {
       lDOSin.b[j]=FPLO->lDOS.V[OrbitalList[i]][j];
     }
     // reglarize
     if(MergeNegativeToNeighbour==true) MergeNegativeToNeighbourListOfPolesSorted(&lDOSin);
     if(SetNegativeToZero==true) SetNegativeToZeroListOfPoles(&lDOSin);
-    if(Normalize==true) NormalizeListOfPoles(&lDOSin);
+    if(Normalize==true)
+    {
+      NormalizeListOfPoles(&lDOSin);
+    }
+    else
+    {
+      ScaleListOfPoles(&lDOSin,0.5 * (FPLO->lDOS.Emax-FPLO->lDOS.Emin) / LP->N );
+    }
     // set the correct elements of Block List Of Poles
     if(LP->QComplex==0)
     {

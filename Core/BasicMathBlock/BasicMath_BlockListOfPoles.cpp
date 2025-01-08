@@ -1218,6 +1218,98 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t Nval, uint3
   return 0;
 }
 
+void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double Emax)
+{
+  int i, j, nMerged=0;
+  double Trl,Trr;
+  CompactMatrixType Bi;
+  Bi.Ni=M->BlockSize;
+  Bi.Nj=M->BlockSize;
+  Bi.QComplex=M->QComplex;
+  OrderBlockListOfPoles(M);
+  if(M->QComplex==0)
+  { // real
+    for (i=0;i<M->N;i++)
+    {
+      if(M->VRe[i*(Sqr(M->BlockSize)+1)]>Emax)
+      {
+        if(nMerged>1)
+        {
+          memcpy(&(M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          M->N-=(nMerged-1);
+          M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
+        }
+        return;
+      }
+      else if(M->VRe[i*(Sqr(M->BlockSize)+1)]>=Emin)
+      {
+        nMerged++;
+        if(nMerged>1)
+        {
+          // Merge pole i with pole i-nMerged and store the result at i-nMerged
+          Bi.VRe = &(M->VRe[1+(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]);
+          Trl = RealMatrixTrace(&Bi);
+          Bi.VRe = &(M->VRe[1+(i            )*(Sqr(M->BlockSize)+1)]);
+          Trr = RealMatrixTrace(&Bi);
+          M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)] = ( fabs(Trl) * M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)] + fabs(Trr) * M->VRe[i*(Sqr(M->BlockSize)+1)] ) / (fabs(Trl) + fabs(Trr) + DBL_MIN);
+          for(j=1;j<=Sqr(M->BlockSize);j++)
+          {
+            M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1) + j ] += M->VRe[i*(Sqr(M->BlockSize)+1) + j ];
+          }
+        }
+      }
+    }
+    if(nMerged>1)
+    {
+      memcpy(&(M->VRe[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
+      M->N-=(nMerged-1);
+      M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
+    }
+  }
+  else
+  { // complex
+    for (i=0;i<M->N;i++)
+    {
+      if(M->V[i*(Sqr(M->BlockSize)+1)].Re>Emax)
+      {
+        if(nMerged>1)
+        {
+          memcpy(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          M->N-=(nMerged-1);
+          M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
+        }
+        return;
+      }
+      else if(M->V[i*(Sqr(M->BlockSize)+1)].Re>=Emin)
+      {
+        nMerged++;
+        if(nMerged>1)
+        {
+          // Merge pole i with pole i-nMerged and store the result at i-nMerged
+          Bi.V = &(M->V[1+(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]);
+          Trl = ComplexMatrixTrace(&Bi).Re;
+          Bi.V = &(M->V[1+(i            )*(Sqr(M->BlockSize)+1)]);
+          Trr = ComplexMatrixTrace(&Bi).Re;
+          M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)].Re = ( fabs(Trl) * M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)].Re + fabs(Trr) * M->V[i*(Sqr(M->BlockSize)+1)].Re ) / (fabs(Trl) + fabs(Trr) + DBL_MIN);
+          M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)].Im = ( fabs(Trl) * M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)].Im + fabs(Trr) * M->V[i*(Sqr(M->BlockSize)+1)].Im ) / (fabs(Trl) + fabs(Trr) + DBL_MIN);
+          for(j=1;j<=Sqr(M->BlockSize);j++)
+          {
+            M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1) + j ].Re += M->V[i*(Sqr(M->BlockSize)+1) + j ].Re;
+            M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1) + j ].Im += M->V[i*(Sqr(M->BlockSize)+1) + j ].Im;
+          }
+        }
+      }
+    }
+    if(nMerged>1)
+    {
+      memcpy(&(M->V[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
+      M->N-=(nMerged-1);
+      M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
+    }
+  }
+}
+
+
 
 uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *mesh, int const NE)
 {

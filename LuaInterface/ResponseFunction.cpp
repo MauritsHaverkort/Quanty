@@ -290,7 +290,7 @@ static int LuaMergePolesInIntervalResponseFunction(lua_State *L)
   ConvertResponsefunction(M, &MRed, 'l', 0, 0);
   if(MRed.Block==true)
   {
-    return luaL_error(L, "Error in MergePolesInInterval not yet implemented for Block response functions.\n");
+    MergeBlockListOfPolesInInterval((BlockListOfPoles *)MRed.data, Emin,  Emax);
   }
   else
   {
