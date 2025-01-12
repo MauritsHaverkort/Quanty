@@ -1,0 +1,9 @@
+BitMask = IndexToBitMask(15,{0,1,2})
+if((BitMask=="111000000000000")~=true) then
+	error("wrong BitMask returned\n", 1)
+end
+
+BitMask = IndexToBitMask(15,{0,1,2,14})
+if((BitMask=="111000000000001")~=true) then
+	error("wrong BitMask returned\n", 1)
+end

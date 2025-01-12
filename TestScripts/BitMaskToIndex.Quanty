@@ -1,0 +1,32 @@
+BitMask = "00000 10101 000"
+NF, Index = BitMaskToIndex(BitMask)
+if(NF~=13) then error("NF wrong in BitMaskToIndex\n", 1) end
+IndexShouldBe = {5,7,9}
+for i=1,#Index do
+	if(IndexShouldBe[i]~=Index[i]) then error("Index["..i.."] wrong in BitMaskToIndex\n", 1) end
+end
+
+BitMask = "0000010101000"
+NF, Index = BitMaskToIndex(BitMask)
+if(NF~=13) then error("NF wrong in BitMaskToIndex\n", 1) end
+IndexShouldBe = {5,7,9}
+for i=1,#Index do
+	if(IndexShouldBe[i]~=Index[i]) then error("Index["..i.."] wrong in BitMaskToIndex\n", 1) end
+end
+
+BitMask = "  0000010101000"
+NF, Index = BitMaskToIndex(BitMask)
+if(NF~=13) then error("NF wrong in BitMaskToIndex\n", 1) end
+IndexShouldBe = {5,7,9}
+for i=1,#Index do
+	if(IndexShouldBe[i]~=Index[i]) then error("Index["..i.."] wrong in BitMaskToIndex\n", 1) end
+end
+
+BitMask = "0000010101000   "
+NF, Index = BitMaskToIndex(BitMask)
+if(NF~=13) then error("NF wrong in BitMaskToIndex\n", 1) end
+IndexShouldBe = {5,7,9}
+for i=1,#Index do
+	if(IndexShouldBe[i]~=Index[i]) then error("Index["..i.."] wrong in BitMaskToIndex\n", 1) end
+end
+

@@ -69,3 +69,7 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), const uint length);
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), bool changeInput);
 void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&));
+int OperatorToHoles(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len);
+void OperatorToHolesInlineNormalOrdered(OperatorType * const O, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
+int OperatorToHolesNormalOrdered(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
+

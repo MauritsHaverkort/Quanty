@@ -53,6 +53,14 @@ sync_release_to_public:
 # ===== These functions are registered in ssp.cpp 
 #
 
+test-job-BitMaskToIndex:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/BitMaskToIndex.Quanty"
+  dependencies:
+  - build-job
+  
 test-job-BlockBandDiagonalize:
   stage: test
   script:
@@ -229,6 +237,14 @@ test-job-FindAllAtomsInsideSphere:
   dependencies:
   - build-job
 
+test-job-IndexToBitMask:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/IndexToBitMask.Quanty"
+  dependencies:
+  - build-job
+
 test-job-Inverse:
   stage: test
   script:
@@ -274,6 +290,14 @@ test-job-NewWavefunction:
   script:
   - export OMP_NUM_THREADS=8
   - ./Quanty.exe "TestScripts/NewWavefunction.Quanty"
+  dependencies:
+  - build-job
+
+test-job-OperatorToHoles:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/OperatorToHoles.Quanty"
   dependencies:
   - build-job
 

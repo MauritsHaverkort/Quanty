@@ -5401,6 +5401,86 @@ static int LuaZtoKMatrix(lua_State * L)
   return 1;
 }
 
+/*  Changes a bitmask of the form 0001001010010 to NF and a list of indeces.
+ *  NF the number of 0's and 1's in the string (all other characters are neglected
+ *  Index a list giving the positions of the 1's in the strings. Only 0's and 1's count
+ */
+static int LuaBitMaskToIndex(lua_State * L)
+{
+  int i,NF,*Index;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(len!=1) return luaL_error(L, "BitMaskToIndex caled with %d arguments. Expected a single input equal to a string.\n",len);
+  const char *Bitmask = luaL_checkstring(L, 1);
+  BitMaskToIndex(Bitmask, &NF, &Index);
+  lua_pushinteger(L, NF);
+  lua_newtable(L);
+  for(i=0;i<NF;i++)
+  {
+    if(Index[i]==-1) break;
+    lua_pushinteger(L,Index[i]);
+    lua_rawseti(L,-2,i + 1);
+  }
+  free(Index);
+  return 2;
+}
+/*  Given NF and a list of indices creates a BitMask
+ *
+ */
+static int LuaIndexToBitMask(lua_State * L)
+{
+  int i,NF,*Index;
+  char *BitMask;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(len!=2) return luaL_error(L, "IndexToBitMask caled with %d arguments. Expected two arguments, NF and a table with indices.\n",len);
+  NF = (int) luaL_checkinteger(L, 1);
+  if(NF<0) return luaL_error(L, "IndexToBitmask called with a negative value for NF\n",NF);
+  if(!lua_istable(L,2)) return luaL_error(L, "IndexToBitmask expects a table on position 2\n");
+  len = (uint32_t) lua_rawlen(L,2);
+  Index = (int*) malloc(len*sizeof(int));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L,2,i+1);
+    Index[i] = (int) luaL_checkinteger(L, -1);
+    if(Index[i]<0) return luaL_error(L, "Index at position %d smaller than zero (%d).\n",i+1,Index[i]);
+    if(Index[i]>=NF) return luaL_error(L, "Index at position %d larger or equal than NF (%d,%d).\n",i+1,NF,Index[i]);
+    lua_pop(L, 1);
+  }
+  IndexToBitMask(NF, Index, len, &BitMask);
+  lua_pushstring(L, BitMask);
+  free(BitMask);
+  free(Index);
+  return 1;
+}
+
+/*  On stack an operator and a list of indices or a Bitmask
+ *  Changes the creation to annihilation and annihilation to creation operators for those listed in the index list
+ */
+static int LuaOperatorToHoles(lua_State *L)
+{
+  OperatorType *op;
+  int i,iIndex;
+  uint16_t *Index;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(len!=2) return luaL_error(L, "OperatorToHoles caled with %d arguments. Expected two arguments, An operator and a table with indices.\n",len);
+  OperatorType *O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  if(!lua_istable(L,2)) return luaL_error(L, "OperatorToHoles expects a table on position 2\n");
+  len = (uint32_t) lua_rawlen(L,2);
+  Index = (uint16_t*) malloc(len*sizeof(uint16_t));
+  for(i=0;i<len;i++)
+  {
+    lua_rawgeti(L,2,i+1);
+    iIndex = (int) luaL_checkinteger(L, -1);
+    if(iIndex<0) return luaL_error(L, "Index at position %d smaller than zero (%d).\n",i+1,iIndex);
+    if(iIndex>=O->NFermion) return luaL_error(L, "Index at position %d larger or equal than NF (%d,%d).\n",i+1,O->NFermion,iIndex);
+    Index[i]=(uint16_t)iIndex;
+    lua_pop(L, 1);
+  }
+  op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  OperatorToHolesNormalOrdered(O, op, Index, len, &QDetNotOrderedFcFaBcBa);
+  luaL_setmetatable(L, "Operator_Type");
+  free(Index);
+  return 1;
+}
 
 static const struct luaL_Reg global_functions[] = {
   {"BlockBandDiagonalize", LuaBlockBandDiagonalize},
@@ -5448,6 +5528,7 @@ static const struct luaL_Reg global_functions[] = {
   {"NewWavefunction", LuaNewWaveFunction},
 	{"NonRelToRelOrbitals",LuaNonRelToRelOrbitals},
   {"OperatorToMatrix", LuaOperatorToMatrix},
+  {"OperatorToHoles", LuaOperatorToHoles},
   {"OperatorSetOnsiteEnergy", LuaOperatorSetOnsiteEnergy},
 	{"OperatorSetTrace", LuaOperatorSetOnsiteEnergy},
 	{"OrbitalRotationMatrix",LuaOrbitalRotationMatrix},
@@ -5480,6 +5561,8 @@ static const struct luaL_Reg global_functions[] = {
 	{"YtoKMatrix",LuaYtoKMatrix},
   {"YtoZMatrix",LuaYtoZMatrix},
   {"ZtoKMatrix",LuaZtoKMatrix},
+  {"IndexToBitMask",LuaIndexToBitMask},
+  {"BitMaskToIndex",LuaBitMaskToIndex},
   {NULL, NULL}
 };
 

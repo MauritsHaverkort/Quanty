@@ -6682,3 +6682,212 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 {
 	extractPartialOperator(O, OPartial, indices, criterion, false);
 }
+
+
+void OperatorToHolesInline(OperatorType * const O, uint16_t const * const Index, uint32_t const len)
+{
+  
+  int i, j, k, l, Nold;
+  /* wipe out all KeyLists */
+  for (j = 1; j <= O->MaxLength; j++)
+  {
+    for (i = 0; i < ((uint32_t) 1 << (O->l[j].NBitsKey)); i++)
+    {
+      O->l[j].KeyList[i] = 0;
+    }
+  }
+  for (j = 1; j <= O->MaxLength; j++)
+  {
+    Nold = O->l[j].N;
+    if (Nold != 0)
+    {
+      O->l[j].N = 0;
+      if (O->l[j].QComplex)
+      {                         /* Complex */
+        for (i = 0; i < Nold; i++)
+        {
+          O->l[j].Next[i] = 0;
+          for(k=0;k<j;k++)
+          {
+            for(l=0;l<len;l++)
+            {
+              if((O->l[j].o[j*i+k] & NotCrAnMask)==Index[l])
+              {
+                O->l[j].o[j*i+k] = O->l[j].o[j*i+k] ^ CrAnMask;
+                break;
+              }
+            }
+          }
+          if (ComplexOperatorAddLader(O, &(O->l[j].o[j * i]), j, O->l[j].V[i].Re, O->l[j].V[i].Im))
+          {
+            printf("ComplexOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
+            AllocFailed();
+          }
+        }
+        if ((O->l[j].V = (Complex16*)realloc(O->l[j].V, O->l[j].N * sizeof(Complex16))) == NULL)
+          if (O->l[j].N != 0)
+          {
+            printf("realloc failed for O->l[j=%i].V in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+            AllocFailed();
+          }
+      }
+      else
+      {                         /* real */
+        for (i = 0; i < Nold; i++)
+        {
+          O->l[j].Next[i] = 0;
+          for(k=0;k<j;k++)
+          {
+            for(l=0;l<len;l++)
+            {
+              if((O->l[j].o[j*i+k] & NotCrAnMask)==Index[l])
+              {
+                O->l[j].o[j*i+k] = O->l[j].o[j*i+k] ^ CrAnMask;
+                break;
+              }
+            }
+          }
+          if (RealOperatorAddLader(O, &(O->l[j].o[j * i]), j, O->l[j].VRe[i]))
+          {
+            printf("RealOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
+            AllocFailed();
+          }
+        }
+        if ((O->l[j].VRe = (double*)realloc(O->l[j].VRe, O->l[j].N * sizeof(double))) == NULL)
+          if (O->l[j].N != 0)
+          {
+            printf("realloc failed for O->l[j=%i].VRe in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+            AllocFailed();
+          }
+      }
+      if ((O->l[j].Next = (uint32_t*)realloc(O->l[j].Next, O->l[j].N * sizeof(uint32_t))) == NULL)
+        if (O->l[j].N != 0)
+        {
+          printf("realloc failed for O->l[j=%i].Next in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+          AllocFailed();
+        }
+      if ((O->l[j].o = (uint16_t*)realloc(O->l[j].o, O->l[j].N * j * sizeof(uint16_t))) == NULL)
+        if (O->l[j].N != 0)
+        {
+          printf("realloc failed for O->l[j=%i].o in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+          AllocFailed();
+        }
+      O->l[j].NAloc = O->l[j].N;
+      if (O->l[j].N == 0) SetQComplexOperator(O);
+    }
+  }
+}
+
+
+int OperatorToHoles(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len)
+{
+  if (OperatorCopy(Oout, *Oin)!=0) return 1;
+  OperatorToHolesInline(Oout, Index, len);
+  return 0;
+}
+
+
+
+
+
+void OperatorToHolesInlineNormalOrdered(OperatorType * const O, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+{
+  
+  int i, j, k, l, Nold;
+  /* wipe out all KeyLists */
+  for (j = 1; j <= O->MaxLength; j++)
+  {
+    for (i = 0; i < ((uint32_t) 1 << (O->l[j].NBitsKey)); i++)
+    {
+      O->l[j].KeyList[i] = 0;
+    }
+  }
+  for (j = 1; j <= O->MaxLength; j++)
+  {
+    Nold = O->l[j].N;
+    if (Nold != 0)
+    {
+      O->l[j].N = 0;
+      if (O->l[j].QComplex)
+      {                         /* Complex */
+        for (i = 0; i < Nold; i++)
+        {
+          O->l[j].Next[i] = 0;
+          for(k=0;k<j;k++)
+          {
+            for(l=0;l<len;l++)
+            {
+              if((O->l[j].o[j*i+k] & NotCrAnMask)==Index[l])
+              {
+                O->l[j].o[j*i+k] = O->l[j].o[j*i+k] ^ CrAnMask;
+                break;
+              }
+            }
+          }
+          if (ComplexOperatorAddLaderNormalOrder(O, &(O->l[j].o[j * i]), j, O->l[j].V[i].Re, O->l[j].V[i].Im,QDetNotOrdered))
+          {
+            printf("ComplexOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
+            AllocFailed();
+          }
+        }
+        if ((O->l[j].V = (Complex16*)realloc(O->l[j].V, O->l[j].N * sizeof(Complex16))) == NULL)
+          if (O->l[j].N != 0)
+          {
+            printf("realloc failed for O->l[j=%i].V in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+            AllocFailed();
+          }
+      }
+      else
+      {                         /* real */
+        for (i = 0; i < Nold; i++)
+        {
+          O->l[j].Next[i] = 0;
+          for(k=0;k<j;k++)
+          {
+            for(l=0;l<len;l++)
+            {
+              if((O->l[j].o[j*i+k] & NotCrAnMask)==Index[l])
+              {
+                O->l[j].o[j*i+k] = O->l[j].o[j*i+k] ^ CrAnMask;
+                break;
+              }
+            }
+          }
+          if (RealOperatorAddLaderNormalOrder(O, &(O->l[j].o[j * i]), j, O->l[j].VRe[i],QDetNotOrdered))
+          {
+            printf("RealOperatorAddLader failed in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n");
+            AllocFailed();
+          }
+        }
+        if ((O->l[j].VRe = (double*)realloc(O->l[j].VRe, O->l[j].N * sizeof(double))) == NULL)
+          if (O->l[j].N != 0)
+          {
+            printf("realloc failed for O->l[j=%i].VRe in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+            AllocFailed();
+          }
+      }
+      if ((O->l[j].Next = (uint32_t*)realloc(O->l[j].Next, O->l[j].N * sizeof(uint32_t))) == NULL)
+        if (O->l[j].N != 0)
+        {
+          printf("realloc failed for O->l[j=%i].Next in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+          AllocFailed();
+        }
+      if ((O->l[j].o = (uint16_t*)realloc(O->l[j].o, O->l[j].N * j * sizeof(uint16_t))) == NULL)
+        if (O->l[j].N != 0)
+        {
+          printf("realloc failed for O->l[j=%i].o in OperatorRemoveSmallValues\n This should not happen\n No clue how to recover\n",j);
+          AllocFailed();
+        }
+      O->l[j].NAloc = O->l[j].N;
+      if (O->l[j].N == 0) SetQComplexOperator(O);
+    }
+  }
+}
+
+
+int OperatorToHolesNormalOrdered(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t))
+{
+  if (OperatorCopy(Oout, *Oin)!=0) return 1;
+  OperatorToHolesInlineNormalOrdered(Oout, Index, len, QDetNotOrdered);
+  return 0;
+}
