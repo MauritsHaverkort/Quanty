@@ -244,7 +244,6 @@ static int LuaReducePolesResponseFunction(lua_State *L)
 
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len>3) return luaL_error(L, "Error in ReducePoles: %d argument(s), 2 or 3 expected (response function, desired number of poles or ResponseFunction, desiered number of poles for val, desired number of poles for con).\n", len);
-
   M = luaL_checkResponsefunction(L,1);
   if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
   Nred = (int)lua_tointeger(L, 2);
@@ -254,13 +253,27 @@ static int LuaReducePolesResponseFunction(lua_State *L)
     Nredcon = (int)lua_tointeger(L, 3);
   }
   ConvertResponsefunction(M, &MRed, 'l', 0, 0);
-  if(len==2)
+  if(M->Block==true)
   {
-    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred);
+    if(len==2)
+    {
+      ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred);
+    }
+    else
+    {
+      ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred, Nredcon);
+    }
   }
   else
   {
-    ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred, Nredcon);
+    if(len==2)
+    {
+      ReduceListOfPolesNumberFermi((ListOfPoles*)(MRed.data), Nred, ((ListOfPoles*)(MRed.data))->mu );
+    }
+    else
+    {
+      ReduceListOfPolesNumberFermi((ListOfPoles*)(MRed.data), Nred, Nredcon, ((ListOfPoles*)(MRed.data))->mu );
+    }
   }
   LuaPush_ResponseFunction(L, &MRed);
   FreeResponsefunction(M);

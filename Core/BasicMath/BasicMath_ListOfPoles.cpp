@@ -634,6 +634,7 @@ void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef)
 }
 
 
+
 /*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight
  *  This algorithm combines the pole with the smallest weight with its nearest two neighbors
  *  and repeats this untill the number of nonzero poles is N
@@ -731,6 +732,17 @@ void ReduceListOfPolesNumber(ListOfPoles * M, uint32_t N)
   }
 }
 
+void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t Nval, uint32_t Ncon, double Ef)
+{
+  ListOfPoles Mval, Mcon;
+  ListOfPolesCopyVal(M, Mval, Ef, DBL_MIN);
+  ListOfPolesCopyCon(M, Mcon, Ef, DBL_MIN);
+  FreeListOfPoles(M);
+  *M = Mval;
+  ReduceListOfPolesNumber(&Mval,Nval);
+  ReduceListOfPolesNumber(&Mcon,Ncon);
+  AddListOfPoles(M, Mcon);
+}
 
 /*  Create a new set of poles, which has lenght N, by removing the M->N-N poles such that for each reduction weight * (delta E neighbor) is minimum
  *  This algorithm combines the pole with the smallest moment to one neighbor with its nearest two neighbors
