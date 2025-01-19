@@ -44,7 +44,7 @@ sync_release_to_public:
   - git pull origin master
   - git remote remove public || true
   - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
-  - git push public master:main
+  - git push --force public master:main
   only:
     - master
 
