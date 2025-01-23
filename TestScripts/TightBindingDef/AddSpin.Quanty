@@ -1,0 +1,64 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - AddSpin                       --")
+print("--------------------------------------------------------")
+
+
+es = 1
+ep = 5
+sssigma =-1
+ppsigma = 2
+spsigma = 1.5
+
+HTB = TightBinding.New()
+HTB.Name = "Square lattice with topological states"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0}, {{"s", {"0"}},
+															{"p", {"x","y","z"}}} } }
+HTB.Hopping = { {"A.s","A.s",{ 0, 0, 0},{{es}} } ,
+								{"A.p","A.p",{ 0, 0, 0},{{ep,0,0},{0,ep,0},{0,0,ep}} } ,
+
+								{"A.s","A.s",{ 1, 0, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{-1, 0, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0, 1, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0,-1, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0, 0, 1}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0, 0,-1}, {{sssigma}} } ,
+								
+								{"A.p","A.p",{ 1, 0, 0}, {{ppsigma,0,0},{0,ppsigma,0},{0,0,ppsigma}} } ,
+								{"A.p","A.p",{-1, 0, 0}, {{ppsigma,0,0},{0,ppsigma,0},{0,0,ppsigma}} } ,
+								{"A.p","A.p",{ 0, 1, 0}, {{ppsigma,0,0},{0,ppsigma,0},{0,0,ppsigma}} } ,
+								{"A.p","A.p",{ 0,-1, 0}, {{ppsigma,0,0},{0,ppsigma,0},{0,0,ppsigma}} } ,
+								{"A.p","A.p",{ 0, 0, 1}, {{ppsigma,0,0},{0,ppsigma,0},{0,0,ppsigma}} } ,
+								{"A.p","A.p",{ 0, 0,-1}, {{ppsigma,0,0},{0,ppsigma,0},{0,0,ppsigma}} } ,
+								
+								{"A.s","A.p",{ 1, 0, 0}, {{-spsigma,-spsigma,-spsigma}} } ,
+								{"A.s","A.p",{-1, 0, 0}, {{ spsigma, spsigma, spsigma}} } ,
+								{"A.s","A.p",{ 0, 1, 0}, {{-spsigma,-spsigma,-spsigma}} } ,
+								{"A.s","A.p",{ 0,-1, 0}, {{ spsigma, spsigma, spsigma}} } ,
+								{"A.s","A.p",{ 0, 0, 1}, {{-spsigma,-spsigma,-spsigma}} } ,
+								{"A.s","A.p",{ 0, 0,-1}, {{ spsigma, spsigma, spsigma}} } ,
+								
+								{"A.p","A.s",{ 1, 0, 0}, {{ spsigma},{ spsigma},{ spsigma}} } ,
+								{"A.p","A.s",{-1, 0, 0}, {{-spsigma},{-spsigma},{-spsigma}} } ,
+								{"A.p","A.s",{ 0, 1, 0}, {{ spsigma},{ spsigma},{ spsigma}} } ,
+								{"A.p","A.s",{ 0,-1, 0}, {{-spsigma},{-spsigma},{-spsigma}} } ,
+								{"A.p","A.s",{ 0, 0, 1}, {{ spsigma},{ spsigma},{ spsigma}} } ,
+								{"A.p","A.s",{ 0, 0,-1}, {{-spsigma},{-spsigma},{-spsigma}} } }
+
+HTBSpin = TightBinding.AddSpin(HTB)
+if((Matrix.AddSpin(HTB(1,2,3))-HTBSpin(1,2,3)==Matrix.ToTable(Matrix.Zero(8)))==false) then
+	error("Tight binding AddSpin\n", 1)
+end
+
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+

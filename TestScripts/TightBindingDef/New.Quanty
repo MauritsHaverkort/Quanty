@@ -1,0 +1,55 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - New                           --")
+print("--------------------------------------------------------")
+
+--  TightBinding objects in Quanty are created with
+HTB = TightBinding.New()
+--  This yields an empty tight bindign definition we now can use the
+--  of a tight bidning object to fill it
+
+print(HTB)
+
+HTB=nil
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+
+-- For a real system we can set the parameters if the tight binding model by setting properties of the object
+
+-- set parameters
+dAB = 0.2
+tnn = 1.1
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "dichalcogenide tight binding"
+HTB.Cell = {{sqrt(3),0,0},
+						{sqrt(3/4),3/2,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"p", {"0"}}}},
+								{"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB.Hopping = {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+ 
+print("Tight-binding object:")
+print(HTB)
+
+
+HTB=nil
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+

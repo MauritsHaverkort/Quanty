@@ -1493,6 +1493,44 @@ uint32_t MatrixCopy(MatrixType * const M, MatrixType const A)
   return 0;
 }
 
+uint32_t MatrixCopyAddSpin(MatrixType * const M, MatrixType const A)
+{
+ uint32_t i, j;
+ M->Ni = 2*A.Ni;
+ M->Nj = 2*A.Nj;
+ M->QComplex = A.QComplex;
+ if (InitMatrix(M)) return 1;
+ strcpy(M->Name, A.Name);
+ if (M->QComplex)
+ {
+   for (i = 0; i < A.Ni; i++)
+   {
+     for (j = 0; j < A.Nj; j++)
+     {
+       M->VRe[2*i  ][2*j  ] = A.VRe[i][j];
+       M->VIm[2*i  ][2*j  ] = A.VIm[i][j];
+       M->VRe[2*i+1][2*j+1] = A.VRe[i][j];
+       M->VIm[2*i+1][2*j+1] = A.VIm[i][j];
+     }
+   }
+ }
+ else
+ {
+   for (i = 0; i < A.Ni; i++)
+   {
+     for (j = 0; j < A.Nj; j++)
+     {
+       M->VRe[2*i  ][2*j  ] = A.VRe[i][j];
+       M->VRe[2*i+1][2*j+1] = A.VRe[i][j];
+     }
+   }
+ }
+ return 0;
+}
+
+
+
+
 /*
  * M<-A
  */

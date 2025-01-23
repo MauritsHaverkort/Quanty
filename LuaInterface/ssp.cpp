@@ -5621,6 +5621,8 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
+  luaL_newlib(L, TightBinding_func);
+  lua_setglobal(L, "TightBinding");
 
   luaL_newmetatable(L, "ResponseFunction_Type");
   luaL_setfuncs(L, ResponseFunction_meta, 0);

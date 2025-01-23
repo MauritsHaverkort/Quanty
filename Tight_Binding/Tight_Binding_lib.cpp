@@ -71,6 +71,26 @@ int FreeTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+int InitTigthBindingDef(TightBindingDef *A)
+{
+  A->Name[0]='\0';
+  A->Cell.rUnitCell[0][0] = 0; A->Cell.rUnitCell[0][1] = 0; A->Cell.rUnitCell[0][2] = 0;
+  A->Cell.rUnitCell[1][0] = 0; A->Cell.rUnitCell[1][1] = 0; A->Cell.rUnitCell[1][2] = 0;
+  A->Cell.rUnitCell[2][0] = 0; A->Cell.rUnitCell[2][1] = 0; A->Cell.rUnitCell[2][2] = 0;
+  A->Cell.gUnitCell[0][0] = 0; A->Cell.gUnitCell[0][1] = 0; A->Cell.gUnitCell[0][2] = 0;
+  A->Cell.gUnitCell[1][0] = 0; A->Cell.gUnitCell[1][1] = 0; A->Cell.gUnitCell[1][2] = 0;
+  A->Cell.gUnitCell[2][0] = 0; A->Cell.gUnitCell[2][1] = 0; A->Cell.gUnitCell[2][2] = 0;
+  A->Cell.NAtoms=0;
+  A->Cell.Units=1;
+  A->nH=0;
+  A->H=NULL;
+  A->NFermion=0;
+  A->FermionIndex=NULL;
+  return 0;
+}
+
+
+
 
 // B <- A
 int CopyTightBindingDef(TightBindingDef const *const A, TightBindingDef *const B)
@@ -108,7 +128,7 @@ int ChopTightBindingDefSize(TightBindingDef *const A,  double const epsilon)
     {
       for(j=0;j<A->H[i].Hop.Ni * A->H[i].Hop.Nj;j++)
       {
-        if( Sqr( A->H[i].Hop.VRe[0][j] ) + Sqr( A->H[i].Hop.VRe[0][j] ) < Sqrepsilon)
+        if( Sqr( A->H[i].Hop.VRe[0][j] ) + Sqr( A->H[i].Hop.VIm[0][j] ) < Sqrepsilon)
         {
           A->H[i].Hop.VRe[0][j] = 0;
           A->H[i].Hop.VIm[0][j] = 0;
@@ -178,9 +198,41 @@ int ChopTightBindingDefDistance(TightBindingDef *const A,  double const distance
   return 0;
 }
 
+/*   In (A) is a pointer to an allocated and defined TightBindingDefinition
+ *   Out (B) is a pointer to an allocated TightBindingDefinition
+ *   Out becomes a TightBindingDefinition with
+ *      the same unit cell as In
+ *      the same atom positions as In
+ *      the same shells as In
+ *      double the number of orbitals as In with the aditional label "_dn", "_up"
+ *                                                   alternating in order
+ *      The Hopping between dn and up orbitals is zero
+ *      the Hopping between dn orbitals for Out is the same as the Hopping in In
+ *      the Hopping between up orbitals for Out is the same as the Hopping in In
+ */
+int CopyTightBindingDefAddSpin(TightBindingDef const *const A, TightBindingDef *const B)
+{
+  uint32_t i;
+  strncpy(B->Name, A->Name, sizeof(B->Name));
+  B->Cell = A->Cell;
+  B->Cell.Atom = (AtomType*)malloc(A->Cell.NAtoms*sizeof(AtomType));
+  for (i=0;i<B->Cell.NAtoms;i++)
+  {
+    CopyAtomTypeAddSpin(&(A->Cell.Atom[i]),&(B->Cell.Atom[i]));
+  }
+  B->nH = A->nH;
+  B->H = (TightBindingDefHopping*)malloc(B->nH * sizeof(TightBindingDefHopping));
+  for(i=0;i<A->nH;i++)
+  {
+    B->H[i] = A->H[i];
+    MatrixCopyAddSpin(&(B->H[i].Hop),A->H[i].Hop);
+  }
+  B->NFermion = A->NFermion;
+  SetNFermionIndexTightBindingDef(B);
+  return 0;
+}
 
-
-
+// B <- A
 int CopyAtomType(const AtomType *const A, AtomType *B)
 {
   int ishell,iorb;
@@ -203,6 +255,36 @@ int CopyAtomType(const AtomType *const A, AtomType *B)
     {
       B->OrbitalName[ishell][iorb]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1)*sizeof(char));
       strcpy(B->OrbitalName[ishell][iorb], A->OrbitalName[ishell][iorb]);
+    }
+  }
+  return 0;
+}
+
+// double all orbitals
+int CopyAtomTypeAddSpin(const AtomType *const A, AtomType *B)
+{
+  int ishell,iorb;
+  strcpy(B->Name, A->Name);
+  B->AtomNumber=A->AtomNumber;
+  B->Position[0]=A->Position[0];
+  B->Position[1]=A->Position[1];
+  B->Position[2]=A->Position[2];
+  B->Nshell=A->Nshell;
+  B->ShellName=(char**)malloc(A->Nshell*sizeof(char*));
+  B->shelldegeneracy=(int*)malloc(A->Nshell*sizeof(int));
+  B->OrbitalName=(char***)malloc(A->Nshell*sizeof(char**));
+  for(ishell=0;ishell<B->Nshell;ishell++)
+  {
+    B->ShellName[ishell]=(char*)malloc((strlen(A->ShellName[ishell])+1)*sizeof(char));
+    strcpy(B->ShellName[ishell], A->ShellName[ishell]);
+    B->shelldegeneracy[ishell]=2*A->shelldegeneracy[ishell];
+    B->OrbitalName[ishell]=(char**)malloc(B->shelldegeneracy[ishell]*sizeof(char*));
+    for(iorb=0;iorb<A->shelldegeneracy[ishell];iorb++)
+    {
+      B->OrbitalName[ishell][2*iorb  ]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1+3)*sizeof(char));
+      B->OrbitalName[ishell][2*iorb+1]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1+3)*sizeof(char));
+      strcpy( stpcpy(B->OrbitalName[ishell][2*iorb  ], A->OrbitalName[ishell][iorb]), "_dn");
+      strcpy( stpcpy(B->OrbitalName[ishell][2*iorb+1], A->OrbitalName[ishell][iorb]), "_up");
     }
   }
   return 0;
@@ -443,7 +525,6 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   SetNFermionIndexTightBindingDef(A);
   return 0;
 }
-
 
 /*  given a Tight binding definition and a k vector creates a matrix
  *  representing the Hamiltonian.

@@ -8,13 +8,8 @@ static int LuaNewTightBinding(lua_State * L)
   if(len==0)
   {
     TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    InitTigthBindingDef(TB);
     luaL_setmetatable(L, "TightBinding_Type");
-    TB->nH=0;
-    TB->NFermion=0;
-    TB->Cell.NAtoms=0;
-    TB->Cell.Units=1;
-    TB->FermionIndex=NULL;
-    TB->Name[0]='\0';
   }
   else
   {
@@ -22,6 +17,69 @@ static int LuaNewTightBinding(lua_State * L)
   }
   return 1;
 }
+
+static int LuaTightBindingCopy(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, -1, "TightBinding_Type");
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  return 1;
+}
+
+
+static int LuaTightBindingChop(lua_State * L)
+{
+  double epsilon=10*DBL_EPSILON;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  struct
+  {
+    bool Distance;
+    bool Deflate;
+  } Options;
+  LuaOptionsType LuaChopOptions[]={
+    {"Distance" ,        "bool",                      &(Options.Distance)},
+    {"Deflate"  ,        "bool",                      &(Options.Deflate)},
+    {NULL, NULL, NULL}};
+  Options.Distance=false;
+  Options.Deflate=true;
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, len, LuaChopOptions);
+    len=len-1;
+  }
+  if(len!=1)
+  {
+    epsilon=luaL_checknumber(L,len);
+    len=len-1;
+  }
+  TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  TightBindingDef *TBnew;
+  TBnew = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBnew);
+  if (Options.Distance)
+  {
+    ChopTightBindingDefDistance(TBnew, epsilon);
+  }
+  else
+  {
+    ChopTightBindingDefSize(TBnew, epsilon);
+  }
+  luaL_setmetatable(L, "TightBinding_Type");
+  return 1;
+}
+
+static int LuaTightBindingAddSpin(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, -1, "TightBinding_Type");
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDefAddSpin(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  return 1;
+}
+
 
 static int LuaFileReadStuttgartCTRL(lua_State * L)
 {
@@ -2214,6 +2272,102 @@ static int LuaTightBindingToString(lua_State * L)
   return 1;
 }
 
+
+static int LuaTightBindingCall(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  double k[3] = {0.0,0.0,0.0};
+  bool AsOperator=false;
+  bool ConstantPhaseInUnitCell=false;
+  bool AddSpin=false;
+  LuaOptionsType LuaOptions[]={
+    {"AsOperator","bool"             ,&AsOperator},
+    {"ConstantPhaseInUnitCell","bool",&ConstantPhaseInUnitCell},
+    {"AddSpin","bool",&AddSpin},
+    {NULL, NULL, NULL}};
+  if(len!=0)
+  { // check for options if options found reduce len by one
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaOptions);
+      len--;
+    }
+  }
+  if((len<2)||(len>4)) return luaL_error(L, "Error TightBindingObject(...) should be called with a k-vector of length 1,2, or 3 and possible options\n");
+  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  if((len==2)&&(lua_type(L,2)==LUA_TTABLE))
+  {
+    len = (int)lua_objlen(L, 2);
+    if((len<1)||(len>3)) luaL_error(L, "Error TightBindingObject(...) should be called with a k-vector of length 1,2, or 3 and possible options\n");
+    for(int i=0;i<len;i++)
+    {
+      lua_rawgeti(L, 2, i+1);
+      k[i]=luaL_checknumber(L, -1);
+      lua_pop(L, 1);
+    }
+  }
+  else
+  {
+    k[0]=luaL_checknumber(L, 2);
+    if(len>2) k[1]=luaL_checknumber(L, 3);
+    if(len>3) k[2]=luaL_checknumber(L, 4);
+  }
+  if((AsOperator==false)&&(ConstantPhaseInUnitCell==false)&&(AddSpin==false))
+  {
+    MatrixType H;
+    CreateHamiltonianFromTightBindingDef(*a, k, &H);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    return 1;
+  }
+  if((AsOperator==false )&&(ConstantPhaseInUnitCell==false)&&(AddSpin==true ))
+  {
+    MatrixType H,Hp;
+    CreateHamiltonianFromTightBindingDef(*a, k, &Hp);
+    MatrixCopyAddSpin(&H, Hp);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    FreeMatrix(&Hp);
+    return 1;
+  }
+  if((AsOperator==false )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==false))
+  {
+    MatrixType H;
+    CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*a, k, &H);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    return 1;
+  }
+  if((AsOperator==false )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==true ))
+  {
+    MatrixType H,Hp;
+    CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*a, k, &Hp);
+    MatrixCopyAddSpin(&H, Hp);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    FreeMatrix(&Hp);
+    return 1;
+
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==false)&&(AddSpin==false))
+  {
+    
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==false)&&(AddSpin==true ))
+  {
+
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==false))
+  {
+    
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==true ))
+  {
+
+  }
+  return luaL_error(L, "Error TightBindingObject(...) incompattible set of options");
+}
+
 static int LuaTightBindingDestroy(lua_State * L)
 {
   TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
@@ -2234,13 +2388,21 @@ static int LuaDresdenFPLODestroy(lua_State * L)
   return 0;
 }
 
-
+static const struct luaL_Reg TightBinding_func[] = {
+  {"New",     LuaNewTightBinding},
+  {"Chop",    LuaTightBindingChop},
+  {"Copy",    LuaTightBindingCopy},
+  {"AddSpin", LuaTightBindingAddSpin},
+  {NULL, NULL}
+};
+  
 
 static const struct luaL_Reg TightBinding_meta[] = {
-  {"__index", LuaTightBindingIndex},
+  {"__index",    LuaTightBindingIndex},
   {"__newindex", LuaTightBindingNewIndex},
   {"__tostring", LuaTightBindingToString},
-  {"__gc", LuaTightBindingDestroy},
+  {"__call",     LuaTightBindingCall},
+  {"__gc",       LuaTightBindingDestroy},
   {NULL, NULL}
 };
 
