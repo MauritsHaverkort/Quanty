@@ -758,17 +758,21 @@ print("-------------------------------------------------------------------------
 print("--                     Operator with NTri                              --")
 print("-------------------------------------------------------------------------")
 
-blockTriMat = BlockBandDiagonalize(H0, psi1, {{"SingularValue", 1E-6}, {"NTri", 3}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
+blockTriMat = BlockBandDiagonalize(H0, psi1, {{"SingularValue", 1E-6}, {"NTri", 2}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
 
-if (blockTriMat ~= ResOpp1NTri) then error("Result for operator not equal to the expected value\n", 1) end
+if (blockTriMat ~= ResOpp1NTri) then
+	print(blockTriMat)
+	print(ResOpp1NTri)
+	error("Result for operator not equal to the expected value\n", 1)
+end
 for i, omega in pairs(omegaList) do
     if Chop(blockTriMat(omega, 0.1)[1][1] - ResOpp1NTri(omega, 0.1)[1][1], 1E-12) ~= 0 then
         error("Result for operator not equal to the expected value\n", 1)
     end
 end
 
-blockTriMat = BlockBandDiagonalize(H0, psi2, {{"SingularValue", 1E-6}, {"NTri", 3}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
+blockTriMat = BlockBandDiagonalize(H0, psi2, {{"SingularValue", 1E-6}, {"NTri", 2}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
 
 if (blockTriMat ~= ResOpp2NTri) then error("Result for operator not equal to the expected value\n", 1) end
@@ -778,7 +782,7 @@ for i, omega in pairs(omegaList) do
     end
 end
 
-blockTriMat = BlockBandDiagonalize(H0, psiList, {{"SingularValue", 1E-6}, {"NTri", 3}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
+blockTriMat = BlockBandDiagonalize(H0, psiList, {{"SingularValue", 1E-6}, {"NTri", 2}, {"NOrtho", 1000}, {"ReOrthogonalize", true}})
 setmetatable(blockTriMat, ResponseFunctionMeta)
 for i, omega in pairs(omegaList) do
     if Chop(blockTriMat(omega, 0.1) - ResOppBlockNTri(omega, 0.1), 1E-12) ~= Matrix.ToTable(Matrix.Zero(2)) then
