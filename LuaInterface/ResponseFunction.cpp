@@ -2314,7 +2314,7 @@ static int LuaResponseFunctionToCompactMatrix(lua_State *L)
     bool   Deflate;
     double SingularValue;
   } Options;
-  Options.Deflate = false;
+  Options.Deflate = true;
   Options.SingularValue = DBL_MIN;
   LuaOptionsType LuaOptions[]={
     {"Deflate",      "bool",  &(Options.Deflate)},
@@ -2325,10 +2325,10 @@ static int LuaResponseFunctionToCompactMatrix(lua_State *L)
     LuaCheckOptions(L, -1, LuaOptions);
   }
   B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-  luaL_setmetatable(L, "Matrix_Type");
-  B->OnLuaStack=true;
   A = luaL_checkResponsefunction(L,1);
   ResponseFunctionToCompactMatrix(A, B, Options.Deflate, Options.SingularValue);
+  luaL_setmetatable(L, "Matrix_Type");
+  B->OnLuaStack=true;
   return 1;
 }
 
