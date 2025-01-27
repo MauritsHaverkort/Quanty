@@ -127,29 +127,6 @@ for _, H in ipairs({HOpp,HOppM}) do
 end
 
 
-
-
-
-
-
-os.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 -- Define some model Hamiltonian: impurity coupled to a 1D chain
 NBath = 5
 NF = 2 + 2*NBath
@@ -1103,6 +1080,9 @@ end
 
 
 
+collectgarbage()
+collectgarbage()
+collectgarbage()
 collectgarbage()
 
 print("--------------------------------------------------------")
