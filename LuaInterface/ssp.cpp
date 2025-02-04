@@ -3822,7 +3822,7 @@ static int LuaGeneralEigensystem(lua_State *L)
   Ssqr=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
   luaL_setmetatable(L, "CompactMatrix_Type");
   val = malloc((H->Ni)*sizeof(Complex16));
-  CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
+  //CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
   LuaPushArray_Complex16(L, val, H->Ni);
   free(val);
 }
