@@ -3797,6 +3797,39 @@ static int LuaEigensystem(lua_State * L)
   }
 }
 
+static int LuaGeneralEigensystem(lua_State *L)
+{
+  CompactMatrixType *H,*S,*fun,*Ssqr;
+  Complex16 *val;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(!(len==2))
+  {
+    return luaL_error(L, "Error GeneralEigensystem called with %d arguments, 2 expected\n",len);
+  }
+  if(!(H->Ni==H->Nj))
+  {
+    return luaL_error(L, "Error Matrix M in GeneralEigensystem is not a square matrix\n",len);
+  }
+  if(!(S->Ni==S->Nj))
+  {
+    return luaL_error(L, "Error Overlap matrix S in GeneralEigensystem is not a square matrix\n",len);
+  }
+  if(!(S->Ni==H->Ni))
+  {
+    return luaL_error(L, "Error GeneralEigensystem is called with matrix M and S of different dimensions\n",len);
+  }
+
+  H=luaL_checkCompactMatrix(L, 1);
+  S=luaL_checkCompactMatrix(L, 2);
+  fun=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "CompactMatrix_Type");
+  Ssqr=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "CompactMatrix_Type");
+  val = (Complex16*)malloc((H->Ni)*sizeof(Complex16));
+  //CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
+  LuaPushArray_Complex16(L, val, H->Ni);
+  free(val);
+}
 
 /*  Given an impurity Green's function, a Bath represented by a hybridization function and a set of transition operators acting on the impurity calculate
  *  < psi_i | T G T | psi_i >
@@ -5505,6 +5538,7 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
 	{"DeterminantString",LuaDeterminantString},
   {"Eigensystem", LuaEigensystem},
+  {"GeneralEigensystem", LuaGeneralEigensystem},
 //  {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"Expand",LuaWavefunctionExpand},
   {"ExpandToBasis",LuaWaveFunctionToDeterminantBasis},
