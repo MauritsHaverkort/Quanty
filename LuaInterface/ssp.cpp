@@ -3800,8 +3800,8 @@ static int LuaEigensystem(lua_State * L)
 static int LuaGeneralEigensystem(lua_State *L)
 {
   CompactMatrixType *H,*S,*fun,*Ssqr;
-  complex16 *val;
-  len = (uint32_t)lua_gettop(L);
+  Complex16 *val;
+  unit32_t len = (uint32_t)lua_gettop(L);
   if(!(len==2))
   {
     return luaL_error(L, "Error GeneralEigensystem called with %d arguments, 2 expected\n",len);
