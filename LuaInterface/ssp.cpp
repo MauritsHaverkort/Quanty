@@ -3801,7 +3801,7 @@ static int LuaGeneralEigensystem(lua_State *L)
 {
   CompactMatrixType *H,*S,*fun,*Ssqr;
   Complex16 *val;
-  unit32_t len = (uint32_t)lua_gettop(L);
+  uint32_t len = (uint32_t)lua_gettop(L);
   if(!(len==2))
   {
     return luaL_error(L, "Error GeneralEigensystem called with %d arguments, 2 expected\n",len);
@@ -3825,7 +3825,7 @@ static int LuaGeneralEigensystem(lua_State *L)
   luaL_setmetatable(L, "CompactMatrix_Type");
   Ssqr=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
   luaL_setmetatable(L, "CompactMatrix_Type");
-  val = malloc((H->Ni)*sizeof(Complex16));
+  val = (Complex16*)malloc((H->Ni)*sizeof(Complex16));
   //CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
   LuaPushArray_Complex16(L, val, H->Ni);
   free(val);
