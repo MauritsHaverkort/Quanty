@@ -31,6 +31,7 @@
 
 uint32_t PowerInt(uint32_t x, uint32_t a);
 double PowerDoubleInt(double x, uint32_t a);
+int pow2roundup (int x);
 void Cross(const double x[], const double y[], double z[]);
 double ParallelalPipedVolume(const double x[], const double y[], const double z[]);
 void Swap(double *const a, double *const b);

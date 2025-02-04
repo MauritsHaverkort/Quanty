@@ -5489,7 +5489,7 @@ static const struct luaL_Reg global_functions[] = {
 //  {"CalculateBands", LuaCalculateBands},
   {"CalculateDOS", LuaCalculateDOS},
 //  {"CalculateFermi", LuaCalculateFermi},
-  {"CalculateG", LuaCalculateG},
+  {"CalculateG", LuaCalculateG},            // same as TightBinding.CalculateG
   {"CalculateRho", LuaCalculateRho},
   {"Chop", LuaChop},
   {"Clone", Luacopy},
