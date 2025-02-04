@@ -57,7 +57,7 @@ uint32_t CompactMatrixSVDOrthogonalizeCol(CompactMatrixType * A, double const Si
 uint32_t CompactMatrixSVDOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, bool const ReduceDimension);
 uint32_t CompactMatrixGramSchmidtOrthogonalizeCol(CompactMatrixType * A, double const SingularValue, bool const ReduceDimension);
 uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, bool const ReduceDimension);
-uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, CompactMatrixType * const funinv, Complex16 *val);
+uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatrixType * const S, CompactMatrixType * const T, CompactMatrixType * const Sroot, double *val);
 uint32_t CompactMatrixLeftRightNormalize(CompactMatrixType * const funL, CompactMatrixType * const funR);
 int SortNonHermitianEigensystemOrder(const void * elem1, const void * elem2);
 uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const funL, CompactMatrixType * const funR);
