@@ -3722,7 +3722,11 @@ static int LuaEigensystem(lua_State * L)
         FreeOperator(&OT);
         break;
       };
-      OperatorScale(Opp, 0.5, 0);val = malloc((H->Ni)*sizeof(Complex16));
+      OperatorScale(Opp, 0.5, 0);
+      OperatorChop(Opp, DBL_EPSILON * Options.Settings.zero);
+      FreeOperator(&OT);
+      break;
+    }
     case 1 :
     {
       // all fine H is Hermitian upto zero
@@ -3826,9 +3830,6 @@ static int LuaGeneralEigensystem(lua_State *L)
   LuaPushArray_Complex16(L, val, H->Ni);
   free(val);
 }
-
-
-
 
 /*  Given an impurity Green's function, a Bath represented by a hybridization function and a set of transition operators acting on the impurity calculate
  *  < psi_i | T G T | psi_i >
