@@ -486,7 +486,7 @@ int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray
   FPOInset.FirstYTick *= ScaleOffDiagonal;
   FPOInset.dYTick *= ScaleOffDiagonal;
   Graphics->NLayer = 1 + NXPlots * NYPlots;
-  Graphics->Layer = (GraphicsType**)malloc(Graphics->NLayer * sizeof(GraphicsType*));
+  Graphics->Layer = (GraphicsType**)malloc(pow2roundup(Graphics->NLayer) * sizeof(GraphicsType*));
   Graphics->Layer[0] = Graphics;
   for(i=1;i<Graphics->NLayer;i++)
   {

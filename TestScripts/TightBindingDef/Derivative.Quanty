@@ -1,0 +1,31 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - Derivative                    --")
+print("--------------------------------------------------------")
+
+
+HTB = NewTightBinding()
+HTB.Name = "Cuprates"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"d", {"x^2-y^2"}}}}}
+HTB.Hopping =  {{"A.d","A.d",{         1,   0,0},{{-1}}},
+								{"A.d","A.d",{        -1,   0,0},{{-1}}}
+								}
+print(HTB )
+
+HTBdx, HTBdy, HTBdz = TightBinding.Derivative(HTB)
+
+print(HTBdx)
+print(HTBdy)
+print(HTBdz)
+
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

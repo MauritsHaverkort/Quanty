@@ -311,7 +311,7 @@ int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType const * cons
         B->VRe[B->N * (1+Sqr(B->BlockSize))] = val[j];
         SetCompactMatrixToZero(&AifunSqr);
         FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr);
-        while((j<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
+        while(((j+1)<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
         {
           j++;
           ToDiv++;
@@ -344,7 +344,7 @@ int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType const * cons
         B->V[B->N * (1+Sqr(B->BlockSize))].Im = 0;
         SetCompactMatrixToZero(&AifunSqr);
         FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr);
-        while((j<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
+        while(((j+1)<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
         {
           j++;
           ToDiv++;

@@ -358,6 +358,29 @@ int SetNFermionIndexTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+int TightBindingDerivative(TightBindingDef * A, TightBindingDef * dAdx, TightBindingDef * dAdy , TightBindingDef * dAdz)
+{
+  double c=1;
+  if((A->Cell.Units&1)==0)
+  {
+    c = 2 * Pi;
+  }
+  TightBindingCopy(*A, *dAdx);
+  TightBindingCopy(*A, *dAdy);
+  TightBindingCopy(*A, *dAdz);
+  for(int i=0; i<A->nH; i++)
+  {
+    MatrixScalarMultiply(&(dAdx->H[i].Hop), 0, c*dAdx->H[i].ConnectingVector[0]);
+    MatrixScalarMultiply(&(dAdy->H[i].Hop), 0, c*dAdy->H[i].ConnectingVector[1]);
+    MatrixScalarMultiply(&(dAdz->H[i].Hop), 0, c*dAdz->H[i].ConnectingVector[2]);
+  }
+  ChopTightBindingDefSize(dAdx, DBL_MIN);
+  ChopTightBindingDefSize(dAdy, DBL_MIN);
+  ChopTightBindingDefSize(dAdz, DBL_MIN);
+  return 0;
+}
+
+
 int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
 {
   int    i;

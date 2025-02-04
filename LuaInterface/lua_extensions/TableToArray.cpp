@@ -3799,10 +3799,10 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             k = (int)luaL_checkinteger(L, -1);
             lua_pop(L, 1);
             // get the value
-            LuaLinePlotOptions[0].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].LineWidth);
-            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].LineColor[0]);
-            LuaLinePlotOptions[2].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].PointSize);
-            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k].PointColor[0]);
+            LuaLinePlotOptions[0].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineWidth);
+            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineColor[0]);
+            LuaLinePlotOptions[2].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointSize);
+            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointColor[0]);
             LuaCheckOptions(L, -1, LuaLinePlotOptions);
             // pop
             lua_pop(L, 1);

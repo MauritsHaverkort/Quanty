@@ -77,6 +77,24 @@ double PowerDoubleInt(double x, uint32_t a)
   }
   return retval;
 }
+/*  find the next largest integer of the form 2^n
+ *
+ */
+int pow2roundup (int x)
+{
+    if (x < 0)
+        return 0;
+    --x;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return x+1;
+}
+
+
+
 
 /*
 *  z = x cross y for vectors of lenght 3

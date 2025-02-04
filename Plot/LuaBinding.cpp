@@ -837,8 +837,8 @@ int LuaPlotGraphics(lua_State * L)
           {
             for(i=0;i<a->NSpectra;i++)
             {
-              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
-              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
+              LPOIm[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPORe[i].LineWidth=0;
               LPORe[i].LineColor[3]=0;
               LPORe[i].PointSize=0;
@@ -849,8 +849,8 @@ int LuaPlotGraphics(lua_State * L)
           {
             for(i=0;i<a->NSpectra;i++)
             {
-              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
-              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
+              LPOIm[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPOIm[i].LineWidth=0;
               LPOIm[i].LineColor[3]=0;
               LPOIm[i].PointSize=0;
@@ -861,8 +861,8 @@ int LuaPlotGraphics(lua_State * L)
           {
             for(i=0;i<a->NSpectra;i++)
             {
-              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
-              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i] = Options.Style.Line[(  (2*i)%(Options.Style.NAllocLine))];
+              LPOIm[i] = Options.Style.Line[((2*i+1)%(Options.Style.NAllocLine))];
             }
           }
           else
@@ -906,7 +906,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Nrow, Options.Ncolumn, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
+        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Ncolumn, Options.Nrow, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
       }
     }
     else if (luaL_testudata(L, 1, "GaussianRadialFunction_Type") != NULL)
@@ -1097,10 +1097,19 @@ int LuaGraphicsToPS(lua_State * L)
 int LuaGraphicsToSVG(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
+  bool RelativeSize=false;
+  LuaOptionsType GraphicsToSVGOptions[]={
+    {"RelativeSize","bool",&(RelativeSize)},
+    {NULL, NULL, NULL}};
+  if(LuaTestOptionsList(L, len))
+  {
+    LuaCheckOptions(L, len, GraphicsToSVGOptions);
+    len=len-1;
+  }
   if(len!=1) return luaL_error(L, "Error: Graphics.ToSVG should be called with exactly one argument, not with %d\n",len);
   GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
   DynamicString SVG;
-  GraphicsToSVG(Graphics, &SVG);
+  GraphicsToSVG(Graphics, &SVG,RelativeSize);
   lua_pushstring(L,SVG.str);
   FreeDynamicString(&SVG);
   return 1;

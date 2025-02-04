@@ -80,6 +80,20 @@ static int LuaTightBindingAddSpin(lua_State * L)
   return 1;
 }
 
+static int LuaTightBindingDerivative(lua_State * L)
+{
+  TightBindingDef *TBDx, *TBDy, *TBDz;
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, -1, "TightBinding_Type");
+  TBDx = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  TBDy = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  TBDz = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  TightBindingDerivative(TB, TBDx, TBDy , TBDz);
+  return 3;
+}
+
 
 static int LuaFileReadStuttgartCTRL(lua_State * L)
 {
@@ -488,7 +502,8 @@ static int LuaCalculateFermi(lua_State *L)
 
 /* Calculate the Green's function from a given tight-binding Hamiltonian.
  * Input on stack:
- *   TB : TightBinding_Type
+ *   TB    : TightBinding_Type
+ *   Sigma : Optional a self energy, either as a ResponseFunctionObject or as a table of Responsefunction objects or as a table of tables of response function objects
  *   Options
  *       Emin
  *       Emax
@@ -500,8 +515,8 @@ static int LuaCalculateG(lua_State *L)
 {
   uint32_t len;
   TightBindingDef *a;
-  ResponsefunctionType *G;
-
+  ResponsefunctionType *G, *Sigma=NULL;
+  bool FreeSigma=false;
   struct
   {
     int *Nk;
@@ -525,16 +540,50 @@ static int LuaCalculateG(lua_State *L)
     {"NE",         "uint32_t", &(Options.NE)},
     {"Type",       "char*",    &(Options.Type)},
     {NULL, NULL, NULL}};
-
   len = (uint32_t)lua_gettop(L);
+  if (LuaTestOptionsList(L,-1))
+  {
+    LuaCheckOptions(L,-1,LuaCalculateGOptions);
+    len--;
+  }
   if(!(len==1||len==2))
   {
-    return luaL_error(L, "Error CalculateG: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
+    return luaL_error(L, "Error CalculateG: called with %d arguments and possible options, 1 or 2 expected (TightBindingDef, and optional a self energy).\n",len);
   }
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
   if(len==2)
   {
-    LuaCheckOptions(L, 2, LuaCalculateGOptions);
+    if(lua_istable(L, 2))
+    {
+      //TODO: read list of response functions and create diagonal response function from this.
+      return luaL_error(L, "Error Self energy per atom or per atom and shell not jet implemented");
+      Sigma=(ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      FreeSigma=true;
+      // read in a table of length a->Cell.Natoms
+      // for each atom (i) read in
+      //    -- a repsonse function of dimension sum_{j=0}^{a->Cell.Atom[i].Nshell} a->Cell.Atom[i].shelldegeneracy[j]
+      //    -- or a list of length a->Cell.Atom[i].Nshell
+      //          -- for each shell (j) read in a response function of dimension a->Cell.Atom[i].shelldegeneracy[j]
+      // merge these response functions into one.
+      
+      
+      
+      
+    }
+    else
+    {
+      Sigma = luaL_checkResponsefunction(L, 2);
+      if(Sigma->Block!=true)
+      {
+        //TODO:
+        return luaL_error(L, "Error need to transform list of poles to Block list of poles");
+      }
+      if((Sigma->type!='l')&&(Sigma->type!='L'))
+      {
+        //TODO;
+        return luaL_error(L, "Error need to transform sigma to BlockListOfPoles");
+      }
+    }
   }
   if(Options.Nk==NULL)
   {
@@ -550,15 +599,24 @@ static int LuaCalculateG(lua_State *L)
   G->type = 'l';
   G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  if(Sigma==NULL)
+  {
+    TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  }
+  else
+  {
+    TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
-
   if(strcmp(Options.Type, "ListOfPoles")!=0)
   {
     lua_pushstring(L, Options.Type);
     return LuaChangeTypeResponseFunction(L);
   }
-  
+  if(FreeSigma==true)
+  {
+    FreeResponsefunction(Sigma);
+  }
   return 1;
 }
 
@@ -2389,10 +2447,12 @@ static int LuaDresdenFPLODestroy(lua_State * L)
 }
 
 static const struct luaL_Reg TightBinding_func[] = {
-  {"New",     LuaNewTightBinding},
-  {"Chop",    LuaTightBindingChop},
-  {"Copy",    LuaTightBindingCopy},
-  {"AddSpin", LuaTightBindingAddSpin},
+  {"New",        LuaNewTightBinding},
+  {"Chop",       LuaTightBindingChop},
+  {"Copy",       LuaTightBindingCopy},
+  {"AddSpin",    LuaTightBindingAddSpin},
+  {"Derivative", LuaTightBindingDerivative},
+  {"CalculateG", LuaCalculateG},
   {NULL, NULL}
 };
   
