@@ -2,6 +2,7 @@ stages:
   - build
   - test_matrix
   - test_responsefunction
+  - test_tightbinding
   - test
   - deploy
 
@@ -617,6 +618,9 @@ test-job-Responsefunction-Value_Of_A0_in_Val_and_Con_of_NatType:
   - build-job
 
 
+
+
+
 # =========================================================================
 # ===== Test functions related to Matrix objects
 # ===== These functions are registered in Matrix.cpp
@@ -895,6 +899,105 @@ test-job-Matrix-Zero:
   - build-job
 
 
+
+
+
+
+
+
+
+# =========================================================================
+# ===== Test functions related to tightbinding objects
+# ===== These functions are registered in TightBinding.cpp
+#
+    
+test-job-tightbinding__call:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/__call.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding__index:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/__index.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding__newindex:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/__newindex.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-AddSpin:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/AddSpin.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-Chop:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/Chop.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-Copy:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/Copy.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-New:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/New.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-PhaseTests:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/PhaseTests.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-UnitTests:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/UnitTests.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-Derivative:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/Derivative.Quanty"
+  dependencies:
+  - build-job
+    
+test-job-tightbinding-CalculateG:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/CalculateG.Quanty"
+  dependencies:
+  - build-job
 
 
 
