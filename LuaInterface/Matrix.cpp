@@ -985,7 +985,7 @@ static int LuaMatrixMul(lua_State * L)
           }
           default:
           {
-            return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",lua_type(L,1));
+            return luaL_error(L,"Unrecognized type at position two of multiplication \n");
           }
         }
       }

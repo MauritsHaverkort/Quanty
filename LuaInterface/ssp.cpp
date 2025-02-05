@@ -3800,12 +3800,14 @@ static int LuaEigensystem(lua_State * L)
 static int LuaGeneralEigensystem(lua_State *L)
 {
   CompactMatrixType *H,*S,*fun,*Ssqr;
-  Complex16 *val;
+  double *val;
   uint32_t len = (uint32_t)lua_gettop(L);
   if(!(len==2))
   {
     return luaL_error(L, "Error GeneralEigensystem called with %d arguments, 2 expected\n",len);
   }
+  H=luaL_checkCompactMatrix(L, 1);
+  S=luaL_checkCompactMatrix(L, 2);
   if(!(H->Ni==H->Nj))
   {
     return luaL_error(L, "Error Matrix M in GeneralEigensystem is not a square matrix\n",len);
@@ -3818,17 +3820,21 @@ static int LuaGeneralEigensystem(lua_State *L)
   {
     return luaL_error(L, "Error GeneralEigensystem is called with matrix M and S of different dimensions\n",len);
   }
-
-  H=luaL_checkCompactMatrix(L, 1);
-  S=luaL_checkCompactMatrix(L, 2);
   fun=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
-  luaL_setmetatable(L, "CompactMatrix_Type");
+  luaL_setmetatable(L, "Matrix_Type");
   Ssqr=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
-  luaL_setmetatable(L, "CompactMatrix_Type");
-  val = (Complex16*)malloc((H->Ni)*sizeof(Complex16));
-  //CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
-  LuaPushArray_Complex16(L, val, H->Ni);
+  luaL_setmetatable(L, "Matrix_Type");
+  val = (double*)malloc((H->Ni)*sizeof(double));
+  CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
+  FreeCompactMatrix(H);
+  FreeCompactMatrix(S);
+  fun->OnLuaStack=true;
+  Ssqr->OnLuaStack=true;
+  LuaPushArray_double(L, val, H->Ni);
   free(val);
+  // return val, fun, Ssqrt
+  lua_insert(L, -3);
+  return 3;
 }
 
 /*  Given an impurity Green's function, a Bath represented by a hybridization function and a set of transition operators acting on the impurity calculate
