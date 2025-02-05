@@ -975,11 +975,11 @@ test-job-tightbinding-PhaseTests:
   dependencies:
   - build-job
     
-test-job-tightbinding-UnitTests:
+test-job-tightbinding-UnitTest:
   stage: test_tightbinding
   script:
   - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/UnitTests.Quanty"
+  - ./Quanty.exe "TestScripts/TightBindingDef/UnitTest.Quanty"
   dependencies:
   - build-job
     
