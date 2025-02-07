@@ -1,8 +1,7 @@
 -- The function GeneralEigensystem calculates a set of eigen vectors and eigen values for a given matrix and a corresponding overlap matrix.
 
 -- threshold for comparing with the expected result (not used for cases where of "infinite" accuracy as well as those with low accuracy)
-threshold = 1E-12
-
+threshold = 1E-14
 -----------------------------------------------------------
 -----------------------------------------------------------
 ---- test general eigensystem on a small 4 by 4 matrix ----
@@ -129,7 +128,7 @@ setmetatable(vecs3, MatrixMeta)
 
 --Test if the eigendecomposition works
 valsQ3,funsQ3,SSqrtQ3=GeneralEigensystem(testmatrix3,overlap2)
-zero=Chop(funsQ3*(testmatrix3*Matrix.Inverse(overlap2))*Matrix.Inverse(funsQ3)-vecs3*testmatrix3*Matrix.Inverse(overlap2)*Matrix.Inverse(vecs3))
+zero=Chop(funsQ3*(testmatrix3*Matrix.Inverse(overlap2))*Matrix.Inverse(funsQ3)-vecs3*testmatrix3*Matrix.Inverse(overlap2)*Matrix.Inverse(vecs3),threshold)
 print(zero)
 if(zero~=Matrix.Zero(4)) 
 then
