@@ -1,0 +1,153 @@
+-- The function GeneralEigensystem calculates a set of eigen vectors and eigen values for a given matrix and a corresponding overlap matrix
+
+-- threshold for comparing with the expected result (not used for cases where of "infinite" accuracy as well as those with low accuracy)
+threshold = 1E-12
+
+-----------------------------------------------------------
+-----------------------------------------------------------
+---- test general eigensystem on a small 4 by 4 matrix ----
+-----------------------------------------------------------
+-----------------------------------------------------------
+print("----------------------------------------------------------------------------------")
+print("Test GeneralEigensystem(H,S) with a hermitian H and orthonormal S")
+print("----------------------------------------------------------------------------------")
+testmatrix1 = {{5, 0, 0, 1}, {0, 1, 0, 0}, {0, 0, 4, 0}, {1, 0, 0, 1}}
+overlap1    = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}} --This matrix is symmetric positive definite
+setmetatable(testmatrix1, MatrixMeta)
+setmetatable(overlap1, MatrixMeta)
+
+--------------solution according to Mathematica-----------------
+vals1={0.7639320225002102, 1., 4., 5.23606797749979}
+vecs1={{-0.2360679774997898, 0., 0., 1.}, {0., 1., 0., 0.}, 
+{0., 0., 1., 0.}, {4.23606797749979, 0., 0., 1.}}
+SSqrt1={{1., 0, 0, 0}, {0, 1., 0, 0}, {0, 0, 1., 0}, {0, 0, 0, 1.}}
+setmetatable(vecs1, MatrixMeta)
+setmetatable(SSqrt1,MatrixMeta)       
+
+--test the function GeneralEiegnsystem(H,S)--
+--The function GeneralEigensystem() provides an othogonal eigenvector basis
+--while Mathematica does not.
+
+valsQ1,funsQ1,SSqrtQ1=GeneralEigensystem(testmatrix1,overlap1)
+
+--Test if the eigendecomposition works
+zero=Chop(funsQ1*testmatrix1*Matrix.Inverse(overlap1)*Matrix.Transpose(funsQ1)-vecs1*testmatrix1*Matrix.Inverse(overlap1)*Matrix.Inverse(vecs1))
+if(zero~=Matrix.Zero(4)) 
+then
+    error("eigenfunctions and-values not equivalent to expected value\n",1)
+end
+
+--Test if eigenvalues are correct.
+zero=0
+for i=1,4 do
+  zero = zero + abs(valsQ1[i] - vals1[i])
+end
+zero = Chop(zero)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
+
+--Test if Cholesky-decomposition of overlap2  S==G*G^T is correct.
+zero=0
+zero=Chop(SSqrtQ1*Matrix.Transpose(SSqrtQ1)-overlap1)
+
+if(zero~=Matrix.Zero(4)) then
+  error("Cholesky decomposition of the overlap matrix S=G*G^T is not correct",1)
+end
+
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+print("----------------------------------------------------------------------------------")
+print("Test GeneralEigensystem(H,S) with a hermitian H and symmetric positive-definite S but not orthonormal")
+print("----------------------------------------------------------------------------------")
+testmatrix2 = {{1, 0, 2, 0}, {0, 1, 0, 0}, {2, 0, 1, 0}, {0, 0, 0, 1}}
+overlap2    = {{5., 1., 0, 0}, {1., 1., 0, 0}, {0, 0, 5., 0}, {0, 0, 0, 1.}} --This matrix is positive definite
+setmetatable(testmatrix2, MatrixMeta)
+setmetatable(overlap2, MatrixMeta)
+
+--------------solution according to Mathematica-----------------
+vals2={-0.2034543598229489, 0.5412170865492415, 1., 1.3622372732737063}
+vecs2={{0.7050772792674745, -0.11919940736279792, -0.6990404362732769, 0.},
+{0.515308394486255, 0.6078990733122671, 0.6040827552894428, 0.},
+{0., 0., 0., 1.},
+{0.2559837810817427, -0.9626581074653808, 0.08810035161261211, 0.}}
+SSqrt2={{2.2135943621178664, 0.316227766016838, 0, 0},
+{0.3162277660168381, 0.9486832980505139, 0, 0}, 
+{0, 0, 2.23606797749979, 0},
+{0, 0, 0, 1.}}
+
+setmetatable(vecs2, MatrixMeta)
+setmetatable(SSqrt2,MatrixMeta)       
+
+--Test the function GeneralEiegnsystem(H,S) with non-orthonormal overlap S--
+
+--Test if the eigendecomposition works
+valsQ2,funsQ2,SSqrtQ2=GeneralEigensystem(testmatrix2,overlap2)
+
+zero=Chop(funsQ2*(testmatrix2*Matrix.Inverse(overlap2))*Matrix.Inverse(funsQ2)-vecs2*testmatrix2*Matrix.Inverse(overlap2)*Matrix.Inverse(vecs2))
+if(zero~=Matrix.Zero(4)) 
+then
+    error("eigenfunctions and-values not equivalent to expected value\n",1)
+end
+
+--Test if eigenvalues are correct.
+zero=0
+for i=1,4 do
+  zero = zero + abs(valsQ2[i] - vals2[i])
+end
+zero = Chop(zero)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
+
+--Test if Cholesky-decomposition of overlap2 S==G*G^T is correct.
+zero=Chop(SSqrtQ2*Matrix.Transpose(SSqrtQ2)-overlap2)
+
+if(zero~=Matrix.Zero(4)) then
+  error("Cholesky decomposition of the overlap matrix S=G*G^T is not correct",1)
+end
+print("----------------------------------------------------------------------------------")
+print("Test GeneralEigensystem(H,S) with a random symmetric H and symmetric positive-definite S but not orthonormal")
+print("----------------------------------------------------------------------------------")
+testmatrix3    = {{7.991812239269964, 2.619433078387991, 4.755849822956582, 2.823207780397709},
+ {2.619433078387991, 1.3942744522579373, 3.9174744076901407, 5.541200653132183}, 
+ {4.755849822956582, 3.9174744076901407, 7.437598370471966, 4.478696629715333}, 
+ {2.823207780397709, 5.541200653132183, 4.478696629715333, 8.667600273712798}}--This matrix is positive definite
+setmetatable(testmatrix3, MatrixMeta)
+
+--------------solution according to Mathematica-----------------
+vals3={-2.1173111586716127, 0.5510755405283958, 1.807771310532553, 12.344663841363774}
+vecs3={{-0.15490296241587456, 0.901783274895968, -0.05583407184324348, -0.39959298514124686},
+{0.5578296904153015, -0.18788661506645057, -0.7338215989448825, 0.3391614914638987}, 
+{0.7389206304383916, -0.19361332247636912, 0.46276377705116095, -0.44984427296736196},
+{-0.03692934045617127, 0.5035525940939585, 0.10380019820375681, 0.8569110383508769}}
+
+setmetatable(vecs3, MatrixMeta)      
+
+--Test the function GeneralEiegnsystem(H,S) with non-orthonormal overlap S--
+
+--Test if the eigendecomposition works
+valsQ3,funsQ3,SSqrtQ3=GeneralEigensystem(testmatrix3,overlap2)
+zero=Chop(funsQ3*(testmatrix3*Matrix.Inverse(overlap2))*Matrix.Inverse(funsQ3)-vecs3*testmatrix3*Matrix.Inverse(overlap2)*Matrix.Inverse(vecs3))
+if(zero~=Matrix.Zero(4)) 
+then
+    error("eigenfunctions and-values not equivalent to expected value\n",1)
+end
+
+--Test if eigenvalues are correct.
+zero=0
+for i=1,4 do
+  zero = zero + abs(valsQ3[i] - vals3[i])
+end
+zero = Chop(zero)
+if(zero~=0) then
+  error("eigenvalues not equivalent to expected value\n",1)
+end
+
+--Test if Cholesky-decomposition of overlap2 S==G*G^T is correct.
+zero=Chop(SSqrtQ3*Matrix.Transpose(SSqrtQ3)-overlap2)
+
+if(zero~=Matrix.Zero(4)) then
+  error("Cholesky decomposition of the overlap matrix S=G*G^T is not correct",1)
+end

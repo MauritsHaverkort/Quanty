@@ -898,6 +898,13 @@ test-job-Matrix-Zero:
   dependencies:
   - build-job
 
+test-job-GeneralEigensystem:
+  stage: test
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/GeneralEigensystem.Quanty"
+  dependencies:
+  - build-job
 
 
 
