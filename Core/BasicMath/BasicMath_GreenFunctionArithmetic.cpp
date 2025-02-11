@@ -1360,6 +1360,67 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
  return 0;
 }
 
+/*  calculate G = G0( omega - Sigma(omega) )
+ *
+ *  represent G0 and S as a list of poles then
+ *   G = sum_i B_i 1/(w-a_i - S) is for each i a response function on Anderson form
+ *     we can transform this for each i to a list of poles and sum list of poles
+ */
+int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, ResponsefunctionType * const G, double Epsilon)
+{
+  if(G0->Block==false)
+  {
+    ResponsefunctionType G0LP, SigmaLP;
+    ListOfPoles        *SigmaLPData, *G0LPData;
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      G0LPData = (ListOfPoles*)G0LP.data;
+    }
+    else
+    {
+      G0LPData = (ListOfPoles*)G0->data;
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      SigmaLPData = (ListOfPoles*)SigmaLP.data;
+    }
+    else
+    {
+      SigmaLPData = (ListOfPoles*)Sigma->data;
+    }
+    G->type='l';
+    G->Block=false;
+    G->NSuggestedGridPoints=0;
+    G->SuggestedGrid=NULL;
+    G->data = (void*)malloc(sizeof(ListOfPoles));
+
+
+
+
+    if(!((G0->type=='a')||(G0->type=='A')))
+    {
+      FreeResponsefunction(&G0LP);
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      FreeResponsefunction(&SigmaLP);
+    }
+  }
+  else
+  {
+    
+  }
+  return 1;
+}
+int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, CompactVectorType *const Grid, ResponsefunctionType * const G, double Epsilon)
+{
+  
+  return 1;
+}
+
+
 
 /*  GBath(w) = 1 / ( G_0(w+mu-Sigma(w))^{-1} + Sigma(w) )
  *    G_0(w+mu-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)

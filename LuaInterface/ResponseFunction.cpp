@@ -468,13 +468,12 @@ static int LuaCalculateSelfEnergy(lua_State *L)
   return 1;
 }
 
-/*   Given Delta_0(omega) as a response function
- *   on a list of poles form it represents a tight binding Hamiltonian with:
- *      a_0 the onsite energy of the impurity
- *      b_i the hopping to a bath site with energy a_i
- *   Sigma(omega)
+/*   Given G_0(omega) and Sigma(omega) on the stack as response functons *
+ *   Calculate 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *   This yields the reponse function of a tight binding model whereby all sites get the self energy Sigma(omega)
+ *   except for the site where we act on
  *
- *   Calculate Delta(oemga) = Delta_0( omega - Sigma(omega) )
+ *   Options allow to specify an energy grid for the final response function in Anderson representation
  */
 static int LuaCalculateHybridizationFunction(lua_State *L)
 {
@@ -517,7 +516,60 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
   return 1;
 }
 
-/*
+/*   Given G_0(omega) and Sigma(omega) on the stack as response functons *
+ *   Calculate G_0(omega-Sigma(omega))
+ *   This yields the reponse function of a tight binding model whereby all sites get the self energy Sigma(omega)
+ *
+ *   Options allow to specify an energy grid for the final response function in ListOfPoles representation
+ *
+ */
+static int LuaCalculateGfromG0andSigma(lua_State *L)
+{
+  ResponsefunctionType *G0,*G,*Sigma;
+  CompactVectorType Grid={0,0,NULL};
+  double Epsilon=1000*DBL_EPSILON;
+  LuaOptionsType CalculateSelfEnergyOptions[]={
+    {"Epsilon","double",&(Epsilon)},
+    {"EnergyGrid","Vector",&Grid},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if( LuaTestOptionsList(L,-1) )
+  {
+    LuaCheckOptions(L,-1,CalculateSelfEnergyOptions);
+    len--;
+  }
+  if(len!=2)
+  {
+    return luaL_error(L, "CalculateHybridizationFunction should be called with D0 and Sigma as the argument (and an optional 3rd argument with options)\n Called with %d arguments\n",len);
+  }
+  G0    = luaL_checkResponsefunction(L,1);
+  Sigma = luaL_checkResponsefunction(L,2);
+  if(G0->Block!=Sigma->Block) return luaL_error(L, "CalculateGfromG0andSigma should be called with G0 and Sigma either both as block response functions or both as single valued response functions\n");
+  if(BlockResponseFunctionGetBlockSize(G0) != BlockResponseFunctionGetBlockSize(Sigma)) return luaL_error(L, "CalculateGfromG0andSigma should be called with G0 and Sigma with same dimension of BlockSize\n");
+  G     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  if(Grid.Ni==0)
+  {
+    CalculateGfromG0andSigma(G0, Sigma, G, Epsilon);
+  }
+  else
+  {
+    CalculateGfromG0andSigmaOnGrid(G0, Sigma, &Grid, G, Epsilon);
+    free(Grid.VRe);
+    Grid.Ni=0;
+    Grid.QComplex=0;
+  }
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  FreeResponsefunction(G0);
+  FreeResponsefunction(Sigma);
+  return 1;
+}
+                                       
+
+
+
+
+
+/*  G(mu+w) -> -G(mu-w)^*
  *
  */
 static int LuaInvertEnergy(lua_State *L)
