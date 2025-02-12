@@ -473,6 +473,14 @@ test-job-Responsefunction-call:
   dependencies:
   - build-job
 
+test-job-Responsefunction-CalculateGfromG0AndSigma:
+  stage: test_responsefunction
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Responsefunction/CalculateGfromG0AndSigma.Quanty"
+  dependencies:
+  - build-job
+
 test-job-Responsefunction-CalculateHybridizationFunction:
   stage: test_responsefunction
   script:

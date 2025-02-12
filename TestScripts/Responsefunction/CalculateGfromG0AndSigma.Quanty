@@ -1,0 +1,147 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction CalculateHybridizationFunction    --")
+print("--------------------------------------------------------")
+
+print("Non - Block")
+a = {0, 0, 2.5,  3.0, 3.5}
+b = {   1, 0.5,  0.6, 0.7}
+G0 = ResponseFunction.New({a,b,mu=0,type="And", name="D0"})
+
+a = {1.0, 1.5, 2.0}
+b = {     0.2, 0.3}
+Sigma = ResponseFunction.New({a,b,mu=0,type="Tri", name="Sigma"})
+
+Gmat = {{1.0, 0.2, 0  , 0.5, 0  , 0  , 0.6, 0  , 0  , 0.7, 0  , 0  },
+	      {0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+			  {0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0.5, 0  , 0  , 3.5, 0.2, 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0.6, 0  , 0  , 0  , 0  , 0  , 4.0, 0.2, 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  },
+				{0.7, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 4.5, 0.2, 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3},
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0}}
+setmetatable(Gmat, MatrixMeta)
+
+GTri = Matrix.Tridiagonalize(Gmat)
+GLP  = ResponseFunction.ChangeType(GTri,"LP")
+
+G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma)
+
+if( not( G==GLP )) then
+	print("G calculated with ResponseFunction.CalculateGfromG0andSigma")
+	print(G)
+	print("G constructed from a matrix")
+	print(GLP)
+	error("Calculation of G from G0 and Sigma failed\n",1)
+end
+
+
+
+print("Non - Block - on Grid")
+
+-- for the test we chose a perfect grid
+val,fun = Eigensystem(Gmat)
+GridPoints=val
+
+G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",GridPoints}})
+
+if( not( G==GLP )) then
+	print("G calculated with ResponseFunction.CalculateGfromG0andSigma")
+	print(G)
+	print("G constructed from a matrix")
+	print(GLP)
+	error("Calculation of G from G0 and Sigma failed\n",1)
+end
+
+
+-- we now take a differnt grid
+GridPoints = {-2,-1,0,1,2,3,4,5,6,7,8,9,10}
+G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",GridPoints}})
+
+a = {0}
+b = { }
+Sigma0 = ResponseFunction.New({a,b,mu=0,type="Tri", name="Sigma"})
+G2 = ResponseFunction.CalculateGfromG0andSigma(GLP,Sigma0,{{"EnergyGrid",GridPoints}})
+
+if( not( G==G2 )) then
+	print("G calculated with ResponseFunction.CalculateGfromG0andSigma")
+	print(G)
+	print("G constructed from a matrix")
+	print(G2)
+	error("Calculation of G from G0 and Sigma failed\n",1)
+end
+
+print("Block")
+
+print("Dimension 1")
+
+a = {{{0}}, {{0}}, {{2.5}},  {{3.0}}, {{3.5}}}
+b = {   {{1}}, {{0.5}},  {{0.6}}, {{0.7}}}
+G0 = {a,b,mu=0,type="And", name="D0"}
+setmetatable(G0, ResponseFunctionMeta)
+
+a = {{{1.0}}, {{1.5}}, {{2.0}}}
+b = {     {{0.2}}, {{0.3}}}
+Sigma = {a,b,mu=0,type="Tri", name="Sigma"}
+setmetatable(Sigma, ResponseFunctionMeta)
+
+Gmat = {{1.0, 0.2, 0  , 0.5, 0  , 0  , 0.6, 0  , 0  , 0.7, 0  , 0  },
+				{0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0.5, 0  , 0  , 3.5, 0.2, 0  , 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  , 0  , 0  , 0  },
+				{0.6, 0  , 0  , 0  , 0  , 0  , 4.0, 0.2, 0  , 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3, 0  , 0  , 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0, 0  , 0  , 0  },
+				{0.7, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 4.5, 0.2, 0  },
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.2, 1.5, 0.3},
+				{0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0.3, 2.0}}
+setmetatable(Gmat, MatrixMeta)
+
+GTri = Matrix.Tridiagonalize(Gmat)
+GLP  = ResponseFunction.ChangeType(GTri,"LP")
+
+G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma)
+
+if( not( G==GLP )) then
+	print("G calculated with ResponseFunction.CalculateGfromG0andSigma")
+	print(G)
+	print("G constructed from a matrix")
+	print(GLP)
+	error("Calculation of G from G0 and Sigma failed\n",1)
+end
+
+
+
+print("Block - on Grid")
+
+-- for the test we chose a perfect grid
+val,fun = Eigensystem(Gmat)
+GridPoints=val
+
+G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",GridPoints}})
+
+if( not( G==GLP )) then
+	print("G calculated with ResponseFunction.CalculateGfromG0andSigma")
+	print(G)
+	print("G constructed from a matrix")
+	print(GLP)
+	error("Calculation of G from G0 and Sigma failed\n",1)
+end
+
+
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+

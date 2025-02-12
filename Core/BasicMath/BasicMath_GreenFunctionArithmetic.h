@@ -25,7 +25,11 @@ uint32_t GBathAndTriAndRepresentationParallel(AndersonMatrixType const G0, TriDi
 uint32_t OldGBathAndTriAndRepresentation(AndersonMatrixType const G0, TriDiagonalMatrixType const Sigma,AndersonMatrixType * const G);
 uint32_t OldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gcl, TriDiagonalMatrixType const Sigma,TriDiagonalMatrixType * const GBathNew);
 uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Glocal, TriDiagonalMatrixType const Sigma,TriDiagonalMatrixType * const GBathNew);
+int GListListListRepresentation(ListOfPoles * G0, ListOfPoles * Sigma, ListOfPoles *G);
+int GListListListRepresentationOnGrid(ListOfPoles * G0, ListOfPoles * Sigma, double *Grid, uint32_t NGridPoints,  ListOfPoles *G);
+int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * Sigma, BlockListOfPoles *G);
 uint32_t TriDiagonalMatrixDysonScalar(TriDiagonalMatrixType const G, TriDiagonalMatrixType * const Gnew,MatrixType const Rho, uint32_t const NRho, TriDiagonalMatrixType * const Gp);
+int BlockGListListListRepresentationOnGrid(BlockListOfPoles * G0, BlockListOfPoles * Sigma, double *Grid, uint32_t NGridPoints,  BlockListOfPoles *G);
 uint32_t TridiagonalizeImpurityCoupledToBathDyson(TriDiagonalMatrixType const O, MatrixType const *V,MatrixType const H, TriDiagonalMatrixType const *g, uint32_t N,TriDiagonalMatrixType * const gnew);
 uint32_t TridiagonalizeImpurityCoupledToBathDysonSecondOrderA(TriDiagonalMatrixType const O, MatrixType const *V1,MatrixType const *V2, MatrixType const H1,MatrixType const H2, TriDiagonalMatrixType const *g,uint32_t N, TriDiagonalMatrixType * const gnew);
 uint32_t TridDiagonalMatrixDysonToMuchSimplified(TriDiagonalMatrixType const G1, MatrixType const *M12,TriDiagonalMatrixType const *g2, MatrixType const *Emu,int32_t const Ni, TriDiagonalMatrixType * const Gnew);

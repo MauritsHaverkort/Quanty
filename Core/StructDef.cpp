@@ -854,7 +854,9 @@ BlockNaturalImpurityOrbitalMatrixType;
  *  reading a lua table will regenerate the ResponsefunctionType
  *
  *  Uppercase -- C controls the allocations
+ *            -- when pushed to a Lua stack we push a copy as a table
  *  Lowercase -- Lua controls the allocations
+ *            -- when pushed to a Lua stack we push a pointer
  *
  *  The array SuggestedGrid contains NSuggestedGridPoints in ascending order.
  *  The Suggested Grid is used for transformations of Matrix types and functions acting on them
