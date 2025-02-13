@@ -1439,7 +1439,7 @@ int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionT
     // We find Sigma as a list of poles in SigmaLPData
     // We need to calculate G as a list of poles in GLPData
     BlockGListListListRepresentation(G0LPData, SigmaLPData, (BlockListOfPoles*)G->data);
-    if(!((G0->type=='a')||(G0->type=='A')))
+    if(!((G0->type=='l')||(G0->type=='L')))
     {
       FreeResponsefunction(&G0LP);
     }
@@ -1523,7 +1523,7 @@ int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, Responsefun
     // We find Sigma as a list of poles in SigmaLPData
     // We need to calculate G as a list of poles in GLPData
     BlockGListListListRepresentationOnGrid(G0LPData, SigmaLPData, Grid->VRe, Grid->Ni, (BlockListOfPoles*)G->data);
-    if(!((G0->type=='a')||(G0->type=='A')))
+    if(!((G0->type=='l')||(G0->type=='L')))
     {
       FreeResponsefunction(&G0LP);
     }
