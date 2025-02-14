@@ -27,6 +27,14 @@ Possible compile commands for the intel compiler on linux are:
 
 icc quanty/LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -ipo -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty
 
+A possible command for GNU g++ is:
+
+g++ LuaInterface/main.cpp -D LUA_USE_LINUX -DBLASunderscore -O3 -fopenmp -flto -o Quanty -lblas -llapack
+
+Note the use of the BLASunderscore macro here, that Quanty exposes to use different conventions of blas and lapack libraries.
+
+
+
 i.e. we link to openmp, blas, lapack and the standard libraries 
 
 
