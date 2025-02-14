@@ -29,7 +29,7 @@ icc quanty/LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -ipo -static -qopenmp -I"$
 
 i.e. we link to openmp, blas, lapack and the standard libraries.
 
-A possible command for GNU g++ is:
+A possible command for GNU g++ or clang++ is:
 
 g++ LuaInterface/main.cpp -D LUA_USE_LINUX -DBLASunderscore -O3 -fopenmp -flto -o Quanty -lblas -llapack
 
