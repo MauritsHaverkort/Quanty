@@ -2,7 +2,7 @@
 
 Repository of Quanty. If you intend to work on part of the code please discuss this first with Maurits, he coordinates the different parts and tasks. 
 
-The Master branch is for stabel releases
+The Master branch is for stable releases
 
 The Develop branch is for the current version with updates. The develop branch should be stable and bug free, i.e. only finished projects should be pushed to develop. Historically not always true. 
 
@@ -32,7 +32,7 @@ i.e. we link to openmp, blas, lapack and the standard libraries
 
 ================== C v.s. C++                                      =======================
 
-Quanty was originally written in C. Based upon many requests I transfered the code to C++. After a few years of experience I seriously tought about changing the code back to pure C. In the end I decided agains this, but this does require some restraints on the people who develop code.
+Quanty was originally written in C. Based upon many requests I transfered the code to C++. After a few years of experience I seriously tought about changing the code back to pure C. In the end I decided againts this, but this does require some restraints on the people who develop code.
 
 First the problem: When students implement reasonable but inefficient code in C I can convert and optimize this. C++ allows the creation of very inefficient code and I have a hard time optimizing this. 
 
