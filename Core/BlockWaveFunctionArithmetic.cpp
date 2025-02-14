@@ -1,5 +1,5 @@
 /*  Block Wavefunctions are arrays of wave-function types wich have the same basis.
- *  for the array psi[] the values
+ *  For the array psi[] the values
  *  psi[i].QComplex
  *        .N
  *        .NBlok
@@ -10,7 +10,7 @@
  *        .Determinant
  *        .NBitskey
  *        .Keylist
- *  should all be the same for all [i]. It is the programers responsibility to make sure this is the case. Otherwise these functions will produce junk
+ *  should all be the same for all [i]. It is the programmers responsibility to make sure this is the case. Otherwise these functions will produce junk
  *  psi[i].Name
  *        .ValueRe
  *        .ValueIm
@@ -1185,7 +1185,7 @@ uint32_t BlockOperatorPsiSerialRestricted(const OperatorType H, WaveFunctionType
 
 /*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi
  *  on input all psi[i]'s are on the same basis
- *  on excit all Opsi[i]'s are on the same basis
+ *  on exit all Opsi[i]'s are on the same basis
  */
 uint32_t BlockOperatorPsiSerial(const OperatorType H, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, uint32_t const Npsi)
 {
@@ -1222,7 +1222,7 @@ uint32_t BlockOperatorPsiSerial(const OperatorType H, WaveFunctionType const * c
 
 /*  Calculate Opsi[i] = H psi[i] for i=0 to Npsi using restrictions
  *  on input all psi[i]'s are on the same basis
- *  on excit all Opsi[i]'s are on the same basis
+ *  on exit all Opsi[i]'s are on the same basis
  */
 uint32_t BlockOperatorPsiRestrictedRR(const OperatorType O, WaveFunctionType const * const psi, WaveFunctionType * const Opsi, DeterminantRestrictionType const Restrictions, uint32_t const Npsi)
 {

@@ -5766,11 +5766,11 @@ uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType
  *    H:             Operator assumed to be Hermitian (not tested and function fails if it is not)
  *    Npsi:          number of states to converge
  *    Settings:      ConvergenceSettingsType* pointer to important values that need to be set:
- *                   Settings->zero    smallest possitive double that is considered different from zero when comparing convergence creteria
+ *                   Settings->zero    smallest positive double that is considered different from zero when comparing convergence criteria
  *                   Settings->epsilon smallest positive double that is considered different from zero when truncating wavefunctions
  *    StartingPoint: a set of restrictions defining the starting point wave function
  *                   if StartingPoint.N = 0 it is assumed that the functions psi are intialized and one starts from there
- *    Restrictions:  a set of restrictions makeing the basis smaler
+ *    Restrictions:  a set of restrictions making the basis smaller
  *    psi:           a pointer to Npsi functions (If StartingPoint.N=0 they should be initialized as form a basis for the starting point of the Lanczos routine, otherwise they should be unititiallized)
  *    NBitsKey:      The number of bits in the key (only used when StartingPoint.N != 0
  *
@@ -5795,7 +5795,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     HE0 = H->l[0].V[0].Re;
   }
   // if StartingPoint.N != 0
-  // create Npsi independent functions fullfiling the starting point conditions
+  // create Npsi independent functions fulfilling the starting point conditions
   // all functions must have the same basis
   // if H is complex or mixed psi will be complex, if H is real psi is real
   VerbosityPrintf(0x10000000,"Start of BlockGroundState\n");
