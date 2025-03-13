@@ -362,16 +362,22 @@ for i=1,#HTBList do
 		file:close()
 		TimeEnd("Plot")
 		
+		print("Start ResponseFunction.CalculateHybridizationFunction")
+		io.flush()
 		-- Calculate GBath
 		TimeStart("CalculateHybridizationFunction")
 			GBath = ResponseFunction.CalculateHybridizationFunction(Gloc,SigmaList[i][j])
 		TimeEnd("CalculateHybridizationFunction")
 		
+		print("Start ResponseFunction.CalculateSelfEnergy")
+		io.flush()
 		-- use GlocS and GBath to calculate Sigma
 		TimeStart("CalculateSelfEnergy")
 		  SigmaTest = ResponseFunction.CalculateSelfEnergy(GBath,GlocS)
 		TimeEnd("CalculateSelfEnergy")
 		
+		print("Start Plot")
+		io.flush()
 		-- plot SigmaTest and SigmaList[i][j], should be the same
 		PlotPoints=200
 		Emin   = -10
