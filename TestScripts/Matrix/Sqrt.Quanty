@@ -15,21 +15,33 @@ M1CD = Matrix.New(M1C)
 
 Msqrt = Matrix.Sqrt(M1)
 if not(Chop(Msqrt * Msqrt - M1,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
+	print(Msqrt)
+	print(Msqrt * Msqrt)
+	print(M1)
 	error("Error in Matrix Sqrt\n",1)
 end
 
 Msqrt = Matrix.Sqrt(M1D)
 if not(Chop(Msqrt * Msqrt - M1D,1E-14)==Matrix.Zero(4)) then
+	print(Msqrt)
+	print(Msqrt * Msqrt)
+	print(M1D)
 	error("Error in Matrix Sqrt\n",1)
 end
 
 Msqrt = Matrix.Sqrt(M1C)
 if not(Chop(Msqrt * Msqrt - M1C,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
+	print(Msqrt)
+	print(Msqrt * Msqrt)
+	print(M1C)
 	error("Error in Matrix Sqrt\n",1)
 end
 
 Msqrt = Matrix.Sqrt(M1CD)
 if not(Chop(Msqrt * Msqrt - M1CD,1E-14)==Matrix.Zero(4)) then
+	print(Msqrt)
+	print(Msqrt * Msqrt)
+	print(M1CD)
 	error("Error in Matrix Sqrt\n",1)
 end
 
