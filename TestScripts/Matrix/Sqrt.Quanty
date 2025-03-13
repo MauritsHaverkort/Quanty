@@ -26,6 +26,7 @@ if not(Chop(Msqrt * Msqrt - M1D,1E-14)==Matrix.Zero(4)) then
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1D)
+	print(Chop(Msqrt * Msqrt - M1D,1E-14))
 	error("Error in Matrix Sqrt\n",1)
 end
 
@@ -34,6 +35,7 @@ if not(Chop(Msqrt * Msqrt - M1C,1E-14)==Matrix.Zero(4,{{"userdata",false}})) the
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1C)
+	print(Chop(Msqrt * Msqrt - M1C,1E-14))
 	error("Error in Matrix Sqrt\n",1)
 end
 
@@ -42,6 +44,7 @@ if not(Chop(Msqrt * Msqrt - M1CD,1E-14)==Matrix.Zero(4)) then
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1CD)
+	pritn(Chop(Msqrt * Msqrt - M1CD,1E-14))
 	error("Error in Matrix Sqrt\n",1)
 end
 
