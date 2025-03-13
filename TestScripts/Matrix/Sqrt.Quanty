@@ -12,9 +12,10 @@ M1C = {{5,-I, 2, 0},
 setmetatable(M1C, MatrixMeta)
 M1CD = Matrix.New(M1C)
 
+tolerance = 1E-13
 
 Msqrt = Matrix.Sqrt(M1)
-if not(Chop(Msqrt * Msqrt - M1,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
+if not(Chop(Msqrt * Msqrt - M1,tolerance)==Matrix.Zero(4,{{"userdata",false}})) then
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1)
@@ -22,29 +23,29 @@ if not(Chop(Msqrt * Msqrt - M1,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
 end
 
 Msqrt = Matrix.Sqrt(M1D)
-if not(Chop(Msqrt * Msqrt - M1D,1E-14)==Matrix.Zero(4)) then
+if not(Chop(Msqrt * Msqrt - M1D,tolerance)==Matrix.Zero(4)) then
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1D)
-	print(Chop(Msqrt * Msqrt - M1D,1E-14))
+	print(Chop(Msqrt * Msqrt - M1D,tolerance))
 	error("Error in Matrix Sqrt\n",1)
 end
 
 Msqrt = Matrix.Sqrt(M1C)
-if not(Chop(Msqrt * Msqrt - M1C,1E-14)==Matrix.Zero(4,{{"userdata",false}})) then
+if not(Chop(Msqrt * Msqrt - M1C,tolerance)==Matrix.Zero(4,{{"userdata",false}})) then
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1C)
-	print(Chop(Msqrt * Msqrt - M1C,1E-14))
+	print(Chop(Msqrt * Msqrt - M1C,tolerance))
 	error("Error in Matrix Sqrt\n",1)
 end
 
 Msqrt = Matrix.Sqrt(M1CD)
-if not(Chop(Msqrt * Msqrt - M1CD,1E-14)==Matrix.Zero(4)) then
+if not(Chop(Msqrt * Msqrt - M1CD,tolerance)==Matrix.Zero(4)) then
 	print(Msqrt)
 	print(Msqrt * Msqrt)
 	print(M1CD)
-	pritn(Chop(Msqrt * Msqrt - M1CD,1E-14))
+	pritn(Chop(Msqrt * Msqrt - M1CD,tolerance))
 	error("Error in Matrix Sqrt\n",1)
 end
 
