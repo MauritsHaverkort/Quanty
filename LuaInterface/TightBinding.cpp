@@ -592,6 +592,9 @@ static int LuaCalculateG(lua_State *L)
     Options.Nk[1]=40;
     Options.Nk[2]=40;
   }
+  if(Options.Nk[0]<1) return luaL_error(L, "Error first number of k-points needs to be larger than 0");
+  if(Options.Nk[1]<1) return luaL_error(L, "Error second number of k-points needs to be larger than 0");
+  if(Options.Nk[2]<1) return luaL_error(L, "Error third number of k-points needs to be larger than 0");
   lua_settop(L, 0);
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
@@ -605,6 +608,10 @@ static int LuaCalculateG(lua_State *L)
   }
   else
   {
+    if(((BlockListOfPoles*)Sigma->data)->BlockSize != a->NFermion )
+    {
+      return luaL_error(L, "Error BlockSize of Sigma (%d) and NFermion of TB Hamiltonian (%d) need to be equivalent ",((BlockListOfPoles*)Sigma->data)->BlockSize , a->NFermion);
+    }
     TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
   }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);

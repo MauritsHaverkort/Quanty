@@ -2,4 +2,17 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
 uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
 uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
 uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
-
+int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G0, const ResponsefunctionType *const Sigma, ResponsefunctionType * G, double Epsilon);
+int ResponseFunctionAddSelfEnergyDenseTriTriLP(const TriDiagonalMatrixType *const G0, const TriDiagonalMatrixType *const Sigma, ListOfPoles * G);
+int ResponseFunctionAddSelfEnergyDenseBlockTriTriLP(const BlockTriDiagonalMatrixType *const G0, const BlockTriDiagonalMatrixType *const Sigma, BlockListOfPoles * G);
+int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *const G0, const ResponsefunctionType *const Sigma, CompactVectorType *const Grid, ResponsefunctionType * G, double Epsilon);
+int ResponseFunctionAddSelfEnergyOnGridTriCompactLP(const TriDiagonalMatrixType *const G0, CompactMatrixType * Sigma, uint32_t SigmaDim, CompactVectorType *const Grid, ListOfPoles * G);
+int ResponseFunctionAddSelfEnergyOnGridBlockTriCompactLP(const BlockTriDiagonalMatrixType *const G0, CompactMatrixType * Sigma, uint32_t SigmaDim, CompactVectorType *const Grid, BlockListOfPoles * G);
+int ResponseFunctionAddSelfEnergyOnGridBlockTriCompactLPRealReal(const BlockTriDiagonalMatrixType *const G0, CompactMatrixType * Sigma, uint32_t SigmaDim, CompactVectorType *const Grid, BlockListOfPoles * G);
+int ResponseFunctionAddSelfEnergyOnGridBlockTriCompactLPRealComplex(const BlockTriDiagonalMatrixType *const G0, CompactMatrixType * Sigma, uint32_t SigmaDim, CompactVectorType *const Grid, BlockListOfPoles * G);
+int ResponseFunctionAddSelfEnergyOnGridBlockTriCompactLPComplexComplex(const BlockTriDiagonalMatrixType *const G0, CompactMatrixType * Sigma, uint32_t SigmaDim, CompactVectorType *const Grid, BlockListOfPoles * G);
+int ResponseFunctionAddSelfEnergyViaAndLP(const ResponsefunctionType *const G0, const ResponsefunctionType *const Sigma, ResponsefunctionType * G, double Epsilon, CompactVectorType *const Grid);
+int ResponseFunctionAddSelfEnergyAndLPAnd(const AndersonMatrixType *const G0, const ListOfPoles *const Sigma, AndersonMatrixType * G, double Epsilon);
+int ResponseFunctionAddSelfEnergyBlockAndLPAnd(const BlockAndersonMatrixType *const G0, const BlockListOfPoles *const Sigma, BlockAndersonMatrixType * G, double Epsilon);
+int ResponseFunctionAddSelfEnergyOnGridAndLPAnd(const AndersonMatrixType *const G0, const ListOfPoles *const Sigma, AndersonMatrixType * G, double Epsilon, CompactVectorType *const Grid);
+int ResponseFunctionAddSelfEnergyOnGridBlockAndLPAnd(const BlockAndersonMatrixType *const G0, const BlockListOfPoles *const Sigma, BlockAndersonMatrixType * G, double Epsilon, CompactVectorType *const Grid);

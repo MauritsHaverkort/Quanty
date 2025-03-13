@@ -522,13 +522,20 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
  *
  *   Options allow to specify an energy grid for the final response function in ListOfPoles representation
  *
+ *   We have implemented several methods using different approximations
+ *     Not all methods are valid for all systems
+ *     Some methods migth treat systems with off diagonal elements incorrectly
+ *     Some mehtods might treat cases where we deflate the blocksize in a tri-diagonal form incorrectly
  */
 static int LuaCalculateGfromG0andSigma(lua_State *L)
 {
   ResponsefunctionType *G0,*G,*Sigma;
   CompactVectorType Grid={0,0,NULL};
   double Epsilon=1000*DBL_EPSILON;
+  char* Method;
+  Method = (char*)"TriDiagonalG0";
   LuaOptionsType CalculateSelfEnergyOptions[]={
+    {"Method","char*",&Method},
     {"Epsilon","double",&(Epsilon)},
     {"EnergyGrid","Vector",&Grid},
     {NULL, NULL, NULL}};
@@ -549,11 +556,45 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
   G     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   if(Grid.Ni==0)
   {
-    CalculateGfromG0andSigma(G0, Sigma, G, Epsilon);
+    if (strcmp(Method,"TriDiagonalG0")==0)
+    {
+      ResponseFunctionAddSelfEnergyDenseViaTri(G0, Sigma, G, Epsilon);
+    }
+    else if (strcmp(Method,"ListOfPolesG0")==0)
+    {
+      // note that this method is not gennerally correct
+      CalculateGfromG0andSigma(G0, Sigma, G, Epsilon);
+    }
+    else if (strcmp(Method,"AndG0")==0)
+    {
+      // note that this method is not gennerally correct
+      ResponseFunctionAddSelfEnergyViaAndLP(G0, Sigma, G,Epsilon, NULL);
+    }
+    else
+    {
+      return luaL_error(L, "CalculateHybridizationFunction called with unkown method.\n");
+    }
   }
   else
   {
-    CalculateGfromG0andSigmaOnGrid(G0, Sigma, &Grid, G, Epsilon);
+    if (strcmp(Method,"TriDiagonalG0")==0)
+    {
+      ResponseFunctionAddSelfEnergyOnGridViaG0Tri(G0, Sigma, &Grid, G, Epsilon);
+    }
+    else if (strcmp(Method,"ListOfPolesG0")==0)
+    {
+      // note that this method is not gennerally correct
+      CalculateGfromG0andSigmaOnGrid(G0, Sigma, &Grid, G, Epsilon);
+    }
+    else if (strcmp(Method,"AndG0")==0)
+    {
+      // note that this method is not gennerally correct
+      ResponseFunctionAddSelfEnergyViaAndLP(G0, Sigma, G,Epsilon, &Grid);
+    }
+    else
+    {
+      return luaL_error(L, "CalculateHybridizationFunction called with unkown method.\n");
+    }
     free(Grid.VRe);
     Grid.Ni=0;
     Grid.QComplex=0;
@@ -2797,8 +2838,11 @@ static int LuaResponseFunctionTableIndexChop(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_Index[] = {
   {"mu",     LuaResponseFunctionIndexMu},
+  {"Mu",     LuaResponseFunctionIndexMu},
   {"type",   LuaResponseFunctionIndexType},
+  {"Type",   LuaResponseFunctionIndexType},
   {"name",   LuaResponseFunctionIndexName},
+  {"Name",   LuaResponseFunctionIndexName},
   {NULL, NULL}
 };
 
@@ -2963,7 +3007,9 @@ static int LuaResponseFunctionNewIndexName(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_NewIndex[] = {
   {"mu",     LuaResponseFunctionNewIndexMu},
+  {"Mu",     LuaResponseFunctionNewIndexMu},
   {"name",   LuaResponseFunctionNewIndexName},
+  {"Name",   LuaResponseFunctionNewIndexName},
   {NULL, NULL}
 };
 

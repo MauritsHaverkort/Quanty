@@ -2924,22 +2924,22 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     if (CompactMatrixCopy(*A, fun)) return 1;
     strcpy(fun->Name, "Eigenvectors of ");
     strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-    zheev(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &info);
+    zheevd(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
     if (info != 0)
     {
-      printf("zheev failed in CompactMatrixEigensystem with info value %i\n", info);
+      printf("zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
       printf("While working on matrix %s\n", A->Name);
-      printf("continue diagonalization with zheevd\n");
+      printf("continue diagonalization with zheev\n");
       fflush(stdout);
       FreeCompactMatrix(fun);
       if (CompactMatrixCopy(*A,fun))
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
       strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-      zheevd(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+      zheev(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &info);
       if (info != 0)
       {
-        printf("also zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
+        printf("also zheev failed in CompactMatrixEigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
         free(iwork);
@@ -3773,6 +3773,10 @@ uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, Bl
   FreeCompactMatrix(&vec);
   return 0;
 }
+
+
+
+
 
 
 

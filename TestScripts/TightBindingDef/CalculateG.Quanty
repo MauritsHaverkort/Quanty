@@ -11,6 +11,98 @@ print("-- Begin TightBinding - CalculateG                    --")
 print("--------------------------------------------------------")
 TimeStart("All")
 
+TimeStart("Mini model")
+
+HTB = NewTightBinding()
+HTB.Name = "Mini Model"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {  0,0,0},       {{"s", {"up","dn"}}}} }
+HTB.Hopping =  {{"A.s","A.s",{ 1, 0,0},{{-1, 0},{0 ,-1}}},
+	              {"A.s","A.s",{-1, 0,0},{{-1, 0},{0 ,-1}}},
+								{"A.s","A.s",{ 0, 0,0},{{0 , 0.2},{0.2 ,1}}}
+								}
+print(HTB)
+
+Sigma = ResponseFunction.New({ {{{0,1},{1,0.5}},-1,3}, { {{1,0.5},{0.5,1}}, {{1,-0.5},{-0.5,2}} }, mu=0, type="ListOfPoles", name="Sigma 1"})
+
+
+
+
+G0 = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",200}}))
+G  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",200}}))
+
+print(HTB(2*pi * 0/4,0,0))
+print(HTB(2*pi * 1/4,0,0))
+print(HTB(2*pi * 3/4,0,0))
+print(HTB(2*pi * 4/4,0,0))
+
+G0Tri = ResponseFunction.ChangeType(G0,"Tri")
+
+
+print("G0")
+print(G0)
+print("G0 Tridiagonal")
+print(G0Tri)
+print("G by summing over k")
+print(G)
+
+
+Grid={}
+for i=0,200 do
+	Grid[i+1] = i*0.1-10
+end
+G1 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",Grid}}))
+G2 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma))
+
+
+
+TimeStart("Plot")
+PlotPoints = 200
+Emin=-6
+Emax= 6
+dETick=2
+dYtick=1
+YRange=5
+
+
+PlG  = Graphics.Plot(G, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+Graphics.Add(PlG,Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+																				{"LineStyle",{{},
+																											{{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																											{{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+																				{"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+Graphics.Add(PlG,Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+																				{"LineStyle",{{},
+																											{{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+																											{{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+																				{"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/PlG_SimpleModle_WithSigma.svg",'w')
+file:write(SVGPlG)
+file:close()
+TimeEnd("Plot")
+
+
+
+
+TimeEnd("Mini model")
+TimePrint()
+--os.exit()
+
+
+
+
+
+
+
+
 print("Start by defining different model Hamiltonians ")
 
 HTBList   = {}
@@ -77,8 +169,9 @@ HTB.Hopping =  {{"Cu.d","Cu.d",{   0,   0,0},{{      ed}}},
 HTBList[2] = Copy(HTB)
 SigmaList[2]={}
 SigmaList[2][1] = ResponseFunction.New({ {{{1,0,0},{0,1,0},{0,0,1}},0}, {{{0,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 1"})
-SigmaList[2][2] = ResponseFunction.New({ {{{1,0,0},{0,0,0},{0,0,0}},0}, {{{0,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
-SigmaList[2][3] = ResponseFunction.New({ {{{0,0,0},{0,0,0},{0,0,0}},-6,-2,2}, {{{1,0,0},{0,1,0},{0,0,1}},{{0,0,0},{0,1,1},{0,1,1}},{{1,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 3"})
+SigmaList[2][2] = ResponseFunction.New({ {{{1,0,0},{0,1,0},{0,0,1}},-6,2}, {{{1,0,0},{0,1,0},{0,0,1}}, {{0.5,0,0},{0,0.5,0},{0,0,0.5}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+SigmaList[2][3] = ResponseFunction.New({ {{{1,0,0},{0,0,0},{0,0,0}},0}, {{{0,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 3"})
+SigmaList[2][4] = ResponseFunction.New({ {{{0,0,0},{0,0,0},{0,0,0}},-6,-2,2}, {{{1,0,0},{0,1,0},{0,0,1}},{{0,0,0},{0,1,1},{0,1,1}},{{1,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 4"})
 
 
 
@@ -110,6 +203,9 @@ HTB.Hopping =  {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
 
 HTBList[3] = Copy(HTB)
 SigmaList[3]={}
+SigmaList[3][1] = ResponseFunction.New({ {{{1,0},{0,1}}},{}, mu=0, type="ListOfPoles", name="Sigma 1"})
+SigmaList[3][2] = ResponseFunction.New({ {{{1,0},{0,1}},-1}, {{{1,0},{0,1}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+SigmaList[3][3] = ResponseFunction.New({ {{{1,0},{0,1}},-1}, {{{0.5,0},{0,1}}}, mu=0, type="ListOfPoles", name="Sigma 3"})
 
 print("Defined tight binding for ",HTBList[3].Name)
 
@@ -172,6 +268,9 @@ HTB = Chop(Rotate(HTB,rotmat,{{"A",{0,0,0},{{"s",{"dn","up"}},{"p1/2",{"dn","up"
 
 HTBList[4] = Copy(HTB)
 SigmaList[4]={}
+SigmaList[4][1] = ResponseFunction.New({ {{{1,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}},-1}, {{{1.1,0,0,0},{0,0.9,0,0},{0,0,1.1,0},{0,0,0,0.9}}}, mu=0, type="ListOfPoles", name="Sigma 1"})
+SigmaList[4][2] = ResponseFunction.New({ {{{1,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-2}},-1}, {{{1.1,0,0,0},{0,0.9,0,0},{0,0,1.1,0},{0,0,0,0.9}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+
 
 print("Defined tight binding for ",HTBList[4].Name)
 
@@ -188,7 +287,7 @@ for i=1,#HTBList do
 	
 	-- calculate Gloc
 	TimeStart("kint")
-  Gloc = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",2000}})
+  Gloc = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
   TimeEnd("kint")
 	
 	-- plot Gloc
@@ -213,16 +312,19 @@ for i=1,#HTBList do
 	for j=1,#SigmaList[i] do
 		print("====================================================================")
 	  print("=========  Start with Self energy                      =============")
-	  print("=========  "..SigmaList[i].Name)
+	  print("=========  "..SigmaList[i][j].name)
 	  print("====================================================================")
 		
 		-- calculate GlocS as sum_k 1/(w-Hk-Sigma)
 		TimeStart("kint")
-		GlocS = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",2000}})
+		GlocS = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
 		TimeEnd("kint")
 		TimeStart("G from G0 and Sigma")
-		GlocS2 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
+		GlocS2 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j])
 		TimeEnd("G from G0 and Sigma")
+		TimeStart("G from G0 and Sigma on Grid")
+		GlocS3 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
+		TimeEnd("G from G0 and Sigma on Grid")
 		
 		
 		-- plot GlocS
@@ -233,26 +335,35 @@ for i=1,#HTBList do
 		TimeStart("Plot")
 		PlG  = Graphics.Plot(GlocS, {{"PlotPoints",PlotPoints},
 																 {"LineStyle",{{},
-																			         {{"LineWidth",0.006},{"LineColor",0xFF8080FF}},
-																			         {{"LineWidth",0.006},{"LineColor",0xFFFF8080}}}},
+																			         {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																			         {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
 												         {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
-		PlG2 = Graphics.Plot(GlocS2,{{"PlotPoints",PlotPoints},{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
     Graphics.Add(PlG,Graphics.Plot(GlocS2, {{"PlotPoints",PlotPoints},
 																	          {"LineStyle",{{},
-																								          {{"LineWidth",0.002},{"LineColor",0xFF000080}},
-																								          {{"LineWidth",0.002},{"LineColor",0xFF800000}}}},
+																								          {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																								          {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
 																	          {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		Graphics.Add(PlG,Graphics.Plot(GlocS3, {{"PlotPoints",PlotPoints},
+																						{"LineStyle",{{},
+																													{{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+																													{{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+																						{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
 		SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
 		file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name.."_WithSigma_"..j..".svg",'w')
 		file:write(SVGPlG)
 		file:close()
 		TimeEnd("Plot")
 		
-		
+		-- Calculate GBath
+		TimeStart("CalculateHybridizationFunction")
+			GBath = ResponseFunction.CalculateHybridizationFunction(Gloc,SigmaList[i][j])
+		TimeEnd("CalculateHybridizationFunction")
 		
 		-- use GlocS and GBath to calculate Sigma
-		GBath = ResponseFunction.CalculateHybridizationFunction(Gloc,SigmaList[i][j])
-		SigmaTest = ResponseFunction.CalculateSelfEnergy(GBath,GlocS)
+		TimeStart("CalculateSelfEnergy")
+		  SigmaTest = ResponseFunction.CalculateSelfEnergy(GBath,GlocS)
+		TimeEnd("CalculateSelfEnergy")
 		
 		-- plot SigmaTest and SigmaList[i][j], should be the same
 		PlotPoints=200

@@ -175,7 +175,7 @@ uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B)
  *   If the energy of B.a[i] is lower than A.a[0] or higher than A.a[A.N-1] the values of the outer poles are allowed to shift
  *
  */
-uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * const B, double AminIdeal, double AmaxIdeal)
+uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, const ListOfPoles * const B, double AminIdeal, double AmaxIdeal)
 {
   A->a0 += B->a0;
   double aNew,bNew,frac;

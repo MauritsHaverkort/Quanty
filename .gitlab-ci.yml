@@ -1,5 +1,6 @@
 stages:
   - build
+  - test_math
   - test_matrix
   - test_responsefunction
   - test_tightbinding
@@ -48,6 +49,29 @@ sync_release_to_public:
   - git push public master:main
   only:
     - master
+
+
+# =========================================================================
+# ===== Test functions related to Math
+# ===== These functions are registered in lmathlib.c and an extention of the standard lua math library
+#
+
+test-job-GaussLegendreQuadrature:
+  stage: test_math
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Math/GaussLegendreQuadrature.Quanty"
+  dependencies:
+  - build-job
+
+test-job-SphericalHarmonics:
+  stage: test_math
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Math/SphericalHarmonics.Quanty"
+  dependencies:
+  - build-job
+
 
 # =========================================================================
 # ===== Test single functions acting on different objects

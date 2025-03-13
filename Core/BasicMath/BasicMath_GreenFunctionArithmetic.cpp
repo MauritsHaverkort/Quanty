@@ -2458,7 +2458,11 @@ int GListListListRepresentationOnGrid(ListOfPoles * G0, ListOfPoles * Sigma, dou
   return 0;
 }
 
-
+/*
+ *  Warning this is not the general form of G.
+ *  with G0 and S represented as block list of poles
+ *  Blocksize of G0 and Sigma need to be the same, not tested
+ */
 int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * Sigma, BlockListOfPoles *G)
 {
   if(G0->N==0) // special case when G0 has no poles
@@ -2466,8 +2470,8 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
     CopyBlockListOfPoles(*G0, G);
     return 0;
   }
-  // general case. The number of poles in G is the product of the number of poles in G0 and (Sigma+1)
-  G->N = (G0->N) * (Sigma->N + 1);
+  // general case. The maximal number of poles in G is the product of the number of poles in G0 and (Sigma+1) times the size of the block.
+  G->N = (G0->N) * (Sigma->N + 1) * G0->BlockSize;
   G->QComplex = G0->QComplex | Sigma->QComplex;
   G->BlockSize = G0->BlockSize;
   if(InitBlockListOfPoles(G))
@@ -2476,6 +2480,7 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
     return 1;
   }
   strcpy(G->Name, "G");
+  G->N=0;
   // for each pole in G0 we create an anderson representation of G0 with sigma and rotate this to a list of pole representation
   BlockListOfPoles bSigmaPole;
   BlockAndersonMatrixType bSigma;
@@ -2507,7 +2512,8 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
         return 1;
       }
       // add poles from bSigmaPole to G
-      memcpy(&(G->VRe[i*(Sqr(G0->BlockSize)+1)*(Sigma->N + 1)]), bSigmaPole.VRe, (Sqr(G0->BlockSize)+1)*bSigmaPole.N*sizeof(double));
+      memcpy(&(G->VRe[(G->N)*(Sqr(G->BlockSize)+1)]), bSigmaPole.VRe, (Sqr(G->BlockSize)+1)*bSigmaPole.N*sizeof(double));
+      G->N+=bSigmaPole.N;
       FreeBlockListOfPoles(&bSigmaPole);
     }
     memcpy(G->a0, G0->a0, Sqr(G0->BlockSize)*sizeof(double));
@@ -2549,8 +2555,8 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
           return 1;
         }
         // add poles from bSigmaPole to G
-        memcpy(&(G->V[i*(Sqr(G0->BlockSize)+1)*(Sigma->N + 1)]), bSigmaPole.V, (Sqr(G0->BlockSize)+1)*bSigmaPole.N*sizeof(Complex16));
-        FreeBlockListOfPoles(&bSigmaPole);
+        memcpy(&(G->V[(G->N)*(Sqr(G->BlockSize)+1)]), bSigmaPole.V, (Sqr(G->BlockSize)+1)*bSigmaPole.N*sizeof(Complex16));
+        G->N+=bSigmaPole.N;
       }
       for(int j=0; j<Sqr(G0->BlockSize); j++)
       {
@@ -2587,7 +2593,8 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
           return 1;
         }
         // add poles from bSigmaPole to G
-        memcpy(&(G->V[i*(Sqr(G0->BlockSize)+1)*(Sigma->N + 1)]), bSigmaPole.V, (Sqr(G0->BlockSize)+1)*bSigmaPole.N*sizeof(Complex16));
+        memcpy(&(G->V[(G->N)*(Sqr(G->BlockSize)+1)]), bSigmaPole.V, (Sqr(G->BlockSize)+1)*bSigmaPole.N*sizeof(Complex16));
+        G->N+=bSigmaPole.N;
         FreeBlockListOfPoles(&bSigmaPole);
       }
       memcpy(G->a0, G0->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
@@ -3452,7 +3459,7 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 /*
  *
  */
-int ConvertResponsefunction(ResponsefunctionType *Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
 {
   if(Min->Block==true)
   {

@@ -3178,9 +3178,9 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
             }
           }
         }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
       }
-      FreeMatrix(&H);
-      FreeCompactMatrix(&T);
     }
   }
   Nktot=Nk[0]*Nk[1]*Nk[2];

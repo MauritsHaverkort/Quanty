@@ -454,14 +454,5 @@ int BlockAndersonMatrixFromListOfPolesAsSelfEnergy(BlockListOfPoles const * cons
     }
     
   }
- 
-  
-  
-  
-  
-  
-  
-  
-  
   return 0;
 }
