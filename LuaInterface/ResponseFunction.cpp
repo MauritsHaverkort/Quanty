@@ -533,7 +533,7 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
   CompactVectorType Grid={0,0,NULL};
   double Epsilon=1000*DBL_EPSILON;
   char* Method;
-  Method = (char*)"TriDiagonalG0";
+  Method = (char*)"Automatic";
   LuaOptionsType CalculateSelfEnergyOptions[]={
     {"Method","char*",&Method},
     {"Epsilon","double",&(Epsilon)},
@@ -555,12 +555,12 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
   if(BlockResponseFunctionGetBlockSize(G0) != BlockResponseFunctionGetBlockSize(Sigma)) return luaL_error(L, "CalculateGfromG0andSigma should be called with G0 and Sigma with same dimension of BlockSize\n");
   G     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   if(Grid.Ni==0)
-  {
-    if (strcmp(Method,"TriDiagonalG0")==0)
+  { // not on a grid
+    if ((strcmp(Method,"TriDiagonalG0")==0) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)))
     {
       ResponseFunctionAddSelfEnergyDenseViaTri(G0, Sigma, G, Epsilon);
     }
-    else if (strcmp(Method,"ListOfPolesG0")==0)
+    else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)))
     {
       // note that this method is not gennerally correct
       CalculateGfromG0andSigma(G0, Sigma, G, Epsilon);
@@ -576,12 +576,12 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
     }
   }
   else
-  {
-    if (strcmp(Method,"TriDiagonalG0")==0)
+  { // on a grid
+    if ((strcmp(Method,"TriDiagonalG0")==0) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)))
     {
       ResponseFunctionAddSelfEnergyOnGridViaG0Tri(G0, Sigma, &Grid, G, Epsilon);
     }
-    else if (strcmp(Method,"ListOfPolesG0")==0)
+    else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)))
     {
       // note that this method is not gennerally correct
       CalculateGfromG0andSigmaOnGrid(G0, Sigma, &Grid, G, Epsilon);
