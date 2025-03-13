@@ -321,16 +321,40 @@ for i=1,#HTBList do
 		TimeStart("kint")
 		GlocS = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
 		TimeEnd("kint")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
 		print("Start ResponseFunction.CalculateGfromG0andSigma")
 		io.flush()
 		TimeStart("G from G0 and Sigma")
 		GlocS2 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j])
 		TimeEnd("G from G0 and Sigma")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
 		print("Start ResponseFunction.CalculateGfromG0andSigma on grid")
 		io.flush()
 		TimeStart("G from G0 and Sigma on Grid")
 		GlocS3 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
 		TimeEnd("G from G0 and Sigma on Grid")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
 		print("Start Plot")
 		io.flush()
 		
@@ -345,22 +369,55 @@ for i=1,#HTBList do
 																			         {{"LineWidth",0.008},{"LineColor",0xFF000080}},
 																			         {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
 												         {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
-    Graphics.Add(PlG,Graphics.Plot(GlocS2, {{"PlotPoints",PlotPoints},
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot GlocS2")
+		io.flush()
+		Graphics.Add(PlG,Graphics.Plot(GlocS2, {{"PlotPoints",PlotPoints},
 																	          {"LineStyle",{{},
 																								          {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
 																								          {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
 																	          {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot GlocS3")
+		io.flush()
 		Graphics.Add(PlG,Graphics.Plot(GlocS3, {{"PlotPoints",PlotPoints},
 																						{"LineStyle",{{},
 																													{{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
 																													{{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
 																						{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
-
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start ToSVG")
+		io.flush()
 		SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
 		file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name.."_WithSigma_"..j..".svg",'w')
 		file:write(SVGPlG)
 		file:close()
 		TimeEnd("Plot")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
 		
 		print("Start ResponseFunction.CalculateHybridizationFunction")
 		io.flush()
@@ -369,6 +426,13 @@ for i=1,#HTBList do
 			GBath = ResponseFunction.CalculateHybridizationFunction(Gloc,SigmaList[i][j])
 		TimeEnd("CalculateHybridizationFunction")
 		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
 		print("Start ResponseFunction.CalculateSelfEnergy")
 		io.flush()
 		-- use GlocS and GBath to calculate Sigma
@@ -376,7 +440,14 @@ for i=1,#HTBList do
 		  SigmaTest = ResponseFunction.CalculateSelfEnergy(GBath,GlocS)
 		TimeEnd("CalculateSelfEnergy")
 		
-		print("Start Plot")
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot Sigma")
 		io.flush()
 		-- plot SigmaTest and SigmaList[i][j], should be the same
 		PlotPoints=200
@@ -414,6 +485,8 @@ TimePrint()
 
 
 
+print("Start Garbage")
+io.flush()
 collectgarbage()
 collectgarbage()
 collectgarbage()
