@@ -691,6 +691,45 @@ static int math_LaguerreL(lua_State * L)
   return 1;
 }
 
+static int math_GaussLegendreQuadrature(lua_State *L)
+{
+  if(lua_gettop(L)!=1) return luaL_error(L, "math.GaussLegendreQuadratur expects 1 parameters n");
+  int n = (int) luaL_checknumber(L, 1);
+  if((n<1)||(n>127)) return luaL_error(L, "math.GaussLegendreQuadratur expects n to be in the range [1,...,127]");
+  const double * Quad = GaussLegendreQuadrature(n);
+  lua_createtable(L, n, 0);
+  lua_createtable(L, n, 0);
+  for (int i=1;i<=n;i++)
+  {
+    lua_pushnumber(L, Quad[2*(i-1)]);
+    lua_rawseti(L, -3, i);
+    lua_pushnumber(L, Quad[(2*i)-1]);
+    lua_rawseti(L, -2, i);
+  }
+  return 2;
+}
+static int math_GaussLegendreQuadratureNode(lua_State *L)
+{
+  if(lua_gettop(L)!=2) return luaL_error(L, "math.GaussLegendreQuadraturNode expects 2 parameters n");
+  int n = (int) luaL_checknumber(L, 1);
+  if((n<1)||(n>127)) return luaL_error(L, "math.GaussLegendreQuadraturNode expects n to be in the range [1,...,127]");
+  int i = (int) luaL_checknumber(L, 2);
+  if((i<1)||(i>n)) return luaL_error(L, "math.GaussLegendreQuadraturNode expects i to be in the range [1,...,n]");
+  lua_pushnumber(L, *GaussLegendreQuadratureNode(n,i-1));
+  return 1;
+}
+static int math_GaussLegendreQuadratureWeight(lua_State *L)
+{
+  if(lua_gettop(L)!=2) return luaL_error(L, "math.GaussLegendreQuadraturNode expects 2 parameters n");
+  int n = (int) luaL_checknumber(L, 1);
+  if((n<1)||(n>127)) return luaL_error(L, "math.GaussLegendreQuadraturNode expects n to be in the range [1,...,127]");
+  int i = (int) luaL_checknumber(L, 2);
+  if((i<1)||(i>n)) return luaL_error(L, "math.GaussLegendreQuadraturNode expects i to be in the range [1,...,n]");
+  lua_pushnumber(L, *GaussLegendreQuadratureWeight(n,i-1));
+  return 1;
+}
+
+
 /* on stack w,GFWHM,LFWHM
  *  returns a real number
  */
@@ -1024,6 +1063,9 @@ static const luaL_Reg mathlib[] = {
   {"KubicHarmonicE",     math_KubicHarmonicE},
   {"SphericalBesselJ",   math_SphericalBesselJ},
   {"LaguerreL",          math_LaguerreL},
+  {"GaussLegendreQuadrature", math_GaussLegendreQuadrature},
+  {"GaussLegendreQuadratureWeight", math_GaussLegendreQuadratureWeight},
+  {"GaussLegendreQuadratureNode", math_GaussLegendreQuadratureNode},
   {"Voight",             math_Voight},
   {"IntegerQ",           math_IntegerQ},
   {"EvenQ",              math_EvenQ},
