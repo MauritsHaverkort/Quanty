@@ -563,18 +563,19 @@ int LuaPlotGraphics(lua_State * L)
   InitGraphics(Graphics);
   struct
   {
+    double   ScaleOffDiagonal;
+    double   ShiftOffDiagonal;
+    
+    int      Nrow;
+    int      Ncolumn;
+    int      PlotPoints;
+    
     FramePlotOptions Frame;
     LinePlotOptionsArray Style;
     
     bool     PlotIm;
     bool     PlotRe;
-    double   Negate;
-    int      Nrow;
-    int      Ncolumn;
-    int      PlotPoints;
-    
-    double   ScaleOffDiagonal;
-    double   ShiftOffDiagonal;
+    bool     Negate;
   } Options;
   Options.Frame.PlotRange[0].X=-INFINITY;
   Options.Frame.PlotRange[0].Y=-INFINITY;
