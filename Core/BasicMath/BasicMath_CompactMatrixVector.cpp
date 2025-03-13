@@ -2883,7 +2883,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     }
     strcpy(fun->Name, "Eigenvectors of ");
     strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-    dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
+    dsyevd(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, iwork, &liwork, &info);
     if (info)
     {
       printf("dsyev failed in CompactMatrixEigensystem with info value %i\n", info);
@@ -2895,7 +2895,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
       strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-      dsyevd(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, iwork, &liwork, &info);
+      dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
       if (info)
       {
         printf("also dsyevd failed in CompactMatrixEigensystem with info value %i\n", info);
