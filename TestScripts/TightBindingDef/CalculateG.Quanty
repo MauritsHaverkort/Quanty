@@ -316,16 +316,23 @@ for i=1,#HTBList do
 	  print("====================================================================")
 		
 		-- calculate GlocS as sum_k 1/(w-Hk-Sigma)
+		print("Start CalculateG")
+		io.flush()
 		TimeStart("kint")
 		GlocS = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
 		TimeEnd("kint")
+		print("Start ResponseFunction.CalculateGfromG0andSigma")
+		io.flush()
 		TimeStart("G from G0 and Sigma")
 		GlocS2 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j])
 		TimeEnd("G from G0 and Sigma")
+		print("Start ResponseFunction.CalculateGfromG0andSigma on grid")
+		io.flush()
 		TimeStart("G from G0 and Sigma on Grid")
 		GlocS3 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
 		TimeEnd("G from G0 and Sigma on Grid")
-		
+		print("Start Plot")
+		io.flush()
 		
 		-- plot GlocS
 		Emin   = -10
