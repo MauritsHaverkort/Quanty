@@ -53,9 +53,8 @@ Grid={}
 for i=0,200 do
 	Grid[i+1] = i*0.1-10
 end
---G1 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",Grid}}))
+G1 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",Grid}}))
 G2 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma))
-G1 = Copy(G2)
 
 
 
@@ -346,8 +345,7 @@ for i=1,#HTBList do
 		print("Start ResponseFunction.CalculateGfromG0andSigma on grid")
 		io.flush()
 		TimeStart("G from G0 and Sigma on Grid")
-		GlocS3 = Copy(GlocS2)
-		--GlocS3 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
+		GlocS3 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
 		TimeEnd("G from G0 and Sigma on Grid")
 		
 		print("Start Garbage")

@@ -1444,6 +1444,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         G0ResTri.SuggestedGrid=NULL;
         // and now restart the function
         ResponseFunctionAddSelfEnergyOnGridViaG0Tri(&G0ResTri, &SigmaTri, Grid, G, Epsilon);
+        FreeResponsefunction(&SigmaTri);
         // we need to free G0 if this was not called as a tridiagonal format
         if(!((G0->type=='t')||(G0->type=='T')))
         {
@@ -1465,6 +1466,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
       FreeBlockTridiagonalMatrix(G0Data);
       free(G0Data);
     }
+    FreeCompactMatrix(&GMat);
   }
   else // non block function
   {

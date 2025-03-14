@@ -226,6 +226,7 @@ void FreeGraphics(GraphicsType* Graphics)
   for(i=1;i<Graphics->NLayer;i++)
   {
     FreeGraphics( Graphics->Layer[i] );
+    free(Graphics->Layer[i]);
   }
   free(Graphics->Layer);
   for(i=0;i<Graphics->NLine;i++) FreeLine(&(Graphics->Line[i]));
