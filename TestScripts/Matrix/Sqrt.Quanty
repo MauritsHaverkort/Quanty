@@ -12,7 +12,7 @@ M1C = {{5,-I, 2, 0},
 setmetatable(M1C, MatrixMeta)
 M1CD = Matrix.New(M1C)
 
-tolerance = 1E-13
+tolerance = 1E-14
 
 Msqrt = Matrix.Sqrt(M1)
 if not(Chop(Msqrt * Msqrt - M1,tolerance)==Matrix.Zero(4,{{"userdata",false}})) then

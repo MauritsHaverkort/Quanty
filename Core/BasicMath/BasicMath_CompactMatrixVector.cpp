@@ -2883,7 +2883,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     }
     strcpy(fun->Name, "Eigenvectors of ");
     strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-    dsyevd(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, iwork, &liwork, &info);
+    dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
     if (info)
     {
       printf("dsyev failed in CompactMatrixEigensystem with info value %i\n", info);
@@ -2895,7 +2895,7 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
       strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-      dsyev(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, &info);
+      dsyevd(jobz, uplo, &A->Ni, fun->VRe, &A->Ni, val, work, &lwork, iwork, &liwork, &info);
       if (info)
       {
         printf("also dsyevd failed in CompactMatrixEigensystem with info value %i\n", info);
@@ -2924,22 +2924,22 @@ uint32_t CompactMatrixEigensystem(CompactMatrixType const *A, CompactMatrixType 
     if (CompactMatrixCopy(*A, fun)) return 1;
     strcpy(fun->Name, "Eigenvectors of ");
     strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-    zheevd(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+    zheev(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &info);
     if (info != 0)
     {
-      printf("zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
+      printf("zheev failed in CompactMatrixEigensystem with info value %i\n", info);
       printf("While working on matrix %s\n", A->Name);
-      printf("continue diagonalization with zheev\n");
+      printf("continue diagonalization with zheevd\n");
       fflush(stdout);
       FreeCompactMatrix(fun);
       if (CompactMatrixCopy(*A,fun))
         return 1;
       strcpy(fun->Name, "Eigenvectors of ");
       strncat(fun->Name, A->Name, Max(0, MAXStrLength - 16));
-      zheev(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &info);
+      zheevd(jobz, uplo, &A->Ni, fun->V, &A->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
       if (info != 0)
       {
-        printf("also zheev failed in CompactMatrixEigensystem with info value %i\n", info);
+        printf("also zheevd failed in CompactMatrixEigensystem with info value %i\n", info);
         printf("ERORR!!!!!!!!!!\n");
         fflush(stdout);
         free(iwork);
