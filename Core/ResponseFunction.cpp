@@ -1637,6 +1637,7 @@ int ResponseFunctionAddSelfEnergyOnGridBlockTriCompactLPRealReal(const BlockTriD
         Sigma->VRe[j+i*Sigma->Nj]=0;
       }
     }
+    FreeBlockTridiagonalMatrix(&Gminor);
     FreeBlockListOfPoles(&SigmaTemp);
     HermitianCompactMatrixToBlockListOfPoles(Sigma, &SigmaTemp, G0->BlockSize);
     BlockListOfPolesPlaceOnMesh(&SigmaTemp, Grid->VRe, Grid->Ni);
