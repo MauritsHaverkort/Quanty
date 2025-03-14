@@ -2757,9 +2757,9 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
             }
           }
         }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
       }
-      FreeMatrix(&H);
-      FreeCompactMatrix(&T);
     }
   }
   Nktot=Nk[0]*Nk[1]*Nk[2];
@@ -2954,9 +2954,9 @@ uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef cons
             }
           }
         }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
       }
-      FreeMatrix(&H);
-      FreeCompactMatrix(&T);
     }
   }
   Nktot=Nk[0]*Nk[1]*Nk[2];
@@ -3446,9 +3446,9 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
             }
           }
         }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
       }
-      FreeMatrix(&H);
-      FreeCompactMatrix(&T);
     }
   }
   Nktot=Nk[0]*Nk[1]*Nk[2];
@@ -3677,8 +3677,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
             }
           }
         }
+        FreeCompactMatrix(&T);
       }
-      FreeCompactMatrix(&T);
     }
   }
   FreeMatrix(&PsiChar);
@@ -3949,8 +3949,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
             }
           }
         }
+        FreeCompactMatrix(&T);
       }
-      FreeCompactMatrix(&T);
     }
   }
   FreeMatrix(&PsiChar);
