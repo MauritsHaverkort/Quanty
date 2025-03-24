@@ -1378,7 +1378,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         SigmaDim = SData->BlockSize * (SData->N+1);
         GMat.Ni = G0Data->BlockSize * Grid->Ni + SigmaDim;
         GMat.Nj = GMat.Ni;
-        GMat.QComplex = G0Data->QComplex | SData->QComplex;
+        GMat.QComplex = G0Data->QComplex || SData->QComplex;
         if(InitCompactMatrix(&GMat))
         {
           printf("Error InitCompactMatrix failed in ResponseFunctionAddSelfEnergyOnGridViaG0Tri\n");
