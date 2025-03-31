@@ -1412,22 +1412,112 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         }
         else if (SData->QComplex==0)
         { // GMat complex but SData real
-          printf("TODO");
+          for(int k=0;k<SData->N;k++)
+          {
+            for(int i=0;i<SData->BlockSize;i++)
+            {
+              for(int j=0;j<SData->BlockSize;j++)
+              {
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Re = SData->aRe[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)];
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Im = 0;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize        ].Re = SData->bRe[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)];
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize        ].Im = 0;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize*GMat.Nj].Re = SData->bRe[i+j*SData->BlockSize + k*Sqr(SData->BlockSize)];
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize*GMat.Nj].Im = 0;
+              }
+            }
+          }
+          {
+            int k=SData->N;
+            for(int i=0;i<SData->BlockSize;i++)
+            {
+              for(int j=0;j<SData->BlockSize;j++)
+              {
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Re = SData->aRe[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)];
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Im = 0;
+              }
+            }
+          }
         }
         else
         { // GMat and SData both complex
-          printf("TODO");
+          for(int k=0;k<SData->N;k++)
+          {
+            for(int i=0;i<SData->BlockSize;i++)
+            {
+              for(int j=0;j<SData->BlockSize;j++)
+              {
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Re = SData->a[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)].Re;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Im = SData->a[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)].Im;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize        ].Re = SData->b[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)].Re;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize        ].Im = SData->b[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)].Im;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize*GMat.Nj].Re = SData->b[i+j*SData->BlockSize + k*Sqr(SData->BlockSize)].Re;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize) + SData->BlockSize*GMat.Nj].Im =-SData->b[i+j*SData->BlockSize + k*Sqr(SData->BlockSize)].Im;
+              }
+            }
+          }
+          {
+            int k=SData->N;
+            for(int i=0;i<SData->BlockSize;i++)
+            {
+              for(int j=0;j<SData->BlockSize;j++)
+              {
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Re = SData->a[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)].Re;
+                GMat.V[j+i*GMat.Nj + k*(GMat.Nj+1)*(SData->BlockSize)                           ].Im = SData->a[j+i*SData->BlockSize + k*Sqr(SData->BlockSize)].Im;
+              }
+            }
+          }
         }
       }
       break;
       case 'a':
       {
-        printf("TODO");
+        // transform Sigma to tridiagonal type and call the function again.
+        // this part can be replaced by filling the matrix with the anderson form without the aditional transformation
+        ResponsefunctionType SigmaTri;
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        // We already transformed G0ResTri to tridiagonal format so lets reuse this
+        ResponsefunctionType G0ResTri;
+        G0ResTri.type='t';
+        G0ResTri.data=G0Data;
+        G0ResTri.Block=true;
+        G0ResTri.NSuggestedGridPoints=0;
+        G0ResTri.SuggestedGrid=NULL;
+        // and now restart the function
+        ResponseFunctionAddSelfEnergyOnGridViaG0Tri(&G0ResTri, &SigmaTri, Grid, G, Epsilon);
+        FreeResponsefunction(&SigmaTri);
+        // we need to free G0 if this was not called as a tridiagonal format
+        if(!((G0->type=='t')||(G0->type=='T')))
+        {
+          FreeBlockTridiagonalMatrix(G0Data);
+          free(G0Data);
+        }
+        return 0;
       }
       break;
       case 'n':
       {
-        printf("TODO");
+        // transform Sigma to tridiagonal type and call the function again.
+        // this part can be replaced by filling the matrix with the natural orbital form without the aditional transformation
+        ResponsefunctionType SigmaTri;
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        // We already transformed G0ResTri to tridiagonal format so lets reuse this
+        ResponsefunctionType G0ResTri;
+        G0ResTri.type='t';
+        G0ResTri.data=G0Data;
+        G0ResTri.Block=true;
+        G0ResTri.NSuggestedGridPoints=0;
+        G0ResTri.SuggestedGrid=NULL;
+        // and now restart the function
+        ResponseFunctionAddSelfEnergyOnGridViaG0Tri(&G0ResTri, &SigmaTri, Grid, G, Epsilon);
+        FreeResponsefunction(&SigmaTri);
+        // we need to free G0 if this was not called as a tridiagonal format
+        if(!((G0->type=='t')||(G0->type=='T')))
+        {
+          FreeBlockTridiagonalMatrix(G0Data);
+          free(G0Data);
+        }
+        return 0;
       }
       break;
       case 'l':
@@ -1454,6 +1544,11 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         return 0;
       }
       break;
+      default:
+      {
+        printf("ERORR in ResponseFunctionAddSelfEnergyOnGridViaG0Tri\n Unrecognized type for Sigma\n");
+        return 1;
+      }
     }
     G->Block=true;
     G->type='l';
@@ -1470,13 +1565,14 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
   }
   else // non block function
   {
-    printf("TODO");
+    printf("ERORR in ResponseFunctionAddSelfEnergyOnGridViaG0Tri\n Method only implemented for Block response functions\n");
+    return 1;
   }
   return 0;
 }
 int ResponseFunctionAddSelfEnergyOnGridTriCompactLP(const TriDiagonalMatrixType *const G0, CompactMatrixType * Sigma, uint32_t SigmaDim, CompactVectorType *const Grid, ListOfPoles * G)
 {
-  //TODO
+  printf("TODO\n");
   return 0;
 }
 /*   The top left SigmaDim by SigmaDim block of Sigma contains the self energy
