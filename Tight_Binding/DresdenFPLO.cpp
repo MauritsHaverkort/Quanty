@@ -308,7 +308,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 			{
 				++siteSpecificShellCounter;
 			}
-			ShellName[ish] = (char*) malloc(4 * sizeof(char));
+			ShellName[ish] = (char*) malloc(6 * sizeof(char));
 			ShellName[ish][0] = (char) (FPLO.Wannier.Orbital[i][0] + '0');
 			if ((bool) FPLO.Wannier.QRelativistic)
 			{

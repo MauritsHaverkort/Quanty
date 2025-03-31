@@ -2,7 +2,7 @@
 
 Repository of Quanty. If you intend to work on part of the code please discuss this first with Maurits, he coordinates the different parts and tasks. 
 
-The Master branch is for stabel releases
+The Master branch is for stable releases
 
 The Develop branch is for the current version with updates. The develop branch should be stable and bug free, i.e. only finished projects should be pushed to develop. Historically not always true. 
 
@@ -27,12 +27,18 @@ Possible compile commands for the intel compiler on linux are:
 
 icc quanty/LuaInterface/main.cpp -D LUA_USE_LINUX -O3 -ipo -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty
 
-i.e. we link to openmp, blas, lapack and the standard libraries 
+i.e. we link to openmp, blas, lapack and the standard libraries.
+
+A possible command for GNU g++ or clang++ is:
+
+g++ LuaInterface/main.cpp -D LUA_USE_LINUX -DBLASunderscore -O3 -fopenmp -flto -o Quanty -lblas -llapack
+
+Note the use of the BLASunderscore macro here, that Quanty exposes to use different conventions of blas and lapack libraries.
 
 
 ================== C v.s. C++                                      =======================
 
-Quanty was originally written in C. Based upon many requests I transfered the code to C++. After a few years of experience I seriously tought about changing the code back to pure C. In the end I decided agains this, but this does require some restraints on the people who develop code.
+Quanty was originally written in C. Based upon many requests I transfered the code to C++. After a few years of experience I seriously tought about changing the code back to pure C. In the end I decided againts this, but this does require some restraints on the people who develop code.
 
 First the problem: When students implement reasonable but inefficient code in C I can convert and optimize this. C++ allows the creation of very inefficient code and I have a hard time optimizing this. 
 
@@ -64,7 +70,7 @@ Last but not least, out of bound read and writes can give rise to security issue
 
 ================== Indentation                                     =======================
 
-We prefer to have a common style for indentation throughout the code. Opening and closing brakets have their own line and we indent by two spaces.
+We prefer to have a common style for indentation throughout the code. Opening and closing brackets have their own line and we indent by two spaces.
 
 
 ================== Small special functions                         =======================
@@ -84,9 +90,9 @@ Furthermore the compiler sees every function and can optimize. As long as compil
 
 The main functions of Quanty can be found in the folder Core. Here you also find the fileStructDef.cpp. This file defines the structures we use for data storage in Quanty.
 
-The C functions are unsafe and do no type checking (i.e. junk in junk out) 
+The C functions are unsafe and do no type checking (i.e. junk in junk out).
 
-You find the lua based interface in the folder LuaInterface. The file main.cpp links the code together with includes (yes we have one big file we compile)
+You find the lua based interface in the folder LuaInterface. The file main.cpp links the code together with includes (yes we have one big file we compile).
 
 The main Lua interface based code can be found in the file ssp.cpp. The botom of this file registers the Quanty functions in the lua registry.
 
