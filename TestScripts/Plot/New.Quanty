@@ -1,0 +1,29 @@
+
+print("-------------------------------------------------------")
+print("--                   Graphics.New                    --")
+print("-------------------------------------------------------")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+-- we can look at the coordinates of the paper
+print(pl.SizeX)
+print(pl.SizeY)
+print(pl.OriginX)
+print(pl.OriginY)
+
+-- and change the coordinates of the paper
+pl.SizeX=1
+pl.SizeY=2
+
+print(pl.SizeX)
+print(pl.SizeY)
+print(pl.OriginX)
+print(pl.OriginY)
+
+
+pl = nil
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()

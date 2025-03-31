@@ -196,8 +196,8 @@ void InitGraphics(GraphicsType* G)
 {
   G->CanvasOrigin.X=0;
   G->CanvasOrigin.Y=0;
-  G->CanvasSize.X=297.3017787506803; //A4 landscape
-  G->CanvasSize.Y=210.2241038134286;
+  G->CanvasSize.X=297.30177875068026667937499264012; //A4 landscape
+  G->CanvasSize.Y=210.22410381342863575778136905830;
   G->NLayer  = 1;
   G->Layer = (GraphicsType**)malloc(sizeof(GraphicsType*));
   G->Layer[0]=G;

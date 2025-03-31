@@ -46,6 +46,26 @@ int LuaNewGraphics(lua_State * L)
   return 1;
 }
 
+int LuaAddToGraphicsMethod(lua_State *L)
+{
+  lua_pushvalue(L, lua_upvalueindex(1));
+  lua_insert(L, 1);
+  LuaAddToGraphics(L);
+  return 0;
+}
+
+int LuaAddToGraphicsFunction(lua_State *L)
+{
+  GraphicsType *GraphicsOld = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
+  GraphicsType *Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+  luaL_setmetatable(L, "Graphics_Type");
+  CopyGraphics(GraphicsOld, Graphics);
+  lua_replace(L, 1);
+  LuaAddToGraphics(L);
+  lua_pushvalue(L, 1);
+  return 1;
+}
+
 int LuaAddToGraphics(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -1202,6 +1222,12 @@ int LuaGraphicsIndex(lua_State * L)
     lua_pushinteger(L, Graphics->NBitMap);
     return 1;
   }
+  if (strcmp(str, "Add") == 0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaAddToGraphicsMethod,1);
+    return 1;
+  }
   return luaL_error(L, "Error index %s not found in Graphics Object\n",str);
 }
 
@@ -1437,7 +1463,7 @@ static int LuaSVGHTMLViewer(lua_State *L)
 
 static const struct luaL_Reg Graphics_func[] = {
   {"New", LuaNewGraphics},
-  {"Add", LuaAddToGraphics},
+  {"Add", LuaAddToGraphicsFunction},
   {"Plot", LuaPlotGraphics},
   {"ToPS", LuaGraphicsToPS},
   {"ToSVG", LuaGraphicsToSVG},

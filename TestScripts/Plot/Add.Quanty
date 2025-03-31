@@ -1,0 +1,425 @@
+-- Determine working directory (same as the directory of the input script)
+directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
+
+print("-------------------------------------------------------")
+print("--                   Graphics.Add                    --")
+print("-------------------------------------------------------")
+
+
+
+print("Add line")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl2 = Graphics.Add(pl  , {{0,0},{0.5,0.5}})
+pl3 = Graphics.Add(pl2 , {{0.1,0.3},{0.2,0.3},{0.2,0.4}},{{"Close",true}})
+pl4 = Graphics.Add(pl3 , {{0.2,0.1},{0.5,0.2}},{{"Line Width",0.05}})
+pl5 = Graphics.Add(pl4 , {{0.6,0.8},{0.2,0.8},{0.3,0.2}},{{"Close",true},
+									                                        {"Fill Color",0xFF0000},
+									                                        {"Fill Transparancy",0x80}})
+pl6 = Graphics.Add(pl5 , {{0.0,0.3},{0.9,0.2}},{{"Line Width",0.05},
+									                              {"Color",0x0000FF},
+									                              {"Transparancy",0xA0}})
+
+SVGpl = Graphics.ToSVG(pl6,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_line_function.svg",'w')
+file:write(SVGpl)
+file:close()
+
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="7" d="M 0 5959 L 4214 2979 " />
+<path opacity="1.00000" fill="#000000" stroke="#000000" stroke-width="7" d="M 843 4171 L 1685 4171 L 1685 3575 Z " />
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="354" d="M 1685 5363 L 4214 4767 " />
+<path fill-opacity="0.50196" stroke-opacity="1.00000" fill="#ff0000" stroke="#000000" stroke-width="7" d="M 5056 1192 L 1685 1192 L 2528 4767 Z " />
+<path fill="none" opacity="0.62745" stroke="#0000ff" stroke-width="354" d="M 0 4171 L 7585 4767 " />
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+print("Add curve")
+
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl2 = Graphics.Add(pl  , {{0,0, 0,0, 0,0.2},{0.5,0.7, 0.5,0.5, 0,0}})
+pl3 = Graphics.Add(pl2 , {{0.10,0.35, 0.1,0.3, 0.15,0.30},
+									        {0.15,0.30, 0.2,0.3, 0.20,0.35},
+									        {0.20,0.35, 0.2,0.4, 0.15,0.35}},{{"Close",true}})
+pl4 = Graphics.Add(pl3 , {{0,0, 0.2,0.1, 0.0,0.3},{0.7,0.0, 0.5,0.2, 0,0}},{{"Line Width",0.05}})
+pl5 = Graphics.Add(pl4 , {{0.5,0.8, 0.6,0.8, 0.5,0.8},
+									        {0.4,0.7, 0.2,0.8, 0.4,0.7},
+									        {0.2,0.1, 0.3,0.2, 0.2,0.1}},{{"Close",true},
+																												{"Fill Color",0xFF0000},
+																												{"Fill Transparancy",0x80}})
+pl6 = Graphics.Add(pl5 , {{0,0, 0.0,0.3, 0.1,0.8},{0.7,0.6,0.9,0.2,0,0}},{{"Line Width",0.05},
+																								{"Color",0x0000FF},
+																								{"Transparancy",0xA0}})
+
+SVGpl = Graphics.ToSVG(pl6,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_curve_function.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="7" d="M 0 5959 C 0 4767 4214 1788 4214 2979" />
+<path opacity="1.00000" fill="#000000" stroke="#000000" stroke-width="7" d="M 843 4171 C 1264 4171 1264 4171 1685 4171C 1685 3873 1685 3873 1685 3575C 1264 3873 843 3873 843 4171" />
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="354" d="M 1685 5363 C 0 4171 5899 5959 4214 4767" />
+<path fill-opacity="0.50196" stroke-opacity="1.00000" fill="#ff0000" stroke="#000000" stroke-width="7" d="M 5056 1192 C 4214 1192 3371 1788 1685 1192C 3371 1788 1685 5363 2528 4767C 1685 5363 4214 1192 5056 1192" />
+<path fill="none" opacity="0.62745" stroke="#0000ff" stroke-width="354" d="M 0 4171 C 843 1192 5899 2384 7585 4767" />
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+print("Add arc")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl2 = Graphics.Add(pl  , {"Arc", {0.5,0.5}, 0.2})
+pl3 = Graphics.Add(pl2 , {"Arc", {0.2,0.2}, 0.1, 0.5*pi,2*pi})
+pl4 = Graphics.Add(pl3 , {"Arc", {0.6,0.2}, 0.1, 1.5*pi,1*pi},{{"Close",true},
+									                                             {"Fill Color",0xFF0000},
+																			                         {"Fill Transparancy",0x80},
+									                                             {"Line Width",0.05},
+									                                             {"Color",0x0000FF},
+																	                             {"Transparancy",0xA0}})
+pl5 = Graphics.Add(pl4 , {"Arc", {0.7,0.7}, 0.4},{{"Close",true},
+																									{"Fill Color",0x00FF00},
+																									{"Fill Transparancy",0x80}})
+pl6 = Graphics.Add(pl5 , {"Arc", {0.1,0.4}, 0.4},{{"Close",true},
+																									{"Fill Color",0xFFFF00},
+																									{"Fill Transparancy",0xC0}})
+
+SVGpl = Graphics.ToSVG(pl6,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_arc_function.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<circle cx="4214" cy="2979" r="1417" stroke-width="7" stroke="#000000" fill="none" opacity="1.00000" />
+<path d="M 1685.00 4058.00 A 709 709 0 1 0 2394.00 4767.00 " fill="none" opacity="1.00000" stroke="#000000" stroke-width="7" />
+<path d="M 5056.00 5476.00 A 709 709 0 1 0 4347.00 4767.00 L 5056 4767 Z" fill-opacity="0.50196" stroke-opacity="0.62745" fill="#ff0000" stroke="#0000ff" stroke-width="354" />
+<circle cx="5899" cy="1788" r="2835" stroke-width="7" stroke="#000000" fill-opacity="0.50196" stroke-opacity="1.00000" fill="#00ff00" />
+<circle cx="843" cy="3575" r="2835" stroke-width="7" stroke="#000000" fill-opacity="0.75294" stroke-opacity="1.00000" fill="#ffff00" />
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+
+print("Add text")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl2 = Graphics.Add(pl  , "Some text", 0.1,0.1)
+pl3 = Graphics.Add(pl2 , "Some more text", 0.2,0.2,{{"Angle",pi/4},
+									                                  {"Font","CourierNewPSMT"}})
+pl4 = Graphics.Add(pl3 , "Quanty", 0.3,0.3,{{"Line Width",0.05},
+																						{"Color",0x800000},
+									                          {"Font","Arial-Black"}})
+pl5 = Graphics.Add(pl4 , "Oh and some more text", 0.4,0.4,{{"Transparancy",0xA0},
+									                                         {"Font","Verdana"}})
+pl6 = Graphics.Add(pl5 , "Never enough text", 0.8,0.7,{{"Font","ArialMT"},{"Alignment","l"}})
+pl7 = Graphics.Add(pl6 , "Never enough text", 0.8,0.8,{{"Font","ArialMT"},{"Alignment","c"}})
+pl8 = Graphics.Add(pl7 , "Never enough text", 0.8,0.9,{{"Font","ArialMT"},{"Alignment","r"}})
+
+SVGpl = Graphics.ToSVG(pl8,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_text_function.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<text x="843" y="5363" opacity="1.00000" font-family="TimesNewRomanPSMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Some text
+</text>
+<text x="1685" y="4767" transform="rotate(-45 1685,4767)" opacity="1.00000" font-family="CourierNewPSMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Some more text
+</text>
+<text x="2528" y="4171" opacity="1.00000" font-family="Arial-Black" style="stroke:none; fill:#800000; font-size: 354px; text-anchor: start" >
+Quanty
+</text>
+<text x="3371" y="3575" opacity="0.62745" font-family="Verdana" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Oh and some more text
+</text>
+<text x="6742" y="1788" opacity="1.00000" font-family="ArialMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Never enough text
+</text>
+<text x="6742" y="1192" opacity="1.00000" font-family="ArialMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: middle"
+>
+Never enough text
+</text>
+<text x="6742" y="596" opacity="1.00000" font-family="ArialMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: end" >
+Never enough text
+</text>
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+
+print("Add bitmap")
+
+BlackWith = {}
+for i=0,15 do
+	BlackWith[i]={}
+	for j=0,15 do
+		BlackWith[i][j]=i*j
+	end
+end
+RGB={}
+for i=0,15 do
+	RGB[i]={}
+	for j=0,15 do
+		RGB[i][j]={i*16+i,j*16+j,0}
+	end
+end
+
+
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl2 = Graphics.Add(pl  , {"BitMap", {0.0,0.0}, {0.2,0.2}, BlackWith})
+pl3 = Graphics.Add(pl2 , {"BitMap", {0.2,0.2}, {0.4,0.4}, RGB})
+
+SVGpl = Graphics.ToSVG(pl3,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_BitMap_function.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<image x="0" y="4767" width="1685" height="1192" preserveAspectRatio="none" xlink:href="data:image/bmp;base64,Qk26AwAAAAAAADYAAAAoAAAADwAAAA8AAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADw8P/x4eHv8tLS3/PDw8/0tLS/9aWlr/aWlp/3h4eP+Hh4f/lpaW/6Wlpf+0tLT/w8PD/9LS0v/h4eH/Dg4O/xwcHP8qKir/ODg4/0ZGRv9UVFT/YmJi/3BwcP9+fn7/jIyM/5qamv+oqKj/tra2/8TExP/S0tL/DQ0N/xoaGv8nJyf/NDQ0/0FBQf9OTk7/W1tb/2hoaP91dXX/goKC/4+Pj/+cnJz/qamp/7a2tv/Dw8P/DAwM/xgYGP8kJCT/MDAw/zw8PP9ISEj/VFRU/2BgYP9sbGz/eHh4/4SEhP+QkJD/nJyc/6ioqP+0tLT/CwsL/xYWFv8hISH/LCws/zc3N/9CQkL/TU1N/1hYWP9jY2P/bm5u/3l5ef+EhIT/j4+P/5qamv+lpaX/CgoK/xQUFP8eHh7/KCgo/zIyMv88PDz/RkZG/1BQUP9aWlr/ZGRk/25ubv94eHj/goKC/4yMjP+Wlpb/CQkJ/xISEv8bGxv/JCQk/y0tLf82Njb/Pz8//0hISP9RUVH/Wlpa/2NjY/9sbGz/dXV1/35+fv+Hh4f/CAgI/xAQEP8YGBj/ICAg/ygoKP8wMDD/ODg4/0BAQP9ISEj/UFBQ/1hYWP9gYGD/aGho/3BwcP94eHj/BwcH/w4ODv8VFRX/HBwc/yMjI/8qKir/MTEx/zg4OP8/Pz//RkZG/01NTf9UVFT/W1tb/2JiYv9paWn/BgYG/wwMDP8SEhL/GBgY/x4eHv8kJCT/Kioq/zAwMP82Njb/PDw8/0JCQv9ISEj/Tk5O/1RUVP9aWlr/BQUF/woKCv8PDw//FBQU/xkZGf8eHh7/IyMj/ygoKP8tLS3/MjIy/zc3N/88PDz/QUFB/0ZGRv9LS0v/BAQE/wgICP8MDAz/EBAQ/xQUFP8YGBj/HBwc/yAgIP8kJCT/KCgo/ywsLP8wMDD/NDQ0/zg4OP88PDz/AwMD/wYGBv8JCQn/DAwM/w8PD/8SEhL/FRUV/xgYGP8bGxv/Hh4e/yEhIf8kJCT/Jycn/yoqKv8tLS3/AgIC/wQEBP8GBgb/CAgI/woKCv8MDAz/Dg4O/xAQEP8SEhL/FBQU/xYWFv8YGBj/Ghoa/xwcHP8eHh7/AQEB/wICAv8DAwP/BAQE/wUFBf8GBgb/BwcH/wgICP8JCQn/CgoK/wsLC/8MDAz/DQ0N/w4ODv8PDw//"/>
+<image x="1685" y="3575" width="1685" height="1192" preserveAspectRatio="none" xlink:href="data:image/bmp;base64,Qk26AwAAAAAAADYAAAAoAAAADwAAAA8AAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABH//wAi//8AM///AET//wBV//8AZv//AHf//wCI//8Amf//AKr//wC7//8AzP//AN3//wDu//8A////ABHu/wAi7v8AM+7/AETu/wBV7v8AZu7/AHfu/wCI7v8Ame7/AKru/wC77v8AzO7/AN3u/wDu7v8A/+7/ABHd/wAi3f8AM93/AETd/wBV3f8AZt3/AHfd/wCI3f8Amd3/AKrd/wC73f8AzN3/AN3d/wDu3f8A/93/ABHM/wAizP8AM8z/AETM/wBVzP8AZsz/AHfM/wCIzP8Amcz/AKrM/wC7zP8AzMz/AN3M/wDuzP8A/8z/ABG7/wAiu/8AM7v/AES7/wBVu/8AZrv/AHe7/wCIu/8Ambv/AKq7/wC7u/8AzLv/AN27/wDuu/8A/7v/ABGq/wAiqv8AM6r/AESq/wBVqv8AZqr/AHeq/wCIqv8Amar/AKqq/wC7qv8AzKr/AN2q/wDuqv8A/6r/ABGZ/wAimf8AM5n/AESZ/wBVmf8AZpn/AHeZ/wCImf8AmZn/AKqZ/wC7mf8AzJn/AN2Z/wDumf8A/5n/ABGI/wAiiP8AM4j/AESI/wBViP8AZoj/AHeI/wCIiP8AmYj/AKqI/wC7iP8AzIj/AN2I/wDuiP8A/4j/ABF3/wAid/8AM3f/AER3/wBVd/8AZnf/AHd3/wCId/8AmXf/AKp3/wC7d/8AzHf/AN13/wDud/8A/3f/ABFm/wAiZv8AM2b/AERm/wBVZv8AZmb/AHdm/wCIZv8AmWb/AKpm/wC7Zv8AzGb/AN1m/wDuZv8A/2b/ABFV/wAiVf8AM1X/AERV/wBVVf8AZlX/AHdV/wCIVf8AmVX/AKpV/wC7Vf8AzFX/AN1V/wDuVf8A/1X/ABFE/wAiRP8AM0T/AERE/wBVRP8AZkT/AHdE/wCIRP8AmUT/AKpE/wC7RP8AzET/AN1E/wDuRP8A/0T/ABEz/wAiM/8AMzP/AEQz/wBVM/8AZjP/AHcz/wCIM/8AmTP/AKoz/wC7M/8AzDP/AN0z/wDuM/8A/zP/ABEi/wAiIv8AMyL/AEQi/wBVIv8AZiL/AHci/wCIIv8AmSL/AKoi/wC7Iv8AzCL/AN0i/wDuIv8A/yL/ABER/wAiEf8AMxH/AEQR/wBVEf8AZhH/AHcR/wCIEf8AmRH/AKoR/wC7Ef8AzBH/AN0R/wDuEf8A/xH/"/>
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+
+
+
+print("-------------------------------------------------------")
+print("--                       pl.Add                      --")
+print("-------------------------------------------------------")
+
+
+print("Add line")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl.Add( {{0,0},{0.5,0.5}})
+pl.Add({{0.1,0.3},{0.2,0.3},{0.2,0.4}},{{"Close",true}})
+pl.Add({{0.2,0.1},{0.5,0.2}},{{"Line Width",0.05}})
+pl.Add({{0.6,0.8},{0.2,0.8},{0.3,0.2}},{{"Close",true},
+																													{"Fill Color",0xFF0000},
+																													{"Fill Transparancy",0x80}})
+pl.Add({{0.0,0.3},{0.9,0.2}},{{"Line Width",0.05},
+																								{"Color",0x0000FF},
+																								{"Transparancy",0xA0}})
+
+SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_line_method.svg",'w')
+file:write(SVGpl)
+file:close()
+
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="7" d="M 0 5959 L 4214 2979 " />
+<path opacity="1.00000" fill="#000000" stroke="#000000" stroke-width="7" d="M 843 4171 L 1685 4171 L 1685 3575 Z " />
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="354" d="M 1685 5363 L 4214 4767 " />
+<path fill-opacity="0.50196" stroke-opacity="1.00000" fill="#ff0000" stroke="#000000" stroke-width="7" d="M 5056 1192 L 1685 1192 L 2528 4767 Z " />
+<path fill="none" opacity="0.62745" stroke="#0000ff" stroke-width="354" d="M 0 4171 L 7585 4767 " />
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+print("Add curve")
+
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl.Add({{0,0, 0,0, 0,0.2},{0.5,0.7, 0.5,0.5, 0,0}})
+pl.Add({{0.10,0.35, 0.1,0.3, 0.15,0.30},
+													{0.15,0.30, 0.2,0.3, 0.20,0.35},
+													{0.20,0.35, 0.2,0.4, 0.15,0.35}},{{"Close",true}})
+pl.Add({{0,0, 0.2,0.1, 0.0,0.3},{0.7,0.0, 0.5,0.2, 0,0}},{{"Line Width",0.05}})
+pl.Add({{0.5,0.8, 0.6,0.8, 0.5,0.8},
+													{0.4,0.7, 0.2,0.8, 0.4,0.7},
+													{0.2,0.1, 0.3,0.2, 0.2,0.1}},{{"Close",true},
+																												{"Fill Color",0xFF0000},
+																												{"Fill Transparancy",0x80}})
+pl.Add({{0,0, 0.0,0.3, 0.1,0.8},{0.7,0.6,0.9,0.2,0,0}},{{"Line Width",0.05},
+																								{"Color",0x0000FF},
+																								{"Transparancy",0xA0}})
+
+SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_curve_method.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="7" d="M 0 5959 C 0 4767 4214 1788 4214 2979" />
+<path opacity="1.00000" fill="#000000" stroke="#000000" stroke-width="7" d="M 843 4171 C 1264 4171 1264 4171 1685 4171C 1685 3873 1685 3873 1685 3575C 1264 3873 843 3873 843 4171" />
+<path fill="none" opacity="1.00000" stroke="#000000" stroke-width="354" d="M 1685 5363 C 0 4171 5899 5959 4214 4767" />
+<path fill-opacity="0.50196" stroke-opacity="1.00000" fill="#ff0000" stroke="#000000" stroke-width="7" d="M 5056 1192 C 4214 1192 3371 1788 1685 1192C 3371 1788 1685 5363 2528 4767C 1685 5363 4214 1192 5056 1192" />
+<path fill="none" opacity="0.62745" stroke="#0000ff" stroke-width="354" d="M 0 4171 C 843 1192 5899 2384 7585 4767" />
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+print("Add arc")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl.Add({"Arc", {0.5,0.5}, 0.2})
+pl.Add({"Arc", {0.2,0.2}, 0.1, 0.5*pi,2*pi})
+pl.Add( {"Arc", {0.6,0.2}, 0.1, 1.5*pi,1*pi},{{"Close",true},
+																															 {"Fill Color",0xFF0000},
+																															 {"Fill Transparancy",0x80},
+																															 {"Line Width",0.05},
+																															 {"Color",0x0000FF},
+																															 {"Transparancy",0xA0}})
+pl.Add({"Arc", {0.7,0.7}, 0.4},{{"Close",true},
+																									{"Fill Color",0x00FF00},
+																									{"Fill Transparancy",0x80}})
+pl.Add({"Arc", {0.1,0.4}, 0.4},{{"Close",true},
+																									{"Fill Color",0xFFFF00},
+																									{"Fill Transparancy",0xC0}})
+
+SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_arc_method.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<circle cx="4214" cy="2979" r="1417" stroke-width="7" stroke="#000000" fill="none" opacity="1.00000" />
+<path d="M 1685.00 4058.00 A 709 709 0 1 0 2394.00 4767.00 " fill="none" opacity="1.00000" stroke="#000000" stroke-width="7" />
+<path d="M 5056.00 5476.00 A 709 709 0 1 0 4347.00 4767.00 L 5056 4767 Z" fill-opacity="0.50196" stroke-opacity="0.62745" fill="#ff0000" stroke="#0000ff" stroke-width="354" />
+<circle cx="5899" cy="1788" r="2835" stroke-width="7" stroke="#000000" fill-opacity="0.50196" stroke-opacity="1.00000" fill="#00ff00" />
+<circle cx="843" cy="3575" r="2835" stroke-width="7" stroke="#000000" fill-opacity="0.75294" stroke-opacity="1.00000" fill="#ffff00" />
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+
+print("Add text")
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl.Add( "Some text", 0.1,0.1)
+pl.Add("Some more text", 0.2,0.2,{{"Angle",pi/4},
+																										{"Font","CourierNewPSMT"}})
+pl.Add( "Quanty", 0.3,0.3,{{"Line Width",0.05},
+																						{"Color",0x800000},
+																						{"Font","Arial-Black"}})
+pl.Add( "Oh and some more text", 0.4,0.4,{{"Transparancy",0xA0},
+																													 {"Font","Verdana"}})
+pl.Add( "Never enough text", 0.8,0.7,{{"Font","ArialMT"},{"Alignment","l"}})
+pl.Add( "Never enough text", 0.8,0.8,{{"Font","ArialMT"},{"Alignment","c"}})
+pl.Add( "Never enough text", 0.8,0.9,{{"Font","ArialMT"},{"Alignment","r"}})
+
+SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_text_method.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<text x="843" y="5363" opacity="1.00000" font-family="TimesNewRomanPSMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Some text
+</text>
+<text x="1685" y="4767" transform="rotate(-45 1685,4767)" opacity="1.00000" font-family="CourierNewPSMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Some more text
+</text>
+<text x="2528" y="4171" opacity="1.00000" font-family="Arial-Black" style="stroke:none; fill:#800000; font-size: 354px; text-anchor: start" >
+Quanty
+</text>
+<text x="3371" y="3575" opacity="0.62745" font-family="Verdana" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Oh and some more text
+</text>
+<text x="6742" y="1788" opacity="1.00000" font-family="ArialMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: start" >
+Never enough text
+</text>
+<text x="6742" y="1192" opacity="1.00000" font-family="ArialMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: middle"
+>
+Never enough text
+</text>
+<text x="6742" y="596" opacity="1.00000" font-family="ArialMT" style="stroke:none; fill:#000000; font-size: 354px; text-anchor: end" >
+Never enough text
+</text>
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+
+
+print("Add bitmap")
+
+BlackWith = {}
+for i=0,15 do
+	BlackWith[i]={}
+	for j=0,15 do
+		BlackWith[i][j]=i*j
+	end
+end
+RGB={}
+for i=0,15 do
+	RGB[i]={}
+	for j=0,15 do
+		RGB[i][j]={i*16+i,j*16+j,0}
+	end
+end
+
+
+
+-- create an empty graphics object
+pl = Graphics.New()
+
+pl.Add({"BitMap", {0.0,0.0}, {0.2,0.2}, BlackWith})
+pl.Add({"BitMap", {0.2,0.2}, {0.4,0.4}, RGB})
+
+SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Add_BitMap_method.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGExpected = [[<svg width="100%" height="100%" viewBox="0 0 8427 5959" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  >
+<image x="0" y="4767" width="1685" height="1192" preserveAspectRatio="none" xlink:href="data:image/bmp;base64,Qk26AwAAAAAAADYAAAAoAAAADwAAAA8AAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADw8P/x4eHv8tLS3/PDw8/0tLS/9aWlr/aWlp/3h4eP+Hh4f/lpaW/6Wlpf+0tLT/w8PD/9LS0v/h4eH/Dg4O/xwcHP8qKir/ODg4/0ZGRv9UVFT/YmJi/3BwcP9+fn7/jIyM/5qamv+oqKj/tra2/8TExP/S0tL/DQ0N/xoaGv8nJyf/NDQ0/0FBQf9OTk7/W1tb/2hoaP91dXX/goKC/4+Pj/+cnJz/qamp/7a2tv/Dw8P/DAwM/xgYGP8kJCT/MDAw/zw8PP9ISEj/VFRU/2BgYP9sbGz/eHh4/4SEhP+QkJD/nJyc/6ioqP+0tLT/CwsL/xYWFv8hISH/LCws/zc3N/9CQkL/TU1N/1hYWP9jY2P/bm5u/3l5ef+EhIT/j4+P/5qamv+lpaX/CgoK/xQUFP8eHh7/KCgo/zIyMv88PDz/RkZG/1BQUP9aWlr/ZGRk/25ubv94eHj/goKC/4yMjP+Wlpb/CQkJ/xISEv8bGxv/JCQk/y0tLf82Njb/Pz8//0hISP9RUVH/Wlpa/2NjY/9sbGz/dXV1/35+fv+Hh4f/CAgI/xAQEP8YGBj/ICAg/ygoKP8wMDD/ODg4/0BAQP9ISEj/UFBQ/1hYWP9gYGD/aGho/3BwcP94eHj/BwcH/w4ODv8VFRX/HBwc/yMjI/8qKir/MTEx/zg4OP8/Pz//RkZG/01NTf9UVFT/W1tb/2JiYv9paWn/BgYG/wwMDP8SEhL/GBgY/x4eHv8kJCT/Kioq/zAwMP82Njb/PDw8/0JCQv9ISEj/Tk5O/1RUVP9aWlr/BQUF/woKCv8PDw//FBQU/xkZGf8eHh7/IyMj/ygoKP8tLS3/MjIy/zc3N/88PDz/QUFB/0ZGRv9LS0v/BAQE/wgICP8MDAz/EBAQ/xQUFP8YGBj/HBwc/yAgIP8kJCT/KCgo/ywsLP8wMDD/NDQ0/zg4OP88PDz/AwMD/wYGBv8JCQn/DAwM/w8PD/8SEhL/FRUV/xgYGP8bGxv/Hh4e/yEhIf8kJCT/Jycn/yoqKv8tLS3/AgIC/wQEBP8GBgb/CAgI/woKCv8MDAz/Dg4O/xAQEP8SEhL/FBQU/xYWFv8YGBj/Ghoa/xwcHP8eHh7/AQEB/wICAv8DAwP/BAQE/wUFBf8GBgb/BwcH/wgICP8JCQn/CgoK/wsLC/8MDAz/DQ0N/w4ODv8PDw//"/>
+<image x="1685" y="3575" width="1685" height="1192" preserveAspectRatio="none" xlink:href="data:image/bmp;base64,Qk26AwAAAAAAADYAAAAoAAAADwAAAA8AAAABACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABH//wAi//8AM///AET//wBV//8AZv//AHf//wCI//8Amf//AKr//wC7//8AzP//AN3//wDu//8A////ABHu/wAi7v8AM+7/AETu/wBV7v8AZu7/AHfu/wCI7v8Ame7/AKru/wC77v8AzO7/AN3u/wDu7v8A/+7/ABHd/wAi3f8AM93/AETd/wBV3f8AZt3/AHfd/wCI3f8Amd3/AKrd/wC73f8AzN3/AN3d/wDu3f8A/93/ABHM/wAizP8AM8z/AETM/wBVzP8AZsz/AHfM/wCIzP8Amcz/AKrM/wC7zP8AzMz/AN3M/wDuzP8A/8z/ABG7/wAiu/8AM7v/AES7/wBVu/8AZrv/AHe7/wCIu/8Ambv/AKq7/wC7u/8AzLv/AN27/wDuu/8A/7v/ABGq/wAiqv8AM6r/AESq/wBVqv8AZqr/AHeq/wCIqv8Amar/AKqq/wC7qv8AzKr/AN2q/wDuqv8A/6r/ABGZ/wAimf8AM5n/AESZ/wBVmf8AZpn/AHeZ/wCImf8AmZn/AKqZ/wC7mf8AzJn/AN2Z/wDumf8A/5n/ABGI/wAiiP8AM4j/AESI/wBViP8AZoj/AHeI/wCIiP8AmYj/AKqI/wC7iP8AzIj/AN2I/wDuiP8A/4j/ABF3/wAid/8AM3f/AER3/wBVd/8AZnf/AHd3/wCId/8AmXf/AKp3/wC7d/8AzHf/AN13/wDud/8A/3f/ABFm/wAiZv8AM2b/AERm/wBVZv8AZmb/AHdm/wCIZv8AmWb/AKpm/wC7Zv8AzGb/AN1m/wDuZv8A/2b/ABFV/wAiVf8AM1X/AERV/wBVVf8AZlX/AHdV/wCIVf8AmVX/AKpV/wC7Vf8AzFX/AN1V/wDuVf8A/1X/ABFE/wAiRP8AM0T/AERE/wBVRP8AZkT/AHdE/wCIRP8AmUT/AKpE/wC7RP8AzET/AN1E/wDuRP8A/0T/ABEz/wAiM/8AMzP/AEQz/wBVM/8AZjP/AHcz/wCIM/8AmTP/AKoz/wC7M/8AzDP/AN0z/wDuM/8A/zP/ABEi/wAiIv8AMyL/AEQi/wBVIv8AZiL/AHci/wCIIv8AmSL/AKoi/wC7Iv8AzCL/AN0i/wDuIv8A/yL/ABER/wAiEf8AMxH/AEQR/wBVEf8AZhH/AHcR/wCIEf8AmRH/AKoR/wC7Ef8AzBH/AN0R/wDuEf8A/xH/"/>
+</svg>
+]]
+
+if not(SVGpl==SVGExpected) then
+	print(SVGpl)
+	error("Plot.Add failed\n", 1)
+end
+

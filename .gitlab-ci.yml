@@ -4,6 +4,7 @@ stages:
   - test_matrix
   - test_responsefunction
   - test_tightbinding
+  - test_plot
   - test
   - deploy
 
@@ -1040,3 +1041,32 @@ test-job-tightbinding-CalculateG:
 
 
 
+  
+
+
+
+
+
+
+
+
+# =========================================================================
+# ===== Test functions related to graphics objects
+# ===== These functions are registered in  Plot/LuaBinding.cpp
+#
+    
+test-job-plot_Add:
+  stage: test_plot
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Plot/Add.Quanty"
+  dependencies:
+  - build-job
+
+test-job-plot_New:
+  stage: test_plot
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/Plot/New.Quanty"
+  dependencies:
+  - build-job

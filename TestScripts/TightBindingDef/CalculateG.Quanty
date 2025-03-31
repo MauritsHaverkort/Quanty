@@ -72,16 +72,16 @@ PlG  = Graphics.Plot(G, {{"PlotPoints",PlotPoints},
 																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
 																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
 														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
-Graphics.Add(PlG,Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
-																				{"LineStyle",{{},
-																											{{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
-																											{{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
-																				{"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
-Graphics.Add(PlG,Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
-																				{"LineStyle",{{},
-																											{{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
-																											{{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
-																				{"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																				 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+													               {{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+													               {{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
 
 SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/PlG_SimpleModle_WithSigma.svg",'w')
@@ -378,11 +378,11 @@ for i=1,#HTBList do
 		
 		print("Start Plot GlocS2")
 		io.flush()
-		Graphics.Add(PlG,Graphics.Plot(GlocS2, {{"PlotPoints",PlotPoints},
-																	          {"LineStyle",{{},
-																								          {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
-																								          {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
-																	          {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		PlG.Add(Graphics.Plot(GlocS2, {{"PlotPoints",PlotPoints},
+																	 {"LineStyle",{{},
+																								 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																								 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+																	 {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
 		print("Start Garbage")
 		io.flush()
 		collectgarbage()
@@ -392,11 +392,11 @@ for i=1,#HTBList do
 		
 		print("Start Plot GlocS3")
 		io.flush()
-		Graphics.Add(PlG,Graphics.Plot(GlocS3, {{"PlotPoints",PlotPoints},
-																						{"LineStyle",{{},
-																													{{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
-																													{{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
-																						{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		PlG.Add(Graphics.Plot(GlocS3, {{"PlotPoints",PlotPoints},
+																	 {"LineStyle",{{},
+																								 {{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+																								 {{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+																	 {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
 		print("Start Garbage")
 		io.flush()
 		collectgarbage()
@@ -460,13 +460,13 @@ for i=1,#HTBList do
 												                                {{"LineWidth",0.006},{"LineColor",0xFF8080FF}},
 																									      {{"LineWidth",0.006},{"LineColor",0xFFFF8080}}}},
 												                  {"Frame",{{"Ymin",-10},{"Ymax",10},{"dYTick",1},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
-		Graphics.Add(PlG, Graphics.Plot(SigmaTest,{{"PlotPoints",PlotPoints},
-																	    	       {"LineStyle",{{},
-																		                         {{"LineWidth",0.002},{"LineColor",0xFF0000A0}},
-																									           {{"LineWidth",0.002},{"LineColor",0xFFA00000}}}},
-																		           {"Frame",{{"Ymin",-10},{"Ymax",10},{"dYTick",1},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
-		Graphics.Add(PlG,"Sigma orig     ",0.65,0.9 ,{{"Color",0xFF0808FF}})
-	  Graphics.Add(PlG,"Sigma from Gloc",0.65,0.85,{{"Color",0xFF0000A0}})
+		PlG.Add(Graphics.Plot(SigmaTest,{{"PlotPoints",PlotPoints},
+																	   {"LineStyle",{{},
+																		               {{"LineWidth",0.002},{"LineColor",0xFF0000A0}},
+																									 {{"LineWidth",0.002},{"LineColor",0xFFA00000}}}},
+																		 {"Frame",{{"Ymin",-10},{"Ymax",10},{"dYTick",1},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		PlG.Add("Sigma orig     ",0.65,0.9 ,{{"Color",0xFF0808FF}})
+	  PlG.Add("Sigma from Gloc",0.65,0.85,{{"Color",0xFF0000A0}})
 		SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
 		file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name.."_Sigma_"..j..".svg",'w')
 		file:write(SVGPlG)
