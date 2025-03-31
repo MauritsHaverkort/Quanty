@@ -558,6 +558,7 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
   { // not on a grid
     if ((strcmp(Method,"TriDiagonalG0")==0) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)))
     {
+      // note that this method is not gennerally correct
       ResponseFunctionAddSelfEnergyDenseViaTri(G0, Sigma, G, Epsilon);
     }
     else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)))
@@ -577,11 +578,13 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
   }
   else
   { // on a grid
-    if ((strcmp(Method,"TriDiagonalG0")==0) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)))
+    if ((strcmp(Method,"TriDiagonalG0")==0) )
     {
+      //TODO: memory problem
+      // note that this method is not gennerally correct
       ResponseFunctionAddSelfEnergyOnGridViaG0Tri(G0, Sigma, &Grid, G, Epsilon);
     }
-    else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)))
+    else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)) )
     {
       // note that this method is not gennerally correct
       CalculateGfromG0andSigmaOnGrid(G0, Sigma, &Grid, G, Epsilon);
