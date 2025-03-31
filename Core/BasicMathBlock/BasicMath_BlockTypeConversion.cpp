@@ -723,6 +723,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   B->mu=A.mu;
   free(alpha);
   FreeCompactMatrix(&beta);
+  FreeCompactMatrix(&T);
   if(B->QComplex)
   {
     for(i=0;i<A.BlockSize*A.BlockSize;i++)
@@ -3995,7 +3996,8 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *p
   {
     M.VRe[i + i * M.Ni] = A[i];
   }
-  CompactMatrixBlockBandDiagonalize(&M, psi, ABlock, SingularValue, psi->Nj, psi->Nj, true, true);
+  CompactMatrixCopy(*psi, T);
+  CompactMatrixBlockBandDiagonalize(&M, T, ABlock, SingularValue, psi->Nj, psi->Nj, true, true);
   FreeCompactMatrix(&M);
   return 0;
 }
