@@ -11,6 +11,7 @@ void MatrixComplexConjugate(MatrixType * const M);
 uint32_t MatrixConjugateTranspose(MatrixType * M);
 double MatrixInverse(MatrixType * M);
 uint32_t MatrixAddShifted(MatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm,int ishift, int jshift);
+uint32_t MatrixAddShifted(CompactMatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm,int ishift, int jshift);
 uint32_t MatrixAddShiftedConjugateTranspose(MatrixType * const M, const MatrixType B, double const alphaRe,double const alphaIm, int ishift, int jshift);
 uint32_t MatrixAdd(MatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm);
 uint32_t MatrixScalarMultiply(MatrixType * const M, double const alphaRe, double const alphaIm);

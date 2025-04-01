@@ -63,3 +63,12 @@ int BitMapToFile(BitMapType *BitMap, const char *filename)
   return 0;
 }
 
+int MakeBitMatWhiteTransparent(BitMapType *BitMap)
+{
+  for(int i=0;i<BitMap->NpointsX*BitMap->NpointsY;i++)
+  {
+    BitMap->Pixels[i] = 0x00FFFFFF;
+  }
+  
+  return 0;
+}

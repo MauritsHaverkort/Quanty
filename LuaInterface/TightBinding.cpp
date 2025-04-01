@@ -480,14 +480,228 @@ static int LuaCalculateDOS(lua_State *L)
   return 1;
 }
 
-/*
+/* On stack we have
+ *     1) a tight binding Hamiltonian, HTB
+ *     2) a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}
+ *     3) a function that assigns a double value (Character) between 0 and 1 to a vector of length HTB.NFermion  (used as Black-White band-color or band-thickness)
+ *     3,4)     same as 3 (used as Black-White band-color and band-thickness)
+ *     3,4,5)   same as 3 (used as RGB band-color)
+ *     3,4,5,6) same as 3 (used as RGB band-color and band-thickness)
+ *     -1) possible options
  *
+ *     we return
+ *     1) a matrix of dimensions HTB.NFermion by sum_i N_i + (#(kpath)+1)/2 with the band eigenbvalues
+ *     2) (3,4,5,6) a matrix of dimensions HTB.NFermion by sum_i N_i + (#(kpath)+1)/2 with the band character
  */
 static int LuaCalculateBands(lua_State *L)
 {
-  //TODO: all
-
-  return 1;
+  // check (and read) the input
+  LuaOptionsType LuaCalculateBandOptions[]={
+  {NULL, NULL, NULL}};
+  int len = (int)lua_gettop(L);
+  if (LuaTestOptionsList(L,-1))
+  {
+    LuaCheckOptions(L,-1,LuaCalculateBandOptions);
+    len--;
+  }
+  if(len<2)
+  {
+    return luaL_error(L, "Error CalculateBands: called with %d arguments (excluding options), minimal 2 expected (TightBindingDef, and k-path).\n",len);
+  }
+  if(len>6)
+  {
+    return luaL_error(L, "Error CalculateBands: called with %d arguments (excluding options), maximal 6 expected (TightBindingDef, k-path, (0 to 4 times) a function that transforms an eigenstate to a character (value between 0 and 1) ).\n",len);
+  }
+  int NCharacter = len-2;
+  TightBindingDef *HTB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  // check (and read) the k-list
+  BandstructurePathType kList;
+  if(!(lua_istable(L, 2)))
+  {
+    return luaL_error(L, "Error CalculateBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\n");
+  }
+  int lenklist = (int)lua_objlen(L, 2);
+  int Nktot = (lenklist+1)/2;
+  if(lenklist&&1==0)
+  {
+    return luaL_error(L, "Error CalculateBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\nThe length should be odd and not %d\n",lenklist);
+  }
+  kList.NQ = (lenklist+1)/2;
+  kList.Q  = (BandstructurePointType*)malloc(kList.NQ*sizeof(BandstructurePointType));
+  kList.Units = HTB->Cell.Units;
+  for(int i=1;i<=lenklist;i+=2)
+  {
+    // test k-point
+    lua_rawgeti(L, 2, i); // put the table {Label, k-vec} on the stack
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==2))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    lua_rawgeti(L,-1,1); // put the string Label on the stack
+    if(!(lua_type(L, -1)==LUA_TSTRING))
+    {
+      lua_pop(L,1);
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    kList.Q[(i-1)/2].label = lua_tolstring(L, -1, NULL)[0];
+    lua_pop(L,1); // remove the string from the stack
+    lua_rawgeti(L,-1,2); // put the k-point on the stack
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==3))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    for(int j=0;j<3;j++)
+    {
+      lua_rawgeti(L, -1, j+1);
+      kList.Q[(i-1)/2].q[j] = (double)luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1); // remove the k-point from the stack
+    lua_pop(L,1); // remove the table {Lable, k-vec} from the stack
+    // test integer N
+    if(i==lenklist)
+    {
+      kList.Q[(i-1)/2].Nq = 0;
+    }
+    else
+    {
+      lua_rawgeti(L, 2, i+1); // put the integer Ni on the stack
+      if (!lua_isnumber(L, -1))
+      {
+        return luaL_error(L, "Wrong format for k-list at position %d\nExpected an integer\n",i+1);
+      }
+      kList.Q[(i-1)/2].Nq = (int) lua_tointeger(L, -1);
+      if(kList.Q[(i-1)/2].Nq<0)
+      {
+        return luaL_error(L, "Number of k-points in the path can not be negative at position %d\n",i+1);
+      }
+      Nktot += kList.Q[(i-1)/2].Nq;
+      lua_pop(L,1);
+    }
+  }
+  // finished reading the k-list
+  // produce output
+  // we will place these on the lua stack later by copying the pointers
+  CompactMatrixType val;
+  CompactMatrixType *Character;
+  Character = (CompactMatrixType *)malloc(NCharacter * sizeof(CompactMatrixType));
+  val.Ni = Nktot;
+  val.Nj = HTB->NFermion;
+  val.QComplex = 0;
+  InitCompactMatrix(&val);
+  strcpy(val.Name, "Band Energies");
+  for(int i=0;i<NCharacter;i++)
+  {
+    Character[i].Ni = Nktot;
+    Character[i].Nj = HTB->NFermion;
+    Character[i].QComplex = 0;
+    InitCompactMatrix(&(Character[i]));
+    sprintf(Character[i].Name, "Band Character %d",i+1);
+  }
+  // check that position 3 to 2+NCharacterare indeed functions
+  for(int i=0;i<NCharacter;i++)
+  {
+    if (!lua_isfunction(L, 3+i))
+    {
+      return luaL_error(L, "Expected a function that takes an eigenstate and returns a character (number of type double bewteen 0 and 1) on position %d\n",3+i);
+    }
+  }
+  // loop over all k-points
+  {
+    CompactMatrixType H, *T;
+    T = (CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+    T->OnLuaStack=false; // warning danger -- we should not loose track of T on the lua stack before we make T save to be garbage collected
+    luaL_setmetatable(L, "Matrix_Type");
+    int ik=0;
+    double k[3];
+    for(int i=0; i<kList.NQ; i++)
+    {
+      for(int j=0; j<=kList.Q[i].Nq; j++)
+      {
+        if(j==0)
+        {
+          k[0] = kList.Q[i].q[0];
+          k[1] = kList.Q[i].q[1];
+          k[2] = kList.Q[i].q[2];
+        }
+        else
+        {
+          k[0] = kList.Q[i].q[0] * (kList.Q[i].Nq + 1 - j) / (kList.Q[i].Nq + 1) + kList.Q[i+1].q[0] * j / (kList.Q[i].Nq + 1) ;
+          k[1] = kList.Q[i].q[1] * (kList.Q[i].Nq + 1 - j) / (kList.Q[i].Nq + 1) + kList.Q[i+1].q[1] * j / (kList.Q[i].Nq + 1) ;
+          k[2] = kList.Q[i].q[2] * (kList.Q[i].Nq + 1 - j) / (kList.Q[i].Nq + 1) + kList.Q[i+1].q[2] * j / (kList.Q[i].Nq + 1) ;
+        }
+        CreateHamiltonianFromTightBindingDef(*HTB, k, &H);
+        CompactMatrixEigensystem(&H, T, &(val.VRe[ik*val.Nj]));
+        // transform eigenstates to character
+        for(int c=0;c<NCharacter;c++)
+        {
+          lua_pushvalue(L, 3+c);             // Lua function
+          lua_createtable(L, 0, 2);
+          lua_pushvalue(L, 3+NCharacter);    // pointer to T
+          lua_setfield(L,-2,"__Matrix");
+          lua_pushnumber(L, 0);
+          lua_setfield(L,-2,"__Row");
+          lua_getglobal(L, "MatrixRowMeta");
+          lua_setmetatable(L, -2);
+          for(int l=0;l<T->Nj;l++)
+          {
+            lua_pushvalue(L, -2); // copy function to stack as pcall removes it
+            lua_pushvalue(L, -2); // copy matrix row to stack as pcal removes it
+            lua_pushnumber(L, l+1);
+            lua_setfield(L,-2,"__Row");
+            if (lua_pcall(L, 1, 1, 0) != LUA_OK)
+            {
+              const char *err = lua_tostring(L, -1);
+              luaL_error(L, "Error in character function %d: %s", c+1, err);
+            }
+            Character[c].VRe[ik*T->Nj+l] = (double)luaL_checknumber(L, -1);
+            lua_pop(L,1);
+          }
+          lua_pop(L,1);
+          lua_pop(L,1);
+        }
+        FreeCompactMatrix(T);
+        FreeCompactMatrix(&H);
+        ik++;
+      }
+    }
+    // T is a matrix on the Lua Stack, but the last action was to free T. We need to allocate T and give it to the Lua stack such that Lua can Garbage collect T. :-)
+    T->Ni=0;
+    T->Nj=0;
+    T->QComplex=0;
+    InitCompactMatrix(T);
+    T->OnLuaStack=true;
+  }
+  // place result on lua stack
+  CompactMatrixType* M;
+  M=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  *M=val;
+  M->OnLuaStack=true;
+  for(int i=0;i<NCharacter;i++)
+  {
+    M=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    *M=Character[i];
+    M->OnLuaStack=true;
+  }
+  // free matrices
+  free(Character);
+  free(kList.Q);
+  return 1+NCharacter;
 }
 
 /*
@@ -2454,12 +2668,13 @@ static int LuaDresdenFPLODestroy(lua_State * L)
 }
 
 static const struct luaL_Reg TightBinding_func[] = {
-  {"New",        LuaNewTightBinding},
-  {"Chop",       LuaTightBindingChop},
-  {"Copy",       LuaTightBindingCopy},
-  {"AddSpin",    LuaTightBindingAddSpin},
-  {"Derivative", LuaTightBindingDerivative},
-  {"CalculateG", LuaCalculateG},
+  {"New",            LuaNewTightBinding},
+  {"Chop",           LuaTightBindingChop},
+  {"Copy",           LuaTightBindingCopy},
+  {"AddSpin",        LuaTightBindingAddSpin},
+  {"Derivative",     LuaTightBindingDerivative},
+  {"CalculateG",     LuaCalculateG},
+  {"CalculateBands", LuaCalculateBands},
   {NULL, NULL}
 };
   

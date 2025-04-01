@@ -579,8 +579,7 @@ double MatrixInverse(MatrixType * M)
 
 /* M[i ... i+B.Ni][j ... j+B.Nj] = M[i ... i+B.Ni][j ... j+B.Nj] + alpha B
  */
-uint32_t MatrixAddShifted(MatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm,
-                          int ishift, int jshift)
+uint32_t MatrixAddShifted(MatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm, int ishift, int jshift)
 {
   if ((M->Ni < B.Ni + ishift) || (M->Nj < B.Nj + jshift))
   {
@@ -627,6 +626,52 @@ uint32_t MatrixAddShifted(MatrixType * const M, const MatrixType B, double const
   return 0;
 }
 
+uint32_t MatrixAddShifted(CompactMatrixType * const M, const MatrixType B, double const alphaRe, double const alphaIm, int ishift, int jshift)
+{
+ if ((M->Ni < B.Ni + ishift) || (M->Nj < B.Nj + jshift))
+ {
+   printf("Matrix B shifted does not fit in matrix M\n");
+   printf("M.Ni= %i M.Nj= %i B.Ni= %i B.Nj= %i ishift= %i jshift= %i\n", M->Ni, M->Nj, B.Ni, B.Nj, ishift, jshift);
+   return 1;
+ }
+ int    i, j;
+ if ((M->QComplex == 0) && (B.QComplex == 0) && (alphaIm == 0))
+ {                             /* all real */
+   for (i = 0; i < B.Ni; i++)
+   {
+     for (j = 0; j < B.Nj; j++)
+     {
+       M->VRe[(i + ishift)*M->Nj + j + jshift] += alphaRe * B.VRe[i][j];
+     }
+   }
+   return 0;
+ }
+ if (M->QComplex == 0)
+   if (MakeCompactRealMatrixComplex(M))
+     return 1;
+ if (B.QComplex == 0)
+ {                             /* B real, rest complex */
+   for (i = 0; i < B.Ni; i++)
+   {
+     for (j = 0; j < B.Nj; j++)
+     {
+       M->V[(i + ishift)*M->Nj+j + jshift].Re += alphaRe * B.VRe[i][j];
+       M->V[(i + ishift)*M->Nj+j + jshift].Im += alphaIm * B.VRe[i][j];
+     }
+   }
+   return 0;
+ }
+ /* all complex */
+ for (i = 0; i < B.Ni; i++)
+ {
+   for (j = 0; j < B.Nj; j++)
+   {
+     M->V[(i + ishift)*M->Nj+j + jshift].Re += alphaRe * B.VRe[i][j] - alphaIm * B.VIm[i][j];
+     M->V[(i + ishift)*M->Nj+j + jshift].Im += alphaIm * B.VRe[i][j] + alphaRe * B.VIm[i][j];
+   }
+ }
+ return 0;
+}
 
 /* M[i ... i+B.Nj][j ... j+B.Ni] = M[i ... i+B.Nj][j ... j+B.Ni] + alpha B^{\dag}
  */
