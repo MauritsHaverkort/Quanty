@@ -743,7 +743,235 @@ int ConvertBandEnergiesToBitMap(CompactMatrixType* BandEnergies, BandstructurePa
   return 0;
 }
 
+/*  Given a matrix with the band Energies generates a plot of the band-structure as bitmap
+ *  Input
+ *    BandEnergies     - a matrix with Nkpoint rows(Ni) and NFermion columns(Nj)
+ *    BandCharacter    - a matrix with Nkpoint rows(Ni) and NFermion columns(Nj)
+ *    kPath            - a path in the Brillouine zone with Nkpoint points
+ *    BandPlot         - an allocated bitmap with the dimensions set
+ *      PointType LB;              // left bottom position in fraction of the canvas
+ *      PointType RT;              // right top position in fraction of the canvas
+ *      int NpointsX;              // number of pixels in the x direction
+ *      int NpointsY;              // number of pixels in the y direction
+ *      uint32_t *Pixels;          // pixels in format alphaRGB of size NpointsX * NpointsY
+ *    Emin             - double for the lower bound of the plot
+ *    Emax             - doulbe for the upper bound of the plot
+ *    LineWidth        - double line width in ratio of the bitmap height, rounded to integer pixels
+ *    LineColor        - RGB alpha color used for the lines
+ *    SecondLineColor  - RGB alpha color used for the lines
+ *         color is character*LineColor + (1-character)*SecondLineColor
+ *    ZeroDistance     - If there are zero k-points between two adjacent points in the kPath we add an aditional distance in ratio of the bitmap width, rounded to integer pixels
+ */
+
+int ConvertBandEnergiesToBitMapBW(CompactMatrixType* BandEnergies, CompactMatrixType* BandCharacter, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint8_t *LineColor, uint8_t *SecondLineColor, double ZeroDistance)
+{
+  if(Emax < Emin) { printf("ERROR in ConvertBandEnergiesToBitMap, Emax < Emin\n"); return 1;}
+  if(LineWidth<0) { printf("ERROR in ConvertBandEnergiesToBitMap, LineWidth < 0\n"); return 1;}
+  if(ZeroDistance<0) { printf("ERROR in ConvertBandEnergiesToBitMap, ZeroDistance < 0\n"); return 1;}
+  if(BandEnergies->Ni != BandCharacter->Ni) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  if(BandEnergies->Nj != BandCharacter->Nj) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  MakeBitMatWhiteTransparent(BandPlot);
+  uint32_t PixelColor;
+  double col;
+  double LengthKPath = 0;
+  int    NKPointsInPath=kPath->NQ;
+  int    NZeroDistance = 0;
+  for(int i=0;i<(kPath->NQ)-1;i++)
+  {
+    NKPointsInPath += kPath->Q[i].Nq;
+    if(kPath->Q[i].Nq==0)
+    {
+      NZeroDistance++;
+    }
+    else
+    {
+      LengthKPath += sqrt( Sqr(kPath->Q[i].q[0] - kPath->Q[i+1].q[0]) + Sqr(kPath->Q[i].q[1] - kPath->Q[i+1].q[1]) + Sqr(kPath->Q[i].q[2] - kPath->Q[i+1].q[2]));
+    }
+  }
+  if(NKPointsInPath!=BandEnergies->Ni)
+  {
+    printf("ERROR in ConvertBandEnergiesToBitMap, Number of points in kPath(%d) does not agree with number of energies in BandEnergies (%d)\n",NKPointsInPath,BandEnergies->Ni);
+    return 1;
+  }
+  double PixelPerE = BandPlot->NpointsY / (Emax - Emin);
+  double PixelPerZeroDistance = ZeroDistance * BandPlot->NpointsX;
+  double PixelPerk = (BandPlot->NpointsX - NZeroDistance * PixelPerZeroDistance) / LengthKPath;
+  double HalfPixelLineWidth = BandPlot->NpointsY * LineWidth / 2;
+  double pixelkPosMin=0,pixelkPosMax=0;
+  double dk;
+  int ik=0;
+  for(int i=0;i<(kPath->NQ)-1;i++)
+  {
+    if(kPath->Q[i].Nq==0)
+    {
+      pixelkPosMin+=PixelPerZeroDistance;
+      ik++;
+      continue;
+    }
+    dk = sqrt( Sqr(kPath->Q[i].q[0] - kPath->Q[i+1].q[0]) + Sqr(kPath->Q[i].q[1] - kPath->Q[i+1].q[1]) + Sqr(kPath->Q[i].q[2] - kPath->Q[i+1].q[2])) / (kPath->Q[i].Nq+1);
+    for(int j=-1;j<=kPath->Q[i].Nq;j++)
+    {
+      if((j==-1)||(j==kPath->Q[i].Nq))
+      {
+        pixelkPosMax = pixelkPosMin + dk * PixelPerk / 2;
+      }
+      else
+      {
+        pixelkPosMax = pixelkPosMin + dk * PixelPerk;
+      }
+      for(int iE=0;iE<BandEnergies->Nj;iE++)
+      {
+        for(int ip=Max(0,floor((Emax-BandEnergies->VRe[ik*BandEnergies->Nj + iE])*PixelPerE-HalfPixelLineWidth)); ip<=Min(BandPlot->NpointsY-1,ceil((Emax-BandEnergies->VRe[ik*BandEnergies->Nj + iE])*PixelPerE+HalfPixelLineWidth)); ip++)
+        {
+          for(int jp=Max(0,floor(pixelkPosMin)); jp<=Min(BandPlot->NpointsX-1,ceil(pixelkPosMax)); jp++)
+          {
+            // alpha channel
+            col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[3] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[3];
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor=(uint32_t)col;
+            //Red
+            col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[0] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[0];
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor = (PixelColor<<8) + (uint32_t)col;
+            //Green
+            col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[1] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[1];
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor = (PixelColor<<8) + (uint32_t)col;
+            // Blue
+            col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[2] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[2];
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor = (PixelColor<<8) + (uint32_t)col;
+            BandPlot->Pixels[ip*BandPlot->NpointsX + jp]=PixelColor;
+          }
+        }
+      }
+      if(j!=kPath->Q[i].Nq)
+      {
+        ik++;
+      }
+      pixelkPosMin = pixelkPosMax;
+    }
+  }
+  return 0;
+}
 
 
+/*  Given a matrix with the band Energies generates a plot of the band-structure as bitmap
+ *  Input
+ *    BandEnergies     - a matrix with Nkpoint rows(Ni) and NFermion columns(Nj)
+ *    BandCharacterR   - a matrix with Nkpoint rows(Ni) and NFermion columns(Nj)
+ *    BandCharacterG   - a matrix with Nkpoint rows(Ni) and NFermion columns(Nj)
+ *    BandCharacterB   - a matrix with Nkpoint rows(Ni) and NFermion columns(Nj)
+ *    kPath            - a path in the Brillouine zone with Nkpoint points
+ *    BandPlot         - an allocated bitmap with the dimensions set
+ *      PointType LB;              // left bottom position in fraction of the canvas
+ *      PointType RT;              // right top position in fraction of the canvas
+ *      int NpointsX;              // number of pixels in the x direction
+ *      int NpointsY;              // number of pixels in the y direction
+ *      uint32_t *Pixels;          // pixels in format alphaRGB of size NpointsX * NpointsY
+ *    Emin             - double for the lower bound of the plot
+ *    Emax             - doulbe for the upper bound of the plot
+ *    LineWidth        - double line width in ratio of the bitmap height, rounded to integer pixels
+ *    ZeroDistance     - If there are zero k-points between two adjacent points in the kPath we add an aditional distance in ratio of the bitmap width, rounded to integer pixels
+ */
 
-
+int ConvertBandEnergiesToBitMapRGB(CompactMatrixType* BandEnergies, CompactMatrixType* BandCharacterR, CompactMatrixType* BandCharacterG, CompactMatrixType* BandCharacterB, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, double ZeroDistance)
+{
+  if(Emax < Emin) { printf("ERROR in ConvertBandEnergiesToBitMap, Emax < Emin\n"); return 1;}
+  if(LineWidth<0) { printf("ERROR in ConvertBandEnergiesToBitMap, LineWidth < 0\n"); return 1;}
+  if(ZeroDistance<0) { printf("ERROR in ConvertBandEnergiesToBitMap, ZeroDistance < 0\n"); return 1;}
+  if(BandEnergies->Ni != BandCharacterR->Ni) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  if(BandEnergies->Nj != BandCharacterR->Nj) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  if(BandEnergies->Ni != BandCharacterG->Ni) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  if(BandEnergies->Nj != BandCharacterG->Nj) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  if(BandEnergies->Ni != BandCharacterB->Ni) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  if(BandEnergies->Nj != BandCharacterB->Nj) { printf("ERROR in ConvertBandEnergiesToBitMap, Character and Energy matrix not the same dimension\n"); return 1;}
+  MakeBitMatWhiteTransparent(BandPlot);
+  uint32_t PixelColor;
+  double col;
+  double LengthKPath = 0;
+  int    NKPointsInPath=kPath->NQ;
+  int    NZeroDistance = 0;
+  for(int i=0;i<(kPath->NQ)-1;i++)
+  {
+    NKPointsInPath += kPath->Q[i].Nq;
+    if(kPath->Q[i].Nq==0)
+    {
+      NZeroDistance++;
+    }
+    else
+    {
+      LengthKPath += sqrt( Sqr(kPath->Q[i].q[0] - kPath->Q[i+1].q[0]) + Sqr(kPath->Q[i].q[1] - kPath->Q[i+1].q[1]) + Sqr(kPath->Q[i].q[2] - kPath->Q[i+1].q[2]));
+    }
+  }
+  if(NKPointsInPath!=BandEnergies->Ni)
+  {
+    printf("ERROR in ConvertBandEnergiesToBitMap, Number of points in kPath(%d) does not agree with number of energies in BandEnergies (%d)\n",NKPointsInPath,BandEnergies->Ni);
+    return 1;
+  }
+  double PixelPerE = BandPlot->NpointsY / (Emax - Emin);
+  double PixelPerZeroDistance = ZeroDistance * BandPlot->NpointsX;
+  double PixelPerk = (BandPlot->NpointsX - NZeroDistance * PixelPerZeroDistance) / LengthKPath;
+  double HalfPixelLineWidth = BandPlot->NpointsY * LineWidth / 2;
+  double pixelkPosMin=0,pixelkPosMax=0;
+  double dk;
+  int ik=0;
+  for(int i=0;i<(kPath->NQ)-1;i++)
+  {
+    if(kPath->Q[i].Nq==0)
+    {
+      pixelkPosMin+=PixelPerZeroDistance;
+      ik++;
+      continue;
+    }
+    dk = sqrt( Sqr(kPath->Q[i].q[0] - kPath->Q[i+1].q[0]) + Sqr(kPath->Q[i].q[1] - kPath->Q[i+1].q[1]) + Sqr(kPath->Q[i].q[2] - kPath->Q[i+1].q[2])) / (kPath->Q[i].Nq+1);
+    for(int j=-1;j<=kPath->Q[i].Nq;j++)
+    {
+      if((j==-1)||(j==kPath->Q[i].Nq))
+      {
+        pixelkPosMax = pixelkPosMin + dk * PixelPerk / 2;
+      }
+      else
+      {
+        pixelkPosMax = pixelkPosMin + dk * PixelPerk;
+      }
+      for(int iE=0;iE<BandEnergies->Nj;iE++)
+      {
+        for(int ip=Max(0,floor((Emax-BandEnergies->VRe[ik*BandEnergies->Nj + iE])*PixelPerE-HalfPixelLineWidth)); ip<=Min(BandPlot->NpointsY-1,ceil((Emax-BandEnergies->VRe[ik*BandEnergies->Nj + iE])*PixelPerE+HalfPixelLineWidth)); ip++)
+        {
+          for(int jp=Max(0,floor(pixelkPosMin)); jp<=Min(BandPlot->NpointsX-1,ceil(pixelkPosMax)); jp++)
+          {
+            // alpha channel
+            PixelColor=0xFF;
+            //Red
+            col = BandCharacterR->VRe[ik*BandCharacterR->Nj + iE] * 256;
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor = (PixelColor<<8) + (uint32_t)col;
+            //Green
+            col = BandCharacterG->VRe[ik*BandCharacterG->Nj + iE] * 256;
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor = (PixelColor<<8) + (uint32_t)col;
+            // Blue
+            col = BandCharacterB->VRe[ik*BandCharacterB->Nj + iE] * 256;
+            if(col<0) col=0;
+            if(col>255) col=255;
+            PixelColor = (PixelColor<<8) + (uint32_t)col;
+            BandPlot->Pixels[ip*BandPlot->NpointsX + jp]=PixelColor;
+          }
+        }
+      }
+      if(j!=kPath->Q[i].Nq)
+      {
+        ik++;
+      }
+      pixelkPosMin = pixelkPosMax;
+    }
+  }
+  return 0;
+}

@@ -82,7 +82,7 @@ print(Characters)
 print(Characterp)
 
 
-pl = Graphics.PlotBands(kpath2,BandEnergies,{{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+pl = Graphics.PlotBands(kpath2,BandEnergies,Characters,0*Characters,Characterp,{{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
 
 
 SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})

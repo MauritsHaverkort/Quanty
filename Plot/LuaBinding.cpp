@@ -1440,6 +1440,8 @@ static int LuaPlotBands(lua_State *L)
     double   EmptyPathWidth;
     uint32_t LineColor;
     uint8_t  LineTransparancy;
+    uint32_t SecondLineColor;
+    uint8_t  SecondLineTransparancy;
     double   LineWidth;
     FramePlotOptions Frame;
     bool     Interpolate;
@@ -1449,6 +1451,8 @@ static int LuaPlotBands(lua_State *L)
   Options.EmptyPathWidth = 0.05;
   Options.LineColor = 0xFF000080;
   Options.LineTransparancy = 0xFF;
+  Options.SecondLineColor = 0xFFFF0000;
+  Options.SecondLineTransparancy = 0xFF;
   Options.LineWidth = 0.002;
   Options.Frame.PlotRange[0].X=0;
   Options.Frame.PlotRange[0].Y=-INFINITY;
@@ -1483,6 +1487,8 @@ static int LuaPlotBands(lua_State *L)
     {"NPixelY","double",&(Options.NPixel[1])},
     {"Color","uint32_t",&(Options.LineColor)},
     {"Transparancy","uint8_t",&(Options.LineTransparancy)},
+    {"SecondColor","uint32_t",&(Options.SecondLineColor)},
+    {"SecondTransparancy","uint8_t",&(Options.SecondLineTransparancy)},
     {"LineWidth","double",&(Options.LineWidth)},
     {"EmptyPathWidth","double",&(Options.EmptyPathWidth)},
     {"Frame","FramePlotOptions",&(Options.Frame)},
@@ -1608,6 +1614,7 @@ static int LuaPlotBands(lua_State *L)
   if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
   // set color
   uint8_t LineColor[4] = {(uint8_t)(Options.LineColor>>16),(uint8_t)(Options.LineColor>>8),(uint8_t)(Options.LineColor),(uint8_t)(Options.LineColor>>24)};
+  uint8_t SecondLineColor[4] = {(uint8_t)(Options.SecondLineColor>>16),(uint8_t)(Options.SecondLineColor>>8),(uint8_t)(Options.SecondLineColor),(uint8_t)(Options.SecondLineColor>>24)};
   // allocate the bitmap
   BitMapType BandPlot;
   BandPlot.LB.X=Options.Frame.Margins[0].X;
@@ -1617,12 +1624,74 @@ static int LuaPlotBands(lua_State *L)
   BandPlot.NpointsX = Options.NPixel[0];
   BandPlot.NpointsY = Options.NPixel[1];
   BandPlot.Pixels = (uint32_t*)malloc(BandPlot.NpointsX*BandPlot.NpointsY*sizeof(uint32_t));
+  // read character
+  CompactMatrixType *BandCharacters[4];
+  for(int i=3; i<=len;i++)
+  {
+    BandCharacters[i-3]=(CompactMatrixType*) luaL_checkudata(L, i, "Matrix_Type");
+  }
+  
+  
   // convert to bitmap depending on number of character and if interpolation is true or not
-  
-  //TODO: --- many many options
-  
-  
-  ConvertBandEnergiesToBitMap(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
+  if(Options.Interpolate==true)
+  {
+    switch (len-2)
+    {
+      case 0:
+        // no characters defined
+        //TODO:
+        ConvertBandEnergiesToBitMap(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
+      break;
+      case 1:
+        // one character used for monochrome color
+        //TODO:
+        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 2:
+        // two characgters used for monochrome color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 3:
+        // three characters used for RGB color
+        //TODO:
+        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+      case 4:
+        // four characters used for RGB color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+    }
+  }
+  else
+  { // no interpollation
+    switch (len-2)
+    {
+      case 0:
+        // no characters defined
+        ConvertBandEnergiesToBitMap(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
+      break;
+      case 1:
+        // one character used for monochrome color
+        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 2:
+        // two characgters used for monochrome color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 3:
+        // three characters used for RGB color
+        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+      case 4:
+        // four characters used for RGB color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+    }
+  }
   // add bitmap to a grahics object and add axis etc
   GraphicsType* Graphics;
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));

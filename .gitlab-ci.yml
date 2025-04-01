@@ -983,6 +983,14 @@ test-job-tightbinding-AddSpin:
   dependencies:
   - build-job
     
+test-job-tightbinding-CalculateBands:
+  stage: test_tightbinding
+  script:
+  - export OMP_NUM_THREADS=8
+  - ./Quanty.exe "TestScripts/TightBindingDef/CalculateBands.Quanty"
+  dependencies:
+  - build-job
+    
 test-job-tightbinding-Chop:
   stage: test_tightbinding
   script:
