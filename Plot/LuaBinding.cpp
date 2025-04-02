@@ -1639,28 +1639,25 @@ static int LuaPlotBands(lua_State *L)
     {
       case 0:
         // no characters defined
-        //TODO:
-        ConvertBandEnergiesToBitMap(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
+        ConvertBandEnergiesToBitMapInterpolate(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
       break;
       case 1:
         // one character used for monochrome color
-        //TODO:
-        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+        ConvertBandEnergiesToBitMapBWInterpolate(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
       break;
       case 2:
         // two characgters used for monochrome color and thickness
         //TODO:
-        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+        ConvertBandEnergiesToBitMapBWInterpolate(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
       break;
       case 3:
         // three characters used for RGB color
-        //TODO:
-        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+        ConvertBandEnergiesToBitMapRGBInterpolate(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
       break;
       case 4:
         // four characters used for RGB color and thickness
         //TODO:
-        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+        ConvertBandEnergiesToBitMapRGBInterpolate(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
       break;
     }
   }
