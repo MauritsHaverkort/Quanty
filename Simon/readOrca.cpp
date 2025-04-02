@@ -91,7 +91,7 @@ void lua_check(lua_State *L, int arg, OrcaObject &in)
 
 bool isOrcaLineIgnored(const string &line)
 {
-	if ((uint)line.size() == 0) return true;
+	if (line.size() == 0) return true;
 	if (line.find("# Basis set for element") != string::npos) return true;
 	if (line.find("NewGTO") != string::npos) return true;
 	if (line.find("CARTESIAN COORDINATES") != string::npos) return true;
@@ -280,18 +280,18 @@ double OrcaGaussianNormfactor(const double w, const int l)
 
 void OrcaSetFermiEnergy(OrcaObject &orca, const double ef)
 {
-	int i = 0;
+	size_t i = 0;
 	while (orca.EigenOccupations[i] > 0)
 	{
 		++i;
 	}
-	if (i == 0 || i == (uint) orca.EigenOccupations.size())
+	if (i == 0 || i == orca.EigenOccupations.size())
 	{
 		cout << "Warning: Could not set Fermi Energy!" << endl;
 		return;
 	}
 	double offset = ef - orca.EigenEnergies[i] + (orca.EigenEnergies[i] - orca.EigenEnergies[i - 1]) / 2;
-	for (int j = 0; j < (int) orca.EigenEnergies.size(); ++j)
+	for (size_t j = 0; j < orca.EigenEnergies.size(); ++j)
 	{
 		orca.EigenEnergies[j] += offset;
 	}
@@ -431,7 +431,7 @@ OrcaObject FileReadOrca(const string &filename)
 				vector<double> lineVec = stringToDoubleVec(line);
 				i = (int) lineVec[0];
 				int j = jOffset - 1;
-				for (int k = 1; k < (uint) lineVec.size(); ++k)
+				for (size_t k = 1; k < lineVec.size(); ++k)
 				{
 					++j;
 					out.OverlapMatrix.VRe[i * out.OverlapMatrix.Nj + j] = lineVec[k];
@@ -461,7 +461,7 @@ OrcaObject FileReadOrca(const string &filename)
 			else if (i == -2)
 			{
 				vector<double> energies = stringToDoubleVec(line);
-				for (int k = 0; k < (uint) energies.size(); ++k)
+				for (size_t k = 0; k < energies.size(); ++k)
 				{
 					out.EigenEnergies.push_back(energies[k] * HartreeToeV);
 				}
@@ -469,7 +469,7 @@ OrcaObject FileReadOrca(const string &filename)
 			else if (i == -1)
 			{
 				vector<double> occus = stringToDoubleVec(line);
-				for (int k = 0; k < (uint) occus.size(); ++k)
+				for (size_t k = 0; k < occus.size(); ++k)
 				{
 					out.EigenOccupations.push_back(occus[k]);
 				}
@@ -477,7 +477,7 @@ OrcaObject FileReadOrca(const string &filename)
 			else
 			{
 				string::size_type orbNameLength = line.find_first_of(" ", 12);
-				if ((uint) out.BasisOrbitalNames.size() < out.NBasis)
+				if ((int) out.BasisOrbitalNames.size() < out.NBasis)
 				{
 					const string orbName = normalizedOrcaOrbname(line.substr(0, orbNameLength));
 					out.BasisOrbitalNames.push_back(orbName);
@@ -485,9 +485,9 @@ OrcaObject FileReadOrca(const string &filename)
 
 				vector<double> entries = stringToDoubleVec(line.substr(orbNameLength));
 				double phaseFac = OrcaPhaseConventionFactor(out.BasisOrbitalNames[i]);
-				for (int k = 0; k < (uint) entries.size(); ++k)
+				for (size_t k = 0; k < entries.size(); ++k)
 				{
-					int j = jOffset + k;
+					size_t j = jOffset + k;
 					out.MolecularOrbitalMatrix.VRe[j * out.MolecularOrbitalMatrix.Nj + i] = phaseFac * entries[k]; //we want the matrix to contain row vectors.
 				}
 			}

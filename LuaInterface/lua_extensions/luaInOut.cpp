@@ -452,7 +452,7 @@ bool luaL_isType(lua_State *L, int arg, const vector<T> &example)
 template<typename T>
 bool luaL_isType(lua_State *L, int arg, const vector<T> &example, const uint32_t vecsize)
 {
-	if (vecsize != (uint) lua_objlen(L, arg))
+	if (vecsize != (uint32_t) lua_objlen(L, arg))
 		return false;
 	else
 		return luaL_isType(L, arg, example);
@@ -523,7 +523,7 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &ex
 	if (isSinglePair)
 	{
 		lua_rawgeti(L, arg, 2);
-		if (vecsize != (uint) lua_objlen(L, -1))
+		if (vecsize != (uint32_t) lua_objlen(L, -1))
 		{
 			lua_pop(L, 1);
 			return false;
@@ -538,7 +538,7 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &ex
 			lua_rawgeti(L, arg, i);
 
 			lua_rawgeti(L, -1, 2);
-			if (vecsize != (uint) lua_objlen(L, -1))
+			if (vecsize != (uint32_t) lua_objlen(L, -1))
 			{
 				lua_pop(L, 1);
 				return false;

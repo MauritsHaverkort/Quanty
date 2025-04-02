@@ -65,10 +65,10 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, const uint32_t NFnew, uint32_t N
 bool isCrAnIncluded(const uint16_t * const CrAn, const uint32_t length, const vector<vector<uint16_t> > &subspace);
 bool isCrAnExcluded(const uint16_t * const CrAn, const uint32_t length, const vector<vector<uint16_t> > &subspace);
 bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint32_t length, const vector<vector<uint16_t> > &subspace);
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), const uint32_t length, bool changeInput);
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), const uint32_t length);
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&), bool changeInput);
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint, const vector<vector<uint16_t> >&));
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint32_t, const vector<vector<uint16_t> >&), const uint32_t length, bool changeInput);
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint32_t, const vector<vector<uint16_t> >&), const uint32_t length);
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint32_t, const vector<vector<uint16_t> >&), bool changeInput);
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t *const, const uint32_t, const vector<vector<uint16_t> >&));
 int OperatorToHoles(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len);
 void OperatorToHolesInlineNormalOrdered(OperatorType * const O, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 int OperatorToHolesNormalOrdered(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));

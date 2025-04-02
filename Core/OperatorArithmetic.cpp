@@ -6641,7 +6641,7 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint32_t length)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint32_t, const vector<vector<uint16_t> >&), const uint32_t length)
 {
 	extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, false);
 }
@@ -6660,7 +6660,7 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
  *  Output Operator OPartial, not initialized on input
  *         Operator O, if change Input == true change O such that Oout + Opartial = Oin
  */
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), bool changeInput)
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint32_t, const vector<vector<uint16_t> >&), bool changeInput)
 {
 	InitOperator(OPartial);
 	OPartial->NFermion = O->NFermion;
@@ -6678,7 +6678,7 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 	SetQComplexOperator(OPartial);
 }
 
-void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&))
+void extractPartialOperator(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint32_t, const vector<vector<uint16_t> >&))
 {
 	extractPartialOperator(O, OPartial, indices, criterion, false);
 }

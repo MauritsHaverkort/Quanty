@@ -22,7 +22,7 @@ void lua_check(lua_State * L, int arg, doubleVecValPair &in)
 double vecNorm(const vector<double> &v)
 {
 	double normSqrd = 0;
-	for (uint i = 0;  i < (uint)v.size(); ++i)
+	for (size_t i = 0;  i < v.size(); ++i)
 		normSqrd += v[i]*v[i];
 	return sqrt(normSqrd);
 }
@@ -30,7 +30,7 @@ double vecNorm(const vector<double> &v)
 vector<double> interpolationRanges(const vector<Interpolation::InterpolatingFunction*> &funs)
 {
 	vector<double> out(funs.size());
-	for (uint i = 0; i < (uint)funs.size(); ++i)
+	for (size_t i = 0; i < funs.size(); ++i)
 		out[i] = funs[i]->GetX()[funs[i]->GetX().size() - 1];
 	return out;
 }
@@ -39,10 +39,10 @@ vector<Complex16> realspaceBasisValuesNoSpin(const vector<double> &v, const vect
 		const vector<Interpolation::InterpolatingFunction*> &funs, const vector<vector<uint16_t> > indices, const double step)
 {
 	vector < Complex16 > psi;
-	for (uint orb = 0; orb < (uint) orbs.size(); ++orb)
+	for (size_t orb = 0; orb < orbs.size(); ++orb)
 	{
 		vector<double> rVec(3);
-		for (uint k = 0; k < 3; ++k)
+		for (int k = 0; k < 3; ++k)
 			rVec[k] = v[k] - atomPos[orb][k];
 		double r = vecNorm(rVec);
 		Complex16 val;
@@ -69,14 +69,14 @@ vector<Complex16> realspaceBasisValuesNoSpin(const vector<double> &v, const vect
 				}
 				val.Re = (*funs[orb])(r) / step / multicellFactor;
 				val.Im = 0;
-				for (uint m = 0; m < (uint) indices[orb].size() / 2; ++m)
+				for (size_t m = 0; m < indices[orb].size() / 2; ++m)
 					psi.push_back(val);
 			}
 		} else
 		{
 			val.Re = 0;
 			val.Im = 0;
-			for (uint m = 0; m < (uint) indices[orb].size() / 2; ++m)
+			for (size_t m = 0; m < indices[orb].size() / 2; ++m)
 				psi.push_back(val);
 		}
 	}
@@ -88,10 +88,10 @@ CompactMatrixType densityMatrixNoSpin(const CompactMatrixType &rho)
 	CompactMatrixType rhoNoSpin;
 	rhoNoSpin.Ni = rho.Ni / 2;
 	rhoNoSpin.Nj = rho.Nj / 2;
-	rhoNoSpin.QComplex = (uint) true;
+	rhoNoSpin.QComplex = 1;
 	InitCompactMatrix(&rhoNoSpin);
-	for (uint i = 0; i < rhoNoSpin.Ni; ++i)
-		for (uint j = 0; j < rhoNoSpin.Nj; ++j)
+	for (uint32_t i = 0; i < rhoNoSpin.Ni; ++i)
+		for (uint32_t j = 0; j < rhoNoSpin.Nj; ++j)
 			if (rho.QComplex)
 			{
 				rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re = rho.V[2 * i * rho.Nj + 2 * j].Re + rho.V[(2 * i + 1) * rho.Nj + (2 * j + 1)].Re;
@@ -114,16 +114,16 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 	double step = domainsize / (double) (gridpoints - 1);
 	vector<doubleVecValPair> result(gridpoints * gridpoints * gridpoints);
 #pragma omp parallel for
-	for (uint xi = 0; xi < gridpoints; ++xi)
+	for (uint32_t xi = 0; xi < gridpoints; ++xi)
 	{
 		double x = -domainsize / 2 + step * xi;
-		for (uint yi = 0; yi < gridpoints; ++yi)
+		for (uint32_t yi = 0; yi < gridpoints; ++yi)
 		{
 			double y = -domainsize / 2 + step * yi;
-			for (uint zi = 0; zi < gridpoints; ++zi)
+			for (uint32_t zi = 0; zi < gridpoints; ++zi)
 			{
 				double z = -domainsize / 2 + step * zi;
-				uint vecI = xi * gridpoints * gridpoints + yi * gridpoints + zi;
+				uint32_t vecI = xi * gridpoints * gridpoints + yi * gridpoints + zi;
 				vector<double> v(3);
 				v[0] = x;
 				v[1] = y;
@@ -131,9 +131,9 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 
 				const vector<Complex16> psi = realspaceBasisValuesNoSpin(v, orbs, atomPos, interRanges, funs, indices, step);
 				double denVal = 0;
-				for (uint i = 0; i < (uint) rhoNoSpin.Ni; ++i)
+				for (uint32_t i = 0; i < rhoNoSpin.Ni; ++i)
 				{
-					for (uint j = 0; j < (uint) rhoNoSpin.Nj; ++j)
+					for (uint32_t j = 0; j < rhoNoSpin.Nj; ++j)
 					{
 						if (rhoNoSpin.V[i * rhoNoSpin.Nj + j].Re != 0 || rhoNoSpin.V[i * rhoNoSpin.Nj + j].Im != 0)
 						{
@@ -159,7 +159,7 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 {
 	double maxNorm = 0;
 	double maxX = 0;
-	for (uint i = 0; i < (uint) atomPos.size(); ++i)
+	for (size_t i = 0; i < atomPos.size(); ++i)
 	{
 		if (vecNorm(atomPos[i]) > maxNorm)
 			maxNorm = vecNorm(atomPos[i]);
@@ -176,10 +176,10 @@ CompactMatrixType densityMatrixSx(const CompactMatrixType &rho)
 	CompactMatrixType rhoSx;
 	rhoSx.Ni = rho.Ni / 2;
 	rhoSx.Nj = rho.Nj / 2;
-	rhoSx.QComplex = (uint) true;
+	rhoSx.QComplex = 1;
 	InitCompactMatrix(&rhoSx);
-	for (uint i = 0; i < rhoSx.Ni; ++i)
-		for (uint j = 0; j < rhoSx.Nj; ++j)
+	for (uint32_t i = 0; i < rhoSx.Ni; ++i)
+		for (uint32_t j = 0; j < rhoSx.Nj; ++j)
 			if (rho.QComplex)
 			{
 				rhoSx.V[i * rhoSx.Nj + j].Re = (rho.V[2 * i * rho.Nj + (2 * j + 1)].Re + rho.V[(2 * i + 1) * rho.Nj + 2 * j].Re) / 2.;
@@ -197,10 +197,10 @@ CompactMatrixType densityMatrixSy(const CompactMatrixType &rho)
 	CompactMatrixType rhoSy;
 	rhoSy.Ni = rho.Ni / 2;
 	rhoSy.Nj = rho.Nj / 2;
-	rhoSy.QComplex = (uint) true;
+	rhoSy.QComplex = 1;
 	InitCompactMatrix(&rhoSy);
-	for (uint i = 0; i < rhoSy.Ni; ++i)
-		for (uint j = 0; j < rhoSy.Nj; ++j)
+	for (uint32_t i = 0; i < rhoSy.Ni; ++i)
+		for (uint32_t j = 0; j < rhoSy.Nj; ++j)
 			if (rho.QComplex)
 			{
 				rhoSy.V[i * rhoSy.Nj + j].Re = -(rho.V[2 * i * rho.Nj + (2 * j + 1)].Im - rho.V[(2 * i + 1) * rho.Nj + 2 * j].Im) / 2.;
@@ -218,10 +218,10 @@ CompactMatrixType densityMatrixSz(const CompactMatrixType &rho)
 	CompactMatrixType rhoSz;
 	rhoSz.Ni = rho.Ni / 2;
 	rhoSz.Nj = rho.Nj / 2;
-	rhoSz.QComplex = (uint) true;
+	rhoSz.QComplex = 1;
 	InitCompactMatrix(&rhoSz);
-	for (uint i = 0; i < rhoSz.Ni; ++i)
-		for (uint j = 0; j < rhoSz.Nj; ++j)
+	for (uint32_t i = 0; i < rhoSz.Ni; ++i)
+		for (uint32_t j = 0; j < rhoSz.Nj; ++j)
 			if (rho.QComplex)
 			{
 				rhoSz.V[i * rhoSz.Nj + j].Re = (-rho.V[2 * i * rho.Nj + 2 * j].Re + rho.V[(2 * i + 1) * rho.Nj + (2 * j + 1)].Re) / 2.;
@@ -245,16 +245,16 @@ vector<vector<double> > realspaceSpinDensityValues(const CompactMatrixType &rho,
 	const vector<double> interRanges = interpolationRanges(funs);
 	vector < vector<double> > result(points.size());
 #pragma omp parallel for
-	for (uint p = 0; p < (uint) points.size(); ++p)
+	for (size_t p = 0; p < points.size(); ++p)
 	{
 		const vector<Complex16> psi = realspaceBasisValuesNoSpin(points[p], orbs, atomPos, interRanges, funs, indices, DBL_EPSILON * 1000);
 		vector<double> denVals(densities.size());
-		for (uint den = 0; den < (uint) densities.size(); ++den)
+		for (size_t den = 0; den < densities.size(); ++den)
 		{
 			double denVal = 0;
-			for (uint i = 0; i < (uint) densities[den].Ni; ++i)
+			for (uint32_t i = 0; i < densities[den].Ni; ++i)
 			{
-				for (uint j = 0; j < (uint) densities[den].Nj; ++j)
+				for (uint32_t j = 0; j < densities[den].Nj; ++j)
 				{
 					if (densities[den].V[i * densities[den].Nj + j].Re != 0 || densities[den].V[i * densities[den].Nj + j].Im != 0)
 					{
@@ -300,7 +300,7 @@ void lua_pushMapKeyValPair(lua_State * L, const map<keyType, valType> &pushkin)
 vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2)
 {
 	vector<double> result(v1.size());
-	for (uint i = 0; i < v1.size(); ++i)
+	for (size_t i = 0; i < v1.size(); ++i)
 		result[i] = (v1[i] + v2[i]) / 2.;
 	return result;
 }
@@ -308,7 +308,7 @@ vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2)
 vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2, double val1, double val2, double valMiddle)
 {
 	vector<double> result(v1.size());
-	for (uint i = 0; i < v1.size(); ++i)
+	for (size_t i = 0; i < v1.size(); ++i)
 		if (val1 != val2)
 			result[i] = v1[i] * (val2 - valMiddle) / (val2 - val1) + v2[i] * (valMiddle - val1) / (val2 - val1);
 		else
@@ -319,7 +319,7 @@ vector<double> vecAverage(const vector<double> &v1, const vector<double> &v2, do
 double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion, double step)
 {
 	double fullSum = 0;
-	for (uint i = 0; i < (uint) density.size(); ++i)
+	for (size_t i = 0; i < density.size(); ++i)
 		fullSum += density[i].val;
 	double threshold = 0;
 	double partialSum = fullSum;
@@ -327,7 +327,7 @@ double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion
 	{
 		partialSum = 0;
 		threshold += step;
-		for (uint i = 0; i < (uint) density.size(); ++i)
+		for (size_t i = 0; i < density.size(); ++i)
 			if (density[i].val > threshold)
 				partialSum += density[i].val;
 	}
@@ -341,18 +341,18 @@ double findIsosurfaceVal(const vector<doubleVecValPair> &density, double portion
 
 vector<vector<double> > isosurface(const vector<doubleVecValPair> &density, double threshold)
 {
-	uint gridpoints = (uint) pow((double) density.size() + 1, 1 / 3.);
+	uint32_t gridpoints = (uint32_t) pow((double) density.size() + 1, 1 / 3.);
 	vector < vector<double> > result;
-	for (uint xi = 0; xi < gridpoints - 1; ++xi)
+	for (uint32_t xi = 0; xi < gridpoints - 1; ++xi)
 	{
-		for (uint yi = 0; yi < gridpoints - 1; ++yi)
+		for (uint32_t yi = 0; yi < gridpoints - 1; ++yi)
 		{
-			for (uint zi = 0; zi < gridpoints - 1; ++zi)
+			for (uint32_t zi = 0; zi < gridpoints - 1; ++zi)
 			{
-				uint i0 = xi * gridpoints * gridpoints + yi * gridpoints + zi;
-				uint ixpp = (xi + 1) * gridpoints * gridpoints + yi * gridpoints + zi;
-				uint iypp = xi * gridpoints * gridpoints + (yi + 1) * gridpoints + zi;
-				uint izpp = xi * gridpoints * gridpoints + yi * gridpoints + (zi + 1);
+				uint32_t i0 = xi * gridpoints * gridpoints + yi * gridpoints + zi;
+				uint32_t ixpp = (xi + 1) * gridpoints * gridpoints + yi * gridpoints + zi;
+				uint32_t iypp = xi * gridpoints * gridpoints + (yi + 1) * gridpoints + zi;
+				uint32_t izpp = xi * gridpoints * gridpoints + yi * gridpoints + (zi + 1);
 				double val0 = density[i0].val;
 				double valxpp = density[ixpp].val;
 				double valypp = density[iypp].val;
@@ -384,7 +384,7 @@ static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMat
 		zeroVec[0] = 0.;
 		zeroVec[1] = 0.;
 		zeroVec[2] = 0.;
-		for (uint i = 0; i < (uint) orbs.size(); ++i)
+		for (size_t i = 0; i < orbs.size(); ++i)
 			atomPos.push_back(zeroVec);
 	}
 
@@ -392,10 +392,9 @@ static int LuaRealspaceDensityCheckAndSecurityMeasures(lua_State * L, CompactMat
 		return luaL_error(L, "Error in calculating RealspaceDensity: Rho needs to be a quadratic matrix, but is of size %dx%d.", rho.Ni, rho.Nj);
 
 	if (funs.size() != orbs.size() || orbs.size() != atomPos.size())
-		return luaL_error(L, "Error in calculating RealspaceDensity: List of functions (%d), list of orbitals (%d) and list of atom positions (%d) need to be of the same size.", (uint) funs.size(),
-				(uint) orbs.size(), (uint) atomPos.size());
+		return luaL_error(L, "Error in calculating RealspaceDensity: List of functions (%d), list of orbitals (%d) and list of atom positions (%d) need to be of the same size.", funs.size(), orbs.size(), atomPos.size());
 
-	uint NF = NumberOfFermionicStates(orbs);
+	uint32_t NF = NumberOfFermionicStates(orbs);
 	if (NF != rho.Ni)
 		return luaL_error(L, "Error in calculating RealspaceDensity: Number of fermionic states obtained from orbitals (%d) is unequal to size of density matrix (%d).", NF, rho.Ni);
 
@@ -419,7 +418,7 @@ static int LuaRealspaceDensity(lua_State * L)
 	bool hasAtomPos = false;
 	struct
 	{
-		uint gridpoints;
+		uint32_t gridpoints;
 		double domain;
 	} Options;
 	LuaOptionsType LuaRealspaceDensityOptions[] =
@@ -430,7 +429,7 @@ static int LuaRealspaceDensity(lua_State * L)
 	Options.domain = 0;
 	bool hasOptions = false;
 
-	uint len = lua_gettop(L);
+	int len = lua_gettop(L);
 	if (len < 3 || len > 5)
 		return luaL_error(L, "Error in RealspaceDensity: Expected 3, 4 or 5 arguments, density matrix, radial functions, orbitals, optional atom positions, and options.");
 
@@ -480,19 +479,19 @@ void saveIsosurface(const vector<vector<double> > &iso, const vector<vector<doub
 
 	if (spinDensitiyVals.size() != 0)
 	{
-		for (uint i = 0; i < (uint) iso.size(); ++i)
+		for (size_t i = 0; i < iso.size(); ++i)
 		{
-			for (uint j = 0; j < (uint) iso[j].size(); ++j)
+			for (size_t j = 0; j < iso[j].size(); ++j)
 				writer << iso[i][j] << "\t";
-			for (uint j = 0; j < (uint) spinDensitiyVals[j].size(); ++j)
+			for (size_t j = 0; j < spinDensitiyVals[j].size(); ++j)
 				writer << spinDensitiyVals[i][j] << "\t";
 			writer << endl;
 		}
 	} else
 	{
-		for (uint i = 0; i < (uint) iso.size(); ++i)
+		for (size_t i = 0; i < iso.size(); ++i)
 		{
-			for (uint j = 0; j < (uint) iso[j].size(); ++j)
+			for (size_t j = 0; j < iso[j].size(); ++j)
 				writer << iso[i][j] << "\t";
 			writer << endl;
 		}
@@ -507,7 +506,7 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 		bool calcSpin;
 		double domain;
 		char* file;
-		uint gridpoints;
+		uint32_t gridpoints;
 		double stepsize;
 	} Options;
 	LuaOptionsType LuaIsosurfaceOptions[] = {
@@ -527,7 +526,7 @@ static int LuaIsosurface(lua_State * L, bool hasThreshold)
 	bool hasOptions;
 	int numberInputPos;
 
-	uint len = lua_gettop(L);
+	int len = lua_gettop(L);
 	switch (len)
 	{
 	case 2:

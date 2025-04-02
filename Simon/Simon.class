@@ -9,7 +9,7 @@ doubleVecValPair;
 // Each Gaussian is of the form A*r^l exp(-w*r^2), with A such that integral_0^inf r^2 G^2(r) = 1
 class GaussianRadial {
 private:
-	uint l;
+	int l;
 	vector<double> amplitudes;
 	vector<double> widths;
 public:
@@ -18,12 +18,12 @@ public:
 		this->l = 0;
 	}
 
-	GaussianRadial(uint l)
+	GaussianRadial(int l)
 	{
 		this->l = l;
 	}
 
-	GaussianRadial(const uint l, const vector<double> &amplitudes, const vector<double> &widths)
+	GaussianRadial(const int l, const vector<double> &amplitudes, const vector<double> &widths)
 	{
 		if (amplitudes.size() != widths.size())
 		{
@@ -38,7 +38,7 @@ public:
 	double operator()(const double r) const
 	{
 		double out = 0;
-		for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+		for (int i = 0; i < (int) amplitudes.size(); ++i)
 		{
 			out += amplitudes[i]*exp(-widths[i]*r*r);
 		}
@@ -48,7 +48,7 @@ public:
 	vector<double> operator()(const vector<double> &r) const
 	{
 		vector<double> out(r.size());
-		for (uint i = 0; i < (uint) r.size(); ++i)
+		for (int i = 0; i < (int) r.size(); ++i)
 		{
 			out[i] = (*this)(r[i]);
 		}
@@ -57,12 +57,12 @@ public:
 
 	void addGaussian(const double amplitude, const double width)
 	{
-		uint i = 0;
-		for (i = 0; i < (uint)widths.size(); ++i)
+		int i = 0;
+		for (i = 0; i < (int)widths.size(); ++i)
 		{
 			if (widths[i] == width) break;
 		}
-		if (i < (uint)widths.size())
+		if (i < (int)widths.size())
 		{
 			amplitudes[i] += amplitude;
 		}
@@ -75,7 +75,7 @@ public:
 	
 	void addGaussian(const vector<double> &gaussian)
 	{
-		if ((uint)gaussian.size() != 2)
+		if ((int)gaussian.size() != 2)
 		{
 			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
 			throw std::exception();
@@ -83,7 +83,7 @@ public:
 		addGaussian(gaussian[0],gaussian[1]);
 	}
 
-	void setGaussian(const uint i, const double amplitude, const double width)
+	void setGaussian(const int i, const double amplitude, const double width)
 	{
 		if (i >= amplitudes.size())
 		{
@@ -94,9 +94,9 @@ public:
 		widths[i] = width;
 	}
 	
-	void setGaussian(const uint i, const vector<double> &gaussian)
+	void setGaussian(const int i, const vector<double> &gaussian)
 	{
-		if ((uint)gaussian.size() != 2)
+		if ((int)gaussian.size() != 2)
 		{
 			cout << "Error in GaussianRadial: New primitive Gaussian needs to be entered as a vector of length 2, with entries amplitude and width." << endl;
 			throw std::exception();
@@ -110,7 +110,7 @@ public:
 		widths[i] = gaussian[1];
 	}
 	
-	vector<double> getGaussian(const uint i) const
+	vector<double> getGaussian(const int i) const
 	{
 		if (i >= amplitudes.size())
 		{
@@ -123,12 +123,12 @@ public:
 		return out;
 	}
 	
-	uint getL() const
+	int getL() const
 	{
 		return l;
 	}
 	
-	void setL(const uint l)
+	void setL(const int l)
 	{
 		this-> l = l;
 	}
@@ -163,16 +163,16 @@ public:
 		this-> widths = widths;
 	}
 	
-	uint getN() const
+	int getN() const
 	{
-		return (uint)amplitudes.size();
+		return (int)amplitudes.size();
 	}
 
 };
 
 typedef struct OrcaObject
 {
-	uint NBasis;
+	int NBasis;
 	CompactMatrixType OverlapMatrix;
 	CompactMatrixType MolecularOrbitalMatrix;
 	vector<double> EigenEnergies;

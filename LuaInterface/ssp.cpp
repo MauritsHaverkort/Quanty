@@ -5146,7 +5146,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 		hamil = *(OperatorType*) luaL_checkudata(L, i, "Operator_Type");
 		++i;
 	}
-	if (luaL_isType(L, i, extraLists, (uint) psiList.size()) && i <= len)
+	if (luaL_isType(L, i, extraLists, (uint32_t) psiList.size()) && i <= len)
 	{
 		hasExtraLists = true;
 		lua_check(L, i, extraLists);

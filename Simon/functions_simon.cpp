@@ -67,7 +67,7 @@ void debug(const CompactMatrixType &M, vector<string> vec, const string &str)
 	cout << "\t";
 	for (int i = 0; i < (int) vec.size(); ++i)
 	{
-		if ((uint) vec[i].size() > 6) vec[i] = vec[i].substr(vec[i].size() - 6);
+		if (vec[i].size() > 6) vec[i] = vec[i].substr(vec[i].size() - 6);
 		cout << vec[i] << "\t";
 	}
 	cout << endl;

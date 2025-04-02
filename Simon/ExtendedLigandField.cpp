@@ -82,11 +82,11 @@ CompactMatrixType extendedLigandFieldRotMatFilledAndEmpty(const CompactMatrixTyp
 
 void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint32_t constOrbs, const bool hasSpin)
 {
-	uint sameSymLigands = (uint) (M.Ni / constOrbs) - 1;
-	uint i;
+	int sameSymLigands = (int) (M.Ni / constOrbs) - 1;
+	int i;
 	for (i = 0; i < sameSymLigands; ++i)
 		names.push_back(nameBase + to_string(i + 1) + "_" + multiplicityToNonRelOrb(constOrbs, hasSpin));
-	uint restLigandMult = M.Ni % constOrbs;
+	int restLigandMult = M.Ni % constOrbs;
 	if (restLigandMult > 0)
 		names.push_back(nameBase + to_string(i + 1) + "_" + multiplicityToNonRelOrb(restLigandMult, hasSpin));
 }
@@ -95,8 +95,8 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 		const bool hasSpin)
 {
 	CompactMatrixType out, HLigand, eigenfunsLigand, HRedFilled, Tfilled, HRedEmpty, Tempty;
-	uint numNegVals = 0;
-	uint LigandMatSize = H.Ni - constOrbs;
+	int numNegVals = 0;
+	int LigandMatSize = H.Ni - constOrbs;
 	orbNames = vector<string>();
 	orbNames.push_back("unchanged_" + multiplicityToNonRelOrb(constOrbs, hasSpin));
 	if (LigandMatSize > 0)
@@ -105,7 +105,7 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 		vector<double> eigenvals = vector<double>(LigandMatSize, 0);
 		CompactMatrixEigensystem(&HLigand, &eigenfunsLigand, &eigenvals[0]);
 		numNegVals = LigandMatSize;
-		for (uint i = 0; i < (uint) eigenvals.size(); ++i)
+		for (int i = 0; i < eigenvals.size(); ++i)
 		{
 			if (eigenvals[i] > 0)
 			{
@@ -225,7 +225,7 @@ TightBindingDef extendedLigandFieldForTightBinding(TightBindingDef &tb, CompactM
 	double k[3] = { 0., 0., 0. };
 	CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(tbSorted, k, &hMat);
 	hMatCompact = MatrixTypeToCompactMatrixType(hMat);
-	uint constOrbs = constAtom.shelldegeneracy[0];
+	uint32_t constOrbs = constAtom.shelldegeneracy[0];
 	vector < string > newNames = vector<string>();
 	hMatRed = extendedLigandFieldForMatrix(hMatCompact, rotMat, constOrbs, filledLig, emptyLig, newNames, hasSpin);
 	CompactMatrixMultiply('T', 'T', &permMat, &rotMat, &T);
@@ -254,8 +254,8 @@ static int LuaExtendedLigandField(lua_State * L)
 	CompactMatrixType mat, T, outMat;
   struct
   {
-		uint filledLigands = 1;
-		uint emptyLigands = 0;
+		uint32_t filledLigands = 1;
+		uint32_t emptyLigands = 0;
 		bool hasSpin = true;
   } Options;
   LuaOptionsType LuaExtendedLigandFieldOptions[]={
@@ -295,7 +295,7 @@ static int LuaExtendedLigandField(lua_State * L)
 	{
 		lua_check(L, 1, op);
 		if (!(bool) QOperatorHermitian(op, 100 * DBL_EPSILON)) return luaL_error(L, "Error: ExtendedLigandField expects a Hermitian operator as input.");
-		uint unchangedStates;
+		uint32_t unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
 		if (unchangedStates > op.NFermion) return luaL_error(L, "Error: Number of unchanged states (%d) cannot be larger than number of Fermionic states (%d).", unchangedStates, op.NFermion);
@@ -310,7 +310,7 @@ static int LuaExtendedLigandField(lua_State * L)
 		lua_check(L, 1, mat);
 		if (mat.Ni != mat.Nj) return luaL_error(L, "Error: ExtendedLigandField expects a quadratic matrix as input.");
 		if (!(bool) QCompactMatrixHermitian(mat, 100 * DBL_EPSILON)) return luaL_error(L, "Error: ExtendedLigandField expects a Hermitian matrix as input.");
-		uint unchangedStates;
+		uint32_t unchangedStates;
 		vector < string > orbNames;
 		lua_check(L, 2, unchangedStates);
 		if (unchangedStates > mat.Ni) return luaL_error(L, "Error: Number of unchanged states (%d) cannot be larger than dimension of matrix (%d).", unchangedStates, mat.Ni);
