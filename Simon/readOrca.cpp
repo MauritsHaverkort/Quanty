@@ -161,7 +161,7 @@ int stringToLz(const string &str)
 	}
 }
 
-string constructOrbname(const int siteNum, const string &atomName, const uint n, const string &shell, const int lz, const bool addLz)
+string constructOrbname(const int siteNum, const string &atomName, const int n, const string &shell, const int lz, const bool addLz)
 {
 	//	Expects input like 2_Fe_3p1 or Fe_3p1
 	std::stringstream strStr;
@@ -177,22 +177,22 @@ string constructOrbname(const int siteNum, const string &atomName, const uint n,
 	return strStr.str();
 }
 
-string constructOrbname(const int siteNum, const string &atomName, const uint n, const string &shell, const int lz)
+string constructOrbname(const int siteNum, const string &atomName, const int n, const string &shell, const int lz)
 {
 	return constructOrbname(siteNum, atomName, n, shell, lz, true);
 }
 
-string constructOrbname(const int siteNum, const string &atomName, const uint n, const string &shell)
+string constructOrbname(const int siteNum, const string &atomName, const int n, const string &shell)
 {
 	return constructOrbname(siteNum, atomName, n, shell, 0, false);
 }
 
-string constructOrbname(const string &atomName, const uint n, const string &shell, const int lz)
+string constructOrbname(const string &atomName, const int n, const string &shell, const int lz)
 {
 	return constructOrbname(-1, atomName, n, shell, lz, true);
 }
 
-string constructOrbname(const string &atomName, const uint n, const string &shell)
+string constructOrbname(const string &atomName, const int n, const string &shell)
 {
 	return constructOrbname(-1, atomName, n, shell, 0, false);
 }
@@ -201,9 +201,9 @@ string normalizedOrcaOrbname(const string &orbOrca)
 {
 	const static string digits = "0123456789";
 	//	Expects input like " 0Cr 3dxy "
-	uint siteNum;
+	int siteNum;
 	string atomName;
-	uint n;
+	int n;
 	string shell;
 	int lz;
 
@@ -238,7 +238,7 @@ void SortOrcaBasis(OrcaObject &orca)
 	permMat.Nj = orca.NBasis;
 	permMat.QComplex = 0;
 	InitCompactMatrix(&permMat);
-	for (uint i = 0; i < (uint) permVec.size(); ++i)
+	for (int i = 0; i < (int) permVec.size(); ++i)
 	{
 		permMat.VRe[i * permMat.Nj + permVec[i]] = 1;
 	}
@@ -258,15 +258,15 @@ void SortOrcaBasis(OrcaObject &orca)
 	FreeCompactMatrix(&permMat);
 }
 
-double OrcaGaussianNormfactor(const double w, const uint l)
+double OrcaGaussianNormfactor(const double w, const int l)
 {
 	double out = sqrt(4 * M_PI);
 	out *= pow(2 * w / M_PI, 3. / 4.);
 	out *= pow(4 * w, (double) l / 2.);
 	if (l > 0)
 	{
-		uint den = 2 * l - 1;
-		uint tmp = den;
+		int den = 2 * l - 1;
+		int tmp = den;
 		while (tmp > 1)
 		{
 			tmp -= 2;
@@ -280,7 +280,7 @@ double OrcaGaussianNormfactor(const double w, const uint l)
 
 void OrcaSetFermiEnergy(OrcaObject &orca, const double ef)
 {
-	uint i = 0;
+	int i = 0;
 	while (orca.EigenOccupations[i] > 0)
 	{
 		++i;
@@ -291,7 +291,7 @@ void OrcaSetFermiEnergy(OrcaObject &orca, const double ef)
 		return;
 	}
 	double offset = ef - orca.EigenEnergies[i] + (orca.EigenEnergies[i] - orca.EigenEnergies[i - 1]) / 2;
-	for (uint j = 0; j < (uint) orca.EigenEnergies.size(); ++j)
+	for (int j = 0; j < (int) orca.EigenEnergies.size(); ++j)
 	{
 		orca.EigenEnergies[j] += offset;
 	}
@@ -316,7 +316,7 @@ OrcaObject FileReadOrca(const string &filename)
 	{
 	string currentAtom;
 	char currentShell;
-	uint shellCounter;
+	int shellCounter;
 	GaussianRadial currentGauss;
 	} basisAux;
 	int i=0, jOffset = 0;
@@ -345,7 +345,7 @@ OrcaObject FileReadOrca(const string &filename)
 			pos = line.find_first_not_of(letters, pos);
 			vector<double> lineVec = stringToDoubleVec(line.substr(pos)); //ZA, FRAG, MASS, X, Y, Z
 			vector<double> atomPos(3);
-			for (uint i = 0; i < 3; ++i)
+			for (int i = 0; i < 3; ++i)
 			{
 				atomPos[i] = lineVec[lineVec.size()-3+i];
 			}
@@ -390,7 +390,7 @@ OrcaObject FileReadOrca(const string &filename)
 					{
 						basisAux.shellCounter++;
 					}
-					uint l = 0;
+					int l = 0;
 					if (basisAux.currentShell == 's') l = 0;
 					if (basisAux.currentShell == 'p') l = 1;
 					if (basisAux.currentShell == 'd') l = 2;
@@ -431,7 +431,7 @@ OrcaObject FileReadOrca(const string &filename)
 				vector<double> lineVec = stringToDoubleVec(line);
 				i = (int) lineVec[0];
 				int j = jOffset - 1;
-				for (uint k = 1; k < (uint) lineVec.size(); ++k)
+				for (int k = 1; k < (uint) lineVec.size(); ++k)
 				{
 					++j;
 					out.OverlapMatrix.VRe[i * out.OverlapMatrix.Nj + j] = lineVec[k];
@@ -461,7 +461,7 @@ OrcaObject FileReadOrca(const string &filename)
 			else if (i == -2)
 			{
 				vector<double> energies = stringToDoubleVec(line);
-				for (uint k = 0; k < (uint) energies.size(); ++k)
+				for (int k = 0; k < (uint) energies.size(); ++k)
 				{
 					out.EigenEnergies.push_back(energies[k] * HartreeToeV);
 				}
@@ -469,7 +469,7 @@ OrcaObject FileReadOrca(const string &filename)
 			else if (i == -1)
 			{
 				vector<double> occus = stringToDoubleVec(line);
-				for (uint k = 0; k < (uint) occus.size(); ++k)
+				for (int k = 0; k < (uint) occus.size(); ++k)
 				{
 					out.EigenOccupations.push_back(occus[k]);
 				}
@@ -485,16 +485,16 @@ OrcaObject FileReadOrca(const string &filename)
 
 				vector<double> entries = stringToDoubleVec(line.substr(orbNameLength));
 				double phaseFac = OrcaPhaseConventionFactor(out.BasisOrbitalNames[i]);
-				for (uint k = 0; k < (uint) entries.size(); ++k)
+				for (int k = 0; k < (uint) entries.size(); ++k)
 				{
-					uint j = jOffset + k;
+					int j = jOffset + k;
 					out.MolecularOrbitalMatrix.VRe[j * out.MolecularOrbitalMatrix.Nj + i] = phaseFac * entries[k]; //we want the matrix to contain row vectors.
 				}
 			}
 
 			if (i == out.NBasis - 1)
 			{
-				if ((uint) out.EigenEnergies.size() == out.NBasis)
+				if ((int) out.EigenEnergies.size() == out.NBasis)
 				{
 					isReadingMolecularOrbitals = false;
 				}
@@ -513,9 +513,9 @@ OrcaObject FileReadOrca(const string &filename)
 	ChangeOrcaOverlapMatrixPhases(out);
 	SortOrcaBasis(out);
 	out.Atoms = OrbsToAtoms(out.BasisOrbitalNames, false);
-	for (uint i = 0; i < (uint) atomPositions.size(); ++i)
+	for (int i = 0; i < (int) atomPositions.size(); ++i)
 	{
-		for (uint j = 0; j < 3; ++j)
+		for (int j = 0; j < 3; ++j)
 		{
 			out.Atoms[i].Position[j] = atomPositions[i][j];
 		}
@@ -526,9 +526,9 @@ OrcaObject FileReadOrca(const string &filename)
 
 void ChangeOrcaOverlapMatrixPhases(OrcaObject &orca)
 {
-	for (uint i = 0; i < orca.NBasis; ++i)
+	for (int i = 0; i < orca.NBasis; ++i)
 	{
-		for (uint j = 0; j < orca.NBasis; ++j)
+		for (int j = 0; j < orca.NBasis; ++j)
 		{
 			const double faci = OrcaPhaseConventionFactor(orca.BasisOrbitalNames[i]);
 			const double facj = OrcaPhaseConventionFactor(orca.BasisOrbitalNames[j]);
@@ -596,22 +596,22 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 {
 
 	CompactMatrixType TrafoFull;
-	const uint NFull = orca.NBasis;
+	const int NFull = orca.NBasis;
 	TrafoFull.Ni = NFull;
 	TrafoFull.Nj = NFull;
 	TrafoFull.QComplex = 0;
 	TrafoFull.OnLuaStack = false;
 	InitCompactMatrix(&TrafoFull);
-	vector<uint> alreadyRotated;
-	for (uint k = 0; k < NFull; ++k)
+	vector<int> alreadyRotated;
+	for (int k = 0; k < NFull; ++k)
 	{
 		if (!isElementOf(k, alreadyRotated))
 		{
-			vector<uint> degOrbIndices;
+			vector<int> degOrbIndices;
 			degOrbIndices.push_back(k);
 			alreadyRotated.push_back(k);
 
-			for (uint l = k + 1; l < NFull; ++l)
+			for (int l = k + 1; l < NFull; ++l)
 			{
 				if (fabs(orca.EigenEnergies[k] - orca.EigenEnergies[l]) < 1e-10 && !isElementOf(l, alreadyRotated))
 				{
@@ -621,13 +621,13 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 				}
 			}
 
-			vector<uint> largestEntries;
-			for (uint l = 0; l < (uint) degOrbIndices.size(); ++l)
+			vector<int> largestEntries;
+			for (int l = 0; l < (int) degOrbIndices.size(); ++l)
 			{
-				const uint MOindex = degOrbIndices[l];
-				uint iMax = 0;
+				const int MOindex = degOrbIndices[l];
+				int iMax = 0;
 				double partMax = 0.;
-				for (uint m = 0; m < NFull; ++m)
+				for (int m = 0; m < NFull; ++m)
 				{
 					double part = fabs(orca.MolecularOrbitalMatrix.VRe[MOindex * NFull + m]);
 					if (part > partMax && !isElementOf(m, largestEntries))
@@ -641,28 +641,28 @@ void OrcaDiagonalizeDegenerateStates(OrcaObject &orca)
 
 			sort(largestEntries.begin(), largestEntries.end());
 			CompactMatrixType subMat;
-			subMat.Ni = (uint) degOrbIndices.size();
-			subMat.Nj = (uint) degOrbIndices.size();
+			subMat.Ni = (int) degOrbIndices.size();
+			subMat.Nj = (int) degOrbIndices.size();
 			subMat.QComplex = 0;
 			InitCompactMatrix(&subMat);
 
-			for (uint i = 0; i < (uint) degOrbIndices.size(); ++i)
+			for (int i = 0; i < (int) degOrbIndices.size(); ++i)
 			{
-				const uint iFull = degOrbIndices[i];
-				for (uint j = 0; j < (uint) largestEntries.size(); ++j)
+				const int iFull = degOrbIndices[i];
+				for (int j = 0; j < (int) largestEntries.size(); ++j)
 				{
-					const uint jFull = largestEntries[j];
+					const int jFull = largestEntries[j];
 					subMat.VRe[i * subMat.Nj + j] = orca.MolecularOrbitalMatrix.VRe[iFull * NFull + jFull];
 				}
 			}
 
 			CompactMatrixType Trafo = GaussEliminationTransformation(subMat);
-			for (uint i = 0; i < (uint) degOrbIndices.size(); ++i)
+			for (int i = 0; i < (int) degOrbIndices.size(); ++i)
 			{
-				const uint iFull = degOrbIndices[i];
-				for (uint j = 0; j < (uint) degOrbIndices.size(); ++j)
+				const int iFull = degOrbIndices[i];
+				for (int j = 0; j < (int) degOrbIndices.size(); ++j)
 				{
-					const uint jFull = degOrbIndices[j];
+					const int jFull = degOrbIndices[j];
 					TrafoFull.VRe[iFull * TrafoFull.Nj + jFull] = Trafo.VRe[i * Trafo.Nj + j];
 				}
 			}
@@ -744,7 +744,7 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 
 	if (inCopy.VRe[0] == 0)
 	{
-		uint i;
+		int i;
 		for (i = 1; i < inCopy.Ni; ++i)
 		{
 			if (inCopy.VRe[i * inCopy.Nj] != 0) break;
@@ -780,9 +780,9 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 
 	if (out.QComplex == 0)
 	{
-		for (uint j = 0; j < mat.Nj - 1; ++j)
+		for (int j = 0; j < mat.Nj - 1; ++j)
 		{
-			for (uint i = j + 1; i < mat.Ni; ++i)
+			for (int i = j + 1; i < mat.Ni; ++i)
 			{
 				if (inCopy.VRe[j * inCopy.Nj + j] == 0)
 				{
@@ -838,17 +838,17 @@ CompactMatrixType GaussEliminationTransformation(const CompactMatrixType &mat)
 			}
 		}
 
-		for (uint i = 0; i < out.Ni; ++i)
+		for (int i = 0; i < out.Ni; ++i)
 		{
 			double newNorm, oldNorm = 0;
 			newNorm = inCopy.VRe[i * inCopy.Nj + i]; //no fabs, in order to make all signs positive.
-			for (uint j = 0; j < out.Nj; ++j)
+			for (int j = 0; j < out.Nj; ++j)
 			{
 				double entry = mat.VRe[i * mat.Nj + j];
 				oldNorm += entry * entry;
 			}
 			oldNorm = sqrt(oldNorm);
-			for (uint j = 0; j < out.Nj; ++j)
+			for (int j = 0; j < out.Nj; ++j)
 			{
 				out.VRe[i * out.Nj + j] = out.VRe[i * out.Nj + j] * oldNorm / newNorm;
 			}

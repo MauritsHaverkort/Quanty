@@ -1,7 +1,7 @@
 string cutLeadingSpaces(string in);
 string cutTrailingSpaces(string in);
 string cutBorderSpaces(string in);
-void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int &lz);
+void deconstructOrbname(const string &orb, uint32_t &siteNum, string &atomName, uint32_t &n, string &shell, int &lz);
 bool atomicStateSorternlz(string s1, string s2);
 bool atomicStateSorterlnz(string s1, string s2);
 vector<map<string, double> > getWF_coefficients_Filecontent(const string &filename, vector<string> &orbitalNames);

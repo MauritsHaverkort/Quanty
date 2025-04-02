@@ -1,4 +1,4 @@
-CompactMatrixType extendedLigandFieldMatrix(const CompactMatrixType &H, const CompactMatrixType &ligRotMat, CompactMatrixType &T, const uint constOrbs, const uint ligNum)
+CompactMatrixType extendedLigandFieldMatrix(const CompactMatrixType &H, const CompactMatrixType &ligRotMat, CompactMatrixType &T, const uint32_t constOrbs, const uint32_t ligNum)
 {
 	if (isNullMatrix(ligRotMat))
 	{
@@ -29,7 +29,7 @@ CompactMatrixType extendedLigandFieldMatrix(const CompactMatrixType &H, const Co
 	return out;
 }
 
-CompactMatrixType extendedLigandFieldFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint constOrbs)
+CompactMatrixType extendedLigandFieldFilledAndEmpty(const CompactMatrixType &HRedFilled, const CompactMatrixType &HRedEmpty, const uint32_t constOrbs)
 {
 	CompactMatrixType out;
 	if (HRedFilled.Ni <= constOrbs)
@@ -54,7 +54,7 @@ CompactMatrixType extendedLigandFieldFilledAndEmpty(const CompactMatrixType &HRe
 	return out;
 }
 
-CompactMatrixType extendedLigandFieldRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint constOrbs, const uint Nj)
+CompactMatrixType extendedLigandFieldRotMatFilledAndEmpty(const CompactMatrixType &Tfilled, const CompactMatrixType &Tempty, const uint32_t constOrbs, const uint32_t Nj)
 {
 	CompactMatrixType out;
 	if (Tfilled.Ni <= constOrbs && Tempty.Ni <= constOrbs)
@@ -80,7 +80,7 @@ CompactMatrixType extendedLigandFieldRotMatFilledAndEmpty(const CompactMatrixTyp
 	return out;
 }
 
-void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint constOrbs, const bool hasSpin)
+void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<string> &names, const uint32_t constOrbs, const bool hasSpin)
 {
 	uint sameSymLigands = (uint) (M.Ni / constOrbs) - 1;
 	uint i;
@@ -91,7 +91,7 @@ void addLigandNames(const CompactMatrixType &M, const string &nameBase, vector<s
 		names.push_back(nameBase + to_string(i + 1) + "_" + multiplicityToNonRelOrb(restLigandMult, hasSpin));
 }
 
-CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,
+CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint32_t constOrbs, const uint32_t filledLig, const uint32_t emptyLig, vector<string> &orbNames,
 		const bool hasSpin)
 {
 	CompactMatrixType out, HLigand, eigenfunsLigand, HRedFilled, Tfilled, HRedEmpty, Tempty;
@@ -159,13 +159,13 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, Compa
 	return out;
 }
 
-CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig)
+CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, CompactMatrixType &T, const uint32_t constOrbs, const uint32_t filledLig, const uint32_t emptyLig)
 {
 	vector < string > vec = vector<string>();
 	return extendedLigandFieldForMatrix(H, T, constOrbs, filledLig, emptyLig, vec, true);
 }
 
-CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, const uint constOrbs, const uint filledLig, const uint emptyLig)
+CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, const uint32_t constOrbs, const uint32_t filledLig, const uint32_t emptyLig)
 {
 	CompactMatrixType T;
 	vector < string > vec = vector<string>();
@@ -174,7 +174,7 @@ CompactMatrixType extendedLigandFieldForMatrix(const CompactMatrixType &H, const
 	return out;
 }
 
-OperatorType extendedLigandFieldForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig, vector<string> &orbNames,
+OperatorType extendedLigandFieldForOperator(const OperatorType &hamil, CompactMatrixType &T, const uint32_t constOrbs, const uint32_t filledLig, const uint32_t emptyLig, vector<string> &orbNames,
 		const bool hasSpin)
 {
 	CompactMatrixType Rho, HMat, HMatRed;
@@ -194,13 +194,13 @@ OperatorType extendedLigandFieldForOperator(const OperatorType &hamil, CompactMa
 	return out;
 }
 
-OperatorType extendedLigandFieldForOperator(const OperatorType &H, CompactMatrixType &T, const uint constOrbs, const uint filledLig, const uint emptyLig)
+OperatorType extendedLigandFieldForOperator(const OperatorType &H, CompactMatrixType &T, const uint32_t constOrbs, const uint32_t filledLig, const uint32_t emptyLig)
 {
 	vector < string > vec = vector<string>();
 	return extendedLigandFieldForOperator(H, T, constOrbs, filledLig, emptyLig, vec, true);
 }
 
-OperatorType extendedLigandFieldForOperator(const OperatorType &H, const uint constOrbs, const uint filledLig, const uint emptyLig)
+OperatorType extendedLigandFieldForOperator(const OperatorType &H, const uint32_t constOrbs, const uint32_t filledLig, const uint32_t emptyLig)
 {
 	CompactMatrixType T;
 	vector < string > vec = vector<string>();
@@ -209,7 +209,7 @@ OperatorType extendedLigandFieldForOperator(const OperatorType &H, const uint co
 	return out;
 }
 
-TightBindingDef extendedLigandFieldForTightBinding(TightBindingDef &tb, CompactMatrixType &T, const AtomType &constAtom, const uint filledLig, const uint emptyLig, const bool hasSpin)
+TightBindingDef extendedLigandFieldForTightBinding(TightBindingDef &tb, CompactMatrixType &T, const AtomType &constAtom, const uint32_t filledLig, const uint32_t emptyLig, const bool hasSpin)
 {
 	TightBindingDef tbSorted, out = TightBindingDef();
 	MatrixType hMat;

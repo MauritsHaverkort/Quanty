@@ -105,7 +105,7 @@ CompactMatrixType densityMatrixNoSpin(const CompactMatrixType &rho)
 }
 
 vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs, const vector<vector<double> > &atomPos,
-		const uint gridpoints, const double domainsize)
+		const uint32_t gridpoints, const double domainsize)
 {
 	CompactMatrixType rhoNoSpin = densityMatrixNoSpin(rho);
 
@@ -155,7 +155,7 @@ vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, 
 }
 
 vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,
-		const vector<vector<double> > &atomPos, const uint gridpoints)
+		const vector<vector<double> > &atomPos, const uint32_t gridpoints)
 {
 	double maxNorm = 0;
 	double maxX = 0;

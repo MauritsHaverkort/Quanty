@@ -3089,7 +3089,7 @@ bool isOrbElementOf(const string &orb, vector<string> set)
 		vector < string > orbsRel;
 		orbsRel.push_back(orb);
 		orbsRel = nonRelToRelOrbs(orbsRel);
-		for (uint i = 0; i < (uint) orbsRel.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) orbsRel.size(); ++i)
 		{
 			if (!isElementOf(orbsRel[i], set)) return false;
 		}
@@ -3115,13 +3115,13 @@ MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 	int NF = 0;
 	if (NFOld < NFNew)
 	{
-		for (uint i = 0; i < (uint) orbsNew.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) orbsNew.size(); ++i)
 			if (!isOrbElementOf(orbsNew[i], orbsOld))
 				orbsOld.push_back(orbsNew[i]);
 		NF = NFNew;
 	} else if (NFOld > NFNew)
 	{
-		for (uint i = 0; i < (uint) orbsOld.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) orbsOld.size(); ++i)
 			if (!isOrbElementOf(orbsOld[i], orbsNew))
 				orbsNew.push_back(orbsOld[i]);
 		NF = NFOld;
@@ -3511,7 +3511,7 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec, bool addSpin)
 {
 	MatrixType out;
-	uint spinFac = addSpin ? 1 : 2;
+	uint32_t spinFac = addSpin ? 1 : 2;
 	vector<int> permVec = permutationVector(oldVec, newVec);
 	if (permVec.size() == 0)
 		return nullMatrix();
@@ -3673,7 +3673,7 @@ map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orb
 {
 	map<string, vector<uint16_t> > allIndices;
 	uint16_t offset = 0;
-	for (uint i = 0; i < (uint) orbitals.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) orbitals.size(); ++i)
 	{
 		string orb = orbitals[i];
 		int multiplicity = orbToMultiplicity(orb);
@@ -3712,14 +3712,14 @@ void groupOrbitals(map<string, vector<uint16_t> > &allIndices, const map<string,
 		string groupKey = iter->first;
 		vector < string > groupMembers = iter->second;
 		vector<uint16_t> indices;
-		for (uint i = 0; i < (uint) groupMembers.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) groupMembers.size(); ++i)
 		{
 			string groupMember = groupMembers[i];
 			map<string, vector<uint16_t> >::const_iterator groupMemberIter = allIndices.find(groupMember);
 			if (groupMemberIter != allIndices.end())
 			{
 				vector<uint16_t> groupMemberIndices = groupMemberIter->second;
-				for (uint j = 0; j < (uint) groupMemberIndices.size(); ++j)
+				for (uint32_t j = 0; j < (uint32_t) groupMemberIndices.size(); ++j)
 				{
 					if (!isElementOf(groupMemberIndices[j], indices))
 						indices.push_back(groupMemberIndices[j]);

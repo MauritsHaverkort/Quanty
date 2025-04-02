@@ -20,7 +20,7 @@ void lua_push(lua_State * L, const int pushkin)
 	lua_push(L, (lua_Integer)pushkin);
 }
 
-void lua_push(lua_State * L, const uint pushkin)
+void lua_push(lua_State * L, const uint32_t pushkin)
 {
 	lua_push(L, (lua_Integer)pushkin);
 }
@@ -398,14 +398,14 @@ bool luaL_isType(lua_State *L, int arg, const CompactMatrixType &example)
 		return true;
 	if (lua_istable(L, arg))
 	{
-		uint len = (uint) lua_objlen(L, arg);
+		uint32_t len = (uint32_t) lua_objlen(L, arg);
 		if (len == 0) return false;
 
 		lua_rawgeti(L, arg, 1);
-		uint len_row = (uint) lua_objlen(L, -1);
+		uint32_t len_row = (uint32_t) lua_objlen(L, -1);
 		lua_pop(L, 1);
 
-		for (uint i = 1; i <= len; ++i)
+		for (uint32_t i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, 1);
 			if (!luaL_isType(L, -1, vector<double>(), len_row) && !luaL_isType(L, -1, vector<Complex16>(), len_row))
@@ -430,9 +430,9 @@ bool luaL_isType(lua_State *L, int arg, const vector<T> &example)
 {
 	if (lua_istable(L, arg))
 	{
-		uint len = (uint) lua_objlen(L, arg);
+		uint32_t len = (uint32_t) lua_objlen(L, arg);
 		if (len == 0) return false;
-		for (uint i = 1; i <= len; ++i)
+		for (uint32_t i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, i);
 			if (!luaL_isType(L, -1, T()))
@@ -450,7 +450,7 @@ bool luaL_isType(lua_State *L, int arg, const vector<T> &example)
 }
 
 template<typename T>
-bool luaL_isType(lua_State *L, int arg, const vector<T> &example, const uint vecsize)
+bool luaL_isType(lua_State *L, int arg, const vector<T> &example, const uint32_t vecsize)
 {
 	if (vecsize != (uint) lua_objlen(L, arg))
 		return false;
@@ -485,9 +485,9 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, valType> &example)
 		return true;
 	} else
 	{
-		uint len = (uint) lua_objlen(L, arg);
+		uint32_t len = (uint32_t) lua_objlen(L, arg);
 		if (len == 0) return false;
-		for (uint i = 1; i <= len; ++i)
+		for (uint32_t i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, i);
 
@@ -513,7 +513,7 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, valType> &example)
 }
 
 template<typename keyType, typename valType>
-bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &example, const uint vecsize)
+bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &example, const uint32_t vecsize)
 {
 	if (!lua_istable(L, arg))
 		return false;
@@ -531,9 +531,9 @@ bool luaL_isType(lua_State *L, int arg, const map<keyType, vector<valType> > &ex
 		lua_pop(L, 1);
 	} else
 	{
-		uint len = (uint) lua_objlen(L, arg);
+		uint32_t len = (uint32_t) lua_objlen(L, arg);
 		if (len == 0) return false;
-		for (uint i = 1; i <= len; ++i)
+		for (uint32_t i = 1; i <= len; ++i)
 		{
 			lua_rawgeti(L, arg, i);
 

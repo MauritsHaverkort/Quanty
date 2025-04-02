@@ -5032,9 +5032,9 @@ static int LuaPartialOperator(lua_State *L)
 	if (len != 3) return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	lua_check(L, 2, indices);
-	for (uint i = 0; i < (uint)indices.size(); i++)
+	for (uint32_t i = 0; i < (uint32_t)indices.size(); i++)
 	{
-		for (uint j = 0; j < (uint)indices[i].size(); ++j)
+		for (uint32_t j = 0; j < (uint32_t)indices[i].size(); ++j)
 		{
 			if (indices[i][j] < 0 || indices[i][j] >= O->NFermion)
 				luaL_warning(L, "Index %d is not within [0,NF-1]=[0,%d].\n", indices[i][j], O->NFermion - 1);
@@ -5118,8 +5118,8 @@ static int LuaPrintExpectationValues(lua_State * L)
 
   struct
   {
-		uint colWidth = 8;
-		uint printHeaderEvery = 0;
+		uint32_t colWidth = 8;
+		uint32_t printHeaderEvery = 0;
 		bool printSigma = false;
 		bool sortByEnergy = false;
     double zero = 1E-10;
@@ -5139,7 +5139,7 @@ static int LuaPrintExpectationValues(lua_State * L)
 //		Possible Input: Psi, Operators, (opt)Hamiltonian, (opt)ExtraLists, (opt)Options.
 	lua_check(L,1,psiList);
 	lua_check(L,2,opList);
-	uint i = 3;
+	uint32_t i = 3;
 	if (luaL_isType(L, i, hamil) && i <= len)
 	{
 		hasHamiltonian = true;
@@ -5181,17 +5181,17 @@ static int LuaTensorProduct(lua_State *L)
   {
     lua_check(L, 1, psi1vec);
     lua_check(L, 2, psi2vec);
-    for (uint i = 0; i < (uint) psi1vec.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) psi1vec.size(); ++i)
       if (psi1vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
-    for (uint i = 0; i < (uint) psi2vec.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) psi2vec.size(); ++i)
       if (psi2vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
     vector < WaveFunctionType > out(psi1vec.size() * psi2vec.size());
 #pragma omp parallel for
-    for (uint ij = 0; ij < (uint) out.size(); ++ij)
+    for (int ij = 0; ij < (int) out.size(); ++ij)
     {
-      uint i, j;
-      j = ij % (uint) psi2vec.size();
-      i = (ij - j) / (uint) psi2vec.size();
+      int i, j;
+      j = ij % (int) psi2vec.size();
+      i = (ij - j) / (int) psi2vec.size();
       WaveFunctionTensorProduct(psi1vec[i], psi2vec[j], &(out[ij]));
     }
     lua_push(L, out);

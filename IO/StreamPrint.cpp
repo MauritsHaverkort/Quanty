@@ -1676,7 +1676,7 @@ vector<double> expectationValuesSingleOperator(const vector<WaveFunctionType> &p
 
 	if (!isOperatorAlmostHermitian(op, zero))
 		cout << "Warning: ExpectationValues called with non-Hermetian Operator" << op.Name << ". The results will probably be rubbish." << endl;
-	for (uint i = 0; i < (uint) psiList.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) psiList.size(); ++i)
 	{
 		expecValue = PsiHermitianOperatorPsi(op, psiList[i]);
 		if (Abs(expecValue) < zero)

@@ -541,9 +541,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 		free(NHopStart[ish]);
 		free(ShellName[ish]);
 	}
-	for (uint i = 0; i < Nshell * Nshell; ++i)
+	for (int i = 0; i < Nshell * Nshell; ++i)
 	{
-		for (uint j = 0; j < HopVecJVals[i].size(); ++j)
+		for (int j = 0; j < HopVecJVals[i].size(); ++j)
 		{
 			free(HopVec[i][HopVecJVals[i][j]]);
 		}

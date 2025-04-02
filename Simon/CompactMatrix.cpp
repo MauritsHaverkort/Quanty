@@ -1,4 +1,4 @@
-bool isRowZero(const CompactMatrixType &M, const uint row, const double precision)
+bool isRowZero(const CompactMatrixType &M, const uint32_t row, const double precision)
 {
 	if ((bool) M.QComplex)
 	{
@@ -14,12 +14,12 @@ bool isRowZero(const CompactMatrixType &M, const uint row, const double precisio
 	return true;
 }
 
-bool isRowZero(const CompactMatrixType &M, const uint row)
+bool isRowZero(const CompactMatrixType &M, const uint32_t row)
 {
 	return isRowZero(M, row, 10 * DBL_EPSILON);
 }
 
-bool isColZero(const CompactMatrixType &M, const uint col, const double precision)
+bool isColZero(const CompactMatrixType &M, const uint32_t col, const double precision)
 {
 	if ((bool) M.QComplex)
 	{
@@ -35,7 +35,7 @@ bool isColZero(const CompactMatrixType &M, const uint col, const double precisio
 	return true;
 }
 
-bool isColZero(const CompactMatrixType &M, const uint col)
+bool isColZero(const CompactMatrixType &M, const uint32_t col)
 {
 	return isColZero(M, col, 10 * DBL_EPSILON);
 }
@@ -96,7 +96,7 @@ void CompactMatrixCutDimensions(CompactMatrixType &M)
 	FreeCompactMatrix(&pointerToGarbage);
 }
 
-CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixType &T, const uint dim2)
+CompactMatrixType SubspaceRotationMatrix(const uint32_t dim1, const CompactMatrixType &T, const uint32_t dim2)
 {
 	CompactMatrixType out, one1, one2;
 	one1.QComplex = 0;

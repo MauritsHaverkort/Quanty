@@ -5499,14 +5499,14 @@ CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size)
 	out.Nj = M.Nj * size;
 	out.QComplex = M.QComplex;
 	InitCompactMatrix(&out);
-	for (uint i = 0; i < M.Ni; ++i)
+	for (uint32_t i = 0; i < M.Ni; ++i)
 	{
-		for (uint j = 0; j < M.Nj; ++j)
+		for (uint32_t j = 0; j < M.Nj; ++j)
 		{
-			for (uint k = 0; k < size; ++k)
+			for (uint32_t k = 0; k < size; ++k)
 			{
-				uint iNew = i * size + k;
-				uint jNew = j * size + k;
+				uint32_t iNew = i * size + k;
+				uint32_t jNew = j * size + k;
 				if ((bool) out.QComplex)
 				{
 					out.V[iNew * out.Nj + jNew].Re = M.V[i * M.Nj + j].Re;
@@ -5607,7 +5607,7 @@ CompactMatrixType CompactidentityMatrix(const int size)
 
 CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &inds)
 {
-	for (uint i = 0; i < (uint) inds.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) inds.size(); ++i)
 	{
 		if (inds[i] < 0 || inds[i] >= M.Ni || inds[i] >= M.Nj)
 		{
@@ -5621,11 +5621,11 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &
 	Msub.QComplex = M.QComplex;
 	InitCompactMatrix(&Msub);
 	Msub.OnLuaStack = M.OnLuaStack;
-	for (int i = 0; i < (uint) inds.size(); ++i)
+	for (int i = 0; i < (uint32_t) inds.size(); ++i)
 	{
-		for (int j = 0; j < (uint) inds.size(); ++j)
+		for (int j = 0; j < (uint32_t) inds.size(); ++j)
 		{
-			uint ind = inds[i] * M.Nj + inds[j];
+			uint32_t ind = inds[i] * M.Nj + inds[j];
 			if (M.QComplex == 0)
 			{
 				Msub.VRe[i * Msub.Nj + j] = M.VRe[ind];

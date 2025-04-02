@@ -96,7 +96,7 @@ static int LuaCorthogonalShells(lua_State *L)
 {
 	OrcaObject OrcaMolec, OrcaAtom;
 	double ELower, EUpper;
-	vector < uint > iAtom;
+	vector < uint32_t > iAtom;
 	CompactMatrixType newBasis;
 	uint len = lua_gettop(L);
 	if (len < 5 || len > 6)

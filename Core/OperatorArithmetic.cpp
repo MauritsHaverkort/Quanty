@@ -6567,11 +6567,11 @@ uint32_t OperatorChangeNFandNB(OperatorType *O, const uint32_t NFnew, uint32_t N
 /*  
  *
  */
-bool isCrAnIncluded(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
+bool isCrAnIncluded(const uint16_t * const CrAn, const uint32_t length, const vector<vector<uint16_t> > &subspace)
 {
-	for (uint i = 0; i < (uint) subspace.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) subspace.size(); ++i)
 	{
-		for (uint j = 0; j < length; ++j)
+		for (uint32_t j = 0; j < length; ++j)
 		{
 			const uint16_t AnInd = NotCrAnMask & CrAn[j];
 			if (isElementOf(AnInd, subspace[i])) return true;
@@ -6580,11 +6580,11 @@ bool isCrAnIncluded(const uint16_t * const CrAn, const uint length, const vector
 	return false;
 }
 
-bool isCrAnExcluded(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
+bool isCrAnExcluded(const uint16_t * const CrAn, const uint32_t length, const vector<vector<uint16_t> > &subspace)
 {
-	for (uint i = 0; i < (uint) subspace.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) subspace.size(); ++i)
 	{
-		for (uint j = 0; j < length; ++j)
+		for (uint32_t j = 0; j < length; ++j)
 		{
 			const uint16_t AnInd = NotCrAnMask & CrAn[j];
 			if (isElementOf(AnInd, subspace[i])) return false;
@@ -6593,12 +6593,12 @@ bool isCrAnExcluded(const uint16_t * const CrAn, const uint length, const vector
 	return true;
 }
 
-bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint length, const vector<vector<uint16_t> > &subspace)
+bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint32_t length, const vector<vector<uint16_t> > &subspace)
 {
-	for (uint i = 0; i < (uint) subspace.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) subspace.size(); ++i)
 	{
 		int additionalSubspaceElectrons = 0;
-		for (uint j = 0; j < length; ++j)
+		for (uint32_t j = 0; j < length; ++j)
 		{
 			const uint16_t AnInd = NotCrAnMask & CrAn[j];
 			if (isElementOf(AnInd, subspace[i]))
@@ -6614,11 +6614,11 @@ bool isCrAnConservesSubspaceOccupation(const uint16_t * const CrAn, const uint l
 	return true;
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length, bool changeInput)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint32_t, const vector<vector<uint16_t> >&), const uint32_t length, bool changeInput)
 {
 	uint16_t *oadd;
 	InitOperatorFixedLength(OPartial, length, O->l[length].NBitsKey);
-	for (uint i = 0; i < (O->l[length].N); ++i)
+	for (uint32_t i = 0; i < (O->l[length].N); ++i)
 	{
     oadd = &(O->l[length].o[i * length]);
 		if (criterion(oadd, length, indices))
@@ -6641,7 +6641,7 @@ void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * co
 	}
 }
 
-void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint length)
+void extractPartialOperatorFixedLength(OperatorType * const O, OperatorType * const OPartial, const vector<vector<uint16_t> > &indices, bool (*criterion)(const uint16_t * const, const uint, const vector<vector<uint16_t> >&), const uint32_t length)
 {
 	extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, false);
 }
@@ -6671,7 +6671,7 @@ void extractPartialOperator(OperatorType * const O, OperatorType * const OPartia
 		if (O->l[0].QComplex) ComplexOperatorAddLader(OPartial, NULL, 0, O->l[0].V[0].Re, O->l[0].V[0].Im);
 		else RealOperatorAddLader(OPartial, NULL, 0, O->l[0].VRe[0]);
 	}
-	for (uint length = 1; length <= O->MaxLength; ++length)
+	for (uint32_t length = 1; length <= O->MaxLength; ++length)
   {
 		extractPartialOperatorFixedLength(O, OPartial, indices, criterion, length, changeInput);
   }

@@ -95,7 +95,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
       strncpy(O->Compound, phrase[1], 15);
       O->Compound[15]=0;
-      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+      for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "lattice constants") != NULL)
     {
@@ -104,7 +104,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         O->Lattice.LattConst[i] = strtod(phrase[Nphrase-3+i],NULL);
       }
-      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+      for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "axis angles") != NULL)
     {
@@ -113,7 +113,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         O->Lattice.Angles[i] = strtod(phrase[Nphrase-3+i],NULL);
       }
-      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+      for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if( (strstr(ReadLine, "reciprocial lattice vectors") != NULL) || (strstr(ReadLine, "reciprocal lattice vectors") != NULL) )
     {
@@ -125,7 +125,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         {
           O->Lattice.gLattVec[i][j] = strtod(phrase[Nphrase-3+j],NULL);
         }
-        for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+        for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
       }
     }
     else if(strstr(ReadLine, "lattice vectors") != NULL)
@@ -138,7 +138,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         {
           O->Lattice.LattVec[i][j] = strtod(phrase[Nphrase-3+j],NULL);
         }
-        for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+        for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
       }
     }
     // Read elements in the unit cell.
@@ -146,7 +146,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     {
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
       O->Atoms.Natom = atoi(phrase[3]);
-      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+      for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
     }
     if(strstr(ReadLine, "No.  Element WPS CPA-Block") != NULL)
     {
@@ -163,7 +163,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
         {
           O->Atoms.Pos[i][j] = strtod(phrase[4+j],NULL);
         }
-        for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+        for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
       }
     }
     // Read the constructed Wannier orbitals.
@@ -171,7 +171,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
     {
       Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
       Nwandef = atoi(phrase[Nphrase-1]);
-      for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+      for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
       O->Wannier.Nwandef   = Nwandef;
       O->Wannier.NActAtom  = 1;
       O->Wannier.Name      = (char**)malloc(Nwandef*sizeof(char*));
@@ -189,7 +189,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           strcpy(O->Wannier.Name[i], phrase[1]);
           for(j=2;j<Nphrase;j++)
             strcat(strcat(O->Wannier.Name[i], " "), phrase[j]);
-          for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+          for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
           while(fgets(ReadLine, 1023, stream) != NULL)
           {
             if(strstr(ReadLine, "center") != NULL)
@@ -201,7 +201,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
                 tmpvec[j] = strtod(phrase[Nphrase-3+j],NULL);
               }
               TransVecNorm(tmpvec, O->Lattice.gLattVec, O->Wannier.PosCenter[i]);
-              for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+              for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
             }
             if(strstr(ReadLine, "site") != NULL)
             {
@@ -233,7 +233,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
               j=0;
               while(j<i && O->Wannier.Site[i]!=O->Wannier.Site[j]) j++;
               if(i>=1&&j==i&& O->Wannier.Site[i]!=O->Wannier.Site[i-1]) O->Wannier.NActAtom += 1;
-              for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+              for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
             }
             if(strstr(ReadLine, "orbital") != NULL)
             {
@@ -260,7 +260,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
 								strcpy(tmpstr, phrase[1]);
 								O->Wannier.Orbital[i][2] = atoi(tmpstr + 2);
 							}
-							for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+							for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
 							break;
             }
           }
@@ -337,7 +337,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
           {
             O->Wannier.Nhop[i] = ihop;
           }
-          for (uint p = 0; p < Nphrase; ++p) free(phrase[p]);
+          for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
         }
       }
       if(i<Nwandef*Nwandef-1)

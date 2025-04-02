@@ -88,7 +88,7 @@ uint32_t LuaPut(lua_State *L, const char * const FileName, const char * const Va
     {
       // create a file of type ASCII
 #if defined(_WIN32)
-      _mkdir(FileName);
+      mkdir(FileName);
 #else
       mkdir(FileName, 0700);
 #endif

@@ -42,9 +42,9 @@ SparseMatrixType CompactMatrixToSparseMatrix(const CompactMatrixType &M)
 	double epsilon = 10 * DBL_EPSILON;
 	if ((bool) S.QComplex)
 	{
-		for (uint i = 0; i < M.Ni; ++i)
+		for (uint32_t i = 0; i < M.Ni; ++i)
 		{
-			for (uint j = 0; j < M.Nj; ++j)
+			for (uint32_t j = 0; j < M.Nj; ++j)
 			{
 				Complex16 elem = M.V[i * M.Nj + j];
 				if (fabs(elem.Re) > epsilon || fabs(elem.Im) > epsilon)
@@ -56,9 +56,9 @@ SparseMatrixType CompactMatrixToSparseMatrix(const CompactMatrixType &M)
 	}
 	else
 	{
-		for (uint i = 0; i < M.Ni; ++i)
+		for (uint32_t i = 0; i < M.Ni; ++i)
 		{
-			for (uint j = 0; j < M.Nj; ++j)
+			for (uint32_t j = 0; j < M.Nj; ++j)
 			{
 				double elem = M.VRe[i * M.Nj + j];
 				if (fabs(elem) > epsilon)
@@ -83,33 +83,33 @@ CompactMatrixType SparseMatrixToCompactMatrix(const SparseMatrixType &S)
 	M.mu = S.mu;
 	if ((bool) M.QComplex)
 	{
-		for (uint i = 0; i < M.Ni; ++i)
+		for (uint32_t i = 0; i < M.Ni; ++i)
 		{
-			for (uint j = 0; j < M.Nj; ++j)
+			for (uint32_t j = 0; j < M.Nj; ++j)
 			{
 				M.V[i * M.Nj + j].Re = 0;
 				M.V[i * M.Nj + j].Im = 0;
 			}
 		}
-		for (uint k = 0; k < S.N; ++k)
+		for (uint32_t k = 0; k < S.N; ++k)
 		{
-			uint ind = S.i[k] * M.Nj + S.j[k];
+			uint32_t ind = S.i[k] * M.Nj + S.j[k];
 			M.V[ind].Re = S.VRe[k];
 			M.V[ind].Im = S.VIm[k];
 		}
 	}
 	else
 	{
-		for (uint i = 0; i < M.Ni; ++i)
+		for (uint32_t i = 0; i < M.Ni; ++i)
 		{
-			for (uint j = 0; j < M.Nj; ++j)
+			for (uint32_t j = 0; j < M.Nj; ++j)
 			{
 				M.VRe[i * M.Nj + j] = 0;
 			}
 		}
-		for (uint k = 0; k < S.N; ++k)
+		for (uint32_t k = 0; k < S.N; ++k)
 		{
-			uint ind = S.i[k] * M.Nj + S.j[k];
+			uint32_t ind = S.i[k] * M.Nj + S.j[k];
 			M.VRe[ind] = S.VRe[k];
 		}
 	}
@@ -120,7 +120,7 @@ CompactMatrixType SparseMatrixToCompactMatrix(const SparseMatrixType &S)
 static int LuaMatrixToSparseMatrix(lua_State * L)
 {
 	CompactMatrixType M;
-	uint len = (uint) lua_gettop(L);
+	int len = (int) lua_gettop(L);
 	if (len != 1)
 		return luaL_error(L, "MatrixToSparseMatrix called with %d arguments, only 1 expected.", len);
 	if (!luaL_isType(L, 1, M))
@@ -134,7 +134,7 @@ static int LuaMatrixToSparseMatrix(lua_State * L)
 static int LuaSparseMatrixToMatrix(lua_State * L)
 {
 	SparseMatrixType M;
-	uint len = (uint) lua_gettop(L);
+	int len = (int) lua_gettop(L);
 	if (len != 1)
 		return luaL_error(L, "SparseMatrixToMatrix called with %d arguments, only 1 expected.", len);
 	if (!luaL_isType(L, 1, M))
@@ -147,7 +147,7 @@ static int LuaSparseMatrixToMatrix(lua_State * L)
 double RealSparseMatrixTrace(const SparseMatrixType *M)
 {
 	double trace = 0;
-	for (uint k = 0; k < M->N; ++k)
+	for (uint32_t k = 0; k < M->N; ++k)
 		if (M->i[k] == M->j[k]) trace += M->VRe[k];
 	return trace;
 }
@@ -157,7 +157,7 @@ Complex16 ComplexSparseMatrixTrace(const SparseMatrixType *M)
 	Complex16 trace;
 	trace.Re = 0;
 	trace.Im = 0;
-	for (uint k = 0; k < M->N; ++k)
+	for (uint32_t k = 0; k < M->N; ++k)
 	{
 		if (M->i[k] == M->j[k])
 		{
@@ -177,7 +177,7 @@ static int LuaSparseMatrixUnm(lua_State *L)
 	SparseMatrixCopy(Sout, *Sin);
 	if ((bool) Sout->QComplex)
 	{
-		for (uint k = 0; k < Sout->N; ++k)
+		for (uint32_t k = 0; k < Sout->N; ++k)
 		{
 			Sout->VRe[k] = -Sout->VRe[k];
 			Sout->VIm[k] = -Sout->VIm[k];
@@ -185,7 +185,7 @@ static int LuaSparseMatrixUnm(lua_State *L)
 	}
 	else
 	{
-		for (uint k = 0; k < Sout->N; ++k)
+		for (uint32_t k = 0; k < Sout->N; ++k)
 		{
 			Sout->VRe[k] = -Sout->VRe[k];
 		}
@@ -343,7 +343,7 @@ static int LuaSparseMatrixToString(lua_State *L)
 	lua_check(L, 1, S);
 	std::stringstream sstream;
 	sstream << "Sparse Matrix print:" << endl;
-	for (uint k = 0; k < S.N; ++k)
+	for (uint32_t k = 0; k < S.N; ++k)
 	{
 		sstream << "Element " << S.i[k] + 1 << "," << S.j[k] + 1 << " = ";
 		sstream << S.VRe[k];

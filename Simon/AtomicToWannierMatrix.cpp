@@ -20,7 +20,7 @@ string cutBorderSpaces(string in)
 	return cutTrailingSpaces(out);
 }
 
-void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int &lz)
+void deconstructOrbname(const string &orb, uint32_t &siteNum, string &atomName, uint32_t &n, string &shell, int &lz)
 {
 	//	Expects input like 2_Fe_3p1 or Fe_3p1
 	string::size_type pos, pos2;

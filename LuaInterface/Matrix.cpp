@@ -2285,7 +2285,7 @@ static int LuaMatrixAddSpin(lua_State * L)
 static int LuaMatrixToOperator(lua_State * L)
 {
   CompactMatrixType M;
-  uint len = (uint) lua_gettop(L);
+  uint32_t len = (uint32_t) lua_gettop(L);
   if (len != 1)
     return luaL_error(L, "MatrixToOperator called with %d arguments, only 1 expected.", len);
   if (!luaL_isType(L, 1, M))
