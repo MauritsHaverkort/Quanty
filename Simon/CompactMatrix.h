@@ -10,7 +10,7 @@ CompactMatrixType SubspaceRotationMatrix(const uint32_t dim1, const CompactMatri
 CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M);
 CompactMatrixType removeSpin(const CompactMatrixType &M);
 static int LuaRemoveSpin(lua_State *L);
-CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols);
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &rows, const vector<uint32_t> &cols);
 double RealMatrixTrace(const CompactMatrixType *M);
 Complex16 ComplexMatrixTrace(const CompactMatrixType *M);
 CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, const CompactMatrixType &Overlap);

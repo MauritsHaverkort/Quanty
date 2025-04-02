@@ -190,7 +190,7 @@ static int LuaRemoveSpin(lua_State *L)
 	return 1;
 }
 
-CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols)
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &rows, const vector<uint32_t> &cols)
 {
 	for (int i = 0; i < rows.size(); ++i)
 	{

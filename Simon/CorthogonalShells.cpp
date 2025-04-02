@@ -1,4 +1,4 @@
-CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObject &OrcaAtom, const double ELower, const double EUpper, const vector<uint> &iAtom, CompactMatrixType &newBasis)
+CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObject &OrcaAtom, const double ELower, const double EUpper, const vector<uint32_t> &iAtom, CompactMatrixType &newBasis)
 {
 	CompactMatrixType out, molecWindowMO, atomicShells, Overlap, atomicShellsOnMO, HMOMat;
 	int iLower = 0;

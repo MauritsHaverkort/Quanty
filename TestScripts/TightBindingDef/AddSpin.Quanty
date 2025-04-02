@@ -48,6 +48,22 @@ HTB.Hopping = { {"A.s","A.s",{ 0, 0, 0},{{es}} } ,
 								{"A.p","A.s",{ 0, 0,-1}, {{-spsigma},{-spsigma},{-spsigma}} } }
 
 HTBSpin = TightBinding.AddSpin(HTB)
+
+A=tostring(HTBSpin.Atoms)
+B=[[{ { A , 
+  { 0 , 0 , 0 } , 
+  { { s , 
+  { 0_dn , 0_up } } , 
+  { p , 
+  { x_dn , x_up , y_dn , y_up , z_dn , z_up } } } } }]]
+
+if((A~=B)) then
+	print(A)
+	print(B)
+	error("Tight binding AddSpin\n", 1)
+end
+
+
 if((Matrix.AddSpin(HTB(1,2,3))-HTBSpin(1,2,3)==Matrix.ToTable(Matrix.Zero(8)))==false) then
 	error("Tight binding AddSpin\n", 1)
 end
