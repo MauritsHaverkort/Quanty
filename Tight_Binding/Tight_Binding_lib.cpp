@@ -283,8 +283,10 @@ int CopyAtomTypeAddSpin(const AtomType *const A, AtomType *B)
     {
       B->OrbitalName[ishell][2*iorb  ]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1+3)*sizeof(char));
       B->OrbitalName[ishell][2*iorb+1]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1+3)*sizeof(char));
-      strcpy( stpcpy(B->OrbitalName[ishell][2*iorb  ], A->OrbitalName[ishell][iorb]), "_dn");
-      strcpy( stpcpy(B->OrbitalName[ishell][2*iorb+1], A->OrbitalName[ishell][iorb]), "_up");
+      strcpy(B->OrbitalName[ishell][2*iorb  ], A->OrbitalName[ishell][iorb]);
+      strcat(B->OrbitalName[ishell][2*iorb  ], "_dn");
+      strcpy(B->OrbitalName[ishell][2*iorb+1], A->OrbitalName[ishell][iorb]);
+      strcat(B->OrbitalName[ishell][2*iorb+1], "_up");
     }
   }
   return 0;
