@@ -9,3 +9,4 @@ Makefile
 .project
 .settings/
 .vscode/settings.json
+build/
