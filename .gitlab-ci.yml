@@ -58,7 +58,7 @@ sync_release_to_public:
 # ===== These functions are registered in lmathlib.c and an extention of the standard lua math library
 #
 
-test-jobs:
+test-jobs-math:
   stage: test_math
   parallel:
     matrix:
@@ -232,7 +232,7 @@ test-jobs-matrix:
 # ===== These functions are registered in TightBinding.cpp
 #
 
-test-jobs-matrix:
+test-jobs-tightbinding:
   stage: test_tightbinding
   parallel:
     matrix:
@@ -261,8 +261,8 @@ test-jobs-matrix:
 # ===== These functions are registered in  Plot/LuaBinding.cpp
 #
 
-test-jobs-matrix:
-  stage: test_tightbinding
+test-jobs-plot:
+  stage: test_plot
   parallel:
     matrix:
       - TEST_NAME:
