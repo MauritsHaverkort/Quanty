@@ -1,5 +1,6 @@
 stages:
   - build
+  - generate
   - test_math
   - test_matrix
   - test_responsefunction
@@ -53,14 +54,19 @@ sync_release_to_public:
     - if: '$CI_COMMIT_BRANCH == "master"'
 
 generate-matrix:
-  stage: build
+  stage: generate
   script:
     - bash generate-jobs.sh
   artifacts:
     paths:
       - matrix-jobs.yml
 
-include:
-  - artifact: matrix-jobs.yml
-    job: generate-matrix
+trigger-child-pipeline:
+  stage: generate
+  needs: [generate-matrix]
+  trigger:
+    include:
+      - artifact: matrix-jobs.yml
+        job: generate-matrix
+    strategy: depend
 
