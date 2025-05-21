@@ -28,7 +28,6 @@ for folder in "${!folders[@]}"; do
     cat >> matrix-jobs.yml <<EOF
 $jobname:
   stage: $stage
-  name: "$displayname"
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "$filepath"
