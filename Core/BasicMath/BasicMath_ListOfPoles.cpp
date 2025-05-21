@@ -83,20 +83,26 @@ void MergeNegativeToNeighbourListOfPolesSorted(ListOfPoles * const A)
     if(A->b[i]>=0) continue;
     for(j=i+1;j<=muindex;j++)
     {
+      // find a previous pole to the right with positive weight
       if(A->b[j]==0) continue;
       dE = A->a[j] - A->a[i-1];
       WeightRight = ( A->a[i] - A->a[i-1] ) / dE;
       WeightLeft = ( A->a[j] - A->a[i] ) / dE;
       if(-(WeightRight * A->b[i]) > A->b[j] )
       {
-        // WeigthToShiftRigth = A->b[j] / WeightRight;
-        A->b[i]   += (WeightLeft+1) * A->b[j] / WeightRight;
+        // b[j] cannot fully compensate the negative weight b[i].
+        // We need to find the factor 0 < f < 1 which can be compensated
+        // partially. After merging, the resulting weight b[j] must be zero:
+        // b[j] + WeightRight * f * b[i] == 0
+        // WeigthToShiftRight = A->b[j] / WeightRight;
+        A->b[i]   += A->b[j] / WeightRight;
         A->b[i-1] -= WeightLeft  * A->b[j] / WeightRight;
         A->b[j] = 0;
         continue;
       }
       else
       {
+        // b[j] can fully compensate the negative weight b[i]
         A->b[i-1] += WeightLeft  * A->b[i];
         A->b[j]   += WeightRight * A->b[i];
         A->b[i] = 0;
@@ -114,20 +120,26 @@ void MergeNegativeToNeighbourListOfPolesSorted(ListOfPoles * const A)
     if(A->b[i]>=0) continue;
     for(j=i-1;j>=muindex;j--)
     {
+      // find a previous pole to the left with positive weight
       if(A->b[j]==0) continue;
-      dE = A->a[i-1] - A->a[j];
-      WeightLeft  = ( A->a[i] - A->a[i-1] ) / dE;
-      WeightRight = ( A->a[j] - A->a[i] ) / dE;
+      dE = A->a[i+1] - A->a[j];
+      WeightLeft  = ( A->a[i+1] - A->a[i] ) / dE;
+      WeightRight = ( A->a[i] - A->a[j] ) / dE;
       if(-(WeightLeft * A->b[i]) > A->b[j] )
       {
-        // WeigthToShiftLeft = A->b[j] / WeightRight;
-        A->b[i]   += (WeightRight+1) * A->b[j] / WeightLeft;
+        // b[j] cannot fully compensate the negative weight b[i].
+        // We need to find the factor 0 < f < 1 which can be compensated
+        // partially. After merging, the resulting weight b[j] must be zero:
+        // b[j] + WeightLeft * f * b[i] == 0
+        // WeigthToShiftLeft = A->b[j] / WeightLeft;
+        A->b[i]   += A->b[j] / WeightLeft;
         A->b[i+1] -= WeightRight  * A->b[j] / WeightLeft;
         A->b[j] = 0;
         continue;
       }
       else
       {
+        // b[j] can fully compensate the negative weight b[i]
         A->b[i+1] += WeightRight * A->b[i];
         A->b[j]   += WeightLeft  * A->b[i];
         A->b[i] = 0;

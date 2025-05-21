@@ -771,7 +771,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           //We found a spectra copy it
           SpectraTypeArray *Spec;
-          Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+          Spec = (SpectraTypeArray *) luaL_checkudata(L, -1, "Spectra_Type");
           if(Spec->NSpectra!=1) return luaL_error(L, "A table of spectra can only contain spectra objects with 1 spectrum. At position %d we found %d spectra\n",i+1,Spec->NSpectra);
           SpectrumAllocate(Spec->Spec[0], &(a->Spec[i]));
           CopySpectra(Spec->Spec[0], &(a->Spec[i]));
