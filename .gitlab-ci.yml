@@ -60,6 +60,7 @@ sync_release_to_public:
 
 test-jobs-math:
   stage: test_math
+  parallel:
     matrix:
       - TEST_NAME:
           - "GaussLegendreQuadrature"
