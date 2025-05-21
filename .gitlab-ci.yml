@@ -1,11 +1,10 @@
 stages:
   - build
-  - generate
   - test_math
   - test_matrix
+  - test_plot
   - test_responsefunction
   - test_tightbinding
-  - test_plot
   - test
   - deploy
 
@@ -53,20 +52,228 @@ sync_release_to_public:
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
 
-generate-matrix:
-  stage: generate
-  script:
-    - bash generate-jobs.sh
-  artifacts:
-    paths:
-      - matrix-jobs.yml
 
-trigger-child-pipeline:
-  stage: generate
-  needs: [generate-matrix]
-  trigger:
-    include:
-      - artifact: matrix-jobs.yml
-        job: generate-matrix
-    strategy: depend
+# =========================================================================
+# ===== Test functions related to Math
+# ===== These functions are registered in lmathlib.c and an extention of the standard lua math library
+#
+
+test-jobs-math:
+  stage: test_math
+    matrix:
+      - TEST_NAME:
+          - "GaussLegendreQuadrature"
+          - "SphericalHarmonics"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Math/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test functions related to Matrix objects
+# ===== These functions are registered in Matrix.cpp
+#
+
+test-jobs-matrix:
+  stage: test_matrix
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__add"
+          - "__div"
+          - "__eq"
+          - "__index"
+          - "__len"
+          - "__mul"
+          - "__newindex"
+          - "__pow"
+          - "__sub"
+          - "__tostring"
+          - "__unm"
+          - "AddSpin"
+          - "Conjugate"
+          - "ConjugateTranspose"
+          - "Diagonal"
+          - "Eigensystem"
+          - "Enlarge"
+          - "Exp"
+          - "Expand"
+          - "Flatten"
+          - "GeneralEigensystem"
+          - "Identity"
+          - "Inverse"
+          - "New"
+          - "Random"
+          - "RemoveSpin"
+          - "Rotate"
+          - "Sqrt"
+          - "Sub"
+          - "ToOperator"
+          - "ToTable"
+          - "ToUserdata"
+          - "Transpose"
+          - "Tridiagonalize"
+          - "Zero"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Matrix/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test functions related to graphics objects
+# ===== These functions are registered in  Plot/LuaBinding.cpp
+#
+
+test-jobs-plot:
+  stage: test_plot
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "Add"
+          - "New"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Plot/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test functions related to ResponseFunctions objects
+# ===== These functions are registered in ResponseFunction.cpp
+#
+
+test-jobs-Responsefunction:
+  stage: test_responsefunction
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__add"
+          - "__call"
+          - "__div"
+          - "__eq"
+          - "__index"
+          - "__mul"
+          - "__sub"
+          - "CalculateGfromG0AndSigma"
+          - "CalculateHybridizationFunction"
+          - "CalculateSelfEnergy"
+          - "ChangeType"
+          - "Chop"
+          - "CreateBitMasks"
+          - "Deflation"
+          - "InvertEnergy"
+          - "LengthZero"
+          - "MergePolesInInterval"
+          - "PlaceOnMesh"
+          - "ReducePoles"
+          - "ToMatrix"
+          - "ToOperator"
+          - "ToSpectra"
+          - "ToTable"
+          - "ToTightbinding"
+          - "ToUserdata"
+          - "Value_Of_A0_In_Val_and_Con_of_NatType"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Responsefunction/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+
+# =========================================================================
+# ===== Test functions related to tightbinding objects
+# ===== These functions are registered in TightBinding.cpp
+#
+
+test-jobs-tightbinding:
+  stage: test_tightbinding
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__call"
+          - "__index"
+          - "__newindex"
+          - "AddSpin"
+          - "CalculateBands"
+          - "CalculateG"
+          - "Chop"
+          - "Copy"
+          - "Derivative"
+          - "New"
+          - "PhaseTests"
+          - "UnitTest"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/TightBindingDef/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+
+# =========================================================================
+# ===== Test single functions acting on different objects
+# ===== These functions are registered in ssp.cpp
+#
+
+test-jobs:
+  stage: test
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "BitMaskToIndex"
+          - "BlockBandDiagonalize"
+          - "Braket"
+          - "BraketDiagonal"
+          - "CalculateRho"
+          - "Chop"
+          - "Clone"
+          - "Conjugate"
+          - "ConjugateTranspose"
+          - "Copy"
+          - "CreateFluorescenceYield"
+          - "CreateResonantSpectra"
+          - "CreateSpectra"
+          - "CreateClusterHamiltonian"
+          - "CreateAtomicIndicesDict"
+          - "CreateAtomicIndicesList"
+          - "DensityMatrix"
+          - "DeterminantString"
+          - "Eigensystem"
+          - "Expand"
+          - "ExpandToBasis"
+          - "FileReadDresdenFPLO"
+          - "FindAllAtomsInsideSphere"
+          - "IndexToBitMask"
+          - "Inverse"
+          - "ioGetPut"
+          - "MeanFieldGroundstate"
+          - "MeanFieldOperator"
+          - "NewTightBinding"
+          - "NewWavefunction"
+          - "OperatorToHoles"
+          - "OperatorToMatrix"
+          - "Orthonormalize"
+          - "PartialMeanFieldOperator"
+          - "PartialOperator"
+          - "Rotate"
+          - "Statistics"
+          - "TensorProduct"
+          - "TimeStartStopPrintSet"
+          - "Transpose"
+          - "Verbosity"
+          - "YtoKMatrix"
+          - "YtoZMatrix"
+          - "YtojjzMatrix"
+          - "ZtoKMatrix"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
 
