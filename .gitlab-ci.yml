@@ -35,8 +35,9 @@ sync_develop_to_public:
   - git remote remove public || true
   - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
   - git push public develop:main
-  only:
-    - develop
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
     
 sync_release_to_public:
   stage: deploy
@@ -48,8 +49,8 @@ sync_release_to_public:
   - git remote remove public || true
   - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
   - git push public master:main
-  only:
-    - master
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
 
 
 # =========================================================================
@@ -57,21 +58,18 @@ sync_release_to_public:
 # ===== These functions are registered in lmathlib.c and an extention of the standard lua math library
 #
 
-test-job-GaussLegendreQuadrature:
+test-jobs:
   stage: test_math
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "GaussLegendreQuadrature"
+          - "SphericalHarmonics"
   script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Math/GaussLegendreQuadrature.Quanty"
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Math/${TEST_NAME}.Quanty"
   dependencies:
-  - build-job
-
-test-job-SphericalHarmonics:
-  stage: test_math
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Math/SphericalHarmonics.Quanty"
-  dependencies:
-  - build-job
+    - build-job
 
 
 # =========================================================================
@@ -79,370 +77,61 @@ test-job-SphericalHarmonics:
 # ===== These functions are registered in ssp.cpp 
 #
 
-test-job-BitMaskToIndex:
+test-jobs:
   stage: test
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "BitMaskToIndex"
+          - "BlockBandDiagonalize"
+          - "Braket"
+          - "BraketDiagonal"
+          - "CalculateRho"
+          - "Chop"
+          - "Clone"
+          - "Conjugate"
+          - "ConjugateTranspose"
+          - "Copy"
+          - "CreateFluorescenceYield"
+          - "CreateResonantSpectra"
+          - "CreateSpectra"
+          - "CreateClusterHamiltonian"
+          - "CreateAtomicIndicesDict"
+          - "CreateAtomicIndicesList"
+          - "DensityMatrix"
+          - "DeterminantString"
+          - "Eigensystem"
+          - "Expand"
+          - "ExpandToBasis"
+          - "FileReadDresdenFPLO"
+          - "FindAllAtomsInsideSphere"
+          - "IndexToBitMask"
+          - "Inverse"
+          - "ioGetPut"
+          - "MeanFieldGroundstate"
+          - "MeanFieldOperator"
+          - "NewTightBinding"
+          - "NewWavefunction"
+          - "OperatorToHoles"
+          - "OperatorToMatrix"
+          - "Orthonormalize"
+          - "PartialMeanFieldOperator"
+          - "PartialOperator"
+          - "Rotate"
+          - "Statistics"
+          - "TensorProduct"
+          - "TimeStartStopPrintSet"
+          - "Transpose"
+          - "Verbosity"
+          - "YtoKMatrix"
+          - "YtoZMatrix"
+          - "YtojjzMatrix"
+          - "ZtoKMatrix"
   script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/BitMaskToIndex.Quanty"
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/${TEST_NAME}.Quanty"
   dependencies:
-  - build-job
-  
-test-job-BlockBandDiagonalize:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/BlockBandDiagonalize.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Braket:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Braket.Quanty"
-  dependencies:
-  - build-job
-
-test-job-BraketDiagonal:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/BraketDiagonal.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CalculateRho:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CalculateRho.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Chop:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Chop.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Clone:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Clone.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Conjugate:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Conjugate.Quanty"
-  dependencies:
-  - build-job
-
-test-job-ConjugateTranspose:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/ConjugateTranspose.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Copy:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Copy.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CreateFluorescenceYield:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateFluorescenceYield.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CreateResonantSpectra:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateResonantSpectra.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CreateSpectra:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateSpectra.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CreateClusterHamiltonian:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateClusterHamiltonian.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CreateAtomicIndicesDict:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateAtomicIndicesDict.Quanty"
-  dependencies:
-  - build-job
-
-test-job-CreateAtomicIndicesList:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/CreateAtomicIndicesList.Quanty"
-  dependencies:
-  - build-job
-
-test-job-DensityMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/DensityMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-DeterminantString:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/DeterminantString.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Eigensystem:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Eigensystem.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Expand:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Expand.Quanty"
-  dependencies:
-  - build-job
-
-test-job-ExpandToBasis:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/ExpandToBasis.Quanty"
-  dependencies:
-  - build-job
-
-test-job-FileReadDresdenFPLO:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/FileReadDresdenFPLO.Quanty"
-  dependencies:
-  - build-job
-
-test-job-FindAllAtomsInsideSphere:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/FindAllAtomsInsideSphere.Quanty"
-  dependencies:
-  - build-job
-
-test-job-IndexToBitMask:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/IndexToBitMask.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Inverse:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Inverse.Quanty"
-  dependencies:
-  - build-job
-
-test-job-ioGetPut:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/ioGetPut.Quanty"
-  dependencies:
-  - build-job
-
-test-job-MeanFieldGroundstate:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/MeanFieldGroundstate.Quanty"
-  dependencies:
-  - build-job
-
-test-job-MeanFieldOperator:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/MeanFieldOperator.Quanty"
-  dependencies:
-  - build-job
-
-test-job-NewTightBinding:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/NewTightBinding.Quanty"
-  dependencies:
-  - build-job
-
-test-job-NewWavefunction:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/NewWavefunction.Quanty"
-  dependencies:
-  - build-job
-
-test-job-OperatorToHoles:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/OperatorToHoles.Quanty"
-  dependencies:
-  - build-job
-
-test-job-OperatorToMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/OperatorToMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Orthonormalize:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Orthonormalize.Quanty"
-  dependencies:
-  - build-job
-
-test-job-PartialMeanFieldOperator:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/PartialMeanFieldOperator.Quanty"
-  dependencies:
-  - build-job
-
-test-job-PartialOperator:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/PartialOperator.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Rotate:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Rotate.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Statistics:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Statistics.Quanty"
-  dependencies:
-  - build-job
-
-test-job-TensorProduct:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TensorProduct.Quanty"
-  dependencies:
-  - build-job
-
-test-job-TimeStartStopPrintSet:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TimeStartStopPrintSet.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Transpose:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Transpose.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Verbosity:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Verbosity.Quanty"
-  dependencies:
-  - build-job
-
-test-job-YtoKMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/YtoKMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-YtoZMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/YtoZMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-YtojjzMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/YtojjzMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-ZtoKMatrix:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/ZtoKMatrix.Quanty"
-  dependencies:
-  - build-job
-
-
-
-
-
+    - build-job
 
 
 # =========================================================================
@@ -450,208 +139,40 @@ test-job-ZtoKMatrix:
 # ===== These functions are registered in ResponseFunction.cpp
 #
 
-test-job-Responsefunction-eq:
+test-jobs-Responsefunction:
   stage: test_responsefunction
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__eq"
+          - "__add"
+          - "__sub"
+          - "__mul"
+          - "__div"
+          - "__call"
+          - "CalculateHybridizationFunction"
+          - "CalculateSelfEnergy"
+          - "ChangeType"
+          - "Chop"
+          - "CreateBitMasks"
+          - "Deflation"
+          - "InvertEnergy"
+          - "LengthZero"
+          - "MergePolesInInterval"
+          - "PlaceOnMesh"
+          - "ReducePoles"
+          - "ToMatrix"
+          - "ToOperator"
+          - "ToSpectra"
+          - "ToTable"
+          - "ToTightbinding"
+          - "ToUserdata"
+          - "Value_Of_A0_In_Val_and_Con_of_NatType"
   script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/__eq.Quanty"
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Responsefunction/${TEST_NAME}.Quanty"
   dependencies:
-  - build-job
-
-test-job-Responsefunction-add:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/__add.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-sub:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/__sub.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-mul:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/__mul.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-div:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/__div.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-call:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/__call.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-CalculateGfromG0AndSigma:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/CalculateGfromG0AndSigma.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-CalculateHybridizationFunction:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/CalculateHybridizationFunction.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Responsefunction-CalculateSelfEnergy:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/CalculateSelfEnergy.Quanty"
-  dependencies:
-  - build-job
- 
-test-job-Responsefunction-ChangeType:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ChangeType.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-Chop:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/Chop.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-CreateBitMasks:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/CreateBitMasks.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-Deflation:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/Deflation.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-InvertEnergy:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/InvertEnergy.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-LengthZero:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/LengthZero.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-MergePolesInInterval:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/MergePolesInInterval.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Responsefunction-PlaceOnMesh:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/PlaceOnMesh.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ReducePoles:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ReducePoles.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ToMatrix:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ToMatrix.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ToOperator:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ToOperator.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ToSpectra:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ToSpectra.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ToTable:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ToTable.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ToTightbinding:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ToTightbinding.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-ToUserdata:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/ToUserdata.Quanty"
-  dependencies:
-  - build-job
-
-test-job-Responsefunction-Value_Of_A0_in_Val_and_Con_of_NatType:
-  stage: test_responsefunction
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Responsefunction/Value_Of_A0_In_Val_and_Con_of_NatType.Quanty"
-  dependencies:
-  - build-job
-
-
-
+    - build-job
 
 
 # =========================================================================
@@ -659,422 +180,96 @@ test-job-Responsefunction-Value_Of_A0_in_Val_and_Con_of_NatType:
 # ===== These functions are registered in Matrix.cpp
 #
 
-test-job-Matrix-__add:
+test-jobs-matrix:
   stage: test_matrix
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__add"
+          - "__div"
+          - "__eq"
+          - "__index"
+          - "__len"
+          - "__mul"
+          - "__newindex"
+          - "__pow"
+          - "__sub"
+          - "__tostring"
+          - "__unm"
+          - "AddSpin"
+          - "Conjugate"
+          - "ConjugateTranspose"
+          - "Diagonal"
+          - "Eigensystem"
+          - "Enlarge"
+          - "Exp"
+          - "Expand"
+          - "Flatten"
+          - "GeneralEigensystem"
+          - "Identity"
+          - "Inverse"
+          - "New"
+          - "Random"
+          - "RemoveSpin"
+          - "Rotate"
+          - "Sqrt"
+          - "Sub"
+          - "ToOperator"
+          - "ToTable"
+          - "ToUserdata"
+          - "Transpose"
+          - "Tridiagonalize"
+          - "Zero"
   script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__add.Quanty"
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Matrix/${TEST_NAME}.Quanty"
   dependencies:
-  - build-job
-  
-test-job-Matrix-__div:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__div.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__eq:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__eq.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__index:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__index.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__len:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__len.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__mul:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__mul.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__newindex:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__newindex.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__pow:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__pow.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__sub:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__sub.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__tostring:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__tostring.Quanty"
-  dependencies:
-  - build-job
-  
-test-job-Matrix-__unm:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/__unm.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-AddSpin:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/AddSpin.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Conjugate:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Conjugate.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-ConjugateTranspose:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/ConjugateTranspose.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Diagonal:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Diagonal.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Eigensystem:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Eigensystem.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Enlarge:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Enlarge.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Exp:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Exp.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Expand:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Expand.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Flatten:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Flatten.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Identity:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Identity.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Inverse:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Inverse.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-New:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/New.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Random:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Random.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-RemoveSpin:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/RemoveSpin.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Rotate:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Rotate.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Sqrt:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Sqrt.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Sub:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Sub.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-ToOperator:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/ToOperator.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-toTable:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/ToTable.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-ToUserdata:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/ToUserdata.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Transpose:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Transpose.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Tridiagonalize:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Tridiagonalize.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-Matrix-Zero:
-  stage: test_matrix
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Matrix/Zero.Quanty"
-  dependencies:
-  - build-job
-
-test-job-GeneralEigensystem:
-  stage: test
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/GeneralEigensystem.Quanty"
-  dependencies:
-  - build-job
-
-
-
-
-
-
+    - build-job
 
 
 # =========================================================================
 # ===== Test functions related to tightbinding objects
 # ===== These functions are registered in TightBinding.cpp
 #
-    
-test-job-tightbinding__call:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/__call.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding__index:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/__index.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding__newindex:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/__newindex.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-AddSpin:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/AddSpin.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-CalculateBands:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/CalculateBands.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-Chop:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/Chop.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-Copy:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/Copy.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-New:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/New.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-PhaseTests:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/PhaseTests.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-UnitTest:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/UnitTest.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-Derivative:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/Derivative.Quanty"
-  dependencies:
-  - build-job
-    
-test-job-tightbinding-CalculateG:
-  stage: test_tightbinding
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/TightBindingDef/CalculateG.Quanty"
-  dependencies:
-  - build-job
 
-
-
-  
-
-
-
-
-
-
+test-jobs-matrix:
+  stage: test_tightbinding
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__call"
+          - "__index"
+          - "__newindex"
+          - "AddSpin"
+          - "CalculateBands"
+          - "Chop"
+          - "Copy"
+          - "New"
+          - "PhaseTests"
+          - "UnitTest"
+          - "Derivative"
+          - "CalculateG"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/TightBindingDef/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
 
 
 # =========================================================================
 # ===== Test functions related to graphics objects
 # ===== These functions are registered in  Plot/LuaBinding.cpp
 #
-    
-test-job-plot_Add:
-  stage: test_plot
-  script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Plot/Add.Quanty"
-  dependencies:
-  - build-job
 
-test-job-plot_New:
-  stage: test_plot
+test-jobs-matrix:
+  stage: test_tightbinding
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "Add"
+          - "New"
   script:
-  - export OMP_NUM_THREADS=8
-  - ./Quanty.exe "TestScripts/Plot/New.Quanty"
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Plot/${TEST_NAME}.Quanty"
   dependencies:
-  - build-job
+    - build-job
