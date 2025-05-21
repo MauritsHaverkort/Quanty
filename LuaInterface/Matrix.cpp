@@ -985,7 +985,7 @@ static int LuaMatrixMul(lua_State * L)
           }
           default:
           {
-            return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",lua_type(L,1));
+            return luaL_error(L,"Unrecognized type at position two of multiplication \n");
           }
         }
       }
@@ -2285,7 +2285,7 @@ static int LuaMatrixAddSpin(lua_State * L)
 static int LuaMatrixToOperator(lua_State * L)
 {
   CompactMatrixType M;
-  uint len = (uint) lua_gettop(L);
+  uint32_t len = (uint32_t) lua_gettop(L);
   if (len != 1)
     return luaL_error(L, "MatrixToOperator called with %d arguments, only 1 expected.", len);
   if (!luaL_isType(L, 1, M))

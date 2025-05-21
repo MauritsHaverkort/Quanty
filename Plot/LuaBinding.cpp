@@ -46,6 +46,26 @@ int LuaNewGraphics(lua_State * L)
   return 1;
 }
 
+int LuaAddToGraphicsMethod(lua_State *L)
+{
+  lua_pushvalue(L, lua_upvalueindex(1));
+  lua_insert(L, 1);
+  LuaAddToGraphics(L);
+  return 0;
+}
+
+int LuaAddToGraphicsFunction(lua_State *L)
+{
+  GraphicsType *GraphicsOld = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
+  GraphicsType *Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+  luaL_setmetatable(L, "Graphics_Type");
+  CopyGraphics(GraphicsOld, Graphics);
+  lua_replace(L, 1);
+  LuaAddToGraphics(L);
+  lua_pushvalue(L, 1);
+  return 1;
+}
+
 int LuaAddToGraphics(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
@@ -259,7 +279,7 @@ int LuaAddToGraphics(lua_State * L)
                   {
                     switch (lua_objlen(L, -1))
                     {
-                      case 1:
+                      case 1: // BW
                       {
                         lua_rawgeti(L, -1, 1);
                         val = (uint32_t)luaL_checkinteger(L,-1);
@@ -275,7 +295,7 @@ int LuaAddToGraphics(lua_State * L)
                         lua_pop(L, 1);
                         break;
                       }
-                      case 3:
+                      case 3: //RGB
                       {
                         
                         BitMap.Pixels[i+j*BitMap.NpointsX] = 0xFF;
@@ -321,9 +341,9 @@ int LuaAddToGraphics(lua_State * L)
                         BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
                         break;
                       }
-                      case 4:
+                      case 4: //RGBalpha
                       {
-                        lua_rawgeti(L, -1, 1);
+                        lua_rawgeti(L, -1, 4);
                         val = (uint32_t)luaL_checkinteger(L,-1);
                         lua_pop(L, 1);
                         if(val<0)
@@ -335,6 +355,19 @@ int LuaAddToGraphics(lua_State * L)
                           val=255;
                         }
                         BitMap.Pixels[i+j*BitMap.NpointsX] = val;
+                        
+                        lua_rawgeti(L, -1, 1);
+                        val = (uint32_t)luaL_checkinteger(L,-1);
+                        lua_pop(L, 1);
+                        if(val<0)
+                        {
+                          val=0;
+                        }
+                        if(val>255)
+                        {
+                          val=255;
+                        }
+                        BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
                         
                         lua_rawgeti(L, -1, 2);
                         val = (uint32_t)luaL_checkinteger(L,-1);
@@ -350,19 +383,6 @@ int LuaAddToGraphics(lua_State * L)
                         BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
                         
                         lua_rawgeti(L, -1, 3);
-                        val = (uint32_t)luaL_checkinteger(L,-1);
-                        lua_pop(L, 1);
-                        if(val<0)
-                        {
-                          val=0;
-                        }
-                        if(val>255)
-                        {
-                          val=255;
-                        }
-                        BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-                        
-                        lua_rawgeti(L, -1, 4);
                         val = (uint32_t)luaL_checkinteger(L,-1);
                         lua_pop(L, 1);
                         if(val<0)
@@ -563,18 +583,19 @@ int LuaPlotGraphics(lua_State * L)
   InitGraphics(Graphics);
   struct
   {
+    double   ScaleOffDiagonal;
+    double   ShiftOffDiagonal;
+    
+    int      Nrow;
+    int      Ncolumn;
+    int      PlotPoints;
+    
     FramePlotOptions Frame;
     LinePlotOptionsArray Style;
     
     bool     PlotIm;
     bool     PlotRe;
-    double   Negate;
-    int      Nrow;
-    int      Ncolumn;
-    int      PlotPoints;
-    
-    double   ScaleOffDiagonal;
-    double   ShiftOffDiagonal;
+    bool     Negate;
   } Options;
   Options.Frame.PlotRange[0].X=-INFINITY;
   Options.Frame.PlotRange[0].Y=-INFINITY;
@@ -750,7 +771,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           //We found a spectra copy it
           SpectraTypeArray *Spec;
-          Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+          Spec = (SpectraTypeArray *) luaL_checkudata(L, -1, "Spectra_Type");
           if(Spec->NSpectra!=1) return luaL_error(L, "A table of spectra can only contain spectra objects with 1 spectrum. At position %d we found %d spectra\n",i+1,Spec->NSpectra);
           SpectrumAllocate(Spec->Spec[0], &(a->Spec[i]));
           CopySpectra(Spec->Spec[0], &(a->Spec[i]));
@@ -773,7 +794,8 @@ int LuaPlotGraphics(lua_State * L)
           A = luaL_checkResponsefunction(L,-1);
           ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
           free(Spec.Name);
-          a->Spec[i]=Spec.Spec[0];        }
+          a->Spec[i]=Spec.Spec[0];
+        }
       }
       else
       {
@@ -837,8 +859,8 @@ int LuaPlotGraphics(lua_State * L)
           {
             for(i=0;i<a->NSpectra;i++)
             {
-              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
-              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
+              LPOIm[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPORe[i].LineWidth=0;
               LPORe[i].LineColor[3]=0;
               LPORe[i].PointSize=0;
@@ -849,8 +871,8 @@ int LuaPlotGraphics(lua_State * L)
           {
             for(i=0;i<a->NSpectra;i++)
             {
-              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
-              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
+              LPOIm[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPOIm[i].LineWidth=0;
               LPOIm[i].LineColor[3]=0;
               LPOIm[i].PointSize=0;
@@ -861,8 +883,8 @@ int LuaPlotGraphics(lua_State * L)
           {
             for(i=0;i<a->NSpectra;i++)
             {
-              LPORe[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
-              LPOIm[i] = Options.Style.Line[1+(i%(Options.Style.NAllocLine-1))];
+              LPORe[i] = Options.Style.Line[(  (2*i)%(Options.Style.NAllocLine))];
+              LPOIm[i] = Options.Style.Line[((2*i+1)%(Options.Style.NAllocLine))];
             }
           }
           else
@@ -906,7 +928,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Nrow, Options.Ncolumn, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
+        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Ncolumn, Options.Nrow, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
       }
     }
     else if (luaL_testudata(L, 1, "GaussianRadialFunction_Type") != NULL)
@@ -1097,10 +1119,19 @@ int LuaGraphicsToPS(lua_State * L)
 int LuaGraphicsToSVG(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
+  bool RelativeSize=false;
+  LuaOptionsType GraphicsToSVGOptions[]={
+    {"RelativeSize","bool",&(RelativeSize)},
+    {NULL, NULL, NULL}};
+  if(LuaTestOptionsList(L, len))
+  {
+    LuaCheckOptions(L, len, GraphicsToSVGOptions);
+    len=len-1;
+  }
   if(len!=1) return luaL_error(L, "Error: Graphics.ToSVG should be called with exactly one argument, not with %d\n",len);
   GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
   DynamicString SVG;
-  GraphicsToSVG(Graphics, &SVG);
+  GraphicsToSVG(Graphics, &SVG,RelativeSize);
   lua_pushstring(L,SVG.str);
   FreeDynamicString(&SVG);
   return 1;
@@ -1190,6 +1221,12 @@ int LuaGraphicsIndex(lua_State * L)
   if (strcmp(str, "NBitMap") == 0)
   {
     lua_pushinteger(L, Graphics->NBitMap);
+    return 1;
+  }
+  if (strcmp(str, "Add") == 0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaAddToGraphicsMethod,1);
     return 1;
   }
   return luaL_error(L, "Error index %s not found in Graphics Object\n",str);
@@ -1380,14 +1417,286 @@ static int LuaPlotDOS(lua_State *L)
   return 0;
 }
 
-/*
+/* On stack we have
+ *     1) a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}
+ *     2) a matrix with band energies
+ *     3) a matrix with band characters used as Black-White grey-scale or as band-thickness
+ *     3,4)     same as 3 (used as Black-White grey-scale and band-thickness)
+ *     3,4,5)   same as 3 (used as RGB band-color)
+ *     3,4,5,6) same as 3 (used as RGB band-color and band-thickness)
+ *     -1) possible options
  *
+ *     we return
+ *     1) a plot of the band-structure
  */
 static int LuaPlotBands(lua_State *L)
 {
-  //TODO:
+  // define options
+  const char* ScaleFormat = "%.0f";
+  const char* EmptyString = "";
+  struct
+  {
+    int      NPixel[2];
+    double   EmptyPathWidth;
+    uint32_t LineColor;
+    uint8_t  LineTransparancy;
+    uint32_t SecondLineColor;
+    uint8_t  SecondLineTransparancy;
+    double   LineWidth;
+    FramePlotOptions Frame;
+    bool     Interpolate;
+  } Options;
+  Options.NPixel[0]=1000;
+  Options.NPixel[1]=1000;
+  Options.EmptyPathWidth = 0.05;
+  Options.LineColor = 0xFF000080;
+  Options.LineTransparancy = 0xFF;
+  Options.SecondLineColor = 0xFFFF0000;
+  Options.SecondLineTransparancy = 0xFF;
+  Options.LineWidth = 0.002;
+  Options.Frame.PlotRange[0].X=0;
+  Options.Frame.PlotRange[0].Y=-INFINITY;
+  Options.Frame.PlotRange[1].X=0;
+  Options.Frame.PlotRange[1].Y=INFINITY;
+  Options.Frame.Margins[0].X=0.08;
+  Options.Frame.Margins[0].Y=0.08*sqrt(2.0);
+  Options.Frame.Margins[1].X=0.01;
+  Options.Frame.Margins[1].Y=0.01*sqrt(2.0);
+  Options.Frame.LineWidth=0.001;
+  Options.Frame.LineColor[0]=0;
+  Options.Frame.LineColor[1]=0;
+  Options.Frame.LineColor[2]=0;
+  Options.Frame.LineColor[3]=0xFF;
+  Options.Frame.FontSize=0.04;
+  Options.Frame.Font=TIMES_NEW_ROMAN;
+  Options.Frame.XLabel=(char*)EmptyString;
+  Options.Frame.YLabel=(char*)EmptyString;
+  Options.Frame.FirstXTick=0;
+  Options.Frame.dXTick=1.0;
+  Options.Frame.NMinorXTick=9;
+  Options.Frame.FirstYTick=-INFINITY;
+  Options.Frame.dYTick=1.0;
+  Options.Frame.NMinorYTick=9;
+  Options.Frame.PlotXScaleFormat=(char*)ScaleFormat;
+  Options.Frame.PlotYScaleFormat=(char*)ScaleFormat;
+  Options.Frame.XAxis=-INFINITY;
+  Options.Frame.YAxis=-INFINITY;
+  Options.Interpolate = true;
+  LuaOptionsType LuaPlotBandOptions[]={
+    {"NPixelX","double",&(Options.NPixel[0])},
+    {"NPixelY","double",&(Options.NPixel[1])},
+    {"Color","uint32_t",&(Options.LineColor)},
+    {"Transparancy","uint8_t",&(Options.LineTransparancy)},
+    {"SecondColor","uint32_t",&(Options.SecondLineColor)},
+    {"SecondTransparancy","uint8_t",&(Options.SecondLineTransparancy)},
+    {"LineWidth","double",&(Options.LineWidth)},
+    {"EmptyPathWidth","double",&(Options.EmptyPathWidth)},
+    {"Frame","FramePlotOptions",&(Options.Frame)},
+    {"Interpolate","bool",&(Options.Interpolate)},
+    {NULL, NULL, NULL}};
+  // check (and read) the input
+  int len = (int)lua_gettop(L);
+  if (LuaTestOptionsList(L,-1))
+  {
+    LuaCheckOptions(L,-1,LuaPlotBandOptions);
+    Options.LineColor = Options.LineColor & 0x00FFFFFF + (((uint32_t)Options.LineTransparancy)<<24);
+    len--;
+  }
+  if(len<2)
+  {
+    return luaL_error(L, "Error PlotBands: called with %d arguments (excluding options), minimal 2 expected (k-path, and Band Energies).\n",len);
+  }
+  if(len>6)
+  {
+    return luaL_error(L, "Error PlotBands: called with %d arguments (excluding options), maximal 6 expected (k-path, Band Energies, (0 to 4 times) a matrix representing the band character related to color and line width ).\n",len);
+  }
   
-  return 0;
+  // check (and read) the k-list
+  BandstructurePathType kList;
+  if(!(lua_istable(L, 1)))
+  {
+    return luaL_error(L, "Error LuaPlotBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\n");
+  }
+  int lenklist = (int)lua_objlen(L, 1);
+  int Nktot = (lenklist+1)/2;
+  if(lenklist&&1==0)
+  {
+    return luaL_error(L, "Error LuaPlotBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\nThe length should be odd and not %d\n",lenklist);
+  }
+  kList.NQ = (lenklist+1)/2;
+  kList.Q  = (BandstructurePointType*)malloc(kList.NQ*sizeof(BandstructurePointType));
+  kList.Units = 0; // not used
+  for(int i=1;i<=lenklist;i+=2)
+  {
+    // test k-point
+    lua_rawgeti(L, 1, i); // put the table {Label, k-vec} on the stack
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==2))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    lua_rawgeti(L,-1,1); // put the string Label on the stack
+    if(!(lua_type(L, -1)==LUA_TSTRING))
+    {
+      lua_pop(L,1);
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    kList.Q[(i-1)/2].label = lua_tolstring(L, -1, NULL)[0];
+    lua_pop(L,1); // remove the string from the stack
+    lua_rawgeti(L,-1,2); // put the k-point on the stack
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==3))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    for(int j=0;j<3;j++)
+    {
+      lua_rawgeti(L, -1, j+1);
+      kList.Q[(i-1)/2].q[j] = (double)luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1); // remove the k-point from the stack
+    lua_pop(L,1); // remove the table {Lable, k-vec} from the stack
+    // test integer N
+    if(i==lenklist)
+    {
+      kList.Q[(i-1)/2].Nq = 0;
+    }
+    else
+    {
+      lua_rawgeti(L, 1, i+1); // put the integer Ni on the stack
+      if (!lua_isnumber(L, -1))
+      {
+        return luaL_error(L, "Wrong format for k-list at position %d\nExpected an integer\n",i+1);
+      }
+      kList.Q[(i-1)/2].Nq = (int) lua_tointeger(L, -1);
+      if(kList.Q[(i-1)/2].Nq<0)
+      {
+        return luaL_error(L, "Number of k-points in the path can not be negative at position %d\n",i+1);
+      }
+      Nktot += kList.Q[(i-1)/2].Nq;
+      lua_pop(L,1);
+    }
+  }
+  // finished reading the k-list
+  // read the matrix with eigen energies
+  CompactMatrixType *BandEnergies = (CompactMatrixType*) luaL_checkudata(L, 2, "Matrix_Type");
+  // if range not set determine it automatically
+  if(Options.Frame.PlotRange[0].Y == -INFINITY)
+  {
+    Options.Frame.PlotRange[0].Y = BandEnergies->VRe[0];
+    for(int i=1;i<BandEnergies->Ni*BandEnergies->Nj;i++)
+    {
+      if(BandEnergies->VRe[i] < Options.Frame.PlotRange[0].Y) Options.Frame.PlotRange[0].Y=BandEnergies->VRe[i];
+    }
+    Options.Frame.PlotRange[0].Y = floor(Options.Frame.PlotRange[0].Y);
+  }
+  if(Options.Frame.PlotRange[1].Y == INFINITY)
+  {
+    Options.Frame.PlotRange[1].Y = BandEnergies->VRe[0];
+    for(int i=1;i<BandEnergies->Ni*BandEnergies->Nj;i++)
+    {
+      if(BandEnergies->VRe[i] > Options.Frame.PlotRange[1].Y) Options.Frame.PlotRange[1].Y=BandEnergies->VRe[i];
+    }
+    Options.Frame.PlotRange[1].Y = ceil(Options.Frame.PlotRange[1].Y);
+  }
+  if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
+  // set color
+  uint8_t LineColor[4] = {(uint8_t)(Options.LineColor>>16),(uint8_t)(Options.LineColor>>8),(uint8_t)(Options.LineColor),(uint8_t)(Options.LineColor>>24)};
+  uint8_t SecondLineColor[4] = {(uint8_t)(Options.SecondLineColor>>16),(uint8_t)(Options.SecondLineColor>>8),(uint8_t)(Options.SecondLineColor),(uint8_t)(Options.SecondLineColor>>24)};
+  // allocate the bitmap
+  BitMapType BandPlot;
+  BandPlot.LB.X=Options.Frame.Margins[0].X;
+  BandPlot.LB.Y=Options.Frame.Margins[0].Y;
+  BandPlot.RT.X=1-Options.Frame.Margins[1].X;
+  BandPlot.RT.Y=1-Options.Frame.Margins[1].Y;
+  BandPlot.NpointsX = Options.NPixel[0];
+  BandPlot.NpointsY = Options.NPixel[1];
+  BandPlot.Pixels = (uint32_t*)malloc(BandPlot.NpointsX*BandPlot.NpointsY*sizeof(uint32_t));
+  // read character
+  CompactMatrixType *BandCharacters[4];
+  for(int i=3; i<=len;i++)
+  {
+    BandCharacters[i-3]=(CompactMatrixType*) luaL_checkudata(L, i, "Matrix_Type");
+  }
+  
+  
+  // convert to bitmap depending on number of character and if interpolation is true or not
+  if(Options.Interpolate==true)
+  {
+    switch (len-2)
+    {
+      case 0:
+        // no characters defined
+        ConvertBandEnergiesToBitMapInterpolate(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
+      break;
+      case 1:
+        // one character used for monochrome color
+        ConvertBandEnergiesToBitMapBWInterpolate(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 2:
+        // two characgters used for monochrome color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapBWInterpolate(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 3:
+        // three characters used for RGB color
+        ConvertBandEnergiesToBitMapRGBInterpolate(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+      case 4:
+        // four characters used for RGB color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapRGBInterpolate(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+    }
+  }
+  else
+  { // no interpollation
+    switch (len-2)
+    {
+      case 0:
+        // no characters defined
+        ConvertBandEnergiesToBitMap(BandEnergies, &kList, &BandPlot,Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, Options.EmptyPathWidth);
+      break;
+      case 1:
+        // one character used for monochrome color
+        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 2:
+        // two characgters used for monochrome color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapBW(BandEnergies, BandCharacters[0], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, LineColor, SecondLineColor, Options.EmptyPathWidth);
+      break;
+      case 3:
+        // three characters used for RGB color
+        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+      case 4:
+        // four characters used for RGB color and thickness
+        //TODO:
+        ConvertBandEnergiesToBitMapRGB(BandEnergies, BandCharacters[0], BandCharacters[1], BandCharacters[2], &kList, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.LineWidth, Options.EmptyPathWidth);
+      break;
+    }
+  }
+  // add bitmap to a grahics object and add axis etc
+  GraphicsType* Graphics;
+  Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+  luaL_setmetatable(L, "Graphics_Type");
+  InitGraphics(Graphics);
+  AddBitMapInherentMemory(Graphics, &BandPlot);
+  PlotAllButDataToBandGraphics(Graphics, &(Options.Frame), &kList, Options.EmptyPathWidth);
+  return 1;
 }
 
 /*
@@ -1427,7 +1736,7 @@ static int LuaSVGHTMLViewer(lua_State *L)
 
 static const struct luaL_Reg Graphics_func[] = {
   {"New", LuaNewGraphics},
-  {"Add", LuaAddToGraphics},
+  {"Add", LuaAddToGraphicsFunction},
   {"Plot", LuaPlotGraphics},
   {"ToPS", LuaGraphicsToPS},
   {"ToSVG", LuaGraphicsToSVG},

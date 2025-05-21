@@ -3797,6 +3797,45 @@ static int LuaEigensystem(lua_State * L)
   }
 }
 
+static int LuaGeneralEigensystem(lua_State *L)
+{
+  CompactMatrixType *H,*S,*fun,*Ssqr;
+  double *val;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(!(len==2))
+  {
+    return luaL_error(L, "Error GeneralEigensystem called with %d arguments, 2 expected\n",len);
+  }
+  H=luaL_checkCompactMatrix(L, 1);
+  S=luaL_checkCompactMatrix(L, 2);
+  if(!(H->Ni==H->Nj))
+  {
+    return luaL_error(L, "Error Matrix M in GeneralEigensystem is not a square matrix\n",len);
+  }
+  if(!(S->Ni==S->Nj))
+  {
+    return luaL_error(L, "Error Overlap matrix S in GeneralEigensystem is not a square matrix\n",len);
+  }
+  if(!(S->Ni==H->Ni))
+  {
+    return luaL_error(L, "Error GeneralEigensystem is called with matrix M and S of different dimensions\n",len);
+  }
+  fun=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  Ssqr=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  val = (double*)malloc((H->Ni)*sizeof(double));
+  CompactMatrixGeneralEigensystem(H,S,fun,Ssqr,val);
+  FreeCompactMatrix(H);
+  FreeCompactMatrix(S);
+  fun->OnLuaStack=true;
+  Ssqr->OnLuaStack=true;
+  LuaPushArray_double(L, val, H->Ni);
+  free(val);
+  // return val, fun, Ssqrt
+  lua_insert(L, -3);
+  return 3;
+}
 
 /*  Given an impurity Green's function, a Bath represented by a hybridization function and a set of transition operators acting on the impurity calculate
  *  < psi_i | T G T | psi_i >
@@ -4993,9 +5032,9 @@ static int LuaPartialOperator(lua_State *L)
 	if (len != 3) return luaL_error(L, "PartialOperator called with %d arguments. Operator, List of (list of) Indices and mode expected.\n", len);
 	O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
 	lua_check(L, 2, indices);
-	for (uint i = 0; i < (uint)indices.size(); i++)
+	for (uint32_t i = 0; i < (uint32_t)indices.size(); i++)
 	{
-		for (uint j = 0; j < (uint)indices[i].size(); ++j)
+		for (uint32_t j = 0; j < (uint32_t)indices[i].size(); ++j)
 		{
 			if (indices[i][j] < 0 || indices[i][j] >= O->NFermion)
 				luaL_warning(L, "Index %d is not within [0,NF-1]=[0,%d].\n", indices[i][j], O->NFermion - 1);
@@ -5079,8 +5118,8 @@ static int LuaPrintExpectationValues(lua_State * L)
 
   struct
   {
-		uint colWidth = 8;
-		uint printHeaderEvery = 0;
+		uint32_t colWidth = 8;
+		uint32_t printHeaderEvery = 0;
 		bool printSigma = false;
 		bool sortByEnergy = false;
     double zero = 1E-10;
@@ -5100,14 +5139,14 @@ static int LuaPrintExpectationValues(lua_State * L)
 //		Possible Input: Psi, Operators, (opt)Hamiltonian, (opt)ExtraLists, (opt)Options.
 	lua_check(L,1,psiList);
 	lua_check(L,2,opList);
-	uint i = 3;
+	uint32_t i = 3;
 	if (luaL_isType(L, i, hamil) && i <= len)
 	{
 		hasHamiltonian = true;
 		hamil = *(OperatorType*) luaL_checkudata(L, i, "Operator_Type");
 		++i;
 	}
-	if (luaL_isType(L, i, extraLists, (uint) psiList.size()) && i <= len)
+	if (luaL_isType(L, i, extraLists, (uint32_t) psiList.size()) && i <= len)
 	{
 		hasExtraLists = true;
 		lua_check(L, i, extraLists);
@@ -5142,17 +5181,17 @@ static int LuaTensorProduct(lua_State *L)
   {
     lua_check(L, 1, psi1vec);
     lua_check(L, 2, psi2vec);
-    for (uint i = 0; i < (uint) psi1vec.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) psi1vec.size(); ++i)
       if (psi1vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
-    for (uint i = 0; i < (uint) psi2vec.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) psi2vec.size(); ++i)
       if (psi2vec[i].NBoson != 0) return luaL_error(L, "One of the Wavefunctions contains bosonic states, this is not yet implemented.");
     vector < WaveFunctionType > out(psi1vec.size() * psi2vec.size());
 #pragma omp parallel for
-    for (uint ij = 0; ij < (uint) out.size(); ++ij)
+    for (int ij = 0; ij < (int) out.size(); ++ij)
     {
-      uint i, j;
-      j = ij % (uint) psi2vec.size();
-      i = (ij - j) / (uint) psi2vec.size();
+      int i, j;
+      j = ij % (int) psi2vec.size();
+      i = (ij - j) / (int) psi2vec.size();
       WaveFunctionTensorProduct(psi1vec[i], psi2vec[j], &(out[ij]));
     }
     lua_push(L, out);
@@ -5489,7 +5528,7 @@ static const struct luaL_Reg global_functions[] = {
 //  {"CalculateBands", LuaCalculateBands},
   {"CalculateDOS", LuaCalculateDOS},
 //  {"CalculateFermi", LuaCalculateFermi},
-  {"CalculateG", LuaCalculateG},
+  {"CalculateG", LuaCalculateG},            // same as TightBinding.CalculateG
   {"CalculateRho", LuaCalculateRho},
   {"Chop", LuaChop},
   {"Clone", Luacopy},
@@ -5505,6 +5544,7 @@ static const struct luaL_Reg global_functions[] = {
   {"DensityMatrix",LuaDensityMatrix},
 	{"DeterminantString",LuaDeterminantString},
   {"Eigensystem", LuaEigensystem},
+  {"GeneralEigensystem", LuaGeneralEigensystem},
 //  {"EvolveToGroundstate", LuaEvolveToGroundstate},
   {"Expand",LuaWavefunctionExpand},
   {"ExpandToBasis",LuaWaveFunctionToDeterminantBasis},
@@ -5621,6 +5661,8 @@ int luaopen_ssp(lua_State * L)
   
   luaL_newmetatable(L, "TightBinding_Type");
   luaL_setfuncs(L, TightBinding_meta, 0);
+  luaL_newlib(L, TightBinding_func);
+  lua_setglobal(L, "TightBinding");
 
   luaL_newmetatable(L, "ResponseFunction_Type");
   luaL_setfuncs(L, ResponseFunction_meta, 0);

@@ -4,6 +4,12 @@ int AddPrologToSVG(DynamicString *Buff, int X0, int Y0, int XMAX, int YMAX)
   return 0;
 }
 
+int AddRelativeSizePrologToSVG(DynamicString *Buff, int X0, int Y0, int XMAX, int YMAX)
+{
+  sprintfAdd(Buff, "<svg width=\"100%%\" height=\"100%%\" viewBox=\"%d %d %d %d\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  >\n",X0,0,XMAX-X0,YMAX-Y0);
+  return 0;
+}
+
 int AddCloseToSVG(DynamicString *Buff)
 {
   sprintfAdd(Buff,"</svg>\n");
@@ -168,8 +174,8 @@ int AddBitMapToSVG(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doub
   
   DynamicString A64;
   BitMapToBase64String(BitMap, &A64);
-  sprintfAdd(Buff,"<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" preserveAspectRatio=\"none\" xlink:href=\"data:image/bmp;base64,%s\"/>\n",
-             (int)round(X0 + scaleX * BitMap->LB.X),(int)round(Y0 + scaleY * BitMap->LB.Y),
+  sprintfAdd(Buff,1024+(int)A64.length,"<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" preserveAspectRatio=\"none\" xlink:href=\"data:image/bmp;base64,%s\"/>\n",
+             (int)round(X0 + scaleX * BitMap->LB.X),(int)round(Y0 + scaleY * BitMap->RT.Y),
              (int)round(scaleX * (BitMap->RT.X-BitMap->LB.X)),(int)round(-scaleY * (BitMap->RT.Y - BitMap->LB.Y)),
              A64.str);
   FreeDynamicString(&A64);
@@ -246,7 +252,7 @@ int AddLayersToSVG(DynamicString *Buff, GraphicsType *G, int YMax)
 // G is a graphics type
 // *PS is a string that will contain the ps text
 
-int GraphicsToSVG(GraphicsType *G, DynamicString *SVG)
+int GraphicsToSVG(GraphicsType *G, DynamicString *SVG, bool RelativeSize)
 {
   int XMax,YMax,X0,Y0;
   
@@ -256,7 +262,14 @@ int GraphicsToSVG(GraphicsType *G, DynamicString *SVG)
   YMax = round(POSTSCIPT_PIXELS_PER_MM * G->CanvasSize.Y ) + round(POSTSCIPT_PIXELS_PER_MM *  G->CanvasOrigin.Y );
   
   *SVG = InitDynamicString();
-  AddPrologToSVG(SVG, X0, Y0, XMax, YMax ) ;
+  if(RelativeSize)
+  {
+    AddRelativeSizePrologToSVG(SVG, X0, Y0, XMax, YMax );
+  }
+  else
+  {
+    AddPrologToSVG(SVG, X0, Y0, XMax, YMax ) ;
+  }
   AddLayersToSVG(SVG, G, YMax);
   AddCloseToSVG(SVG);
   return 0;
@@ -268,7 +281,7 @@ int GraphicsToSVG(GraphicsType *G, DynamicString *SVG)
 int GraphicsToSVG(GraphicsType *G, char** SVG)
 {
   DynamicString Buff;
-  GraphicsToSVG(G, &Buff);
+  GraphicsToSVG(G, &Buff, false);
   *SVG = Buff.str;
   return 0;
 }

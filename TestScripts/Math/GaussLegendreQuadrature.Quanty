@@ -1,0 +1,72 @@
+print("--------------------------------------------------------")
+print("-- Begin Math - GaussLegendreQuadrature               --")
+print("--------------------------------------------------------")
+
+
+
+N=10
+nodes, weights = GaussLegendreQuadrature(N)
+for i=1,N do
+	if(nodes[i]~=GaussLegendreQuadratureNode(N,i)) then
+		print(nodes[i],GaussLegendreQuadratureNode(N,i))
+		error("ERROR in nodes"..N..i,1)
+	end
+	if(weights[i]~=GaussLegendreQuadratureWeight(N,i)) then
+		print(weights[i],GaussLegendreQuadratureWeight(N,i))
+		error("ERROR in weigths"..N..i,1)
+	end
+end
+
+
+-- use Quadratures to integrate
+function f(x)
+	return 3 + x + 5*x^2
+end
+intf = 28/3
+-- need 2N-1 >= 2, N=2
+for N=2,127 do
+  nodes, weights = GaussLegendreQuadrature(N)
+  intval = 0
+  for i=1,N do
+	  intval = intval + f(nodes[i]) * weights[i]
+  end
+  if(Chop(intval - intf,1E-14)~=0 )then
+	  print(N)
+  	print(nodes)
+	  print(weights)
+	  print(intval)
+	  print(intf)
+	  print(intval-intf)
+	  error("ERROR in integration using Gaussian Quadratures",1)
+  end
+end
+
+
+
+
+function f(x)
+	return 3 + x + 5*x^2 + 2*x^3 - 7 * x^4 + 2* x^6
+end
+intf = 746/105
+-- need 2N-1 >= 6, N=4
+for N=4,127 do
+	nodes, weights = GaussLegendreQuadrature(N)
+	intval = 0
+	for i=1,N do
+		intval = intval + f(nodes[i]) * weights[i]
+	end
+	if(Chop(intval - intf,1E-14)~=0 )then
+		print(N)
+		print(nodes)
+		print(weights)
+		print(intval)
+		print(intf)
+		print(intval-intf)
+		error("ERROR in integration using Gaussian Quadratures",1)
+	end
+end
+
+
+print("--------------------------------------------------------")
+print("-- End Math - GaussLegendreQuadrature                 --")
+print("--------------------------------------------------------")

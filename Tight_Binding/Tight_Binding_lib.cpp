@@ -71,6 +71,26 @@ int FreeTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+int InitTigthBindingDef(TightBindingDef *A)
+{
+  A->Name[0]='\0';
+  A->Cell.rUnitCell[0][0] = 0; A->Cell.rUnitCell[0][1] = 0; A->Cell.rUnitCell[0][2] = 0;
+  A->Cell.rUnitCell[1][0] = 0; A->Cell.rUnitCell[1][1] = 0; A->Cell.rUnitCell[1][2] = 0;
+  A->Cell.rUnitCell[2][0] = 0; A->Cell.rUnitCell[2][1] = 0; A->Cell.rUnitCell[2][2] = 0;
+  A->Cell.gUnitCell[0][0] = 0; A->Cell.gUnitCell[0][1] = 0; A->Cell.gUnitCell[0][2] = 0;
+  A->Cell.gUnitCell[1][0] = 0; A->Cell.gUnitCell[1][1] = 0; A->Cell.gUnitCell[1][2] = 0;
+  A->Cell.gUnitCell[2][0] = 0; A->Cell.gUnitCell[2][1] = 0; A->Cell.gUnitCell[2][2] = 0;
+  A->Cell.NAtoms=0;
+  A->Cell.Units=1;
+  A->nH=0;
+  A->H=NULL;
+  A->NFermion=0;
+  A->FermionIndex=NULL;
+  return 0;
+}
+
+
+
 
 // B <- A
 int CopyTightBindingDef(TightBindingDef const *const A, TightBindingDef *const B)
@@ -108,7 +128,7 @@ int ChopTightBindingDefSize(TightBindingDef *const A,  double const epsilon)
     {
       for(j=0;j<A->H[i].Hop.Ni * A->H[i].Hop.Nj;j++)
       {
-        if( Sqr( A->H[i].Hop.VRe[0][j] ) + Sqr( A->H[i].Hop.VRe[0][j] ) < Sqrepsilon)
+        if( Sqr( A->H[i].Hop.VRe[0][j] ) + Sqr( A->H[i].Hop.VIm[0][j] ) < Sqrepsilon)
         {
           A->H[i].Hop.VRe[0][j] = 0;
           A->H[i].Hop.VIm[0][j] = 0;
@@ -178,9 +198,41 @@ int ChopTightBindingDefDistance(TightBindingDef *const A,  double const distance
   return 0;
 }
 
+/*   In (A) is a pointer to an allocated and defined TightBindingDefinition
+ *   Out (B) is a pointer to an allocated TightBindingDefinition
+ *   Out becomes a TightBindingDefinition with
+ *      the same unit cell as In
+ *      the same atom positions as In
+ *      the same shells as In
+ *      double the number of orbitals as In with the aditional label "_dn", "_up"
+ *                                                   alternating in order
+ *      The Hopping between dn and up orbitals is zero
+ *      the Hopping between dn orbitals for Out is the same as the Hopping in In
+ *      the Hopping between up orbitals for Out is the same as the Hopping in In
+ */
+int CopyTightBindingDefAddSpin(TightBindingDef const *const A, TightBindingDef *const B)
+{
+  uint32_t i;
+  strncpy(B->Name, A->Name, sizeof(B->Name));
+  B->Cell = A->Cell;
+  B->Cell.Atom = (AtomType*)malloc(A->Cell.NAtoms*sizeof(AtomType));
+  for (i=0;i<B->Cell.NAtoms;i++)
+  {
+    CopyAtomTypeAddSpin(&(A->Cell.Atom[i]),&(B->Cell.Atom[i]));
+  }
+  B->nH = A->nH;
+  B->H = (TightBindingDefHopping*)malloc(B->nH * sizeof(TightBindingDefHopping));
+  for(i=0;i<A->nH;i++)
+  {
+    B->H[i] = A->H[i];
+    MatrixCopyAddSpin(&(B->H[i].Hop),A->H[i].Hop);
+  }
+  B->NFermion = A->NFermion;
+  SetNFermionIndexTightBindingDef(B);
+  return 0;
+}
 
-
-
+// B <- A
 int CopyAtomType(const AtomType *const A, AtomType *B)
 {
   int ishell,iorb;
@@ -203,6 +255,38 @@ int CopyAtomType(const AtomType *const A, AtomType *B)
     {
       B->OrbitalName[ishell][iorb]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1)*sizeof(char));
       strcpy(B->OrbitalName[ishell][iorb], A->OrbitalName[ishell][iorb]);
+    }
+  }
+  return 0;
+}
+
+// double all orbitals
+int CopyAtomTypeAddSpin(const AtomType *const A, AtomType *B)
+{
+  int ishell,iorb;
+  strcpy(B->Name, A->Name);
+  B->AtomNumber=A->AtomNumber;
+  B->Position[0]=A->Position[0];
+  B->Position[1]=A->Position[1];
+  B->Position[2]=A->Position[2];
+  B->Nshell=A->Nshell;
+  B->ShellName=(char**)malloc(A->Nshell*sizeof(char*));
+  B->shelldegeneracy=(int*)malloc(A->Nshell*sizeof(int));
+  B->OrbitalName=(char***)malloc(A->Nshell*sizeof(char**));
+  for(ishell=0;ishell<B->Nshell;ishell++)
+  {
+    B->ShellName[ishell]=(char*)malloc((strlen(A->ShellName[ishell])+1)*sizeof(char));
+    strcpy(B->ShellName[ishell], A->ShellName[ishell]);
+    B->shelldegeneracy[ishell]=2*A->shelldegeneracy[ishell];
+    B->OrbitalName[ishell]=(char**)malloc(B->shelldegeneracy[ishell]*sizeof(char*));
+    for(iorb=0;iorb<A->shelldegeneracy[ishell];iorb++)
+    {
+      B->OrbitalName[ishell][2*iorb  ]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1+3)*sizeof(char));
+      B->OrbitalName[ishell][2*iorb+1]=(char*)malloc((strlen(A->OrbitalName[ishell][iorb])+1+3)*sizeof(char));
+      strcpy(B->OrbitalName[ishell][2*iorb  ], A->OrbitalName[ishell][iorb]);
+      strcat(B->OrbitalName[ishell][2*iorb  ], "_dn");
+      strcpy(B->OrbitalName[ishell][2*iorb+1], A->OrbitalName[ishell][iorb]);
+      strcat(B->OrbitalName[ishell][2*iorb+1], "_up");
     }
   }
   return 0;
@@ -276,6 +360,29 @@ int SetNFermionIndexTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+int TightBindingDerivative(TightBindingDef * A, TightBindingDef * dAdx, TightBindingDef * dAdy , TightBindingDef * dAdz)
+{
+  double c=1;
+  if((A->Cell.Units&1)==0)
+  {
+    c = 2 * Pi;
+  }
+  TightBindingCopy(*A, *dAdx);
+  TightBindingCopy(*A, *dAdy);
+  TightBindingCopy(*A, *dAdz);
+  for(int i=0; i<A->nH; i++)
+  {
+    MatrixScalarMultiply(&(dAdx->H[i].Hop), 0, c*dAdx->H[i].ConnectingVector[0]);
+    MatrixScalarMultiply(&(dAdy->H[i].Hop), 0, c*dAdy->H[i].ConnectingVector[1]);
+    MatrixScalarMultiply(&(dAdz->H[i].Hop), 0, c*dAdz->H[i].ConnectingVector[2]);
+  }
+  ChopTightBindingDefSize(dAdx, DBL_MIN);
+  ChopTightBindingDefSize(dAdy, DBL_MIN);
+  ChopTightBindingDefSize(dAdz, DBL_MIN);
+  return 0;
+}
+
+
 int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
 {
   int    i;
@@ -292,8 +399,8 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Units = 1;
   ReciprocalLatticeVector(A->Cell.rUnitCell, A->Cell.gUnitCell,A->Cell.Units);
   A->Cell.NAtoms = 1;
-  A->Cell.Atom = (AtomType*)malloc(1 * sizeof(AtomType));
-  strncpy(A->Cell.Atom[0].Name, "s", 3);
+  A->Cell.Atom = (AtomType*)malloc(2 * sizeof(AtomType));
+  strncpy(A->Cell.Atom[0].Name, "s", 2);
   A->Cell.Atom[0].Position[0] = 0.00000;
   A->Cell.Atom[0].Position[1] = 0.00000;
   A->Cell.Atom[0].Position[2] = 0.00000;
@@ -301,12 +408,12 @@ int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Atom[0].shelldegeneracy = (int*)malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
   A->Cell.Atom[0].ShellName = (char**)malloc(1*sizeof(char*));
-  A->Cell.Atom[0].ShellName[0] = (char*)malloc(1*sizeof(char));
-  strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
+  A->Cell.Atom[0].ShellName[0] = (char*)malloc(2*sizeof(char));
+  strncpy(A->Cell.Atom[0].ShellName[0], "s", 2);
   A->Cell.Atom[0].OrbitalName= (char***)malloc(1*sizeof(char**));
   A->Cell.Atom[0].OrbitalName[0]= (char**)malloc(1*sizeof(char*));
-  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(1*sizeof(char));
-  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
+  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(2*sizeof(char));
+  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 2);
   A->nH = 7;
   A->H = (TightBindingDefHopping*)malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 7; i++)
@@ -357,12 +464,12 @@ int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Atom[0].shelldegeneracy = (int*)malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
   A->Cell.Atom[0].ShellName = (char**)malloc(1*sizeof(char*));
-  A->Cell.Atom[0].ShellName[0] = (char*)malloc(1*sizeof(char));
-  strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
+  A->Cell.Atom[0].ShellName[0] = (char*)malloc(2*sizeof(char));
+  strncpy(A->Cell.Atom[0].ShellName[0], "s", 2);
   A->Cell.Atom[0].OrbitalName= (char***)malloc(1*sizeof(char**));
   A->Cell.Atom[0].OrbitalName[0]= (char**)malloc(1*sizeof(char*));
-  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(1*sizeof(char));
-  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
+  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(2*sizeof(char));
+  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 2);
   A->nH = 5;
   A->H = (TightBindingDefHopping*)malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 5; i++)
@@ -414,12 +521,12 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   A->Cell.Atom[0].shelldegeneracy = (int*)malloc(1 * sizeof(int));
   A->Cell.Atom[0].shelldegeneracy[0] = 1;
   A->Cell.Atom[0].ShellName = (char**)malloc(1*sizeof(char*));
-  A->Cell.Atom[0].ShellName[0] = (char*)malloc(1*sizeof(char));
-  strncpy(A->Cell.Atom[0].ShellName[0], "s", 3);
+  A->Cell.Atom[0].ShellName[0] = (char*)malloc(2*sizeof(char));
+  strncpy(A->Cell.Atom[0].ShellName[0], "s", 2);
   A->Cell.Atom[0].OrbitalName= (char***)malloc(1*sizeof(char**));
   A->Cell.Atom[0].OrbitalName[0]= (char**)malloc(1*sizeof(char*));
-  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(1*sizeof(char));
-  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 3);
+  A->Cell.Atom[0].OrbitalName[0][0]= (char*)malloc(2*sizeof(char));
+  strncpy(A->Cell.Atom[0].OrbitalName[0][0], "s", 2);
   A->nH = 3;
   A->H = (TightBindingDefHopping*)malloc(A->nH * sizeof(TightBindingDefHopping));
   for (i = 0; i < 3; i++)
@@ -444,7 +551,6 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
-
 /*  given a Tight binding definition and a k vector creates a matrix
  *  representing the Hamiltonian.
  *    two atoms at different positions in the unit cell hop with a phase e^{i k x_1 - x_2}
@@ -458,6 +564,32 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
   H->Nj = A.NFermion;
   H->QComplex = 0;
   InitMatrix(H);
+  for (iH = 0; iH < A.nH; iH++)
+  {
+    i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
+    j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
+    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
+    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
+    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
+    vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
+    vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
+    vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
+    alphaRe = cos(Dot(k, vector));
+    alphaIm = sin(Dot(k, vector));
+    if (Sqr(alphaIm) < Sqr(alphaRe) * DBL_EPSILON * 100) alphaIm = 0;
+    MatrixAddShifted(H, A.H[iH].Hop, alphaRe, alphaIm, i, j);
+  }
+  return 0;
+}
+int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], CompactMatrixType * H)
+{
+  int    iH, i, j;
+  double alphaRe, alphaIm;
+  double vector[3];
+  H->Ni = A.NFermion;
+  H->Nj = A.NFermion;
+  H->QComplex = 0;
+  InitCompactMatrix(H);
   for (iH = 0; iH < A.nH; iH++)
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
@@ -2959,7 +3091,7 @@ bool isOrbElementOf(const string &orb, vector<string> set)
 		vector < string > orbsRel;
 		orbsRel.push_back(orb);
 		orbsRel = nonRelToRelOrbs(orbsRel);
-		for (uint i = 0; i < (uint) orbsRel.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) orbsRel.size(); ++i)
 		{
 			if (!isElementOf(orbsRel[i], set)) return false;
 		}
@@ -2985,13 +3117,13 @@ MatrixType OrbitalRotationMatrix(vector<string> orbsOld, vector<string> orbsNew)
 	int NF = 0;
 	if (NFOld < NFNew)
 	{
-		for (uint i = 0; i < (uint) orbsNew.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) orbsNew.size(); ++i)
 			if (!isOrbElementOf(orbsNew[i], orbsOld))
 				orbsOld.push_back(orbsNew[i]);
 		NF = NFNew;
 	} else if (NFOld > NFNew)
 	{
-		for (uint i = 0; i < (uint) orbsOld.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) orbsOld.size(); ++i)
 			if (!isOrbElementOf(orbsOld[i], orbsNew))
 				orbsNew.push_back(orbsOld[i]);
 		NF = NFOld;
@@ -3381,7 +3513,7 @@ MatrixType YToJJzMatrix(const int size, const bool addSpin)
 MatrixType orbitalPermutationMatrix(const vector<string> &oldVec, const vector<string> &newVec, bool addSpin)
 {
 	MatrixType out;
-	uint spinFac = addSpin ? 1 : 2;
+	uint32_t spinFac = addSpin ? 1 : 2;
 	vector<int> permVec = permutationVector(oldVec, newVec);
 	if (permVec.size() == 0)
 		return nullMatrix();
@@ -3543,7 +3675,7 @@ map<string, vector<uint16_t> > createAtmoicIndicesDict(const vector<string> &orb
 {
 	map<string, vector<uint16_t> > allIndices;
 	uint16_t offset = 0;
-	for (uint i = 0; i < (uint) orbitals.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) orbitals.size(); ++i)
 	{
 		string orb = orbitals[i];
 		int multiplicity = orbToMultiplicity(orb);
@@ -3582,14 +3714,14 @@ void groupOrbitals(map<string, vector<uint16_t> > &allIndices, const map<string,
 		string groupKey = iter->first;
 		vector < string > groupMembers = iter->second;
 		vector<uint16_t> indices;
-		for (uint i = 0; i < (uint) groupMembers.size(); ++i)
+		for (uint32_t i = 0; i < (uint32_t) groupMembers.size(); ++i)
 		{
 			string groupMember = groupMembers[i];
 			map<string, vector<uint16_t> >::const_iterator groupMemberIter = allIndices.find(groupMember);
 			if (groupMemberIter != allIndices.end())
 			{
 				vector<uint16_t> groupMemberIndices = groupMemberIter->second;
-				for (uint j = 0; j < (uint) groupMemberIndices.size(); ++j)
+				for (uint32_t j = 0; j < (uint32_t) groupMemberIndices.size(); ++j)
 				{
 					if (!isElementOf(groupMemberIndices[j], indices))
 						indices.push_back(groupMemberIndices[j]);

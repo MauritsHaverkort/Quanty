@@ -249,7 +249,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
   int Nshell, *Norb, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
-  vector < vector<uint> > HopVecJVals; //for freeing the memory in the end.
+  vector < vector<uint32_t> > HopVecJVals; //for freeing the memory in the end.
   const int NhopMax=2048;
   double AtomPositionAccuracy = 0.001;
 
@@ -308,7 +308,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 			{
 				++siteSpecificShellCounter;
 			}
-			ShellName[ish] = (char*) malloc(4 * sizeof(char));
+			ShellName[ish] = (char*) malloc(6 * sizeof(char));
 			ShellName[ish][0] = (char) (FPLO.Wannier.Orbital[i][0] + '0');
 			if ((bool) FPLO.Wannier.QRelativistic)
 			{
@@ -350,7 +350,7 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     for(j=0;j<Nshell;j++)
     {
       HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
-      HopVecJVals.push_back(vector<uint>());
+      HopVecJVals.push_back(vector<uint32_t>());
     }
   }
 
@@ -541,9 +541,9 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 		free(NHopStart[ish]);
 		free(ShellName[ish]);
 	}
-	for (uint i = 0; i < Nshell * Nshell; ++i)
+	for (int i = 0; i < Nshell * Nshell; ++i)
 	{
-		for (uint j = 0; j < HopVecJVals[i].size(); ++j)
+		for (int j = 0; j < HopVecJVals[i].size(); ++j)
 		{
 			free(HopVec[i][HopVecJVals[i][j]]);
 		}

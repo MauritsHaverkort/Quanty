@@ -3,15 +3,15 @@ map<string, OperatorType> AtomicNumberOperators(const vector<string> &orbitals, 
 {
 	map < string, OperatorType > numberOperators;
 	map<string, vector<uint16_t> > allIndices = createAtmoicIndicesDict(orbitals, groupings);
-	uint NF = NumberOfFermionicStates(orbitals);
+	int NF = NumberOfFermionicStates(orbitals);
 	typedef map<string, vector<uint16_t> >::iterator iterType;
 	for (iterType iter = allIndices.begin(); iter != allIndices.end(); ++iter)
 	{
 		OperatorType numOp;
 		vector<uint16_t> indices = iter-> second;
-		uint NOpp = (uint) indices.size();
+		int NOpp = (int) indices.size();
 		double ones[NOpp], zeroes[NOpp];
-		for (uint i = 0; i < NOpp; ++i)
+		for (int i = 0; i < NOpp; ++i)
 		{
 			ones[i] = 1.;
 			zeroes[i] = 0.;

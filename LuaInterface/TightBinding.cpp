@@ -8,13 +8,8 @@ static int LuaNewTightBinding(lua_State * L)
   if(len==0)
   {
     TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+    InitTigthBindingDef(TB);
     luaL_setmetatable(L, "TightBinding_Type");
-    TB->nH=0;
-    TB->NFermion=0;
-    TB->Cell.NAtoms=0;
-    TB->Cell.Units=1;
-    TB->FermionIndex=NULL;
-    TB->Name[0]='\0';
   }
   else
   {
@@ -22,6 +17,83 @@ static int LuaNewTightBinding(lua_State * L)
   }
   return 1;
 }
+
+static int LuaTightBindingCopy(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, -1, "TightBinding_Type");
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  return 1;
+}
+
+
+static int LuaTightBindingChop(lua_State * L)
+{
+  double epsilon=10*DBL_EPSILON;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  struct
+  {
+    bool Distance;
+    bool Deflate;
+  } Options;
+  LuaOptionsType LuaChopOptions[]={
+    {"Distance" ,        "bool",                      &(Options.Distance)},
+    {"Deflate"  ,        "bool",                      &(Options.Deflate)},
+    {NULL, NULL, NULL}};
+  Options.Distance=false;
+  Options.Deflate=true;
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, len, LuaChopOptions);
+    len=len-1;
+  }
+  if(len!=1)
+  {
+    epsilon=luaL_checknumber(L,len);
+    len=len-1;
+  }
+  TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  TightBindingDef *TBnew;
+  TBnew = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBnew);
+  if (Options.Distance)
+  {
+    ChopTightBindingDefDistance(TBnew, epsilon);
+  }
+  else
+  {
+    ChopTightBindingDefSize(TBnew, epsilon);
+  }
+  luaL_setmetatable(L, "TightBinding_Type");
+  return 1;
+}
+
+static int LuaTightBindingAddSpin(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, -1, "TightBinding_Type");
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDefAddSpin(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  return 1;
+}
+
+static int LuaTightBindingDerivative(lua_State * L)
+{
+  TightBindingDef *TBDx, *TBDy, *TBDz;
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, -1, "TightBinding_Type");
+  TBDx = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  TBDy = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  TBDz = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  luaL_setmetatable(L, "TightBinding_Type");
+  TightBindingDerivative(TB, TBDx, TBDy , TBDz);
+  return 3;
+}
+
 
 static int LuaFileReadStuttgartCTRL(lua_State * L)
 {
@@ -408,14 +480,228 @@ static int LuaCalculateDOS(lua_State *L)
   return 1;
 }
 
-/*
+/* On stack we have
+ *     1) a tight binding Hamiltonian, HTB
+ *     2) a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}
+ *     3) a function that assigns a double value (Character) between 0 and 1 to a vector of length HTB.NFermion  (used as Black-White band-color or band-thickness)
+ *     3,4)     same as 3 (used as Black-White band-color and band-thickness)
+ *     3,4,5)   same as 3 (used as RGB band-color)
+ *     3,4,5,6) same as 3 (used as RGB band-color and band-thickness)
+ *     -1) possible options
  *
+ *     we return
+ *     1) a matrix of dimensions HTB.NFermion by sum_i N_i + (#(kpath)+1)/2 with the band eigenbvalues
+ *     2) (3,4,5,6) a matrix of dimensions HTB.NFermion by sum_i N_i + (#(kpath)+1)/2 with the band character
  */
 static int LuaCalculateBands(lua_State *L)
 {
-  //TODO: all
-
-  return 1;
+  // check (and read) the input
+  LuaOptionsType LuaCalculateBandOptions[]={
+  {NULL, NULL, NULL}};
+  int len = (int)lua_gettop(L);
+  if (LuaTestOptionsList(L,-1))
+  {
+    LuaCheckOptions(L,-1,LuaCalculateBandOptions);
+    len--;
+  }
+  if(len<2)
+  {
+    return luaL_error(L, "Error CalculateBands: called with %d arguments (excluding options), minimal 2 expected (TightBindingDef, and k-path).\n",len);
+  }
+  if(len>6)
+  {
+    return luaL_error(L, "Error CalculateBands: called with %d arguments (excluding options), maximal 6 expected (TightBindingDef, k-path, (0 to 4 times) a function that transforms an eigenstate to a character (value between 0 and 1) ).\n",len);
+  }
+  int NCharacter = len-2;
+  TightBindingDef *HTB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  // check (and read) the k-list
+  BandstructurePathType kList;
+  if(!(lua_istable(L, 2)))
+  {
+    return luaL_error(L, "Error CalculateBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\n");
+  }
+  int lenklist = (int)lua_objlen(L, 2);
+  int Nktot = (lenklist+1)/2;
+  if(lenklist&&1==0)
+  {
+    return luaL_error(L, "Error CalculateBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\nThe length should be odd and not %d\n",lenklist);
+  }
+  kList.NQ = (lenklist+1)/2;
+  kList.Q  = (BandstructurePointType*)malloc(kList.NQ*sizeof(BandstructurePointType));
+  kList.Units = HTB->Cell.Units;
+  for(int i=1;i<=lenklist;i+=2)
+  {
+    // test k-point
+    lua_rawgeti(L, 2, i); // put the table {Label, k-vec} on the stack
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==2))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    lua_rawgeti(L,-1,1); // put the string Label on the stack
+    if(!(lua_type(L, -1)==LUA_TSTRING))
+    {
+      lua_pop(L,1);
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    kList.Q[(i-1)/2].label = lua_tolstring(L, -1, NULL)[0];
+    lua_pop(L,1); // remove the string from the stack
+    lua_rawgeti(L,-1,2); // put the k-point on the stack
+    if(!(lua_istable(L, -1)))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    if(!(((int)lua_objlen(L, -1))==3))
+    {
+      lua_pop(L,1);
+      return luaL_error(L, "Wrong format for k-list at position %d\n",i);
+    }
+    for(int j=0;j<3;j++)
+    {
+      lua_rawgeti(L, -1, j+1);
+      kList.Q[(i-1)/2].q[j] = (double)luaL_checknumber(L, -1);
+      lua_pop(L,1);
+    }
+    lua_pop(L,1); // remove the k-point from the stack
+    lua_pop(L,1); // remove the table {Lable, k-vec} from the stack
+    // test integer N
+    if(i==lenklist)
+    {
+      kList.Q[(i-1)/2].Nq = 0;
+    }
+    else
+    {
+      lua_rawgeti(L, 2, i+1); // put the integer Ni on the stack
+      if (!lua_isnumber(L, -1))
+      {
+        return luaL_error(L, "Wrong format for k-list at position %d\nExpected an integer\n",i+1);
+      }
+      kList.Q[(i-1)/2].Nq = (int) lua_tointeger(L, -1);
+      if(kList.Q[(i-1)/2].Nq<0)
+      {
+        return luaL_error(L, "Number of k-points in the path can not be negative at position %d\n",i+1);
+      }
+      Nktot += kList.Q[(i-1)/2].Nq;
+      lua_pop(L,1);
+    }
+  }
+  // finished reading the k-list
+  // produce output
+  // we will place these on the lua stack later by copying the pointers
+  CompactMatrixType val;
+  CompactMatrixType *Character;
+  Character = (CompactMatrixType *)malloc(NCharacter * sizeof(CompactMatrixType));
+  val.Ni = Nktot;
+  val.Nj = HTB->NFermion;
+  val.QComplex = 0;
+  InitCompactMatrix(&val);
+  strcpy(val.Name, "Band Energies");
+  for(int i=0;i<NCharacter;i++)
+  {
+    Character[i].Ni = Nktot;
+    Character[i].Nj = HTB->NFermion;
+    Character[i].QComplex = 0;
+    InitCompactMatrix(&(Character[i]));
+    sprintf(Character[i].Name, "Band Character %d",i+1);
+  }
+  // check that position 3 to 2+NCharacterare indeed functions
+  for(int i=0;i<NCharacter;i++)
+  {
+    if (!lua_isfunction(L, 3+i))
+    {
+      return luaL_error(L, "Expected a function that takes an eigenstate and returns a character (number of type double bewteen 0 and 1) on position %d\n",3+i);
+    }
+  }
+  // loop over all k-points
+  {
+    CompactMatrixType H, *T;
+    T = (CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+    T->OnLuaStack=false; // warning danger -- we should not loose track of T on the lua stack before we make T save to be garbage collected
+    luaL_setmetatable(L, "Matrix_Type");
+    int ik=0;
+    double k[3];
+    for(int i=0; i<kList.NQ; i++)
+    {
+      for(int j=0; j<=kList.Q[i].Nq; j++)
+      {
+        if(j==0)
+        {
+          k[0] = kList.Q[i].q[0];
+          k[1] = kList.Q[i].q[1];
+          k[2] = kList.Q[i].q[2];
+        }
+        else
+        {
+          k[0] = kList.Q[i].q[0] * (kList.Q[i].Nq + 1 - j) / (kList.Q[i].Nq + 1) + kList.Q[i+1].q[0] * j / (kList.Q[i].Nq + 1) ;
+          k[1] = kList.Q[i].q[1] * (kList.Q[i].Nq + 1 - j) / (kList.Q[i].Nq + 1) + kList.Q[i+1].q[1] * j / (kList.Q[i].Nq + 1) ;
+          k[2] = kList.Q[i].q[2] * (kList.Q[i].Nq + 1 - j) / (kList.Q[i].Nq + 1) + kList.Q[i+1].q[2] * j / (kList.Q[i].Nq + 1) ;
+        }
+        CreateHamiltonianFromTightBindingDef(*HTB, k, &H);
+        CompactMatrixEigensystem(&H, T, &(val.VRe[ik*val.Nj]));
+        // transform eigenstates to character
+        for(int c=0;c<NCharacter;c++)
+        {
+          lua_pushvalue(L, 3+c);             // Lua function
+          lua_createtable(L, 0, 2);
+          lua_pushvalue(L, 3+NCharacter);    // pointer to T
+          lua_setfield(L,-2,"__Matrix");
+          lua_pushnumber(L, 0);
+          lua_setfield(L,-2,"__Row");
+          lua_getglobal(L, "MatrixRowMeta");
+          lua_setmetatable(L, -2);
+          for(int l=0;l<T->Nj;l++)
+          {
+            lua_pushvalue(L, -2); // copy function to stack as pcall removes it
+            lua_pushvalue(L, -2); // copy matrix row to stack as pcal removes it
+            lua_pushnumber(L, l+1);
+            lua_setfield(L,-2,"__Row");
+            if (lua_pcall(L, 1, 1, 0) != LUA_OK)
+            {
+              const char *err = lua_tostring(L, -1);
+              luaL_error(L, "Error in character function %d: %s", c+1, err);
+            }
+            Character[c].VRe[ik*T->Nj+l] = (double)luaL_checknumber(L, -1);
+            lua_pop(L,1);
+          }
+          lua_pop(L,1);
+          lua_pop(L,1);
+        }
+        FreeCompactMatrix(T);
+        FreeCompactMatrix(&H);
+        ik++;
+      }
+    }
+    // T is a matrix on the Lua Stack, but the last action was to free T. We need to allocate T and give it to the Lua stack such that Lua can Garbage collect T. :-)
+    T->Ni=0;
+    T->Nj=0;
+    T->QComplex=0;
+    InitCompactMatrix(T);
+    T->OnLuaStack=true;
+  }
+  // place result on lua stack
+  CompactMatrixType* M;
+  M=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  *M=val;
+  M->OnLuaStack=true;
+  for(int i=0;i<NCharacter;i++)
+  {
+    M=(CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    *M=Character[i];
+    M->OnLuaStack=true;
+  }
+  // free matrices
+  free(Character);
+  free(kList.Q);
+  return 1+NCharacter;
 }
 
 /*
@@ -430,7 +716,8 @@ static int LuaCalculateFermi(lua_State *L)
 
 /* Calculate the Green's function from a given tight-binding Hamiltonian.
  * Input on stack:
- *   TB : TightBinding_Type
+ *   TB    : TightBinding_Type
+ *   Sigma : Optional a self energy, either as a ResponseFunctionObject or as a table of Responsefunction objects or as a table of tables of response function objects
  *   Options
  *       Emin
  *       Emax
@@ -442,8 +729,8 @@ static int LuaCalculateG(lua_State *L)
 {
   uint32_t len;
   TightBindingDef *a;
-  ResponsefunctionType *G;
-
+  ResponsefunctionType *G, *Sigma=NULL;
+  bool FreeSigma=false;
   struct
   {
     int *Nk;
@@ -467,16 +754,50 @@ static int LuaCalculateG(lua_State *L)
     {"NE",         "uint32_t", &(Options.NE)},
     {"Type",       "char*",    &(Options.Type)},
     {NULL, NULL, NULL}};
-
   len = (uint32_t)lua_gettop(L);
+  if (LuaTestOptionsList(L,-1))
+  {
+    LuaCheckOptions(L,-1,LuaCalculateGOptions);
+    len--;
+  }
   if(!(len==1||len==2))
   {
-    return luaL_error(L, "Error CalculateG: called with %d arguments, 1 or 2 expected (TightBindingDef, and options).\n",len);
+    return luaL_error(L, "Error CalculateG: called with %d arguments and possible options, 1 or 2 expected (TightBindingDef, and optional a self energy).\n",len);
   }
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
   if(len==2)
   {
-    LuaCheckOptions(L, 2, LuaCalculateGOptions);
+    if(lua_istable(L, 2))
+    {
+      //TODO: read list of response functions and create diagonal response function from this.
+      return luaL_error(L, "Error Self energy per atom or per atom and shell not jet implemented");
+      Sigma=(ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      FreeSigma=true;
+      // read in a table of length a->Cell.Natoms
+      // for each atom (i) read in
+      //    -- a repsonse function of dimension sum_{j=0}^{a->Cell.Atom[i].Nshell} a->Cell.Atom[i].shelldegeneracy[j]
+      //    -- or a list of length a->Cell.Atom[i].Nshell
+      //          -- for each shell (j) read in a response function of dimension a->Cell.Atom[i].shelldegeneracy[j]
+      // merge these response functions into one.
+      
+      
+      
+      
+    }
+    else
+    {
+      Sigma = luaL_checkResponsefunction(L, 2);
+      if(Sigma->Block!=true)
+      {
+        //TODO:
+        return luaL_error(L, "Error need to transform list of poles to Block list of poles");
+      }
+      if((Sigma->type!='l')&&(Sigma->type!='L'))
+      {
+        //TODO;
+        return luaL_error(L, "Error need to transform sigma to BlockListOfPoles");
+      }
+    }
   }
   if(Options.Nk==NULL)
   {
@@ -485,6 +806,9 @@ static int LuaCalculateG(lua_State *L)
     Options.Nk[1]=40;
     Options.Nk[2]=40;
   }
+  if(Options.Nk[0]<1) return luaL_error(L, "Error first number of k-points needs to be larger than 0");
+  if(Options.Nk[1]<1) return luaL_error(L, "Error second number of k-points needs to be larger than 0");
+  if(Options.Nk[2]<1) return luaL_error(L, "Error third number of k-points needs to be larger than 0");
   lua_settop(L, 0);
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
@@ -492,15 +816,28 @@ static int LuaCalculateG(lua_State *L)
   G->type = 'l';
   G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  if(Sigma==NULL)
+  {
+    TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  }
+  else
+  {
+    if(((BlockListOfPoles*)Sigma->data)->BlockSize != a->NFermion )
+    {
+      return luaL_error(L, "Error BlockSize of Sigma (%d) and NFermion of TB Hamiltonian (%d) need to be equivalent ",((BlockListOfPoles*)Sigma->data)->BlockSize , a->NFermion);
+    }
+    TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+  }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
-
   if(strcmp(Options.Type, "ListOfPoles")!=0)
   {
     lua_pushstring(L, Options.Type);
     return LuaChangeTypeResponseFunction(L);
   }
-  
+  if(FreeSigma==true)
+  {
+    FreeResponsefunction(Sigma);
+  }
   return 1;
 }
 
@@ -2214,6 +2551,102 @@ static int LuaTightBindingToString(lua_State * L)
   return 1;
 }
 
+
+static int LuaTightBindingCall(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  double k[3] = {0.0,0.0,0.0};
+  bool AsOperator=false;
+  bool ConstantPhaseInUnitCell=false;
+  bool AddSpin=false;
+  LuaOptionsType LuaOptions[]={
+    {"AsOperator","bool"             ,&AsOperator},
+    {"ConstantPhaseInUnitCell","bool",&ConstantPhaseInUnitCell},
+    {"AddSpin","bool",&AddSpin},
+    {NULL, NULL, NULL}};
+  if(len!=0)
+  { // check for options if options found reduce len by one
+    if(LuaTestOptionsList(L, -1))
+    {
+      LuaCheckOptions(L, -1, LuaOptions);
+      len--;
+    }
+  }
+  if((len<2)||(len>4)) return luaL_error(L, "Error TightBindingObject(...) should be called with a k-vector of length 1,2, or 3 and possible options\n");
+  TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  if((len==2)&&(lua_type(L,2)==LUA_TTABLE))
+  {
+    len = (int)lua_objlen(L, 2);
+    if((len<1)||(len>3)) luaL_error(L, "Error TightBindingObject(...) should be called with a k-vector of length 1,2, or 3 and possible options\n");
+    for(int i=0;i<len;i++)
+    {
+      lua_rawgeti(L, 2, i+1);
+      k[i]=luaL_checknumber(L, -1);
+      lua_pop(L, 1);
+    }
+  }
+  else
+  {
+    k[0]=luaL_checknumber(L, 2);
+    if(len>2) k[1]=luaL_checknumber(L, 3);
+    if(len>3) k[2]=luaL_checknumber(L, 4);
+  }
+  if((AsOperator==false)&&(ConstantPhaseInUnitCell==false)&&(AddSpin==false))
+  {
+    MatrixType H;
+    CreateHamiltonianFromTightBindingDef(*a, k, &H);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    return 1;
+  }
+  if((AsOperator==false )&&(ConstantPhaseInUnitCell==false)&&(AddSpin==true ))
+  {
+    MatrixType H,Hp;
+    CreateHamiltonianFromTightBindingDef(*a, k, &Hp);
+    MatrixCopyAddSpin(&H, Hp);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    FreeMatrix(&Hp);
+    return 1;
+  }
+  if((AsOperator==false )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==false))
+  {
+    MatrixType H;
+    CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*a, k, &H);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    return 1;
+  }
+  if((AsOperator==false )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==true ))
+  {
+    MatrixType H,Hp;
+    CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*a, k, &Hp);
+    MatrixCopyAddSpin(&H, Hp);
+    lua_push(L,H);
+    FreeMatrix(&H);
+    FreeMatrix(&Hp);
+    return 1;
+
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==false)&&(AddSpin==false))
+  {
+    
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==false)&&(AddSpin==true ))
+  {
+
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==false))
+  {
+    
+  }
+  if((AsOperator==true )&&(ConstantPhaseInUnitCell==true )&&(AddSpin==true ))
+  {
+
+  }
+  return luaL_error(L, "Error TightBindingObject(...) incompattible set of options");
+}
+
 static int LuaTightBindingDestroy(lua_State * L)
 {
   TightBindingDef *a = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
@@ -2234,13 +2667,24 @@ static int LuaDresdenFPLODestroy(lua_State * L)
   return 0;
 }
 
-
+static const struct luaL_Reg TightBinding_func[] = {
+  {"New",            LuaNewTightBinding},
+  {"Chop",           LuaTightBindingChop},
+  {"Copy",           LuaTightBindingCopy},
+  {"AddSpin",        LuaTightBindingAddSpin},
+  {"Derivative",     LuaTightBindingDerivative},
+  {"CalculateG",     LuaCalculateG},
+  {"CalculateBands", LuaCalculateBands},
+  {NULL, NULL}
+};
+  
 
 static const struct luaL_Reg TightBinding_meta[] = {
-  {"__index", LuaTightBindingIndex},
+  {"__index",    LuaTightBindingIndex},
   {"__newindex", LuaTightBindingNewIndex},
   {"__tostring", LuaTightBindingToString},
-  {"__gc", LuaTightBindingDestroy},
+  {"__call",     LuaTightBindingCall},
+  {"__gc",       LuaTightBindingDestroy},
   {NULL, NULL}
 };
 

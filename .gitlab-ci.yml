@@ -1,7 +1,10 @@
 stages:
   - build
+  - test_math
   - test_matrix
   - test_responsefunction
+  - test_tightbinding
+  - test_plot
   - test
   - deploy
 
@@ -48,6 +51,26 @@ sync_release_to_public:
   - git push public master:main
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
+
+
+# =========================================================================
+# ===== Test functions related to Math
+# ===== These functions are registered in lmathlib.c and an extention of the standard lua math library
+#
+
+test-jobs:
+  stage: test_math
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "GaussLegendreQuadrature"
+          - "SphericalHarmonics"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Math/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
 
 # =========================================================================
 # ===== Test single functions acting on different objects
@@ -110,6 +133,7 @@ test-jobs:
   dependencies:
     - build-job
 
+
 # =========================================================================
 # ===== Test functions related to ResponseFunctions objects
 # ===== These functions are registered in ResponseFunction.cpp
@@ -150,6 +174,7 @@ test-jobs-Responsefunction:
   dependencies:
     - build-job
 
+
 # =========================================================================
 # ===== Test functions related to Matrix objects
 # ===== These functions are registered in Matrix.cpp
@@ -180,6 +205,7 @@ test-jobs-matrix:
           - "Exp"
           - "Expand"
           - "Flatten"
+          - "GeneralEigensystem"
           - "Identity"
           - "Inverse"
           - "New"
@@ -197,5 +223,53 @@ test-jobs-matrix:
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/Matrix/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test functions related to tightbinding objects
+# ===== These functions are registered in TightBinding.cpp
+#
+
+test-jobs-matrix:
+  stage: test_tightbinding
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "__call"
+          - "__index"
+          - "__newindex"
+          - "AddSpin"
+          - "CalculateBands"
+          - "Chop"
+          - "Copy"
+          - "New"
+          - "PhaseTests"
+          - "UnitTest"
+          - "Derivative"
+          - "CalculateG"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/TightBindingDef/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test functions related to graphics objects
+# ===== These functions are registered in  Plot/LuaBinding.cpp
+#
+
+test-jobs-matrix:
+  stage: test_tightbinding
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "Add"
+          - "New"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/Plot/${TEST_NAME}.Quanty"
   dependencies:
     - build-job

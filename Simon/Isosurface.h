@@ -4,7 +4,7 @@ double vecNorm(const vector<double> &v);
 vector<double> interpolationRanges(const vector<Interpolation::InterpolatingFunction*> &funs);
 vector<Complex16> realspaceBasisValuesNoSpin(const vector<double> &v, const vector<string> &orbs, const vector<vector<double> > &atomPos, const vector<double> &interRanges,const vector<Interpolation::InterpolatingFunction*> &funs, const vector<vector<uint16_t> > indices, const double step);
 CompactMatrixType densityMatrixNoSpin(const CompactMatrixType &rho);
-vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,const vector<vector<double> > &atomPos, const uint gridpoints);
+vector<doubleVecValPair> realspaceElectronDensity(const CompactMatrixType &rho, const vector<Interpolation::InterpolatingFunction*> &funs, const vector<string> &orbs,const vector<vector<double> > &atomPos, const int gridpoints);
 CompactMatrixType densityMatrixSx(const CompactMatrixType &rho);
 CompactMatrixType densityMatrixSy(const CompactMatrixType &rho);
 CompactMatrixType densityMatrixSz(const CompactMatrixType &rho);

@@ -2,7 +2,7 @@
 template<typename T>
 bool isElementOf(const T element, const vector<T> &set, bool (*eq)(const T&, const T&))
 {
-	for (uint i = 0; i < (uint) set.size(); ++i)
+	for (int i = 0; i < (int) set.size(); ++i)
 	{
 		if (eq(element, set[i]))
 			return true;
@@ -14,7 +14,7 @@ bool QAtomsEqual(const AtomType &a1, const AtomType &a2)
 {
 	if (strcmp(a1.Name, a2.Name) != 0)
 		return false;
-	for (uint i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 		if (a1.Position[i] != a2.Position[i])
 			return false;
 	return true;
@@ -77,18 +77,18 @@ TightBindingDef sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &a
 	vector < AtomType > newAtoms;
 	newAtoms.push_back(atom);
 	vector<string> oldOrbs, newOrbs;
-	for (uint i = 0; i < (uint) tb.Cell.NAtoms; ++i)
+	for (int i = 0; i < tb.Cell.NAtoms; ++i)
 	{
 		if (!QAtomsEqual(tb.Cell.Atom[i], atom))
 			newAtoms.push_back(tb.Cell.Atom[i]);
-		for (uint j = 0; j < tb.Cell.Atom[i].Nshell; ++j)
+		for (int j = 0; j < tb.Cell.Atom[i].Nshell; ++j)
 		{
 			oldOrbs.push_back(to_string(i + 1) + "_" + to_string(tb.Cell.Atom[i].Name) + "_" + to_string(tb.Cell.Atom[i].ShellName[j]));
 			if (QAtomsEqual(tb.Cell.Atom[i], atom))
 				newOrbs.push_back(oldOrbs[oldOrbs.size() - 1]);
 		}
 	}
-	for (uint i = 0; i < (uint) oldOrbs.size(); ++i)
+	for (int i = 0; i < oldOrbs.size(); ++i)
 		if (!isElementOf(oldOrbs[i], newOrbs))
 			newOrbs.push_back(oldOrbs[i]);
 	permMat = orbitalPermutationMatrix(oldOrbs, newOrbs, false);
@@ -102,7 +102,7 @@ TightBindingDef sortTbAtomToFirstPosition(TightBindingDef &tb, const AtomType &a
 void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector<string> > &orbitNames, const bool hasSpin)
 {
 	a.AtomNumber = AtomNameToNumber(a.Name);
-	for (uint i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 		a.Position[i] = 0.;
 	a.Nshell = (int) shellNames.size();
 	if (a.Nshell != 0)
@@ -114,13 +114,13 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 		{
 			a.ShellName[i] = (char*) malloc(MAXStrLength * sizeof(char));
 			strcpy(a.ShellName[i], shellNames[i].c_str());
-			if ((uint) orbitNames.size() != 0)
+			if (orbitNames.size() != 0)
 			{
 				a.shelldegeneracy[i] = (int) orbitNames[i].size();
 				if (a.shelldegeneracy[i] != 0)
 				{
 					a.OrbitalName[i] = (char**) malloc(a.shelldegeneracy[i] * sizeof(char*));
-					for (uint j = 0; j < a.shelldegeneracy[i]; ++j)
+					for (int j = 0; j < a.shelldegeneracy[i]; ++j)
 					{
 						a.OrbitalName[i][j] = (char*) malloc(MAXStrLength * sizeof(char));
 						strcpy(a.OrbitalName[i][j], orbitNames[i][j].c_str());
@@ -132,7 +132,7 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 				if (a.shelldegeneracy[i] > 0)
 				{
 					a.OrbitalName[i] = (char**) malloc(a.shelldegeneracy[i] * sizeof(char*));
-					for (uint j = 0; j < a.shelldegeneracy[i]; ++j)
+					for (int j = 0; j < a.shelldegeneracy[i]; ++j)
 					{
 						a.OrbitalName[i][j] = (char*) malloc(MAXStrLength * sizeof(char));
 						if (hasSpin)
@@ -157,7 +157,7 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 vector<string> orbsAddLz(const vector<string> &in)
 {
 	vector < string > out;
-	for (uint i = 0; i < (uint) in.size(); ++i)
+	for (int i = 0; i < in.size(); ++i)
 	{
 		int l = (orbToMultiplicity(in[i], false) - 1) / 2;
 		for (int lz = -l; lz <= l; ++lz)
@@ -175,17 +175,17 @@ void initAtom(AtomType &a, const vector<string> &shellNames, const vector<vector
 
 vector<AtomType> OrbsToAtoms(const vector<string> &orbs, const bool hasSpin)
 {
-	uint lastNum = 0;
+	int lastNum = 0;
 	vector < string > atomNames;
 	vector < vector<string> > shellNames;
 	vector < vector<vector<string> > > orbitNames;
-	for (uint i = 0; i < (uint) orbs.size(); ++i)
+	for (int i = 0; i < orbs.size(); ++i)
 	{
-		uint atomNum, n;
+		uint32_t atomNum, n;
 		string atomName, shell;
 		int lz;
 		deconstructOrbname(orbs[i], atomNum, atomName, n, shell, lz);
-		if ((uint) atomNames.size() == 0 || atomNum != lastNum || atomNames[atomNames.size() - 1].compare(atomName) != 0)
+		if (atomNames.size() == 0 || atomNum != lastNum || atomNames[atomNames.size() - 1].compare(atomName) != 0)
 		{
 			lastNum = atomNum;
 			atomNames.push_back(atomName);
@@ -201,15 +201,15 @@ vector<AtomType> OrbsToAtoms(const vector<string> &orbs, const bool hasSpin)
 		{
 			shellName = to_string(n) + shell;
 		}
-		if ((uint) shellNames[(uint) shellNames.size() - 1].size() == 0 || shellNames[(uint) shellNames.size() - 1][(uint) shellNames[(uint) shellNames.size() - 1].size() - 1].compare(shellName) != 0)
+		if (shellNames[shellNames.size() - 1].size() == 0 || shellNames[shellNames.size() - 1][shellNames[shellNames.size() - 1].size() - 1].compare(shellName) != 0)
 		{
-			shellNames[(uint) shellNames.size() - 1].push_back(shellName);
-			orbitNames[(uint) orbitNames.size() - 1].push_back(vector<string>());
+			shellNames[shellNames.size() - 1].push_back(shellName);
+			orbitNames[orbitNames.size() - 1].push_back(vector<string>());
 		}
-		orbitNames[(uint) orbitNames.size() - 1][(uint) orbitNames[(uint) orbitNames.size() - 1].size() - 1].push_back(to_string(lz));
+		orbitNames[orbitNames.size() - 1][orbitNames[orbitNames.size() - 1].size() - 1].push_back(to_string(lz));
 	}
 	vector < AtomType > out = vector < AtomType > (atomNames.size());
-	for (uint i = 0; i < (uint) atomNames.size(); ++i)
+	for (int i = 0; i < atomNames.size(); ++i)
 	{
 		out[i] = AtomType();
 		strcpy(out[i].Name, atomNames[i].c_str());

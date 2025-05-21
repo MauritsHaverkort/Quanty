@@ -19,6 +19,7 @@ static int LuaOperatorToMatrix(lua_State *L);
 static int LuaEvolveToGroundstate(lua_State * L);
 static int LuaEigensystemDenseTable(lua_State *L);
 static int LuaEigensystem(lua_State * L);
+static int LuaGeneralEigensystem(lua_State *L);
 static int LuaImpurityGreensFunction(lua_State * L);
 static int LuaOrthonormalize(lua_State *L);
 static int LuaBlockBandDiagonalize(lua_State *L);

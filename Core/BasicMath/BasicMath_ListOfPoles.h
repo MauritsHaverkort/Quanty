@@ -2,7 +2,7 @@ uint32_t InitListOfPoles(ListOfPoles * M);
 void FreeListOfPoles(ListOfPoles * M);
 void ScaleListOfPoles(ListOfPoles * const A, double const scale);
 uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B);
-uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, ListOfPoles * const B, double AminIdeal, double AmaxIdeal);
+uint32_t AddToListOfPolesOnGridOrdered(ListOfPoles * const A, const ListOfPoles * const B, double AminIdeal, double AmaxIdeal);
 uint32_t MixListOfPoles(ListOfPoles * const A, ListOfPoles const B, double const alpha);
 uint32_t SymmetrizeListOfPoles(ListOfPoles * const A);
 int OrderListOfPolesCompare(double *elem1, double *elem2);

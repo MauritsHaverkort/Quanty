@@ -1,0 +1,43 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - __call                        --")
+print("--------------------------------------------------------")
+
+
+-- set parameters
+dAB = 0.2
+tnn = 1.1
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "dichalcogenide tight binding"
+HTB.Cell = {{sqrt(3),0,0},
+						{sqrt(3/4),3/2,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"p", {"0"}}}},
+							{"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB.Hopping =  {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+print(HTB )
+if ((Chop(HTB(0,0,0) - { { -0.1 , 3.3 } , { 3.3 , 0.1 } }) == Matrix.ToTable(Matrix.Zero(2)))==false) then
+	error("Tight binding call\n", 1)
+end
+if((Chop(HTB(0,(4/3)*pi,0)  - { { -0.1 , (-1.65 + 2.8578838324886*I) } , { (-1.65 - 2.8578838324886*I) , 0.1 } },1E-13) == Matrix.ToTable(Matrix.Zero(2)))==false) then
+	error("Tight binding call\n", 1)
+end
+if((Chop(HTB(0.1,0.2,0)  - { { -0.1 , (2.3922581647251 - 2.2130051100447*I) } ,{  (2.3922581647251 + 2.2130051100447*I) , 0.1 } },1E-13)== Matrix.ToTable(Matrix.Zero(2)))==false) then
+	error("Tight binding call\n", 1)
+end
+HTB=nil
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

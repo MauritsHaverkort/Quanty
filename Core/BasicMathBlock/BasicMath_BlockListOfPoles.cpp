@@ -552,6 +552,7 @@ uint32_t AddBlockListOfPolesOnMeshOfAReal(BlockListOfPoles * const A, BlockListO
   }
   for(i=0;i<B->N;i++)
   {
+    // find j such that B.a[i] >= A.a[j-1]
     j=A->N;
     while((j>0)&&(B->VRe[i*(1+Sqr(B->BlockSize))]<A->VRe[(j-1)*(1+Sqr(A->BlockSize))]))j--;
     if(j==0)
@@ -576,7 +577,7 @@ uint32_t AddBlockListOfPolesOnMeshOfAReal(BlockListOfPoles * const A, BlockListO
       {
         for(k=0;k<Sqr(A->BlockSize);k++)
         {
-          A->VRe[k + 1 + (j-1)*(1+Sqr(B->BlockSize))] += B->VRe[k + 1 + i+(1*Sqr(B->BlockSize))];
+          A->VRe[k + 1 + (j-1)*(1+Sqr(B->BlockSize))] += B->VRe[k + 1 + i*(1+Sqr(B->BlockSize))];
         }
         continue;
       }
@@ -661,8 +662,8 @@ uint32_t AddBlockListOfPolesOnMeshOfAComplex(BlockListOfPoles * const A, BlockLi
       {
         for(k=0;k<Sqr(A->BlockSize);k++)
         {
-          A->V[k + 1 + (j-1)*(1+Sqr(B->BlockSize))].Re += B->V[k + 1 + i+(1*Sqr(B->BlockSize))].Re;
-          A->V[k + 1 + (j-1)*(1+Sqr(B->BlockSize))].Im += B->V[k + 1 + i+(1*Sqr(B->BlockSize))].Im;
+          A->V[k + 1 + (j-1)*(1+Sqr(B->BlockSize))].Re += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Re;
+          A->V[k + 1 + (j-1)*(1+Sqr(B->BlockSize))].Im += B->V[k + 1 + i*(1+Sqr(B->BlockSize))].Im;
         }
         continue;
       }

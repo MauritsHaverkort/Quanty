@@ -1,6 +1,6 @@
-double lsdCouplingConstant(const string atom, const uint occupation)
+double lsdCouplingConstant(const string atom, const int occupation)
 {
-	uint atomNum = AtomNameToNumber(atom.c_str());
+	int atomNum = AtomNameToNumber(atom.c_str());
 	switch (atomNum)
 	{
 	case 19: //K
@@ -193,9 +193,9 @@ double lsdCouplingConstant(const string atom, const uint occupation)
 	}
 }
 
-double lspCouplingConstant(const string atom, const uint dShellOccupation)
+double lspCouplingConstant(const string atom, const int dShellOccupation)
 {
-	uint atomNum = AtomNameToNumber(atom.c_str());
+	int atomNum = AtomNameToNumber(atom.c_str());
 	switch (atomNum)
 	{
 	case 19: //K
@@ -402,7 +402,7 @@ static int LuaLSCouplingConstants(lua_State * L)
 	if (len != 2)
 		return luaL_error(L, "lsCouplingConstants called with %d arguments, exactly 2 expected, Name of atom and intial d-shell occupation.", len);
 	string atom;
-	uint dOccupation;
+	int dOccupation;
 	lua_check(L, 1, atom);
 	lua_check(L, 2, dOccupation);
 	lua_push(L, lspCouplingConstant(atom, dOccupation + 1));

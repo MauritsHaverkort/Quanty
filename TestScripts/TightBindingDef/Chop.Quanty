@@ -1,0 +1,49 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - Chop                          --")
+print("--------------------------------------------------------")
+
+
+-- We define a tight binding object
+
+-- set parameters
+dAB = 0.2
+tnn = 1.1
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "dichalcogenide tight binding"
+HTB.Cell = {{sqrt(3),0,0},
+						{sqrt(3/4),3/2,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"p", {"0"}}}},
+							{"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB.Hopping =  {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+-- and chop it
+
+-- remove all hoping terms smaller than 0.3.
+-- For real systems this might brake symmetry.
+--   For example in cubic symmetry the hopping of a z^2 orbital is larger than the hopping for a x^2-y^2 orbial
+--   but the x^2-y^2 orbital has 4 interactions, the z^2 only 2. So Chop used in this way might lift the degeneracy of eg orbitals
+HTB2 = TightBinding.Chop(HTB,0.3)
+print(HTB2)
+
+-- We can also Chop in distance, removing all interactions after a certain length.
+HTB3 = TightBinding.Chop(HTB,0.3,{{"distance",true}})
+print(HTB3)
+os.exit()
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+

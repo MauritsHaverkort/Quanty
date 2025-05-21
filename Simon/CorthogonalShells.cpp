@@ -1,9 +1,9 @@
-CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObject &OrcaAtom, const double ELower, const double EUpper, const vector<uint> &iAtom, CompactMatrixType &newBasis)
+CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObject &OrcaAtom, const double ELower, const double EUpper, const vector<uint32_t> &iAtom, CompactMatrixType &newBasis)
 {
 	CompactMatrixType out, molecWindowMO, atomicShells, Overlap, atomicShellsOnMO, HMOMat;
-	uint iLower = 0;
-	uint iUpper = OrcaMolec.NBasis - 1;
-	for (uint i = 0; i < OrcaMolec.NBasis; ++i)
+	int iLower = 0;
+	int iUpper = OrcaMolec.NBasis - 1;
+	for (int i = 0; i < OrcaMolec.NBasis; ++i)
 	{
 		if (OrcaMolec.EigenEnergies[i] < ELower && i >= iLower)
 		{
@@ -26,19 +26,19 @@ CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObjec
 		throw std::exception();
 	}
 
-	vector<uint> iMolec, iMolecFull;
-	for (uint i = iLower; i <= iUpper; ++i)
+	vector<uint32_t> iMolec, iMolecFull;
+	for (int i = iLower; i <= iUpper; ++i)
 	{
 		iMolec.push_back(i);
 	}
-	for (uint i = 0; i < OrcaMolec.NBasis; ++i)
+	for (int i = 0; i < OrcaMolec.NBasis; ++i)
 	{
 		iMolecFull.push_back(i);
 	}
 	molecWindowMO = Submatrix(OrcaMolec.MolecularOrbitalMatrix, iMolec, iMolecFull);
 
-	vector<uint> iAtomFull;
-	for (uint i = 0; i < OrcaAtom.NBasis; ++i)
+	vector<uint32_t> iAtomFull;
+	for (int i = 0; i < OrcaAtom.NBasis; ++i)
 	{
 		iAtomFull.push_back(i);
 	}
@@ -52,18 +52,18 @@ CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObjec
 	newBasis.Nj = atomicShellsOnMO.Nj;
 	newBasis.QComplex = 0;
 	InitCompactMatrix(&newBasis);
-	for (uint i = 0; i < newBasis.Ni; ++i)
+	for (int i = 0; i < newBasis.Ni; ++i)
 	{
 		if (i < atomicShellsOnMO.Ni)
 		{
-			for (uint j = 0; j < atomicShellsOnMO.Nj; ++j)
+			for (int j = 0; j < atomicShellsOnMO.Nj; ++j)
 			{
 				newBasis.VRe[i * newBasis.Nj + j] = atomicShellsOnMO.VRe[i * newBasis.Nj + j];
 			}
 		}
 		else
 		{
-			uint j = i - atomicShellsOnMO.Ni;
+			int j = i - atomicShellsOnMO.Ni;
 			newBasis.VRe[i * newBasis.Nj + j] = 1;
 		}
 	}
@@ -73,7 +73,7 @@ CompactMatrixType CorthogonalShells(const OrcaObject &OrcaMolec, const OrcaObjec
 	HMOMat.Nj = newBasis.Nj;
 	HMOMat.QComplex = 0;
 	InitCompactMatrix(&HMOMat);
-	for (uint i = 0; i < HMOMat.Ni; ++i)
+	for (int i = 0; i < HMOMat.Ni; ++i)
 	{
 		HMOMat.VRe[i * HMOMat.Nj + i] = OrcaMolec.EigenEnergies[iMolec[i]];
 	}
@@ -96,9 +96,9 @@ static int LuaCorthogonalShells(lua_State *L)
 {
 	OrcaObject OrcaMolec, OrcaAtom;
 	double ELower, EUpper;
-	vector < uint > iAtom;
+	vector < uint32_t > iAtom;
 	CompactMatrixType newBasis;
-	uint len = lua_gettop(L);
+	int len = lua_gettop(L);
 	if (len < 5 || len > 6)
 	{
 		return luaL_error(L,
@@ -107,19 +107,19 @@ static int LuaCorthogonalShells(lua_State *L)
 	}
 
 	lua_check(L, 1, OrcaMolec);
-	if ((uint) OrcaMolec.Atoms.size() == 0)
+	if (OrcaMolec.Atoms.size() == 0)
 	{
 		return luaL_error(L, "The molecular OrcaOutput contains no atoms, something has gone sincerely wrong.");
 	}
 
 	lua_check(L, 2, OrcaAtom);
-	if ((uint) OrcaAtom.Atoms.size() == 0)
+	if (OrcaAtom.Atoms.size() == 0)
 	{
 		return luaL_error(L, "The atomic OrcaOutput contains no atoms, something has gone sincerely wrong.");
 	}
-	if ((uint) OrcaAtom.Atoms.size() > 1)
+	if (OrcaAtom.Atoms.size() > 1)
 	{
-		return luaL_error(L, "The atomic OrcaOutput is actually that of a molecule with %d atoms. Did you the molecular and the atomic input?", (uint) OrcaAtom.Atoms.size());
+		return luaL_error(L, "The atomic OrcaOutput is actually that of a molecule with %d atoms. Did you the molecular and the atomic input?", OrcaAtom.Atoms.size());
 	}
 	if (strcmp(OrcaAtom.Atoms[0].Name, OrcaMolec.Atoms[0].Name) != 0)
 	{
@@ -137,7 +137,7 @@ static int LuaCorthogonalShells(lua_State *L)
 	if (len == 5)
 	{
 		lua_check(L, 5, iAtom);
-		for (uint i = 0; i < (uint) iAtom.size(); ++i)
+		for (int i = 0; i < iAtom.size(); ++i)
 		{
 			if (iAtom[i] < 1 || iAtom[i] > OrcaAtom.NBasis)
 			{
@@ -148,7 +148,7 @@ static int LuaCorthogonalShells(lua_State *L)
 	}
 	else if (len == 6)
 	{
-		uint iLower, iUpper;
+		uint32_t iLower, iUpper;
 		lua_check(L, 5, iLower);
 		if (iLower < 1 || iLower > OrcaAtom.NBasis)
 		{
@@ -165,7 +165,7 @@ static int LuaCorthogonalShells(lua_State *L)
 			return luaL_error(L, "Lower atomic index (%d) is above upper atomic index (%d).", iLower, iUpper);
 		}
 
-		for (uint i = iLower - 1; i < iUpper; ++i)
+		for (int i = iLower - 1; i < iUpper; ++i)
 		{
 			iAtom.push_back(i);
 		}

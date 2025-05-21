@@ -7,7 +7,7 @@ static int LuaGaussianRadialUnm(lua_State * L)
 	GaussianRadial g;
 	lua_check(L, 1, g);
 	vector<double> amplitudes = g.getAmplitudes();
-	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	for (int i = 0; i < amplitudes.size(); ++i)
 	{
 		amplitudes[i] = -amplitudes[i];
 	}
@@ -27,7 +27,7 @@ static int LuaGaussianRadialAdd(lua_State *L)
 		return luaL_error(L, "Error while adding two Gaussian Functions: l1 (%d) and l2 (%d) need to be the same.", g1.getL(), g2.getL());
 	}
 	gOut = g1;
-	for (uint i = 0; i < g2.getN(); ++i)
+	for (int i = 0; i < g2.getN(); ++i)
 	{
 		gOut.addGaussian(g2.getGaussian(i));
 	}
@@ -47,7 +47,7 @@ static int LuaGaussianRadialSub(lua_State *L)
 		return luaL_error(L, "Error while subtracting two Gaussian Functions: l1 (%d) and l2 (%d) need to be the same.", g1.getL(), g2.getL());
 	}
 	gOut = g1;
-	for (uint i = 0; i < g2.getN(); ++i)
+	for (int i = 0; i < g2.getN(); ++i)
 	{
 		vector<double> primitiveGaussian = g2.getGaussian(i);
 		primitiveGaussian[0] = -primitiveGaussian[0];
@@ -80,7 +80,7 @@ static int LuaGaussianRadialMul(lua_State *L)
 	else
 	{
 		vector<double> amplitudes = g.getAmplitudes();
-		for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+		for (size_t i = 0; i < amplitudes.size(); ++i)
 		{
 			amplitudes[i] = d * amplitudes[i];
 		}
@@ -98,7 +98,7 @@ static int LuaGaussianRadialDiv(lua_State *L)
 	lua_check(L, 1, g);
 	lua_check(L, 2, d);
 	vector<double> amplitudes = g.getAmplitudes();
-	for (uint i = 0; i < (uint) amplitudes.size(); ++i)
+	for (size_t i = 0; i < amplitudes.size(); ++i)
 	{
 		amplitudes[i] = amplitudes[i] / d;
 	}
@@ -221,7 +221,7 @@ bool luaL_isType(lua_State *L, int arg, const GaussianRadial &example)
 
 static int LuaNewGaussianRadial(lua_State *L)
 {
-	uint l;
+	int l;
 	vector<double> amplitudes, widths;
 	lua_check(L, 1, l);
 	lua_check(L, 2, amplitudes);
@@ -233,7 +233,7 @@ static int LuaNewGaussianRadial(lua_State *L)
 vector<double> GaussianRadialToInterpolationYValsTimesR(const GaussianRadial &g, const vector<double> &grid)
 {
 	vector<double> yVals(grid.size());
-	for (uint i = 0; i < (uint) grid.size(); ++i)
+	for (size_t i = 0; i < grid.size(); ++i)
 	{
 		yVals[i] = g(grid[i]) * grid[i];
 	}
@@ -256,7 +256,7 @@ static int LuaGaussianRadialToCubicSplineTimesR(lua_State *L)
 	}
 	else
 	{
-		for (uint i = 0; i < 200; ++i)
+		for (int i = 0; i < 200; ++i)
 		{
 			grid.push_back((double) (i*i*i) * 2.5 /1000000.);
 		}
@@ -273,7 +273,7 @@ static int LuaGaussianRadialIndex(lua_State *L)
 {
 	GaussianRadial g;
 	lua_check(L, 1, g);
-	uint i = 0;
+	int i = 0;
 	string ind = "";
 	if (luaL_isType(L,2,i))
 	{
@@ -322,7 +322,7 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 {
 	GaussianRadial *g;
 	lua_check(L, 1, g);
-	uint i = 0;
+	int i = 0;
 	string ind = "";
 	if (luaL_isType(L, 2, i))
 	{
@@ -336,7 +336,7 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 	{
 		vector<double> newGauss;
 		lua_check(L, 3, newGauss);
-		if ((uint) newGauss.size() != 2)
+		if (newGauss.size() != 2)
 		{
 			return luaL_error(L, "Error: Setting individual Gaussians needs the input format {amplitude, width}.");
 		}
@@ -358,7 +358,7 @@ static int LuaGaussianRadialNewIndex(lua_State *L)
 	}
 	else if (ind.compare("l") == 0)
 	{
-		uint l;
+		int l;
 		lua_check(L, 3, l);
 		g->setL(l);
 		return 0;

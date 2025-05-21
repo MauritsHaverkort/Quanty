@@ -737,7 +737,6 @@ static int LuaCreateEigenDifferentials(lua_State *L)
 			return 2;
 		}
 	}
-
 	eigendifferentials = std::vector<Interpolation::CubicSpline*>(NeigenDiffs);
 	lua_createtable(L,NeigenDiffs,0);
 	for (uint32_t i = 0; i < NeigenDiffs; i++)

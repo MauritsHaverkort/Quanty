@@ -20,13 +20,13 @@ string cutBorderSpaces(string in)
 	return cutTrailingSpaces(out);
 }
 
-void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint &n, string &shell, int &lz)
+void deconstructOrbname(const string &orb, uint32_t &siteNum, string &atomName, uint32_t &n, string &shell, int &lz)
 {
 	//	Expects input like 2_Fe_3p1 or Fe_3p1
 	string::size_type pos, pos2;
 	pos = orb.find('_');
 	pos2 = orb.find('_',pos+1);
-	siteNum = (uint) strtol(orb.substr(0, pos).c_str(), NULL, 10);
+	siteNum = (uint32_t) strtol(orb.substr(0, pos).c_str(), NULL, 10);
 	if (pos2 == string::npos)
 	{
 		atomName = orb.substr(0, pos);
@@ -39,7 +39,7 @@ void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint
 	}
 	pos = orb.find_last_of('_') + 1;
 	if (pos < orb.length())
-		n = (uint) strtol(orb.substr(pos, 1).c_str(), NULL, 10);
+		n = (uint32_t) strtol(orb.substr(pos, 1).c_str(), NULL, 10);
 	else
 		n = 0;
 	if (n > 0)
@@ -57,9 +57,9 @@ void deconstructOrbname(const string &orb, uint &siteNum, string &atomName, uint
 
 bool atomicStateSorternlz(string s1, string s2)
 {
-	uint siteNum1, siteNum2;
+	uint32_t siteNum1, siteNum2;
 	string atomName1, atomName2, shell1, shell2;
-	uint n1, n2, mult1, mult2;
+	uint32_t n1, n2, mult1, mult2;
 	int lz1, lz2;
 	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
 	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
@@ -79,9 +79,9 @@ bool atomicStateSorternlz(string s1, string s2)
 
 bool atomicStateSorterlnz(string s1, string s2)
 {
-	uint siteNum1, siteNum2;
+	uint32_t siteNum1, siteNum2;
 	string atomName1, atomName2, shell1, shell2;
-	uint n1, n2, mult1, mult2;
+	uint32_t n1, n2, mult1, mult2;
 	int lz1, lz2;
 	deconstructOrbname(s1, siteNum1, atomName1, n1, shell1, lz1);
 	deconstructOrbname(s2, siteNum2, atomName2, n2, shell2, lz2);
@@ -110,7 +110,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 		return out;
 	}
 	string line, site, orb, state;
-	uint oldWanNumber = 1, wanNumber, siteNum = 0;
+	uint32_t oldWanNumber = 1, wanNumber, siteNum = 0;
 	int lz;
 	double weight;
 	size_t pos1, pos2;
@@ -124,7 +124,7 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 			pos1 = line.find("WF(");
 			pos1 += 3;
 			pos2 = line.find(")", pos1);
-			wanNumber = (uint) strtol(line.substr(pos1, pos2 - pos1).c_str(), NULL, 10);
+			wanNumber = (uint32_t) strtol(line.substr(pos1, pos2 - pos1).c_str(), NULL, 10);
 			if (wanNumber != oldWanNumber)
 			{
 				out.push_back(orbWeightsMap);
@@ -138,11 +138,11 @@ vector<map<string, double> > getWF_coefficients_Filecontent(const string &filena
 			site = cutBorderSpaces(line.substr(pos1, pos2 - pos1));
 			pos1 = pos2 + 1;
 			pos2 = line.find(")", pos1);
-			siteNum = (uint) strtol(line.substr(pos1, pos2 - pos1).c_str(), NULL, 10);
+			siteNum = (uint32_t) strtol(line.substr(pos1, pos2 - pos1).c_str(), NULL, 10);
 		}
     else if (line.find("vec=") != string::npos)
 		{
-    		uint overlapNumber = (uint) strtol(line.substr(0, line.find("vec")).c_str(), NULL, 10);
+    		uint32_t overlapNumber = (uint32_t) strtol(line.substr(0, line.find("vec")).c_str(), NULL, 10);
     		isPrimaryOverlap = (overlapNumber == 1);
     		if (!isPrimaryOverlap && !isWarningPrinted)
     		{
@@ -175,12 +175,12 @@ CompactMatrixType AtomicToWannierMatrix(const string &filename, vector<string> &
 {
 	vector < map<string, double> > filecontent = getWF_coefficients_Filecontent(filename, orbitalNames);
 	CompactMatrixType out = CompactMatrixType();
-	out.Ni = (uint) filecontent.size();
-	out.Nj = (uint) orbitalNames.size();
+	out.Ni = (uint32_t) filecontent.size();
+	out.Nj = (uint32_t) orbitalNames.size();
 	out.QComplex = 0;
 	InitCompactMatrix(&out);
-	for (uint i = 0; i < (uint) out.Ni; ++i)
-		for (uint j = 0; j < (uint) out.Nj; ++j)
+	for (int i = 0; i < out.Ni; ++i)
+		for (int j = 0; j < out.Nj; ++j)
 			if (filecontent[i].find(orbitalNames[j]) != filecontent[i].end())
 				out.VRe[i * out.Nj + j] = filecontent[i][orbitalNames[j]];
 			else

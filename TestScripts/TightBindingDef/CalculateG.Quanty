@@ -1,0 +1,496 @@
+-- Determine working directory (same as the directory of the input script)
+directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
+
+-- this test creates plots for several local response functions of a few different tight binding Hamiltonians
+-- We furthermore add a local (k independent) self energy
+   -- we compare the local response function calculated by integrating over k with a self energy to the
+	 -- calculations done using only response functions.
+
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - CalculateG                    --")
+print("--------------------------------------------------------")
+TimeStart("All")
+
+TimeStart("Mini model")
+
+HTB = NewTightBinding()
+HTB.Name = "Mini Model"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {  0,0,0},       {{"s", {"up","dn"}}}} }
+HTB.Hopping =  {{"A.s","A.s",{ 1, 0,0},{{-1, 0},{0 ,-1}}},
+	              {"A.s","A.s",{-1, 0,0},{{-1, 0},{0 ,-1}}},
+								{"A.s","A.s",{ 0, 0,0},{{0 , 0.2},{0.2 ,1}}}
+								}
+print(HTB)
+
+Sigma = ResponseFunction.New({ {{{0,1},{1,0.5}},-1,3}, { {{1,0.5},{0.5,1}}, {{1,-0.5},{-0.5,2}} }, mu=0, type="ListOfPoles", name="Sigma 1"})
+
+
+
+
+G0 = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",200}}))
+G  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",200}}))
+
+print(HTB(2*pi * 0/4,0,0))
+print(HTB(2*pi * 1/4,0,0))
+print(HTB(2*pi * 3/4,0,0))
+print(HTB(2*pi * 4/4,0,0))
+
+G0Tri = ResponseFunction.ChangeType(G0,"Tri")
+
+
+print("G0")
+print(G0)
+print("G0 Tridiagonal")
+print(G0Tri)
+print("G by summing over k")
+print(G)
+
+
+Grid={}
+for i=0,200 do
+	Grid[i+1] = i*0.1-10
+end
+G1 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",Grid}}))
+G2 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma))
+
+
+
+TimeStart("Plot")
+PlotPoints = 200
+Emin=-6
+Emax= 6
+dETick=2
+dYtick=1
+YRange=5
+
+
+PlG  = Graphics.Plot(G, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																				 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+													               {{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+													               {{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/PlG_SimpleModle_WithSigma.svg",'w')
+file:write(SVGPlG)
+file:close()
+TimeEnd("Plot")
+
+
+
+
+TimeEnd("Mini model")
+TimePrint()
+--os.exit()
+
+
+
+
+
+
+
+
+print("Start by defining different model Hamiltonians ")
+
+HTBList   = {}
+SigmaList = {}
+
+-- Single band Hubbard model
+
+HTB = NewTightBinding()
+HTB.Name = "Hubbard"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"Cu", {0,0,0},       {{"d", {"x^2-y^2"}}}}}
+HTB.Hopping =  {{"Cu.d","Cu.d",{ 1, 0,0},{{-1}}},
+								{"Cu.d","Cu.d",{-1, 0,0},{{-1}}},
+								{"Cu.d","Cu.d",{ 0, 1,0},{{-1}}},
+								{"Cu.d","Cu.d",{ 0,-1,0},{{-1}}}
+								
+								}
+HTBList[1] = Copy(HTB)
+SigmaList[1]={}
+SigmaList[1][1] = ResponseFunction.New({ {{{1}},0,0}, {{{0}},{{0}}}, mu=0, type="ListOfPoles", name="Sigma 1"})
+SigmaList[1][2] = ResponseFunction.New({ {{{0}},-0.4,-0.3,-0.2,-0.1,0,0.1,0.2,0.3,0.4}, {{{0.25}},{{0.25}},{{0.25}},{{0.25}},{{0.25}}, {{0.25}},{{0.25}},{{0.25}},{{0.25}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+
+print("Defined tight binding for ",HTBList[1].Name)
+
+-- Emery model
+
+-- set parameters
+ed      =  0.5
+ep      = -4.0
+pdsigma = 1.25
+tpp     = 1.0
+
+HTB = NewTightBinding()
+HTB.Name = "Emery"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"Cu", {  0,  0,0}, {{"d", {"x^2-y^2"}}}},
+	            {"O1", {1/2,  0,0}, {{"p",       {"x"}}}},
+              {"O2", {  0,1/2,0}, {{"p",       {"y"}}}}}
+HTB.Hopping =  {{"Cu.d","Cu.d",{   0,   0,0},{{      ed}}},
+	              {"O1.p","O1.p",{   0,   0,0},{{      ep}}},
+	              {"O2.p","O2.p",{   0,   0,0},{{      ep}}},
+								{"O1.p","Cu.d",{ 1/2,   0,0},{{ pdsigma}}},
+								{"Cu.d","O1.p",{ 1/2,   0,0},{{-pdsigma}}},
+								{"O1.p","Cu.d",{-1/2,   0,0},{{-pdsigma}}},
+								{"Cu.d","O1.p",{-1/2,   0,0},{{ pdsigma}}},
+								{"O2.p","Cu.d",{   0, 1/2,0},{{-pdsigma}}},
+								{"Cu.d","O2.p",{   0, 1/2,0},{{ pdsigma}}},
+								{"O2.p","Cu.d",{   0,-1/2,0},{{ pdsigma}}},
+								{"Cu.d","O2.p",{   0,-1/2,0},{{-pdsigma}}},
+								{"O1.p","O2.p",{-1/2, 1/2,0},{{     tpp}}},
+								{"O1.p","O2.p",{ 1/2, 1/2,0},{{     tpp}}},
+								{"O1.p","O2.p",{-1/2,-1/2,0},{{     tpp}}},
+								{"O1.p","O2.p",{ 1/2,-1/2,0},{{     tpp}}},
+								{"O2.p","O1.p",{-1/2, 1/2,0},{{     tpp}}},
+								{"O2.p","O1.p",{ 1/2, 1/2,0},{{     tpp}}},
+								{"O2.p","O1.p",{-1/2,-1/2,0},{{     tpp}}},
+								{"O2.p","O1.p",{ 1/2,-1/2,0},{{     tpp}}}
+								}
+
+HTBList[2] = Copy(HTB)
+SigmaList[2]={}
+SigmaList[2][1] = ResponseFunction.New({ {{{1,0,0},{0,1,0},{0,0,1}},0}, {{{0,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 1"})
+SigmaList[2][2] = ResponseFunction.New({ {{{1,0,0},{0,1,0},{0,0,1}},-6,2}, {{{1,0,0},{0,1,0},{0,0,1}}, {{0.5,0,0},{0,0.5,0},{0,0,0.5}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+SigmaList[2][3] = ResponseFunction.New({ {{{1,0,0},{0,0,0},{0,0,0}},0}, {{{0,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 3"})
+SigmaList[2][4] = ResponseFunction.New({ {{{0,0,0},{0,0,0},{0,0,0}},-6,-2,2}, {{{1,0,0},{0,1,0},{0,0,1}},{{0,0,0},{0,1,1},{0,1,1}},{{1,0,0},{0,0,0},{0,0,0}}}, mu=0, type="ListOfPoles", name="Sigma 4"})
+
+
+
+print("Defined tight binding for ",HTBList[2].Name)
+
+
+-- dichalcogenide
+
+-- set parameters
+dAB = 0.2
+tnn = 1.1
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "Dichalcogenide"
+HTB.Cell = {{sqrt(3),0,0},
+						{sqrt(3/4),3/2,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"p", {"0"}}}},
+							{"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB.Hopping =  {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+
+HTBList[3] = Copy(HTB)
+SigmaList[3]={}
+SigmaList[3][1] = ResponseFunction.New({ {{{1,0},{0,1}}},{}, mu=0, type="ListOfPoles", name="Sigma 1"})
+SigmaList[3][2] = ResponseFunction.New({ {{{1,0},{0,1}},-1}, {{{1,0},{0,1}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+SigmaList[3][3] = ResponseFunction.New({ {{{1,0},{0,1}},-1}, {{{0.5,0},{0,1}}}, mu=0, type="ListOfPoles", name="Sigma 3"})
+
+print("Defined tight binding for ",HTBList[3].Name)
+
+-- Minimal Topological insulator model
+
+-- Parameters:
+
+es      =-3      -- onsite energy of the s orbital
+ep      = 3      -- onsite energy of the p orbital(s)
+sssigma =-1      -- Hopping between two s orbitals (should be negative)
+ppsigma = 2      -- Hopping between two p orbitals in the direction of their lobes (should be positive)
+spsigma = 1.5    -- Hopping between an s and p orbital (from s to p in the direction of the p lobe, should be positive)
+
+
+-- We start by creating a model with an s and p band and then rotate to the p1/2 orbital
+
+HTB = TightBinding.New()
+HTB.Name = "TopologicalInsulator"
+HTB.Cell = {{1,0,0},
+						{0,1,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0}, {{"s", {"0"}},
+															{"p", {"x","y","z"}}} } }
+HTB.Hopping = { {"A.s","A.s",{ 0, 0, 0},{{es}} } ,
+								{"A.p","A.p",{ 0, 0, 0},{{ep,0,0},{0,ep,0},{0,0,ep}} } ,
+
+								{"A.s","A.s",{ 1, 0, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{-1, 0, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0, 1, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0,-1, 0}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0, 0, 1}, {{sssigma}} } ,
+								{"A.s","A.s",{ 0, 0,-1}, {{sssigma}} } ,
+								
+								{"A.p","A.p",{ 1, 0, 0}, {{ppsigma,0,0},{0,0,0},{0,0,0}} } ,
+								{"A.p","A.p",{-1, 0, 0}, {{ppsigma,0,0},{0,0,0},{0,0,0}} } ,
+								{"A.p","A.p",{ 0, 1, 0}, {{0,0,0},{0,ppsigma,0},{0,0,0}} } ,
+								{"A.p","A.p",{ 0,-1, 0}, {{0,0,0},{0,ppsigma,0},{0,0,0}} } ,
+								{"A.p","A.p",{ 0, 0, 1}, {{0,0,0},{0,0,0},{0,0,ppsigma}} } ,
+								{"A.p","A.p",{ 0, 0,-1}, {{0,0,0},{0,0,0},{0,0,ppsigma}} } ,
+								
+								{"A.s","A.p",{ 1, 0, 0}, {{-spsigma, 0, 0}} } ,
+								{"A.s","A.p",{-1, 0, 0}, {{ spsigma, 0, 0}} } ,
+								{"A.s","A.p",{ 0, 1, 0}, {{ 0,-spsigma, 0}} } ,
+								{"A.s","A.p",{ 0,-1, 0}, {{ 0, spsigma, 0}} } ,
+								{"A.s","A.p",{ 0, 0, 1}, {{ 0, 0,-spsigma}} } ,
+								{"A.s","A.p",{ 0, 0,-1}, {{ 0, 0, spsigma}} } ,
+								
+								{"A.p","A.s",{ 1, 0, 0}, {{ spsigma},{ 0},{ 0}} } ,
+								{"A.p","A.s",{-1, 0, 0}, {{-spsigma},{ 0},{ 0}} } ,
+								{"A.p","A.s",{ 0, 1, 0}, {{ 0},{ spsigma},{ 0}} } ,
+								{"A.p","A.s",{ 0,-1, 0}, {{ 0},{-spsigma},{ 0}} } ,
+								{"A.p","A.s",{ 0, 0, 1}, {{ 0},{ 0},{ spsigma}} } ,
+								{"A.p","A.s",{ 0, 0,-1}, {{ 0},{ 0},{-spsigma}} } }
+-- Add spin
+HTB = TightBinding.AddSpin(HTB)
+-- rotate to s and p1/2
+rotmat = YtojjzMatrix(1) * Matrix.ConjugateTranspose(YtoKMatrix(1))
+rotmat = Matrix.Sub( Matrix.Flatten({{Matrix.Identity(2),0},{0, rotmat}}),4,8)
+HTB = Chop(Rotate(HTB,rotmat,{{"A",{0,0,0},{{"s",{"dn","up"}},{"p1/2",{"dn","up"}}}}}))
+
+HTBList[4] = Copy(HTB)
+SigmaList[4]={}
+SigmaList[4][1] = ResponseFunction.New({ {{{1,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-1}},-1}, {{{1.1,0,0,0},{0,0.9,0,0},{0,0,1.1,0},{0,0,0,0.9}}}, mu=0, type="ListOfPoles", name="Sigma 1"})
+SigmaList[4][2] = ResponseFunction.New({ {{{1,0,0,0},{0,-1,0,0},{0,0,1,0},{0,0,0,-2}},-1}, {{{1.1,0,0,0},{0,0.9,0,0},{0,0,1.1,0},{0,0,0,0.9}}}, mu=0, type="ListOfPoles", name="Sigma 2"})
+
+
+print("Defined tight binding for ",HTBList[4].Name)
+
+
+
+-- We now calculate Gloc for all models with and without self energy
+
+for i=1,#HTBList do
+	TimeStart("Model "..HTBList[i].Name)
+	print("====================================================================")
+	print("=========  Start with model                            =============")
+	print("=========  "..HTBList[i].Name)
+	print("====================================================================")
+	
+	-- calculate Gloc
+	TimeStart("kint")
+  Gloc = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
+  TimeEnd("kint")
+	
+	-- plot Gloc
+	Emin   = -10
+	Emax   =  10
+	dETick = 2
+	PlotPoints=200
+	TimeStart("Plot")
+	PlG = Graphics.Plot(Gloc,{{"PlotPoints",PlotPoints},{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+	SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+	file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name..".svg",'w')
+	file:write(SVGPlG)
+	file:close()
+	TimeEnd("Plot")
+	GridPoints={}
+	dE = 0.1
+	for i=0,201 do
+		GridPoints[#GridPoints+1] = i*dE-10-dE/2
+	end
+	
+	-- loop over all defined self energies
+	for j=1,#SigmaList[i] do
+		print("====================================================================")
+	  print("=========  Start with Self energy                      =============")
+	  print("=========  "..SigmaList[i][j].name)
+	  print("====================================================================")
+		
+		-- calculate GlocS as sum_k 1/(w-Hk-Sigma)
+		print("Start CalculateG")
+		io.flush()
+		TimeStart("kint")
+		GlocS = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
+		TimeEnd("kint")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start ResponseFunction.CalculateGfromG0andSigma")
+		io.flush()
+		TimeStart("G from G0 and Sigma")
+		GlocS2 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j])
+		TimeEnd("G from G0 and Sigma")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start ResponseFunction.CalculateGfromG0andSigma on grid")
+		io.flush()
+		TimeStart("G from G0 and Sigma on Grid")
+		GlocS3 = ResponseFunction.CalculateGfromG0andSigma(Gloc,SigmaList[i][j],{{"EnergyGrid",GridPoints}})
+		TimeEnd("G from G0 and Sigma on Grid")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot")
+		io.flush()
+		
+		-- plot GlocS
+		Emin   = -10
+		Emax   =  10
+		dETick = 2
+		PlotPoints=200
+		TimeStart("Plot")
+		PlG  = Graphics.Plot(GlocS, {{"PlotPoints",PlotPoints},
+																 {"LineStyle",{{},
+																			         {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																			         {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+												         {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot GlocS2")
+		io.flush()
+		PlG.Add(Graphics.Plot(GlocS2, {{"PlotPoints",PlotPoints},
+																	 {"LineStyle",{{},
+																								 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																								 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+																	 {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot GlocS3")
+		io.flush()
+		PlG.Add(Graphics.Plot(GlocS3, {{"PlotPoints",PlotPoints},
+																	 {"LineStyle",{{},
+																								 {{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+																								 {{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+																	 {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start ToSVG")
+		io.flush()
+		SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+		file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name.."_WithSigma_"..j..".svg",'w')
+		file:write(SVGPlG)
+		file:close()
+		TimeEnd("Plot")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start ResponseFunction.CalculateHybridizationFunction")
+		io.flush()
+		-- Calculate GBath
+		TimeStart("CalculateHybridizationFunction")
+			GBath = ResponseFunction.CalculateHybridizationFunction(Gloc,SigmaList[i][j])
+		TimeEnd("CalculateHybridizationFunction")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start ResponseFunction.CalculateSelfEnergy")
+		io.flush()
+		-- use GlocS and GBath to calculate Sigma
+		TimeStart("CalculateSelfEnergy")
+		  SigmaTest = ResponseFunction.CalculateSelfEnergy(GBath,GlocS)
+		TimeEnd("CalculateSelfEnergy")
+		
+		print("Start Garbage")
+		io.flush()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		collectgarbage()
+		
+		print("Start Plot Sigma")
+		io.flush()
+		-- plot SigmaTest and SigmaList[i][j], should be the same
+		PlotPoints=200
+		Emin   = -10
+		Emax   =  10
+		dETick = 2
+		TimeStart("Plot")
+		PlG = Graphics.Plot(SigmaList[i][j],{{"PlotPoints",PlotPoints},
+																				  {"LineStyle",{{},
+												                                {{"LineWidth",0.006},{"LineColor",0xFF8080FF}},
+																									      {{"LineWidth",0.006},{"LineColor",0xFFFF8080}}}},
+												                  {"Frame",{{"Ymin",-10},{"Ymax",10},{"dYTick",1},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+		PlG.Add(Graphics.Plot(SigmaTest,{{"PlotPoints",PlotPoints},
+																	   {"LineStyle",{{},
+																		               {{"LineWidth",0.002},{"LineColor",0xFF0000A0}},
+																									 {{"LineWidth",0.002},{"LineColor",0xFFA00000}}}},
+																		 {"Frame",{{"Ymin",-10},{"Ymax",10},{"dYTick",1},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+		PlG.Add("Sigma orig     ",0.65,0.9 ,{{"Color",0xFF0808FF}})
+	  PlG.Add("Sigma from Gloc",0.65,0.85,{{"Color",0xFF0000A0}})
+		SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+		file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name.."_Sigma_"..j..".svg",'w')
+		file:write(SVGPlG)
+		file:close()
+		TimeEnd("Plot")
+		
+		print("========== Sigmas are equal?:",SigmaTest==SigmaList[i][j])
+		
+	end
+	
+	TimeEnd("Model "..HTBList[i].Name)
+end
+
+TimeEnd("All")
+TimePrint()
+
+
+
+print("Start Garbage")
+io.flush()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

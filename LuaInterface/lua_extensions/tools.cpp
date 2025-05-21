@@ -40,6 +40,7 @@ static void luaMWH_StackDump (lua_State *L)
         else if (luaL_testudata(L, i, "DresdenFPLO_Type")      != NULL) printf("DresdenFPLO");
         else if (luaL_testudata(L, i, "Matrix_Type")           != NULL) printf("Matrix");
         else if (luaL_testudata(L, i, "ResponseFunction_Type") != NULL) printf("ResponseFunction");
+        else if (luaL_testudata(L, i, "Graphics_Type")         != NULL) printf("Graphics_Type");
         else printf("Unrecognized");
         break;
 

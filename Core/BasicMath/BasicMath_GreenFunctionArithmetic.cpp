@@ -1360,6 +1360,182 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
  return 0;
 }
 
+/*  calculate G = G0( omega - Sigma(omega) )
+ *
+ *  represent G0 and S as a list of poles then
+ *   G = sum_i B_i 1/(w-a_i - S) is for each i a response function on Anderson form
+ *     we can transform this for each i to a list of poles and sum list of poles
+ */
+int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, ResponsefunctionType * const G, double Epsilon)
+{
+  if(G0->Block==false)
+  {
+    ResponsefunctionType G0LP, SigmaLP;
+    ListOfPoles          *SigmaLPData, *G0LPData;
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      G0LPData = (ListOfPoles*)G0LP.data;
+    }
+    else
+    {
+      G0LPData = (ListOfPoles*)G0->data;
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      SigmaLPData = (ListOfPoles*)SigmaLP.data;
+    }
+    else
+    {
+      SigmaLPData = (ListOfPoles*)Sigma->data;
+    }
+    G->type='l';
+    G->Block=false;
+    G->NSuggestedGridPoints=0;
+    G->SuggestedGrid=NULL;
+    G->data = (void*)malloc(sizeof(ListOfPoles));
+    // We find G0 as a list of poles in G0LPData
+    // We find Sigma as a list of poles in SigmaLPData
+    // We need to calculate G as a list of poles in GLPData
+    GListListListRepresentation(G0LPData, SigmaLPData, (ListOfPoles*)G->data);
+    if(!((G0->type=='a')||(G0->type=='A')))
+    {
+      FreeResponsefunction(&G0LP);
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      FreeResponsefunction(&SigmaLP);
+    }
+  }
+  else
+  {
+    ResponsefunctionType G0LP, SigmaLP;
+    BlockListOfPoles     *SigmaLPData, *G0LPData;
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      G0LPData = (BlockListOfPoles*)G0LP.data;
+    }
+    else
+    {
+      G0LPData = (BlockListOfPoles*)G0->data;
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
+    }
+    else
+    {
+      SigmaLPData = (BlockListOfPoles*)Sigma->data;
+    }
+    G->type='l';
+    G->Block=true;
+    G->NSuggestedGridPoints=0;
+    G->SuggestedGrid=NULL;
+    G->data = (void*)malloc(sizeof(BlockListOfPoles));
+    // We find G0 as a list of poles in G0LPData
+    // We find Sigma as a list of poles in SigmaLPData
+    // We need to calculate G as a list of poles in GLPData
+    BlockGListListListRepresentation(G0LPData, SigmaLPData, (BlockListOfPoles*)G->data);
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      FreeResponsefunction(&G0LP);
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      FreeResponsefunction(&SigmaLP);
+    }
+  }
+  return 1;
+}
+int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType  * const Sigma, CompactVectorType *const Grid, ResponsefunctionType * const G, double Epsilon)
+{
+  if(G0->Block==false)
+  {
+    ResponsefunctionType G0LP, SigmaLP;
+    ListOfPoles        *SigmaLPData, *G0LPData;
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      G0LPData = (ListOfPoles*)G0LP.data;
+    }
+    else
+    {
+      G0LPData = (ListOfPoles*)G0->data;
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      SigmaLPData = (ListOfPoles*)SigmaLP.data;
+    }
+    else
+    {
+      SigmaLPData = (ListOfPoles*)Sigma->data;
+    }
+    G->type='l';
+    G->Block=false;
+    G->NSuggestedGridPoints=0;
+    G->SuggestedGrid=NULL;
+    G->data = (void*)malloc(sizeof(ListOfPoles));
+    // We find G0 as a list of poles in G0LPData
+    // We find Sigma as a list of poles in SigmaLPData
+    // We need to calculate G as a list of poles in GLPData
+    GListListListRepresentationOnGrid(G0LPData, SigmaLPData, Grid->VRe, Grid->Ni, (ListOfPoles*)G->data);
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      FreeResponsefunction(&G0LP);
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      FreeResponsefunction(&SigmaLP);
+    }
+  }
+  else
+  {
+    ResponsefunctionType G0LP, SigmaLP;
+    BlockListOfPoles     *SigmaLPData, *G0LPData;
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      G0LPData = (BlockListOfPoles*)G0LP.data;
+    }
+    else
+    {
+      G0LPData = (BlockListOfPoles*)G0->data;
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
+    }
+    else
+    {
+      SigmaLPData = (BlockListOfPoles*)Sigma->data;
+    }
+    G->type='l';
+    G->Block=true;
+    G->NSuggestedGridPoints=0;
+    G->SuggestedGrid=NULL;
+    G->data = (void*)malloc(sizeof(BlockListOfPoles));
+    // We find G0 as a list of poles in G0LPData
+    // We find Sigma as a list of poles in SigmaLPData
+    // We need to calculate G as a list of poles in GLPData
+    BlockGListListListRepresentationOnGrid(G0LPData, SigmaLPData, Grid->VRe, Grid->Ni, (BlockListOfPoles*)G->data);
+    if(!((G0->type=='l')||(G0->type=='L')))
+    {
+      FreeResponsefunction(&G0LP);
+    }
+    if(!((Sigma->type=='l')||(Sigma->type=='L')))
+    {
+      FreeResponsefunction(&SigmaLP);
+    }
+  }
+  return 1;
+}
+
+
 
 /*  GBath(w) = 1 / ( G_0(w+mu-Sigma(w))^{-1} + Sigma(w) )
  *    G_0(w+mu-Sigma(w))                     = 1 / (w - S - a1 - sum_i b_i^2 / (w - a_{i+1} - S)
@@ -2148,6 +2324,455 @@ uint32_t VeryOldGBathNewTriDiagonalRepresentation(TriDiagonalMatrixType const Gl
   return 0;
 }
 
+/*  G(w) = G_0(w-Sigma(w))
+ *       = Ga0 + sum_i Gb_i 1/(w - Ga_i - Sigma(w))
+ *       = Ga0 + sum_i Gb_i 1/(w - Ga_i - Sa0 - sum_j Sb_j (1/(w-Sa_j) ) )
+ */
+int GListListListRepresentation(ListOfPoles * G0, ListOfPoles * Sigma, ListOfPoles *G)
+{
+  if(G0->N==0) // special case when G0 has no poles
+  {
+    ListOfPolesCopy(G, *G0);
+    return 0;
+  }
+  if(Sigma->N==0) // specia case when Sigma has no poles, still need to shift the Hartree term
+  {
+    ListOfPolesCopy(G, *G0);
+    for(int i=0; i<G->N;i++)
+    {
+      G->a[i]-=Sigma->a0;
+    }
+    return 0;
+  }
+  // general case. The number of poles in G is the product of the number of poles in G0 and (Sigma+1)
+  G->N = (G0->N) * (Sigma->N + 1);
+  if(InitListOfPoles(G))
+  {
+    printf("InitListOfPoles failed in GListListListRepresentation\n");
+    return 1;
+  }
+  strcpy(G->Name, "G");
+  // for each pole in G0 we create an anderson representation of G0 with sigma and rotate this to a list of pole representation
+  ListOfPoles bSigmaPole;
+  AndersonMatrixType bSigma;
+  bSigma.N = Sigma->N + 1;
+  if (InitAndersonMatrix(&bSigma))
+  {
+    printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");
+    return 1;
+  }
+  bSigma.a[0] = 0;
+  bSigma.a[1] = 0; // Sigma->a0 + G0 pole energy
+  bSigma.b[0] = 0; // sqrt of G0 pole weigth
+  for (int i=0; i<Sigma->N; i++)
+  {
+    bSigma.a[i+2] = Sigma->a[i];
+    bSigma.b[i+1] = sqrt(Sigma->b[i]);
+  }
+  for (int i = 0; i < G0->N; i++)
+  {
+    bSigma.b[0] = sqrt(G0->b[i]);
+    bSigma.a[1] = G0->a[i] + Sigma->a0;
+    if (AndersonMatrixToListOfPoles(bSigma, &bSigmaPole))
+    {
+      printf("AndersonMatrixToListOfPoles failed in GListListListRepresentation\n");
+      return 1;
+    }
+    for (int j = 0; j < bSigmaPole.N; j++)
+    {
+      G->a[j + i * (Sigma->N + 1) ] = bSigmaPole.a[j];
+      G->b[j + i * (Sigma->N + 1) ] = bSigmaPole.b[j];
+    }
+    for (int j = bSigmaPole.N; j < bSigma.N; j++)
+    {
+      G->a[j + i * (Sigma->N + 1) ] = 0;
+      G->b[j + i * (Sigma->N + 1) ] = 0;
+    }
+    FreeListOfPoles(&bSigmaPole);
+  }
+  OrderListOfPoles(G);
+  G->a0 = G0->a0;
+  G->mu = G0->mu;
+  FreeAndersonMatrix(&bSigma);
+  return 0;
+}
+
+
+int GListListListRepresentationOnGrid(ListOfPoles * G0, ListOfPoles * Sigma, double *Grid, uint32_t NGridPoints,  ListOfPoles *G)
+{
+  if(G0->N==0) // special case when G0 has no poles
+  {
+    ListOfPolesCopy(G, *G0);
+    return 0;
+  }
+  if(NGridPoints==0)
+  {
+    printf("Zero gridpoints in GListListListRepresentationOnGrid. That does not make sence.\n");
+    return 1;
+  }
+  // general case. The number of poles in G is determined by the grid
+  G->N = NGridPoints;
+  if(InitListOfPoles(G))
+  {
+    printf("InitListOfPoles failed in GListListListRepresentationOnGrid\n");
+    return 1;
+  }
+  strcpy(G->Name, "G");
+  G->a0 = G0->a0;
+  G->mu = G0->mu;
+  for(int i=0;i<G->N;i++)
+  {
+    G->a[i]=Grid[i];
+    G->b[i]=0;
+  }
+  // for each pole in G0 we create an anderson representation of G0 with sigma and rotate this to a list of pole representation
+  ListOfPoles bSigmaPole;
+  AndersonMatrixType bSigma;
+  bSigma.N = Sigma->N + 1;
+  if (InitAndersonMatrix(&bSigma))
+  {
+    printf("InitAndersonMatrix failed in GBathAndListAndRepresentation\n");
+    return 1;
+  }
+  bSigma.a[0] = 0;
+  bSigma.a[1] = 0; // Sigma->a0 + G0 pole energy
+  bSigma.b[0] = 0; // sqrt of G0 pole weigth
+  for (int i=0; i<Sigma->N; i++)
+  {
+    bSigma.a[i+2] = Sigma->a[i];
+    bSigma.b[i+1] = sqrt(Sigma->b[i]);
+  }
+  for (int i = 0; i < G0->N; i++)
+  {
+    bSigma.b[0] = sqrt(G0->b[i]);
+    bSigma.a[1] = G0->a[i] + Sigma->a0;
+    if (AndersonMatrixToListOfPoles(bSigma, &bSigmaPole))
+    {
+      printf("AndersonMatrixToListOfPoles failed in GListListListRepresentation\n");
+      return 1;
+    }
+    AddToListOfPolesOnGridOrdered(G, &bSigmaPole, Grid[0], Grid[NGridPoints-1]);
+    FreeListOfPoles(&bSigmaPole);
+  }
+  FreeAndersonMatrix(&bSigma);
+  return 0;
+}
+
+/*
+ *  Warning this is not the general form of G.
+ *  with G0 and S represented as block list of poles
+ *  Blocksize of G0 and Sigma need to be the same, not tested
+ */
+int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * Sigma, BlockListOfPoles *G)
+{
+  if(G0->N==0) // special case when G0 has no poles
+  {
+    CopyBlockListOfPoles(*G0, G);
+    return 0;
+  }
+  // general case. The maximal number of poles in G is the product of the number of poles in G0 and (Sigma+1) times the size of the block.
+  G->N = (G0->N) * (Sigma->N + 1) * G0->BlockSize;
+  G->QComplex = G0->QComplex | Sigma->QComplex;
+  G->BlockSize = G0->BlockSize;
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in GListListListRepresentation\n");
+    return 1;
+  }
+  strcpy(G->Name, "G");
+  G->N=0;
+  // for each pole in G0 we create an anderson representation of G0 with sigma and rotate this to a list of pole representation
+  BlockListOfPoles bSigmaPole;
+  BlockAndersonMatrixType bSigma;
+  BlockAndersonMatrixFromListOfPolesAsSelfEnergy(Sigma, &bSigma);
+  if(G->QComplex==0)
+  {
+    CompactMatrixType B,BSqrt;
+    B.Ni=G0->BlockSize;
+    B.Nj=G0->BlockSize;
+    B.QComplex=G0->QComplex;
+    B.Name=(char*)G0->Name;
+    for (int i = 0; i < G0->N; i++)
+    {
+      // set B0 of bSigma to sqrt of G0->B[i]
+      B.VRe = &(G0->VRe[i*(Sqr(G0->BlockSize)+1)+1]);
+      CompactMatrixSqrt(&B, &BSqrt);
+      memcpy(bSigma.bRe, BSqrt.VRe, Sqr(G0->BlockSize)*sizeof(double));
+      FreeCompactMatrix(&BSqrt);
+      // set A1 of bSigma to A0 of Sigma + G0->a[i] I
+      memcpy(&(bSigma.aRe[Sqr(G0->BlockSize)]), Sigma->a0Re, Sqr(G0->BlockSize)*sizeof(double));
+      for(int j=0; j<G0->BlockSize; j++)
+      {
+        bSigma.aRe[Sqr(G0->BlockSize) + j + j * G0->BlockSize] += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
+      }
+      // transform to list of poles
+      if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+      {
+        printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
+        return 1;
+      }
+      // add poles from bSigmaPole to G
+      memcpy(&(G->VRe[(G->N)*(Sqr(G->BlockSize)+1)]), bSigmaPole.VRe, (Sqr(G->BlockSize)+1)*bSigmaPole.N*sizeof(double));
+      G->N+=bSigmaPole.N;
+      FreeBlockListOfPoles(&bSigmaPole);
+    }
+    memcpy(G->a0, G0->a0, Sqr(G0->BlockSize)*sizeof(double));
+  }
+  else
+  {
+    if(bSigma.QComplex==0)
+    {
+      RealBlockAndersonMatrixToComplex(&bSigma);
+    }
+    if(G0->QComplex==0)
+    { // G0 real Sigma complex
+      CompactMatrixType B,BSqrt;
+      B.Ni=G0->BlockSize;
+      B.Nj=G0->BlockSize;
+      B.QComplex=G0->QComplex;
+      B.Name=(char*)G0->Name;
+      for (int i = 0; i < G0->N; i++)
+      {
+        // set B0 of bSigma to sqrt of G0->B[i]
+        B.VRe = &(G0->VRe[i*(Sqr(G0->BlockSize)+1)+1]);
+        CompactMatrixSqrt(&B, &BSqrt);
+        for(int j=0;j<Sqr(G0->BlockSize);j++)
+        {
+          bSigma.b[j].Re = BSqrt.VRe[j];
+          bSigma.b[j].Im = 0;
+        }
+        FreeCompactMatrix(&BSqrt);
+        // set A1 of bSigma to A0 of Sigma + G0->a[i] I
+        memcpy(&(bSigma.a[Sqr(G0->BlockSize)]), Sigma->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
+        for(int j=0; j<G0->BlockSize; j++)
+        {
+          bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Re += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
+        }
+        // transform to list of poles
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        {
+          printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
+          return 1;
+        }
+        // add poles from bSigmaPole to G
+        memcpy(&(G->V[(G->N)*(Sqr(G->BlockSize)+1)]), bSigmaPole.V, (Sqr(G->BlockSize)+1)*bSigmaPole.N*sizeof(Complex16));
+        G->N+=bSigmaPole.N;
+      }
+      for(int j=0; j<Sqr(G0->BlockSize); j++)
+      {
+        G->a0[j].Re = G0->a0Re[j];
+        G->a0[j].Im = 0;
+      }
+    }
+    else
+    {
+      CompactMatrixType B,BSqrt;
+      B.Ni=G0->BlockSize;
+      B.Nj=G0->BlockSize;
+      B.QComplex=G0->QComplex;
+      B.Name=(char*)G0->Name;
+      for (int i = 0; i < G0->N; i++)
+      {
+        // set B0 of bSigma to sqrt of G0->B[i]
+        B.V = &(G0->V[i*(Sqr(G0->BlockSize)+1)+1]);
+        CompactMatrixSqrt(&B, &BSqrt);
+        CompactMatrixConjugate(&BSqrt);
+        memcpy(bSigma.b, BSqrt.V, Sqr(G0->BlockSize)*sizeof(Complex16));
+        FreeCompactMatrix(&BSqrt);
+        // set A1 of bSigma to A0 of Sigma + G0->a[i] I
+        memcpy(&(bSigma.a[Sqr(G0->BlockSize)]), Sigma->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
+        for(int j=0; j<G0->BlockSize; j++)
+        {
+          bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Re += G0->V[i*(Sqr(G0->BlockSize)+1)].Re;
+          bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Im += G0->V[i*(Sqr(G0->BlockSize)+1)].Im;
+        }
+        // transform to list of poles
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        {
+          printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
+          return 1;
+        }
+        // add poles from bSigmaPole to G
+        memcpy(&(G->V[(G->N)*(Sqr(G->BlockSize)+1)]), bSigmaPole.V, (Sqr(G->BlockSize)+1)*bSigmaPole.N*sizeof(Complex16));
+        G->N+=bSigmaPole.N;
+        FreeBlockListOfPoles(&bSigmaPole);
+      }
+      memcpy(G->a0, G0->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
+    }
+  }
+  OrderBlockListOfPoles(G);
+  G->mu = G0->mu;
+  FreeBlockAndersonMatrix(&bSigma);
+  return 0;
+}
+
+
+int BlockGListListListRepresentationOnGrid(BlockListOfPoles * G0, BlockListOfPoles * Sigma, double *Grid, uint32_t NGridPoints,  BlockListOfPoles *G)
+{
+  if(G0->N==0) // special case when G0 has no poles
+  {
+    CopyBlockListOfPoles(*G0, G);
+    return 0;
+  }
+  // general case. The number of poles in G is determined by the grid
+  if(NGridPoints==0)
+  {
+    printf("Zero gridpoints in BlockGListListListRepresentationOnGrid. That does not make sence.\n");
+    return 1;
+  }
+  // general case. The number of poles in G is determined by the grid
+  G->N = NGridPoints;
+  G->QComplex = G0->QComplex | Sigma->QComplex;
+  G->BlockSize = G0->BlockSize;
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in GListListListRepresentation\n");
+    return 1;
+  }
+  strcpy(G->Name, "G");
+  G->a0 = G0->a0;
+  G->mu = G0->mu;
+  // initialize G
+  if(G->QComplex==0)
+  {
+    for(int i=0;i<G->N;i++)
+    {
+      G->VRe[i*(Sqr(G->BlockSize)+1)]=Grid[i];
+    }
+  }
+  else
+  {
+    for(int i=0;i<G->N;i++)
+    {
+      G->V[i*(Sqr(G->BlockSize)+1)].Re=Grid[i];
+    }
+  }
+  // for each pole in G0 we create an anderson representation of G0 with sigma and rotate this to a list of pole representation
+  BlockListOfPoles bSigmaPole;
+  BlockAndersonMatrixType bSigma;
+  BlockAndersonMatrixFromListOfPolesAsSelfEnergy(Sigma, &bSigma);
+  if(G->QComplex==0)
+  {
+    CompactMatrixType B,BSqrt;
+    B.Ni=G0->BlockSize;
+    B.Nj=G0->BlockSize;
+    B.QComplex=G0->QComplex;
+    B.Name=(char*)G0->Name;
+    for (int i = 0; i < G0->N; i++)
+    {
+      // set B0 of bSigma to sqrt of G0->B[i]
+      B.VRe = &(G0->VRe[i*(Sqr(G0->BlockSize)+1)+1]);
+      CompactMatrixSqrt(&B, &BSqrt);
+      memcpy(bSigma.bRe, BSqrt.VRe, Sqr(G0->BlockSize)*sizeof(double));
+      FreeCompactMatrix(&BSqrt);
+      // set A1 of bSigma to A0 of Sigma + G0->a[i] I
+      memcpy(&(bSigma.aRe[Sqr(G0->BlockSize)]), Sigma->a0Re, Sqr(G0->BlockSize)*sizeof(double));
+      for(int j=0; j<G0->BlockSize; j++)
+      {
+        bSigma.aRe[Sqr(G0->BlockSize) + j + j * G0->BlockSize] += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
+      }
+      // transform to list of poles
+      if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+      {
+        printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
+        return 1;
+      }
+      // add poles from bSigmaPole to G
+      AddBlockListOfPolesOnMeshOfA(G, &bSigmaPole);
+      FreeBlockListOfPoles(&bSigmaPole);
+    }
+    memcpy(G->a0, G0->a0, Sqr(G0->BlockSize)*sizeof(double));
+  }
+  else
+  {
+    if(bSigma.QComplex==0)
+    {
+      RealBlockAndersonMatrixToComplex(&bSigma);
+    }
+    if(G0->QComplex==0)
+    { // G0 real Sigma complex
+      CompactMatrixType B,BSqrt;
+      B.Ni=G0->BlockSize;
+      B.Nj=G0->BlockSize;
+      B.QComplex=G0->QComplex;
+      B.Name=(char*)G0->Name;
+      for (int i = 0; i < G0->N; i++)
+      {
+        // set B0 of bSigma to sqrt of G0->B[i]
+        B.VRe = &(G0->VRe[i*(Sqr(G0->BlockSize)+1)+1]);
+        CompactMatrixSqrt(&B, &BSqrt);
+        for(int j=0;j<Sqr(G0->BlockSize);j++)
+        {
+          bSigma.b[j].Re = BSqrt.VRe[j];
+          bSigma.b[j].Im = 0;
+        }
+        FreeCompactMatrix(&BSqrt);
+        // set A1 of bSigma to A0 of Sigma + G0->a[i] I
+        memcpy(&(bSigma.a[Sqr(G0->BlockSize)]), Sigma->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
+        for(int j=0; j<G0->BlockSize; j++)
+        {
+          bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Re += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
+        }
+        // transform to list of poles
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        {
+          printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
+          return 1;
+        }
+        // add poles from bSigmaPole to G
+        AddBlockListOfPolesOnMeshOfA(G, &bSigmaPole);
+        FreeBlockListOfPoles(&bSigmaPole);
+      }
+      for(int j=0; j<Sqr(G0->BlockSize); j++)
+      {
+        G->a0[j].Re = G0->a0Re[j];
+        G->a0[j].Im = 0;
+      }
+    }
+    else
+    {
+      CompactMatrixType B,BSqrt;
+      B.Ni=G0->BlockSize;
+      B.Nj=G0->BlockSize;
+      B.QComplex=G0->QComplex;
+      B.Name=(char*)G0->Name;
+      for (int i = 0; i < G0->N; i++)
+      {
+        // set B0 of bSigma to sqrt of G0->B[i]
+        B.V = &(G0->V[i*(Sqr(G0->BlockSize)+1)+1]);
+        CompactMatrixSqrt(&B, &BSqrt);
+        CompactMatrixConjugate(&BSqrt);
+        memcpy(bSigma.b, BSqrt.V, Sqr(G0->BlockSize)*sizeof(Complex16));
+        FreeCompactMatrix(&BSqrt);
+        // set A1 of bSigma to A0 of Sigma + G0->a[i] I
+        memcpy(&(bSigma.a[Sqr(G0->BlockSize)]), Sigma->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
+        for(int j=0; j<G0->BlockSize; j++)
+        {
+          bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Re += G0->V[i*(Sqr(G0->BlockSize)+1)].Re;
+          bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Im += G0->V[i*(Sqr(G0->BlockSize)+1)].Im;
+        }
+        // transform to list of poles
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        {
+          printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
+          return 1;
+        }
+        // add poles from bSigmaPole to G
+        AddBlockListOfPolesOnMeshOfA(G, &bSigmaPole);
+        FreeBlockListOfPoles(&bSigmaPole);
+      }
+      memcpy(G->a0, G0->a0, Sqr(G0->BlockSize)*sizeof(Complex16));
+    }
+  }
+  G->mu = G0->mu;
+  FreeBlockAndersonMatrix(&bSigma);
+  return 0;
+}
+
+
+
+
+
 
 
 
@@ -2834,7 +3459,7 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 /*
  *
  */
-int ConvertResponsefunction(ResponsefunctionType *Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
 {
   if(Min->Block==true)
   {

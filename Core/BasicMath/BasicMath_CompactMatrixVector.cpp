@@ -2156,16 +2156,173 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const *
   return 0;
 }
 
-/*
- *A=funinv.H.fun with H a diagonal matrix with the values val on the diagonal
- *  input M defined, fun not initiallized, val allocated
+/*  Returns the Generalized Eigensystem of a non-orthnormal matrix.
+ *  Given a basis psi_i
+ *  Matrix M contains the values psi_i^* . H . psi_j
+ *  Matrix S contains the values psi_i^* . psi_j
+ *
+ *  on exit val defines a diagonal matrix H and
+ *  H = T^* . M . T^{\dag}
+ *  I = T^* . S . T^{\dag}
+ *  S = Sroot . Sroot^{\dag}
+ *
  */
-uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *A, CompactMatrixType * const fun, CompactMatrixType * const funinv, Complex16 *val)
+uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatrixType * const S, CompactMatrixType * const T, CompactMatrixType * const Sroot, double *val)
 {
-  //TODO: implement
-  printf("To Do CompactMatrixGeneralEigensystem\n");
-  return 1;
+  int    info;
+  uint32_t itype = 1;
+  const char *jobz = "V";
+  const char *uplo = "U";
+  uint32_t   lwork = 1 + 6 * M->Ni + 2 * Sqr(M->Ni);
+  uint32_t   liwork = 3 + 5 * M->Ni;
+  int    iwork[liwork];
+  double work[lwork];
+  uint32_t i, j;
+  if (M->Ni != M->Nj)
+  {
+    printf("Generalized Eigensystem called with non-square matrix\n");
+    printf("ERORR!!!!!!\n");
+    return 1;
+  }
+  if (CompactMatrixCopy(*S,Sroot))
+  {
+    printf("CompactMatrixCopy failed to copy S to Sroot in GeneralizedEigensystem\n");
+    return 1;
+  }
+  strcpy(Sroot->Name, "Sqrt of ");
+  strncat(Sroot->Name, S->Name, Max(0, MAXStrLength - 8));
+  for (i = 0; i < Sroot->Ni; i++)
+  {
+    for (j = i + 1; j < Sroot->Nj; j++)
+    {
+      Sroot->VRe[i*Sroot->Nj+j] = 0;
+    }
+  }
+  if (CompactMatrixCopy(*M,T))
+  {
+    printf("CompactMatrixCopy failed to copy M to T in GeneralizedEigensystem\n");
+    FreeCompactMatrix(Sroot);
+    return 1;
+  }
+  strcpy(T->Name, "Eigenvectors of ");
+  strncat(T->Name, M->Name, Max(0, MAXStrLength - 16));
+  if (M->QComplex == 0)
+  {                             /* Real */
+    dsygv(&itype, jobz, uplo, &M->Ni, T->VRe, &M->Ni, Sroot->VRe, &M->Ni, val, work, &lwork, &info);
+    if (info)
+    {
+      printf("dsygv failed in Generalized Eigensystem with info value %i\n", info);
+      printf("While working on matrix %s\n", M->Name);
+      printf("continue diagonalization with dsygvd\n");
+      fflush(stdout);
+      FreeCompactMatrix(T);
+      FreeCompactMatrix(Sroot);
+      if (CompactMatrixCopy(*S,Sroot))
+      {
+        printf("CompactMatrixCopy failed to copy S to Sroot in GeneralizedEigensystem\n");
+        return 1;
+      }
+      strcpy(Sroot->Name, "Sqrt of ");
+      strncat(Sroot->Name, S->Name, Max(0, MAXStrLength - 8));
+      for (i = 0; i < Sroot->Ni; i++)
+      {
+        for (j = i + 1; j < Sroot->Nj; j++)
+        {
+          Sroot->VRe[i*Sroot->Nj+j] = 0;
+        }
+      }
+      if (CompactMatrixCopy(*M,T))
+      {
+        printf("MatrixCopy failed to copy M to T in GeneralizedEigensystem\n");
+        FreeCompactMatrix(Sroot);
+        return 1;
+      }
+      strcpy(T->Name, "Eigenvectors of ");
+      strncat(T->Name, M->Name, Max(0, MAXStrLength - 16));
+      dsygvd(&itype, jobz, uplo, &M->Ni, T->VRe, &M->Ni, Sroot->VRe, &M->Ni, val, work, &lwork, iwork, &liwork, &info);
+      if (info)
+      {
+        printf("ERORR also dsygvd failed in Eigensystem with info value %i\n", info);
+        fflush(stdout);
+        return 1;
+      }
+    }
+    return 0;
+  }
+  else
+  {                             /* complex */
+    uint32_t  lcwork = 2 * M->Ni + Sqr(M->Ni);
+    Complex16 cwork[lcwork];
+    if(Sroot->QComplex==0)
+    {
+      MakeCompactRealMatrixComplex(Sroot);
+    }
+    zhegv(&itype, jobz, uplo, &M->Ni, M->V, &M->Ni, Sroot->V, &M->Ni, val, cwork, &lcwork, work, &info);
+    if (info != 0)
+    {
+      printf("zhegv failed in Generalized Eigensystem with info value %i\n", info);
+      printf("While working on matrix %s\n", M->Name);
+      printf("continue diagonalization with zhegvd\n");
+      fflush(stdout);
+      FreeCompactMatrix(T);
+      FreeCompactMatrix(Sroot);
+      if (CompactMatrixCopy(*S,Sroot))
+      {
+        printf("CompactMatrixCopy failed to copy S to Sroot in GeneralizedEigensystem\n");
+        return 1;
+      }
+      strcpy(Sroot->Name, "Sqrt of ");
+      strncat(Sroot->Name, S->Name, Max(0, MAXStrLength - 8));
+      for (i = 0; i < Sroot->Ni; i++)
+      {
+        for (j = i + 1; j < Sroot->Nj; j++)
+        {
+          Sroot->VRe[i*Sroot->Nj+j] = 0;
+        }
+      }
+      if (CompactMatrixCopy(*M,T))
+      {
+        printf("MatrixCopy failed to copy M to T in GeneralizedEigensystem\n");
+        FreeCompactMatrix(Sroot);
+        return 1;
+      }
+      strcpy(T->Name, "Eigenvectors of ");
+      strncat(T->Name, M->Name, Max(0, MAXStrLength - 16));
+      dsygvd(&itype, jobz, uplo, &M->Ni, T->VRe, &M->Ni, Sroot->VRe, &M->Ni, val, work, &lwork, iwork, &liwork, &info);
+      if (info)
+      {
+        printf("ERORR also dsygvd failed in Eigensystem with info value %i\n", info);
+        fflush(stdout);
+        return 1;
+      }
+      if(Sroot->QComplex==0)
+      {
+        MakeCompactRealMatrixComplex(Sroot);
+      }
+      zhegvd(&itype, jobz, uplo, &M->Ni, M->V, &M->Ni, Sroot->V, &M->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+      if (info != 0)
+      {
+        printf("ERORR, also zhegvd failed in Generalized Eigensystem with info value %i\n", info);
+        fflush(stdout);
+        return 1;
+      }
+    }
+  }
+  return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 uint32_t CompactMatrixLeftRightNormalize(CompactMatrixType * const funL, CompactMatrixType * const funR)
 {
@@ -3616,6 +3773,10 @@ uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, Bl
   FreeCompactMatrix(&vec);
   return 0;
 }
+
+
+
+
 
 
 
@@ -5338,14 +5499,14 @@ CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size)
 	out.Nj = M.Nj * size;
 	out.QComplex = M.QComplex;
 	InitCompactMatrix(&out);
-	for (uint i = 0; i < M.Ni; ++i)
+	for (uint32_t i = 0; i < M.Ni; ++i)
 	{
-		for (uint j = 0; j < M.Nj; ++j)
+		for (uint32_t j = 0; j < M.Nj; ++j)
 		{
-			for (uint k = 0; k < size; ++k)
+			for (uint32_t k = 0; k < size; ++k)
 			{
-				uint iNew = i * size + k;
-				uint jNew = j * size + k;
+				uint32_t iNew = i * size + k;
+				uint32_t jNew = j * size + k;
 				if ((bool) out.QComplex)
 				{
 					out.V[iNew * out.Nj + jNew].Re = M.V[i * M.Nj + j].Re;
@@ -5446,7 +5607,7 @@ CompactMatrixType CompactidentityMatrix(const int size)
 
 CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &inds)
 {
-	for (uint i = 0; i < (uint) inds.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t) inds.size(); ++i)
 	{
 		if (inds[i] < 0 || inds[i] >= M.Ni || inds[i] >= M.Nj)
 		{
@@ -5460,11 +5621,11 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &
 	Msub.QComplex = M.QComplex;
 	InitCompactMatrix(&Msub);
 	Msub.OnLuaStack = M.OnLuaStack;
-	for (int i = 0; i < (uint) inds.size(); ++i)
+	for (int i = 0; i < (uint32_t) inds.size(); ++i)
 	{
-		for (int j = 0; j < (uint) inds.size(); ++j)
+		for (int j = 0; j < (uint32_t) inds.size(); ++j)
 		{
-			uint ind = inds[i] * M.Nj + inds[j];
+			uint32_t ind = inds[i] * M.Nj + inds[j];
 			if (M.QComplex == 0)
 			{
 				Msub.VRe[i * Msub.Nj + j] = M.VRe[ind];

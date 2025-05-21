@@ -111,7 +111,7 @@ public:
   ExpectationValues(const vector<WaveFunctionType> &psiList, OperatorType hamil, const vector<OperatorType> &opList, const map<string, vector<double> > &extraLists, bool hasHamiltonian, double zero =1E-10, bool sortByEnergy = false, bool calcSigma = false)
   {
     this->hasHamiltonian = hasHamiltonian;
-    for (uint i = 0; i < (uint) psiList.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) psiList.size(); ++i)
     {
       values.push_back(vector<double>());
     }
@@ -120,16 +120,16 @@ public:
     {
       headers.push_back("E");
       energies = expectationValuesSingleOperator(psiList, hamil, zero);
-      for (uint i = 0; i < (uint) values.size(); ++i)
+      for (uint32_t i = 0; i < (uint32_t) values.size(); ++i)
       {
         values[i].push_back(energies[i]);
       }
     }
-    for (uint j = 0; j < (uint) opList.size(); ++j)
+    for (uint32_t j = 0; j < (uint32_t) opList.size(); ++j)
     {
       headers.push_back(opList[j].Name);
       vector<double> tmp = expectationValuesSingleOperator(psiList, opList[j], zero);
-      for (uint i = 0; i < (uint) values.size(); ++i)
+      for (uint32_t i = 0; i < (uint32_t) values.size(); ++i)
       {
         values[i].push_back(tmp[i]);
       }
@@ -139,14 +139,14 @@ public:
       headers.push_back(iter->first);
       if (iter->second.size() != psiList.size())
         cout << "Warning: Size " << iter->second.size() << " of List with name " << iter->first << " is not equal to " << psiList.size() << ", the number of Wavefunctions." << endl;
-      for (uint i = 0; i < (uint) iter->second.size(); ++i)
+      for (uint32_t i = 0; i < (uint32_t) iter->second.size(); ++i)
         values[i].push_back(iter->second[i]);
     }
     if (hasHamiltonian && calcSigma)
     {
       headers.push_back("std-dev");
       vector<double> tmp = sigmaValues(psiList, hamil, energies);
-      for (uint i = 0; i < (uint) values.size(); ++i)
+      for (uint32_t i = 0; i < (uint32_t) values.size(); ++i)
         values[i].push_back(tmp[i]);
     }
     if (hasHamiltonian && sortByEnergy)
@@ -161,9 +161,9 @@ public:
   //  Methods:
 public:
   
-  void print(uint colWidth = 8, uint printHeaderEvery = 0)
+  void print(uint32_t colWidth = 8, uint32_t printHeaderEvery = 0)
   {
-    for (uint i = 0; i < (uint) values.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) values.size(); ++i)
     {
       if (i == 0 || (printHeaderEvery > 0 && i % printHeaderEvery == 0))
       {
@@ -180,7 +180,7 @@ private:
     cout << endl;
     cout << blankFill(colWidth);
     cout << " ";
-    for (uint i = 0; i < (uint) headers.size(); ++i)
+    for (uint32_t i = 0; i < (uint32_t) headers.size(); ++i)
     {
       string name(headers[i]);
       if (name.length() > colWidth - 1)
@@ -191,12 +191,12 @@ private:
     cout << endl;
   }
   
-  void printLine(uint i, uint colWidth)
+  void printLine(uint32_t i, uint32_t colWidth)
   {
     string num = numberToStringMaxWidth(i + 1, colWidth);
     cout << num;
     cout << blankFill(colWidth - (int)num.length());
-    for (uint j = 0; j < (uint) values[i].size(); ++j)
+    for (uint32_t j = 0; j < (uint32_t) values[i].size(); ++j)
     {
       num = numberToStringMaxWidth(values[i][j], colWidth - 1);
       cout << num;

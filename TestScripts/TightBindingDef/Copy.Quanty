@@ -1,0 +1,70 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - Copy                          --")
+print("--------------------------------------------------------")
+
+-- We define a tight binding object
+
+-- set parameters
+dAB = 0.2
+tnn = 1.1
+-- create the tight binding Hamiltonian
+HTB = NewTightBinding()
+HTB.Name = "dichalcogenide tight binding"
+HTB.Cell = {{sqrt(3),0,0},
+						{sqrt(3/4),3/2,0},
+						{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"p", {"0"}}}},
+							{"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB.Hopping =  {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+
+-- and copy it
+
+HTB2 = TightBinding.Copy(HTB) -- this is a copy
+HTB3 = HTB                    -- this is a pointer to the same object
+
+-- The two objects should be the same. We can test this by evaluating the tight binding Hamiltonian at some random k vector
+
+if ((Matrix.ToUserdata(HTB2(0.1,0.2,0.3)-HTB(0.1,0.2,0.3))==Matrix.Zero(2))==false) then
+	error("Tightbinding.Copy did not give a tight binding object back with the same values\n", 1)
+end
+
+-- we now change one of the tight binding objects
+tnn = 2*tnn
+HTB.Hopping =  {{"A.p","A.p",{         0,   0,0}, {{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+-- now HTB should be different from HTB2
+-- but HTB should be the same as THB3
+if ((Matrix.ToUserdata(HTB2(0.1,0.2,0.3)-HTB(0.1,0.2,0.3))==Matrix.Zero(2))==true) then
+	error("Tightbinding.Copy did not give a tight binding object back that is independent of its original\n", 1)
+end
+if ((Matrix.ToUserdata(HTB3(0.1,0.2,0.3)-HTB(0.1,0.2,0.3))==Matrix.Zero(2))==false) then
+	error("TB3=TB did not give a tight binding object back with a pointer to the same struct\n", 1)
+end
+
+HTB=nil
+HTB2=nil
+HTB3=nil
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+

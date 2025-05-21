@@ -1,0 +1,136 @@
+-- Determine working directory (same as the directory of the input script)
+directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
+
+
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - CalculateBands                --")
+print("--------------------------------------------------------")
+
+
+-- model 1
+
+-- set parameters
+dAB = 0.0
+tnn = 1.1
+-- create the tight binding Hamiltonian
+HTB1 = NewTightBinding()
+HTB1.Name = "dichalcogenide tight binding"
+HTB1.Cell = {{sqrt(3),0,0},
+						 {sqrt(3/4),3/2,0},
+						 {0,0,1}}
+HTB1.Atoms =  { {"A", {0,0,0},       {{"p", {"0"}}}},
+								{"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB1.Hopping = {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+								{"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+								{"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+								{"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+								{"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+								{"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+								{"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}
+								}
+
+
+-- define the k-path
+kpath1 = { {"M",{0,2*pi/3,0}} , 100 , {"Gamma",{0,0,0}} , 100 ,  {"K",{4*pi/(3*sqrt(3)),0,0}} , 100 , {"M",{2*pi/(sqrt(3)),0,0}} }
+-- calculate the energies
+BandEnergies = TightBinding.CalculateBands(HTB1,kpath1)
+-- plot the bands
+pl = Graphics.PlotBands(kpath1,BandEnergies,{{"LineWidth",0.001},{"Frame",{{"Ymin",-4},{"Ymax",4},{"dYTick",1},{"YLabel","Energy"}}}});
+-- save plot to disk
+SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model1.svg",'w')
+file:write(SVGpl)
+file:close()
+
+-- model 2
+
+-- set parameters
+sssigma =-2
+ppsigma = 1
+spsigma = 0.2
+ep =  2
+es = -1
+-- create the tight binding Hamiltonian
+HTB2 = NewTightBinding()
+HTB2.Name = "Simple Cubic lattice with s and p orbital"
+HTB2.Cell = {{1,0,0},
+						 {0,1,0},
+						 {0,0,1}}
+HTB2.Atoms = { {"A", {0,0,0}, { {"s", {"0"}},{"p", {"x","y","z"}} } }}
+HTB2.Hopping = { {"A.p","A.p",{ 0, 0, 0}, {{ep,0,0},{0,ep,0},{0,0,ep}}    },
+	               {"A.p","A.p",{ 1, 0, 0}, {{ppsigma,0,0},{0,0,0},{0,0,0}} },
+								 {"A.p","A.p",{-1, 0, 0}, {{ppsigma,0,0},{0,0,0},{0,0,0}} },
+								 {"A.p","A.p",{ 0, 1, 0}, {{0,0,0},{0,ppsigma,0},{0,0,0}} },
+								 {"A.p","A.p",{ 0,-1, 0}, {{0,0,0},{0,ppsigma,0},{0,0,0}} },
+	               {"A.p","A.p",{ 0, 0, 1}, {{0,0,0},{0,0,0},{0,0,ppsigma}} },
+	               {"A.p","A.p",{ 0, 0,-1}, {{0,0,0},{0,0,0},{0,0,ppsigma}} },
+	               {"A.s","A.s",{ 1, 0, 0}, {{sssigma}} },
+	               {"A.s","A.s",{-1, 0, 0}, {{sssigma}} },
+	               {"A.s","A.s",{ 0, 1, 0}, {{sssigma}} },
+	               {"A.s","A.s",{ 0,-1, 0}, {{sssigma}} },
+	               {"A.s","A.s",{ 0, 0, 1}, {{sssigma}} },
+	               {"A.s","A.s",{ 0, 0,-1}, {{sssigma}} },
+	               {"A.s","A.p",{ 1, 0, 0}, {{ spsigma,0,0}} },
+	               {"A.s","A.p",{-1, 0, 0}, {{-spsigma,0,0}} },
+	               {"A.s","A.p",{ 0, 1, 0}, {{0, spsigma,0}} },
+	               {"A.s","A.p",{ 0,-1, 0}, {{0,-spsigma,0}} },
+	               {"A.s","A.p",{ 0, 0, 1}, {{0,0, spsigma}} },
+	               {"A.s","A.p",{ 0, 0,-1}, {{0,0,-spsigma}} },
+	               {"A.p","A.s",{ 1, 0, 0}, {{-spsigma},{0},{0}} },
+                 {"A.p","A.s",{-1, 0, 0}, {{ spsigma},{0},{0}} },
+	               {"A.p","A.s",{ 0, 1, 0}, {{0},{-spsigma},{0}} },
+	               {"A.p","A.s",{ 0,-1, 0}, {{0},{ spsigma},{0}} },
+	               {"A.p","A.s",{ 0, 0, 1}, {{0},{0},{-spsigma}} },
+	               {"A.p","A.s",{ 0, 0,-1}, {{0},{0},{ spsigma}} }
+}
+-- define the k-path
+kpath2 = { {"Gamma",{0,0,0}} , 100 , {"X",{pi,0,0}} , 100 , {"M",{pi,pi,0}} , 100 , {"R",{pi,pi,pi}} , 170 , {"Gamma",{0,0,0}} }
+-- define functions to calculate the character from the eigenfunctions
+-- these functions take a vector as input and a double as output
+function EigenFunctionToCharacter2s(fun)
+  return Complex.Re( fun[1]*Conjugate(fun[1]) )
+end
+function EigenFunctionToCharacter2p(fun)
+	return Complex.Re( fun[2]*Conjugate(fun[2]) + fun[3]*Conjugate(fun[3]) + fun[4]*Conjugate(fun[4]))
+end
+-- calculate the energies and characters
+BandEnergies, Characters, Characterp = TightBinding.CalculateBands(HTB2,kpath2,EigenFunctionToCharacter2s,EigenFunctionToCharacter2p)
+
+-- single color
+pla = Graphics.PlotBands(kpath2,BandEnergies,{{"Interpolate",false},{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+plb = Graphics.PlotBands(kpath2,BandEnergies,{{"Interpolate",true},{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+
+-- mochrome color scheme
+plc = Graphics.PlotBands(kpath2,BandEnergies,Characterp,{{"Interpolate",false},{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+pld = Graphics.PlotBands(kpath2,BandEnergies,Characterp,{{"Interpolate",true},{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+
+-- rgb color set
+ple = Graphics.PlotBands(kpath2,BandEnergies,Characters,0*Characterp,Characterp,{{"Interpolate",false},{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+plf = Graphics.PlotBands(kpath2,BandEnergies,Characters,0*Characterp,Characterp,{{"Interpolate",true},{"LineWidth",0.005},{"Frame",{{"Ymin",-13},{"Ymax",13},{"dYTick",2},{"YLabel","Energy"}}}});
+
+
+SVGpl = Graphics.ToSVG(pla,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model2a.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGpl = Graphics.ToSVG(plb,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model2b.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGpl = Graphics.ToSVG(plc,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model2c.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGpl = Graphics.ToSVG(pld,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model2d.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGpl = Graphics.ToSVG(ple,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model2e.svg",'w')
+file:write(SVGpl)
+file:close()
+SVGpl = Graphics.ToSVG(plf,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Bands_Model2f.svg",'w')
+file:write(SVGpl)
+file:close()

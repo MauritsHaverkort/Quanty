@@ -44,18 +44,18 @@ int sprintfAdd(char ** A, const char *fmt, ...)
 }
 
 // We have string A->str of length A->length
-// We add the string defined by *fmt of length extralen
+// We add the string defined by *fmt of length smaller than MaxBuffSize
 //    ... It is the users respomnsibility to make sure that this is ok
 // If A->length + extralen is smaller than a->allocated we need to realloc the string
-int sprintfAdd(DynamicString *A, int extralen, const char *fmt, ...)
+int sprintfAdd(DynamicString *A, int MaxBuffSize, const char *fmt, ...)
 {
   char * Atemp;
-  int retval;
+  int extralen;
   va_list args;
   va_start ( args, fmt );
-  if(A->allocated < A->length+extralen)
+  if(A->allocated < A->length+MaxBuffSize)
   {
-    A->allocated = ( A->allocated + extralen ) * 2;
+    A->allocated = Max(A->length+MaxBuffSize,2*(A->allocated));
     Atemp = (char*)realloc(A->str, A->allocated+1);
     if(Atemp==NULL)
     {
@@ -64,10 +64,10 @@ int sprintfAdd(DynamicString *A, int extralen, const char *fmt, ...)
     }
     A->str = Atemp;
   }
-  retval = vsnprintf(A->str+A->length,extralen,fmt,args);
+  extralen = vsnprintf(A->str+A->length,MaxBuffSize,fmt,args);
   A->length = A->length + extralen;
   va_end(args);
-  return retval;
+  return 0;
 }
 
 

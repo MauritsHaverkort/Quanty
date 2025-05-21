@@ -1,41 +1,41 @@
-bool isRowZero(const CompactMatrixType &M, const uint row, const double precision)
+bool isRowZero(const CompactMatrixType &M, const uint32_t row, const double precision)
 {
 	if ((bool) M.QComplex)
 	{
-		for (uint j = 0; j < (uint) M.Nj; ++j)
+		for (int j = 0; j <  M.Nj; ++j)
 			if ((Abs(M.V[row * M.Nj + j].Re) > precision) || (Abs(M.V[row * M.Nj + j].Im) > precision))
 				return false;
 	} else
 	{
-		for (uint j = 0; j < (uint) M.Nj; ++j)
+		for (int j = 0; j < M.Nj; ++j)
 			if (Abs(M.VRe[row * M.Nj + j]) > precision)
 				return false;
 	}
 	return true;
 }
 
-bool isRowZero(const CompactMatrixType &M, const uint row)
+bool isRowZero(const CompactMatrixType &M, const uint32_t row)
 {
 	return isRowZero(M, row, 10 * DBL_EPSILON);
 }
 
-bool isColZero(const CompactMatrixType &M, const uint col, const double precision)
+bool isColZero(const CompactMatrixType &M, const uint32_t col, const double precision)
 {
 	if ((bool) M.QComplex)
 	{
-		for (uint i = 0; i < (uint) M.Ni; ++i)
+		for (int i = 0; i < M.Ni; ++i)
 			if ((Abs(M.V[i * M.Nj + col].Re) > precision) || (Abs(M.V[i * M.Nj + col].Im) > precision))
 				return false;
 	} else
 	{
-		for (uint i = 0; i < (uint) M.Ni; ++i)
+		for (int i = 0; i < M.Ni; ++i)
 			if (Abs(M.VRe[i * M.Nj + col]) > precision)
 				return false;
 	}
 	return true;
 }
 
-bool isColZero(const CompactMatrixType &M, const uint col)
+bool isColZero(const CompactMatrixType &M, const uint32_t col)
 {
 	return isColZero(M, col, 10 * DBL_EPSILON);
 }
@@ -44,14 +44,14 @@ bool isZeroMatrix(const CompactMatrixType &M, const double zero)
 {
 	if ((bool) M.QComplex)
 	{
-		for (uint i = 0; i < (uint) M.Ni; ++i)
-			for (uint j = 0; j < (uint) M.Nj; ++j)
+		for (int i = 0; i < M.Ni; ++i)
+			for (int j = 0; j < M.Nj; ++j)
 				if ((Abs(M.V[i * M.Nj + j].Re) > zero) || (Abs(M.V[i * M.Nj + j].Im) > zero))
 					return false;
 	} else
 	{
-		for (uint i = 0; i < (uint) M.Ni; ++i)
-			for (uint j = 0; j < (uint) M.Nj; ++j)
+		for (int i = 0; i < M.Ni; ++i)
+			for (int j = 0; j < M.Nj; ++j)
 				if (Abs(M.VRe[i * M.Nj + j]) > zero)
 					return false;
 	}
@@ -60,9 +60,9 @@ bool isZeroMatrix(const CompactMatrixType &M, const double zero)
 
 void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat)
 {
-	for (uint i = 0; i < (uint) matMat.size(); ++i)
+	for (int i = 0; i < matMat.size(); ++i)
 	{
-		for (uint j = 0; j < (uint) matMat[i].size(); ++j)
+		for (int j = 0; j < matMat[i].size(); ++j)
 		{
 			if (!isNullMatrix(matMat[i][j]))
 			{
@@ -74,8 +74,8 @@ void FreeCompactMatrixMatrix(vector<vector<CompactMatrixType> > &matMat)
 
 void FreeMatrixMatrix(vector<vector<MatrixType> > &matMat)
 {
-	for (uint i = 0; i < (uint) matMat.size(); ++i)
-		for (uint j = 0; j < (uint) matMat.size(); ++j)
+	for (int i = 0; i < matMat.size(); ++i)
+		for (int j = 0; j < matMat.size(); ++j)
 			if (!isNullMatrix(matMat[i][j]))
 				FreeMatrix(&matMat[i][j]);
 }
@@ -87,7 +87,7 @@ void CompactMatrixCutDimensions(CompactMatrixType &M)
 		cout << "Error in Cut Dimensions: Number of rows (" << M.Ni << ") not equal to number of colums (" << M.Ni << ")." << endl;
 		return;
 	}
-	uint newDim;
+	uint32_t newDim;
 	for (newDim = M.Ni; newDim > 0; --newDim)
 		if (!isRowZero(M, newDim-1) || !isColZero(M,newDim-1))
 			break;
@@ -96,7 +96,7 @@ void CompactMatrixCutDimensions(CompactMatrixType &M)
 	FreeCompactMatrix(&pointerToGarbage);
 }
 
-CompactMatrixType SubspaceRotationMatrix(const uint dim1, const CompactMatrixType &T, const uint dim2)
+CompactMatrixType SubspaceRotationMatrix(const uint32_t dim1, const CompactMatrixType &T, const uint32_t dim2)
 {
 	CompactMatrixType out, one1, one2;
 	one1.QComplex = 0;
@@ -130,8 +130,8 @@ CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M)
 	out.a0 = M.a0;
 	out.b0 = M.b0;
 	out.mu = M.mu;
-	for (uint i = 0; i < M.Ni; ++i)
-		for (uint j = 0; j < M.Nj; ++j)
+	for (int i = 0; i < M.Ni; ++i)
+		for (int j = 0; j < M.Nj; ++j)
 			if (M.QComplex == 0)
 			{
 				out.VRe[i * out.Nj + j] = M.VRe[i][j];
@@ -152,18 +152,18 @@ CompactMatrixType removeSpin(const CompactMatrixType &M)
 	InitCompactMatrix(&out);
 	if (out.QComplex == 0)
 	{
-		for (uint i = 0; i < out.Ni; ++i)
+		for (int i = 0; i < out.Ni; ++i)
 		{
-			for (uint j = 0; j < out.Nj; ++j)
+			for (int j = 0; j < out.Nj; ++j)
 			{
 				out.VRe[i * out.Nj + j] = M.VRe[2 * i * M.Nj + 2 * j];
 			}
 		}
 	} else
 	{
-		for (uint i = 0; i < out.Ni; ++i)
+		for (int i = 0; i < out.Ni; ++i)
 		{
-			for (uint j = 0; j < out.Nj; ++j)
+			for (int j = 0; j < out.Nj; ++j)
 			{
 				out.V[i * out.Nj + j].Re = M.V[2 * i * M.Nj + 2 * j].Re;
 				out.V[i * out.Nj + j].Im = M.V[2 * i * M.Nj + 2 * j].Im;
@@ -176,7 +176,7 @@ CompactMatrixType removeSpin(const CompactMatrixType &M)
 static int LuaRemoveSpin(lua_State *L)
 {
 	CompactMatrixType M, Mout;
-	uint len = (uint) lua_gettop(L);
+	int len = lua_gettop(L);
 	if (len != 1)
 		return luaL_error(L, "Error: LuaRemoveSpin called with %d argmuents, only 1 expected, a Matrix.", len);
 	lua_check(L, 1, M);
@@ -190,9 +190,9 @@ static int LuaRemoveSpin(lua_State *L)
 	return 1;
 }
 
-CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows, const vector<uint> &cols)
+CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &rows, const vector<uint32_t> &cols)
 {
-	for (uint i = 0; i < (uint) rows.size(); ++i)
+	for (int i = 0; i < rows.size(); ++i)
 	{
 		if (rows[i] < 0 || rows[i] >= M.Ni)
 		{
@@ -200,7 +200,7 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows
 			throw std::exception();
 		}
 	}
-	for (uint i = 0; i < (uint) cols.size(); ++i)
+	for (int i = 0; i < cols.size(); ++i)
 	{
 		if (cols[i] < 0 || cols[i] >= M.Nj)
 		{
@@ -209,17 +209,17 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows
 		}
 	}
 	CompactMatrixType Msub;
-	Msub.Ni = (uint) rows.size();
-	Msub.Nj = (uint) cols.size();
+	Msub.Ni = (uint32_t) rows.size();
+	Msub.Nj = (uint32_t) cols.size();
 	Msub.QComplex = M.QComplex;
 	InitCompactMatrix(&Msub);
 	Msub.OnLuaStack = M.OnLuaStack;
-	for (int k = 0; k < (uint) rows.size(); ++k)
+	for (size_t k = 0; k < rows.size(); ++k)
 	{
-		uint i = rows[k];
-		for (int l = 0; l < (uint) cols.size(); ++l)
+		int i = rows[k];
+		for (size_t l = 0; l < cols.size(); ++l)
 		{
-			uint j = cols[l];
+			int j = cols[l];
 			if (M.QComplex == 0)
 			{
 				Msub.VRe[k * Msub.Nj + l] = M.VRe[i * M.Nj + j];
@@ -236,7 +236,7 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint> &rows
 double RealMatrixTrace(const CompactMatrixType *M)
 {
 	double trace = 0;
-	for (uint i = 0; i < M->Ni; ++i)
+	for (int i = 0; i < M->Ni; ++i)
 		trace += M->VRe[i * M->Nj + i];
 	return trace;
 }
@@ -246,7 +246,7 @@ Complex16 ComplexMatrixTrace(const CompactMatrixType *M)
 	Complex16 trace;
 	trace.Re = 0;
 	trace.Im = 0;
-	for (uint i = 0; i < M->Ni; ++i)
+	for (int i = 0; i < M->Ni; ++i)
 	{
 		trace.Re += M->V[i * M->Nj + i].Re;
 		trace.Im += M->V[i * M->Nj + i].Im;
@@ -263,31 +263,31 @@ CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, 
 	}
 	CompactMatrixType out;
 	CompactMatrixCopy(in, &out);
-	uint Nj = out.Nj;
-	for (uint i = 0; i < (uint) out.Ni; ++i)
+	int Nj = out.Nj;
+	for (int i = 0; i < out.Ni; ++i)
 	{
-		for (uint j = 0; j < i; ++j)
+		for (int j = 0; j < i; ++j)
 		{
 			double overl = 0;
-			for (uint k = 0; k < Nj; ++k)
+			for (int k = 0; k < Nj; ++k)
 			{
-				for (uint l = 0; l < Nj; ++l)
+				for (int l = 0; l < Nj; ++l)
 				{
 					overl += out.VRe[j * Nj + k] * Overlap.VRe[k * Nj + l] * out.VRe[i * Nj + l];
 				}
 			}
 			if (overl != 0)
 			{
-				for (uint k = 0; k < Nj; ++k)
+				for (int k = 0; k < Nj; ++k)
 				{
 					out.VRe[i * Nj + k] -= overl * out.VRe[j * Nj + k];
 				}
 			}
 		}
 		double norm = 0;
-		for (uint k = 0; k < Nj; ++k)
+		for (int k = 0; k < Nj; ++k)
 		{
-			for (uint l = 0; l < Nj; ++l)
+			for (int l = 0; l < Nj; ++l)
 			{
 				norm += out.VRe[i * Nj + k] * Overlap.VRe[k * Nj + l] * out.VRe[i * Nj + l];
 			}
@@ -295,7 +295,7 @@ CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, 
 		if (norm != 1.0)
 		{
 			norm = 1.0 / sqrt(norm);
-			for (uint j = 0; j < (uint) Nj; ++j)
+			for (int j = 0; j < Nj; ++j)
 				out.VRe[i * Nj + j] = out.VRe[i * Nj + j] * norm;
 		}
 	}

@@ -4,7 +4,6 @@
 *.xcworkspacedata
 *.plist
 .DS_Store
-Makefile
 .cproject
 .project
 .settings/

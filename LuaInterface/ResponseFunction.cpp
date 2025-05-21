@@ -468,13 +468,12 @@ static int LuaCalculateSelfEnergy(lua_State *L)
   return 1;
 }
 
-/*   Given Delta_0(omega) as a response function
- *   on a list of poles form it represents a tight binding Hamiltonian with:
- *      a_0 the onsite energy of the impurity
- *      b_i the hopping to a bath site with energy a_i
- *   Sigma(omega)
+/*   Given G_0(omega) and Sigma(omega) on the stack as response functons *
+ *   Calculate 1 / ( G_0(w-Sigma(w))^{-1} + Sigma(w) )
+ *   This yields the reponse function of a tight binding model whereby all sites get the self energy Sigma(omega)
+ *   except for the site where we act on
  *
- *   Calculate Delta(oemga) = Delta_0( omega - Sigma(omega) )
+ *   Options allow to specify an energy grid for the final response function in Anderson representation
  */
 static int LuaCalculateHybridizationFunction(lua_State *L)
 {
@@ -517,7 +516,104 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
   return 1;
 }
 
-/*
+/*   Given G_0(omega) and Sigma(omega) on the stack as response functons *
+ *   Calculate G_0(omega-Sigma(omega))
+ *   This yields the reponse function of a tight binding model whereby all sites get the self energy Sigma(omega)
+ *
+ *   Options allow to specify an energy grid for the final response function in ListOfPoles representation
+ *
+ *   We have implemented several methods using different approximations
+ *     Not all methods are valid for all systems
+ *     Some methods migth treat systems with off diagonal elements incorrectly
+ *     Some mehtods might treat cases where we deflate the blocksize in a tri-diagonal form incorrectly
+ */
+static int LuaCalculateGfromG0andSigma(lua_State *L)
+{
+  ResponsefunctionType *G0,*G,*Sigma;
+  CompactVectorType Grid={0,0,NULL};
+  double Epsilon=1000*DBL_EPSILON;
+  char* Method;
+  Method = (char*)"Automatic";
+  LuaOptionsType CalculateSelfEnergyOptions[]={
+    {"Method","char*",&Method},
+    {"Epsilon","double",&(Epsilon)},
+    {"EnergyGrid","Vector",&Grid},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if( LuaTestOptionsList(L,-1) )
+  {
+    LuaCheckOptions(L,-1,CalculateSelfEnergyOptions);
+    len--;
+  }
+  if(len!=2)
+  {
+    return luaL_error(L, "CalculateHybridizationFunction should be called with D0 and Sigma as the argument (and an optional 3rd argument with options)\n Called with %d arguments\n",len);
+  }
+  G0    = luaL_checkResponsefunction(L,1);
+  Sigma = luaL_checkResponsefunction(L,2);
+  if(G0->Block!=Sigma->Block) return luaL_error(L, "CalculateGfromG0andSigma should be called with G0 and Sigma either both as block response functions or both as single valued response functions\n");
+  if(BlockResponseFunctionGetBlockSize(G0) != BlockResponseFunctionGetBlockSize(Sigma)) return luaL_error(L, "CalculateGfromG0andSigma should be called with G0 and Sigma with same dimension of BlockSize\n");
+  G     = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  if(Grid.Ni==0)
+  { // not on a grid
+    if ((strcmp(Method,"TriDiagonalG0")==0) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)))
+    {
+      // note that this method is not gennerally correct
+      ResponseFunctionAddSelfEnergyDenseViaTri(G0, Sigma, G, Epsilon);
+    }
+    else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)))
+    {
+      // note that this method is not gennerally correct
+      CalculateGfromG0andSigma(G0, Sigma, G, Epsilon);
+    }
+    else if (strcmp(Method,"AndG0")==0)
+    {
+      // note that this method is not gennerally correct
+      ResponseFunctionAddSelfEnergyViaAndLP(G0, Sigma, G,Epsilon, NULL);
+    }
+    else
+    {
+      return luaL_error(L, "CalculateHybridizationFunction called with unkown method.\n");
+    }
+  }
+  else
+  { // on a grid
+    if ((strcmp(Method,"TriDiagonalG0")==0) )
+    {
+      //TODO: memory problem
+      // note that this method is not gennerally correct
+      ResponseFunctionAddSelfEnergyOnGridViaG0Tri(G0, Sigma, &Grid, G, Epsilon);
+    }
+    else if ((strcmp(Method,"ListOfPolesG0")==0) || ((Sigma->Block==false)&&(strcmp(Method,"Automatic")==0)) || ((Sigma->Block==true)&&(strcmp(Method,"Automatic")==0)) )
+    {
+      // note that this method is not gennerally correct
+      CalculateGfromG0andSigmaOnGrid(G0, Sigma, &Grid, G, Epsilon);
+    }
+    else if (strcmp(Method,"AndG0")==0)
+    {
+      // note that this method is not gennerally correct
+      ResponseFunctionAddSelfEnergyViaAndLP(G0, Sigma, G,Epsilon, &Grid);
+    }
+    else
+    {
+      return luaL_error(L, "CalculateHybridizationFunction called with unkown method.\n");
+    }
+    free(Grid.VRe);
+    Grid.Ni=0;
+    Grid.QComplex=0;
+  }
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  FreeResponsefunction(G0);
+  FreeResponsefunction(Sigma);
+  return 1;
+}
+                                       
+
+
+
+
+
+/*  G(mu+w) -> -G(mu-w)^*
  *
  */
 static int LuaInvertEnergy(lua_State *L)
@@ -2314,7 +2410,7 @@ static int LuaResponseFunctionToCompactMatrix(lua_State *L)
     bool   Deflate;
     double SingularValue;
   } Options;
-  Options.Deflate = false;
+  Options.Deflate = true;
   Options.SingularValue = DBL_MIN;
   LuaOptionsType LuaOptions[]={
     {"Deflate",      "bool",  &(Options.Deflate)},
@@ -2325,10 +2421,10 @@ static int LuaResponseFunctionToCompactMatrix(lua_State *L)
     LuaCheckOptions(L, -1, LuaOptions);
   }
   B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-  luaL_setmetatable(L, "Matrix_Type");
-  B->OnLuaStack=true;
   A = luaL_checkResponsefunction(L,1);
   ResponseFunctionToCompactMatrix(A, B, Options.Deflate, Options.SingularValue);
+  luaL_setmetatable(L, "Matrix_Type");
+  B->OnLuaStack=true;
   return 1;
 }
 
@@ -2745,8 +2841,11 @@ static int LuaResponseFunctionTableIndexChop(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_Index[] = {
   {"mu",     LuaResponseFunctionIndexMu},
+  {"Mu",     LuaResponseFunctionIndexMu},
   {"type",   LuaResponseFunctionIndexType},
+  {"Type",   LuaResponseFunctionIndexType},
   {"name",   LuaResponseFunctionIndexName},
+  {"Name",   LuaResponseFunctionIndexName},
   {NULL, NULL}
 };
 
@@ -2911,7 +3010,9 @@ static int LuaResponseFunctionNewIndexName(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_NewIndex[] = {
   {"mu",     LuaResponseFunctionNewIndexMu},
+  {"Mu",     LuaResponseFunctionNewIndexMu},
   {"name",   LuaResponseFunctionNewIndexName},
+  {"Name",   LuaResponseFunctionNewIndexName},
   {NULL, NULL}
 };
 
@@ -3009,6 +3110,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ToOperator", LuaResponseFunctionToOperator},
   {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
   {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
+  {"CalculateGfromG0andSigma",LuaCalculateGfromG0andSigma},
   {"InvertEnergy", LuaInvertEnergy},
   {"CreateBitMasks", LuaResponseFunctionToBitMask},
   {"Chop", LuaChop},

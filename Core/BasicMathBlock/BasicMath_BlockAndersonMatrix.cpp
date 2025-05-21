@@ -88,6 +88,34 @@ uint32_t ComplexBlockAndersonMatrixToReal(BlockAndersonMatrixType *const A)
   return 0;
 }
 
+uint32_t RealBlockAndersonMatrixToComplex(BlockAndersonMatrixType *const A)
+{
+  Complex16 *Ac, *Bc;
+  if(A->QComplex!=0) return 0;
+  Ac = (Complex16*)malloc(A->BlockSize*A->BlockSize*(1+A->N)*sizeof(Complex16));
+  Bc = (Complex16*)malloc(A->BlockSize*A->BlockSize*(A->N)*sizeof(Complex16));
+  for(int i=0;i<A->BlockSize*A->BlockSize*(A->N); i++)
+  {
+    Ac[i].Re = A->aRe[i];
+    Ac[i].Im = 0;
+    Bc[i].Re = A->bRe[i];
+    Bc[i].Im = 0;
+  }
+  for(int i=A->BlockSize*A->BlockSize*(A->N);i<A->BlockSize*A->BlockSize*(1+A->N); i++)
+  {
+    Ac[i].Re = A->aRe[i];
+    Ac[i].Im = 0;
+  }
+  A->QComplex=1;
+  free(A->aRe);
+  free(A->bRe);
+  A->a = Ac;
+  A->b = Bc;
+  return 0;
+}
+
+
+
 uint32_t BlockAndersonMatrixChop(BlockAndersonMatrixType *const A, double const Epsilon)
 {
   uint32_t i,KeepComplex=0;
@@ -311,7 +339,7 @@ int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType const * cons
         B->VRe[B->N * (1+Sqr(B->BlockSize))] = val[j];
         SetCompactMatrixToZero(&AifunSqr);
         FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr);
-        while((j<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
+        while(((j+1)<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
         {
           j++;
           ToDiv++;
@@ -344,7 +372,7 @@ int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType const * cons
         B->V[B->N * (1+Sqr(B->BlockSize))].Im = 0;
         SetCompactMatrixToZero(&AifunSqr);
         FunTrDotFunCCPreAllocated(&Aifun, j, &AifunSqr);
-        while((j<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
+        while(((j+1)<A->BlockSize)&&(fabs(val[j]-val[j+1])<epsilon))
         {
           j++;
           ToDiv++;
@@ -367,5 +395,64 @@ int BlockAndersonMatrixInverseToListOfPoles(BlockAndersonMatrixType const * cons
   free(Ai.Name);
   free(Bi.Name);
   free(Ci.Name);
+  return 0;
+}
+
+int BlockAndersonMatrixFromListOfPolesAsSelfEnergy(BlockListOfPoles const * const Sigma, BlockAndersonMatrixType * const G)
+{
+  G->N         = Sigma->N + 1;
+  G->QComplex  = Sigma->QComplex;
+  G->BlockSize = Sigma->BlockSize;
+  if (InitBlockAndersonMatrix(G))
+  {
+    printf("InitBlockAndersonMatrix failed in BlockAndersonMatrixFromListOfPolesAsSelfEnergy\n");
+    return 1;
+  }
+  G->mu = Sigma->mu;
+  // fill G with Sigma
+  // need compact matrices to be able to use CompactMatrixSqrt
+  CompactMatrixType S,SqrtS;
+  S.Ni=Sigma->BlockSize;
+  S.Nj=Sigma->BlockSize;
+  S.QComplex=Sigma->QComplex;
+  S.Name = (char*)(Sigma->Name);
+  if(G->QComplex==0)
+  {
+    // A0
+    memcpy(&(G->aRe[Sqr(Sigma->BlockSize)]), Sigma->a0Re, Sqr(Sigma->BlockSize)*sizeof(double));
+    // bSigma.A[i+2] = Sigma.a[i] * I
+    // bSigma.B[i+1] = sqrt( Sigma.B[i] )
+    for(int i=0;i<Sigma->N;i++)
+    {
+      for(int j=0;j<Sigma->BlockSize;j++)
+      {
+        G->aRe[j + j * Sigma->BlockSize + (i+2)*Sqr(Sigma->BlockSize)] = Sigma->VRe[i * (Sqr(Sigma->BlockSize)+1)];
+      }
+      S.VRe=&(Sigma->VRe[1+ i * (Sqr(Sigma->BlockSize)+1)]);
+      CompactMatrixSqrt(&S, &SqrtS);
+      memcpy(&(G->bRe[(i+1)*Sqr(Sigma->BlockSize)]), SqrtS.VRe, Sqr(Sigma->BlockSize)*sizeof(double));
+      FreeCompactMatrix(&SqrtS);
+    }
+  }
+  else
+  {
+    // A0
+    memcpy(&(G->a[Sqr(Sigma->BlockSize)]), Sigma->a0, Sqr(Sigma->BlockSize)*sizeof(Complex16));
+    // bSigma.A[i+2] = Sigma.a[i] * I
+    // bSigma.B[i+1] = sqrt( Sigma.B[i] )
+    for(int i=0;i<Sigma->N;i++)
+    {
+      for(int j=0;j<Sigma->BlockSize;j++)
+      {
+        G->a[j + j * Sigma->BlockSize + (i+2)*Sqr(Sigma->BlockSize)].Re = Sigma->V[i * (Sqr(Sigma->BlockSize)+1)].Re;
+        G->a[j + j * Sigma->BlockSize + (i+2)*Sqr(Sigma->BlockSize)].Im = Sigma->V[i * (Sqr(Sigma->BlockSize)+1)].Im;
+      }
+      S.V=&(Sigma->V[1+ i * (Sqr(Sigma->BlockSize)+1)]);
+      CompactMatrixSqrt(&S, &SqrtS);
+      memcpy(&(G->b[(i+1)*Sqr(Sigma->BlockSize)]), SqrtS.V, Sqr(Sigma->BlockSize)*sizeof(Complex16));
+      FreeCompactMatrix(&SqrtS);
+    }
+    
+  }
   return 0;
 }

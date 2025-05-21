@@ -1,0 +1,99 @@
+print("--------------------------------------------------------")
+print("-- Begin Math - SphericalHarmonics                    --")
+print("--------------------------------------------------------")
+
+
+
+-- test orthonormality
+
+lmax = 6
+Nphi   = (2*lmax+1)
+Ntheta = (lmax+1)
+theta, Weight = GaussLegendreQuadrature(Ntheta)
+for i=1,Ntheta do
+	theta[i] = math.acos(theta[i])
+end
+
+function lmtoindex(l,m)
+	return 1 + (l+1)*l + m
+end
+
+d = (2*pi / Nphi)
+
+
+S = Matrix.Zero((1+lmax) * (1+lmax))
+for l1=0,lmax do
+	for m1=-l1,l1 do
+		for l2=0,lmax do
+			for m2=-l2,l2 do
+				local Snow=0
+		    for i=1,Ntheta do
+		    	for j=1,Nphi do
+				    phi = j * 2 * pi/Nphi
+						Snow = Snow + SphericalHarmonicY(l1,m1,theta[i],-phi) * SphericalHarmonicY(l2,m2,theta[i], phi) * Weight[i]
+					end
+				end
+				S[lmtoindex(l1,m1)][lmtoindex(l2,m2)] = Snow * d
+			end
+		end
+	end
+end
+
+if(not(Chop(S-Matrix.Identity((1+lmax) * (1+lmax)),1E-14)==Matrix.Zero((1+lmax) * (1+lmax)))) then
+	error("SphericalHarmonicY does not define an orthonromal set of functions")
+end
+
+
+
+S = Matrix.Zero((1+lmax) * (1+lmax))
+for l1=0,lmax do
+	for m1=-l1,l1 do
+		for l2=0,lmax do
+			for m2=-l2,l2 do
+				local Snow=0
+				for i=1,Ntheta do
+					for j=1,Nphi do
+						phi = j * 2 * pi/Nphi
+						Snow = Snow + TesseralHarmonicZ(l1,m1,theta[i],phi) * TesseralHarmonicZ(l2,m2,theta[i], phi) * Weight[i]
+					end
+				end
+				S[lmtoindex(l1,m1)][lmtoindex(l2,m2)] = Snow * d
+			end
+		end
+	end
+end
+
+if(not(Chop(S-Matrix.Identity((1+lmax) * (1+lmax)),1E-14)==Matrix.Zero((1+lmax) * (1+lmax)))) then
+	error("TesseralHarmonicZ does not define an orthonromal set of functions")
+end
+
+
+
+
+S = Matrix.Zero((1+lmax) * (1+lmax))
+for l1=0,lmax do
+	for m1=-l1,l1 do
+		for l2=0,lmax do
+			for m2=-l2,l2 do
+				local Snow=0
+				for i=1,Ntheta do
+					for j=1,Nphi do
+						phi = j * 2 * pi/Nphi
+						Snow = Snow + KubicHarmonicK(l1,m1,theta[i],phi) * KubicHarmonicK(l2,m2,theta[i], phi) * Weight[i]
+					end
+				end
+				S[lmtoindex(l1,m1)][lmtoindex(l2,m2)] = Snow * d
+			end
+		end
+	end
+end
+
+if(not(Chop(S-Matrix.Identity((1+lmax) * (1+lmax)),1E-14)==Matrix.Zero((1+lmax) * (1+lmax)))) then
+	error("KubicHarmonicK does not define an orthonromal set of functions")
+end
+
+
+
+print("--------------------------------------------------------")
+print("-- End Math - SphericalHarmonics                      --")
+print("--------------------------------------------------------")

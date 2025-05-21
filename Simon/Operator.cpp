@@ -2,15 +2,15 @@
  * If the operator is only ever to be multiplied with wavefunctions that have some empty orbitals, any annihilation term
  * acting on them can be deleted to save time. This is very specific. I need it.
  */
-void PrepareOperatorForEmptyOrbitals(OperatorType *O, const vector<uint16_t> &ind, uint minLength)
+void PrepareOperatorForEmptyOrbitals(OperatorType *O, const vector<uint16_t> &ind, int minLength)
 {
 	uint16_t *oadd;
-	for (uint length = minLength; length <= O->MaxLength; ++length)
+	for (int length = minLength; length <= O->MaxLength; ++length)
 	{
-		for (uint i = 0; i < (O->l[length].N); ++i)
+		for (int i = 0; i < (O->l[length].N); ++i)
 		{
 			oadd = &(O->l[length].o[i * length]);
-			for (uint j = 0; j < length; ++j)
+			for (int j = 0; j < length; ++j)
 			{
 				if (isElementOf(oadd[j], ind))
 				{
@@ -39,7 +39,7 @@ static int LuaPrepareOperatorForEmptyOrbitals(lua_State *L)
 {
 	OperatorType in, *out;
 	vector < uint16_t > inds;
-	uint minLength;
+	uint32_t minLength;
 	uint32_t len = (uint32_t) lua_gettop(L);
 	if (len < 2 || len > 3) return luaL_error(L, "Error: PrepareOperatorForEmptyOrbitals called with %d arguments, 2 or 3 expected, Operator, list of indices and optional minimal length!", len);
 	if (!luaL_isType(L, 1, in)) return luaL_error(L, "Error in PrepareOperatorForEmptyOrbitals: First argument should be an operator!");

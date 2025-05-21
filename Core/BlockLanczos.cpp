@@ -666,6 +666,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -818,6 +819,27 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]).Im);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -886,6 +908,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -1038,6 +1061,27 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]).Im);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -1106,6 +1150,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -1258,6 +1303,27 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]).Im);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -1326,6 +1392,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -1478,6 +1545,28 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  double c;
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->aRe[((M->N*M->BlockSize)+i)*M->BlockSize+j]),&c);
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->bRe[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]),&c);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -1592,6 +1681,7 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -1744,6 +1834,27 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]).Im);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -1812,6 +1923,7 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -1964,6 +2076,27 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]).Im);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -2032,6 +2165,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -2184,6 +2318,27 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]).Im);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -2252,6 +2407,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   VerbosityPrintf(0x0100,"BasisSetSize: %12i ", v[1][0].N);
   for(k=1;k<M->N;k++)
   {
@@ -2406,6 +2562,28 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in v[vi] and v[vim]
+  double c;
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,v[vi][i],v[vi][j],&(M->aRe[((M->N*M->BlockSize)+i)*M->BlockSize+j]),&c);
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,v[vi][i],v[vim][j],&(M->bRe[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]),&c);
+      }
+    }
   }
   if(M->N<=1)
   {
@@ -2535,6 +2713,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -2687,6 +2866,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Im));
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -2750,6 +2950,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -2902,6 +3103,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Im));
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -2965,6 +3187,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -3117,6 +3340,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Im));
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -3177,6 +3421,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -3328,6 +3573,28 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  double c;
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->aRe[((M->N*M->BlockSize)+i)*M->BlockSize+j]),&c);
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->bRe[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]),&c);
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -3585,6 +3852,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Im));
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -3648,6 +3936,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -3800,6 +4089,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Im));
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -3863,6 +4173,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -4015,6 +4326,27 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->a[((M->N*M->BlockSize)+i)*M->BlockSize+j].Im));
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Re),&(M->b[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j].Im));
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -4075,6 +4407,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   vim=0;
   vip=2;
   Npsivi=Npsi;
+  M->BlockSizeList[1]=Npsi;
   for(k=1;k<M->N;k++)
   {
     // v[vip] = H v[vi]^T
@@ -4226,6 +4559,28 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
     vip=(vip+1)%3;
     Npsivim=Npsivi;
     Npsivi=Npsi;
+    M->BlockSizeList[k+1]=Npsi;
+  }
+  // We have created M->N blocks of states, but only calculated M->N - 1 matrix elements.
+  // We need to fill the last part of the tridiagonal matrix.
+  // The states are in psiBasis[M->N - 1] and psiBasis[M->N - 2]
+  double c;
+  for(i=0;i<Npsi;i++)
+  {
+    for(j=0;j<Npsi;j++)
+    {
+      PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-1][j],&(M->aRe[((M->N*M->BlockSize)+i)*M->BlockSize+j]),&c);
+    }
+  }
+  if(M->N>1)
+  {
+    for(i=0;i<Npsi;i++)
+    {
+      for(j=0;j<Npsi;j++)
+      {
+        PsiPrimeOperatorPsi(H,psiBasis[M->N-1][i],psiBasis[M->N-2][j],&(M->bRe[(((M->N-1)*M->BlockSize)+i)*M->BlockSize+j]),&c);
+      }
+    }
   }
   for(i=0;i<Sqr(M->BlockSize);i++)
   {
@@ -5411,11 +5766,11 @@ uint32_t BlockLanczosGroundStateConserveBasis(OperatorType * H, WaveFunctionType
  *    H:             Operator assumed to be Hermitian (not tested and function fails if it is not)
  *    Npsi:          number of states to converge
  *    Settings:      ConvergenceSettingsType* pointer to important values that need to be set:
- *                   Settings->zero    smallest possitive double that is considered different from zero when comparing convergence creteria
+ *                   Settings->zero    smallest positive double that is considered different from zero when comparing convergence criteria
  *                   Settings->epsilon smallest positive double that is considered different from zero when truncating wavefunctions
  *    StartingPoint: a set of restrictions defining the starting point wave function
  *                   if StartingPoint.N = 0 it is assumed that the functions psi are intialized and one starts from there
- *    Restrictions:  a set of restrictions makeing the basis smaler
+ *    Restrictions:  a set of restrictions making the basis smaller
  *    psi:           a pointer to Npsi functions (If StartingPoint.N=0 they should be initialized as form a basis for the starting point of the Lanczos routine, otherwise they should be unititiallized)
  *    NBitsKey:      The number of bits in the key (only used when StartingPoint.N != 0
  *
@@ -5440,7 +5795,7 @@ uint32_t BlockGroundState(OperatorType *H, uint32_t const Npsi, ConvergenceSetti
     HE0 = H->l[0].V[0].Re;
   }
   // if StartingPoint.N != 0
-  // create Npsi independent functions fullfiling the starting point conditions
+  // create Npsi independent functions fulfilling the starting point conditions
   // all functions must have the same basis
   // if H is complex or mixed psi will be complex, if H is real psi is real
   VerbosityPrintf(0x10000000,"Start of BlockGroundState\n");

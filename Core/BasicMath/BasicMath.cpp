@@ -77,6 +77,24 @@ double PowerDoubleInt(double x, uint32_t a)
   }
   return retval;
 }
+/*  find the next largest integer of the form 2^n
+ *
+ */
+int pow2roundup (int x)
+{
+    if (x < 0)
+        return 0;
+    --x;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    return x+1;
+}
+
+
+
 
 /*
 *  z = x cross y for vectors of lenght 3
@@ -461,7 +479,7 @@ bool Test_uint32_t_array_in_range(const uint32_t min, const uint32_t max, uint32
 template <typename T>
 bool isElementOf(const T element, const vector<T> &set)
 {
-	for (uint i = 0; i < (uint)set.size(); ++i)
+	for (uint32_t i = 0; i < (uint32_t)set.size(); ++i)
 	{
 		if (element == set[i])
 			return true;
