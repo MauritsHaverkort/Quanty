@@ -31,8 +31,8 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
               *EmaxPole=A->VRe[0]+1;
               return 0;
             }
-            if( A->VRe[i*(1+Sqr(A->N))] < *EminPole ) *EminPole=A->VRe[i*(1+Sqr(A->N))];
-            if( A->VRe[i*(1+Sqr(A->N))] > *EmaxPole ) *EmaxPole=A->VRe[i*(1+Sqr(A->N))];
+            if( A->VRe[i*(1+Sqr(A->BlockSize))] < *EminPole ) *EminPole=A->VRe[i*(1+Sqr(A->BlockSize))];
+            if( A->VRe[i*(1+Sqr(A->BlockSize))] > *EmaxPole ) *EmaxPole=A->VRe[i*(1+Sqr(A->BlockSize))];
           }
         }
         else
@@ -45,8 +45,8 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
           }
           for(i=0;i<A->N;i++)
           {
-            if( A->V[i*(1+Sqr(A->N))].Re < *EminPole ) *EminPole=A->V[i*(1+Sqr(A->N))].Re;
-            if( A->V[i*(1+Sqr(A->N))].Re > *EmaxPole ) *EmaxPole=A->V[i*(1+Sqr(A->N))].Re;
+            if( A->V[i*(1+Sqr(A->BlockSize))].Re < *EminPole ) *EminPole=A->V[i*(1+Sqr(A->BlockSize))].Re;
+            if( A->V[i*(1+Sqr(A->BlockSize))].Re > *EmaxPole ) *EmaxPole=A->V[i*(1+Sqr(A->BlockSize))].Re;
           }
         }
         return 0;

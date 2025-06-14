@@ -585,6 +585,7 @@ int LuaPlotGraphics(lua_State * L)
   {
     double   ScaleOffDiagonal;
     double   ShiftOffDiagonal;
+    double   WatterfallShift;
     
     int      Nrow;
     int      Ncolumn;
@@ -665,6 +666,7 @@ int LuaPlotGraphics(lua_State * L)
   Options.PlotPoints=600;
   Options.ScaleOffDiagonal=1;
   Options.ShiftOffDiagonal=0;
+  Options.WatterfallShift=0;
   LuaOptionsType LuaGraphicsOptions[]={
     {"Frame","FramePlotOptions",&(Options.Frame)},
     {"Axis", "FramePlotOptions",&(Options.Frame)},
@@ -677,7 +679,7 @@ int LuaPlotGraphics(lua_State * L)
     {"PlotPoints","int",&(Options.PlotPoints)},
     {"ScaleOffDiagonal","double",&(Options.ScaleOffDiagonal)},
     {"ShiftOffDiagonal","double",&(Options.ShiftOffDiagonal)},
-    
+    {"WatterfallShift", "double",&(Options.WatterfallShift)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, len))
   {
@@ -750,6 +752,16 @@ int LuaPlotGraphics(lua_State * L)
             SpectraTypeArray Spec;
             A = luaL_checkResponsefunction(L,-1);
             ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
+            if(Options.WatterfallShift!=0)
+            {
+              for(int j=0;j<Spec.NSpectra;j++)
+              {
+                for(int k=0;k<Spec.Spec[j].N;k++)
+                {
+                  Spec.Spec[j].Re[k]+=i*Options.WatterfallShift;
+                }
+              }
+            }
             free(Spec.Name);
             a->Spec[i]=Spec.Spec[0];
             FreeResponsefunctionIncludingOriginalPointer(A);
@@ -892,7 +904,7 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), Options.Negate);
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), Options.Negate, Options.WatterfallShift);
         free(LPORe);
         free(LPOIm);
       }
@@ -1020,7 +1032,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), Options.Negate);
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), Options.Negate, Options.WatterfallShift);
         free(LPORe);
         free(LPOIm);
       }

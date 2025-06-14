@@ -387,7 +387,7 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
   return 0;
 }
 
-int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint8_t *LineColorRe, double PointSizeRe, uint8_t *PointColorRe, double LineWidthIm, uint8_t *LineColorIm, double PointSizeIm, uint8_t *PointColorIm, bool Negate)
+int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint8_t *LineColorRe, double PointSizeRe, uint8_t *PointColorRe, double LineWidthIm, uint8_t *LineColorIm, double PointSizeIm, uint8_t *PointColorIm, bool Negate, double YShift)
 {
   PointType *DataPoints;
   int NPoints=Data->N+1;
@@ -402,12 +402,12 @@ int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
   for(i=0;i<NPoints;i++)
   {
     DataPoints[i].X = i * Data->Emax / (NPoints-1) + (NPoints-i-1) * Data->Emin / (NPoints-1);
-    DataPoints[i].Y = datasign * Data->Re[i];
+    DataPoints[i].Y = datasign * Data->Re[i] + YShift;
   }
   AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NPoints, LineWidthRe, LineColorRe, PointSizeRe, PointColorRe);
   for(i=0;i<NPoints;i++)
   {
-    DataPoints[i].Y = datasign * Data->Im[i];
+    DataPoints[i].Y = datasign * Data->Im[i] + YShift;
   }
   AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NPoints, LineWidthIm, LineColorIm, PointSizeIm, PointColorIm);
   free(DataPoints);
@@ -545,17 +545,17 @@ int PlotPointsToGraphics(GraphicsType* Graphics, PointType *Data, int NPoints, L
 int PlotSpectraTypeToGraphics(GraphicsType* Graphics, SpectraType *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, bool Negate)
 {
   PlotAllButDataToGraphics(Graphics, FPO);
-  AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, LPORe->LineWidth, LPORe->LineColor, LPORe->PointSize, LPORe->PointColor, LPOIm->LineWidth, LPOIm->LineColor, LPOIm->PointSize, LPOIm->PointColor, Negate);
+  AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, LPORe->LineWidth, LPORe->LineColor, LPORe->PointSize, LPORe->PointColor, LPOIm->LineWidth, LPOIm->LineColor, LPOIm->PointSize, LPOIm->PointColor, Negate, 0);
   return 0;
 }
 
-int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, bool Negate)
+int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, bool Negate, double WatterfallShift)
 {
   int i;
   PlotAllButDataToGraphics(Graphics, FPO);
   for(i=0;i<Data->NSpectra;i++)
   {
-    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, Negate);
+    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, Negate, i*WatterfallShift);
   }
   return 0;
 }
