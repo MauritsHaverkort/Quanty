@@ -63,38 +63,175 @@ void SetNegativeToZeroListOfPoles(ListOfPoles * const A)
   }
 }
 
+//  given a <= b <= c
+//  calcualtes
+//  w1 = (b-a) / (c-a)
+//  w2 = (c-b) / (c-a)
+//   catches edge cases
+//   allow for numerical inaccuracies
+void inline FindWeigth(double const * const a, double const * const b, double const * const c, double *w2, double *w1)
+{
+  const double denom = *c-*a;
+  const double scale = DBL_EPSILON * ( fabs(*a) + fabs(*c) );
+  if (denom <= scale)
+  {
+    *w1=0.5;
+    *w2=0.5;
+    return;
+  }
+  *w1 = (*b-*a);
+  *w2 = (*c-*b);
+  if (*w1 > *w2)
+  {
+    *w1 /= denom;
+    *w2 = 1-*w1;
+  }
+  else
+  {
+    *w2 /= denom;
+    *w1 = 1-*w2;
+  }
+}
+
+// we shift negative weight starting at indeces StartIndex to larger/smaller indices
+// If the weight at the new index is negative we also shift this weight
+// The function conserverse the 0th but not higher
+void ShiftNegativeSpectralWeightToLargerIndices0(ListOfPoles * const A, int StartIndex, int MaxIndex)
+{
+  int i=StartIndex;
+  while ((A->b[i]<=0) && (i<MaxIndex))
+  {
+    A->b[i+1] += A->b[i];
+    A->b[i] = 0;
+    i++;
+  }
+}
+void ShiftNegativeSpectralWeightToSmallerIndices0(ListOfPoles * const A, int StartIndex, int MinIndex)
+{
+  int i=StartIndex;
+  while ((A->b[i]<=0) && (i>MinIndex))
+  {
+    A->b[i-1] += A->b[i];
+    A->b[i] = 0;
+    i--;
+  }
+}
+// The function conserverse the 0th and 1st norm
+// We conserver the 1st norm locally by changing the pole energies.
+// If we merge pole i and i+1 we get
+// a_{i+1} -> ( a_i b_i + a_{i+1} b_{i+1} ) / ( b_i + b_{i+1} )
+// b_{i+1} -> b_i + b_{i+1}
+//
+// if ( b_i + b_{i+1} ) is really small this can lead to a very large shift of the energy
+// we thus continue to merge poles ontill a_{i+1} < a_{i+2}
+void ShiftNegativeSpectralWeightToLargerIndices1(ListOfPoles * const A, int StartIndex, int MaxIndex)
+{
+  int i=StartIndex;
+  while ( (i<MaxIndex) && ( (A->b[i]<=0) || (A->a[i] >= A->a[i+1]) ) )
+  {
+    if ( fabs(A->b[i] + A->b[i+1]) <= DBL_EPSILON * (fabs(A->b[i]) + fabs(A->b[i+1])))
+    {
+      A->b[i] = 0;
+      A->b[i+1] = 0;
+      i++;
+    }
+    else
+    {
+      A->a[i+1] = (A->a[i+1] * A->b[i+1] + A->a[i] * A->b[i] ) / (A->b[i+1] + A->b[i]);
+      A->b[i+1] += A->b[i];
+      A->b[i] = 0;
+      i++;
+    }
+  }
+}
+void ShiftNegativeSpectralWeightToSmallerIndices1(ListOfPoles * const A, int StartIndex, int MinIndex)
+{
+  int i=StartIndex;
+  while ( (i>MinIndex) && ( (A->b[i]<=0) || (A->a[i] <= A->a[i-1]) ) )
+  {
+    if ( fabs(A->b[i] + A->b[i-1]) <= DBL_EPSILON * (fabs(A->b[i]) + fabs(A->b[i-1])))
+    {
+      A->b[i] = 0;
+      A->b[i-1] = 0;
+      i--;
+    }
+    else
+    {
+      A->a[i-1] = (A->a[i-1] * A->b[i-1] + A->a[i] * A->b[i] ) / (A->b[i-1] + A->b[i]);
+      A->b[i-1] += A->b[i];
+      A->b[i] = 0;
+      i--;
+    }
+  }
+}
+
 // This function can leave negative spectral weight at the edges
 // otherwise it removes the negative spectral weight weilst keeping locally
 // the frist moments correct.
 void MergeNegativeToNeighbourListOfPolesSorted(ListOfPoles * const A)
 {
+  if(A->N==0) return;
   int i,j;
-  int muindex;
-  double WeightLeft,WeightRight,dE;
+  int muindex, muindexL,muindexR;
+  double WeightLeft,WeightRight;
+  // find the index for the chemical potential such that
+  // A->a[muindexL] < a->mu
+  // A->a[muindexR] > a->mu
+  // A->a[muindex] == a->mu
+  // indices are -1 or A->N if there is no solution to the previous equations
   muindex=0;
-  while((muindex<A->N)&&(A->b[muindex]<A->mu))
+  while((muindex<A->N)&&(A->a[muindex]<A->mu))
   {
     muindex++;
   }
-  muindex--;
+  muindexR = muindex;
+  muindexL = muindex-1;
+  muindex=-1;
+  if((muindexL>0) && (A->a[muindexL]==A->mu))
+  {
+    muindex = muindexL;
+    muindexL--;
+  }
+  if((muindexR<A->N) && (A->a[muindexR]==A->mu))
+  {
+    muindex = muindexR;
+    muindexR++;
+  }
+  // at the chemical potential
+  if((muindex!=-1) && (A->b[muindex]<0))
+  {
+    if(muindex==0)
+    {
+      A->b[muindex+1] += A->a[muindex];
+      A->b[muindex] = 0;
+    }
+    else if(muindex==A->N-1)
+    {
+      A->b[muindex-1] += A->a[muindex];
+      A->b[muindex] = 0;
+    }
+    else
+    {
+      FindWeigth(&(A->a[muindex-1]), &(A->a[muindex]), &(A->a[muindex+1]), &WeightLeft, &WeightRight);
+      A->b[muindex-1] += A->b[muindex] * WeightLeft;
+      A->b[muindex+1] += A->b[muindex] * WeightRight;
+      A->b[muindex] = 0;
+    }
+  }
   // left of chemical potential
-  for(i=muindex-1;i>0;i--)
+  for(i=muindexL;i>0;i--)
   {
     if(A->b[i]>=0) continue;
-    for(j=i+1;j<=muindex;j++)
+    for(j=i+1;j<=muindexL;j++)
     {
       // find a previous pole to the right with positive weight
-      if(A->b[j]==0) continue;
-      dE = A->a[j] - A->a[i-1];
-      WeightRight = ( A->a[i] - A->a[i-1] ) / dE;
-      WeightLeft = ( A->a[j] - A->a[i] ) / dE;
+      if(A->b[j]<=0) continue;
+      FindWeigth(&(A->a[i-1]), &(A->a[i]), &(A->a[j]), &WeightLeft, &WeightRight);
       if(-(WeightRight * A->b[i]) > A->b[j] )
       {
         // b[j] cannot fully compensate the negative weight b[i].
-        // We need to find the factor 0 < f < 1 which can be compensated
-        // partially. After merging, the resulting weight b[j] must be zero:
-        // b[j] + WeightRight * f * b[i] == 0
-        // WeigthToShiftRight = A->b[j] / WeightRight;
+        // We move a weight b[j] from i to j and a weigth b[j] * wr / wl to b[i-1]
+        // We thus add a total weight of (1 + wr/wl) * b[j] = b[j]/wl to b[i]
         A->b[i]   += A->b[j] / WeightRight;
         A->b[i-1] -= WeightLeft  * A->b[j] / WeightRight;
         A->b[j] = 0;
@@ -111,27 +248,19 @@ void MergeNegativeToNeighbourListOfPolesSorted(ListOfPoles * const A)
     }
   }
   // right of chemical potential
-  muindex++;
-  if(muindex==A->N) return;
-  if(A->mu == A->b[muindex]) muindex++;
-  if(muindex==A->N) return;
-  for(i=muindex+1;i<A->N-1;i++)
+  for(i=muindexR;i<A->N-1;i++)
   {
     if(A->b[i]>=0) continue;
-    for(j=i-1;j>=muindex;j--)
+    for(j=i-1;j>=muindexR;j--)
     {
       // find a previous pole to the left with positive weight
-      if(A->b[j]==0) continue;
-      dE = A->a[i+1] - A->a[j];
-      WeightLeft  = ( A->a[i+1] - A->a[i] ) / dE;
-      WeightRight = ( A->a[i] - A->a[j] ) / dE;
+      if(A->b[j]<=0) continue;
+      FindWeigth(&(A->a[j]), &(A->a[i]), &(A->a[i+1]), &WeightLeft, &WeightRight);
       if(-(WeightLeft * A->b[i]) > A->b[j] )
       {
         // b[j] cannot fully compensate the negative weight b[i].
-        // We need to find the factor 0 < f < 1 which can be compensated
-        // partially. After merging, the resulting weight b[j] must be zero:
-        // b[j] + WeightLeft * f * b[i] == 0
-        // WeigthToShiftLeft = A->b[j] / WeightLeft;
+        // We move a weight b[j] from i to j and a weigth b[j] * wr / wl to b[i+1]
+        // We thus add a total weight of (1 + wr/wl) * b[j] = b[j]/wl to b[i]
         A->b[i]   += A->b[j] / WeightLeft;
         A->b[i+1] -= WeightRight  * A->b[j] / WeightLeft;
         A->b[j] = 0;
@@ -147,6 +276,10 @@ void MergeNegativeToNeighbourListOfPolesSorted(ListOfPoles * const A)
       }
     }
   }
+  ShiftNegativeSpectralWeightToLargerIndices0(A, 0, muindexL);
+  ShiftNegativeSpectralWeightToSmallerIndices0(A, muindexL,0);
+  ShiftNegativeSpectralWeightToSmallerIndices0(A, A->N-1, muindexR);
+  ShiftNegativeSpectralWeightToLargerIndices0(A, muindexR, A->N-1);
 }
 
 uint32_t AddListOfPoles(ListOfPoles * const A, ListOfPoles B)
@@ -1140,107 +1273,53 @@ uint32_t ListOfPolesRemovePositiveEnergy(ListOfPoles * const A, double const mu)
 /*   A <- A-B
  *   The energy of the poles in B is adjusted to be on the same "grid" as the poles in A
  *   If A pole in A becomes negative weight it is substracted from the remainder of A
- *   If A has only one pole left the returned weight can be negative
+ *   If A has only one pole left above and or below the chemical potential the returned weight can be negative
  */
-uint32_t SubtractListOfPoles(ListOfPoles * const A, const ListOfPoles B)
+uint32_t SubtractListOfPoles(ListOfPoles * const A, ListOfPoles const * const B, double const mu)
 {
-  uint32_t i, NRes, iMin;
-  double VRes[A->N + B.N], WRes[A->N + B.N];
-  if (A->N == 0)
+  //
+  // special B->N==0
+  if (B->N==0)
   {
-    if (B.N==0)
-    {
-      A->a0 -= B.a0;
-      return 0;
-    }
-    A->N=1;
-    A->a = (double*)realloc(A->a,sizeof(double));
-    A->b = (double*)realloc(A->b,sizeof(double));
-  };
+    A->a0 -= B->a0;
+    return 0;
+  }
+  A->N += B->N;
+  A->a = (double*)realloc(A->a,A->N * sizeof(double));
+  if(A->a==NULL)
+  {
+    printf("Realloc failed in SubtractListOfPoles\n Fatal error");
+    return 1;
+  }
+  A->b = (double*)realloc(A->b,A->N * sizeof(double));
+  if(A->b==NULL)
+  {
+    printf("Realloc failed in SubtractListOfPoles\n Fatal error");
+    return 1;
+  }
+  memcpy(&(A->a[A->N-B->N]), B->a, B->N*sizeof(double));
+  memcpy(&(A->b[A->N-B->N]), B->b, B->N*sizeof(double));
+  for(int i=A->N-B->N;i<A->N;i++)
+  {
+    A->b[i]*=-1;
+  }
   OrderListOfPoles(A);
-  A->a0 -= B.a0;
-  /* copy B to Res */
-  for (i = 0; i < B.N; i++)
-  {
-    VRes[i] = B.a[i];
-    WRes[i] = B.b[i];
-  }
-  NRes = B.N;
-  /* subtract B from A */
-  while (NRes != 0)
-  {
-    /* find neighbors in A for VRes[NRes-1] */
-    /* special case *NA=1 */
-    if (A->N == 1)
-    {
-      if (fabs(A->b[0] - WRes[NRes - 1]) > (DBL_MIN + DBL_EPSILON * fabs(WRes[NRes - 1] + A->b[0])))
-      {
-        A->a[0] += WRes[NRes - 1] * (A->a[0] - VRes[NRes - 1]) / (A->b[0] - WRes[NRes - 1]);
-      }
-      A->b[0] -= WRes[NRes - 1];
-      NRes--;
-    }
-    else
-    {
-      if (VRes[NRes - 1] > A->a[A->N - 2])
-      {
-        iMin = A->N - 2;
-      }
-      else
-      {
-        iMin = A->N - 2;
-        for (i = 1; i < A->N; i++)
-        {
-          if (VRes[NRes - 1] < A->a[i])
-          {
-            iMin = i - 1;
-            break;
-          }
-        }
-      }
-      if (fabs(A->a[iMin + 1] - A->a[iMin]) < (DBL_MIN + DBL_EPSILON * fabs(A->a[iMin + 1] - VRes[NRes - 1])))
-      {
-        A->b[iMin] -= 0.5 * WRes[NRes - 1];
-        A->b[iMin + 1] -= 0.5 * WRes[NRes - 1];
-      }
-      else
-      {
-        A->b[iMin + 1] -= ((VRes[NRes - 1] - A->a[iMin]) / (A->a[iMin + 1] - A->a[iMin])) * WRes[NRes - 1];
-        A->b[iMin] -= ((A->a[iMin + 1] - VRes[NRes - 1]) / (A->a[iMin + 1] - A->a[iMin])) * WRes[NRes - 1];
-      }
-      NRes--;
-      if (A->b[iMin + 1] <= 0)
-      {
-        WRes[NRes] = -A->b[iMin + 1];
-        VRes[NRes] = A->a[iMin + 1];
-        NRes++;
-        for (i = iMin + 2; i < A->N; i++)
-        {
-          A->b[i - 1] = A->b[i];
-          A->a[i - 1] = A->a[i];
-        }
-        A->N--;
-      }
-      if ((A->b[iMin] <= 0) && !(A->N==1))
-      {
-        WRes[NRes] = -A->b[iMin];
-        VRes[NRes] = A->a[iMin];
-        NRes++;
-        for (i = iMin + 1; i < A->N; i++)
-        {
-          A->b[i - 1] = A->b[i];
-          A->a[i - 1] = A->a[i];
-        }
-        A->N--;
-      }
-    }
-  }
+  double muA = A->mu;
+  A->mu = mu;
+  MergeNegativeToNeighbourListOfPolesSorted(A);
+  A->mu = muA;
+  if(A->N==0) return 0;
+  
   if (A->b[0] < 0)
   {
     printf("WARNING: SubtractListOfPoles returned with A->b[0]=%24.17E and A->N=%i\n", A->b[0], A->N);
-    printf("You thus have one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
-    return 0;
+    printf("You thus have at least one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
   };
+  if((A->N>1) && (A->b[A->N-1] < 0) )
+     {
+       printf("WARNING: SubtractListOfPoles returned with A->b[%i]=%24.17E and A->N=%i\n", A->N-1, A->b[A->N-1], A->N);
+       printf("You thus have at least one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
+     };
   return 0;
 }
 

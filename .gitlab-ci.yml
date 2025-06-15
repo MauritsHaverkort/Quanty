@@ -171,6 +171,7 @@ test-jobs-Responsefunction:
           - "LengthZero"
           - "MergePolesInInterval"
           - "PlaceOnMesh"
+          - "Pole_Reduction"
           - "ReducePoles"
           - "ToMatrix"
           - "ToOperator"
