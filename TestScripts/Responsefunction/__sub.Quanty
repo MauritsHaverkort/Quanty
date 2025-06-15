@@ -23,7 +23,12 @@ GAB = ResponseFunction.ToUserdata(GAB)
 
 G = GA-GB
 
-if((G==GAB)~=true) then error("Response function comparison failed\n",1) end
+if((G==GAB)~=true) then
+	print(G)
+	print(GA)
+	print(GB)
+	error("Response function comparison failed\n",1)
+end
 
 
 GA_L = ResponseFunction.ChangeType(GA,"LP")

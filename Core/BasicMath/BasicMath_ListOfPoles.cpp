@@ -1277,11 +1277,11 @@ uint32_t ListOfPolesRemovePositiveEnergy(ListOfPoles * const A, double const mu)
  */
 uint32_t SubtractListOfPoles(ListOfPoles * const A, ListOfPoles const * const B, double const mu)
 {
+  A->a0 -= B->a0;
   //
   // special B->N==0
   if (B->N==0)
   {
-    A->a0 -= B->a0;
     return 0;
   }
   A->N += B->N;
