@@ -1153,6 +1153,86 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
   return 0;
 }
 
+/*  G(w) -> G(w)^T
+ *
+ */
+void BlockAndersonMatrixTypeTranspose(BlockAndersonMatrixType * const G)
+{
+  
+  return;
+}
+void BlockListOfPolesTranspose(BlockListOfPoles * const G)
+{
+  CompactMatrixType M;
+  M.Ni = G->BlockSize;
+  M.Nj = G->BlockSize;
+  M.QComplex = G->QComplex;
+  if(G->QComplex==true)
+  {
+    M.V = G->a0;
+    CompactMatrixTranspose(&M);
+    for(int i=0;i<G->N;i++)
+    {
+      M.V = &( G->V[i*(1+G->BlockSize*G->BlockSize)+1] );
+      CompactMatrixTranspose(&M);
+    }
+  }
+  else
+  {
+    M.VRe = G->a0Re;
+    CompactMatrixTranspose(&M);
+    for(int i=0;i<G->N;i++)
+    {
+      M.VRe = &( G->VRe[i*(1+G->BlockSize*G->BlockSize)+1] );
+      CompactMatrixTranspose(&M);
+    }
+  }
+  return;
+}
+void BlockTriDiagonalMatrixTypeTranspose(BlockTriDiagonalMatrixType * const G)
+{
+  
+  return;
+}
+void BlockNaturalImpurityOrbitalMatrixTypeTranspose(BlockNaturalImpurityOrbitalMatrixType * const G)
+{
+  
+  return;
+}
+
+
+int ResponseFunctionTranspose(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
+{
+  ResponsefunctionCopy(Gin,Gout);
+  if(Gout->Block==false) return 0;
+  switch (Gout->type|32)
+  {
+    case 'a':
+    {
+      BlockAndersonMatrixTypeTranspose(((BlockAndersonMatrixType*)(Gout->data)));
+    }
+    break;
+    case 'l':
+    {
+      BlockListOfPolesTranspose(((BlockListOfPoles*)(Gout->data)));
+    }
+    break;
+    case 't':
+    {
+      BlockTriDiagonalMatrixTypeTranspose(((BlockTriDiagonalMatrixType*)(Gout->data)));
+    }
+    break;
+    case 'n':
+    {
+      BlockNaturalImpurityOrbitalMatrixTypeTranspose(((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data)));
+    }
+    break;
+  }
+  return 0;
+}
+
+
+
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {
   ResponsefunctionType GBLP;

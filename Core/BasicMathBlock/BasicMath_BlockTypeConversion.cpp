@@ -2351,16 +2351,28 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToSpectra(double GroundStateEnergy, Bl
  {
    SpectrumAllocate(G[0], &(G[i]));
  }
-
-  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  if(A->a0.QComplex==0)
   {
-    for(j=0;j<=N;j++)
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
-      G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j];
-      G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j];
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j] + A->a0.VRe[i];
+        G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j] ;
+      }
     }
   }
-
+  else
+  {
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      for(j=0;j<=N;j++)
+      {
+        G[i].Re[j] = Gval[i].Re[j] + Gcon[i].Re[j] + A->a0.V[i].Re;
+        G[i].Im[j] = Gval[i].Im[j] + Gcon[i].Im[j] + A->a0.V[i].Im;
+      }
+    }
+  }
  for(i=0;i<A->BlockSize*A->BlockSize;i++)
  {
    SpectrumFree(&Gval[i]);

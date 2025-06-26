@@ -616,7 +616,7 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
 /*  G(mu+w) -> -G(mu-w)^*
  *
  */
-static int LuaInvertEnergy(lua_State *L)
+static int LuaResponseFunctionInvertEnergy(lua_State *L)
 {
   ResponsefunctionType *Gin,Gout;
   Gin = luaL_checkResponsefunction(L,1);
@@ -625,6 +625,32 @@ static int LuaInvertEnergy(lua_State *L)
   FreeResponsefunction(Gin);
   FreeResponsefunction(&Gout);
   return 1;
+}
+
+
+
+/*  G(w) -> G(w)^T
+ *
+ */
+static int LuaResponseFunctionTranspose(lua_State *L)
+{
+  ResponsefunctionType *Gin,Gout;
+  Gin = luaL_checkResponsefunction(L,1);
+  ResponseFunctionTranspose(Gin,&Gout);
+  LuaPush_ResponseFunction(L, &Gout);
+  FreeResponsefunction(Gin);
+  FreeResponsefunction(&Gout);
+  return 1;
+}
+
+
+/*  G(w) -> G(w)[i1,i2,...in]
+ *
+ */
+static int LuaResponseFunctionElement(lua_State *L)
+{
+  
+  return 0;
 }
 
 
@@ -3111,7 +3137,9 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
   {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
   {"CalculateGfromG0andSigma",LuaCalculateGfromG0andSigma},
-  {"InvertEnergy", LuaInvertEnergy},
+  {"InvertEnergy", LuaResponseFunctionInvertEnergy},
+  {"Transpose", LuaResponseFunctionTranspose},
+  {"Elements", LuaResponseFunctionElement},
   {"CreateBitMasks", LuaResponseFunctionToBitMask},
   {"Chop", LuaChop},
   {NULL, NULL}

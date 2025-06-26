@@ -1,0 +1,178 @@
+-- Determine working directory (same as the directory of the input script)
+directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
+
+-- Real
+
+-- Matrix valued
+A0 = Matrix.New({{1,0,-1},{0,1,1},{-1,1,1}})
+
+B1 = Matrix.New({{1,-1/2,1/5},{-1/2,1,0},{1/5,0,2}})
+B2 = Matrix.New({{1,0,0},{0,1,1},{0,1,1}})
+B3 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+B4 = Matrix.New({{1,1,0},{1,2,0},{0,0,3}})
+
+GLP  = ResponseFunction.New( { {A0,-5,-2, 7,10}, {B1,B2,B3,B4}, mu=0, type="ListOfPoles", name="G Mat LP"} )
+GTri = ResponseFunction.ChangeType(GLP,"Tri")
+GAnd = ResponseFunction.ChangeType(GLP,"And")
+GNat = ResponseFunction.ChangeType(GLP,"Nat")
+
+TimeStart("Plot")
+PlotPoints = 800
+Emin=-10
+Emax= 15
+dETick=5
+dYtick=10
+Ymin =-20
+Ymax = 15
+
+
+PlG1 = Graphics.Plot(GLP,0.0,0.5, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.016},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.016},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+
+PlG2 = Graphics.Plot(GTri,0.0,0.5, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF0000FF}},
+																					 {{"LineWidth",0.008},{"LineColor",0xFFFF0000}}}},
+														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+
+PlG3 = Graphics.Plot(GAnd,0.0,0.5, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.004},{"LineColor",0xFF008080}},
+																					 {{"LineWidth",0.004},{"LineColor",0xFF808000}}}},
+														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+
+PlG4 = Graphics.Plot(GNat,0.0,0.5, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.002},{"LineColor",0xFF00FFFF}},
+																					 {{"LineWidth",0.002},{"LineColor",0xFFFFFF00}}}},
+														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+
+
+
+
+PlG = Graphics.Add(PlG1,PlG2,PlG3,PlG4)
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/Transpose.svg",'w')
+file:write(SVGPlG)
+file:close()
+TimeEnd("Plot")
+
+
+
+print("Green's function as list of poles")
+print(GLP)
+
+print("Green's function tridiagonal")
+print(GTri)
+if((GLP==GTri)~=true) then
+	print("Error GLP not equal to GTri")
+	print("GLP-GTri\n",ResponseFunction.ToTable(GLP-GTri))
+	print("GTri-GLP\n",ResponseFunction.ToTable(GTri-GLP))
+	error("Response function comparison failed\n",1)
+end
+
+print("Green's function anderson format")
+print(GAnd)
+
+G2 = ResponseFunction.ChangeType(GAnd,"LP")
+print(G2)
+print(GLP)
+
+if((GLP==GAnd)~=true) then
+	print("Error GLP not equal to GAnd")
+	print("GLP-GAnd\n",ResponseFunction.ToTable(GLP-GAnd))
+	print("GAnd-GLP\n",ResponseFunction.ToTable(GAnd-GLP))
+	error("Response function comparison failed\n",1)
+end
+
+print(GNat)
+if((GLP==GNat)~=true) then
+	print("Error GLP not equal to GTri")
+	print("GLP-GNat\n",ResponseFunction.ToTable(GLP-GNat))
+	print("GNat-GLP\n",ResponseFunction.ToTable(GNat-GLP))
+	error("Response function comparison failed\n",1)
+end
+
+
+GLPT = ResponseFunction.Transpose(GLP)
+
+print(GLPT)
+
+os.exit()
+
+
+G5 = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="G Mat Tri"} )
+
+-- Matrix valued anderson
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})/3
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})/3
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})/3
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s/100
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s/100
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s/100
+
+G6 = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="G Mat And"} )
+
+-- Matrix valued Natural
+
+A0 = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})/3
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})/3
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})/3
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{1,1,3},{1,5,6},{3,6,9}})
+B1 = B1s * B1s/100
+B2s = Matrix.New({{2,0,3},{0,5,6},{3,6,9}})
+B2 = B2s * B2s/100
+B3s = Matrix.New({{3,0,3},{0,5,6},{3,6,9}})
+B3 = B3s * B3s/100
+
+B0v = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+B0c = Matrix.New({{sqrt(1/2),0,0},{0,sqrt(1/2),0},{0,0,sqrt(1/2)}})
+
+Gv = ResponseFunction.New( { {A0,-A1,-A2,-A3}, {B0v,B1,B2}, mu=0, type="Tri", name="A"} )
+Gc = ResponseFunction.New( { {A0, A1, A2, A3}, {B0c,B1,B2}, mu=0, type="Tri", name="A"} )
+
+G7 = ResponseFunction.New( { {A0,B0}, val=Gv, con=Gc, mu=0, type="Nat", name="G Mat Nat"} )
+
+-- Matrix valued list of poles
+
+A0 = Matrix.New({{1,1,0},{-1,1,0},{0,0,0}})
+A1 = Matrix.New({{1,2,3},{2,5,6},{3,6,9}})
+A2 = Matrix.New({{2,2,3},{2,5,6},{3,6,9}})
+A3 = Matrix.New({{3,2,3},{2,5,6},{3,6,9}})
+
+B0s = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+B0 = B0s * B0s
+B1s = Matrix.New({{0,1,3},{1,5,0},{3,0,0}})
+B1 = B1s * B1s/100
+B2s = Matrix.New({{2,0,3},{0,0,2},{3,2,0}})
+B2 = B2s * B2s/100
+B3s = Matrix.New({{3,0,3},{0,5,1},{3,1,0}})
+B3 = B3s * B3s/100
+
+G8 = ResponseFunction.New( { {A0,-5,7,10}, {B0,B1,B2}, mu=0, type="ListOfPoles", name="G Mat LP"} )
+
+print(G5)
+print(G6)
+print(G7)
+print(G8)
+
+
+G8T = ResponseFunction.Transpose(G8)
+
+print(G8T)
