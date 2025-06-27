@@ -1154,11 +1154,38 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
 }
 
 /*  G(w) -> G(w)^T
- *
+ *  G(w)^T = (A0 + B0^* ( 1 / ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) ) . B0^T)^T
+ *         = A0^T + B0 ( 1 / ( w - A1^T - \sum_i ( B_i^* 1 / ( w - A_{i+1}^T ) . B_i^T ) ) ) . B0^+
+ * B_i -> B_i^*
+ * A_i -> A_i^T
  */
 void BlockAndersonMatrixTypeTranspose(BlockAndersonMatrixType * const G)
 {
-  
+  CompactMatrixType M;
+  M.Ni = G->BlockSize;
+  M.Nj = G->BlockSize;
+  M.QComplex = G->QComplex;
+  if(G->QComplex==true)
+  {
+    for(int i=0;i<=G->N;i++)
+    {
+      M.V = &( G->a[i*(G->BlockSize*G->BlockSize)] );
+      CompactMatrixTranspose(&M);
+    }
+    for(int i=0;i<G->N;i++)
+    {
+      M.V = &( G->b[i*(G->BlockSize*G->BlockSize)] );
+      CompactMatrixConjugate(&M);
+    }
+  }
+  else
+  {
+    for(int i=0;i<=G->N;i++)
+    {
+      M.VRe = &( G->aRe[i*(G->BlockSize*G->BlockSize)] );
+      CompactMatrixTranspose(&M);
+    }
+  }
   return;
 }
 void BlockListOfPolesTranspose(BlockListOfPoles * const G)
@@ -1189,14 +1216,55 @@ void BlockListOfPolesTranspose(BlockListOfPoles * const G)
   }
   return;
 }
+/*
+ *   G0 =        A0 + B0^* . ( G1 ) . B0^T
+ *   G1 = 1/(w - A1 - B1 . ( G2 ) . B1^+)
+ *   G2 = 1/(w - A2 - B2 . ( G3 ) . B2^+)
+ *   ...
+ *   Gn = 1/(w - An)
+ *   G0^T =  A0^T + B0 . ( G1^T ) . B0^*
+ *   G1^T = 1/(w - A1^T - B1^* . ( G2^T ) . B1^T)
+ * B_i -> B_i^*
+ * A_i -> A_i^T
+ */
 void BlockTriDiagonalMatrixTypeTranspose(BlockTriDiagonalMatrixType * const G)
 {
-  
+  CompactMatrixType M;
+  M.Ni = G->BlockSize;
+  M.Nj = G->BlockSize;
+  M.QComplex = G->QComplex;
+  if(G->QComplex==true)
+  {
+    for(int i=0;i<=G->N;i++)
+    {
+      M.V = &( G->a[i*(G->BlockSize*G->BlockSize)] );
+      CompactMatrixTranspose(&M);
+    }
+    for(int i=0;i<G->N;i++)
+    {
+      M.V = &( G->b[i*(G->BlockSize*G->BlockSize)] );
+      CompactMatrixConjugate(&M);
+    }
+  }
+  else
+  {
+    for(int i=0;i<=G->N;i++)
+    {
+      M.VRe = &( G->aRe[i*(G->BlockSize*G->BlockSize)] );
+      CompactMatrixTranspose(&M);
+    }
+  }
   return;
 }
+/*
+ *
+ */
 void BlockNaturalImpurityOrbitalMatrixTypeTranspose(BlockNaturalImpurityOrbitalMatrixType * const G)
 {
-  
+  BlockTriDiagonalMatrixTypeTranspose(&(G->val));
+  BlockTriDiagonalMatrixTypeTranspose(&(G->con));
+  CompactMatrixTranspose(&(G->a0));
+  CompactMatrixTranspose(&(G->TMT));
   return;
 }
 

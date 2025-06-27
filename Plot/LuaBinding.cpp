@@ -161,9 +161,9 @@ int LuaAddToGraphics(lua_State * L)
         text.Size = Options.FontSize;
         text.Font = Options.Font;
         AddText(Graphics, &text);
-        lua_remove(L,2);
-        lua_remove(L,3);
         lua_remove(L,4);
+        lua_remove(L,3);
+        lua_remove(L,2);
         len=len-3;
         break;
       }
