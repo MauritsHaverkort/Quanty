@@ -179,6 +179,7 @@ test-jobs-Responsefunction:
           - "ToTable"
           - "ToTightbinding"
           - "ToUserdata"
+          - "Transpose"
           - "Value_Of_A0_In_Val_and_Con_of_NatType"
   script:
     - export OMP_NUM_THREADS=8
