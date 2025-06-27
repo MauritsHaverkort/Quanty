@@ -718,7 +718,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
       iN+=1+A.BlockSize*A.BlockSize;
     }
   }
-  CompactMatrixConjugateTranspose(&beta);
+  CompactMatrixTranspose(&beta);
   DiagonalMatrixBlockTridiagonalize(alpha, &beta, &T, B, NBlockMax, SingularValue);
   B->mu=A.mu;
   free(alpha);
