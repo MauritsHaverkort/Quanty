@@ -147,7 +147,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'a':
         {
           Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
-          BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)Min->data, (BlockAndersonMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N+1);
+          BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)Min->data, (BlockAndersonMatrixType*)Mout->data,  ((BlockListOfPoles*)(Min->data))->N+1, SingularValue);
         }
         break;
         case 'n':

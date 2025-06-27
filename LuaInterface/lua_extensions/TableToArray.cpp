@@ -1307,7 +1307,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     lua_pop(L, 1);
     temp = luaL_checkBlockListOfPoles(L, narg);
     buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
-    BlockListOfPolesToBlockAndersonMatrix(*temp, buff, temp->N);
+    BlockListOfPolesToBlockAndersonMatrix(*temp, buff, temp->N, 1000*DBL_EPSILON);
     FreeBlockListOfPoles(temp);
     free(temp);
     return buff;

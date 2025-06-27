@@ -1842,7 +1842,7 @@ int ResponseFunctionAddSelfEnergyViaAndLP(const ResponsefunctionType *const G0, 
       {
         case 'l':
         {
-          BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)G0->data, G0Data, 1+((BlockListOfPoles*)G0->data)->N);
+          BlockListOfPolesToBlockAndersonMatrix(*(BlockListOfPoles*)G0->data, G0Data, 1+((BlockListOfPoles*)G0->data)->N, 1000*DBL_EPSILON);
         }
         break;
         case 't':

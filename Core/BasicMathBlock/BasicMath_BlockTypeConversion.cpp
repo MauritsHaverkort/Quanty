@@ -908,7 +908,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
  *
  *
  */
-uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax)
+uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax, double const SingularValue)
 {
   if(A.N==0)
   {
@@ -928,7 +928,7 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
     return 0;
   }
   BlockTriDiagonalMatrixType ATri;
-  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, DBL_EPSILON))
+  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, 1000*DBL_EPSILON))
   {
     printf("BlockListOfPolesToBlockTridiagonalMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
     return 1;
@@ -2400,7 +2400,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpu
   BlockListOfPoles ALP;
   BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
   //TODO: the plus one should not be here
-  BlockListOfPolesToBlockAndersonMatrix(ALP, B, ALP.N+1);
+  BlockListOfPolesToBlockAndersonMatrix(ALP, B, ALP.N+1, 1000*DBL_EPSILON);
   FreeBlockListOfPoles(&ALP);
   return 0;
 }
