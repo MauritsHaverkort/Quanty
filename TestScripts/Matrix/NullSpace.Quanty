@@ -1,0 +1,147 @@
+
+print("--------------------------------")
+print("-----   Test 1   ---------------")
+print("--------------------------------")
+
+A = Matrix.New({{-0.3865619456539328,-0.1540423756983491, 0.4239216233786872,-0.2084527848362222,-0.2320744738080721,0.04215722695454463,0.435510044274506,  -0.2955180567312219,0.3431328707011815,0.3915390424157627},
+							  {-0.125011280707894, -0.3075348538505327,-0.3831403897924173,-0.1844325329468728,-0.2029681039126016,0.2905636152279518,-0.4977192966132799,  0.2722921958816665,0.3280877614319153,0.39223741892191},
+							  {0.1518020704821707, -0.3617075359571063,-0.0156886271655243, 0.4168958560304973, 0.0850547371245767,0.5361943618271273,-0.02557452728667475,-0.497215363661922,-0.3170157788550878,0.1701782057679576}})
+
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(A))
+
+print(A)
+print(S)
+
+B = Matrix.NullSpace(A)
+
+S = Chop(Matrix.Conjugate(B) * Matrix.Transpose(B))
+
+print(B)
+print(S)
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(B))
+print(S)
+
+print("--------------------------------")
+print("-----   Test 2   ---------------")
+print("--------------------------------")
+
+A = Matrix.New({{1,0,0,0,0,0,0,0},
+							  {0,1,0,0,0,0,0,0},
+							  {0,0,1,0,0,0,0,0}})
+
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(A))
+
+print(A)
+print(S)
+
+B = Matrix.NullSpace(A)
+
+S = Chop(Matrix.Conjugate(B) * Matrix.Transpose(B))
+
+print(B)
+print(S)
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(B))
+print(S)
+
+
+print("--------------------------------")
+print("-----   Test 3   ---------------")
+print("--------------------------------")
+
+A = Matrix.New({{1,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,1,0},
+								{0,0,1,0,0,0,0,0}})
+
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(A))
+
+print(A)
+print(S)
+
+B = Matrix.NullSpace(A)
+
+S = Chop(Matrix.Conjugate(B) * Matrix.Transpose(B))
+
+print(B)
+print(S)
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(B))
+print(S)
+
+print("--------------------------------")
+print("-----   Test 1C   --------------")
+print("--------------------------------")
+
+
+A = Matrix.New({{-0.3865619456539328,-0.1540423756983491*I, 0.4239216233786872,-0.2084527848362222,-0.2320744738080721,0.04215722695454463,0.435510044274506,  -0.2955180567312219,0.3431328707011815,0.3915390424157627},
+								{-0.125011280707894, -0.3075348538505327*I,-0.3831403897924173,-0.1844325329468728,-0.2029681039126016,0.2905636152279518,-0.4977192966132799,  0.2722921958816665,0.3280877614319153,0.39223741892191},
+								{0.1518020704821707, -0.3617075359571063*I,-0.0156886271655243, 0.4168958560304973, 0.0850547371245767,0.5361943618271273,-0.02557452728667475,-0.497215363661922,-0.3170157788550878,0.1701782057679576}})
+
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(A))
+
+print(A)
+print(S)
+
+B = Matrix.NullSpace(A)
+
+S = Chop(Matrix.Conjugate(B) * Matrix.Transpose(B))
+
+print(B)
+print(S)
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(B))
+print(S)
+
+print("--------------------------------")
+print("-----   Test 2C   --------------")
+print("--------------------------------")
+
+A = Matrix.New({{1,0,0,0,0,0,0,0},
+								{0,I,0,0,0,0,0,0},
+								{0,0,1,0,0,0,0,0}})
+
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(A))
+
+print(A)
+print(S)
+
+B = Matrix.NullSpace(A)
+
+S = Chop(Matrix.Conjugate(B) * Matrix.Transpose(B))
+
+print(B)
+print(S)
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(B))
+print(S)
+
+
+print("--------------------------------")
+print("-----   Test 3C   --------------")
+print("--------------------------------")
+
+A = Matrix.New({{1,0,0,0,0,0,0,0},
+								{0,0,0,0,0,0,1,0},
+								{0,0,I,0,0,0,0,0}})
+
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(A))
+
+print(A)
+print(S)
+
+B = Matrix.NullSpace(A)
+
+S = Chop(Matrix.Conjugate(B) * Matrix.Transpose(B))
+
+print(B)
+print(S)
+
+S = Chop(Matrix.Conjugate(A) * Matrix.Transpose(B))
+print(S)

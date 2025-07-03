@@ -1,0 +1,85 @@
+
+
+--------------
+---- Real ----
+--------------
+
+-- Matrix valued
+-- For physical systems A0 should be Hermitian (It can represent an Hamiltonian)
+-- We here do not follow this for testing perpousous. The matrices B can be written as Bp Bp^{dag} such that G is symmetric.
+-- Transpose sould leave a real G invariant
+A0 = Matrix.New({{1,0,-5},{0,1,1},{5,1,1}})
+
+B1 = Matrix.New({{1,-1/2,1/5},{-1/2,1,0},{1/5,0,2}})
+B2 = Matrix.New({{1,0,0},{0,1,1},{0,1,1}})
+B3 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+B4 = Matrix.New({{1,1,0},{1,2,0},{0,0,3}})
+
+GLP  = ResponseFunction.New( { {A0,-5,-2, 7,10}, {B1,B2,B3,B4}, mu=0, type="ListOfPoles", name="G Mat LP"} )
+GTri = ResponseFunction.ChangeType(GLP,"Tri")
+GAnd = ResponseFunction.ChangeType(GLP,"And")
+GNat = ResponseFunction.ChangeType(GLP,"Nat")
+
+U = {{sqrt(1/2),sqrt(1/2),0},{sqrt(1/2),-sqrt(1/2),0},{0,0,1}}
+
+GLPR  = Chop(ResponseFunction.Rotate(GLP,U))
+GTriR = Chop(ResponseFunction.Rotate(GTri,U))
+GAndR = Chop(ResponseFunction.Rotate(GAnd,U))
+GNatR = Chop(ResponseFunction.Rotate(GNat,U))
+
+print(GLPR)
+print(GTriR)
+print(GAndR)
+print(GNatR)
+
+if ((Chop(GLPR(0,0.1) - Rotate(GLP(0,0.1),U)) == Matrix.Zero(3,{{"userdata",false}}))~=true) then
+	print("Error")
+	error("Rotate failed\n",1)
+end
+if ((Chop(GTriR(0,0.1) - Rotate(GLP(0,0.1),U)) == Matrix.Zero(3,{{"userdata",false}}))~=true) then
+	print("Error")
+	error("Rotate failed\n",1)
+end
+if ((Chop(GAndR(0,0.1) - Rotate(GLP(0,0.1),U)) == Matrix.Zero(3,{{"userdata",false}}))~=true) then
+	print("Error")
+	error("Rotate failed\n",1)
+end
+if ((Chop(GNatR(0,0.1) - Rotate(GLP(0,0.1),U)) == Matrix.Zero(3,{{"userdata",false}}))~=true) then
+	print("Error")
+	error("Rotate failed\n",1)
+end
+
+-- non unitarian
+
+U = {{sqrt(1/2),sqrt(1/2),-1},{sqrt(1/2),-sqrt(1/2),1}}
+
+GLPR  = Chop(ResponseFunction.Rotate(GLP,U))
+GTriR = Chop(ResponseFunction.Rotate(GTri,U))
+GAndR = Chop(ResponseFunction.Rotate(GAnd,U))
+GNatR = Chop(ResponseFunction.Rotate(GNat,U))
+
+print(GLPR)
+print(GTriR)
+print(GAndR)
+print(GNatR)
+
+if ((Chop(GLPR(0,0.1) - Rotate(GLP(0,0.1),U),1E-14) == Matrix.Zero(2,{{"userdata",false}}))~=true) then
+	print("Error")
+	print(Chop(GLPR(0,0.1) - Rotate(GLP(0,0.1),U)))
+	error("Rotate failed\n",1)
+end
+if ((Chop(GTriR(0,0.1) - Rotate(GLP(0,0.1),U),1E-14) == Matrix.Zero(2,{{"userdata",false}}))~=true) then
+	print("Error")
+	print(Chop(GTriR(0,0.1) - Rotate(GLP(0,0.1),U)))
+	error("Rotate failed\n",1)
+end
+if ((Chop(GAndR(0,0.1) - Rotate(GLP(0,0.1),U),1E-14) == Matrix.Zero(2,{{"userdata",false}}))~=true) then
+	print("Error")
+	print(Chop(GAndR(0,0.1) - Rotate(GLP(0,0.1),U)))
+	error("Rotate failed\n",1)
+end
+if ((Chop(GNatR(0,0.1) - Rotate(GLP(0,0.1),U),1E-14) == Matrix.Zero(2,{{"userdata",false}}))~=true) then
+	print("Error")
+	print(Chop(GNatR(0,0.1) - Rotate(GLP(0,0.1),U)))
+	error("Rotate failed\n",1)
+end

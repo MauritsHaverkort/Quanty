@@ -259,6 +259,7 @@ test-jobs:
           - "MeanFieldOperator"
           - "NewTightBinding"
           - "NewWavefunction"
+          - "NullSpace"
           - "OperatorToHoles"
           - "OperatorToMatrix"
           - "Orthonormalize"

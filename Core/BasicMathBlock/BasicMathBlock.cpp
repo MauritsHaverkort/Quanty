@@ -359,7 +359,7 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
       {
         GRoti.V = GRotData->a0;
       }
-      TransformCompactMatrixcT(&Gi, U, &GRoti);
+      CompactMatrixMultiply3PreAllocated('*', 'N', 'T', U, &Gi, U, &GRoti);
       // Rotate the residus of the poles
       for(int i=0; i<GData->N; i++)
       {

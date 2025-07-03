@@ -357,6 +357,24 @@ static int LuaMatrixTridiagonalize(lua_State * L)
 
 
 
+/*
+ *
+ */
+static int LuaMatrixNullSpace(lua_State * L)
+{
+  CompactMatrixType *A,*NA;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  NA = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if(len!=1) luaL_error(L, "Matrix.NullSpace called with %d arguments, only one expected (with possible options on the second position)\n",len);
+  A=luaL_checkCompactMatrix(L, 1);
+  if(A->Ni>A->Nj) return luaL_error(L,"Matrix.NullSpace expects a matrix with more columns than rows\n");
+  if(CompactMatrixNullSpace(A, NA)!=0)
+  {
+    return luaL_error(L,"Matrix.NullSpace failed\n");
+  }
+  luaL_setmetatable(L, "Matrix_Type");
+  return 1;
+}
 
 
 
@@ -2644,6 +2662,7 @@ static const struct luaL_Reg Matrix_func[] = {
   {"Zero", LuaMatrixZero},
   {"Eigensystem", LuaMatrixEigensystem},
   {"Tridiagonalize", LuaMatrixTridiagonalize},
+  {"NullSpace", LuaMatrixNullSpace},
   {NULL, NULL}
 };
 

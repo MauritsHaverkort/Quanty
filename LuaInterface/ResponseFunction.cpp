@@ -3126,6 +3126,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
   {"New", LuaResponseFunctionNew},
   {"ReducePoles", LuaReducePolesResponseFunction},
+  {"Rotate", LuaResponseFunctionRotate},
   {"MergePolesInInterval", LuaMergePolesInIntervalResponseFunction},
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},
   {"ToTable", LuaResponseFunctionToTable},

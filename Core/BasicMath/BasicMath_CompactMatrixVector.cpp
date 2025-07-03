@@ -1726,6 +1726,76 @@ uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatri
   return 0;
 }
 
+/*   Matrix A has Ni rows and Nj coulomns with Ni <= Nj
+ *   We assume that A^* . A^T = I with I an identity matrix of dimension Ni by Ni
+ *   We return matrix NA such that {A,NA} is a square matrix of dimenstion Nj by Nj and {A,NA}^* . {A,NA}^T = I
+ */
+uint32_t CompactMatrixNullSpace(CompactMatrixType * Ain, CompactMatrixType * NA)
+{
+  char const *JOBU ="A";  /* in SVD A = U S V^T return full array U */
+  char const *JOBVT="N";  /* in SVD A = U S V^T return nothing for VT */
+  CompactMatrixType A;
+  CompactMatrixCopy(*Ain, &A);
+  Complex16 ALPHA,BETA;
+  ALPHA.Re=1; ALPHA.Im=0;
+  BETA.Re =0; BETA.Im =0;
+  uint32_t M,N,K,LDA,LDB,LDC,LWORK;
+  int INFO;
+  LWORK = Max(5,A.Ni)*Max(5,A.Nj);
+  double *WORK;
+  Complex16 *WORKIM;
+  double *V=NULL;
+  Complex16 *Vc=NULL;
+  double *S=(double*)calloc(A.Ni,sizeof(double));
+  NA->Ni=A.Nj;
+  NA->Nj=A.Nj;
+  NA->QComplex=A.QComplex;
+  InitCompactMatrix(NA);
+  if(A.QComplex)
+  {
+    WORK = (double*)malloc(5*Min(A.Ni,A.Nj)*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    WORKIM = (Complex16*)malloc(LWORK*sizeof(Complex16));
+    if(WORKIM==NULL)
+    {
+      free(WORK);
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    zgesvd(JOBU, JOBVT, &A.Nj, &A.Ni, A.V, &A.Nj,S,NA->V, &A.Nj,Vc, &A.Nj, WORKIM, &LWORK, WORK, &INFO);
+    if(INFO)
+    {
+      printf("zgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i\n",INFO);
+      return 1;
+    }
+    memmove(NA->VRe,NA->V+(A.Nj*A.Ni),A.Nj*(A.Nj-A.Ni)*sizeof(Complex16));
+    NA->Ni-=A.Ni;
+  }
+  else
+  {
+    WORK = (double*)malloc(LWORK*sizeof(double));
+    if(WORK==NULL)
+    {
+      printf("malloc failed in CompactMatrixSVDOrthogonalize\n");
+      return 1;
+    }
+    dgesvd(JOBU, JOBVT, &A.Nj, &A.Ni, A.VRe, &A.Nj,S,NA->VRe, &A.Nj,V, &A.Nj, WORK, &LWORK, &INFO);
+    if(INFO)
+    {
+      printf("dgesvd failed in CompactMatrixSVDOrthogonalize with INFO %i (A->Ni %u, A->Nj %u)\n",INFO,A.Ni,A.Nj);
+      return 1;
+    }
+    memmove(NA->VRe,NA->VRe+(A.Nj*A.Ni),A.Nj*(A.Nj-A.Ni)*sizeof(double));
+    NA->Ni-=A.Ni;
+  }
+  free(S);
+  return 0;
+}
+
 
 /*  A is replaced by an orthonormal form of A using Singular value decomposition (eigen value decomposition)
  *  If a SingularValue is smaller than SingularValue this vector is removed from the basis

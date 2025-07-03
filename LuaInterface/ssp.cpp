@@ -4590,10 +4590,52 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     FreeCompactMatrix(&vec);
     return 1;
   }
-  // error not case 1, 2 or 3
+  // case 4 Response function object and an index
+  else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *G;
+    CompactMatrixType *vecA, *vecB;
+    /* read the response functon defintion from the first place on the lua stack */
+    G = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+    uint32_t BlockSize = ResponseFunctionGetBlockSize(G);
+    if(lua_type(L, 2)==LUA_TNUMBER)
+    {
+      vecA= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
+      vecA->QComplex=0;
+      vecA->Ni=(uint32_t)luaL_checkinteger(L, 2);
+      vecA->Nj=BlockSize;
+      if(vecA->Ni>BlockSize) return luaL_error(L, "New Block size (%d) should be smaller than or equal to the original Blocksize (%d)\n",vecA->Ni,BlockSize);
+      InitCompactIdentityMatrix(vecA);
+      vecB= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
+      vecB->QComplex=0;
+      vecB->Ni=BlockSize - vecA->Ni;
+      vecB->Nj=BlockSize;
+      InitCompactMatrix(vecB);
+      for(int i=0;i<vecB->Ni;i++)
+      {
+        vecB->VRe[vecA->Ni + i * (1+BlockSize) ] = 1;
+      }
+    }
+    else if(lua_type(L,2)==LUA_TTABLE)
+    {
+      vecA = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
+      if(vecA->Ni>BlockSize) return luaL_error(L, "New Block size (%d) should be smaller than or equal to the original Blocksize (%d)\n",vecA->Ni,BlockSize);
+      if(vecA->Nj!=BlockSize) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension original Block Matrix (%d).\n",vecA->Nj,BlockSize);
+      
+    }
+    else
+    {
+      return luaL_error(L, "BlockBandDiagonalize for matrices expects either a number or a vector of numbers on second position\n");
+    }
+    
+    return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator a square hermitian matrix (table of tables) or a tight binding object\n");
+
+    
+  }
+  // error not case 1, 2, 3, or 4
   else
   {
-    return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator or a square hermitian matrix (table of tables)\n");
+    return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator a square hermitian matrix (table of tables) or a tight binding object\n");
   }
 }
 
