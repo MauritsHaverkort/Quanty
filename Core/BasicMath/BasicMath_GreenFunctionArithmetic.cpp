@@ -3941,6 +3941,10 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
               k++;
             }
           }
+          for(int j=0;j<Sqr( (((BlockListOfPoles*)(M->data))->BlockSize) ); j++)
+          {
+            ((BlockListOfPoles*)(M->data))->a0Re[j]*=x;
+          }
         }
         else
         {
@@ -3955,17 +3959,24 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
               k++;
             }
           }
+          for(int j=0;j<Sqr( (((BlockListOfPoles*)(M->data))->BlockSize) ); j++)
+          {
+            ((BlockListOfPoles*)(M->data))->a0[j].Re*=x;
+            ((BlockListOfPoles*)(M->data))->a0[j].Im*=x;
+          }
         }
       }
         break;
       case 't':
       {
+        double xSqr = x;
         x = sqrt(x);
         if( (((BlockTriDiagonalMatrixType*)(M->data))->QComplex) ==0 )
         {
           for(int i=0;i<Sqr(((BlockTriDiagonalMatrixType*)(M->data))->BlockSize);i++)
           {
             (((BlockTriDiagonalMatrixType*)(M->data))->bRe[i]*=x);
+            (((BlockTriDiagonalMatrixType*)(M->data))->aRe[i]*=xSqr);
           }
         }
         else
@@ -3974,18 +3985,22 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
           {
             (((BlockTriDiagonalMatrixType*)(M->data))->b[i].Re*=x);
             (((BlockTriDiagonalMatrixType*)(M->data))->b[i].Im*=x);
+            (((BlockTriDiagonalMatrixType*)(M->data))->a[i].Re*=xSqr);
+            (((BlockTriDiagonalMatrixType*)(M->data))->a[i].Im*=xSqr);
           }
         }
       }
         break;
       case 'a':
       {
+        double xSqr = x;
         x = sqrt(x);
         if( (((BlockAndersonMatrixType*)(M->data))->QComplex) ==0 )
         {
           for(int i=0;i<Sqr(((BlockAndersonMatrixType*)(M->data))->BlockSize);i++)
           {
             (((BlockAndersonMatrixType*)(M->data))->bRe[i]*=x);
+            (((BlockAndersonMatrixType*)(M->data))->aRe[i]*=xSqr);
           }
         }
         else
@@ -3994,12 +4009,15 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
           {
             (((BlockAndersonMatrixType*)(M->data))->b[i].Re*=x);
             (((BlockAndersonMatrixType*)(M->data))->b[i].Im*=x);
+            (((BlockAndersonMatrixType*)(M->data))->a[i].Re*=xSqr);
+            (((BlockAndersonMatrixType*)(M->data))->a[i].Im*=xSqr);
           }
         }
       }
         break;
       case 'n':
       {
+        double xSqr = x;
         x = sqrt(x);
         if( (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->QComplex) ==0 )
         {
@@ -4007,6 +4025,7 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
           {
             (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.bRe[i]*=x);
             (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.bRe[i]*=x);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->a0.VRe[i]*=xSqr);
           }
         }
         else
@@ -4017,6 +4036,8 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
             (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.b[i].Im*=x);
             (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.b[i].Re*=x);
             (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.b[i].Im*=x);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->a0.V[i].Re*=xSqr);
+            (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->a0.V[i].Im*=xSqr);
           }
         }      }
         break;
@@ -4037,21 +4058,25 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
         {
           ((ListOfPoles*)(M->data))->b[i]*=x;
         }
+        ((ListOfPoles*)(M->data))->a0*= x;
       }
         break;
       case 't':
       {
         ((TriDiagonalMatrixType*)(M->data))->b[0] *=sqrt(x);
+        ((TriDiagonalMatrixType*)(M->data))->a[0] *= x;
       }
         break;
       case 'a':
       {
         ((AndersonMatrixType*)(M->data))->b[0] *=sqrt(x);
+        ((AndersonMatrixType*)(M->data))->a[0] *= x;
       }
         break;
       case 'n':
       {
         ((BADoubleTriDiagonalMatrixType*)(M->data))->b0 *=sqrt(x);
+        ((BADoubleTriDiagonalMatrixType*)(M->data))->a0 *= x;
       }
         break;
       default:
