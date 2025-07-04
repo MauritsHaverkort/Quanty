@@ -4590,10 +4590,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
     FreeCompactMatrix(&vec);
     return 1;
   }
-  // case 4 Response function object and an index
+  // case 4 Response function object and an index or a set of vectors
   else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
   {
     ResponsefunctionType *G;
+    // vecA contains the active space, vecB the downfolded space G -> 1/( G_A^{-1} - H_{AB} G_B^{-1} H_{BA} )
     CompactMatrixType *vecA, *vecB;
     /* read the response functon defintion from the first place on the lua stack */
     G = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
@@ -4621,18 +4622,70 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       vecA = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
       if(vecA->Ni>BlockSize) return luaL_error(L, "New Block size (%d) should be smaller than or equal to the original Blocksize (%d)\n",vecA->Ni,BlockSize);
       if(vecA->Nj!=BlockSize) return luaL_error(L, "Length of starting vector (%d) should be equivalent to dimension original Block Matrix (%d).\n",vecA->Nj,BlockSize);
-      
+      vecB= (CompactMatrixType*)malloc(sizeof(CompactMatrixType));
+      CompactMatrixNullSpace(vecA, vecB);
     }
     else
     {
       return luaL_error(L, "BlockBandDiagonalize for matrices expects either a number or a vector of numbers on second position\n");
     }
-    
-    return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator a square hermitian matrix (table of tables) or a tight binding object\n");
-
-    
+    if(BlockSize==vecA->Ni)
+    {
+      // nothing to do, copy the original response function
+      // if G is given as a table it now is in the memory as a copy we can return G
+      if((G->type&0x20)==0) // G stored in a newly created struct, on Lua stack as a table (upper case letter)
+      {
+        G->type = (G->type|32); // G stored as a lua controled struct (lower case letter)
+        ResponsefunctionType * res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+        *res = *G;
+        luaL_setmetatable(L, "ResponseFunction_Type");
+      }
+      else
+      {
+        ResponsefunctionType * res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+        ResponsefunctionCopy(G, res);
+        luaL_setmetatable(L, "ResponseFunction_Type");
+      }
+    }
+    else // we dealt whith the trival case where Ni and Blocksize are equal, now do the real work
+    {
+      ResponsefunctionType * res = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+      res->Block=true;
+      res->NSuggestedGridPoints=0;
+      res->SuggestedGrid=NULL;
+      switch (G->type|32)
+      {
+        case 'l':
+        {
+          res->type = 'L';
+          res->data = malloc(sizeof(BlockListOfPoles));
+          BlockListOfPolesDownfold( (BlockListOfPoles*)(G->data), (BlockListOfPoles*)(res->data), vecA, vecB);
+        }
+        break;
+        case 't':
+        {
+          
+        }
+        break;
+        case 'a':
+        {
+          
+        }
+        break;
+        case 'n':
+        {
+          
+        }
+        break;
+      }
+      luaL_setmetatable(L, "ResponseFunction_Type");
+    }
+    FreeResponsefunction(G);
+    FreeCompactMatrixIncludingPointer(vecA);
+    FreeCompactMatrixIncludingPointer(vecB);
+    return 0;
   }
-  // error not case 1, 2, 3, or 4
+  // error not case 1, 2, or 3
   else
   {
     return luaL_error(L, "BlockBandDiagonalize expects as a first argument either an operator a square hermitian matrix (table of tables) or a tight binding object\n");

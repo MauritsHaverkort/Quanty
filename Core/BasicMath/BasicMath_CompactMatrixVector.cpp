@@ -1739,7 +1739,7 @@ uint32_t CompactMatrixNullSpace(CompactMatrixType * Ain, CompactMatrixType * NA)
   Complex16 ALPHA,BETA;
   ALPHA.Re=1; ALPHA.Im=0;
   BETA.Re =0; BETA.Im =0;
-  uint32_t M,N,K,LDA,LDB,LDC,LWORK;
+  uint32_t LWORK;
   int INFO;
   LWORK = Max(5,A.Ni)*Max(5,A.Nj);
   double *WORK;
