@@ -3506,28 +3506,3 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
   ChopBlockListOfPoles(G, 1000*DBL_EPSILON);
   return 0;
 }
-
-/*  GA = 1 / ( A^* G^{-1} A^T - H_{AB} B^* G^{-1} B^T H_{BA} )
- *     required dimensions
- *  A.Nj = B.Nj = G.BlockSize
- *  A.Ni + B.Ni = G.BlockSize
- *
- *     returned dimensions
- *  GA.BlockSize = A.Ni
- */
-uint32_t BlockListOfPolesDownfold(BlockListOfPoles const * const G, BlockListOfPoles * const GA, CompactMatrixType const * const A, CompactMatrixType const * const B)
-{
-  GA->BlockSize = A->Ni;
-  GA->QComplex = A->QComplex | B->QComplex | G->QComplex;
-  
-  InitBlockListOfPoles(GA);
-  GA->mu = G->mu;
-  strncpy(GA->Name, G->Name,MAXStrLength);
-  GA->Name[MAXStrLength-1]='\0';
-  
-  
-  
-  
-  
-  return 0;
-}
