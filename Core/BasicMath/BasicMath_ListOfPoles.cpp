@@ -1273,53 +1273,107 @@ uint32_t ListOfPolesRemovePositiveEnergy(ListOfPoles * const A, double const mu)
 /*   A <- A-B
  *   The energy of the poles in B is adjusted to be on the same "grid" as the poles in A
  *   If A pole in A becomes negative weight it is substracted from the remainder of A
- *   If A has only one pole left above and or below the chemical potential the returned weight can be negative
+ *   If A has only one pole left the returned weight can be negative
  */
-uint32_t SubtractListOfPoles(ListOfPoles * const A, ListOfPoles const * const B, double const mu)
+uint32_t SubtractListOfPoles(ListOfPoles * const A,  ListOfPoles const * const B)
 {
-  A->a0 -= B->a0;
-  //
-  // special B->N==0
-  if (B->N==0)
+  uint32_t i, NRes, iMin;
+  double VRes[A->N + B->N], WRes[A->N + B->N];
+  if (A->N == 0)
   {
-    return 0;
-  }
-  A->N += B->N;
-  A->a = (double*)realloc(A->a,A->N * sizeof(double));
-  if(A->a==NULL)
-  {
-    printf("Realloc failed in SubtractListOfPoles\n Fatal error");
-    return 1;
-  }
-  A->b = (double*)realloc(A->b,A->N * sizeof(double));
-  if(A->b==NULL)
-  {
-    printf("Realloc failed in SubtractListOfPoles\n Fatal error");
-    return 1;
-  }
-  memcpy(&(A->a[A->N-B->N]), B->a, B->N*sizeof(double));
-  memcpy(&(A->b[A->N-B->N]), B->b, B->N*sizeof(double));
-  for(int i=A->N-B->N;i<A->N;i++)
-  {
-    A->b[i]*=-1;
-  }
+    if (B->N==0)
+    {
+      A->a0 -= B->a0;
+      return 0;
+    }
+    A->N=1;
+    A->a = (double*)realloc(A->a,sizeof(double));
+    A->b = (double*)realloc(A->b,sizeof(double));
+  };
   OrderListOfPoles(A);
-  double muA = A->mu;
-  A->mu = mu;
-  MergeNegativeToNeighbourListOfPolesSorted(A);
-  A->mu = muA;
-  if(A->N==0) return 0;
-  
+  A->a0 -= B->a0;
+  /* copy B to Res */
+  for (i = 0; i < B->N; i++)
+  {
+    VRes[i] = B->a[i];
+    WRes[i] = B->b[i];
+  }
+  NRes = B->N;
+  /* subtract B from A */
+  while (NRes != 0)
+  {
+    /* find neighbors in A for VRes[NRes-1] */
+    /* special case *NA=1 */
+    if (A->N == 1)
+    {
+      if (fabs(A->b[0] - WRes[NRes - 1]) > (DBL_MIN + DBL_EPSILON * fabs(WRes[NRes - 1] + A->b[0])))
+      {
+        A->a[0] += WRes[NRes - 1] * (A->a[0] - VRes[NRes - 1]) / (A->b[0] - WRes[NRes - 1]);
+      }
+      A->b[0] -= WRes[NRes - 1];
+      NRes--;
+    }
+    else
+    {
+      if (VRes[NRes - 1] > A->a[A->N - 2])
+      {
+        iMin = A->N - 2;
+      }
+      else
+      {
+        iMin = A->N - 2;
+        for (i = 1; i < A->N; i++)
+        {
+          if (VRes[NRes - 1] < A->a[i])
+          {
+            iMin = i - 1;
+            break;
+          }
+        }
+      }
+      if (fabs(A->a[iMin + 1] - A->a[iMin]) < (DBL_MIN + DBL_EPSILON * fabs(A->a[iMin + 1] - VRes[NRes - 1])))
+      {
+        A->b[iMin] -= 0.5 * WRes[NRes - 1];
+        A->b[iMin + 1] -= 0.5 * WRes[NRes - 1];
+      }
+      else
+      {
+        A->b[iMin + 1] -= ((VRes[NRes - 1] - A->a[iMin]) / (A->a[iMin + 1] - A->a[iMin])) * WRes[NRes - 1];
+        A->b[iMin] -= ((A->a[iMin + 1] - VRes[NRes - 1]) / (A->a[iMin + 1] - A->a[iMin])) * WRes[NRes - 1];
+      }
+      NRes--;
+      if (A->b[iMin + 1] <= 0)
+      {
+        WRes[NRes] = -A->b[iMin + 1];
+        VRes[NRes] = A->a[iMin + 1];
+        NRes++;
+        for (i = iMin + 2; i < A->N; i++)
+        {
+          A->b[i - 1] = A->b[i];
+          A->a[i - 1] = A->a[i];
+        }
+        A->N--;
+      }
+      if ((A->b[iMin] <= 0) && !(A->N==1))
+      {
+        WRes[NRes] = -A->b[iMin];
+        VRes[NRes] = A->a[iMin];
+        NRes++;
+        for (i = iMin + 1; i < A->N; i++)
+        {
+          A->b[i - 1] = A->b[i];
+          A->a[i - 1] = A->a[i];
+        }
+        A->N--;
+      }
+    }
+  }
   if (A->b[0] < 0)
   {
     printf("WARNING: SubtractListOfPoles returned with A->b[0]=%24.17E and A->N=%i\n", A->b[0], A->N);
-    printf("You thus have at least one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
+    printf("You thus have one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
+    return 0;
   };
-  if((A->N>1) && (A->b[A->N-1] < 0) )
-     {
-       printf("WARNING: SubtractListOfPoles returned with A->b[%i]=%24.17E and A->N=%i\n", A->N-1, A->b[A->N-1], A->N);
-       printf("You thus have at least one pole with negative spectral weight. That is unphysical. If the weight is small this might be numerical inacuracies. If the negative spectral weight is larger you probably have an error in your input script or in your model.\n");
-     };
   return 0;
 }
 

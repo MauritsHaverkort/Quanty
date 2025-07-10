@@ -678,7 +678,7 @@ uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType
     fflush(stdout);
     return 1;
   };
-  if (SubtractListOfPoles(&Ap, &Bp, Ap.mu))
+  if (SubtractListOfPoles(&Ap, &Bp))
   {
     if ((Ap.N == 1) && (Ap.b[0] < 0))
     {
@@ -740,7 +740,7 @@ uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType cons
     printf("AndersonMatrixInverseToListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");
     return 1;
   }
-  if (SubtractListOfPoles(Sigma, &IG0, IG0.mu))
+  if (SubtractListOfPoles(Sigma, &IG0))
   {
     printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");
     for (i = 0; i < Sigma->N; i++)
@@ -783,7 +783,7 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
     return 1;
   }
   FreeAndersonMatrix(&G0And);
-  if (SubtractListOfPoles(Sigma, &IG0, IG0.mu))
+  if (SubtractListOfPoles(Sigma, &IG0))
   {
     printf("SubtractListOfPoles failed in SelfEnergyListOfPolesFromAndersonRepresentation\n");
     return 1;
@@ -1333,7 +1333,7 @@ int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionTy
   }
   else
   {
-    retval=SubtractListOfPoles((ListOfPoles*)(Gdif->data), (ListOfPoles*)(GBLP.data), ((ListOfPoles*)(Gdif->data))->mu );
+    retval=SubtractListOfPoles((ListOfPoles*)(Gdif->data), (ListOfPoles*)(GBLP.data) );
   }
   FreeResponsefunction(&GBLP);
   return retval;

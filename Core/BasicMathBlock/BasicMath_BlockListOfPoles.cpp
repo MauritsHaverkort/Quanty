@@ -625,6 +625,7 @@ uint32_t AddBlockListOfPolesOnMeshOfAReal(BlockListOfPoles * const A, BlockListO
   }
   return 0;
 }
+
 uint32_t AddBlockListOfPolesOnMeshOfAComplex(BlockListOfPoles * const A, BlockListOfPoles const * const B)
 {
   int i,j,k;

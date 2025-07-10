@@ -1539,11 +1539,56 @@ end
 
 
 
+print("--------------------------------------------------------")
+print("-- Polese at zero                                     --")
+print("--------------------------------------------------------")
+
+
+print("scalar")
+G1 = ResponseFunction.New( {{0,-1,0,1},{1,1,1},mu=0,type="ListOfPoles", name="G1"} )
+G2 = ResponseFunction.New( {{0,-1,0,1},{1/2,1/2,1/2},mu=0,type="ListOfPoles", name="G2"} )
+print(G1-G2)
+
+
+print("block")
+G1 = ResponseFunction.New( {{{{0}},-1,0,1},{{{1}},{{1}},{{1}}},mu=0,type="ListOfPoles", name="G1"} )
+G2 = ResponseFunction.New( {{{{0}},-1,0,1},{{{1/2}},{{1/2}},{{1/2}}},mu=0,type="ListOfPoles", name="G2"} )
+print(G1-G2)
+
+
+print("--------------------------------------------------------")
+print("-- Polese outside window                              --")
+print("--------------------------------------------------------")
+
+
+print("scalar")
+G1 = ResponseFunction.New( {{0,-1,0,1},{1,1,1},mu=0,type="ListOfPoles", name="G1"} )
+G2 = ResponseFunction.New( {{0,-0.5,0,1.1},{1/2,1/2,1/2},mu=0,type="ListOfPoles", name="G2"} )
+print(G1-G2)
+
+
+print("block")
+G1 = ResponseFunction.New( {{{{0}},-1,0,1},{{{1}},{{1}},{{1}}},mu=0,type="ListOfPoles", name="G1"} )
+G2 = ResponseFunction.New( {{{{0}},-0.5,0,1.1},{{{1/2}},{{1/2}},{{1/2}}},mu=0,type="ListOfPoles", name="G2"} )
+print(G1-G2)
+
+
+print("--------------------------------------------------------")
+print("-- Polese with negative residue                      --")
+print("--------------------------------------------------------")
 
 
 
+print("scalar")
+G1 = ResponseFunction.New( {{0,-1,0,1},{1,1,1},mu=0,type="ListOfPoles", name="G1"} )
+G2 = ResponseFunction.New( {{0,0.2},{2},mu=0,type="ListOfPoles", name="G2"} )
+print(G1-G2)
 
 
+print("block")
+G1 = ResponseFunction.New( {{{{0}},-1,0,1},{{{1}},{{1}},{{1}}},mu=0,type="ListOfPoles", name="G1"} )
+G2 = ResponseFunction.New( {{{{0}},0.2},{{{2}}},mu=0,type="ListOfPoles", name="G2"} )
+print(G1-G2)
 
 
 

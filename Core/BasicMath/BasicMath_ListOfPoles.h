@@ -18,7 +18,7 @@ uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const m
 uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const mu);
 uint32_t ListOfPolesRemoveNegativeEnergy(ListOfPoles * const A, double const mu);
 uint32_t ListOfPolesRemovePositiveEnergy(ListOfPoles * const A, double const mu);
-uint32_t SubtractListOfPoles(ListOfPoles * const A, ListOfPoles const * const  B, double const mu);
+uint32_t SubtractListOfPoles(ListOfPoles * const A, ListOfPoles const * const  B);
 uint32_t GaussianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32_t const Nmul);
 uint32_t ListOfPolesCopy(ListOfPoles * M, ListOfPoles B);
 uint32_t ListOfPolesCopyVal(ListOfPoles * M, ListOfPoles B, double Ef, double Epsilon);
