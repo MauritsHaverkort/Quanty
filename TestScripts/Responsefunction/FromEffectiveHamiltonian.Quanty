@@ -6,10 +6,9 @@ Heffa = ResponseFunction.ChangeType(Hefft,"And")
 Heffn = ResponseFunction.ChangeType(Hefft,"Nat")
 
 Gt = ResponseFunction.FromEffectiveHamiltonian(Hefft)
---Ga = ResponseFunction.FromEffectiveHamiltonian(Heffa)
---Gl = ResponseFunction.FromEffectiveHamiltonian(Heffl)
---Gn = ResponseFunction.FromEffectiveHamiltonian(Heffn)
-
+Ga = ResponseFunction.FromEffectiveHamiltonian(Heffa)
+Gl = ResponseFunction.FromEffectiveHamiltonian(Heffl)
+Gn = ResponseFunction.FromEffectiveHamiltonian(Heffn)
 
 GList = {Gt,Gl,Ga,Gn}
 for i=1,#GList do
@@ -25,6 +24,7 @@ for i=1,#GList do
 	end
 end
 
+
 print("Start Block")
 
 a = {{{10}}, {{1}},   {{2}},   {{3}},   {{4}},   {{5}},  {{6}} }
@@ -36,10 +36,9 @@ Heffn = ResponseFunction.ChangeType(Hefft,"Nat")
 
 
 Gt = ResponseFunction.FromEffectiveHamiltonian(Hefft)
---Ga = ResponseFunction.FromEffectiveHamiltonian(Heffa)
---Gl = ResponseFunction.FromEffectiveHamiltonian(Heffl)
---Gn = ResponseFunction.FromEffectiveHamiltonian(Heffn)
-
+Ga = ResponseFunction.FromEffectiveHamiltonian(Heffa)
+Gl = ResponseFunction.FromEffectiveHamiltonian(Heffl)
+Gn = ResponseFunction.FromEffectiveHamiltonian(Heffn)
 
 GList = {Gt,Gl,Ga,Gn}
 for i=1,#GList do
@@ -68,9 +67,9 @@ Heffn = ResponseFunction.ChangeType(Hefft,"Nat")
 
 
 Gt = ResponseFunction.FromEffectiveHamiltonian(Hefft)
---Ga = ResponseFunction.FromEffectiveHamiltonian(Heffa)
---Gl = ResponseFunction.FromEffectiveHamiltonian(Heffl)
---Gn = ResponseFunction.FromEffectiveHamiltonian(Heffn)
+Ga = ResponseFunction.FromEffectiveHamiltonian(Heffa)
+Gl = ResponseFunction.FromEffectiveHamiltonian(Heffl)
+Gn = ResponseFunction.FromEffectiveHamiltonian(Heffn)
 
 
 GList = {Gt,Gl,Ga,Gn}
@@ -86,4 +85,3 @@ for i=1,#GList do
 		end
 	end
 end
-

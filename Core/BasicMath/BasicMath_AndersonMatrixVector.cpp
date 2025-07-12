@@ -158,6 +158,25 @@ int AndersonMatrixEffectiveHamiltonian(AndersonMatrixType const * const Gin, Lis
   return 0;
 }
 
+/*  given
+ *     a1 + sum_i b_i 1/( w-a_{i+1} ) b_i )
+ *  return
+ *    a0 + b0 1/(w - a1 - sum_i b_i 1/( w-a_{i+1} ) b_i ) b_0
+ */
+int AndersonMatrixFromEffectiveHamiltonian(ListOfPoles const * const Heff, AndersonMatrixType * const Gout)
+{
+  Gout->N = Heff->N+1;
+  InitAndersonMatrix(Gout);
+  Gout->mu=Heff->mu;
+  memcpy(&(Gout->a[2]), Heff->a, (Heff->N)*sizeof(double));
+  Gout->a[1] = Heff->a0;
+  for (int i=0;i<Heff->N;i++)
+  {
+    Gout->b[i+1] = sqrt( Max(0,Heff->b[i]) );
+  }
+  return 0;
+}
+
 /*
 *  M<- M + alpha B
 */

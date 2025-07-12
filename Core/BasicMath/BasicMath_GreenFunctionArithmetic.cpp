@@ -1428,12 +1428,25 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
     {
       case 'a':
       {
-        
+        ListOfPoles Gl;
+        AndersonMatrixToListOfPoles(*((AndersonMatrixType *)(Gin->data)), &Gl);
+        Gout->type = 'A';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
+        AndersonMatrixFromEffectiveHamiltonian( &Gl, ((AndersonMatrixType *)(Gout->data)) );
+        FreeListOfPoles(&Gl);
       }
       break;
       case 'l':
       {
-        
+        Gout->type = 'A';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
+        AndersonMatrixFromEffectiveHamiltonian( ((ListOfPoles*)(Gin->data)), ((AndersonMatrixType *)(Gout->data)) );
       }
       break;
       case 't':
@@ -1448,7 +1461,15 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
       break;
       case 'n':
       {
-        
+        ListOfPoles Gl;
+        BADoubleTriDiagonalMatrixToListOfPoles(((BADoubleTriDiagonalMatrixType *)(Gin->data)), &Gl);
+        Gout->type = 'A';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
+        AndersonMatrixFromEffectiveHamiltonian( &Gl, ((AndersonMatrixType *)(Gout->data)) );
+        FreeListOfPoles(&Gl);
       }
       break;
     }
@@ -1460,12 +1481,25 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
     {
       case 'a':
       {
-        
+        BlockListOfPoles Gt;
+        BlockAndersonMatrixToBlockListOfPoles(((BlockAndersonMatrixType *)(Gin->data)), &Gt);
+        Gout->type = 'A';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
+        BlockAndersonMatrixFromListOfPolesAsSelfEnergy(&Gt, ((BlockAndersonMatrixType *)(Gout->data)) );
+        FreeBlockListOfPoles(&Gt);
       }
       break;
       case 'l':
       {
-        
+        Gout->type = 'A';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
+        BlockAndersonMatrixFromListOfPolesAsSelfEnergy(((BlockListOfPoles*)(Gin->data)), ((BlockAndersonMatrixType *)(Gout->data)) );
       }
       break;
       case 't':
@@ -1480,7 +1514,15 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
       break;
       case 'n':
       {
-        
+        BlockListOfPoles Gt;
+        BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles( ((BlockNaturalImpurityOrbitalMatrixType *)(Gin->data)), &Gt);
+        Gout->type = 'A';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
+        BlockAndersonMatrixFromListOfPolesAsSelfEnergy(&Gt, ((BlockAndersonMatrixType *)(Gout->data)) );
+        FreeBlockListOfPoles(&Gt);
       }
       break;
     }
