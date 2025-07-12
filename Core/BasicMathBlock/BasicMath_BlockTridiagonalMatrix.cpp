@@ -349,3 +349,68 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
   return 0;
 }
 
+
+/* Given G = a0 + b0^* 1/(w - a1 - b1 (1/(w - ...)) b1^+ ) b0^T
+ * return
+ *  a1 + b1^* (1/(w - ...)) b1^T
+ */
+int BlockTriDiagonalMatrixEffectiveHamiltonian(BlockTriDiagonalMatrixType const * const G, BlockTriDiagonalMatrixType * const Heff)
+{
+  if (G->N==0)
+  {
+    printf("TriDiagonalMatrixEffectiveHamiltonian failed with on response function with length 0");
+    Heff->N=0;
+    Heff->QComplex=0;
+    Heff->BlockSize = G->BlockSize;
+    InitBlockTridiagonalMatrix(Heff);
+    return 1;
+  }
+  Heff->N = G->N-1;
+  Heff->QComplex = G->QComplex;
+  Heff->BlockSize = G->BlockSize;
+  InitBlockTridiagonalMatrix(Heff);
+  Heff->mu=G->mu;
+  memcpy(Heff->BlockSizeList, &(G->BlockSizeList[1]), (Heff->N+1)*sizeof(uint32_t));
+  if(Heff->QComplex==0)
+  { // real
+    memcpy(Heff->aRe, &(G->aRe[Sqr(G->BlockSize)]), (Heff->N+1)*Sqr(G->BlockSize)*sizeof(double));
+    memcpy(Heff->bRe, &(G->bRe[Sqr(G->BlockSize)]), (Heff->N  )*Sqr(G->BlockSize)*sizeof(double));
+  }
+  else
+  { // complex
+    memcpy(Heff->a, &(G->a[Sqr(G->BlockSize)]), (Heff->N+1)*Sqr(G->BlockSize)*sizeof(Complex16));
+    memcpy(Heff->b, &(G->b[Sqr(G->BlockSize)]), (Heff->N  )*Sqr(G->BlockSize)*sizeof(Complex16));
+    for(int i=0; i<Sqr(G->BlockSize); i++)
+    {
+      Heff->b[i].Im*=-1;
+    }
+  }
+  return 0;
+}
+
+
+
+int BlockTriDiagonalMatrixFromEffectiveHamiltonian(BlockTriDiagonalMatrixType const * const Heff, BlockTriDiagonalMatrixType * const G)
+{
+ G->N = Heff->N+1;
+ G->QComplex = Heff->QComplex;
+ G->BlockSize = Heff->BlockSize;
+ InitBlockTridiagonalMatrix(G);
+ G->mu=Heff->mu;
+ memcpy(&(G->BlockSizeList[1]), Heff->BlockSizeList, (Heff->N+1)*sizeof(uint32_t));
+ if(G->QComplex==0)
+ { // real
+   memcpy(&(G->aRe[Sqr(G->BlockSize)]), Heff->aRe, (Heff->N+1)*Sqr(G->BlockSize)*sizeof(double));
+   memcpy(&(G->bRe[Sqr(G->BlockSize)]), Heff->bRe, (Heff->N  )*Sqr(G->BlockSize)*sizeof(double));
+ }
+ else
+ { // complex
+   memcpy(&(G->a[Sqr(G->BlockSize)]), Heff->a, (Heff->N+1)*Sqr(G->BlockSize)*sizeof(Complex16));
+   memcpy(&(G->b[Sqr(G->BlockSize)]), Heff->b, (Heff->N  )*Sqr(G->BlockSize)*sizeof(Complex16));
+   for(int i=0; i<Sqr(G->BlockSize); i++)
+   {
+     G->b[i+Sqr(G->BlockSize)].Im*=-1;
+   }
+ }
+ return 0;
+}

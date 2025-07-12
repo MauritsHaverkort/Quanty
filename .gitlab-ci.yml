@@ -168,6 +168,8 @@ test-jobs-Responsefunction:
           - "Chop"
           - "CreateBitMasks"
           - "Deflation"
+          - "EffectiveHamiltonian"
+          - "FromEffectiveHamiltonian"
           - "InvertEnergy"
           - "LengthZero"
           - "MergePolesInInterval"

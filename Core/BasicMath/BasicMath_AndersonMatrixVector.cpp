@@ -132,6 +132,31 @@ double AndersonMatrixInverse(AndersonMatrixType const M, MatrixType * const MI)
   return MatrixInverse(MI);
 }
 
+/*  given
+ *    a0 + b0 1/(w - a1 - sum_i b_i 1/( w-a_{i+1} ) b_i ) b_0
+ *  return
+ *     a1 + sum_i b_i 1/( w-a_{i+1} ) b_i )
+ */
+int AndersonMatrixEffectiveHamiltonian(AndersonMatrixType const * const Gin, ListOfPoles * const Heff)
+{
+  if(Gin->N==0)
+  {
+    Heff->N=0;
+    InitListOfPoles(Heff);
+    Heff->mu = Gin->mu;
+    return 0;
+  }
+  Heff->N = Gin->N-1;
+  InitListOfPoles(Heff);
+  Heff->mu = Gin->mu;
+  if (Heff->N > 1) memcpy(Heff->a, &(Gin->a[2]), (Heff->N)*sizeof(double));
+  Heff->a0 = Gin->a[1];
+  for (int i=0;i<Heff->N;i++)
+  {
+    Heff->b[i] = Sqr( Gin->b[i+1] );
+  }
+  return 0;
+}
 
 /*
 *  M<- M + alpha B

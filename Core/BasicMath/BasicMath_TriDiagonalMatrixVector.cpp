@@ -141,7 +141,35 @@ double TriDiagonalMatrixInverse(TriDiagonalMatrixType const M, MatrixType * cons
   return MatrixInverse(MI);
 }
 
-
+/* Given G = a0 + b0 1/(w - a1 - b1 (1/(w - ...)) b1 ) b0
+ * return
+ *  a1 + b1 (1/(w - ...)) b1
+ */
+int TriDiagonalMatrixEffectiveHamiltonian(TriDiagonalMatrixType const * const G, TriDiagonalMatrixType * const Heff)
+{
+  if (G->N==0)
+  {
+    printf("TriDiagonalMatrixEffectiveHamiltonian failed with on response function with length 0");
+    Heff->N=0;
+    InitTriDiagonalMatrix(Heff);
+    return 1;
+  }
+  Heff->N = G->N-1;
+  InitTriDiagonalMatrix(Heff);
+  Heff->mu=G->mu;
+  memcpy(Heff->a, &(G->a[1]), (Heff->N+1)*sizeof(double));
+  memcpy(Heff->b, &(G->b[1]), (Heff->N  )*sizeof(double));
+  return 0;
+}
+int TriDiagonalMatrixFromEffectiveHamiltonian(TriDiagonalMatrixType const * const Heff, TriDiagonalMatrixType * const G)
+{
+  G->N = Heff->N+1;
+  InitTriDiagonalMatrix(G);
+  G->mu=Heff->mu;
+  memcpy(&(G->a[1]), Heff->a, (Heff->N+1)*sizeof(double));
+  memcpy(&(G->b[1]), Heff->b, (Heff->N  )*sizeof(double));
+  return 0;
+}
 
 
 /*  M<- M + alpha B

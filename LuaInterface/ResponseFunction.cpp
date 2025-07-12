@@ -644,6 +644,38 @@ static int LuaResponseFunctionTranspose(lua_State *L)
 }
 
 
+/*  When A0=0 and B0 = 1 this returns w - G(w)^{-1}
+ *  G = A0 + B0^* 1 / (w - A1 - B1 1/(...) B1^+ ) B0^T
+ *  Return (B0^T)^{-1} ( A1 - B1 1/(...) B1^+ ) (B0^*)^{-1}
+ */
+static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
+{
+  ResponsefunctionType *Gin,*Heff;
+  Gin = luaL_checkResponsefunction(L,1);
+  Heff = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  ResponseFunctionEffectiveHamiltonian(Gin,Heff);
+  // we give the controle of the allocation of the memory of Heff to Lua
+  // turn the type to a lower case letter
+  Heff->type = Heff->type | 32;
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  FreeResponsefunction(Gin);
+  return 1;
+}
+
+static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
+{
+ ResponsefunctionType *Gout,*Heff;
+ Heff = luaL_checkResponsefunction(L,1);
+ Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+ ResponseFunctionFromEffectiveHamiltonian(Heff, Gout);
+ // we give the controle of the allocation of the memory of Gout to Lua
+ // turn the type to a lower case letter
+ Gout->type = Gout->type | 32;
+ luaL_setmetatable(L, "ResponseFunction_Type");
+ FreeResponsefunction(Heff);
+ return 1;
+}
+
 /*  G(w) -> G(w)[i1,i2,...in]
  *
  */
@@ -3124,6 +3156,8 @@ static int LuaResponseFunctionNewIndex(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
+  {"EffectiveHamiltonian",LuaResponseFunctionEffectiveHamiltonian},
+  {"FromEffectiveHamiltonian",LuaResponseFunctionFromEffectiveHamiltonian},
   {"New", LuaResponseFunctionNew},
   {"ReducePoles", LuaReducePolesResponseFunction},
   {"Rotate", LuaResponseFunctionRotate},

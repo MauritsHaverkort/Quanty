@@ -3100,7 +3100,6 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   Complex16  alpha;
   Complex16  beta;
   Complex16  cwork[lcwork];
-  Complex16  phase;
   alpha.Re=1; alpha.Im=0;
   beta.Re=0;  beta.Im=0;
   if (M->Ni != M->Nj)

@@ -562,6 +562,7 @@ int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Dat
 
 int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, bool Negate, double ScaleOffDiagonal, double ShiftOffDiagonal)
 {
+  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,Negate,0);
   int i;
   FramePlotOptions FPOInset;
   // plot graphs to layer 1 to NXPlots * NYPlots

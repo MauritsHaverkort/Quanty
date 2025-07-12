@@ -3,6 +3,7 @@ uint32_t InitAndersonMatrix(AndersonMatrixType * const M);
 uint32_t InitIdentityAndersonMatrix(AndersonMatrixType * const M);
 void AndersonMatrixChop(AndersonMatrixType * const M, double const epsilon);
 double AndersonMatrixInverse(AndersonMatrixType const M, MatrixType * const MI);
+int AndersonMatrixEffectiveHamiltonian(AndersonMatrixType const * const Gin, ListOfPoles * const Heff);
 void AndersonMatrixAdd(AndersonMatrixType * const M, AndersonMatrixType B, double alphaRe);
 void AndersonMatrixScalarMultiply(AndersonMatrixType * const M, double alphaRe);
 uint32_t AndersonMatrixPart(AndersonMatrixType * const M, AndersonMatrixType A, const uint32_t iStart, const uint32_t iEnd);

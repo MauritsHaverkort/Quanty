@@ -795,7 +795,6 @@ uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixTyp
 
 uint32_t BlockSelfEnergyListOfPolesFromAndersonRepresentation(BlockAndersonMatrixType const G0, BlockAndersonMatrixType const G, BlockListOfPoles * const Sigma, double epsilon)
 {
-  uint32_t i;
   BlockListOfPoles IG0;
   if (BlockAndersonMatrixInverseToListOfPoles(&G, Sigma, epsilon))
   {
@@ -1299,6 +1298,195 @@ int ResponseFunctionTranspose(ResponsefunctionType * const Gin, Responsefunction
   return 0;
 }
 
+/* Given a response function we return
+ *  case 1 anderson
+ *  G = A0 + B0^* 1/(w - A1 - sum_i B_i 1/(A_{i+1} B_i^+) B0^T
+ *  Heff = A1 - sum_i B_i 1/(A_{i+1} B_i^+)
+ *
+ *  case 2 tridiagonal
+ *
+ *  case 3 list of poles
+ *
+ *  case 4 natural impurity orbitals
+ *
+ */
+int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
+{
+  if(Gin->Block==false)
+  { // scalar response functions
+    switch (Gin->type|32)
+    {
+      case 'a':
+      {
+        Gout->type = 'L';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (ListOfPoles*)malloc(sizeof(ListOfPoles));
+        AndersonMatrixEffectiveHamiltonian(((AndersonMatrixType*)(Gin->data)), ((ListOfPoles*)(Gout->data)));
+      }
+      break;
+      case 'l':
+      {
+        TriDiagonalMatrixType Gt;
+        ListOfPolesToTridiagonalMatrix(*((ListOfPoles*)(Gin->data)), &Gt, ((ListOfPoles*)(Gin->data))->N);
+        Gout->type = 'T';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
+        TriDiagonalMatrixEffectiveHamiltonian(&Gt, ((TriDiagonalMatrixType*)(Gout->data)));
+        FreeTriDiagonalMatrix(&Gt);
+      }
+      break;
+      case 't':
+      {
+        Gout->type = 'T';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
+        TriDiagonalMatrixEffectiveHamiltonian(((TriDiagonalMatrixType*)(Gin->data)), ((TriDiagonalMatrixType*)(Gout->data)));
+      }
+      break;
+      case 'n':
+      {
+        AndersonMatrixType Gt;
+        BADoubleTriDiagonalMatrixToAndersonMatrix((BADoubleTriDiagonalMatrixType*)Gin->data, &Gt);
+        Gout->type = 'L';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (ListOfPoles*)malloc(sizeof(ListOfPoles));
+        AndersonMatrixEffectiveHamiltonian(&Gt, ((ListOfPoles*)(Gout->data)));
+        FreeAndersonMatrix(&Gt);
+      }
+      break;
+    }
+    
+  }
+  else
+  { // block response functions
+    switch (Gin->type|32)
+    {
+      case 'a':
+      {
+        Gout->type = 'L';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
+        BlockAndersonMatrixInverseToListOfPoles((BlockAndersonMatrixType*)(Gin->data), (BlockListOfPoles *)(Gout->data) , DBL_MIN);
+      }
+      break;
+      case 'l':
+      {
+        BlockTriDiagonalMatrixType Gt;
+        BlockListOfPolesToBlockTridiagonalMatrix(*((BlockListOfPoles*)(Gin->data)), &Gt, 1+((BlockListOfPoles*)(Gin->data))->N, 100*DBL_EPSILON);
+        Gout->type = 'T';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
+        BlockTriDiagonalMatrixEffectiveHamiltonian(&Gt, ((BlockTriDiagonalMatrixType*)(Gout->data)));
+        FreeBlockTridiagonalMatrix(&Gt);
+      }
+      break;
+      case 't':
+      {
+        Gout->type = 'T';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
+        BlockTriDiagonalMatrixEffectiveHamiltonian(((BlockTriDiagonalMatrixType*)(Gin->data)), ((BlockTriDiagonalMatrixType*)(Gout->data)));
+      }
+      break;
+      case 'n':
+      {
+        BlockAndersonMatrixType Gt;
+        BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix( ((BlockNaturalImpurityOrbitalMatrixType *)(Gin->data)), &Gt);
+        Gout->type = 'L';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
+        BlockAndersonMatrixInverseToListOfPoles(&Gt, (BlockListOfPoles *)(Gout->data) , DBL_MIN);
+        FreeBlockAndersonMatrix(&Gt);
+      }
+      break;
+    }
+  }
+  return 0;
+}
+
+int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
+{
+  if(Gin->Block==false)
+  { // scalar response functions
+    switch (Gin->type|32)
+    {
+      case 'a':
+      {
+        
+      }
+      break;
+      case 'l':
+      {
+        
+      }
+      break;
+      case 't':
+      {
+        Gout->type = 'T';
+        Gout->Block = false;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
+        TriDiagonalMatrixFromEffectiveHamiltonian(((TriDiagonalMatrixType*)(Gin->data)), ((TriDiagonalMatrixType*)(Gout->data)));
+      }
+      break;
+      case 'n':
+      {
+        
+      }
+      break;
+    }
+    
+  }
+  else
+  { // block response functions
+    switch (Gin->type|32)
+    {
+      case 'a':
+      {
+        
+      }
+      break;
+      case 'l':
+      {
+        
+      }
+      break;
+      case 't':
+      {
+        Gout->type = 'T';
+        Gout->Block = true;
+        Gout->NSuggestedGridPoints=0;
+        Gout->SuggestedGrid=NULL;
+        Gout->data = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
+        BlockTriDiagonalMatrixFromEffectiveHamiltonian(((BlockTriDiagonalMatrixType*)(Gin->data)), ((BlockTriDiagonalMatrixType*)(Gout->data)));
+      }
+      break;
+      case 'n':
+      {
+        
+      }
+      break;
+    }
+  }
+  return 0;
+}
 
 
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
