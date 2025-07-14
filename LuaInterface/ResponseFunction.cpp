@@ -2569,7 +2569,7 @@ static int LuaResponseFunctionRotate(lua_State * L)
   
   uint32_t len = (uint32_t)lua_gettop(L);
   if(len!=2) luaL_error(L, "ResponseFunction.Rotate called with %d arguments, two arguments expected",len);
-  G = (ResponsefunctionType *) luaL_checkudata(L, 1, "ResponseFunction_Type");
+  G = luaL_checkResponsefunction(L,1);
   U=luaL_checkCompactMatrix(L, 2);
   if(G->Block==false)
   {
