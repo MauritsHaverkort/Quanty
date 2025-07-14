@@ -176,6 +176,7 @@ test-jobs-Responsefunction:
           - "PlaceOnMesh"
           - "Pole_Reduction"
           - "ReducePoles"
+          - "RemovePolesInInterval"
           - "ToMatrix"
           - "ToOperator"
           - "ToSpectra"

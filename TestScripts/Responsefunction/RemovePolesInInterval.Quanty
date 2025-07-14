@@ -1,0 +1,45 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction RemovePolesInInterval             --")
+print("--------------------------------------------------------")
+
+
+print("Scalar")
+
+a = {10, -5,  -4,   0,    4,   5}
+b = {    0.1, 0.2, 0.3, 0.4, 0.5}
+G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="G"})
+
+G1 = ResponseFunction.RemovePolesInInterval(G,-6,1)
+print(G1)
+
+G1 = ResponseFunction.RemovePolesInInterval(G,-1,1)
+print(G1)
+
+print("Matrix")
+
+
+a = {{{10}}, -5,  -4,   0,    4,   5}
+b = {    {{0.1}}, {{0.2}}, {{0.3}}, {{0.4}}, {{0.5}}}
+G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="G"})
+
+
+G1 = ResponseFunction.RemovePolesInInterval(G,-6,1)
+print(G1)
+
+G1 = ResponseFunction.RemovePolesInInterval(G,-1,1)
+print(G1)
+
+
+os.exit()
+
+
+
+
+
+
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
+
+

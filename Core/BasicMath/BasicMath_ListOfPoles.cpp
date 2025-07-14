@@ -1105,16 +1105,15 @@ void RemoveListOfPolesInInterval(ListOfPoles * M, double Emin, double Emax)
 {
   int i, nMerged;
   nMerged=0;
-  double bnew;
   OrderListOfPoles(M);
   for (i=0;i<M->N;i++)
   {
     if(M->a[i]>Emax)
     {
-      if(nMerged>1)
+      if(nMerged>0)
       {
-        M->a[i-(nMerged-1)]=M->a[i];
-        M->b[i-(nMerged-1)]=M->b[i];
+        M->a[i-(nMerged)]=M->a[i];
+        M->b[i-(nMerged)]=M->b[i];
       }
     }
     else if(M->a[i]>=Emin)
@@ -1122,9 +1121,9 @@ void RemoveListOfPolesInInterval(ListOfPoles * M, double Emin, double Emax)
       nMerged++;
     }
   }
-  if(nMerged>1)
+  if(nMerged>0)
   {
-    M->N-=(nMerged-1);
+    M->N-=(nMerged);
   }
 }
 
