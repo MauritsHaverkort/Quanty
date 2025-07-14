@@ -315,12 +315,43 @@ static int LuaMergePolesInIntervalResponseFunction(lua_State *L)
   return 1;
 }
 
+
+/*  On stack ResponseFunction, Emin, Emax
+ *  Returns a ResponseFunction Whereby all poles in the window Emin to Emax are removed, i.e. their residue is set to zero
+ */
+static int LuaRemovePolesInIntervalResponseFunction(lua_State *L)
+{
+  ResponsefunctionType *M, MRed;
+  double Emin,Emax;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=3) return luaL_error(L, "Error in RemovePolesInInterval: %d argument(s), 3 expected (response function, Emin, Emax.\n", len);
+
+  M = luaL_checkResponsefunction(L,1);
+  if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in RemovePolesInInterval: 2nd argument should be the Emin.\n");
+  Emin=(double)luaL_checknumber(L, 2);
+  if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in RemovePolesInInterval: 3rd argument should be the Emax.\n");
+  Emax=(double)luaL_checknumber(L, 3);
+  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  if(MRed.Block==true)
+  {
+    RemoveBlockListOfPolesInInterval((BlockListOfPoles *)MRed.data, Emin,  Emax);
+  }
+  else
+  {
+    RemoveListOfPolesInInterval((ListOfPoles *)MRed.data, Emin,  Emax);
+  }
+  LuaPush_ResponseFunction(L, &MRed);
+  FreeResponsefunction(M);
+  FreeResponsefunction(&MRed);
+  return 1;
+}
+
 /*
  *
  */
 static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 {
-  ResponsefunctionType *M, MRed;
+  ResponsefunctionType *M, *MRed;
   uint32_t NE;
   double *mesh;
 
@@ -329,19 +360,24 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
   if(lua_type(L,2)!=LUA_TTABLE) return luaL_error(L, "Error in PlaceOnMesh: the 2nd argument should be a list of energy grid points.\n");
 
   M = luaL_checkResponsefunction(L,1);
-  if((M->type|32)!='l')
-  {
-    return luaL_error(L, "Error in PlaceOnMesh: The first argument should be of type 'L'/'l' (ListOfPoles).\n");
-  }
   mesh = luaL_checkarray_double(L, 2, &NE);
-  ResponsefunctionCopy(M,&MRed);
-  
-  
-  
-  BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed.data, mesh, NE);
-  LuaPush_ResponseFunction(L, &MRed);
+  MRed = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  ConvertResponsefunction(M, MRed, 'l', 0, 0);
+  if(MRed->Block==true)
+  {
+    BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed->data, mesh, NE);
+  }
+  else
+  {
+    ListOfPoles temp;
+    ListOfPolesPlaceOnMesh((ListOfPoles*)MRed->data, &temp, mesh, NE);
+    FreeListOfPoles((ListOfPoles*)MRed->data);
+    *(ListOfPoles*)MRed->data = temp;
+  }
+  // give Lua the controle over the allocation
+  MRed->type = MRed->type|32;
+  luaL_setmetatable(L, "ResponseFunction_Type");
   FreeResponsefunction(M);
-  FreeResponsefunction(&MRed);
   return 1;
 }
 
@@ -3160,6 +3196,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"FromEffectiveHamiltonian",LuaResponseFunctionFromEffectiveHamiltonian},
   {"New", LuaResponseFunctionNew},
   {"ReducePoles", LuaReducePolesResponseFunction},
+  {"RemovePolesInInterval",LuaRemovePolesInIntervalResponseFunction},
   {"Rotate", LuaResponseFunctionRotate},
   {"MergePolesInInterval", LuaMergePolesInIntervalResponseFunction},
   {"PlaceOnMesh", LuaPlaceOnMeshResponseFunction},

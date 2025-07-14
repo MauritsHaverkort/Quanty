@@ -1098,6 +1098,36 @@ void MergeListOfPolesInInterval(ListOfPoles * M, double Emin, double Emax)
   }
 }
 
+/*
+ * set the residue of all poles in the interval Emin to Emax to zero
+ */
+void RemoveListOfPolesInInterval(ListOfPoles * M, double Emin, double Emax)
+{
+  int i, nMerged;
+  nMerged=0;
+  double bnew;
+  OrderListOfPoles(M);
+  for (i=0;i<M->N;i++)
+  {
+    if(M->a[i]>Emax)
+    {
+      if(nMerged>1)
+      {
+        M->a[i-(nMerged-1)]=M->a[i];
+        M->b[i-(nMerged-1)]=M->b[i];
+      }
+    }
+    else if(M->a[i]>=Emin)
+    {
+      nMerged++;
+    }
+  }
+  if(nMerged>1)
+  {
+    M->N-=(nMerged-1);
+  }
+}
+
 
 
 uint32_t ListOfPolesMoveNegativeEnergyToMu(ListOfPoles * const A, double const mu)
@@ -1448,6 +1478,65 @@ uint32_t ListOfPolesCopy(ListOfPoles * M, ListOfPoles B)
   {
     M->a[i] = B.a[i];
     M->b[i] = B.b[i];
+  }
+  return 0;
+}
+
+uint32_t ListOfPolesPlaceOnMesh(ListOfPoles *Min, ListOfPoles *Mout, double * mesh, int NE)
+{
+  int i,j;
+  double dE,wl,wr;
+  Mout->N = NE;
+  InitListOfPoles(Mout);
+  Mout->a0 = Min->a0;
+  Mout->mu = Min->mu;
+  memcpy(Mout->a, mesh, NE*sizeof(double));
+  for(i=0;i<Min->N;i++)
+  {
+    if(Min->a[i] <= Mout->a[0])
+    {
+      Mout->b[0]+=Min->b[i];
+      continue;
+    }
+    if(Min->a[i] >= Mout->a[NE-1])
+    {
+      Mout->b[NE-1]+=Min->b[i];
+      continue;
+    }
+    j=1;
+    while(Min->a[i] > Mout->a[j]) {j++;}
+    // value inbetween Mout->a[j-1] and Mout->a[j]
+    dE = Mout->a[j] - Mout->a[j-1];
+    wr = Min->a[i] - Mout->a[j-1];
+    wl = Mout->a[j] - Min->a[i];
+    if(wr>wl)
+    {
+      if(wl<DBL_EPSILON*dE)
+      {
+        wl=0;
+        wr=1;
+      }
+      else
+      {
+        wr /= dE;
+        wl = 1 - wr;
+      }
+    }
+    else
+    {
+      if(wr<DBL_EPSILON*dE)
+      {
+        wr=0;
+        wl=1;
+      }
+      else
+      {
+        wl /= dE;
+        wr = 1 - wl;
+      }
+    }
+    Mout->b[j-1]+=wl * Min->b[i];
+    Mout->b[j  ]+=wr * Min->b[i];
   }
   return 0;
 }
