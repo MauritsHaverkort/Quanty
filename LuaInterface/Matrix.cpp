@@ -979,10 +979,10 @@ static int LuaMatrixMul(lua_State * L)
               A = (CompactMatrixType*)luaL_checkudata(L, 1, "Matrix_Type");
               B = (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
               C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-              luaL_setmetatable(L, "Matrix_Type");
-              C->OnLuaStack=true;
               if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
               CompactMatrixMultiply('N', 'N', A, B, C);
+              luaL_setmetatable(L, "Matrix_Type");
+              C->OnLuaStack=true;
               return 1;
             }
           }
@@ -993,10 +993,10 @@ static int LuaMatrixMul(lua_State * L)
             A = (CompactMatrixType*) luaL_checkudata(L, 1, "Matrix_Type");
             B = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-            luaL_setmetatable(L, "Matrix_Type");
-            C->OnLuaStack=true;
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
             CompactMatrixMultiply('N', 'N', A, B, C);
+            luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             FreeCompactMatrix(B);
             free(B);
             return 1;
@@ -1049,10 +1049,10 @@ static int LuaMatrixMul(lua_State * L)
             A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
             B = (CompactMatrixType *) (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-            luaL_setmetatable(L, "Matrix_Type");
-            C->OnLuaStack=true;
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
             CompactMatrixMultiply('N', 'N', A, B, C);
+            luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             FreeCompactMatrix(A);
             free(A);
             return 1;
@@ -1196,13 +1196,13 @@ static int LuaMatrixDiv(lua_State * L)
               A = (CompactMatrixType*)luaL_checkudata(L, 1, "Matrix_Type");
               B = (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
               C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-              luaL_setmetatable(L, "Matrix_Type");
-              C->OnLuaStack=true;
               CompactMatrixCopy(*B, &Binv);
               if(Binv.Nj!=Binv.Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",Binv.Ni,Binv.Nj);
               if(CompactMatrixInverse(&Binv)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
               if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
               CompactMatrixMultiply('N', 'N', A, &Binv, C);
+              luaL_setmetatable(L, "Matrix_Type");
+              C->OnLuaStack=true;
               FreeCompactMatrix(&Binv);
               return 1;
             }
@@ -1214,12 +1214,12 @@ static int LuaMatrixDiv(lua_State * L)
             A = (CompactMatrixType*) luaL_checkudata(L, 1, "Matrix_Type");
             B = (CompactMatrixType *) luaL_checkCompactMatrix(L, 2);
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-            luaL_setmetatable(L, "Matrix_Type");
-            C->OnLuaStack=true;
             if(B->Nj!=B->Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",B->Ni,B->Nj);
             if(CompactMatrixInverse(B)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
             CompactMatrixMultiply('N', 'N', A, B, C);
+            luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             FreeCompactMatrix(B);
             free(B);
             return 1;
@@ -1273,13 +1273,13 @@ static int LuaMatrixDiv(lua_State * L)
             A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
             B = (CompactMatrixType *) (CompactMatrixType*)luaL_checkudata(L, 2, "Matrix_Type");
             C = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-            luaL_setmetatable(L, "Matrix_Type");
-            C->OnLuaStack=true;
             CompactMatrixCopy(*B, &Binv);
             if(Binv.Nj!=Binv.Ni) return luaL_error(L,"Matrix inversion only works for square matrices dimensions are (%d %d)\n",Binv.Ni,Binv.Nj);
             if(CompactMatrixInverse(&Binv)!=0) return luaL_error(L,"Matrix inversion failed, probably the matrix is singular\n");
             if(A->Nj!=B->Ni) return luaL_error(L,"Matrix multiplication requirs the number of columns of the left matrix (%d) to be equal to the number of rows (%d) of the right matrix\n",A->Nj,B->Ni);
             CompactMatrixMultiply('N', 'N', A, B, C);
+            luaL_setmetatable(L, "Matrix_Type");
+            C->OnLuaStack=true;
             FreeCompactMatrix(A);
             free(A);
             FreeCompactMatrix(&Binv);

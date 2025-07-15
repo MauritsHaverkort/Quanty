@@ -1310,10 +1310,18 @@ int ResponseFunctionTranspose(ResponsefunctionType * const Gin, Responsefunction
  *  case 4 natural impurity orbitals
  *
  */
-int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
+int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout, CompactMatrixType * const A0, CompactMatrixType * const B0)
 {
   if(Gin->Block==false)
   { // scalar response functions
+    A0->Ni=1;
+    A0->Nj=1;
+    A0->QComplex=0;
+    InitCompactMatrix(A0);
+    B0->Ni=1;
+    B0->Nj=1;
+    B0->QComplex=0;
+    InitCompactMatrix(B0);
     switch (Gin->type|32)
     {
       case 'a':
@@ -1324,6 +1332,8 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (ListOfPoles*)malloc(sizeof(ListOfPoles));
         AndersonMatrixEffectiveHamiltonian(((AndersonMatrixType*)(Gin->data)), ((ListOfPoles*)(Gout->data)));
+        A0->VRe[0] = ((AndersonMatrixType*)(Gin->data))->a[0];
+        B0->VRe[0] = ((AndersonMatrixType*)(Gin->data))->b[0];
       }
       break;
       case 'l':
@@ -1336,6 +1346,8 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
         TriDiagonalMatrixEffectiveHamiltonian(&Gt, ((TriDiagonalMatrixType*)(Gout->data)));
+        A0->VRe[0] = Gt.a[0];
+        B0->VRe[0] = Gt.b[0];
         FreeTriDiagonalMatrix(&Gt);
       }
       break;
@@ -1347,6 +1359,8 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
         TriDiagonalMatrixEffectiveHamiltonian(((TriDiagonalMatrixType*)(Gin->data)), ((TriDiagonalMatrixType*)(Gout->data)));
+        A0->VRe[0] = ((TriDiagonalMatrixType*)(Gin->data))->a[0];
+        B0->VRe[0] = ((TriDiagonalMatrixType*)(Gin->data))->b[0];
       }
       break;
       case 'n':
@@ -1359,6 +1373,8 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (ListOfPoles*)malloc(sizeof(ListOfPoles));
         AndersonMatrixEffectiveHamiltonian(&Gt, ((ListOfPoles*)(Gout->data)));
+        A0->VRe[0] = Gt.a[0];
+        B0->VRe[0] = Gt.b[0];
         FreeAndersonMatrix(&Gt);
       }
       break;
@@ -1377,6 +1393,24 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
         BlockAndersonMatrixInverseToListOfPoles((BlockAndersonMatrixType*)(Gin->data), (BlockListOfPoles *)(Gout->data) , DBL_MIN);
+        A0->Ni=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        A0->Nj=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        A0->QComplex=((BlockAndersonMatrixType*)(Gin->data))->QComplex;
+        InitCompactMatrix(A0);
+        B0->Ni=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        B0->Nj=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        B0->QComplex=((BlockAndersonMatrixType*)(Gin->data))->QComplex;
+        InitCompactMatrix(B0);
+        if(A0->QComplex==0)
+        {
+          memcpy(A0->VRe, ((BlockAndersonMatrixType*)(Gin->data))->aRe, Sqr(A0->Ni)*sizeof(double));
+          memcpy(B0->VRe, ((BlockAndersonMatrixType*)(Gin->data))->bRe, Sqr(B0->Ni)*sizeof(double));
+        }
+        else
+        {
+          memcpy(A0->V, ((BlockAndersonMatrixType*)(Gin->data))->a, Sqr(A0->Ni)*sizeof(Complex16));
+          memcpy(B0->V, ((BlockAndersonMatrixType*)(Gin->data))->b, Sqr(B0->Ni)*sizeof(Complex16));
+        }
       }
       break;
       case 'l':
@@ -1389,6 +1423,24 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
         BlockTriDiagonalMatrixEffectiveHamiltonian(&Gt, ((BlockTriDiagonalMatrixType*)(Gout->data)));
+        A0->Ni=Gt.BlockSize;
+        A0->Nj=Gt.BlockSize;
+        A0->QComplex=Gt.QComplex;
+        InitCompactMatrix(A0);
+        B0->Ni=Gt.BlockSize;
+        B0->Nj=Gt.BlockSize;
+        B0->QComplex=Gt.QComplex;
+        InitCompactMatrix(B0);
+        if(A0->QComplex==0)
+        {
+          memcpy(A0->VRe, Gt.aRe, Sqr(A0->Ni)*sizeof(double));
+          memcpy(B0->VRe, Gt.bRe, Sqr(B0->Ni)*sizeof(double));
+        }
+        else
+        {
+          memcpy(A0->V, Gt.a, Sqr(A0->Ni)*sizeof(Complex16));
+          memcpy(B0->V, Gt.b, Sqr(B0->Ni)*sizeof(Complex16));
+        }
         FreeBlockTridiagonalMatrix(&Gt);
       }
       break;
@@ -1400,6 +1452,24 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
         BlockTriDiagonalMatrixEffectiveHamiltonian(((BlockTriDiagonalMatrixType*)(Gin->data)), ((BlockTriDiagonalMatrixType*)(Gout->data)));
+        A0->Ni=((BlockTriDiagonalMatrixType*)(Gin->data))->BlockSize;
+        A0->Nj=((BlockTriDiagonalMatrixType*)(Gin->data))->BlockSize;
+        A0->QComplex=((BlockTriDiagonalMatrixType*)(Gin->data))->QComplex;
+        InitCompactMatrix(A0);
+        B0->Ni=((BlockTriDiagonalMatrixType*)(Gin->data))->BlockSize;
+        B0->Nj=((BlockTriDiagonalMatrixType*)(Gin->data))->BlockSize;
+        B0->QComplex=((BlockTriDiagonalMatrixType*)(Gin->data))->QComplex;
+        InitCompactMatrix(B0);
+        if(A0->QComplex==0)
+        {
+          memcpy(A0->VRe, ((BlockTriDiagonalMatrixType*)(Gin->data))->aRe, Sqr(A0->Ni)*sizeof(double));
+          memcpy(B0->VRe, ((BlockTriDiagonalMatrixType*)(Gin->data))->bRe, Sqr(B0->Ni)*sizeof(double));
+        }
+        else
+        {
+          memcpy(A0->V, ((BlockTriDiagonalMatrixType*)(Gin->data))->a, Sqr(A0->Ni)*sizeof(Complex16));
+          memcpy(B0->V, ((BlockTriDiagonalMatrixType*)(Gin->data))->b, Sqr(B0->Ni)*sizeof(Complex16));
+        }
       }
       break;
       case 'n':
@@ -1412,6 +1482,24 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
         Gout->SuggestedGrid=NULL;
         Gout->data = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
         BlockAndersonMatrixInverseToListOfPoles(&Gt, (BlockListOfPoles *)(Gout->data) , DBL_MIN);
+        A0->Ni=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        A0->Nj=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        A0->QComplex=((BlockAndersonMatrixType*)(Gin->data))->QComplex;
+        InitCompactMatrix(A0);
+        B0->Ni=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        B0->Nj=((BlockAndersonMatrixType*)(Gin->data))->BlockSize;
+        B0->QComplex=((BlockAndersonMatrixType*)(Gin->data))->QComplex;
+        InitCompactMatrix(B0);
+        if(A0->QComplex==0)
+        {
+          memcpy(A0->VRe, Gt.aRe, Sqr(A0->Ni)*sizeof(double));
+          memcpy(B0->VRe, Gt.bRe, Sqr(B0->Ni)*sizeof(double));
+        }
+        else
+        {
+          memcpy(A0->V, Gt.a, Sqr(A0->Ni)*sizeof(Complex16));
+          memcpy(B0->V, Gt.b, Sqr(B0->Ni)*sizeof(Complex16));
+        }
         FreeBlockAndersonMatrix(&Gt);
       }
       break;

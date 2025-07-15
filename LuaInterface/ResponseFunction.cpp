@@ -686,16 +686,26 @@ static int LuaResponseFunctionTranspose(lua_State *L)
  */
 static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
 {
+  CompactMatrixType *A0,*B0;
   ResponsefunctionType *Gin,*Heff;
   Gin = luaL_checkResponsefunction(L,1);
   Heff = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  ResponseFunctionEffectiveHamiltonian(Gin,Heff);
+  A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  ResponseFunctionEffectiveHamiltonian(Gin,Heff,A0,B0);
   // we give the controle of the allocation of the memory of Heff to Lua
   // turn the type to a lower case letter
   Heff->type = Heff->type | 32;
-  luaL_setmetatable(L, "ResponseFunction_Type");
+  luaL_getmetatable(L, "ResponseFunction_Type");
+  lua_setmetatable(L, -4);
+  A0->OnLuaStack=true;
+  luaL_getmetatable(L, "Matrix_Type");
+  lua_setmetatable(L, -3);
+  B0->OnLuaStack=true;
+  luaL_getmetatable(L, "Matrix_Type");
+  lua_setmetatable(L, -2);
   FreeResponsefunction(Gin);
-  return 1;
+  return 3;
 }
 
 static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
