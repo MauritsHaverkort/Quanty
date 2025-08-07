@@ -1,0 +1,143 @@
+local A = {
+		[0] = 0,
+		[4] = 0.2,
+		[6] = 0.008
+}
+
+AkmOh={}
+
+AkmOh.XYZ = {{0, 0, A[0]} ,
+			 {4, 0, A[4]} ,
+			 {4,-4, (sqrt(5/14))*(A[4])} ,
+			 {4, 4, (sqrt(5/14))*(A[4])} ,
+			 {6, 0, A[6]} ,
+			 {6,-4, (-1)*((sqrt(7/2))*(A[6]))} ,
+			 {6, 4, (-1)*((sqrt(7/2))*(A[6]))} }
+
+
+print("Eigen energies from paramters in XYZ orientation ")
+
+Ea2u = A[0] - (12/33) * A[4] + (240/429)*A[6]
+Et1u = A[0] + ( 6/33) * A[4] + (100/429)*A[6]
+Et2u = A[0] - ( 2/33) * A[4] - (180/429)*A[6]
+
+print("Ea2u ",Ea2u)
+print("Et1u ",Et1u)
+print("Et2u ",Et2u)
+
+local A = {
+		[0] = 0,
+		[4] = 0.2,
+		[6] = 0.008
+}
+print("Potential expanded on spherical harmonics for the 111 z direction C4 // 111 -- C3 // z")
+
+A[0] = (1/7)*(Ea2u + (3)*(Et1u + Et2u))
+A[4] = (1/2)*((2)*(Ea2u) + (-3)*(Et1u) + Et2u)
+A[6] = (26/105)*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u))
+
+print("A[0] ", A[0])
+print("A[4] ", A[4])
+print("A[6] ", A[6])
+			
+AkmOh.oneoneonez = {{0, 0, A[0]} ,
+			 {4, 0, A[4]} ,
+			 {4, 3, (-1+-1*I)*((sqrt(5/7))*(A[4]))} ,
+			 {4,-3, (1+-1*I)*((sqrt(5/7))*(A[4]))} ,
+			 {6, 0, A[6]} ,
+			 {6,-3, (-1/8+1/8*I)*((sqrt(35/3))*(A[6]))} ,
+			 {6, 3, (1/8+1/8*I)*((sqrt(35/3))*(A[6]))} ,
+			 {6,-6, (-1/8*I)*((sqrt(77/3))*(A[6]))} ,
+			 {6, 6, (1/8*I)*((sqrt(77/3))*(A[6]))} }
+
+NF=14
+NB=0
+IndexDn_4f={0,2,4,6,8,10,12}
+IndexUp_4f={1,3,5,7,9,11,13}
+
+H={}
+for k, v in pairs(AkmOh) do
+	H[k] = NewOperator("CF",NF,IndexDn_4f,IndexUp_4f,v)
+end
+
+
+val={}
+fun={}
+for k, v in pairs(H) do
+	val[k], fun[k] = Eigensystem(OperatorToMatrix(v))
+end
+
+print(val)
+
+
+
+os.exit()
+
+-- This scripts compares the different settings for point-groups as defined on the Quanty web-page.
+
+print("Oh")
+print("We take \"Random\" values for the crystal fields. Note that these have no physical meaning")
+Et1u = 1.0
+Et2u = 0.345
+Ea2u = 0.186
+
+Akm={}
+Akm.XYZ={{0, 0, (1/7)*(Ea2u + (3)*(Et1u + Et2u))} ,
+	{4, 0, (-3/4)*((2)*(Ea2u) + (-3)*(Et1u) + Et2u)} ,
+ {4,-4, (-3/4)*((sqrt(5/14))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {4, 4, (-3/4)*((sqrt(5/14))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {6, 0, (39/280)*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u))} ,
+ {6,-4, (-39/40)*((1/(sqrt(14)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6, 4, (-39/40)*((1/(sqrt(14)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} }
+
+Akm.OneOneOnez={{0, 0, (1/7)*(Ea2u + (3)*(Et1u + Et2u))} ,
+	{4, 0, (1/2)*((2)*(Ea2u) + (-3)*(Et1u) + Et2u)} ,
+ {4, 3, (-1/2+-1/2*I)*((sqrt(5/7))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {4,-3, (1/2+-1/2*I)*((sqrt(5/7))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {6, 0, (26/105)*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u))} ,
+ {6,-3, (-13/12+13/12*I)*((1/(sqrt(105)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6, 3, (13/12+13/12*I)*((1/(sqrt(105)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6,-6, (-13/60*I)*((sqrt(11/21))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6, 6, (13/60*I)*((sqrt(11/21))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} }
+
+Akm.ZeroSqrt2minu1z = {{0, 0, (1/7)*(Ea2u + (3)*(Et1u + Et2u))} ,
+	{4, 0, (1/2)*((2)*(Ea2u) + (-3)*(Et1u) + Et2u)} ,
+ {4,-3, (-I)*((sqrt(5/14))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {4, 3, (-I)*((sqrt(5/14))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {6, 0, (26/105)*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u))} ,
+ {6,-3, (13/6*I)*((1/(sqrt(210)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6, 3, (13/6*I)*((1/(sqrt(210)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6,-6, (-13/60)*((sqrt(11/21))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6, 6, (-13/60)*((sqrt(11/21))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} }
+
+Akm.sqrt201z = {{0, 0, (1/7)*(Ea2u + (3)*(Et1u + Et2u))} ,
+	{4, 0, (1/2)*((2)*(Ea2u) + (-3)*(Et1u) + Et2u)} ,
+ {4,-3, (-1)*((sqrt(5/14))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u))} ,
+ {4, 3, (sqrt(5/14))*((2)*(Ea2u) + (-3)*(Et1u) + Et2u)} ,
+ {6, 0, (26/105)*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u))} ,
+ {6, 3, (-13/6)*((1/(sqrt(210)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6,-3, (13/6)*((1/(sqrt(210)))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6,-6, (13/60)*((sqrt(11/21))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} ,
+ {6, 6, (13/60)*((sqrt(11/21))*((4)*(Ea2u) + (5)*(Et1u) + (-9)*(Et2u)))} }
+
+
+print(Akm)
+
+NF = 14
+NB = 0
+IndexDn_4f = {0,2,4,6,8,10,12}
+IndexUp_4f = {1,3,5,7,9,11,13}
+H={}
+for k, v in pairs(Akm) do
+	H[k] = NewOperator("CF",NF,IndexDn_4f,IndexUp_4f,v)
+end
+
+print(H)
+
+val={}
+fun={}
+for k, v in pairs(H) do
+	val[k], fun[k] = Eigensystem(OperatorToMatrix(v))
+end
+
+print(val)

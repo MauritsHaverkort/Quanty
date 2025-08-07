@@ -1,0 +1,98 @@
+-- Determine working directory (same as the directory of the input script)
+directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
+
+print("---------------------------------------------------------")
+print("-- DOS and Bands - unit cell dependence single orbital --")
+print("---------------------------------------------------------")
+
+HTB1 = NewTightBinding()
+HTB1.Name = "cubic lattice"
+HTB1.Cell = {{1,0,0},
+						 {0,1,0},
+						 {0,0,1}}
+HTB1.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}}}
+HTB1.Hopping = {{"A.s","A.s",{1,0,0},{{1}}},
+	              {"A.s","A.s",{0,1,0},{{1}}},
+								{"A.s","A.s",{0,0,1},{{1}}}
+								}
+
+
+HTB2 = NewTightBinding()
+HTB2.Name = "cubic lattice different lattice constant"
+HTB2.Cell = {{2,0,0},
+						 {0,2,0},
+						 {0,0,2}}
+HTB2.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}}}
+HTB2.Hopping = {{"A.s","A.s",{2,0,0},{{1}}},
+								{"A.s","A.s",{0,2,0},{{1}}},
+								{"A.s","A.s",{0,0,2},{{1}}}
+								}
+
+
+HTB3 = NewTightBinding()
+HTB3.Name = "cubic lattice parallell piped"
+HTB3.Cell = {{1,1,0},
+						 {0,1,0},
+						 {0,0,2}}
+HTB3.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}}}
+HTB3.Hopping = {{"A.s","A.s",{1,0,0},{{1}}},
+								{"A.s","A.s",{0,1,0},{{1}}},
+								{"A.s","A.s",{0,0,2},{{1}}}
+								}
+
+
+HTB4 = NewTightBinding()
+HTB4.Name = "cubic lattice parallell piped"
+HTB4.Cell = {{1,1,1},
+						 {0,1,1},
+						 {1,0,1}}
+HTB4.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}}}
+HTB4.Hopping = {{"A.s","A.s",{1,0,0},{{1}}},
+								{"A.s","A.s",{0,1,0},{{1}}},
+								{"A.s","A.s",{0,0,1},{{1}}}
+								}
+
+
+G1 = CalculateG(HTB1, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G2 = CalculateG(HTB2, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G3 = CalculateG(HTB3, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G4 = CalculateG(HTB4, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+
+print(G1==G2)
+print(G2==G3)
+print(G3==G1)
+
+PlotPoints=200
+YRange=2
+dYtick=1
+Emin=-5
+Emax=5
+dETick=1
+
+PlG  = Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.014},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.014},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.010},{"LineColor",0xFF0080FF}},
+																				 {{"LineWidth",0.010},{"LineColor",0xFFFF8000}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G3, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.006},{"LineColor",0xFF80FFFF}},
+																				 {{"LineWidth",0.006},{"LineColor",0xFFFFFF80}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G4, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.002},{"LineColor",0xFF800000}},
+																				 {{"LineWidth",0.002},{"LineColor",0xFF000080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
+
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/DOSandBands_01.svg",'w')
+file:write(SVGPlG)
+file:close()

@@ -2523,6 +2523,13 @@ static int LuaTightBindingNewIndex(lua_State * L)
     if((lua_type(L,3)!=LUA_TTABLE)) return luaL_error(L, "Error TightBinding.Hopping should be a list of hopping definitions {{def1}, {def2}, ...}\n");
     a->nH = (uint32_t)lua_objlen(L, 3);
     a->H= (TightBindingDefHopping*)malloc(a->nH*sizeof(TightBindingDefHopping));
+    for(i=0;i<a->nH;i++) // make sure that whne LuaReadHopping fails we can free a without addressing unassigned / random pointers
+    {
+      a->H[i].Hop.Ni=0;
+      a->H[i].Hop.Nj=0;
+      a->H[i].Hop.QComplex=0;
+      a->H[i].Hop.VRe=NULL;
+    }
     for(i=0;i<a->nH;i++)
     {
       lua_rawgeti(L, 3, i+1);
