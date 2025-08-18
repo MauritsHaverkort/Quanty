@@ -1,6 +1,9 @@
 -- Determine working directory (same as the directory of the input script)
 directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
 
+goto test3
+
+
 print("---------------------------------------------------------")
 print("-- DOS and Bands - unit cell dependence single orbital --")
 print("---------------------------------------------------------")
@@ -94,5 +97,256 @@ PlG.Add(Graphics.Plot(G4, {{"PlotPoints",PlotPoints},
 
 SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/DOSandBands_01.svg",'w')
+file:write(SVGPlG)
+file:close()
+
+
+print("---------------------------------------------------")
+print("-- DOS and Bands - unit cell dependence p shell  --")
+print("---------------------------------------------------")
+
+HTB1 = NewTightBinding()
+HTB1.Name = "cubic lattice"
+HTB1.Cell = {{1,0,0},
+						 {0,1,0},
+						 {0,0,1}}
+HTB1.Atoms =  { {"A", {0,0,0},       {{"p", {"x","y","z"}}}}}
+HTB1.Hopping = {{"A.p","A.p",{1,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+								{"A.p","A.p",{0,1,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+								{"A.p","A.p",{0,0,1},{{0.2,0,0},{0,0.2,0},{0,0,1}}}
+								}
+
+
+HTB2 = NewTightBinding()
+HTB2.Name = "cubic lattice different lattice constant"
+HTB2.Cell = {{2,0,0},
+						 {0,2,0},
+						 {0,0,2}}
+HTB2.Atoms =  { {"A", {0,0,0},       {{"p", {"x","y","z"}}}}}
+HTB2.Hopping = {{"A.p","A.p",{2,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+	              {"A.p","A.p",{0,2,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+			      	  {"A.p","A.p",{0,0,2},{{0.2,0,0},{0,0.2,0},{0,0,1}}}
+				       }
+
+
+HTB3 = NewTightBinding()
+HTB3.Name = "cubic lattice parallell piped"
+HTB3.Cell = {{1,1,0},
+						 {0,1,0},
+						 {0,0,2}}
+HTB3.Atoms =  { {"A", {0,0,0},       {{"p", {"x","y","z"}}}}}
+HTB3.Hopping = {{"A.p","A.p",{1,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+	              {"A.p","A.p",{0,1,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+	              {"A.p","A.p",{0,0,2},{{0.2,0,0},{0,0.2,0},{0,0,1}}}
+               }
+
+
+HTB4 = NewTightBinding()
+HTB4.Name = "cubic lattice parallell piped"
+HTB4.Cell = {{1,1,1},
+						 {0,1,1},
+						 {1,0,1}}
+HTB4.Atoms =  { {"A", {0,0,0},       {{"p", {"x","y","z"}}}}}
+HTB4.Hopping = {{"A.p","A.p",{1,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+	              {"A.p","A.p",{0,1,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+	              {"A.p","A.p",{0,0,1},{{0.2,0,0},{0,0.2,0},{0,0,1}}}
+                }
+
+
+G1 = CalculateG(HTB1, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G2 = CalculateG(HTB2, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G3 = CalculateG(HTB3, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G4 = CalculateG(HTB4, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+
+print(G1==G2)
+print(G1==G3)
+print(G1==G4)
+
+PlotPoints=200
+YRange=2
+dYtick=1
+Emin=-5
+Emax=5
+dETick=1
+
+PlG  = Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.014},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.014},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.010},{"LineColor",0xFF0080FF}},
+																				 {{"LineWidth",0.010},{"LineColor",0xFFFF8000}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G3, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.006},{"LineColor",0xFF80FFFF}},
+																				 {{"LineWidth",0.006},{"LineColor",0xFFFFFF80}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G4, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.002},{"LineColor",0xFF800000}},
+																				 {{"LineWidth",0.002},{"LineColor",0xFF000080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
+
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/DOSandBands_02.svg",'w')
+file:write(SVGPlG)
+file:close()
+
+
+
+
+::test3::
+
+
+print("--------------------------------------------------------------------")
+print("-- DOS and Bands - unit cell dependence sp differnt sites orbital --")
+print("--------------------------------------------------------------------")
+
+HTB1 = NewTightBinding()
+HTB1.Name = "cubic lattice"
+HTB1.Cell = {{1,0,0},
+						 {0,1,0},
+						 {0,0,1}}
+HTB1.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}},
+                {"B", {0.1,0.2,0.3}, {{"p", {"x","y","z"}}}}}
+HTB1.Hopping = {{"A.s","A.s",{1,0,0},{{1}}},
+								{"A.s","A.s",{0,1,0},{{1}}},
+								{"A.s","A.s",{0,0,1},{{1}}},
+								
+								{"B.p","B.p",{1,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,1,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,0,1},{{0.2,0,0},{0,0.2,0},{0,0,1}}},
+								
+								{"A.s","B.p",{0.1,0.2,0.3},{{0.267261, 0.534522, 0.801784}}},
+								{"B.p","A.s",{-0.1,-0.2,-0.3},{{0.267261}, {0.534522}, {0.801784}}},
+								
+								{"A.s","B.p",{0.1,0.2,-0.7},{{0.0680414, 0.136083, -0.47629}}},
+								{"B.p","A.s",{-0.1,-0.2,0.7},{{0.0680414}, {0.136083}, {-0.47629}}},
+								
+								
+								}
+
+
+HTB2 = NewTightBinding()
+HTB2.Name = "cubic lattice"
+HTB2.Cell = {{2,0,0},
+						 {0,2,0},
+						 {0,0,2}}
+HTB2.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}},
+								{"B", {0.1,0.2,0.3}, {{"p", {"x","y","z"}}}}}
+HTB2.Hopping = {{"A.s","A.s",{2,0,0},{{1}}},
+								{"A.s","A.s",{0,2,0},{{1}}},
+								{"A.s","A.s",{0,0,2},{{1}}},
+								
+								{"B.p","B.p",{2,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,2,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,0,2},{{0.2,0,0},{0,0.2,0},{0,0,1}}},
+								
+								{"A.s","B.p",{0.1,0.2,0.3},{{0.267261, 0.534522, 0.801784}}},
+								{"B.p","A.s",{-0.1,-0.2,-0.3},{{0.267261}, {0.534522}, {0.801784}}},
+								
+								{"A.s","B.p",{0.1,0.2,-1.7},{{0.0680414, 0.136083, -0.47629}}},
+								{"B.p","A.s",{-0.1,-0.2,1.7},{{0.0680414}, {0.136083}, {-0.47629}}},
+								
+								
+								}
+
+
+HTB3 = NewTightBinding()
+HTB3.Name = "cubic lattice"
+HTB3.Cell = {{1,1,0},
+						 {0,1,0},
+						 {0,0,2}}
+HTB3.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}},
+								{"B", {0.1,0.2,0.3}, {{"p", {"x","y","z"}}}}}
+HTB3.Hopping = {{"A.s","A.s",{1,0,0},{{1}}},
+								{"A.s","A.s",{0,1,0},{{1}}},
+								{"A.s","A.s",{0,0,2},{{1}}},
+								
+								{"B.p","B.p",{1,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,1,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,0,2},{{0.2,0,0},{0,0.2,0},{0,0,1}}},
+								
+								{"A.s","B.p",{0.1,0.2,0.3},{{0.267261, 0.534522, 0.801784}}},
+								{"B.p","A.s",{-0.1,-0.2,-0.3},{{0.267261}, {0.534522}, {0.801784}}},
+								
+								{"A.s","B.p",{0.1,0.2,-1.7},{{0.0680414, 0.136083, -0.47629}}},
+								{"B.p","A.s",{-0.1,-0.2,1.7},{{0.0680414}, {0.136083}, {-0.47629}}},
+								
+								
+								}
+
+
+HTB4 = NewTightBinding()
+HTB4.Name = "cubic lattice"
+HTB4.Cell = {{1,1,1},
+						 {0,1,1},
+						 {1,0,1}}
+HTB4.Atoms =  { {"A", {0,0,0},       {{"s", {"0"}}}},
+								{"B", {0.1,0.2,0.3}, {{"p", {"x","y","z"}}}}}
+HTB4.Hopping = {{"A.s","A.s",{1,0,0},{{1}}},
+								{"A.s","A.s",{0,1,0},{{1}}},
+								{"A.s","A.s",{0,0,1},{{1}}},
+								
+								{"B.p","B.p",{1,0,0},{{1,0,0},{0,0.2,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,1,0},{{0.2,0,0},{0,1,0},{0,0,0.2}}},
+								{"B.p","B.p",{0,0,1},{{0.2,0,0},{0,0.2,0},{0,0,1}}},
+								
+								{"A.s","B.p",{0.1,0.2,0.3},{{0.267261, 0.534522, 0.801784}}},
+								{"B.p","A.s",{-0.1,-0.2,-0.3},{{0.267261}, {0.534522}, {0.801784}}},
+								
+								{"A.s","B.p",{0.1,0.2,-0.7},{{0.0680414, 0.136083, -0.47629}}},
+								{"B.p","A.s",{-0.1,-0.2,0.7},{{0.0680414}, {0.136083}, {-0.47629}}},
+								
+								
+								}
+
+
+G1 = CalculateG(HTB1, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G2 = CalculateG(HTB2, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G3 = CalculateG(HTB3, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+G4 = CalculateG(HTB4, {{"NK",{80,80,80}},{"Emin",-5},{"Emax",5},{"NE",1000}})
+
+print(G1==G2)
+print(G1==G3)
+print(G1==G4)
+
+PlotPoints=200
+YRange=2
+dYtick=1
+Emin=-5
+Emax=5
+dETick=1
+
+PlG  = Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.014},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.014},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.010},{"LineColor",0xFF0080FF}},
+																				 {{"LineWidth",0.010},{"LineColor",0xFFFF8000}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G3, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.006},{"LineColor",0xFF80FFFF}},
+																				 {{"LineWidth",0.006},{"LineColor",0xFFFFFF80}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G4, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.002},{"LineColor",0xFF800000}},
+																				 {{"LineWidth",0.002},{"LineColor",0xFF000080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
+
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/DOSandBands_03.svg",'w')
 file:write(SVGPlG)
 file:close()
