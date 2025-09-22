@@ -646,6 +646,380 @@ uint32_t ResonantSpectraDense(WaveFunctionType * H1psiBasis, WaveFunctionType * 
   return 0;
 }
 
+// TODO:
+uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionType * H2psiBasis,const OperatorType OppH1, const OperatorType OppH2, const OperatorType *T1, uint32_t NT1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType *psi, uint32_t Npsi, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
+{
+ /*Given wavefunction psi (usually ground state, but could be excited)*/
+ 
+ /*Calculates resonant spectra using <i|T*GTGT*GT|i> in the following steps:
+  
+  1. Calculate MT1i  = T1|i> for all elments of T1 and |i> on a basis of H1psiBasis as a dense matrix
+     The dimensions of MT1i are Ni = Npsi*NT1 Nj=H1psiBasis.N
+     the order is {T1[0] * psi[0], T1[1] * psi[0], ..., T1[NT1-1] * psi[0], ..., ..., T1[0] * psi[Npsi-1], T1[1] * psi[Npsi-1], ..., T1[NT1-1] * psi[Npsi-1]}
+  2. Calcualte MfT2m[k] = a dense matrix rerpesenting T2 on a basis of H1psiBasis and H2psiBasis for each k from 0 to NT2
+     The dimensions of MfT2m[k] are Ni = N2psiBasis.N by Nj = H1psiBasis.N
+  3. Calculate Hm the dense matrix representing H1 on a basis of H1psiBasis
+     The dimensions of Hm are Ni = H1psiBasis.N by Nj = H1psiBasis.N
+  4. Calculate Hf the dense matrix representing H2 on a basis of H2psiBasis
+     The dimensions of Hf are Ni = H2psiBasis.N by Nj = H2psiBasis.N
+  
+  5. calculate Valm and Funm as the eigenvalues and functions of Hm
+     The dimensions of Funm are Ni = H1psiBasis.N by Nj = H1psiBasis.N
+  6. calculate A = Funm^* * MT1i^T
+     The dimensions of A are Ni = H1psiBasis.N by Nj = Npis*NT1
+  7. calculate Valf and Funf as the eigenvalues and functions of Hf
+     The dimensions of Funf are Ni = H2psiBasis.N by Nj = H2psiBasis.N
+  8. calcualte B[k] = Funf^* * MfT2m[k] * Funm^T
+     The dimensions of B[k] are Ni = H2psiBasis.N by Nj = H1psiBasis.N
+  
+  For each inicdent photon energy wi[l] do (l from 0 to Nwi)
+ 
+    9. Calcualte the matrix C as a copy of A with each element scaled: Cij = Aij * 1/(wi[l] - Em[i] + Ei[j] + i Gm)
+       The dimensions of C are Ni = H1psiBasis.N by Nj = Npsi*NT1
+  
+    For each decay operator T2[k] do
+  
+      10. Calculate the matrix D = B[k] * C
+          The dimensions of D are Ni = H2psiBasis.N by Nj = Npsi*NT1
+          Dij contains the scattering amplitude from initial T1psi[j] to final state i with resonant energy wi[l] and decay operator T2[k]
+      11. Square all elements of matrix D to get the scattering intensity
+          Dij = Dij^* * Dij
+  
+      For each transfer energy wr[m] do (m from 0 to Nwr)
+      
+        12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_i 1 / (wr[m] - Ef[i] + Ei[j] + i Gf)
+            The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
+  
+  */
+ CompactMatrixType MT1i, *MfT2m, Hm, Hf, Funm, Funf, A, B[NT2], C, D;
+ WaveFunctionType Opsi;
+ double *Valm, *Valf, energy1List[Npsi], energy2List[Npsi], wRes, wLoss, Norm, energy1ListMin, energy1ListMax, energy2ListMin, energy2ListMax;
+ MfT2m= (CompactMatrixType*)malloc(NT2 * sizeof(CompactMatrixType));
+ Valm = (double*)malloc(H1psiBasis->N*sizeof(double));
+ Valf = (double*)malloc(H2psiBasis->N*sizeof(double));
+ uint32_t i,j,k,l,m,n,o;
+ Complex16 Lorentz;
+ 
+ VerbosityPrintf(0x0001,"Start of ResonantSpectra using Dense Methods\n");
+ 
+ //
+ *Spec = (SpectraType*)malloc(Sqr(NT1 * Npsi * NT2) * (settings->NE1+1) * sizeof(SpectraType));
+ if(Spec==NULL)
+ {
+   printf("ERROR: malloc failed in ResonantSpectraDense\n");
+   return 1;
+ }
+ // Calculate the energy of the initial states used as a shift of the spectra
+ if(energy1==DBL_MAX)
+ {
+   for(i=0;i<Npsi;i++)
+   {
+     PsiHermitianOperatorPsi(OppH1, psi[i], &energy1List[i]);
+     WaveFunctionCalculateNormSqr(psi[i], &Norm);
+     if(Norm > DBL_EPSILON) energy1List[i]/=Norm;
+   }
+ }
+ else
+ {
+   for(i=0;i<Npsi;i++)
+   {
+     energy1List[i]=energy1;
+   }
+ }
+ if(energy2==DBL_MAX)
+ {
+   for(i=0;i<Npsi;i++)
+   {
+     PsiHermitianOperatorPsi(OppH2, psi[i], &energy2List[i]);
+     WaveFunctionCalculateNormSqr(psi[i], &Norm);
+     if(Norm > DBL_EPSILON) energy2List[i]/=Norm;
+   }
+ }
+ else
+ {
+   for(i=0;i<Npsi;i++)
+   {
+     energy2List[i]=energy2;
+   }
+ }
+ // get extrema of shifts
+ energy1ListMin=energy1List[0];
+ energy1ListMax=energy1List[0];
+ energy2ListMin=energy2List[0];
+ energy2ListMax=energy2List[0];
+ for(i=1;i<Npsi;i++)
+ {
+   if(energy1List[i]<energy1ListMin) energy1ListMin=energy1List[i];
+   if(energy1List[i]>energy1ListMax) energy1ListMax=energy1List[i];
+   if(energy2List[i]<energy2ListMin) energy2ListMin=energy2List[i];
+   if(energy2List[i]>energy2ListMax) energy2ListMax=energy2List[i];
+ }
+ //1. Calculate MT1i  = T1|i> for all elments of T1 and |i> on a basis of H1psiBasis as a dense matrix
+ //   The dimensions of MT1i are Ni = Npsi*NT1 Nj=H1psiBasis.N
+ //   the order is {T1[0] * psi[0], T1[1] * psi[0], ..., T1[NT1-1] * psi[0], ..., ..., T1[0] * psi[Npsi-1], T1[1] * psi[Npsi-1], ..., T1[NT1-1] * psi[Npsi-1]}
+ MT1i.Ni = Npsi * NT1;
+ MT1i.Nj = H1psiBasis->N;
+ MT1i.QComplex = H1psiBasis->QComplex;
+ InitCompactMatrix(&MT1i);
+ k=0;
+ for(i=0;i<Npsi;i++)
+ {
+   for(j=0;j<NT1;j++)
+   {
+     if(settings->restrictions1.N==0)
+     {
+       OperatorPsi(T1[j], psi[i], &Opsi);
+     }
+     else
+     {
+       OperatorPsiRestricted(T1[j], psi[i], &Opsi, settings->restrictions1);
+     }
+     WaveFunctionMultiply(H1psiBasis, 0, 0);
+     WaveFunctionAddConserveBasis(H1psiBasis, Opsi);
+     WaveFunctionFree(&Opsi);
+     if(H1psiBasis->QComplex==0)
+     {
+       for(l=1;l<=H1psiBasis->N;l++)
+       {
+         MT1i.VRe[k] = H1psiBasis->ValueRe[BlokElement(l)];
+         k++;
+       }
+     }
+     else
+     {
+       for(l=1;l<=H1psiBasis->N;l++)
+       {
+         MT1i.V[k].Re = H1psiBasis->ValueRe[BlokElement(l)];
+         MT1i.V[k].Im = H1psiBasis->ValueIm[BlokElement(l)];
+         k++;
+       }
+     }
+   }
+ }
+ //2. Calcualte MfT2m[k] = a dense matrix rerpesenting T2 on a basis of H1psiBasis and H2psiBasis for each k from 0 to NT2
+ //   The dimensions of MfT2m[k] are Ni = H2psiBasis.N by Nj = H1psiBasis.N
+ for(k=0;k<NT2;k++)
+ {
+   OperatorToDeterminantMatrix2(&(T2[k]), H2psiBasis, H1psiBasis, &(MfT2m[k]));
+ }
+ //3. Calculate Hm the dense matrix representing H1 on a basis of H1psiBasis
+ //   The dimensions of Hm are Ni = H1psiBasis.N by Nj = H1psiBasis.N
+ OperatorToDeterminantMatrix(&OppH1, H1psiBasis, &Hm);
+ //4. Calculate Hf the dense matrix representing H2 on a basis of H2psiBasis
+ //   The dimensions of Hf are Ni = H2psiBasis.N by Nj = H2psiBasis.N
+ OperatorToDeterminantMatrix(&OppH2, H2psiBasis, &Hf);
+ //5. calculate Valm and Funm as the eigenvalues and functions of Hm
+ //   The dimensions of Funm are Ni = H1psiBasis.N by Nj = H1psiBasis.N
+ CompactMatrixEigensystem(&Hm, &Funm, Valm);
+ //6. calculate A = Funm^* * MT1i^T
+ //   The dimensions of A are Ni = H1psiBasis.N by Nj = Npis*NT1
+ CompactMatrixMultiply('*', 'T', &Funm, &MT1i, &A);
+ //7. calculate Valf and Funf as the eigenvalues and functions of Hf
+ //   The dimensions of Funf are Ni = H2psiBasis.N by Nj = H2psiBasis.N
+ CompactMatrixEigensystem(&Hf, &Funf, Valf);
+ //8. calcualte B[k] = Funf^* * MfT2m[k] * Funm^T
+ //   The dimensions of B[k] are Ni = H2psiBasis.N by Nj = H1psiBasis.N
+ for(k=0;k<NT2;k++)
+ {
+   CompactMatrixMultiply('N', 'T', &Funm, &(MfT2m[k]), &C);
+   CompactMatrixMultiply('*', 'T', &Funf, &C, &(B[k]));
+   FreeCompactMatrix(&C);
+ }
+ // free eigenfunctions
+ FreeCompactMatrix(&Funm);
+ FreeCompactMatrix(&Funf);
+ //
+ /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
+ if(settings->Emin1>( 0.001*DBL_MAX) && (settings->Emax1<(-0.001*DBL_MAX)))
+ {
+   settings->Emin1=1.1*Valm[0]-0.1*Valm[H1psiBasis->N-1]-energy1ListMax;
+   settings->Emax1=1.1*Valm[H1psiBasis->N-1]-0.1*Valm[0]-energy1ListMin;
+   VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
+ }
+ if(settings->Emin1>( 0.001*DBL_MAX))
+ {
+   settings->Emin1=1.1*Valm[0]-0.1*settings->Emax1-energy1ListMax;
+   VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
+ }
+ if(settings->Emax1<(-0.001*DBL_MAX))
+ {
+   settings->Emax1=1.1*Valm[H1psiBasis->N-1]-0.1*settings->Emin1-energy1ListMin;
+   VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
+ }
+ if((settings->Gamma1==0)&&(settings->NE1==0))
+ {
+   settings->NE1=1000;
+   settings->Gamma1=5*(settings->Emax1-settings->Emin1)/settings->NE1;
+   VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
+ }
+ if(settings->NE1==0)
+ {
+   settings->NE1    =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->Gamma1);
+   VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) for intermediate state\n",settings->NE1);
+ }
+ if(settings->Gamma1==0)
+ {
+   settings->Gamma1 =(5*(settings->Emax1-settings->Emin1)/settings->NE1);
+   VerbosityPrintf(0x0002, "Automatically set lifetime (Gamma=%22.15E) for intermediate state\n",settings->Gamma1);
+ }
+ /* determine Emin2, Emax2, NE2 and Gamma2 if not set */
+ if(settings->Emin2>( 0.001*DBL_MAX) && (settings->Emax2<(-0.001*DBL_MAX)))
+ {
+   settings->Emin2=1.1*Valf[0]-0.1*Valf[H2psiBasis->N-1]-energy2ListMax;
+   settings->Emax2=1.1*Valf[H2psiBasis->N-1]-0.1*Valf[0]-energy2ListMin;
+   VerbosityPrintf(0x0002, "Automatically set energy range for final states Emin=%22.15E Emax=%22.15E\n",settings->Emin2,settings->Emax2);
+ }
+ if(settings->Emin2>( 0.001*DBL_MAX))
+ {
+   settings->Emin2=1.1*Valf[0]-0.1*settings->Emax2-energy2ListMax;
+   VerbosityPrintf(0x0002, "Automatically set energy range for final states Emin=%22.15E Emax=%22.15E\n",settings->Emin2,settings->Emax2);
+ }
+ if(settings->Emax2<(-0.001*DBL_MAX))
+ {
+   settings->Emax2=1.1*Valf[H2psiBasis->N-1]-0.1*settings->Emin2-energy2ListMin;
+   VerbosityPrintf(0x0002, "Automatically set energy range for final states Emin=%22.15E Emax=%22.15E\n",settings->Emin2,settings->Emax2);
+ }
+ if((settings->Gamma2==0)&&(settings->NE2==0))
+ {
+   settings->NE2=1000;
+   settings->Gamma2=5*(settings->Emax2-settings->Emin2)/settings->NE2;
+   VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for final state\n",settings->NE2,settings->Gamma2);
+ }
+ if(settings->NE2==0)
+ {
+   settings->NE2    =(uint32_t)(5*(settings->Emax2-settings->Emin2)/settings->Gamma2);
+   VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) for final state\n",settings->NE2);
+ }
+ if(settings->Gamma2==0)
+ {
+   settings->Gamma2 =(5*(settings->Emax2-settings->Emin2)/settings->NE2);
+   VerbosityPrintf(0x0002, "Automatically set lifetime (Gamma=%22.15E) for final state\n",settings->Gamma2);
+ }
+ //   For each inicdent photon energy wi[l] do (l from 0 to Nwi)
+ C.Ni=A.Ni;
+ C.Nj=A.Nj;
+ C.QComplex=1;
+ InitCompactMatrix(&C);
+ for(l = 0; l <= settings->NE1; l++)
+ {
+   //9. Calcualte the matrix C as a copy of A with each element scaled: Cij = Aij * 1/(wi[l] - Em[i] + Ei[j] + i Gm)
+   //   The dimensions of C are Ni = H1psiBasis.N by Nj = Npsi*NT1
+   /* Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary */
+   wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*l/((double)settings->NE1);
+   o=0;
+   if(A.QComplex==0)
+   {
+     for(i=0;i<H1psiBasis->N;i++)
+     {
+       for(j=0;j<Npsi;j++)
+       {
+         Lorentz.Re = 1/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1/2));
+         Lorentz.Im = -Lorentz.Re * settings->Gamma1/2;
+         Lorentz.Re *= wRes - Valm[i] + energy1List[j];
+         for(k=0;k<NT1;k++)
+         {
+           C.V[o].Re = A.VRe[o] * Lorentz.Re;
+           C.V[o].Im = A.VRe[o] * Lorentz.Im;
+           o++;
+         }
+       }
+     }
+   }
+   else
+   {
+     for(i=0;i<H1psiBasis->N;i++)
+     {
+       for(j=0;j<Npsi;j++)
+       {
+         Lorentz.Re = 1/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1*0.5));
+         Lorentz.Im = -Lorentz.Re * settings->Gamma1 * 0.5;
+         Lorentz.Re *= (wRes - Valm[i] + energy1List[j]);
+         for(k=0;k<NT1;k++)
+         {
+           C.V[o].Re = A.V[o].Re * Lorentz.Re - A.V[o].Im * Lorentz.Im;
+           C.V[o].Im = A.V[o].Re * Lorentz.Im + A.V[o].Im * Lorentz.Re;
+           o++;
+         }
+       }
+     }
+   }
+   //   For each decay operator T2[k] do
+   for(k=0;k<NT2;k++)
+   {
+     //10. Calculate the matrix D = B[k] * C
+     //    The dimensions of D are Ni = H2psiBasis.N by Nj = Npsi*NT1
+     //    Dij contains the scattering amplitude from initial T1psi[j] to final state i with resonant energy wi[l] and decay operator T2[k]
+     CompactMatrixMultiply('N', 'N', &(B[k]), &C, &D);
+     //11. Square all elements of matrix D to get the scattering intensity
+     //    Dij = Dij^* * Dij
+     o=0;
+     for(i=0;i<D.Ni;i++)
+     {
+       for(j=0;j<D.Nj;j++)
+       {
+         D.V[o].Re*=D.V[o].Re;
+         D.V[o].Re+=Sqr(D.V[o].Im);
+         o++;
+       }
+     }
+     // loop over all T1psi
+     for(j=0;j<NT1*Npsi;j++)
+     {
+       n = l + (settings->NE1+1) * (k + NT2 * j);
+       // allocate the spectra
+       (*Spec)[n].N    =settings->NE2;
+       (*Spec)[n].Emin =settings->Emin2;
+       (*Spec)[n].Emax =settings->Emax2;
+       (*Spec)[n].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
+       (*Spec)[n].Gamma=settings->Gamma2;
+       (*Spec)[n].ResonantEnergy = settings->Emin1 + ((double)(l)/(settings->NE1)) * (settings->Emax1-settings->Emin1);
+       sprintf((*Spec)[n].Name, "Spectrum wres %i/%i T2 %i/%i T1 %i/%i psi %i/%i",l,settings->NE1,k,NT2,j%NT1,NT1,(int)(j/NT1),Npsi);
+       SpectrumAllocate((*Spec)[n], &(*Spec)[n]);
+       //    calculate the integral
+       for(i=0;i<H2psiBasis->N;i++)
+       {
+         (*Spec)[n].b[0]  += D.V[i*D.Nj+j].Re;
+       }
+       //    For each transfer energy wr[m] do (m from 0 to Nwr)
+       for(m=0;m<=settings->NE2;m++)
+       {
+         wLoss = settings->Emin2 + ((double)m/(double)(settings->NE2))*(settings->Emax2 - settings->Emin2);
+         //12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_i Dij / (wr[m] - Ef[i] + Ei[j] + i Gf)
+         //    The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
+         for(i=0;i<H2psiBasis->N;i++)
+         {
+           (*Spec)[n].Im[m] -= D.V[i*D.Nj+j].Re * (settings->Gamma2*0.5)                 / (Sqr(wLoss - Valf[i] + energy2List[j/NT1]) + Sqr(settings->Gamma2*0.5));
+           (*Spec)[n].Re[m] += D.V[i*D.Nj+j].Re * (wLoss - Valf[i] + energy2List[j/NT1]) / (Sqr(wLoss - Valf[i] + energy2List[j/NT1]) + Sqr(settings->Gamma2*0.5));
+         } // end loop over all final states
+       } // end loop over energy loss photon energies index m
+       (*Spec)[n].b[0] = sqrt((*Spec)[n].b[0]);
+       if(H2psiBasis->N==0)
+       {
+         (*Spec)[n].EmaxPole=0;
+         (*Spec)[n].EminPole=0;
+       }
+       else
+       {
+         (*Spec)[n].EmaxPole = Valf[H2psiBasis->N-1] -  energy2List[j/NT1];
+         (*Spec)[n].EminPole = Valf[0] -  energy2List[j/NT1];
+       }
+     } // end loop over T1psi indexed by j
+     FreeCompactMatrix(&D);
+   } // end loop over decay operators index k
+ } // end loop over incomming photon energies index l
+ FreeCompactMatrix(&A);
+ for(k=0;k<NT2;k++)
+ {
+   FreeCompactMatrix(&(B[k]));
+ }
+ FreeCompactMatrix(&C);
+ free(Valm);
+ free(Valf);
+ free(MfT2m);
+ return 0;
+}
+
+
 
 uint32_t ResonantSpectraPartialDense(const OperatorType OppH1, const OperatorType OppH2, const OperatorType *T1, uint32_t NT1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType *psi, uint32_t Npsi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
 {
