@@ -364,41 +364,55 @@ CompactTensorType* luaL_checkCompactTensor(lua_State *L, int narg)
 
 MatrixType* luaL_checkMatrix(lua_State *L, int narg)
 {
-  uint32_t len_row;
-  int i,j;
-  MatrixType *buff;
-  Complex16 * row;
-  luaL_checktype(L, narg, LUA_TTABLE);
-  uint32_t len = (uint32_t)lua_objlen(L, narg);
-  buff= (MatrixType*)malloc(sizeof(MatrixType));
-  buff->QComplex=1;
-  buff->Ni=len;
-  buff->a0=0;
-  buff->b0=0;
-  buff->mu=0;
-  for(i=0;i<len;i++)
+  
+  // Matrix stored as pointer to structure on lua stack
+  if (luaL_testudata(L, narg, "Matrix_Type") != NULL)
   {
-    lua_rawgeti(L, narg, i+1);
-    row = luaL_checkarray_complex16(L, -1, &len_row);
-    if(i==0)
-    {
-      buff->Nj=len_row;
-      InitMatrix(buff);
-    }
-    lua_pop(L, 1);
-    if(len_row!=buff->Nj)
-    {
-      luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Nj,len_row,i);
-    }
-    for(j=0;j<buff->Nj;j++)
-    {
-      buff->VRe[i][j]=row[j].Re;
-      buff->VIm[i][j]=row[j].Im;
-    }
-    free(row);
+    CompactMatrixType *buffCompact;
+    MatrixType *buff;
+    buffCompact = (CompactMatrixType*)luaL_checkudata(L, narg, "Matrix_Type");
+    buff= (MatrixType*)malloc(sizeof(MatrixType));
+    CompactMatrixCopyToMatrix(buff, *buffCompact);
+    return buff;
   }
-  MatrixChop(buff, 100*DBL_MIN);
-  return buff;
+  else // matrix stored as table
+  {
+    uint32_t len_row;
+    int i,j;
+    MatrixType *buff;
+    Complex16 * row;
+    luaL_checktype(L, narg, LUA_TTABLE);
+    uint32_t len = (uint32_t)lua_objlen(L, narg);
+    buff= (MatrixType*)malloc(sizeof(MatrixType));
+    buff->QComplex=1;
+    buff->Ni=len;
+    buff->a0=0;
+    buff->b0=0;
+    buff->mu=0;
+    for(i=0;i<len;i++)
+    {
+      lua_rawgeti(L, narg, i+1);
+      row = luaL_checkarray_complex16(L, -1, &len_row);
+      if(i==0)
+      {
+        buff->Nj=len_row;
+        InitMatrix(buff);
+      }
+      lua_pop(L, 1);
+      if(len_row!=buff->Nj)
+      {
+        luaL_error(L, "Error while reading matrix. Dimensions of rows not constant. %d at first row %d at row %d",buff->Nj,len_row,i);
+      }
+      for(j=0;j<buff->Nj;j++)
+      {
+        buff->VRe[i][j]=row[j].Re;
+        buff->VIm[i][j]=row[j].Im;
+      }
+      free(row);
+    }
+    MatrixChop(buff, 100*DBL_MIN);
+    return buff;
+  }
 }
 
 /*  Check BlockGreensfunction reads a BlockGreensfunction from the stack

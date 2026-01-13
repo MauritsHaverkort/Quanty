@@ -922,6 +922,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
   int i,j,k;
   uint32_t NF,NB=0;
   uint32_t NCore, NImpurity, NBath, NBathVal, NBathCon, NBathExt;
+  CompactMatrixType *T;
   char *Core,*Impurity,*ImpurityUp,*ImpurityDn,*Bath,*BathUp,*BathDn, *ImpurityExt, *ImpurityExtUp, *ImpurityExtDn;
   char *BathVal,*BathValUp,*BathValDn,*BathCon,*BathConDn,*BathConUp,*BathExt,*BathExtUp,*BathExtDn;
   
@@ -2073,6 +2074,21 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         lua_setfield(L,-2,"NF");
         lua_pushinteger(L, NB);
         lua_setfield(L,-2,"NB");
+        // push transformation matrix T
+        T = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        luaL_setmetatable(L, "Matrix_Type");
+        T->OnLuaStack=true;
+        lua_setfield(L,-2,"T");
+        GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType((BlockNaturalImpurityOrbitalMatrixType*)(M->data), T);
+        if(AddSpin==true)
+        {
+          CompactMatrixType Tspin;
+          Tspin = MatrixEnlarge(*T, 2);
+          T->OnLuaStack=false;
+          FreeCompactMatrix(T);
+          *T=Tspin;
+          T->OnLuaStack=true;
+        }
       }
       else
       {
@@ -2306,6 +2322,28 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         lua_setfield(L,-2,"NF");
         lua_pushinteger(L, NB);
         lua_setfield(L,-2,"NB");
+        // push transformation matrix T
+        T = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        luaL_setmetatable(L, "Matrix_Type");
+        lua_setfield(L,-2,"T");
+        T->QComplex=0;
+        T->Ni=2;
+        T->Nj=2;
+        InitCompactMatrix(T);
+        T->OnLuaStack=true;
+        T->VRe[0]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.b[0] );
+        T->VRe[1]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.b[0] );
+        T->VRe[2]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.b[0] );
+        T->VRe[3]=-( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.b[0] );
+        if(AddSpin==true)
+        {
+          CompactMatrixType Tspin;
+          Tspin = MatrixEnlarge(*T, 2);
+          T->OnLuaStack=false;
+          FreeCompactMatrix(T);
+          *T=Tspin;
+          T->OnLuaStack=true;
+        }
       }
       break;
     }
@@ -2424,14 +2462,23 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   {
     bool AddSpin;
     bool Deflation;
+    bool TransformImpurity;
+    uint32_t Nv;
+    uint32_t Nc;
     uint32_t FermionShift;
   } Options;
   Options.Deflation=false;
   Options.AddSpin=false;
   Options.FermionShift=0;
+  Options.TransformImpurity = false;
+  Options.Nv = UINT32_MAX;
+  Options.Nc = UINT32_MAX;
   LuaOptionsType LuaOptions[]={
     {"AddSpin","bool",&(Options.AddSpin)},
+ //   {"TransformImpurity","bool",&(Options.TransformImpurity)},
     {"FermionShift","uint32_t",&(Options.FermionShift)},
+    {"Nc","uint32_t",&(Options.Nc)},
+    {"Nv","uint32_t",&(Options.Nv)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t) lua_gettop(L);
   if(LuaTestOptionsList(L, -1))
@@ -2441,10 +2488,11 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   }
   if(len!=1) return luaL_error(L, "Error in ResponseFunction.ToOperator() It should be called with 1 argument, not with %d\n",len);
   M = luaL_checkResponsefunction(L,1);
+  if((Options.TransformImpurity==true)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option TransformImpurity only availalbe for Response Functions in natural impurity orbital form");
+  if((Options.Nc!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option Nc only availalbe for Response Functions in natural impurity orbital form");
+  if((Options.Nv!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option Nv only availalbe for Response Functions in natural impurity orbital form");
   O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
   luaL_setmetatable(L, "Operator_Type");
-
-  
   switch(M->type)
   {
     case 'L':
@@ -2486,11 +2534,41 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     {
       if(M->Block==true)
       {
-        BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(O, (BlockNaturalImpurityOrbitalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+        // copy and shorten M->data if Nv and Nc set
+        uint32_t MNv = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;
+        uint32_t MNc = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;
+        if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=Options.Nv;
+        if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=Options.Nc;
+        if(Options.TransformImpurity == true)
+        {
+          // TODO
+        }
+        else // impurity is not transformed
+        {
+          BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(O, (BlockNaturalImpurityOrbitalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+        }
+        // copy and expand M->data if Nv and Nc set
+        if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=MNv;
+        if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=MNc;
       }
       else
       {
-        BADoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BADoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
+        // copy and shorten M->data if Nv and Nc set
+        uint32_t MNv = ((BADoubleTriDiagonalMatrixType*)M->data)->val.N;
+        uint32_t MNc = ((BADoubleTriDiagonalMatrixType*)M->data)->con.N;
+        if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=Options.Nv;
+        if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=Options.Nc;
+        if(Options.TransformImpurity == true)
+        {
+          //TOD
+        }
+        else // impurity is not transformed
+        {
+          BADoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BADoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
+        }
+        // copy and expand M->data if Nv and Nc set
+        if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+        if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
       }
       break;
     }
@@ -2501,6 +2579,11 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     }
   }
   ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
+  // push Gv and Gc to stack if Nv or Nc are set
+  //TODO
+  
+  
+  
   FreeResponsefunctionIncludingOriginalPointer(M);
   return 2;
 }
@@ -2515,7 +2598,7 @@ static int LuaResponseFunctionToCompactMatrix(lua_State *L)
     double SingularValue;
   } Options;
   Options.Deflate = true;
-  Options.SingularValue = DBL_MIN;
+  Options.SingularValue = DBL_EPSILON;
   LuaOptionsType LuaOptions[]={
     {"Deflate",      "bool",  &(Options.Deflate)},
     {"SingularValue","double",&(Options.SingularValue)},

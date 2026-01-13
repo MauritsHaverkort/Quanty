@@ -1,0 +1,177 @@
+
+a = {0, -4.0, -3.0, -1.0, 1.5, 2.5,  3.5}
+b = {    0.2,  0.2,  0.2, 0.1, 0.1,  0.2}
+G0 = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="G0"})
+
+
+G0Mat = ResponseFunction.ToMatrix(G0)
+print(G0Mat)
+
+val0, fun0 = Eigensystem(G0Mat)
+
+print(val0)
+print(Transpose(fun0)[1])
+
+M1 = {{0.1,0},{0,0.3}}
+M2 = {{0.2,0},{0,0.1}}
+a = {{{0,0},{0,0}}, -4.0, -3.0, -1.0, 1.5, 2.5,  3.5}
+b = {    M2,  M2,  M2, M1, M1,  M2}
+G1 = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="G1"})
+
+print(G1)
+
+G1Mat = ResponseFunction.ToMatrix(G1)
+print(G1Mat)
+
+val1, fun1 = Eigensystem(G1Mat)
+
+print(val1)
+print(Transpose(fun1)[1])
+print(Transpose(fun1)[2])
+
+rotmat = {{0.02364929066211952, 0.9997203164141352}, {-0.9997203164141352, 0.02364929066211952}}
+
+G2 = Rotate(G1,rotmat)
+print(G2)
+
+G2Mat = ResponseFunction.ToMatrix(G2)
+print(G2Mat)
+
+val2, fun2 = Eigensystem(G2Mat)
+
+print(val2)
+print(Transpose(fun2)[1])
+print(Transpose(fun2)[2])
+
+-- Natural impurity orbitals non block form
+
+G0Nat = ResponseFunction.ChangeType(G0,"Nat")
+print(G0Nat)
+G0NatMat = ResponseFunction.ToMatrix(G0Nat)
+print(G0NatMat)
+
+val0N, fun0N = Eigensystem(G0NatMat)
+print(val0N)
+print(fun0N)
+
+
+-- Natural impurity orbitals diagonal block form
+
+G1Nat = ResponseFunction.ChangeType(G1,"Nat")
+print(G1Nat)
+G1NatMat = ResponseFunction.ToMatrix(G1Nat)
+print(G1NatMat)
+
+val1N, fun1N = Eigensystem(G1NatMat)
+print(val1N)
+print(Chop(fun1N))
+
+
+
+-- Natural impurity orbitals dense block form
+
+G2Nat = ResponseFunction.ChangeType(G2,"Nat")
+print(G2Nat)
+G2NatMat = ResponseFunction.ToMatrix(G2Nat)
+print(G2NatMat)
+
+val2N, fun2N = Eigensystem(G2NatMat)
+print(val2N)
+print(Chop(fun2N))
+
+-- even more random
+
+B1={{-0.19008497204743927,  0.016948340278784425,  0.05714262059670165}, { 0.2287741678316676,   0.19297904267057522, 0.33297665905111656}, { 0.0065398325719344804, 0.10729524000969883,  0.26816097990106363}}
+setmetatable(B1, MatrixMeta)
+B2={{-0.08339481627041247,  0.1687784469654125  ,  0.20050324930882163}, {-0.2233413533951513,   0.35692065610529866, 0.3253586341732941},  {-0.3884577986434481,   -0.32892307203548626,  0.32026466468389225}}
+setmetatable(B2, MatrixMeta)
+B3={{0.2785472750962363  , -0.16915264118118653 ,  0.3462041153838157},  {-0.24524459165933307, -0.3432293381127901,  0.06571356833166044}, { 0.36703172662687794,   0.2529239768467015,   0.02676315313323735}}
+setmetatable(B3, MatrixMeta)
+B4={{-0.131954028950715  , -0.3500606603093583  ,  0.37664341731917766}, {-0.09547688933071842, -0.1008741097750511, -0.29323780333535376}, {-0.09267811662561005,   0.08812002539001133, -0.1926286512181221}}
+setmetatable(B4, MatrixMeta)
+B5={{-0.0679725137535737 , -0.08887260978755036 , -0.4075432092628798},  {-0.09406221610780184,  0.39572808468941395, 0.21459943468264378}, { 0.238379953052742,     0.11556657454391005, -0.24757333689256436}}
+setmetatable(B5, MatrixMeta)
+B6={{0.25630838277176654 , -0.188821787584749   ,  0.3111944002370836},  { 0.06371956553404746,  0.03694408057655431, 0.10927159723706338}, {-0.3971272659824324,   -0.08514211496681205, -0.07472380589182209}}
+setmetatable(B6, MatrixMeta)
+
+B1 = B1 * Transpose(B1)
+B2 = B2 * Transpose(B2)
+B3 = B3 * Transpose(B3)
+B4 = B4 * Transpose(B4)
+B5 = B5 * Transpose(B5)
+B6 = B6 * Transpose(B6)
+
+print(B1+B2+B3+B4+B5+B6)
+
+
+
+a = {{{0,0,0},{0,0,0},{0,0,0}}, -4.0, -3.0, -1.0, 1.5, 2.5,  3.5}
+b = {    B1,B2,B3,B4,B5,B6}
+G3 = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="G3"})
+
+print(G3)
+G3Mat = ResponseFunction.ToMatrix(G3)
+print(G3Mat)
+
+val3, fun3 = Eigensystem(G3Mat)
+print(val3)
+
+
+
+G3Nat = ResponseFunction.ChangeType(G3,"Nat")
+print(G3Nat)
+G3NatMat = ResponseFunction.ToMatrix(G3Nat)
+print(G3NatMat)
+
+print(G3NatMat - Transpose(G3NatMat))
+
+val3N, fun3N = Eigensystem(G3NatMat)
+print(val3N)
+print(Chop(fun3N))
+
+G3NatMat = (G3NatMat + Transpose(G3NatMat))/2
+
+val3N, fun3N = Eigensystem(G3NatMat)
+print(val3N)
+print(Chop(fun3N))
+
+
+
+O1, O1Bitmask = ResponseFunction.ToOperator(G1Nat)
+print(O1)
+print(O1Bitmask)
+
+print(O1Bitmask.T * ConjugateTranspose(O1Bitmask.T))
+
+rotmat = Matrix.Expand(O1Bitmask.T,O1.NF,1)
+
+O1rot = Rotate(O1,rotmat)
+print(OperatorToMatrix(O1rot))
+
+
+
+O3, O3Bitmask = ResponseFunction.ToOperator(G3Nat)
+print(O3)
+print(O3Bitmask)
+
+print(O3Bitmask.T * ConjugateTranspose(O3Bitmask.T))
+
+rotmat = Matrix.Expand(O3Bitmask.T,O3.NF,1)
+
+O3rot = Rotate(O3,rotmat)
+print(OperatorToMatrix(O3rot))
+
+
+
+
+O0, O0Bitmask = ResponseFunction.ToOperator(G0Nat)
+
+print(OperatorToMatrix(O0))
+print(O0Bitmask)
+
+print(O0Bitmask.T * ConjugateTranspose(O0Bitmask.T))
+
+rotmat = Matrix.Expand(O0Bitmask.T,O0.NF,1)
+
+O0rot = Rotate(O0,rotmat)
+print(OperatorToMatrix(O0rot))

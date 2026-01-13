@@ -1815,12 +1815,22 @@ static int LuaCreateSpectra(lua_State *L)
     uint32_t Npsi;
     uint32_t NT;
     ConvergenceSettingsType Settings;
+    DeterminantRestrictionType FilledEmptySpinOrbitals;
+    CompactVectorType GridPoints;
+    char *GridType; // "PoleEnergy", "bin"
     char *stream;
     bool Tensor;
     bool Sigma;
     bool KrylovBasis;
     bool DenseMethod;
+    bool HybridizationExpansion;
   } Options;
+  Options.HybridizationExpansion=false;
+  Options.GridPoints.QComplex=0;
+  Options.GridPoints.Ni=0;
+  Options.GridPoints.VRe=NULL;
+  Options.GridType=NULL;
+  Options.FilledEmptySpinOrbitals.N=0;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=false;
@@ -1853,6 +1863,13 @@ static int LuaCreateSpectra(lua_State *L)
     {"E0","double",&(Options.E0)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+    
+    {"HybridizationExpansion","bool",&(Options.HybridizationExpansion)},
+    {"FilledEmptySpinOrbitals", "DeterminantRestrictionType", &(Options.FilledEmptySpinOrbitals)},
+    {"GridType","char*",&(Options.GridType)},
+    {"GridPoints","Vector",&(Options.GridPoints)},
+    
+    
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/

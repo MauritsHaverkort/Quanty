@@ -144,6 +144,19 @@ uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const 
   return 0;
 }
 
+/* A <-> B
+ * Both matrices should be initiallized
+ */
+uint32_t CompactMatrixSwap(CompactMatrixType * const A, CompactMatrixType * const B)
+{
+  CompactMatrixType Temp;
+  Temp = *A;
+  *A = *B;
+  *B = *A;
+  return 0;
+}
+
+
 /*  M <- A
  *  M should not be allocated
  */
