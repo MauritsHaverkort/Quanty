@@ -2458,6 +2458,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
 {
   OperatorType *O;
   ResponsefunctionType *M;
+  uint32_t MNv=0, MNc=0;
   struct
   {
     bool AddSpin;
@@ -2535,8 +2536,8 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       if(M->Block==true)
       {
         // copy and shorten M->data if Nv and Nc set
-        uint32_t MNv = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;
-        uint32_t MNc = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;
+        MNv = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;
+        MNc = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;
         if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=Options.Nv;
         if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=Options.Nc;
         if(Options.TransformImpurity == true)
@@ -2547,15 +2548,12 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         {
           BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonian(O, (BlockNaturalImpurityOrbitalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
         }
-        // copy and expand M->data if Nv and Nc set
-        if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=MNv;
-        if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=MNc;
       }
       else
       {
         // copy and shorten M->data if Nv and Nc set
-        uint32_t MNv = ((BADoubleTriDiagonalMatrixType*)M->data)->val.N;
-        uint32_t MNc = ((BADoubleTriDiagonalMatrixType*)M->data)->con.N;
+        MNv = ((BADoubleTriDiagonalMatrixType*)M->data)->val.N;
+        MNc = ((BADoubleTriDiagonalMatrixType*)M->data)->con.N;
         if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=Options.Nv;
         if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=Options.Nc;
         if(Options.TransformImpurity == true)
@@ -2566,9 +2564,6 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         {
           BADoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BADoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
         }
-        // copy and expand M->data if Nv and Nc set
-        if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
-        if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
       }
       break;
     }
@@ -2583,7 +2578,22 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   //TODO
   
   
-  
+  // undo changes to M
+  if((M->type=='N')||(M->type=='n'))
+  {
+    if(M->Block==true)
+    {
+      // expand M->data if Nv and Nc set
+      if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=MNv;
+      if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=MNc;
+    }
+    else
+    {
+      // expand M->data if Nv and Nc set
+      if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+      if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
+    }
+  }
   FreeResponsefunctionIncludingOriginalPointer(M);
   return 2;
 }
