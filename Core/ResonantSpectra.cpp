@@ -666,7 +666,7 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
   5. calculate Valm and Funm as the eigenvalues and functions of Hm
      The dimensions of Funm are Ni = H1psiBasis.N by Nj = H1psiBasis.N
   6. calculate A = Funm^* * MT1i^T
-     The dimensions of A are Ni = H1psiBasis.N by Nj = Npis*NT1
+     The dimensions of A are Ni = H1psiBasis.N by Nj = Npsi*NT1
   7. calculate Valf and Funf as the eigenvalues and functions of Hf
      The dimensions of Funf are Ni = H2psiBasis.N by Nj = H2psiBasis.N
   8. calcualte B[k] = Funf^* * MfT2m[k] * Funm^T
@@ -682,22 +682,22 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
       10. Calculate the matrix D = B[k] * C
           The dimensions of D are Ni = H2psiBasis.N by Nj = Npsi*NT1
           Dij contains the scattering amplitude from initial T1psi[j] to final state i with resonant energy wi[l] and decay operator T2[k]
-      11. Square all elements of matrix D to get the scattering intensity
-          Dij = Dij^* * Dij
-  
+      11
+
       For each transfer energy wr[m] do (m from 0 to Nwr)
+      12. Spec[T2T1psi[j],T2T1[k],wi[l]][wr[m]] = sum_i 1 / (wr[m] - Ef[i] + Ei[j] + i Gf)
+          The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
+  
       
-        12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_i 1 / (wr[m] - Ef[i] + Ei[j] + i Gf)
-            The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
   
   */
- CompactMatrixType MT1i, *MfT2m, Hm, Hf, Funm, Funf, A, B[NT2], C, D;
+ CompactMatrixType MT1i, *MfT2m, Hm, Hf, Funm, Funf, A, B[NT2], C, D, R[NT2];
  WaveFunctionType Opsi;
  double *Valm, *Valf, energy1List[Npsi], energy2List[Npsi], wRes, wLoss, Norm, energy1ListMin, energy1ListMax, energy2ListMin, energy2ListMax;
  MfT2m= (CompactMatrixType*)malloc(NT2 * sizeof(CompactMatrixType));
  Valm = (double*)malloc(H1psiBasis->N*sizeof(double));
  Valf = (double*)malloc(H2psiBasis->N*sizeof(double));
- uint32_t i,j,k,l,m,n,o;
+ uint32_t i,j,k,l,m,n,o,r,s,t;
  Complex16 Lorentz;
  
  VerbosityPrintf(0x0001,"Start of ResonantSpectra using Dense Methods\n");
@@ -949,68 +949,81 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
      //10. Calculate the matrix D = B[k] * C
      //    The dimensions of D are Ni = H2psiBasis.N by Nj = Npsi*NT1
      //    Dij contains the scattering amplitude from initial T1psi[j] to final state i with resonant energy wi[l] and decay operator T2[k]
-     CompactMatrixMultiply('N', 'N', &(B[k]), &C, &D);
-     //11. Square all elements of matrix D to get the scattering intensity
+     CompactMatrixMultiply('N', 'N', &(B[k]), &C, &R[k]);
+   }
+
+     //Here is now where The dense Tensor version differs from the non tensor one. we can apply Create spectra in tensor mode. 
+     //11.  Call the dense version of CreateSpectra with tensor option.
      //    Dij = Dij^* * Dij
-     o=0;
-     for(i=0;i<D.Ni;i++)
-     {
-       for(j=0;j<D.Nj;j++)
-       {
-         D.V[o].Re*=D.V[o].Re;
-         D.V[o].Re+=Sqr(D.V[o].Im);
-         o++;
-       }
-     }
+
+  for(r=0;r<Npsi;r++)
+  {
+  for(s=0;s<Npsi;s++)
+  {
+  
+    for(i=0;i<NT2;i++)
+   {
+      for(j=0;j<NT1;j++)
+    {
+        for(m=0;m<NT2;m++)
+      {
      // loop over all T1psi
-     for(j=0;j<NT1*Npsi;j++)
-     {
-       n = l + (settings->NE1+1) * (k + NT2 * j);
-       // allocate the spectra
-       (*Spec)[n].N    =settings->NE2;
-       (*Spec)[n].Emin =settings->Emin2;
-       (*Spec)[n].Emax =settings->Emax2;
-       (*Spec)[n].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
-       (*Spec)[n].Gamma=settings->Gamma2;
-       (*Spec)[n].ResonantEnergy = settings->Emin1 + ((double)(l)/(settings->NE1)) * (settings->Emax1-settings->Emin1);
-       sprintf((*Spec)[n].Name, "Spectrum wres %i/%i T2 %i/%i T1 %i/%i psi %i/%i",l,settings->NE1,k,NT2,j%NT1,NT1,(int)(j/NT1),Npsi);
-       SpectrumAllocate((*Spec)[n], &(*Spec)[n]);
-       //    calculate the integral
-       for(i=0;i<H2psiBasis->N;i++)
-       {
-         (*Spec)[n].b[0]  += D.V[i*D.Nj+j].Re;
-       }
-       //    For each transfer energy wr[m] do (m from 0 to Nwr)
-       for(m=0;m<=settings->NE2;m++)
-       {
-         wLoss = settings->Emin2 + ((double)m/(double)(settings->NE2))*(settings->Emax2 - settings->Emin2);
-         //12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_i Dij / (wr[m] - Ef[i] + Ei[j] + i Gf)
-         //    The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
-         for(i=0;i<H2psiBasis->N;i++)
-         {
-           (*Spec)[n].Im[m] -= D.V[i*D.Nj+j].Re * (settings->Gamma2*0.5)                 / (Sqr(wLoss - Valf[i] + energy2List[j/NT1]) + Sqr(settings->Gamma2*0.5));
-           (*Spec)[n].Re[m] += D.V[i*D.Nj+j].Re * (wLoss - Valf[i] + energy2List[j/NT1]) / (Sqr(wLoss - Valf[i] + energy2List[j/NT1]) + Sqr(settings->Gamma2*0.5));
-         } // end loop over all final states
+          for(n=0;n<NT1;n++)
+        {
+
+        // indexing, from outest to innermost: Psiright[r],psileft[s],T1right[i],T2right[j],T1left[m],T2left[n],omega1[l]
+
+        t = l + (settings->NE1+1) * (n + NT2 *(m+NT1*(j+NT2*(i+NT1*(s+Npsi*r)))));
+        // allocate the spectra
+        (*Spec)[t].N    =settings->NE2;
+        (*Spec)[t].Emin =settings->Emin2;
+        (*Spec)[t].Emax =settings->Emax2;
+        (*Spec)[t].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
+        (*Spec)[t].Gamma=settings->Gamma2;
+        (*Spec)[t].ResonantEnergy = settings->Emin1 + ((double)(l)/(settings->NE1)) * (settings->Emax1-settings->Emin1);
+        sprintf((*Spec)[t].Name, "Spectrum wres %i/%i T2 %i/%i T1 %i/%i psi %i/%i",l,settings->NE1,k,NT2,j%NT1,NT1,(int)(j/NT1),Npsi);
+        SpectrumAllocate((*Spec)[t], &(*Spec)[t]);
+        //    calculate the integral 
+        for(i=0;i<H2psiBasis->N;i++)
+        {
+          (*Spec)[t].b[0]  += R[k].V[i*D.Nj+j].Re;
+        }
+        //    For each transfer energy wr[m] do (m from 0 to Nwr)
+        for(m=0;m<=settings->NE2;m++)
+        {
+          wLoss = settings->Emin2 + ((double)m/(double)(settings->NE2))*(settings->Emax2 - settings->Emin2);
+          //12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_i Dij / (wr[m] - Ef[i] + Ei[j] + i Gf)
+          //    The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
+          for(i=0;i<H2psiBasis->N;i++)
+          {
+            (*Spec)[t].Im[m] -= D.V[i*D.Nj+j].Re * (settings->Gamma2*0.5)                 / (Sqr(wLoss - Valf[i] + energy2List[j/NT1]) + Sqr(settings->Gamma2*0.5));
+            (*Spec)[t].Re[m] += D.V[i*D.Nj+j].Re * (wLoss - Valf[i] + energy2List[j/NT1]) / (Sqr(wLoss - Valf[i] + energy2List[j/NT1]) + Sqr(settings->Gamma2*0.5));
+          } // end loop over all final states
        } // end loop over energy loss photon energies index m
-       (*Spec)[n].b[0] = sqrt((*Spec)[n].b[0]);
+       (*Spec)[t].b[0] = sqrt((*Spec)[t].b[0]);
        if(H2psiBasis->N==0)
        {
-         (*Spec)[n].EmaxPole=0;
-         (*Spec)[n].EminPole=0;
+         (*Spec)[t].EmaxPole=0;
+         (*Spec)[t].EminPole=0;
        }
        else
        {
-         (*Spec)[n].EmaxPole = Valf[H2psiBasis->N-1] -  energy2List[j/NT1];
-         (*Spec)[n].EminPole = Valf[0] -  energy2List[j/NT1];
+         (*Spec)[t].EmaxPole = Valf[H2psiBasis->N-1] -  energy2List[j/NT1];
+         (*Spec)[t].EminPole = Valf[0] -  energy2List[j/NT1];
        }
+      } //end loop 
+      } // end loop 
      } // end loop over T1psi indexed by j
-     FreeCompactMatrix(&D);
    } // end loop over decay operators index k
+  }//end loop over psi
+}//end loop over psi
+   
  } // end loop over incomming photon energies index l
  FreeCompactMatrix(&A);
  for(k=0;k<NT2;k++)
  {
    FreeCompactMatrix(&(B[k]));
+   FreeCompactMatrix(&(R[k]));
  }
  FreeCompactMatrix(&C);
  free(Valm);
