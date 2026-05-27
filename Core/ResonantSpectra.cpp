@@ -704,7 +704,7 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
  uint32_t i,j,k,l,m,n,o,r,s,t,a,b,kRr,kRs;
  Complex16 Lorentz;
  
- VerbosityPrintf(0x0001,"Start of ResonantSpectra using Dense Methods\n");
+ VerbosityPrintf(0x0001,"Start of ResonantSpectra Tensor using Dense Methods\n");
  
  //
  *Spec = (SpectraType*)malloc(Sqr(NT1 * Npsi * NT2) * (settings->NE1+1) * sizeof(SpectraType));
