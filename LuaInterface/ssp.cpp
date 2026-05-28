@@ -2567,7 +2567,7 @@ static int LuaCreateSpectra(lua_State *L)
       {
         luaL_warning(L, "CreateSpectra called with option Tensor->true and %d wave-functions but no energy-shift set.\nTensors can have only one shift and no different shift for each eigen-state.\nConsider using E0->0.0 in order to define a fixed shift.\nUsed the energy of the first wave-function (%f) in this case.\n(Probably does not make physical sence!)",Options.Npsi,psiEn[0]);
       }
-      /* place starting functions on same basis */
+      /*1. place starting functions on same basis */
       WaveFunctionCopy(Tpsi[0], &TpsiSameBasis[0]);
       WaveFunctionFree(&(Tpsi[0]));
       for(i=1;i<Options.NT*Options.Npsi;i++)
@@ -2580,6 +2580,7 @@ static int LuaCreateSpectra(lua_State *L)
         WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
         WaveFunctionFree(&(Tpsi[i]));
       }
+      /*2. BlockTriDiagonalize H in the krylov Space H^n * TpsiSameBasis */
       /* init BlockTriDiagonal Matrix */
       GTri.BlockSize = Options.NT*Options.Npsi;
       GTri.N = Options.Settings.NTri;
@@ -3012,6 +3013,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     // use sparse methods
     if(Options.Tensor==false)
     {
+      //the function computes each T1 and psi separadetly
       for(ipsi=0;ipsi<Options.Npsi;ipsi++)
       {
         for(iT=0;iT<Options.NT1;iT++)
