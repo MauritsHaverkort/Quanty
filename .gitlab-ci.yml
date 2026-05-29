@@ -15,6 +15,7 @@ build-job:
   script:
   - set -x
   - echo "Start"
+  - source /etc/profile.d/lmod.sh
   - export LANG=en_US.utf8
   - export LC_ALL=en_US.utf8
   - module load intel/2019
