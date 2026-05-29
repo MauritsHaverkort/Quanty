@@ -1203,14 +1203,16 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
    *  If energy?=DBL_MAX we set energy? = <psi[0] | H? | psi[0]> and print a warning
    */
   
-  //TODO: All :D starting Michelangelo
-  
+  //TODO:
+  //      - automatic determination of spectral parameters if no defined
+  //      - Krylov true Option.
+  //      - Also save response function  
   WaveFunctionType Tpsi[Npsi*NT1],GTpsi[Npsi*NT1],TGTpsi[Npsi*NT1*NT2], *PsiBasis[settings->NTri1];
   BlockTriDiagonalMatrixType SpecTri1;
   MatrixType EFun;
   uint32_t BlockSize[settings->NTri1];
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
-  int i,ipsi,iT1,p,k;
+  int i,ipsi,iT1,p,k,m,n,j,o,s;
   double wRes;
   
   /* calcualte ground state energy */
@@ -1239,41 +1241,6 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     PsiHermitianOperatorPsi(OppH2, psi[0], &energy2);
   }
   
-
-
-  /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
-  if(settings->Emin1>( 0.001*DBL_MAX) && (settings->Emax1<(-0.001*DBL_MAX)))
-  {
-    settings->Emin1=1.1*EVal[0]-0.1*EVal[settings->NTri1-1];
-    settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*EVal[0];
-    VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
-  }
-  if(settings->Emin1>( 0.001*DBL_MAX))
-  {
-    settings->Emin1=1.1*EVal[0]-0.1*settings->Emax1;
-    VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
-  }
-  if(settings->Emax1<(-0.001*DBL_MAX))
-  {
-    settings->Emax1=1.1*EVal[settings->NTri1-1]-0.1*settings->Emin1;
-    VerbosityPrintf(0x0002, "Automatically set energy range for intermediate states Emin=%22.15E Emax=%22.15E\n",settings->Emin1,settings->Emax1);
-  }
-  if((settings->Gamma1==0)&&(settings->NE1==0))
-  {
-    settings->NE1=1000;
-    settings->Gamma1=5*(settings->Emax1-settings->Emin1)/settings->NE1;
-    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and lifetime (Gamma=%22.15E) for intermediate state\n",settings->NE1,settings->Gamma1);
-  }
-  if(settings->NE1==0)
-  {
-    settings->NE1    =(uint32_t)(5*(settings->Emax1-settings->Emin1)/settings->Gamma1);
-    VerbosityPrintf(0x0002, "Automatically set number of energy points (NE=%d) and for intermediate state\n",settings->NE1);
-  }
-  if(settings->Gamma1==0)
-  {
-    settings->Gamma1 =(5*(settings->Emax1-settings->Emin1)/settings->NE1);
-    VerbosityPrintf(0x0002, "Automatically set lifetime (Gamma=%22.15E) for intermediate state\n",settings->Gamma1);
-  }
   
   //1. Calculate T1|i> for all elments of T1 and |i> giving a vector of length Npsi*NT1 
   i=0;
@@ -1324,7 +1291,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
    */
   /* Eval has length (settings->NTri1)*(Npsi*NT1), with inner loop over (Npsi*NT1)*/
-  if(BlockTriDiagonalMatrixEigenSystemWithDeflation(SpecTri1, &EFun, EVal))
+  if(BlockTriDiagonalMatrixEigenSystemWithDeflation(SpecTri1, &EFun, EVal,SpecTri1.BlockSize))
   {
     printf("Problem with BlockTridiagonalMatrixToEigenSystem\n");
   }
@@ -1332,7 +1299,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
 
   /* create spectra from tridiagonal matrices */
-  *Spec = (SpectraType*)malloc(Sqrt(Npsi * NT1 * NT2) * sizeof(SpectraType));
+  *Spec = (SpectraType*)malloc(Sqr(Npsi * NT1 * NT2) * sizeof(SpectraType));
 
   //Todo: do we have add the lines with the settings
 
@@ -1342,7 +1309,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     3. Invert (w - H_tri + iGamma) to get G(w) as a matrix of dimension Npsi*NT1:
      a. EValInv[i] = 1/(wres - EVal[i] + iGammaRes)
      b. GT|i> = sum_j EFun[i][j]*EValIn[j]*K[j], where K is Krylov basis vectors
-    /* Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary */
+     Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary 
+    */
     
     wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*p/((double)settings->NE1) + energy1;
     for(i = 0; i <(settings->NTri1)*(Npsi)*(NT1); i++)
@@ -1421,82 +1389,72 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       }
     }
 
-        /* calcualte spectra using tensor form, i.e. returned are Sqr(Options.NT * Options.Npsi) sepctra */
+    /* calcualte spectra using tensor form, i.e. returned are Sqr(NT2 * NT1 * Npsi) spectra */
     WaveFunctionType TGTpsiSameBasis[NT2*NT1*Npsi];
     BlockTriDiagonalMatrixType GTri2;
-    SpectraType *Specwp;
+    //SpectraType *Specwp;
 
     /*1. place starting functions on same basis */
     WaveFunctionCopy(TGTpsi[0], &TGTpsiSameBasis[0]);
     WaveFunctionFree(&(TGTpsi[0]));
-    for(i=1;i<Options.NT*Options.Npsi;i++)
+    for(i=1;i<NT1 * Npsi;i++)
     {
-      if(WaveFunctionAddMultipliedUnionBasis(&TGTpsiSameBasis[0], TGTpsi[i], 0)) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
+      if(WaveFunctionAddMultipliedUnionBasis(&TGTpsiSameBasis[0], TGTpsi[i], 0))
+      {
+        printf("malloc failed. Out of memory during initialization in CalculateSpectra\n");
+      }
     }
-    for(i=1;i<Options.NT*Options.Npsi;i++)
+    for(i=1;i<NT1 * Npsi;i++)
     {
-      if(WaveFunctionInitCopyBasis(&(TGTpsiSameBasis[i]), TGTpsiSameBasis[0])) return luaL_error(L, "malloc failed. Out of memory during initialization in CalculateSpectra\n");
+      if(WaveFunctionInitCopyBasis(&(TGTpsiSameBasis[i]), TGTpsiSameBasis[0]))
+      {
+        printf("malloc failed. Out of memory during initialization in CalculateSpectra\n");
+      }
       WaveFunctionAddConserveBasis(&(TGTpsiSameBasis[i]), TGTpsi[i]);
       WaveFunctionFree(&(TGTpsi[i]));
     }
     //6. Use T2*G(w)T1|i> to transform H1 to Block tridiagonal 
     /* init BlockTriDiagonal Matrix */
     GTri2.BlockSize = NT2*NT1*Npsi;
-    GTri2.N = Options.Settings.NTri2;
+    GTri2.N = settings->NTri2;
     /* create block tridiagonal representation */
     GTri2.QComplex=0;
-    if(OppH2->QComplex) GTri2.QComplex=1;
+    if(OppH2.QComplex) GTri2.QComplex=1;
     for(i=0;i<GTri2.BlockSize;i++)
     {
       if(TGTpsiSameBasis[i].QComplex) GTri2.QComplex=1;
     }
     InitBlockTridiagonalMatrix(&GTri2);
     GTri2.mu=0;//psiEn[0];
-    if(Options.Settings.restrictions.N==0)
+    if(settings->restrictions.N==0)
     {
-      if(Options.KrylovBasis==true)
-      {
-        printf("Using Krylov basis for final states still not implemented for CreateResonantSpectra\n");
-        //BlockSizeN= (uint32_t*)malloc(GTri2.N*sizeof(uint32_t));
-        //psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri2*sizeof(WaveFunctionType*));
-        //LanczosBlockTriDiagonalizeKrylov(*H, TGTpsiSameBasis, Options.Settings.epsilon, &GTri2, psiBasis, BlockSizeN);
-      }
-      else
-      {
-        LanczosBlockTriDiagonalize(*OppH2, TGTpsiSameBasis, Settings->epsilon, &GTri2, Max(Settings->Gamma2,Settings->epsilon));
-      }
+      LanczosBlockTriDiagonalize(*OppH2, TGTpsiSameBasis, settings->epsilon, &GTri2, Max(settings->Gamma2,settings->epsilon));
     }
     else
     {
-      if(Options.KrylovBasis==true)
-      {
-        printf("Using Krylov basis for final states still not implemented for CreateResonantSpectra\n");
-        //BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
-        //psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-        //LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
-      }
-      else
-      {
-        LanczosBlockTriDiagonalizeRestricted(*OppH2, TGTpsiSameBasis, Settings->restrictions2, Settings->epsilon, &GTri2, Max(Settings->Gamma2,Settings->epsilon));
-      }
+      LanczosBlockTriDiagonalizeRestricted(*OppH2, TGTpsiSameBasis, settings->restrictions2, settings->epsilon, &GTri2, Max(settings->Gamma2,settings->epsilon));
     }
 
     //7. Convert to spectra. The block algorithm should automatically combine into tensor, just as in CreateSpectra
     /* create spectra from tridiagonal matrices */
-    Specwp = (SpectraType*)malloc(NPpsi * NT1 * NT2 * sizeof(SpectraType));
-    BlockTriDiagonalMatrixToSpectraWithBroadening(energy2, &GTri2, Specwp->Spec, settings->Emin2, settings->Emax2, settings->NE2, settings->Gamma2);
-    
+    //Specwp = (SpectraType*)malloc(Npsi * NT1 * NT2 * sizeof(SpectraType));
+    SpectraTypeArray Specwp; 
+    Specwp.Name=(char*)malloc(sizeof(char));
+    Specwp.Name[0]='\0';
+    Specwp.NSpectra=Sqr(NT2 * NT1 * Npsi);
+    Specwp.Spec= (SpectraType*)malloc(Specwp.NSpectra*sizeof(SpectraType));
+    BlockTriDiagonalMatrixToSpectraWithBroadening(energy2, &GTri2, Specwp.Spec, settings->Emin2, settings->Emax2, settings->NE2, settings->Gamma2);
+  
+
+
     //8. Save in *Spec with the correct indexing.
     for(i=0;i<Sqr(Npsi * NT1 * NT2);i++)
     {
-
-      (*Spec)[p + i*(settings->NE1+1)] = Specwp[i];
-      (*Spec)[p + i*(settings->NE1+1)].dE   =(settings->Emax2-settings->Emin2)/settings->NE2;
-      (*Spec)[p + i*(settings->NE1+1)].Gamma=settings->Gamma2;
       (*Spec)[p + i*(settings->NE1+1)].ResonantEnergy = settings->Emin1 + ((double)(p % (settings->NE1+1))/(settings->NE1)) * (settings->Emax1-settings->Emin1);
       sprintf((*Spec)[p + i*(settings->NE1+1)].Name, "Spectrum wres %i/%i Psi %i/%i T1 %i/%i T2 %i/%i",(int)(p % (settings->NE1+1)),settings->NE1,(int)(i/Npsi*NT1*NT2),Npsi,(int)(i/(NT1*NT2) % Npsi),NT1,(int)((i/NT2) % (NT1*Npsi)),NT2);
-      //SpectrumAllocate((*Spec)[p + i*(settings->NE1+1)], &(*Spec)[p + i*(settings->NE1+1)]);
-
+      SpectrumAllocate((*Spec)[i], &(*Spec)[i]);
+      /*Save spectrum into spectrum position*/
+      (*Spec)[p + i*(settings->NE1+1)] = Specwp.Spec[i];
     }
   }
   return 0;
