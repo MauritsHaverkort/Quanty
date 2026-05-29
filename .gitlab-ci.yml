@@ -19,6 +19,17 @@ build-job:
   - export LANG=en_US.utf8
   - export LC_ALL=en_US.utf8
   - module load intel/2019
+    - whoami
+    - echo "$PATH"
+    - which icc || true
+    - which gcc || true
+    - icc --version || true
+    - gcc --version || true
+    - source /opt/intel/oneapi/setvars.sh || true
+    - which icc || true
+    - which gcc || true
+    - icc --version || true
+    - gcc --version || true
   - echo "current working directory $(pwd) "
   - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -ipo -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty.exe
   artifacts:
