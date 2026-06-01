@@ -3040,8 +3040,8 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {
       //print that we are using the tensor method for resonant spectra
       printf("Using tensor method for resonant spectra\n");
-      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &Options.Settings);
-      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+      ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec), Options.E01, Options.E02, &Options.Settings);
+      //return luaL_error(L,"Tensor form for Resonant spectra not yet available");
     }
   }
   return 1;
