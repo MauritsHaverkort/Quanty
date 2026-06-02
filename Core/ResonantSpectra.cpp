@@ -1335,16 +1335,17 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     /* We are trying to calculate Q[0,:]A^(-1)Q^(-1).  Because A is diagonal, we were
      able to calculate B = Q[0,:]*I*Q^(-1) outside the loop. Now we calculate diag(A)*B */
     /* Calculate Q*A^(-1)*Q^(-1)[:,0] */
-    //GTpsi.NFermion = psi.NFermion;
-    //GTpsi.NBoson   = psi.NBoson;
-    //GTpsi.QComplex = psi.QComplex;
-    //GTpsi.NBitsKey = psi.NBitsKey;
+    
 
     printf("Calculating G(w) for wres %f\n",wRes);
     //4. Calculate G(w)T|i> as a vector of length Npsi*NT1
     o = 0;
     for (j=0;j<Npsi * NT1;j++)
     {
+      GTpsi[j].NFermion = PsiBasis[0]->NFermion;
+      GTpsi[j].NBoson   = PsiBasis[0]->NBoson;
+      //GTpsi[j].QComplex = PsiBasis[0]->QComplex;
+      GTpsi[j].NBitsKey = PsiBasis[0]->NBitsKey;
       if(WaveFunctionInit(&GTpsi[j]))
       {
         printf("WaveFunctionInit failed in ResonantSpectra 00");
@@ -1366,7 +1367,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
             r = j +n*(Npsi*NT1 * settings->NTri1);
             m = n+(j + i*((Npsi*NT1)))*(Npsi*NT1 * settings->NTri1);
 
-            printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i, complex Efuns\n",p,settings->NE1,j,Npsi*NT1);
+            printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i,Nkriv %i/%i, complex Efuns\n",p,settings->NE1,j,Npsi*NT1,i,settings->NTri1);
             //TODO: this is not exactly Q*A^(-1)*Q^(-1)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
             //we can exchange the order of the Q since A is diagonal, but I think I miss a complex conjugation.
             tempDoubleRe += EValInvRe[n]*EFun.V[m].Re*EFun.V[r].Re -
@@ -1389,23 +1390,47 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
             m = n+(j + i*((Npsi*NT1)))*(Npsi*NT1 * settings->NTri1);
       
             //TODO: this is not exactly Q*A^(-1)*Q^(T)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
-            //anyway it should not matter here.
-            printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i, real Efuns\n",p,settings->NE1,j,Npsi*NT1);
+           //anyway it should not matter here.
+            printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i, Nkriv %i/%i, real Efuns\n",p,settings->NE1,j,Npsi*NT1,i,settings->NTri1);
             tempDoubleRe += EValInvRe[n]*EFun.VRe[m]*EFun.VRe[r];
             tempDoubleIm += EValInvIm[n]*EFun.VRe[m]*EFun.VRe[r];
           }
         }
 
-        m = j + i*(Npsi*NT1);
+        m = 0;//j + i*(Npsi*NT1);
         printf("compute GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
         printf("tempDoubleRe %f tempDoubleIm %f\n",tempDoubleRe,tempDoubleIm);
-        printf("Krylov state: %f\n ",*PsiBasis[m]);
-        printf("GTstate: %f\n ",GTpsi[j]);
-
-        //TODO: here is a problem with the block version. We need access to the j component of spectri.
-        WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], *PsiBasis[m], SpecTri1.b[0].Re * tempDoubleRe, SpecTri1.b[0].Im * tempDoubleIm);
+        printf("Krylov state:");
+        PrintWaveFunctionReadable(*PsiBasis[j][i]);
+        printf("GTstate:");
+        PrintWaveFunctionReadable(GTpsi[j]);
+        /* Access the (row=j, col=0) element of the first b-block.
+         * b is stored as N blocks of size SxS flattened; use bRe when real. */
+        {
+          uint32_t S = SpecTri1.BlockSize;
+          uint32_t blockBase = 0 * S * S; /* first b-block */
+          uint32_t idx = blockBase + j * S + 0; /* row=j, col=0 */
+          double alphaRe, alphaIm;
+          if(SpecTri1.QComplex)
+          {
+            printf("SpecTri1 is complex\n");
+            alphaRe = SpecTri1.b[idx].Re * tempDoubleRe - SpecTri1.b[idx].Im * tempDoubleIm;
+            alphaIm = SpecTri1.b[idx].Re * tempDoubleIm + SpecTri1.b[idx].Im * tempDoubleRe;
+          }
+          else
+          {
+            printf("SpecTri1 is real\n");
+            alphaRe = SpecTri1.bRe[idx] * tempDoubleRe;
+            alphaIm = SpecTri1.bRe[idx] * tempDoubleIm;
+          }
+          printf("alphaRe %f alphaIm %f\n",alphaRe,alphaIm);
+          PrintBlockTriDiagonalMatrix(SpecTri1);
+          WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], *PsiBasis[m], alphaRe, alphaIm);
+        }
         printf("computed GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
         // 5. Calculate T2*G(w)T1|i> as a vector of length Npsi*NT1* NT2
+
+        printf("5. Calculate T2*G(w)T1|i> as a vector of length Npsi*NT1* NT2\n");
         for(s = 0; s < NT2; s++)
         {
           /* Calculate T*G(w)T|i> */
