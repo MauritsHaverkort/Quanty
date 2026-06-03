@@ -1210,7 +1210,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   WaveFunctionType Tpsi[Npsi*NT1],GTpsi[Npsi*NT1],TGTpsi[Npsi*NT1*NT2],**PsiBasis=NULL;
   BlockTriDiagonalMatrixType SpecTri1;
   CompactMatrixType EFun;
-  uint32_t BlockSize[settings->NTri1];
+  uint32_t *BlockSizeN=NULL;
   double EVal[settings->NTri1], EValInvRe[settings->NTri1], EValInvIm[settings->NTri1],tempDoubleRe,tempDoubleIm, EVal2[settings->NTri2];
   int i,ipsi,iT1,p,k,m,n,j,o,r,s;
   double wRes;
@@ -1285,17 +1285,33 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
  
   printf("Starting block tridiagonalization of H1\n");
 
-  PsiBasis= (WaveFunctionType**)malloc(Npsi*NT1*settings->NTri1*sizeof(WaveFunctionType*));
+  BlockSizeN= (uint32_t*)malloc(settings->NTri1*sizeof(uint32_t));
+  PsiBasis= (WaveFunctionType**)malloc(settings->NTri1*sizeof(WaveFunctionType*));
+
+  //print shape of PsiBasis
+  for(i=0;i<settings->NTri1;i++)
+  {
+    BlockSizeN[i]=Npsi*NT1;
+  }
+
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &SpecTri1, PsiBasis, BlockSize);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSize);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
   }
   printf("Finished block tridiagonalization of H1\n");
 
+
+
+  //TODO: when one blocksize is 0, then you have to also to set Null
+  //print shape of PsiBasis
+  for(i=0;i<settings->NTri1;i++)
+  {
+    printf("Block %i/%i has size %i\n",i+1,settings->NTri1,BlockSizeN[i]);
+  }
 
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
@@ -1357,6 +1373,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         tempDoubleRe = 0;
         tempDoubleIm = 0;
         
+          printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i, Nkriv %i/%i\n",p,settings->NE1,j,Npsi*NT1,i,settings->NTri1);
         //TODO: doble check here if we can do the same as for the non block algorithm
         if(EFun.QComplex)
         {
@@ -1367,7 +1384,6 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
             r = j +n*(Npsi*NT1 * settings->NTri1);
             m = n+(j + i*((Npsi*NT1)))*(Npsi*NT1 * settings->NTri1);
 
-            printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i,Nkriv %i/%i, complex Efuns\n",p,settings->NE1,j,Npsi*NT1,i,settings->NTri1);
             //TODO: this is not exactly Q*A^(-1)*Q^(-1)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
             //we can exchange the order of the Q since A is diagonal, but I think I miss a complex conjugation.
             tempDoubleRe += EValInvRe[n]*EFun.V[m].Re*EFun.V[r].Re -
@@ -1391,7 +1407,6 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       
             //TODO: this is not exactly Q*A^(-1)*Q^(T)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
            //anyway it should not matter here.
-            printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i, Nkriv %i/%i, real Efuns\n",p,settings->NE1,j,Npsi*NT1,i,settings->NTri1);
             tempDoubleRe += EValInvRe[n]*EFun.VRe[m]*EFun.VRe[r];
             tempDoubleIm += EValInvIm[n]*EFun.VRe[m]*EFun.VRe[r];
           }
@@ -1401,9 +1416,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         printf("compute GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
         printf("tempDoubleRe %f tempDoubleIm %f\n",tempDoubleRe,tempDoubleIm);
         printf("Krylov state:");
-        PrintWaveFunctionReadable(*PsiBasis[j][i]);
+        //PrintWaveFunctionReadable(PsiBasis[i][j]);
         printf("GTstate:");
-        PrintWaveFunctionReadable(GTpsi[j]);
+        //PrintWaveFunctionReadable(GTpsi[j]);
         /* Access the (row=j, col=0) element of the first b-block.
          * b is stored as N blocks of size SxS flattened; use bRe when real. */
         {
@@ -1424,8 +1439,12 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
             alphaIm = SpecTri1.bRe[idx] * tempDoubleIm;
           }
           printf("alphaRe %f alphaIm %f\n",alphaRe,alphaIm);
-          PrintBlockTriDiagonalMatrix(SpecTri1);
-          WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], *PsiBasis[m], alphaRe, alphaIm);
+          PrintWaveFunctionReadable(GTpsi[j]);
+          PrintWaveFunctionReadable(PsiBasis[i][j]);
+          WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[i][j], alphaRe, alphaIm);
+          
+          printf("GTpsi[%i] after adding contribution from Krylov state:", j);
+          PrintWaveFunctionReadable(GTpsi[j]);
         }
         printf("computed GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
         // 5. Calculate T2*G(w)T1|i> as a vector of length Npsi*NT1* NT2
@@ -1433,13 +1452,32 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         printf("5. Calculate T2*G(w)T1|i> as a vector of length Npsi*NT1* NT2\n");
         for(s = 0; s < NT2; s++)
         {
+          //WaveFunctionInitCopyBasis(&TGTpsi[o], GTpsi[j]);
+          //TGTpsi[o].NFermion = GTpsi[j].NFermion;
+          //TGTpsi[o].NBoson   = GTpsi[j].NBoson;
+          //GTpsi[j].QComplex = GTpsi[j].QComplex;
+          //TGTpsi[o].NBitsKey = GTpsi[j].NBitsKey;
+          printf("GTpsi[%i] before adding to TGTpsi[o]:", j);
+          PrintWaveFunctionReadable(GTpsi[j]);
+          return 0;
+          if(WaveFunctionInit(&TGTpsi[o]))
+
+          {
+            printf("WaveFunctionInit failed in ResonantSpectra 00");
+            return 1;
+          }
+          PrintWaveFunctionReadable(TGTpsi[o]);
+          PrintWaveFunctionReadable(GTpsi[j]);
           /* Calculate T*G(w)T|i> */
           if(settings->restrictions2.N==0)
           {
+            printf("Calculate T2*G(w)T1|i> for T2 %i/%i without restrictions\n",s,NT2);
             OperatorPsi(T2[s],GTpsi[j],&TGTpsi[o]);
+            printf("Calculated T2*G(w)T1|i> for T2 %i/%i without restrictions\n",s,NT2);
           }
           else
           {
+            printf("Calculate T2*G(w)T1|i> for T2 %i/%i with restrictions\n",s,NT2);
             OperatorPsiRestricted(T2[s], GTpsi[j], &TGTpsi[o], settings->restrictions2);
           }
           o++;
