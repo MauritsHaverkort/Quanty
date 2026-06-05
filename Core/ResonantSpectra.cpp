@@ -1171,22 +1171,21 @@ uint32_t ResonantSpectraPartialDense(const OperatorType OppH1, const OperatorTyp
 /*  Calculate < psi | T1^+ G1^+ T2^+ G2 T2 G1 T1 | psi >
  *  psi, T1 and T2 are vectors of Length Np, NT1 and NT2
  *  psi and T1 are contract to a single vector of length Np*NT1
- *  returned is a matrix of dimensions (Np*NT1) * NT2
- */
+ *  returned is a matrix of dimensions Sqr(Npsi* NT1 * NT2) in of flattened array of spetra, where the innest index runs over the excitation energy wres.*/
 uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH2, const OperatorType *T1, uint32_t NT1, const OperatorType *T2, uint32_t NT2, const WaveFunctionType *psi, uint32_t Npsi, TriDiagonalMatrixType **SpecTri2, SpectraType **Spec, double energy1, double energy2, ConvergenceSettingsType *settings)
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
   /*Calculates resonant spectra using <i|T*GTGT*GT|i> in the following steps:
    
-   1. Calculate T1|i> for all elments of T1 and |i> giving a vector of length Npsi*NT1
+   1. Calculate T1|i> for all elments of T1 and |i> giving a vector of length Npsi*NT1 and put all on the same basis.
    2. Use T|i> to transform H1 to block tridiagonal form in Krylov basis
-   for each wRes:
-     3. Invert (w - H_tri + iGamma) to get G(w) as a matrix of dimension Npsi*NT1
-     4. Calculate G(w)T|i> as a vector of length Npsi*NT1
-     5. Calculate T2*G(w)T1|i> as a vector of length Npsi*NT1* NT2
-     6. Use T2*G(w)T1|i> to transform H1 to Block tridiagonal
-     7. Convert to spectra. The block algorithm should automatically combine into tensor, just as in CreateSpectra
+   for each wRes do:
+     3. Invert (wRes - H_tri + iGamma) to get G(wRes) as a matrix of dimension Npsi*NT1
+     4. Calculate G(wRes)T|i> as a vector of length Npsi*NT1
+     5. Calculate T2*G(wRes)T1|i> as a vector of length Npsi*NT1* NT2
+     6. Use T2*G(wRes)T1|i> to transform H2 to Block tridiagonal and get GTri2 for the same wRes
+     7. Convert to spectra. Here, the block algorithm automatically combines into Tensor form, just as in CreateSpectra.
      8. Save in *Spec with the correct indexing.
    */
   
@@ -1202,11 +1201,15 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
    *  If Npsi>1 and energy? is not DBL_MAX energy? of the input is used for all states
    *  If energy?=DBL_MAX we set energy? = <psi[0] | H? | psi[0]> and print a warning
    */
+
   
+
   //TODO:
+  //      - There is a proble in the initialiation of PsiBasis. the uncoupled states are not correctly defined
   //      - automatic determination of spectral parameters if no defined
   //      - Krylov true Option.
-  //      - Also save response function  
+  //      - Also save response function  Gtri2
+
   WaveFunctionType Tpsi[Npsi*NT1],GTpsi[Npsi*NT1],TGTpsi[Npsi*NT1*NT2],**PsiBasis=NULL;
   BlockTriDiagonalMatrixType SpecTri1;
   CompactMatrixType EFun;
@@ -1255,6 +1258,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       for(iT1=0;iT1<NT1;iT1++)
       {
         OperatorPsi(T1[iT1],psi[ipsi],&Tpsi[i]);
+
+        printf("T1[%i] | psi[%i] > = \n",iT1,ipsi);
+        PrintWaveFunctionReadable(Tpsi[i]);
         i++;
       }
     }
@@ -1266,11 +1272,33 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       for(iT1=0;iT1<NT1;iT1++)
       {
         OperatorPsiRestricted(T1[iT1],psi[ipsi],&Tpsi[i], settings->restrictions1);
+        
+        printf("T1[%i] | psi[%i] > = \n",iT1,ipsi);
+        PrintWaveFunctionReadable(Tpsi[i]);
         i++;
+
       }
     }
   }
   
+  /* calcualte spectra using tensor form, i.e. returned are Sqr(Options.NT * Options.Npsi) sepctra */
+  WaveFunctionType TpsiSameBasis[NT1 * Npsi];
+  
+  WaveFunctionCopy(Tpsi[0], &TpsiSameBasis[0]);
+  WaveFunctionFree(&(Tpsi[0]));
+  for(i=1;i< NT1 * Npsi;i++)
+  {
+    if(WaveFunctionAddMultipliedUnionBasis(&TpsiSameBasis[0], Tpsi[i], 0)) printf("malloc failed. Out of memory during initialization in CalculateSpectra\n");
+  }
+  for(i=1;i< NT1 * Npsi;i++)
+  {
+    if(WaveFunctionInitCopyBasis(&(TpsiSameBasis[i]), TpsiSameBasis[0])) printf("malloc failed. Out of memory during initialization in CalculateSpectra\n");
+    WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
+    WaveFunctionFree(&(Tpsi[i]));
+  }
+
+
+
   //2. Use T|i>==Tpsi to transform H1 to Block tridiagonal form in Krylov basis */
   //   Using the version which gives back the Krylov basis vectors */
   SpecTri1.N = settings->NTri1;
@@ -1287,20 +1315,22 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
   BlockSizeN= (uint32_t*)malloc(settings->NTri1*sizeof(uint32_t));
   PsiBasis= (WaveFunctionType**)malloc(settings->NTri1*sizeof(WaveFunctionType*));
+  
+
 
   //print shape of PsiBasis
-  for(i=0;i<settings->NTri1;i++)
+  /*for(i=0;i<settings->NTri1;i++)
   {
     BlockSizeN[i]=Npsi*NT1;
   }
-
+  */
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, TpsiSameBasis, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, TpsiSameBasis, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
   }
   printf("Finished block tridiagonalization of H1\n");
 
@@ -1313,6 +1343,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Block %i/%i has size %i\n",i+1,settings->NTri1,BlockSizeN[i]);
   }
 
+  free(BlockSizeN);
+
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
    */
@@ -1322,16 +1354,22 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   {
     printf("Problem with BlockTridiagonalMatrixToEigenSystem\n");
   }
-  
+  for (i=0;i<(settings->NTri1);i++)
+  {
+    for (j=0;j<Npsi*NT1;j++)
+    {
+      printf("Block %i/%i, state %i/%i\n",i+1,settings->NTri1,j+1,Npsi*NT1);
+      uint32_t S = Sqr(SpecTri1.BlockSize); //size of each block
+      uint32_t idx = S * i + j; ///contribution for i-th Krylov state and j-th {T1|i>}/
+      printf("SpecTri1.b[idx].Re= %f, SpecTri1.b[idx].Im= %f \n",SpecTri1.b[idx].Re, SpecTri1.b[idx].Im);
+      PrintWaveFunctionReadable(PsiBasis[i][j]);
+    }
+  }
+
+  //return 0;
   printf("Finished block tridiagonalization of H1\n");
   printf("SpecTri1:\n");
-  PrintBlockTriDiagonalMatrix(SpecTri1);
-
-
-
-
-
-
+  
 
 
   printf("Allocate memory for spectra\n");
@@ -1367,10 +1405,10 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     o = 0;
     for (j=0;j<Npsi * NT1;j++)
     {
-      GTpsi[j].NFermion = Tpsi[j].NFermion;
-      GTpsi[j].NBoson   = Tpsi[j].NBoson;
-      GTpsi[j].QComplex = Tpsi[j].QComplex;
-      GTpsi[j].NBitsKey = Tpsi[j].NBitsKey;
+      GTpsi[j].NFermion = TpsiSameBasis[j].NFermion;
+      GTpsi[j].NBoson   = TpsiSameBasis[j].NBoson;
+      GTpsi[j].QComplex = TpsiSameBasis[j].QComplex;
+      GTpsi[j].NBitsKey = TpsiSameBasis[j].NBitsKey;
       if(WaveFunctionInit(&GTpsi[j]))
       {
         printf("WaveFunctionInit failed in ResonantSpectra 00");
@@ -1386,9 +1424,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         //TODO: doble check here if we can do the same as for the non block algorithm
         if(EFun.QComplex)
         {
-          for(k = 0; k < settings->NTri1; k++)
+          for(k = 0; k < settings->NTri1 * NT1 * Npsi; k++)
           {            
-            n= j + k*(Npsi*NT1); //eigenvalue index
+            //n= j + k*(Npsi*NT1); //eigenvalue index, here for the case where the trafos are block diag
             //Here we adapt to Efun being a CompactMatrixType.
             r = j +n*(Npsi*NT1 * settings->NTri1);
             m = n+(j + i*((Npsi*NT1)))*(Npsi*NT1 * settings->NTri1);
@@ -1407,17 +1445,17 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         }
         else
         {
-          for(k = 0; k < settings->NTri1; k++)
+          for(k = 0; k < settings->NTri1 * NT1 * Npsi; k++)
           {
-            n= j + k*(Npsi*NT1); //eigenvalue index
+            //n= j + k*(Npsi*NT1); //eigenvalue index, here for the case where the trafos are block diag
             //Here we adapt to Efun being a CompactMatrixType.
             r = j +n*(Npsi*NT1 * settings->NTri1);
             m = n+(j + i*((Npsi*NT1)))*(Npsi*NT1 * settings->NTri1);
       
             //TODO: this is not exactly Q*A^(-1)*Q^(T)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
            //anyway it should not matter here.
-            tempDoubleRe += EValInvRe[n]*EFun.VRe[m]*EFun.VRe[r];
-            tempDoubleIm += EValInvIm[n]*EFun.VRe[m]*EFun.VRe[r];
+            tempDoubleRe += EValInvRe[k]*EFun.VRe[m]*EFun.VRe[r];
+            tempDoubleIm += EValInvIm[k]*EFun.VRe[m]*EFun.VRe[r];
           }
         }
 
@@ -1582,13 +1620,14 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       /*Save spectrum into spectrum position*/
       (*Spec)[p + i*(settings->NE1+1)] = Specwp.Spec[i];
 
+      SpectrumFree(&Specwp.Spec[i]);
+
       printf("Saved spectrum at Index %i\n",p + i*(settings->NE1+1));
       printf("Saved spectrum %i/%i for wres %f\n",i+1,Sqr(Npsi * NT1 * NT2),wRes);
-      //PrintSpectra(&(*Spec)[p + i*(settings->NE1+1)], 1);
-
-
+      PrintSpectra(&(*Spec)[p + i*(settings->NE1+1)], 1);
     }
-  } 
+  }
+  WaveFunctionFree(*PsiBasis);
   return 0;
 }
 
@@ -1600,7 +1639,8 @@ uint32_t ResonantSpectraOrig(const OperatorType OppH, const OperatorType OppH2, 
 {
   /*Given wavefunction psi (usually ground state, but could be excited)*/
   
-  /*Calculates resonant spectra using <i|T*GTGT*GT|i> in the following steps:
+  /*
+  Calculates resonant spectra using <i|T*GTGT*GT|i> in the following steps:
    
    1. Calculate T|i>
    2. Use T|i> to transform H to tridiagonal form in Krylov basis
