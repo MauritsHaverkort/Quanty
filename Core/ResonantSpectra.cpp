@@ -158,8 +158,20 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
       
       if(EFun.QComplex)
       {
+        printf("Complex eigenfunctions for G1 in ResonantSpectra\n");
         for(k = 0; k < settings->NTri1; k++)
         {
+          /*suggested correction*/
+          tempDoubleRe += EValInvRe[k]*EFun.VRe[k][i]*EFun.VRe[k][0] -
+          EValInvIm[k]*EFun.VIm[k][i]*EFun.VRe[k][0] +
+          EValInvIm[k]*EFun.VRe[k][i]*EFun.VIm[k][0] +
+          EValInvRe[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
+          tempDoubleIm += EValInvIm[k]*EFun.VRe[k][i]*EFun.VRe[k][0] +
+          EValInvRe[k]*EFun.VIm[k][i]*EFun.VRe[k][0] -
+          EValInvRe[k]*EFun.VRe[k][i]*EFun.VIm[k][0] +
+          EValInvIm[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
+          
+          /* original version:
           tempDoubleRe += EValInvRe[k]*EFun.VRe[k][i]*EFun.VRe[k][0] -
           EValInvIm[k]*EFun.VIm[k][i]*EFun.VRe[k][0] -
           EValInvIm[k]*EFun.VRe[k][i]*EFun.VIm[k][0] -
@@ -168,6 +180,7 @@ uint32_t ResonantSpectra(const OperatorType OppH1, const OperatorType OppH2, con
           EValInvRe[k]*EFun.VIm[k][i]*EFun.VRe[k][0] +
           EValInvRe[k]*EFun.VRe[k][i]*EFun.VIm[k][0] -
           EValInvIm[k]*EFun.VIm[k][i]*EFun.VIm[k][0];
+          */
         }
       }
       else
@@ -1343,8 +1356,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Block %i/%i has size %i\n",i+1,settings->NTri1,BlockSizeN[i]);
   }
 
-  free(BlockSizeN);
-
+  
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
    */
@@ -1356,13 +1368,15 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   }
   for (i=0;i<(settings->NTri1);i++)
   {
-    for (j=0;j<Npsi*NT1;j++)
+    if(BlockSizeN[i]==0) break;
+    //for (j=0;j<Npsi*NT1;j++)
+    for (j=0;j<BlockSizeN[i];j++)
     {
       printf("Block %i/%i, state %i/%i\n",i+1,settings->NTri1,j+1,Npsi*NT1);
       uint32_t S = Sqr(SpecTri1.BlockSize); //size of each block
       uint32_t idx = S * i + j; ///contribution for i-th Krylov state and j-th {T1|i>}/
       printf("SpecTri1.b[idx].Re= %f, SpecTri1.b[idx].Im= %f \n",SpecTri1.b[idx].Re, SpecTri1.b[idx].Im);
-      PrintWaveFunctionReadable(PsiBasis[i][j]);
+      //PrintWaveFunctionReadable(PsiBasis[i][j]);
     }
   }
 
@@ -1390,6 +1404,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     
     wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*p/((double)settings->NE1) + energy1;
     for(i = 0; i <(settings->NTri1)*(Npsi)*(NT1); i++)
+
     {
       EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
       EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
@@ -1403,20 +1418,21 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Calculating G(w) for wres %f\n",wRes);
     //4. Calculate G(w)T|i> as a vector of length Npsi*NT1
     o = 0;
-    for (j=0;j<Npsi * NT1;j++)
+    for(i = 0; i < settings->NTri1; i++)
     {
-      GTpsi[j].NFermion = TpsiSameBasis[j].NFermion;
-      GTpsi[j].NBoson   = TpsiSameBasis[j].NBoson;
-      GTpsi[j].QComplex = TpsiSameBasis[j].QComplex;
-      GTpsi[j].NBitsKey = TpsiSameBasis[j].NBitsKey;
-      if(WaveFunctionInit(&GTpsi[j]))
+      if (BlockSizeN[i]==0) break;
+      //for (j=0;j<Npsi * NT1;j++)
+      for (j=0;j<BlockSizeN[i];j++)
       {
-        printf("WaveFunctionInit failed in ResonantSpectra 00");
-        return 1;
-      }
-      for(i = 0; i < settings->NTri1; i++)
-      {
-        
+        GTpsi[j].NFermion = TpsiSameBasis[j].NFermion;
+        GTpsi[j].NBoson   = TpsiSameBasis[j].NBoson;
+        GTpsi[j].QComplex = TpsiSameBasis[j].QComplex;
+        GTpsi[j].NBitsKey = TpsiSameBasis[j].NBitsKey;
+        if(WaveFunctionInit(&GTpsi[j]))
+        {
+          printf("WaveFunctionInit failed in ResonantSpectra 00");
+          return 1;
+        }
         tempDoubleRe = 0;
         tempDoubleIm = 0;
         
@@ -1424,6 +1440,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         //TODO: doble check here if we can do the same as for the non block algorithm
         if(EFun.QComplex)
         {
+          //might also have to consider blocksize here.
           for(k = 0; k < settings->NTri1 * NT1 * Npsi; k++)
           {            
             //n= j + k*(Npsi*NT1); //eigenvalue index, here for the case where the trafos are block diag
@@ -1469,21 +1486,18 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         /* Access the (row=j, col=0) element of the first b-block.
          * b is stored as N blocks of size SxS flattened; use bRe when real. */
         {
-          uint32_t S = Sqr(SpecTri1.BlockSize); //size of each block
-          uint32_t idx = S * i + j; ///contribution for i-th Krylov state and j-th {T1|i>}/
           double alphaRe, alphaIm;
-
           if(SpecTri1.QComplex)
           {
             printf("SpecTri1 is complex\n");
-            alphaRe = SpecTri1.b[idx].Re * tempDoubleRe - SpecTri1.b[idx].Im * tempDoubleIm;
-            alphaIm = SpecTri1.b[idx].Re * tempDoubleIm + SpecTri1.b[idx].Im * tempDoubleRe;
+            alphaRe = SpecTri1.b[j].Re * tempDoubleRe - SpecTri1.b[j].Im * tempDoubleIm;
+            alphaIm = SpecTri1.b[j].Re * tempDoubleIm + SpecTri1.b[j].Im * tempDoubleRe;
           }
           else
           {
             printf("SpecTri1 is real\n");
-            alphaRe = SpecTri1.bRe[idx] * tempDoubleRe;
-            alphaIm = SpecTri1.bRe[idx] * tempDoubleIm;
+            alphaRe = SpecTri1.bRe[j] * tempDoubleRe;
+            alphaIm = SpecTri1.bRe[j] * tempDoubleIm;
           }
           printf("alphaRe %f alphaIm %f\n",alphaRe,alphaIm);
           //PrintWaveFunctionReadable(GTpsi[j]);
@@ -1510,17 +1524,17 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
           TGTpsi[o].NBitsKey = GTpsi[j].NBitsKey;
 
 
-          //printf("GTpsi[%i] before after metadata TGTpsi[o]:", j);
-          //PrintWaveFunctionReadable(GTpsi[j]);
+          printf("GTpsi[%i] before after metadata TGTpsi[o]:", j);
+          PrintWaveFunctionReadable(GTpsi[j]);
           if(WaveFunctionInit(&TGTpsi[o]))
           {
             printf("WaveFunctionInit failed in ResonantSpectra 00");
             return 1;
           }
 
-          //printf("GTpsi[%i] before after initialization TGTpsi[o]:", j);
-          //PrintWaveFunctionReadable(TGTpsi[o]);
-          //PrintWaveFunctionReadable(GTpsi[j]);
+          printf("GTpsi[%i] before after initialization TGTpsi[o]:", j);
+          PrintWaveFunctionReadable(TGTpsi[o]);
+          PrintWaveFunctionReadable(GTpsi[j]);
           
           /* Calculate T*G(w)T|i> */
           if(settings->restrictions2.N==0)
@@ -1627,6 +1641,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       PrintSpectra(&(*Spec)[p + i*(settings->NE1+1)], 1);
     }
   }
+  free(BlockSizeN);
   WaveFunctionFree(*PsiBasis);
   return 0;
 }
