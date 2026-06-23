@@ -1391,7 +1391,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
   printf("Allocate memory for spectra\n");
   /* create spectra from tridiagonal matrices */
-  *Spec = (SpectraType*)malloc(Sqr(Npsi * NT1 * NT2) * sizeof(SpectraType));
+  *Spec = (SpectraType*)malloc((Sqr(Npsi * NT1 * NT2)*(settings->NE1+1)) * sizeof(SpectraType));
 
   printf("Starting loop over resonant energies\n");
   //Todo: do we have add the lines with the settings
@@ -1644,24 +1644,22 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     for(i=0;i<Sqr(Npsi * NT1 * NT2);i++)
     {
 
-      //TODO: There is an error in copying
-      printf("Saving spectrum %i/%i for wres %f\n",i+1,Sqr(Npsi * NT1 * NT2),wRes);
-      
+      printf("Saving spectrum %i/%i for wres %f\n",i+1,Sqr(Npsi * NT1 * NT2),wRes);      
       PrintSpectra(&Specwp.Spec[i], 1);
 
-
-      (*Spec)[p + i*(settings->NE1+1)].ResonantEnergy = settings->Emin1 + ((double)(p % (settings->NE1+1))/(settings->NE1)) * (settings->Emax1-settings->Emin1);
-      sprintf((*Spec)[p + i*(settings->NE1+1)].Name, "Spectrum wres %i/%i Psi %i/%i T1 %i/%i T2 %i/%i",(int)(p % (settings->NE1+1)),settings->NE1,(int)(i/Npsi*NT1*NT2),Npsi,(int)(i/(NT1*NT2) % Npsi),NT1,(int)((i/NT2) % (NT1*Npsi)),NT2);
-      SpectrumAllocate((*Spec)[p + i*(settings->NE1+1)], &(*Spec)[p + i*(settings->NE1+1)]);
-      /*Save spectrum into spectrum position*/
-      
-      (*Spec)[p + i*(settings->NE1+1)] = Specwp.Spec[i];
-
-      SpectrumFree(&Specwp.Spec[i]);
+      Specwp.Spec[i].ResonantEnergy = settings->Emin1 + ((double)(p % (settings->NE1+1))/(settings->NE1)) * (settings->Emax1-settings->Emin1);
+      sprintf(Specwp.Spec[i].Name, "Spectrum wres %i/%i Psi %i/%i T1 %i/%i T2 %i/%i",(int)(p % (settings->NE1+1)),settings->NE1,(int)(i/Npsi*NT1*NT2),Npsi,(int)(i/(NT1*NT2) % Npsi),NT1,(int)((i/NT2) % (NT1*Npsi)),NT2);  
+      SpectrumAllocate(Specwp.Spec[i], &(*Spec)[p + i*(settings->NE1+1)]);
+     
+      //copying to avoid changing after freeing Specwp.Spec[i]
+      CopySpectra(Specwp.Spec[i],  &(*Spec)[p + i*(settings->NE1+1)]);
 
       printf("Saved spectrum at Index %i\n",p + i*(settings->NE1+1));
       printf("Saved spectrum %i/%i for wres %f\n",i+1,Sqr(Npsi * NT1 * NT2),wRes);
       PrintSpectra(&(*Spec)[p + i*(settings->NE1+1)], 1);
+      
+      SpectrumFree(&Specwp.Spec[i]);
+
     }
   }
   free(BlockSizeN);
