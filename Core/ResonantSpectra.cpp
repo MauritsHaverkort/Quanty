@@ -1356,8 +1356,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Block %i/%i has size %i\n",i+1,settings->NTri1,BlockSizeN[i]);
   }
 
-  printf("SpecTri1:");
-  PrintBlockTriDiagonalMatrix(SpecTri1);
+  //printf("SpecTri1:");
+  //PrintBlockTriDiagonalMatrix(SpecTri1);
 
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
@@ -1369,8 +1369,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Problem with BlockTridiagonalMatrixToEigenSystem\n");
   }
 
-  printf("EigenVectors of Htri:\n");
-  PrintCompactMatrixMinimal(EFun);
+  //printf("EigenVectors of Htri:\n");
+  //PrintCompactMatrixMinimal(EFun);
 
 
 
@@ -1410,11 +1410,11 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
     {
 
-      printf("Eval[%i] = %f\n",i,EVal[i]);
+      //printf("Eval[%i] = %f\n",i,EVal[i]);
       EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
       EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
 
-      printf("EValInvRe[%i] = %f, EValInvIm[%i] = %f\n",i,EValInvRe[i],i,EValInvIm[i]);
+      //printf("EValInvRe[%i] = %f, EValInvIm[%i] = %f\n",i,EValInvRe[i],i,EValInvIm[i]);
 
     }
     
@@ -1538,7 +1538,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       for(s = 0; s < NT2; s++)
       {
         printf("GTpsi[%i] before initializing TGTpsi[o]:", j);
-        PrintWaveFunctionReadable(GTpsi[j]);
+        //PrintWaveFunctionReadable(GTpsi[j]);
 
         TGTpsi[o].NFermion = GTpsi[j].NFermion;
         TGTpsi[o].NBoson = GTpsi[j].NBoson;
@@ -1546,16 +1546,16 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         TGTpsi[o].NBitsKey = GTpsi[j].NBitsKey;
 
         printf("GTpsi[%i] after metadata TGTpsi[o]:", j);
-        PrintWaveFunctionReadable(GTpsi[j]);
+        //PrintWaveFunctionReadable(GTpsi[j]);
         if(WaveFunctionInit(&TGTpsi[o]))
         {
           printf("WaveFunctionInit failed in ResonantSpectra 00");
           return 1;
         }
 
-        printf("GTpsi[%i]  after initialization TGTpsi[o]:", j);
-        PrintWaveFunctionReadable(TGTpsi[o]);
-        PrintWaveFunctionReadable(GTpsi[j]);
+        //printf("GTpsi[%i]  after initialization TGTpsi[o]:", j);
+        //PrintWaveFunctionReadable(TGTpsi[o]);
+        //PrintWaveFunctionReadable(GTpsi[j]);
         
         /* Calculate T*G(w)T|i> */
         if(settings->restrictions2.N==0)
@@ -1657,7 +1657,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     {
 
       printf("Saving spectrum %i/%i for wres %f\n",i+1,Sqr(Npsi * NT1 * NT2),wRes);      
-      PrintSpectra(&Specwp.Spec[i], 1);
+      //PrintSpectra(&Specwp.Spec[i], 1);
       
       //ChopSpectra(&Specwp.Spec[i], settings->epsilon);
 
@@ -1670,7 +1670,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
       printf("Saved spectrum at Index %i\n",p + i*(settings->NE1+1));
       printf("Saved spectrum %i/%i for wres %f\n",i+1,Sqr(Npsi * NT1 * NT2),wRes);
-      PrintSpectra(&(*Spec)[p + i*(settings->NE1+1)], 1);
+      //PrintSpectra(&(*Spec)[p + i*(settings->NE1+1)], 1);
       
       SpectrumFree(&Specwp.Spec[i]);
 
