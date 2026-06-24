@@ -1356,8 +1356,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Block %i/%i has size %i\n",i+1,settings->NTri1,BlockSizeN[i]);
   }
 
-  //printf("SpecTri1:");
-  //PrintBlockTriDiagonalMatrix(SpecTri1);
+  printf("SpecTri1:");
+  PrintBlockTriDiagonalMatrix(SpecTri1);
 
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where
    Q are the eigenvectors and A is a matrix with the eigenvalue inverses on the diagonal.
@@ -1438,88 +1438,90 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         printf("WaveFunctionInit failed in ResonantSpectra 00");
         return 1;
       }
-
-      
-      //TODO: doble check here if we can do the same as for the non block algorithm
-      //might also have to consider blocksize here.
-      for(m = 0; m < settings->NTri1 ; m++)
-      {
-        printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i, Nkriv %i/%i\n",p+1,settings->NE1,j+1,Npsi*NT1,m+1,settings->NTri1);
-        if(BlockSizeN[m]==0) break;
-        for(n = 0; n < BlockSizeN[m]; n++)
+ 
+      for (i=0;i< NT1 * Npsi;i++)
+      {        
+        //TODO: doble check here if we can do the same as for the non block algorithm
+        //might also have to consider blocksize here.
+        for(m = 0; m < settings->NTri1 ; m++)
         {
-        tempDoubleRe = 0;
-        tempDoubleIm = 0;
-          for(r = 0; r < settings->NTri1 ; r++)
+          printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i contrib to GT|i> %i/%i, Nkriv %i/%i\n",p+1,settings->NE1,i+1,Npsi*NT1,j+1,Npsi*NT1,m+1,settings->NTri1);
+          if(BlockSizeN[m]==0) break;
+          for(n = 0; n < BlockSizeN[m]; n++)
           {
-            if(BlockSizeN[r]==0) break;
-            for(s = 0; s < BlockSizeN[r]; s++)
+          tempDoubleRe = 0;
+          tempDoubleIm = 0;
+            for(r = 0; r < settings->NTri1 ; r++)
             {
-
-              //maybe nbot the correct orientation of the indices, but it should not matter since we are summing over all anyway.
-              uint32_t imiddle = s+r*(Npsi*NT1);
-              uint32_t iright = j +(Npsi*NT1 * settings->NTri1)*imiddle;
-              uint32_t ileft = (n+m*(Npsi*NT1)) +(Npsi*NT1 * settings->NTri1)*imiddle;
-
-              //printf("imiddle %i iright %i ileft %i\n",imiddle,iright,ileft);
-              //printf("EValInvIm[imiddle] %f EFun.VRe[ileft] %f EFun.VRe[iright] %f\n",EValInvIm[imiddle],EFun.VRe[ileft],EFun.VRe[iright]);
-
-              if(EFun.QComplex)
+              if(BlockSizeN[r]==0) break;
+              for(s = 0; s < BlockSizeN[r]; s++)
               {
-                //TODO: this is not exactly Q*A^(-1)*Q^(-1)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
-                //we can exchange the order of the Q since A is diagonal, but I think I miss a complex conjugation.
-                tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
-                EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im -
-                EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im -
-                EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
-                EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
-                EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im -
-                EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+
+                //maybe nbot the correct orientation of the indices, but it should not matter since we are summing over all anyway.
+                uint32_t imiddle = s+r*(Npsi*NT1);
+                uint32_t iright = j +(Npsi*NT1 * settings->NTri1)*imiddle;
+                uint32_t ileft = (n+m*(Npsi*NT1)) +(Npsi*NT1 * settings->NTri1)*imiddle;
+
+                //printf("imiddle %i iright %i ileft %i\n",imiddle,iright,ileft);
+                //printf("EValInvIm[imiddle] %f EFun.VRe[ileft] %f EFun.VRe[iright] %f\n",EValInvIm[imiddle],EFun.VRe[ileft],EFun.VRe[iright]);
+
+                if(EFun.QComplex)
+                {
+                  //printf("EFun is complex\n");
+                  //TODO: this is not exactly Q*A^(-1)*Q^(-1)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... (now corrected here)
+                  //we can exchange the order of the Q since A is diagonal, but I think I miss a complex conjugation.
+                  tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im -
+                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im -
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
+                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im -
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                }
+                else
+                {
+                  //printf("EFun is real\n");
+                  //anyway it should not matter here.
+                  tempDoubleRe += EValInvRe[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
+                  tempDoubleIm += EValInvIm[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
+                }
+              }//close loop over s
+            }//close loop over r
+            printf("tempDoubleRe %f tempDoubleIm %f\n",tempDoubleRe,tempDoubleIm);
+            printf("Krylov state:");
+            //PrintWaveFunctionReadable(PsiBasis[i][j]);
+            printf("GTstate:");
+            //PrintWaveFunctionReadable(GTpsi[j]);
+            /* Access the (row=j, col=0) element of the first b-block.
+            * b is stored as N blocks of size SxS flattened; use bRe when real. */
+            {
+              double alphaRe, alphaIm;
+              if(SpecTri1.QComplex)
+              {
+                printf("SpecTri1 is complex\n");
+                printf("SpecTri1.b[%i].Re %f SpecTri1.b[%i].Im %f\n",j,SpecTri1.b[j*(NT1*Npsi)+i].Re,j,SpecTri1.b[j*(NT1*Npsi)+i].Im);
+                alphaRe = SpecTri1.b[j*(NT1*Npsi)+i].Re * tempDoubleRe - SpecTri1.b[j*(NT1*Npsi)+i].Im * tempDoubleIm;
+                alphaIm = SpecTri1.b[j*(NT1*Npsi)+i].Re * tempDoubleIm + SpecTri1.b[j*(NT1*Npsi)+i].Im * tempDoubleRe;
               }
               else
               {
-                //TODO: this is not exactly Q*A^(-1)*Q^(T)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... 
-                //anyway it should not matter here.
-                tempDoubleRe += EValInvRe[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
-                tempDoubleIm += EValInvIm[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
+                printf("SpecTri1 is real\n");
+                printf("SpecTri1.b[%i].Re %f \n",j,SpecTri1.bRe[j*(NT1*Npsi)+i]);
+                alphaRe = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleRe;
+                alphaIm = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleIm;
               }
-            }//close loop over s
-          }//close loop over r
-
-          printf("compute GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
-          printf("tempDoubleRe %f tempDoubleIm %f\n",tempDoubleRe,tempDoubleIm);
-          printf("Krylov state:");
-          //PrintWaveFunctionReadable(PsiBasis[i][j]);
-          printf("GTstate:");
-          //PrintWaveFunctionReadable(GTpsi[j]);
-          /* Access the (row=j, col=0) element of the first b-block.
-          * b is stored as N blocks of size SxS flattened; use bRe when real. */
-          {
-            double alphaRe, alphaIm;
-            if(SpecTri1.QComplex)
-            {
-              printf("SpecTri1 is complex\n");
-                
-              alphaRe = SpecTri1.b[j].Re * tempDoubleRe - SpecTri1.b[j].Im * tempDoubleIm;
-              alphaIm = SpecTri1.b[j].Re * tempDoubleIm + SpecTri1.b[j].Im * tempDoubleRe;
+              printf("alphaRe %f alphaIm %f\n",alphaRe,alphaIm);
+              printf("alphaRe %f alphaIm %f\n",alphaRe,alphaIm);
+              //PrintWaveFunctionReadable(GTpsi[j]);
+              //PrintWaveFunctionReadable(PsiBasis[m][n]);
+              //TODo: add sum for different final j's in the same block
+              WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, alphaIm);
+          
             }
-            else
-            {
-              printf("SpecTri1 is real\n");
-              printf("SpecTri1.b[%i].Re %f SpecTri1.b[%i].Im %f\n",j,SpecTri1.b[j].Re,j,SpecTri1.b[j].Im);
-              alphaRe = SpecTri1.bRe[j] * tempDoubleRe;
-              alphaIm = SpecTri1.bRe[j] * tempDoubleIm;
-            }
-            printf("alphaRe %f alphaIm %f\n",alphaRe,alphaIm);
-            //PrintWaveFunctionReadable(GTpsi[j]);
-            //PrintWaveFunctionReadable(PsiBasis[m][n]);
-            //TODo: add sum for different final j's in the same block
-            WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, alphaIm);
-        
-          }
-        }//close loop over n
-      }//close loop over m
+          }//close loop over n
+        }//close loop over m
+      }//close loop over i
 
       if(GTpsi[j].QComplex)
       {
@@ -1636,6 +1638,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
     BlockTridiagonalMatrixChop(&GTri2, settings->epsilon);
 
+    
+
     printf("Finished block tridiagonalization of H2\n");
     //7. Convert to spectra. The block algorithm should automatically combine into tensor, just as in CreateSpectra
     /* create spectra from tridiagonal matrices */
@@ -1678,6 +1682,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     free(Specwp.Name);
     Specwp.NSpectra=0;
   }
+
+  printf("Finished calculating spectra\n");
   free(BlockSizeN);
   WaveFunctionFree(*PsiBasis);
   return 0;
