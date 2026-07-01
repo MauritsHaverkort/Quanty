@@ -1264,35 +1264,38 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   
   //1. Calculate T1|i> for all elments of T1 and |i> giving a vector of length Npsi*NT1 
   i=0;
-  if(settings->restrictions1.N==0)
-  {
-    for(ipsi=0;ipsi<Npsi;ipsi++)
-    {
-      for(iT1=0;iT1<NT1;iT1++)
-      {
-        OperatorPsi(T1[iT1],psi[ipsi],&Tpsi[i]);
 
-        printf("T1[%i] | psi[%i] > = \n",iT1,ipsi);
-        //PrintWaveFunctionReadable(Tpsi[i]);
-        i++;
+  for(ipsi=0;ipsi<Npsi;ipsi++)
+  {
+    for(iT1=0;iT1<NT1;iT1++)
+    {
+      {
+        if(settings->restrictions1.N==0)
+        {
+          OperatorPsi(T1[iT1],psi[ipsi],&Tpsi[i]);
+        }
+        else
+        {
+          OperatorPsiRestricted(T1[iT1],psi[ipsi],&Tpsi[i], settings->restrictions1);
+        }
       }
+      if(Tpsi[i].QComplex)
+      {
+        ComplexWaveFunctionTruncateBasis(&Tpsi[i],settings->epsilon);
+      }
+      else
+      {
+        RealWaveFunctionTruncateBasis(&Tpsi[i],settings->epsilon);
+      }
+      i++;
     }
   }
-  else
-  {
-    for(ipsi=0;ipsi<Npsi;ipsi++)
-    {
-      for(iT1=0;iT1<NT1;iT1++)
-      {
-        OperatorPsiRestricted(T1[iT1],psi[ipsi],&Tpsi[i], settings->restrictions1);
-        
-        printf("T1[%i] | psi[%i] > = \n",iT1,ipsi);
-        //PrintWaveFunctionReadable(Tpsi[i]);
-        i++;
 
-      }
-    }
-  }
+
+
+  
+
+
   
   /* calcualte spectra using tensor form, i.e. returned are Sqr(Options.NT * Options.Npsi) sepctra */
   WaveFunctionType TpsiSameBasis[NT1 * Npsi];
@@ -1310,7 +1313,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     WaveFunctionFree(&(Tpsi[i]));
   }
 
-
+ 
 
   //2. Use T|i>==Tpsi to transform H1 to Block tridiagonal form in Krylov basis */
   //   Using the version which gives back the Krylov basis vectors */
@@ -1346,6 +1349,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, TpsiSameBasis, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
   }
   printf("Finished block tridiagonalization of H1\n");
+
+  BlockTridiagonalMatrixChop(&SpecTri1, settings->epsilon);
 
 
 
@@ -1470,14 +1475,28 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
                   //printf("EFun is complex\n");
                   //TODO: this is not exactly Q*A^(-1)*Q^(-1)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... (now corrected here)
                   //we can exchange the order of the Q since A is diagonal, but I think I miss a complex conjugation.
+                  
                   tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im -
-                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im -
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
+                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
                   EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
-                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im -
+                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
+                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
                   EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                  
+                  //original version:
+                  /*
+                  tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
+                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
+                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                  */
+
                 }
                 else
                 {
@@ -1522,7 +1541,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
           }//close loop over n
         }//close loop over m
       }//close loop over i
-
+      /*
       if(GTpsi[j].QComplex)
       {
         ComplexWaveFunctionTruncateBasis(&GTpsi[j],settings->epsilon);
@@ -1531,7 +1550,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       {
         RealWaveFunctionTruncateBasis(&GTpsi[j],settings->epsilon);
       }
-
+      */
 
       printf("computed GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
       // 5. Calculate T2*G(w)T1|i> as a vector of length Npsi*NT1* NT2
@@ -1555,8 +1574,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
           return 1;
         }
 
-        //printf("GTpsi[%i]  after initialization TGTpsi[o]:", j);
-        //PrintWaveFunctionReadable(TGTpsi[o]);
+        
         //PrintWaveFunctionReadable(GTpsi[j]);
         
         /* Calculate T*G(w)T|i> */
@@ -1580,6 +1598,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       {
         RealWaveFunctionTruncateBasis(&TGTpsi[o],settings->epsilon);
       }
+        printf("GTpsi[%i]:", o);
+        PrintWaveFunctionReadable(TGTpsi[o]);
         o++;
       }//close loop over s (T2 operators)
     } //close loop over T|i>
@@ -1651,8 +1671,12 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     Specwp.Spec= (SpectraType*)malloc(Specwp.NSpectra*sizeof(SpectraType));
     BlockTriDiagonalMatrixToSpectraWithBroadening(energy2, &GTri2, Specwp.Spec, settings->Emin2, settings->Emax2, settings->NE2, settings->Gamma2);
 
+    /* push a table to L containing the spectra in Block Tridiagonal form */
+    ShiftBlockTridiagonalMatrix(&GTri2,energy2);
+
+
+
     printf("Calculated spectra for wres %f\n",wRes);
-    
     
     printf("Saving spectra\n");
 
@@ -1683,7 +1707,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     Specwp.NSpectra=0;
   }
 
-  printf("Finished calculating spectra\n");
+  printf("Finished calculating spectra with energy1 %f and energy2 %f\n", energy1, energy2);
   free(BlockSizeN);
   WaveFunctionFree(*PsiBasis);
   return 0;
