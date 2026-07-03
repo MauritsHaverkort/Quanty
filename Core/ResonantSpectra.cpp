@@ -1349,6 +1349,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   {
     printf("Problem with BlockTridiagonalMatrixToEigenSystem\n");
   }
+  
 
   /* determine Eminpole and Emaxpole */
   /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
@@ -1440,7 +1441,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
                 //maybe nbot the correct orientation of the indices, but it should not matter since we are summing over all anyway.
                 uint32_t imiddle = s+r*(Npsi*NT1);
-                uint32_t iright = j +(Npsi*NT1 * settings->NTri1)*imiddle;
+                uint32_t iright = i +(Npsi*NT1 * settings->NTri1)*imiddle;//
                 uint32_t ileft = (n+m*(Npsi*NT1)) +(Npsi*NT1 * settings->NTri1)*imiddle;
 
                 //printf("imiddle %i iright %i ileft %i\n",imiddle,iright,ileft);
@@ -1497,7 +1498,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
                 alphaRe = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleRe;
                 alphaIm = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleIm;
               }
-              WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, alphaIm);
+              WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, -alphaIm);
             }
           }//close loop over n
         }//close loop over m
@@ -1551,7 +1552,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         }
         o++;
       }//close loop over s (T2 operators)
-    } //close loop over T|i>
+    } //close loop over j T|i>
 
 
     /* calcualte spectra*/
