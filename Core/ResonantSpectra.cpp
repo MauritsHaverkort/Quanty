@@ -1339,6 +1339,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   BlockTridiagonalMatrixChop(&SpecTri1, settings->epsilon);
 
 
+
   /*3. Compute the Block tridiagonal eigenvalues and eigenfunctions of H1 in the Krylov basis
    then S^-1 = QAQ^T where Q are the eigenvectors and A is a matrix with the eigenvalue inverses
    on the diagonal.
@@ -1350,6 +1351,22 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     printf("Problem with BlockTridiagonalMatrixToEigenSystem\n");
   }
   
+  /*
+  printf("Blocksize");
+  for (j=0;j< settings->NTri1;j++)
+  {
+    printf("BlocksizeN[%i]=%u \n",j,BlockSizeN[j]);
+  }
+  
+
+  printf("print Efun");
+  PrintCompactMatrixMinimal(EFun);
+  printf("print Eval");
+  for (j=0;j< NT1 * Npsi * settings->NTri1;j++)
+  {
+    printf("Eval[%i]=%f \n",j,EVal[j]);
+  }
+  */
 
   /* determine Eminpole and Emaxpole */
   /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
@@ -1427,20 +1444,23 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       {        
         for(m = 0; m < settings->NTri1 ; m++)
         {
+          //printf("BlockSizeN[%i]=%u \n",m,BlockSizeN[m]);
           //printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i contrib to GT|i> %i/%i, Nkriv %i/%i\n",p+1,settings->NE1,i+1,Npsi*NT1,j+1,Npsi*NT1,m+1,settings->NTri1);
+          fflush(stdout);
           if(BlockSizeN[m]==0) break;
           for(n = 0; n < BlockSizeN[m]; n++)
           {
           tempDoubleRe = 0;
           tempDoubleIm = 0;
-            for(r = 0; r < settings->NTri1 ; r++)
+            for(r = 0; r < NT1 * Npsi*settings->NTri1 ; r++)
             {
-              if(BlockSizeN[r]==0) break;
-              for(s = 0; s < BlockSizeN[r]; s++)
-              {
+              //printf("BlockSizeN[%i]=%u \n",r,BlockSizeN[r]);
+              //if(BlockSizeN[r]==0) printf("blocksize=0");break;
+              //for(s = 0; s < NT1 * Npsi; s++)
+              //{
 
                 //maybe nbot the correct orientation of the indices, but it should not matter since we are summing over all anyway.
-                uint32_t imiddle = s+r*(Npsi*NT1);
+                uint32_t imiddle = r;
                 uint32_t iright = i +(Npsi*NT1 * settings->NTri1)*imiddle;//
                 uint32_t ileft = (n+m*(Npsi*NT1)) +(Npsi*NT1 * settings->NTri1)*imiddle;
 
@@ -1449,10 +1469,26 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
                 if(EFun.QComplex)
                 {
+
+
+                  //option: U^-1*G*U
+
+                  tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
+                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
+                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
+                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
+                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
+                  
+
+
                   //printf("EFun is complex\n");
                   //TODO: this is not exactly Q*A^(-1)*Q^(-1)[:,0], but rather Q^(T)*A^(-1)*Q[:,0]... (now corrected here)
                   //we can exchange the order of the Q since A is diagonal, but I think I miss a complex conjugation.
-                  
+                  /*
+                  //option U^{T}*G*U*
                   tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
                   EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
                   EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
@@ -1461,7 +1497,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
                   EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
                   EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
                   EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  
+                  */
                   //original version:
                   /*
                   tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
@@ -1481,7 +1517,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
                   tempDoubleRe += EValInvRe[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
                   tempDoubleIm += EValInvIm[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
                 }
-              }//close loop over s
+              //}//close loop over s
             }//close loop over r
             
             /* Access the (row=j, col=0) element of the first b-block.
@@ -1498,7 +1534,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
                 alphaRe = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleRe;
                 alphaIm = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleIm;
               }
-              WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, -alphaIm);
+              //printf("alphaRe=%f,alphaIm=%f",alphaRe,-alphaIm);
+              WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, alphaIm);//check the minus alpha here
             }
           }//close loop over n
         }//close loop over m
