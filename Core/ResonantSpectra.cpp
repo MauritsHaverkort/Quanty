@@ -1224,8 +1224,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
   WaveFunctionType Tpsi[Npsi*NT1],GTpsi[Npsi*NT1],TGTpsi[Npsi*NT1*NT2],**PsiBasis=NULL;
   BlockTriDiagonalMatrixType SpecTri1;
-  CompactMatrixType EFun;
+  CompactMatrixType EFun,UtranGUcon;
   uint32_t *BlockSizeN=NULL;
+  Complex16 *Gdiag=NULL;
   double EVal[Npsi*NT1*settings->NTri1], EValInvRe[Npsi*NT1*settings->NTri1], EValInvIm[Npsi*NT1*settings->NTri1], tempDoubleRe,tempDoubleIm,wRes,*Eval2,Emin2pole,Emax2pole;
   int i,ipsi,iT1,p,m,n,j,o,r,s;
   
@@ -1349,7 +1350,6 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   {
     printf("Problem with BlockTridiagonalMatrixToEigenSystem\n");
   }
-  
 
   /* determine Eminpole and Emaxpole */
   /* get eigenvalues Block Tridiagonal matrix and set smallest and largest eigenvalue */
@@ -1396,13 +1396,21 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
      Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary 
     */
     
-    wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*p/((double)settings->NE1) + energy1;
-    for(i = 0; i <(settings->NTri1)*(Npsi)*(NT1); i++)
 
+    Gdiag = (Complex16*)malloc((settings->NTri1)*(Npsi)*(NT1) * sizeof(Complex16));
+    wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*p/((double)settings->NE1) + energy1;
+
+    for(i = 0; i <(settings->NTri1)*(Npsi)*(NT1); i++)
+    
     {
-      EValInvRe[i] =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
-      EValInvIm[i] = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+      Gdiag[i].Re =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
+      Gdiag[i].Im = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
     }
+
+    //TODO:write together in one function. Here you perform the loop for each function...
+    CompactMatrixConjugateTranspose(&EFun);
+    TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Gdiag, &EFun, &UtranGUcon);
+
 
     /*5. Calculate G(w)T|i> as a vector of length Npsi*NT1
     
@@ -1430,94 +1438,35 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         return 1;
       }
  
-      for (i=0;i< NT1 * Npsi;i++)
-      {        
-        for(m = 0; m < settings->NTri1 ; m++)
+      for(m = 0; m < settings->NTri1 ; m++)
+      {
+        //printf("BlockSizeN[%i]=%u \n",m,BlockSizeN[m]);
+        //printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i contrib to GT|i> %i/%i, Nkriv %i/%i\n",p+1,settings->NE1,i+1,Npsi*NT1,j+1,Npsi*NT1,m+1,settings->NTri1);
+        fflush(stdout);
+        if(BlockSizeN[m]==0) break;
+        for(n = 0; n < BlockSizeN[m]; n++)
         {
-          //printf("BlockSizeN[%i]=%u \n",m,BlockSizeN[m]);
-          //printf("Calculating G(w)T|i> for wres %i/%i T1|i> %i/%i contrib to GT|i> %i/%i, Nkriv %i/%i\n",p+1,settings->NE1,i+1,Npsi*NT1,j+1,Npsi*NT1,m+1,settings->NTri1);
-          fflush(stdout);
-          if(BlockSizeN[m]==0) break;
-          for(n = 0; n < BlockSizeN[m]; n++)
-          {
-          tempDoubleRe = 0;
-          tempDoubleIm = 0;
-            for(r = 0; r < NT1 * Npsi*settings->NTri1 ; r++)
+          uint32_t idx;
+          double alphaRe = 0;
+          double alphaIm = 0;
+          for (i=0;i< NT1 * Npsi;i++)
+          {  
+            idx = i+(n + m * (Npsi * NT1))*(settings->NTri1 * (Npsi * NT1));
+            if(SpecTri1.QComplex)
             {
-
-                //maybe nbot the correct orientation of the indices, but it should not matter since we are summing over all anyway.
-                uint32_t imiddle = r;
-                uint32_t iright = i +(Npsi*NT1 * settings->NTri1)*imiddle;//
-                uint32_t ileft = (n+m*(Npsi*NT1)) +(Npsi*NT1 * settings->NTri1)*imiddle;
-
-                //printf("imiddle %i iright %i ileft %i\n",imiddle,iright,ileft);
-                //printf("EValInvIm[imiddle] %f EFun.VRe[ileft] %f EFun.VRe[iright] %f\n",EValInvIm[imiddle],EFun.VRe[ileft],EFun.VRe[iright]);
-
-                if(EFun.QComplex)
-                {
-                  //option: U^-1*G*U
-                  tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
-                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
-                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  
-
-                  /*
-                  //option U^{T}*G*U^{*}
-                  tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
-                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
-                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  */
-                  //original version:
-                  /*
-                  tempDoubleRe += EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re -
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re +
-                  EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  tempDoubleIm += EValInvIm[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Re +
-                  EValInvRe[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Re -
-                  EValInvRe[imiddle]*EFun.V[ileft].Re*EFun.V[iright].Im +
-                  EValInvIm[imiddle]*EFun.V[ileft].Im*EFun.V[iright].Im;
-                  */
-                }
-                else
-                {
-                  //printf("EFun is real\n");
-                  //anyway it should not matter here.
-                  tempDoubleRe += EValInvRe[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
-                  tempDoubleIm += EValInvIm[imiddle]*EFun.VRe[ileft]*EFun.VRe[iright];
-                }
-            }//close loop over r
-            
-            /* Access the (row=j, col=0) element of the first b-block.
-            * b is stored as N blocks of size SxS flattened; use bRe when real. */
-            {
-              double alphaRe, alphaIm;
-              if(SpecTri1.QComplex)
-              {
-                alphaRe = SpecTri1.b[j*(NT1*Npsi)+i].Re * tempDoubleRe - SpecTri1.b[j*(NT1*Npsi)+i].Im * tempDoubleIm;
-                alphaIm = SpecTri1.b[j*(NT1*Npsi)+i].Re * tempDoubleIm + SpecTri1.b[j*(NT1*Npsi)+i].Im * tempDoubleRe;
-              }
-              else
-              {
-                alphaRe = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleRe;
-                alphaIm = SpecTri1.bRe[j*(NT1*Npsi)+i] * tempDoubleIm;
-              }
-              //printf("alphaRe=%f,alphaIm=%f",alphaRe,-alphaIm);
-              WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, alphaIm);//check the minus alpha here
+              alphaRe += SpecTri1.b[j*(NT1*Npsi)+i].Re *  UtranGUcon.V[idx].Re - SpecTri1.b[j*(NT1*Npsi)+i].Im *  UtranGUcon.V[idx].Im;
+              alphaIm += SpecTri1.b[j*(NT1*Npsi)+i].Re *  UtranGUcon.V[idx].Im + SpecTri1.b[j*(NT1*Npsi)+i].Im *  UtranGUcon.V[idx].Re;
             }
-          }//close loop over n
-        }//close loop over m
-      }//close loop over i
+            else
+            {
+              alphaRe += SpecTri1.bRe[j*(NT1*Npsi)+i] *  UtranGUcon.V[idx].Re;
+              alphaIm += SpecTri1.bRe[j*(NT1*Npsi)+i] *  UtranGUcon.V[idx].Im;
+            }             
+          }//close loop over i
+          //printf("alphaRe=%f,alphaIm=%f",alphaRe,-alphaIm);
+          WaveFunctionAddComplexMultipliedUnionBasis(&GTpsi[j], PsiBasis[m][n], alphaRe, alphaIm);//check the minus alpha here
+        }//close loop over n
+      }//close loop over m
    
 
       //printf("computed GTpsi %i/%i wres %f\n",j,Npsi*NT1,wRes);
