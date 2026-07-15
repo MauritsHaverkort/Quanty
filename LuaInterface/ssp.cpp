@@ -2731,6 +2731,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     uint32_t NT2;
     bool Tensor;
     bool DenseMethod;
+    char *TensorBasis;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.E0=DBL_MAX;
@@ -2738,6 +2739,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Options.E02=DBL_MAX;
   Options.Tensor=false;
   Options.DenseMethod=false;
+  Options.TensorBasis=nullptr;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
   SpectraType *SpecT1psi;
@@ -2749,6 +2751,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"NTri1","uint32_t",&(Options.Settings.NTri1)},
     {"NTri2","uint32_t",&(Options.Settings.NTri2)},
     {"Tensor","bool",&(Options.Tensor)},
+    {"TensorBasis","char*",&(Options.TensorBasis)},
     {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
     {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
     {"Restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
@@ -2814,6 +2817,10 @@ static int LuaCreateResonantSpectra(lua_State *L)
   if (len==6)
   {
     LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
+  }
+  if (Options.TensorBasis != nullptr)
+  {
+    Options.Settings.TensorBasis = Options.TensorBasis;
   }
   if(Options.E01==DBL_MAX)Options.E01=Options.E0;
   if(Options.E02==DBL_MAX)Options.E02=Options.E0;
@@ -3005,6 +3012,15 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {
       ResonantSpectraDenseTensor(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
       Spec->NSpectra=Sqr(Options.NT1*Options.NT2*Options.Npsi)*(Options.Settings.NE1+1);
+      if(Options.Settings.TensorBasis == nullptr)
+      {
+        fprintf(stderr, "Warning: TensorBasis not set\n");
+      }
+      else
+      {
+        Spec->TensorBasis=Options.Settings.TensorBasis;
+        printf("Using tensor basis %s for resonant spectra\n", Spec->TensorBasis);
+      }
       //return luaL_error(L,"Tensor form for Resonant spectra not yet available");
     }
   }
@@ -3042,6 +3058,15 @@ static int LuaCreateResonantSpectra(lua_State *L)
       printf("Using tensor method for resonant spectra\n");
       ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec), Options.E01, Options.E02, &Options.Settings);
       Spec->NSpectra=Sqr(Options.NT1*Options.NT2*Options.Npsi)*(Options.Settings.NE1+1);//I don't get why I cannot put this line in the functions itself;
+      if(Options.Settings.TensorBasis == nullptr)
+      {
+        fprintf(stderr, "Warning: TensorBasis not set\n");
+      }
+      else
+      {
+        Spec->TensorBasis=Options.Settings.TensorBasis;
+        printf("Using tensor basis %s for resonant spectra\n", Spec->TensorBasis);
+      }
       //return luaL_error(L,"Tensor form for Resonant spectra not yet available");
     }
   }
