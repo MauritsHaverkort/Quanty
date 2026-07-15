@@ -792,6 +792,7 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
        OperatorPsiRestricted(T1[j], psi[i], &Opsi, settings->restrictions1);
      }
      WaveFunctionMultiply(H1psiBasis, 0, 0);
+     //why add????
      WaveFunctionAddConserveBasis(H1psiBasis, Opsi);
      WaveFunctionFree(&Opsi);
      if(H1psiBasis->QComplex==0)
@@ -930,9 +931,8 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
      {
        for(j=0;j<Npsi;j++)
        {
-         Lorentz.Re = 1/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1/2));
-         Lorentz.Im = -Lorentz.Re * settings->Gamma1/2;
-         Lorentz.Re *= wRes - Valm[i] + energy1List[j];
+         Lorentz.Re = (wRes - Valm[i] + energy1List[j])/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1*0.5));
+         Lorentz.Im = -(settings->Gamma1 * 0.5)/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1*0.5));
          for(k=0;k<NT1;k++)
          {
            C.V[o].Re = A.VRe[o] * Lorentz.Re;
@@ -948,9 +948,8 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
      {
        for(j=0;j<Npsi;j++)
        {
-         Lorentz.Re = 1/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1*0.5));
-         Lorentz.Im = -Lorentz.Re * settings->Gamma1 * 0.5;
-         Lorentz.Re *= (wRes - Valm[i] + energy1List[j]);
+         Lorentz.Re = (wRes - Valm[i] + energy1List[j])/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1*0.5));
+         Lorentz.Im = -(settings->Gamma1 * 0.5)/(Sqr(wRes - Valm[i] + energy1List[j]) + Sqr(settings->Gamma1*0.5));
          for(k=0;k<NT1;k++)
          {
            C.V[o].Re = A.V[o].Re * Lorentz.Re - A.V[o].Im * Lorentz.Im;
@@ -983,14 +982,15 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
         {
           for(m=0;m<NT1;m++)
           {
-            // loop over all T1psi
             for(n=0;n<NT2;n++)
             {
 
               // define indexing output, from outest to innermost: Psiright[r],psileft[s],T1[i],T2[j],T1_dag[m],T2_dag[n],omega1[l]
               t = l + (settings->NE1+1) * (n + NT2 *(m+NT1*(j+NT2*(i+NT1*(s+Npsi*r)))));
-              kRr = i+r*Npsi;
-              kRs = m+s*Npsi;
+              
+              //select right and ledt T|psi>
+              kRr = i+r*NT1;
+              kRs = m+s*NT1;
 
               // allocate the spectra
               (*Spec)[t].N    =settings->NE2;
@@ -1005,24 +1005,36 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
               for(a=0;a<H2psiBasis->N;a++)
               {
                 //TODO: does it make sense for the Tensor off diag elements to have integral defined?
-                (*Spec)[t].b[0]  += R[j].V[kRr+a*R[j].Nj].Re*R[n].V[kRs+a*R[n].Nj].Re;
-                (*Spec)[t].b[0]  += R[j].V[kRr+a*R[j].Nj].Im*R[n].V[kRs+a*R[n].Nj].Im;
+               // (*Spec)[t].b[0]  += R[j].V[kRr+a*R[j].Nj].Re*R[n].V[kRs+a*R[n].Nj].Re;
+                //(*Spec)[t].b[0]  += R[j].V[kRr+a*R[j].Nj].Im*R[n].V[kRs+a*R[n].Nj].Im;
               }
               //    For each transfer energy wr[m] do (m from 0 to Nwr)
               for(b=0;b<settings->NE2;b++)
               {
                 wLoss = settings->Emin2 + ((double)b/(double)(settings->NE2))*(settings->Emax2 - settings->Emin2);
-                //12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_i Dij / (wr[m] - Ef[i] + Ei[j] + i Gf)
+                //12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_a R^{*}_a * R_a/ (wr[m] - Ef[a] + Ei[j] + i Gf)
                 //    The index of the spectrum is:  l + Nwr * ( k + NT2 * ( jT1 + NT1 * ( jpsi ) ) )  where j = ( jT1 + NT1 * ( jpsi ) )
                 for(a=0;a<H2psiBasis->N;a++)
                 {
-                  //TODO: do we need + or minus for the imaginary part?
+                  //imagionary and real parts of the lorentzian for the final state
+                  double tempDoubleRe = (wLoss - Valf[a] + energy2List[0]) / (Sqr(wLoss - Valf[a] + energy2List[0]) + Sqr(settings->Gamma2*0.5));
+                  double tempDoubleIm = -(settings->Gamma2*0.5)             / (Sqr(wLoss - Valf[a] + energy2List[0]) + Sqr(settings->Gamma2*0.5));
                   //TODO: energy2List[0] how to deal with the offset for cross components between wavefunctions?
-                  (*Spec)[t].Im[b] -= R[j].V[kRr+a*R[j].Nj].Im*R[n].V[kRs+a*R[n].Nj].Im * (settings->Gamma2*0.5)                 / (Sqr(wLoss - Valf[a] + energy2List[0]) + Sqr(settings->Gamma2*0.5));
-                  (*Spec)[t].Re[b] += R[j].V[kRr+a*R[j].Nj].Re*R[n].V[kRs+a*R[n].Nj].Re * (wLoss - Valf[a] + energy2List[0]) / (Sqr(wLoss - Valf[a] + energy2List[0]) + Sqr(settings->Gamma2*0.5));
+                  
+                  //The dimensions of R[k] are Ni = H2psiBasis.N by Nj = Npsi*NT1
+                  //sum_a R^*_{a,kRs}*R^*_{a,kRr}*Gf_a
+                  (*Spec)[t].Im[b] += R[n].V[kRs+a*R[n].Nj].Im* R[j].V[kRr+a*R[j].Nj].Im * tempDoubleIm +
+                                      R[n].V[kRs+a*R[n].Nj].Re* R[j].V[kRr+a*R[j].Nj].Re * tempDoubleIm +
+                                      R[n].V[kRs+a*R[n].Nj].Re* R[j].V[kRr+a*R[j].Nj].Im * tempDoubleRe -
+                                      R[n].V[kRs+a*R[n].Nj].Im* R[j].V[kRr+a*R[j].Nj].Re * tempDoubleRe;
+
+                  (*Spec)[t].Re[b] += R[n].V[kRs+a*R[n].Nj].Im* R[j].V[kRr+a*R[j].Nj].Im * tempDoubleRe +
+                                      R[n].V[kRs+a*R[n].Nj].Re* R[j].V[kRr+a*R[j].Nj].Re * tempDoubleRe -
+                                      R[n].V[kRs+a*R[n].Nj].Re* R[j].V[kRr+a*R[j].Nj].Im * tempDoubleIm +
+                                      R[n].V[kRs+a*R[n].Nj].Im* R[j].V[kRr+a*R[j].Nj].Re * tempDoubleIm;
                 } // end loop over all final states
-              } // end loop over energy loss photon energies index m
-              (*Spec)[t].b[0] = sqrt((*Spec)[t].b[0]);
+              } // end loop over energy loss photon energies index b
+              //(*Spec)[t].b[0] = sqrt((*Spec)[t].b[0]);
               if(H2psiBasis->N==0)
               {
                 (*Spec)[t].EmaxPole=0;
