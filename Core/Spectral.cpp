@@ -78,6 +78,7 @@ void FreeSpectraTypeArray(SpectraTypeArray * const G)
   }
   free(G->Name);
   G->NSpectra=0;
+  G->NE1=0;
 }
 
 
@@ -120,6 +121,7 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
 {
   uint32_t i;
   Out->NSpectra=In->NSpectra;
+  Out->NE1=In->NE1;
   Out->Spec = (SpectraType*)malloc(In->NSpectra*sizeof(SpectraType));
   if(Out->Spec==NULL){printf("malloc failed in CopySpectraArray\n");return 1;}
   for(i=0;i<In->NSpectra;i++)
@@ -1874,5 +1876,269 @@ int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[
                            sin(Dot(klist[k], AtomConnect)));
     }
   }
+  return 0;
+}
+
+
+/* specA <-  U specB
+ * A not initiallized on input
+ * U is a (NSpectra/(NE1+1))*(NSpectra/(NE1+1)) dimensional matrix that defines the transformation
+ *
+ * A = U^{*} * B * U^{T}
+ * A[p]_ij= sum_kl (U_ik)^* B[p]_kl U_jl
+ *
+ * The spectra are stored as a flat array with the energy index p running fastest, followed by the basis index.
+ * For the basis index (i,j) the corresponding spectrum is stored at
+ * p + (NE1+1) * (j + U.Nj * i).
+ */
+uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * const B, const CompactMatrixType * const U)
+{
+  uint32_t p, i, j, k, l;
+  uint32_t ne1;
+  uint32_t nstate;
+  uint32_t idxA, idxB;
+  double alphaRe, alphaIm;
+  Complex16 uik, ujl;
+
+  if(B->NSpectra == 0)
+  {
+    printf("RotateSpectra failed: B->NSpectra is zero\n");
+    A->NSpectra = 0;
+    A->NE1 = 0;
+    if(A->Spec != NULL)
+    {
+      for(i = 0; i < A->NSpectra; i++)
+      {
+        SpectrumFree(&(A->Spec[i]));
+      }
+      free(A->Spec);
+      A->Spec = NULL;
+    }
+    return 0;
+  }
+  printf("RotateSpectra: B->NSpectra=%u, B->NE1=%u, U->Ni=%u, U->Nj=%u\n", B->NSpectra, B->NE1, U->Ni, U->Nj);
+  ne1 = (B->NE1 != 0) ? B->NE1 : 0;
+  A->NE1 = ne1;
+
+  if((B->NSpectra % (ne1 + 1)) != 0)
+  {
+    printf("RotateSpectra failed: B->NSpectra must be divisible by (B->NE1+1)\n");
+    return 1;
+  }
+
+  nstate = B->NSpectra / (ne1 + 1);
+  if((U->Ni * U->Nj) != nstate)
+  {
+    printf("RotateSpectra failed: U.Ni*U.Nj must equal B->NSpectra/(B->NE1+1)\n");
+    return 1;
+  }
+
+
+  A->NSpectra = B->NSpectra;
+  A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
+  if(A->Spec == NULL)
+  {
+    printf("RotateSpectra failed: could not allocate spectra array\n");
+    return 1;
+  }
+
+  for(p = 0; p <= ne1; p++)
+  {
+    for(i = 0; i < U->Ni; i++)
+    {
+      for(j = 0; j < U->Nj; j++)
+      {
+        idxA = p + (ne1 + 1) * (j + U->Nj * i);
+        if(SpectrumAllocate(B->Spec[0], &(A->Spec[idxA])) != 0)
+        {
+          printf("RotateSpectra failed: SpectrumAllocate for target spectrum %u\n", idxA);
+          return 1;
+        }
+
+        for(k = 0; k < U->Ni; k++)
+        {
+          for(l = 0; l < U->Nj; l++)
+          {
+            idxB = p + (ne1 + 1) * (l + U->Nj * k);
+            if(U->QComplex)
+            {
+              uik = U->V[i * U->Nj + k];
+              ujl = U->V[j * U->Nj + l];
+              alphaRe = uik.Re * ujl.Re + uik.Im * ujl.Im;
+              alphaIm = uik.Re * ujl.Im - uik.Im * ujl.Re;
+            }
+            else
+            {
+              alphaRe = U->VRe[i * U->Nj + k] * U->VRe[j * U->Nj + l];
+              alphaIm = 0.0;
+            }
+            AddMultipliedSpectra(&(A->Spec[idxA]), B->Spec[idxB], alphaRe, alphaIm);
+          }
+        }
+      }
+    }
+  }
+  printf("B->NSpectra=%u, B->NE1=%u\n", B->NSpectra, B->NE1);
+  printf("A->NSpectra=%u, A->NE1=%u\n", A->NSpectra, A->NE1);
+  return 0;
+}
+
+
+uint32_t ContractSpectraTensor(SpectraTypeArray * const A,
+                                const SpectraTypeArray * const B,
+                                const uint32_t lene,
+                                const Complex16 * const e)
+{
+  uint32_t p, i, j, k, l, idxB;
+  uint32_t ne1 = B->NE1;
+  double alphaRe, alphaIm;
+
+  
+  printf("ContractSpectraTensor: B->NSpectra=%u, B->NE1=%u\n", B->NSpectra, B->NE1);
+  fflush(stdout);
+  
+
+  printf("ContractSpectraTensor: B->NSpectra=%u, B->NE1=%u, lene=%u\n", B->NSpectra, B->NE1, lene);
+  fflush(stdout);
+  A->NE1 = ne1;
+  A->NSpectra = ne1 + 1;
+  A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
+
+  for(p = 0; p <= ne1; p++)
+  {
+
+    if(SpectrumAllocate(B->Spec[0], &(A->Spec[p])) != 0)
+    {
+      printf("ContractSpectraTensor failed: SpectrumAllocate for result spectrum\n");
+      return 1;
+    }
+
+    for(i = 0; i < lene; i++) for(j = 0; j < lene; j++)
+    {    
+
+      idxB = p + (ne1 + 1) * (j + lene*i);
+    
+      //e^{*}i B_ij e_j = (e[i].Re - i e[i].Im) B_ij (e[j].Re + i e[j].Im)
+      alphaRe = e[i].Re*e[j].Re + e[i].Im*e[j].Im;
+      alphaIm = e[i].Re*e[j].Im - e[i].Im*e[j].Re;
+
+      AddMultipliedSpectra(&(A->Spec[p]), B->Spec[idxB], alphaRe, alphaIm);
+    }
+  }
+  return 0;
+}
+
+
+
+uint32_t GetPowderTensor(SpectraTypeArray * const A,
+                                const SpectraTypeArray * const B,
+                                const uint32_t * const lvec,
+                                const uint32_t lvec_len)
+{
+  uint32_t p, i, j, k, idxA, idxB,lenTotal, nstate;   
+  uint32_t ne1 = B->NE1;
+  double alphaRe, alphaIm;
+
+  printf("GetPowderTensor: start B->NSpectra=%u B->NE1=%u lvec_len=%u\n", B->NSpectra, B->NE1, lvec_len);
+  fflush(stdout);
+
+
+  A->NE1 = ne1;
+  A->NSpectra = A->NSpectra;
+  A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
+
+  printf("GetPowderTensor: allocated output A->NSpectra=%u A->NE1=%u\n", A->NSpectra, A->NE1);
+  fflush(stdout);
+
+  lenTotal = 0;
+  for(k = 0; k < lvec_len; k++)
+  {
+    printf("GetPowderTensor: lvec[%u]=%u -> block size=%u\n", k, lvec[k], (lvec[k] * 2 + 1));
+    fflush(stdout);
+    lenTotal += (lvec[k]*2+1);
+  }
+
+  printf("GetPowderTensor: lenTotal=%u\n", lenTotal);
+  fflush(stdout);
+
+  nstate = B->NSpectra / (ne1 + 1);
+  printf("GetPowderTensor: nstate=%u expected lenTotal^2=%u\n", nstate, lenTotal * lenTotal);
+  fflush(stdout);
+  if((lenTotal * lenTotal) != nstate)
+  {
+    printf("GetPowderTensor failed: lenTotal*lenTotal must equal B->NSpectra/(B->NE1+1)\n");
+    return 1;
+  }
+
+  //get the subtrace in each subblock of the tensor and store it in
+  for(p = 0; p <= ne1; p++)
+  {
+    printf("GetPowderTensor: processing p=%u/%u\n", p, ne1);
+    fflush(stdout);
+
+
+    for(i = 0; i < lenTotal; i++) for(j = 0; j < lenTotal; j++)
+    { 
+      idxB = p + (ne1 + 1) * (j + lenTotal*i);
+      
+      if(SpectrumAllocate(B->Spec[0], &(A->Spec[idxB])) != 0)
+      {
+        printf("GetPowderTensor failed: SpectrumAllocate for result spectrum idxB=%u\n", idxB);
+        return 1;
+      }
+      
+      if((i == 0 && j == 0) || (i == lenTotal - 1 && j == lenTotal - 1))
+      {
+        printf("GetPowderTensor: p=%u initial sweep idxB=%u (i=%u j=%u)\n", p, idxB, i, j);
+        fflush(stdout);
+      }
+      AddMultipliedSpectra(&(A->Spec[idxB]), B->Spec[idxB], 0, 0);
+    }
+
+    j = 0;
+    //do the loop for each subblock. the number of subblocks is given by the length of lvec.
+    for(k = 0; k < lvec_len; k++)
+    {
+      printf("GetPowderTensor: p=%u block=%u joffset=%u blockSize=%u\n", p, k, j, lvec[k] * 2 + 1);
+      fflush(stdout);
+      for(i = 0; i < lvec[k]*2+1; i++)
+      {
+        idxB = p + (ne1 + 1) * ((j+i) + lenTotal*(j+i));
+        idxA = p + (ne1 + 1) * (j + lenTotal*j);
+
+        if(i == 0)
+        {
+          printf("GetPowderTensor: p=%u block=%u diag-avg idxA=%u idxB=%u\n", p, k, idxA, idxB);
+          fflush(stdout);
+        }
+
+        alphaRe = 1.0/(lvec[k]*2+1);
+        alphaIm = 1.0/(lvec[k]*2+1);
+
+        printf("GetPowderTensor: p=%u block=%u diag-avg idxA=%u idxB=%u alphaRe=%lf alphaIm=%lf\n", p, k, idxA, idxB, alphaRe, alphaIm);
+        fflush(stdout);
+        AddMultipliedSpectra(&(A->Spec[idxA]), B->Spec[idxB], alphaRe, alphaIm);        
+
+      }
+      for(i = 1; i < lvec[k]*2+1; i++)
+      {
+        idxB = p + (ne1 + 1) * (j + lenTotal*j);
+        idxA = p + (ne1 + 1) * ((j+i) + lenTotal*(j+i));
+
+        if(i == 1)
+        {
+          printf("GetPowderTensor: p=%u block=%u propagate idxB=%u -> idxA=%u\n", p, k, idxB, idxA);
+          fflush(stdout);
+        }
+        
+        alphaRe = 1.0;
+        alphaIm = 1.0;
+        AddMultipliedSpectra(&(A->Spec[idxA]), A->Spec[idxB], alphaRe, alphaIm);
+      }
+    j++;
+    }
+  }
+  printf("GetPowderTensor: done\n");
+  fflush(stdout);
   return 0;
 }

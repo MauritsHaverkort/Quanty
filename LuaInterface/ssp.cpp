@@ -1788,6 +1788,40 @@ static int Luarotate(lua_State *L)
     RotateTightBinding(TB, RotMat, RTB);
     return 1;
   }
+  if (luaL_testudata(L, 1, "Spectra_Type") != NULL)
+  {
+    CompactMatrixType *U;
+    SpectraTypeArray *Spec;
+    SpectraTypeArray *SpecNew;
+
+    if(len!=2)
+    {
+      return luaL_error(L, "Rotate for spectra called with %d arguments, 2 expected, spectra object and rotation matrix\n", len);
+    }
+
+    U = luaL_checkCompactMatrix(L, 2);
+    Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+    printf("Rotating spectra with %d spectra and %d energy points\n", Spec->NSpectra, Spec->NE1);
+    SpecNew = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    SpecNew->NSpectra = 0;
+    SpecNew->NE1 = 0;
+    SpecNew->Spec = NULL;
+    SpecNew->Name = NULL;
+    SpecNew->TensorBasis = NULL;
+    SpecNew->TensorDim[0] = NULL;
+    SpecNew->TensorDim[1] = NULL;
+    luaL_setmetatable(L, "Spectra_Type");
+    if(RotateSpectra(SpecNew, Spec, U) != 0)
+    {
+      return luaL_error(L, "Error while rotating spectra\n");
+    }
+    if(U->OnLuaStack == false)
+    {
+      FreeCompactMatrix(U);
+      free(U);
+    }
+    return 1;
+  }
   if ((luaL_testudata(L, 1, "Matrix_Type") != NULL) || (lua_istable(L, 1)==1))
   {
     return LuaMatrixRotate(L);
@@ -2881,6 +2915,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Spec->Name[0]='\0';
   Spec->NSpectra=0;
   Spec->Spec=NULL;
+  Spec->NE1=Options.Settings.NE1;
   /* test if dense methods can be used */
   // at the same time create the wave-functions that define the basis sets of the dense matrices used in the dense methods
   // we need the vectors:
@@ -3012,6 +3047,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {
       ResonantSpectraDenseTensor(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
       Spec->NSpectra=Sqr(Options.NT1*Options.NT2*Options.Npsi)*(Options.Settings.NE1+1);
+      printf("Spec->NE1=%i\n",Spec->NE1);
       if(Options.Settings.TensorBasis == nullptr)
       {
         fprintf(stderr, "Warning: TensorBasis not set\n");
@@ -3058,6 +3094,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
       printf("Using tensor method for resonant spectra\n");
       ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec), Options.E01, Options.E02, &Options.Settings);
       Spec->NSpectra=Sqr(Options.NT1*Options.NT2*Options.Npsi)*(Options.Settings.NE1+1);//I don't get why I cannot put this line in the functions itself;
+
       if(Options.Settings.TensorBasis == nullptr)
       {
         fprintf(stderr, "Warning: TensorBasis not set\n");
@@ -5488,6 +5525,54 @@ static int LuaZtoKMatrix(lua_State * L)
   return 1;
 }
 
+/*added by Michelangelo
+Transformation matrix from coupled Cartesian to spherical tensor basis. The input is two integers l1 and l2, the output is a matrix of size (2*l1+1)*(2*l2+1) x (2*l1+1)*(2*l2+1)
+for now, only l1=l2=1 is implemented, but the code can be easily extended to higher l's. 
+*/
+static int LuaCoupledCartesianToSphericalTensorKMatrix(lua_State * L)
+{
+  uint32_t len = (uint32_t) lua_gettop(L);
+  CompactMatrixType returnMat;
+
+  if (len != 2)
+    return luaL_error(L, "CoupledCartesianToSphericalTensorKMatrix called with %d arguments. 2 integers expected: l1 and l2.\n", len);
+
+  const uint32_t l1 = (uint32_t) luaL_checkinteger(L, 1);
+  const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
+
+  if (coupledCartesianToSphericalTensorK(l1, l2, &returnMat) != 0)
+    return luaL_error(L, "Failed to construct coupled Cartesian-to-spherical tensor K matrix for l1=%u and l2=%u.\n", l1, l2);
+
+  LuaPushTable_CompactMatrixType(L, &returnMat);
+  FreeCompactMatrix(&returnMat);
+  return 1;
+}
+
+
+/*added by Michelangelo
+Transformation matrix from coupled Cartesian to spherical tensor basis. The input is two integers l1 and l2, the output is a matrix of size (2*l1+1)*(2*l2+1) x (2*l1+1)*(2*l2+1)
+for now, only l1=l2=1 is implemented, but the code can be easily extended to higher l's. 
+*/
+static int LuaCoupledSphericalTensorKToSphericalTensorYMatrix(lua_State * L)
+{
+  uint32_t len = (uint32_t) lua_gettop(L);
+  CompactMatrixType returnMat;
+
+  if (len != 2)
+    return luaL_error(L, "CoupledSphericalTensorKToSphericalTensorYMatrix called with %d arguments. 2 integers expected: l1 and l2.\n", len);
+
+  const uint32_t l1 = (uint32_t) luaL_checkinteger(L, 1);
+  const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
+
+  if (coupledSphericalTensorKToSphericalTensorY(l1, l2, &returnMat) != 0)
+    return luaL_error(L, "Failed to construct coupled spherical tensor K-to-Y matrix for l1=%u and l2=%u.\n", l1, l2);
+
+  LuaPushTable_CompactMatrixType(L, &returnMat);
+  FreeCompactMatrix(&returnMat);
+  return 1;
+}
+
+
 /*  Changes a bitmask of the form 0001001010010 to NF and a list of indeces.
  *  NF the number of 0's and 1's in the string (all other characters are neglected
  *  Index a list giving the positions of the 1's in the strings. Only 0's and 1's count
@@ -5583,6 +5668,8 @@ static const struct luaL_Reg global_functions[] = {
   {"Conjugate", Luaconjugate},
   {"ConjugateTranspose", Luaconjugatetranspose},
   {"Copy", Luacopy},
+  {"CoupledCartesianToSphericalTensorKMatrix", LuaCoupledCartesianToSphericalTensorKMatrix},
+  {"CoupledSphericalTensorKToSphericalTensorYMatrix", LuaCoupledSphericalTensorKToSphericalTensorYMatrix},
 	{"CreateAtomicIndicesDict",LuaCreateAtomicIndicesDict},
 	{"CreateAtomicIndicesList",LuaCreateAtomicIndicesList},
   {"CreateSpectra", LuaCreateSpectra},

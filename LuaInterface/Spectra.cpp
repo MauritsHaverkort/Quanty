@@ -516,6 +516,9 @@ static int LuaSpectraMultiplyByEnergyMethod(lua_State * L)
   return 0;
 }
 
+
+
+
 static int LuaSpectraSum(lua_State * L)
 {
   uint32_t len,i,j,k;
@@ -530,6 +533,7 @@ static int LuaSpectraSum(lua_State * L)
   res->Name=(char*)malloc(2*sizeof(char));
   res->Name[0]='\0';
   res->NSpectra = len-1;
+  res->NE1 = a->NE1;
   res->Spec= (SpectraType*)malloc(res->NSpectra*sizeof(SpectraType));
   res->Spec[0].Emin    = a->Spec[0].Emin;
   res->Spec[0].Emax    = a->Spec[0].Emax;
@@ -596,6 +600,306 @@ static int LuaSpectraSum(lua_State * L)
   }
   return 1;
 }
+static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
+{
+    size_t i,j,p;
+    size_t len[2];
+    uint64_t n, expected;
+    Complex16 *polarization[2] = {NULL, NULL};
+    SpectraTypeArray *res;
+
+    printf("LuaContractSpectraTensorWithPolarizationMethod started \n");
+    fflush(stdout);
+
+    //starting spectral array
+    SpectraTypeArray *spec = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
+    
+    //output spectral array
+    res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    luaL_setmetatable(L, "Spectra_Type");
+    
+    /* Validate both polarization tables. */
+    for (p = 0; p < 2; ++p) {
+        int arg = (int)p + 1;
+
+        luaL_checktype(L, arg, LUA_TTABLE);
+        len[p] = lua_objlen(L, arg);
+
+        if (len[p] == 0) {
+            return luaL_error(
+                L,
+                "Error in .ContractWithPolarization: "
+                "arg_%d must be a non-empty table",
+                arg
+            );
+        }
+
+        for (i = 0; i < len[p]; ++i) {
+            lua_rawgeti(L, arg, (int)i + 1);
+
+            if (luaL_testudata(L, -1, "Complex_Type") == NULL) {
+                return luaL_error(
+                    L,
+                    "Error in .ContractWithPolarization: "
+                    "element %d of arg_%d must be Complex_Type",
+                    (int)i + 1,
+                    arg
+                );
+            }
+
+            lua_pop(L, 1);
+        }
+    }
+
+    /* Validate spectrum dimensions. */
+    if (spec->NE1 == UINT32_MAX ||
+        spec->NSpectra % (spec->NE1 + 1) != 0) {
+        return luaL_error(
+            L,
+            "Error in .ContractWithPolarization: "
+            "invalid tensor spectrum dimensions"
+        );
+    }
+
+    n = (uint64_t)len[0] * (uint64_t)len[1];
+
+    if (n != 0 && n > UINT64_MAX / n) {
+        return luaL_error(
+            L,
+            "Error in .ContractWithPolarization: "
+            "polarization dimensions are too large"
+        );
+    }
+
+    expected = n * n;
+
+    if ((uint64_t)(spec->NSpectra / (spec->NE1 + 1)) != expected) {
+        return luaL_error(
+            L,
+            "Error in .ContractWithPolarization: "
+            "tensor has %llu components, expected "
+            "(%llu * %llu)^2 = %llu",
+            (unsigned long long)(
+                spec->NSpectra / (spec->NE1 + 1)
+            ),
+            (unsigned long long)len[0],
+            (unsigned long long)len[1],
+            (unsigned long long)expected
+        );
+    }
+
+    /* Allocate and copy both polarization vectors. */
+    for (p = 0; p < 2; ++p) {
+        int arg = (int)p + 1;
+
+        polarization[p] =
+            (Complex16 *)malloc(
+                len[p] * sizeof(*polarization[p])
+            );
+
+        if (polarization[p] == NULL) {
+            free(polarization[0]);
+            free(polarization[1]);
+
+            return luaL_error(
+                L,
+                "Error in .ContractWithPolarization: "
+                "allocation failed"
+            );
+        }
+
+        for (i = 0; i < len[p]; ++i) {
+            Complex16 *z;
+
+            lua_rawgeti(L, arg, (int)i + 1);
+
+            z = (Complex16 *)luaL_checkudata(
+                L, -1, "Complex_Type"
+            );
+
+            polarization[p][i] = *z;
+            lua_pop(L, 1);
+        }
+    }
+
+    printf("Build the coupled polarization vector...\n");
+    fflush(stdout);
+    /* Build the coupled polarization vector */
+    Complex16 *coupledpol = (Complex16 *)malloc(n * sizeof(Complex16));
+    if (coupledpol == NULL) {
+        free(polarization[0]); free(polarization[1]);
+        return luaL_error(L, "Error in .ContractWithPolarization: allocation failed");
+    }
+
+    printf("Tensor basis: %s\n", spec->TensorBasis);
+    fflush(stdout);
+#define CMUL(a,b) ((Complex16){(a).Re*(b).Re-(a).Im*(b).Im, (a).Re*(b).Im+(a).Im*(b).Re})
+#define CSCALE(s,a) ((Complex16){(s)*(a).Re, (s)*(a).Im})
+#define CADD(a,b)  ((Complex16){(a).Re+(b).Re, (a).Im+(b).Im})
+#define CSUB(a,b)  ((Complex16){(a).Re-(b).Re, (a).Im-(b).Im})
+#define CONJ(a) ((Complex16){(a).Re, -(a).Im})
+
+    if (strcmp(spec->TensorBasis, "Cartesian") == 0 || strcmp(spec->TensorBasis, "cartesian") == 0)
+    {
+        /* coupledpol[ix + len[0]*iy] = conj(pol2[ix]) * pol1[iy] */
+        for (i = 0; i < len[0]; ++i) {
+            for (j = 0; j < len[1]; ++j) {
+                coupledpol[i + len[0]*j] = CMUL(CONJ(polarization[1][i]), polarization[0][j]);
+            }
+        }
+      printf("Cartesian done\n");
+      fflush(stdout);
+    }
+    else if (strcmp(spec->TensorBasis, "SphericalTensorK") == 0)
+    {
+        if (len[0] != 3 || len[1] != 3) {
+            free(coupledpol); free(polarization[0]); free(polarization[1]);
+            return luaL_error(L,
+                "Error in .ContractWithPolarization(SphericalTensorK): "
+                "polarization vectors must have length 3 (x,y,z)");
+        }
+
+        double isq2 = 1.0/sqrt(2.0);
+        double isq3 = 1.0/sqrt(3.0);
+        double isq6 = 1.0/sqrt(6.0);
+        double sqrt2_3 = sqrt(2.0/3.0);
+
+        Complex16 ein[3], eout[3];
+        for (i = 0; i < 3; ++i) {
+            ein[i] = polarization[0][i];
+            eout[i] = CONJ(polarization[1][i]);
+        }
+
+        Complex16 i_unit = (Complex16){0, 1.0};
+
+        /* e^(0) = -(ein_x * eout_x + ein_y * eout_y + ein_z * eout_z) / sqrt(3) */
+        coupledpol[0] = CSCALE(-isq3, CADD(CADD(
+            CMUL(ein[0], eout[0]),
+            CMUL(ein[1], eout[1])),
+            CMUL(ein[2], eout[2])));
+
+        /* e^(1)_Rx = i(ein_y * eout_z - ein_z * eout_y) / sqrt(2) */
+        coupledpol[1] = CSCALE(isq2, CMUL(i_unit, CSUB(
+            CMUL(ein[1], eout[2]),
+            CMUL(ein[2], eout[1]))));
+
+        /* e^(1)_Ry = i(ein_z * eout_x - ein_x * eout_z) / sqrt(2) */
+        coupledpol[2] = CSCALE(isq2, CMUL(i_unit, CSUB(
+            CMUL(ein[2], eout[0]),
+            CMUL(ein[0], eout[2]))));
+
+        /* e^(1)_Rz = i(ein_x * eout_y - ein_y * eout_x) / sqrt(2) */
+        coupledpol[3] = CSCALE(isq2, CMUL(i_unit, CSUB(
+            CMUL(ein[0], eout[1]),
+            CMUL(ein[1], eout[0]))));
+
+        /* e^(2)_{x2-y2} = (ein_x * eout_x - ein_y * eout_y) / sqrt(2) */
+        coupledpol[4] = CSCALE(isq2, CSUB(
+            CMUL(ein[0], eout[0]),
+            CMUL(ein[1], eout[1])));
+
+        /* e^(2)_{z2} = -(ein_x * eout_x + ein_y * eout_y) / sqrt(6) + sqrt(2/3) * ein_z * eout_z */
+        coupledpol[5] = CSUB(
+            CSCALE(-isq6, CADD(
+                CMUL(ein[0], eout[0]),
+                CMUL(ein[1], eout[1]))),
+            CSCALE(sqrt2_3, CMUL(ein[2], eout[2])));
+
+        /* e^(2)_{yz} = (ein_y * eout_z + ein_z * eout_y) / sqrt(2) */
+        coupledpol[6] = CSCALE(isq2, CADD(
+            CMUL(ein[1], eout[2]),
+            CMUL(ein[2], eout[1])));
+
+        /* e^(2)_{xz} = (ein_x * eout_z + ein_z * eout_x) / sqrt(2) */
+        coupledpol[7] = CSCALE(isq2, CADD(
+            CMUL(ein[0], eout[2]),
+            CMUL(ein[2], eout[0])));
+
+        /* e^(2)_{xy} = (ein_x * eout_y + ein_y * eout_x) / sqrt(2) */
+        coupledpol[8] = CSCALE(isq2, CADD(
+            CMUL(ein[0], eout[1]),
+            CMUL(ein[1], eout[0])));
+    }
+    else
+    {
+        free(coupledpol); free(polarization[0]); free(polarization[1]);
+        return luaL_error(L,
+            "Error in .ContractWithPolarization: "
+            "unknown TensorBasis \"%s\", expected \"Cartesian\" or \"Cubic\"",
+            spec->TensorBasis);
+        fflush(stdout);
+    }    
+
+    #undef CMUL
+    #undef CSCALE
+    #undef CADD
+    #undef CSUB
+    #undef CONJ
+
+    printf("Contracting tensor spectra with polarization vectors of lengths %zu and %zu\n", len[0], len[1]);
+    fflush(stdout);
+
+    ContractSpectraTensor(
+        res,
+        spec,
+        n,
+        coupledpol
+    );
+
+    free(coupledpol);
+    free(polarization[0]);
+    free(polarization[1]);
+    printf("Contracted with polarization, resulting in %u spectra\n", res->NSpectra);
+    fflush(stdout);
+
+
+    return 1;
+}
+
+static int LuaSpectraGetPowderTensorMethod(lua_State *L)
+{
+  uint32_t nstate;
+  const uint32_t lvec9[3] = {0, 1, 2};
+  const uint32_t lvec15[3] = {1, 2, 3};
+  const uint32_t *lvec = NULL;
+  uint32_t lvec_len = 3;
+  SpectraTypeArray *res;
+  SpectraTypeArray *spec;
+
+  spec = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
+  //output spectral array
+  res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  
+
+  if((spec->NE1 == UINT32_MAX) || ((spec->NSpectra % (spec->NE1 + 1)) != 0))
+  {
+    return luaL_error(L, "Error Spectra.GetPowderTensor: invalid tensor dimensions\n");
+  }
+
+  nstate = spec->NSpectra / (spec->NE1 + 1);
+  if(nstate == 81)
+  {
+    lvec = lvec9;
+  }
+  else if(nstate == 225)
+  {
+    lvec = lvec15;
+  }
+  else
+  {
+    return luaL_error(L, "Error Spectra.GetPowderTensor: sqrt(nstate) must be 9 or 15 (nstate=%u)\n", nstate);
+  }
+
+  printf("GetPowderTensor: nstate=%u, lvec_len=%u\n", nstate, lvec_len);
+  fflush(stdout);
+  if(GetPowderTensor(res, spec, lvec, lvec_len) != 0)
+  {
+    return luaL_error(L, "Error while creating powder tensor spectra\n");
+  }
+  return 1;
+}
+
 
 /*  Return a sum of the spectra
  *  on stack a SpectrumTypeArray and a list of numbers (doubles or complex) with the length of the list equal to the number of elements in the spectra
@@ -1462,6 +1766,7 @@ static int LuaSpectraMul(lua_State * L)
             res->Name=(char*)malloc(2*sizeof(char));
             res->Name[0]='\0';
             res->NSpectra = a->NSpectra;
+            res->NE1 = a->NE1;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
             {
@@ -2041,8 +2346,24 @@ static int LuaSpectraIndex(lua_State * L)
       lua_pushstring(L, a->Spec[i].Name);
       lua_rawseti(L, -2, i+1);
     }
-    return 2;
   }
+  if (strcmp(str, "ContractSpectraTensorWithPolarization") == 0)
+  {
+    printf("ContractSpectraTensorWithPolarizationMethod called\n");
+
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaContractSpectraTensorWithPolarizationMethod,1);
+    return 1;
+  }
+  if (strcmp(str, "GetPowderTensor") == 0)
+  {
+    printf("GetPowderTensorMethod called\n");
+    fflush(stdout);
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraGetPowderTensorMethod, 1);
+    return 1;
+  }
+  return 2;
   return luaL_error(L, "Error operation \".%s()\" not defined on spectra\n",str);
 }
 
@@ -2101,6 +2422,7 @@ static const struct luaL_Reg Spectra_func[] = {
   {"Copy", LuaSpectraCopy},
   {"Clone", LuaSpectraCopy},
   {"Element", LuaSpectraElement},
+  //{"GetPowderTensor", LuaSpectraGetPowderTensor},
   {"MultiplyByEnergy", LuaSpectraMultiplyByEnergy},
   {"Shift", LuaSpectraShift},
   {"Sum", LuaSpectraSum},

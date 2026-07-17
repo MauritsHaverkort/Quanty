@@ -52,3 +52,5 @@ void SplitAndersonImpurityHamiltonian(const TriDiagonalMatrixType M, const doubl
 void CalculateSelfEnergySpectralRepresentation(const SpectraType G0, const SpectraType G, SpectraType * const S,const double *const FWHM);
 void CalculateG0fromSandGSpectralRepresentation(SpectraType * const G0, const SpectraType G, const SpectraType S);
 int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[3][3], double klist[][3], SpectraType * Spectra);
+uint32_t RotateSpectra(SpectraTypeArray * const SpecNew, const SpectraTypeArray * const Spec, const CompactMatrixType * const U);
+uint32_t GetPowderTensor(SpectraTypeArray * const A, const SpectraTypeArray * const B, const uint32_t * const lvec, const uint32_t lvec_len);

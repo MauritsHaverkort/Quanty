@@ -942,6 +942,7 @@ SpectraType;
 typedef struct SpectraTypeArray
 {
   uint32_t NSpectra;
+  uint32_t NE1;
   SpectraType *Spec;
   char *Name;
   const char *TensorBasis;  /*If defined, whis will flag that we have a Tensor object. Depending on the basis, some functions will behave differently */

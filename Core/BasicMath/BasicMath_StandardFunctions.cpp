@@ -6344,6 +6344,159 @@ uint32_t SphericalHarmonicjjzToK(uint32_t l, CompactMatrixType *U)
   return 0;
 }
 
+
+
+
+
+/* coupledSphericalTensorKToSphericalTensorY for  l=1 x l=1 coupled angular momentum to l=0,1,2
+   The transformation matrix is given by the following numpy array:
+USphKToSphY = np.array([
+    [1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1 / np.sqrt(2), -1j / np.sqrt(2), 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0, 0],
+    [0, -1 / np.sqrt(2), -1j / np.sqrt(2), 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1 / np.sqrt(2), 0, 0, 0, -1j / np.sqrt(2)],
+    [0, 0, 0, 0, 0, 0, -1j / np.sqrt(2), 1 / np.sqrt(2), 0],
+    [0, 0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, -1j / np.sqrt(2), -1 / np.sqrt(2), 0],
+    [0, 0, 0, 0, 1 / np.sqrt(2), 0, 0, 0, 1j / np.sqrt(2)]
+], dtype=complex)
+
+
+*/
+
+
+uint32_t coupledSphericalTensorKToSphericalTensorY(uint32_t l1,uint32_t l2, CompactMatrixType *U)
+{
+  if(l1 != 1 || l2 != 1)
+  {
+    printf("Called coupledSphericalTensorKToSphericalTensorY with l1/l2 != 1 only l1=l2=1 are implemented.");
+    return 1;
+  }
+
+  U->Ni=9;
+  U->Nj=9;
+  U->QComplex=1;
+  if(InitCompactMatrix(U))
+  {
+    printf("InitCompactMatrix failed in coupledSphericalTensorKToSphericalTensorY\n");
+    return 1;
+  }
+
+  const double invSqrt2 = 1.0/sqrt(2.0);
+
+  U->V[0*U->Ni+0].Re = 1.0;
+
+  U->V[1*U->Ni+1].Re = invSqrt2;
+  U->V[1*U->Ni+2].Im = -invSqrt2;
+
+  U->V[2*U->Ni+3].Re = 1.0;
+
+  U->V[3*U->Ni+1].Re = -invSqrt2;
+  U->V[3*U->Ni+2].Im = -invSqrt2;
+
+  U->V[4*U->Ni+4].Re = invSqrt2;
+  U->V[4*U->Ni+8].Im = -invSqrt2;
+
+  U->V[5*U->Ni+5].Im = -invSqrt2;
+  U->V[5*U->Ni+7].Re = invSqrt2;
+
+  U->V[6*U->Ni+6].Re = 1.0;
+
+  U->V[7*U->Ni+5].Im = -invSqrt2;
+  U->V[7*U->Ni+7].Re = -invSqrt2;
+
+  U->V[8*U->Ni+4].Re = invSqrt2;
+  U->V[8*U->Ni+8].Im = invSqrt2;
+
+  return 0;
+}
+
+/* coupledCartesianToSphericalTensorK for  l=1 x l=1 coupled angular momentum to l=0,1,2
+   The transformation matrix is given by the following numpy array:
+UCartToSphK = np.array([
+[-(1/np.sqrt(3)), 0, 0, 0, -(1/np.sqrt(3)), 0, 0, 0, -(1/np.sqrt(3))],
+[0, 0, 0, 0, 0, 1j/np.sqrt(2), 0, -1j/np.sqrt(2), 0],
+[0, 0, -1j/np.sqrt(2), 0, 0, 0, 1j/np.sqrt(2), 0, 0],
+[0, 1j/np.sqrt(2), 0, -1j/np.sqrt(2), 0, 0, 0, 0, 0],
+[1/np.sqrt(2), 0, 0, 0, -(1/np.sqrt(2)), 0, 0, 0, 0],
+[-(1/np.sqrt(6)), 0, 0, 0, -(1/np.sqrt(6)), 0, 0, 0, np.sqrt(2/3)],
+[0, 0, 0, 0, 0, 1/np.sqrt(2), 0, 1/np.sqrt(2), 0],
+[0, 0, 1/np.sqrt(2), 0, 0, 0, 1/np.sqrt(2), 0, 0],
+[0, 1/np.sqrt(2), 0, 1/np.sqrt(2), 0, 0, 0, 0, 0]
+])
+*/
+uint32_t coupledCartesianToSphericalTensorK(uint32_t l1,uint32_t l2, CompactMatrixType *U)
+{
+  if(l1 != 1 || l2 != 1)
+  {
+    printf("Called coupledCartesianToSphericalTensorK with l1/l2 != 1 only l1=l2=1 are implemented.");
+    return 1;
+  }
+
+  U->Ni=9;
+  U->Nj=9;
+  U->QComplex=1;
+  if(InitCompactMatrix(U))
+  {
+    printf("InitCompactMatrix failed in coupledCartesianToSphericalTensorK\n");
+    return 1;
+  }
+
+  const double invSqrt2 = 1.0/sqrt(2.0);
+  const double invSqrt3 = 1.0/sqrt(3.0);
+  const double invSqrt6 = 1.0/sqrt(6.0);
+  const double sqrt23 = sqrt(2.0/3.0);
+
+  U->V[0*U->Ni+0].Re = -invSqrt3;
+  U->V[0*U->Ni+4].Re = -invSqrt3;
+  U->V[0*U->Ni+8].Re = -invSqrt3;
+
+  U->V[1*U->Ni+5].Im = invSqrt2;
+  U->V[1*U->Ni+7].Im = -invSqrt2;
+
+  U->V[2*U->Ni+2].Im = -invSqrt2;
+  U->V[2*U->Ni+6].Im = invSqrt2;
+
+  U->V[3*U->Ni+1].Im = invSqrt2;
+  U->V[3*U->Ni+3].Im = -invSqrt2;
+
+  U->V[4*U->Ni+0].Re = invSqrt2;
+  U->V[4*U->Ni+4].Re = -invSqrt2;
+
+  U->V[5*U->Ni+0].Re = -invSqrt6;
+  U->V[5*U->Ni+4].Re = -invSqrt6;
+  U->V[5*U->Ni+8].Re = sqrt23;
+
+  U->V[6*U->Ni+5].Re = invSqrt2;
+  U->V[6*U->Ni+7].Re = invSqrt2;
+
+  U->V[7*U->Ni+2].Re = invSqrt2;
+  U->V[7*U->Ni+6].Re = invSqrt2;
+
+  U->V[8*U->Ni+1].Re = invSqrt2;
+  U->V[8*U->Ni+3].Re = invSqrt2;
+
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*  returns a pointer to an array of length 2*n contaning the n
  *  Quadrature nodes and weights
  *  GaussLegendreQuadratureCompact defined in BasicMath_StandardFunctions.h
