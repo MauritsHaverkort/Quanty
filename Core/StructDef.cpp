@@ -946,7 +946,7 @@ typedef struct SpectraTypeArray
   SpectraType *Spec;
   char *Name;
   const char *TensorBasis;  /*If defined, whis will flag that we have a Tensor object. Depending on the basis, some functions will behave differently */
-  uint32_t *TensorDim[2]; /* TODO: This would allow to go to beyond dipole transitions */
+  /*  uint32_t *TensorDim[2];  TODO: This would allow to go to beyond dipole transitions */
 }
 SpectraTypeArray;
 

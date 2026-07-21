@@ -1706,6 +1706,7 @@ static int Luarotate(lua_State *L)
   struct
   {
     double zero;
+    char * TensorBasis;
   } Options;
   Options.zero=100*DBL_EPSILON;
   MatrixType *U;
@@ -1794,10 +1795,14 @@ static int Luarotate(lua_State *L)
     SpectraTypeArray *Spec;
     SpectraTypeArray *SpecNew;
 
-    if(len!=2)
+    if(len<2 || len>3)
     {
-      return luaL_error(L, "Rotate for spectra called with %d arguments, 2 expected, spectra object and rotation matrix\n", len);
+      return luaL_error(L, "Rotate for spectra called with %d arguments, 2 or 3 expected, spectra object, rotation matrix, and optional options table\n", len);
     }
+
+    LuaOptionsType LuaRotateSpectraOptions[]={
+      {"TensorBasis","char*",&(Options.TensorBasis)},
+      {NULL, NULL, NULL}};
 
     U = luaL_checkCompactMatrix(L, 2);
     Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
@@ -1808,13 +1813,27 @@ static int Luarotate(lua_State *L)
     SpecNew->Spec = NULL;
     SpecNew->Name = NULL;
     SpecNew->TensorBasis = NULL;
-    SpecNew->TensorDim[0] = NULL;
-    SpecNew->TensorDim[1] = NULL;
+    //SpecNew->TensorDim[0] = NULL;
+    //SpecNew->TensorDim[1] = NULL;
     luaL_setmetatable(L, "Spectra_Type");
+    
+    /* read options if provided */
+    if(len==3)
+    {
+      LuaCheckOptions(L, 3, LuaRotateSpectraOptions);
+    }
+
     if(RotateSpectra(SpecNew, Spec, U) != 0)
     {
       return luaL_error(L, "Error while rotating spectra\n");
     }
+
+    /* override TensorBasis if provided in options */
+    if(Options.TensorBasis != NULL)
+    {
+      SpecNew->TensorBasis = Options.TensorBasis;
+    }
+
     if(U->OnLuaStack == false)
     {
       FreeCompactMatrix(U);

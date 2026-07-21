@@ -1009,7 +1009,7 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
                 //(*Spec)[t].b[0]  += R[j].V[kRr+a*R[j].Nj].Im*R[n].V[kRs+a*R[n].Nj].Im;
               }
               //    For each transfer energy wr[m] do (m from 0 to Nwr)
-              for(b=0;b<settings->NE2;b++)
+              for(b=0;b<settings->NE2+1;b++)
               {
                 wLoss = settings->Emin2 + ((double)b/(double)(settings->NE2))*(settings->Emax2 - settings->Emin2);
                 //12. Spec[T1psi[j],T2[k],wi[l]][wr[m]] = sum_a R^{*}_a * R_a/ (wr[m] - Ef[a] + Ei[j] + i Gf)
