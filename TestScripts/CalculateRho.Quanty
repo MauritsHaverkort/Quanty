@@ -122,6 +122,8 @@ RhoExpected =Matrix.ToUserdata(Matrix.Identity(Nx))
 Zero =Matrix.ToUserdata(0.*Matrix.Identity(Nx))
 assert(Chop(Rho)==Zero ,"Error: Wrong Value of Rho") 
 
+print(HClTB)
+
 --check the the kBT parameter
 Rho=CalculateRho(HClTB,{{"kBT",1000}})
 --Check some basics of Rho
