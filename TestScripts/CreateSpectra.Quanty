@@ -1033,9 +1033,11 @@ end
 spec, G = CreateSpectra(H1, {TDn,TUp}, psi1, {{"DenseBorder", 3000}, {"Tensor", true},{"Restrictions",restrictions}})
 for i, omega in pairs(omegaList) do
 	if Chop(G(omega, 0.1)[1][1] - G1Dn1(omega, 0.1), threshold) ~= 0 then
+	         print(G(omega, 0.1)[1][1] - G1Dn1(omega, 0.1))
 			 error("Response function not equal to the expected value\n",1)
 	 end
 	if Chop(G(omega, 0.1)[2][2] - G1Up1(omega, 0.1), threshold) ~= 0 then
+	         print(G(omega, 0.1)[2][2] - G1Up1(omega, 0.1))
 			 error("Response function not equal to the expected value\n",1)
 	 end
 end
