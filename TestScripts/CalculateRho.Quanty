@@ -89,6 +89,8 @@ Nx,Ny,Nz=2,1,1
 HCl, HClTB, Cellpos, Kvec = CreateClusterHamiltonian(HTB, {"periodic", {{Nx,0,0},{0,Ny,0},{0,0,Nz}}}, 
 {{"ReturnTBSuperCell",true},{"ReturnTBCellPositions",true}, {"ReturnTBKVectors",true} })
 
+HClTB = Chop(( HClTB + ConjugateTranspose(HClTB) )/2)
+
 --Calculate the density matrix
 Rho=Chop(CalculateRho(HClTB))
 
