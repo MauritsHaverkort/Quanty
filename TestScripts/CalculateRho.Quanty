@@ -19,9 +19,9 @@ local function printCallerLine()
 end
 
 function IsPositiveDefinite(M)
-   local val,fun=Eigensystem(M)
+   local val,fun=Eigensystem(Chop(M,1E-14))
    for i=1,#val do
-      if val[i]<0 then
+      if Chop(val[i],1E-14)<0 then
          return false
       end
    end
