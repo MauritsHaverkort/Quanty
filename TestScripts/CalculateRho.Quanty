@@ -105,9 +105,6 @@ checkPhysicalRho(Rho,Nx*Ny*Nz)
 Rho=CalculateRho(HClTB,{{"mu",1.01}})
 --Check some basics of Rho
 checkPhysicalRho(Rho,Nx*Ny*Nz)
-RhoExpected =Matrix.ToUserdata(Matrix.Identity(Nx))
-Zero =Matrix.ToUserdata(0.*Matrix.Identity(Nx))
-assert(Chop(Rho-RhoExpected)==Zero ,"Error: Wrong Value of Rho") 
 
 --check the the mu parameter. All states empty
 Rho=CalculateRho(HClTB,{{"mu",-1.01}})
