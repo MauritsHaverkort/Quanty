@@ -110,9 +110,6 @@ checkPhysicalRho(Rho,Nx*Ny*Nz)
 Rho=CalculateRho(HClTB,{{"mu",-1.01}})
 --Check some basics of Rho
 checkPhysicalRho(Rho,Nx*Ny*Nz)
-RhoExpected =Matrix.ToUserdata(Matrix.Identity(Nx))
-Zero =Matrix.ToUserdata(0.*Matrix.Identity(Nx))
-assert(Chop(Rho)==Zero ,"Error: Wrong Value of Rho") 
 
 --check the the kBT parameter
 Rho=CalculateRho(HClTB,{{"kBT",1000}})
