@@ -19,7 +19,7 @@ build-job:
     - export LC_ALL=en_US.utf8
     - module load intel/2021
     - echo "current working directory $(pwd)"
-    - icpx LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -fp-model=precise -fimf-precision=high -ipo -march=core-avx2 -static-intel -qopenmp -I"${MKLROOT}/include" -Wl,--start-group "${MKLROOT}/lib/intel64/libmkl_intel_lp64.a" "${MKLROOT}/lib/intel64/libmkl_sequential.a" ${MKLROOT}/lib/intel64/libmkl_core.a" Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
+    - icpx LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -fp-model=precise -fimf-precision=high -ipo -march=core-avx2 -static-intel -qopenmp -I"${MKLROOT}/include" -Wl,--start-group "${MKLROOT}/lib/intel64/libmkl_intel_lp64.a" "${MKLROOT}/lib/intel64/libmkl_sequential.a" "${MKLROOT}/lib/intel64/libmkl_core.a" Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
   artifacts:
     paths:
     - Quanty.exe
