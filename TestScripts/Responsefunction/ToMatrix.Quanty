@@ -78,7 +78,7 @@ G = ResponseFunction.New({a,b,mu=0,type="ListOfPoles", name="A"})
 Mexp = Matrix.New({ {  0      ,  1      ,  0      } ,
 									  {  1      ,  0      ,  1      } ,
 				            {  0      ,  1      ,  0      } })
-M = ResponseFunction.ToMatrix(G)
+M = Chop(ResponseFunction.ToMatrix(G))
 if((M==Mexp)~=true) then
 	print("Error")
 	print("M\n",M)
