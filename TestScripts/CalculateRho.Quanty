@@ -29,8 +29,8 @@ function IsPositiveDefinite(M)
 end
 
 function IsHermitian(M)
-   local M=Matrix.ToTable(M)
-   if ConjugateTranspose(M)~=M then
+   local M=Matrix.ToTable(Chop(M,1E-14))
+   if Chop(ConjugateTranspose(M)-M)~=0*M then
          return false
       end
    return true
