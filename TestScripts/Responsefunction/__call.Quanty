@@ -271,41 +271,41 @@ MD = 0
 
 ------------ test
 
-if((Chop(GA_L(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_T(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_A(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_N(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_l(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_t(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_a(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GA_n(0.1,0.1)-GA)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_L(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_T(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_A(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_N(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_l(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_t(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_a(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GA_n(0.1,0.1)-GA,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
 
-if((Chop(GB_L(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_T(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_A(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_N(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_l(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_t(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_a(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GB_n(0.1,0.1)-GB)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_L(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_T(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_A(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_N(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_l(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_t(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_a(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GB_n(0.1,0.1)-GB,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
 
-if((Chop(GC_L(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_T(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_A(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_N(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_l(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_t(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_a(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GC_n(0.1,0.1)-GC)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_L(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_T(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_A(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_N(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_l(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_t(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_a(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GC_n(0.1,0.1)-GC,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
 
-if((Chop(GD_L(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_T(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_A(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_N(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_l(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_t(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_a(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
-if((Chop(GD_n(0.1,0.1)-GD)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_L(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_T(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_A(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_N(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_l(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_t(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_a(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
+if((Chop(GD_n(0.1,0.1)-GD,1E-14)==0)==false) then error("Response function comparison failed\n",1) end
 
 
 

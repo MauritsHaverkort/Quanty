@@ -8,4 +8,7 @@
 .project
 .settings/
 .vscode/settings.json
+*.svg
+*.pdf
+*.ps
 build/

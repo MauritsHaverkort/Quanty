@@ -13,44 +13,44 @@ build-job:
   variables:
    FF_POSIXLY_CORRECT_ESCAPES: "true"
   script:
-  - set -x
-  - echo "Start"
-  - export LANG=en_US.utf8
-  - export LC_ALL=en_US.utf8
-  - module load intel/2019
-  - echo "current working directory $(pwd) "
-  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -ipo -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty.exe
+    - set -x
+    - echo "Start"
+    - export LANG=en_US.utf8
+    - export LC_ALL=en_US.utf8
+    - module load intel/2021
+    - echo "current working directory $(pwd)"
+    - icpx LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -fp-model=precise -fimf-precision=high -ipo -march=core-avx2 -static-intel -qopenmp -I"${MKLROOT}/include" -Wl,--start-group "${MKLROOT}/lib/intel64/libmkl_intel_lp64.a" "${MKLROOT}/lib/intel64/libmkl_sequential.a" "${MKLROOT}/lib/intel64/libmkl_core.a" -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
   artifacts:
     paths:
     - Quanty.exe
     expire_in: 1 week
 
-sync_develop_to_public:
-  stage: deploy
-  script:
-  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
-  - git fetch origin develop
-  - git checkout develop
-  - git pull origin develop
-  - git remote remove public || true
-  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
-  - git push public develop:main
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
+#sync_develop_to_public:
+#  stage: deploy
+#  script:
+#  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+#  - git fetch origin develop
+#  - git checkout develop
+#  - git pull origin develop
+#  - git remote remove public || true
+#  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
+#  - git push public develop:main
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "develop"'
 
     
-sync_release_to_public:
-  stage: deploy
-  script:
-  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
-  - git fetch origin master
-  - git checkout master
-  - git pull origin master
-  - git remote remove public || true
-  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
-  - git push public master:main
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+#sync_release_to_public:
+#  stage: deploy
+#  script:
+#  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+#  - git fetch origin master
+#  - git checkout master
+#  - git pull origin master
+#  - git remote remove public || true
+#  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
+#  - git push public master:main
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "master"'
 
 
 # =========================================================================

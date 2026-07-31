@@ -1954,7 +1954,6 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
   ASuper->nH = SuperCell.NCell * A.nH;
   ASuper->H = (TightBindingDefHopping*)malloc(ASuper->nH * sizeof(TightBindingDefHopping));
   iAtomsuper = 0;
-  iHsuper = 0;
   for (iCell = 0; iCell < SuperCell.NCell; iCell++)
   {
     ia = SuperCell.CellPos[iCell][0];
