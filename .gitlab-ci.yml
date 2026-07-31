@@ -6,7 +6,7 @@ stages:
   - test_responsefunction
   - test_tightbinding
   - test
- # - deploy
+# deploy
 
 build-job:
   stage: build
