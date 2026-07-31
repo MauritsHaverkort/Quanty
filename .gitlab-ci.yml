@@ -6,7 +6,7 @@ stages:
   - test_responsefunction
   - test_tightbinding
   - test
-# deploy
+  - deploy
 
 build-job:
   stage: build
@@ -25,32 +25,32 @@ build-job:
     - Quanty.exe
     expire_in: 1 week
 
-sync_develop_to_public:
-  stage: deploy
-  script:
-  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
-  - git fetch origin develop
-  - git checkout develop
-  - git pull origin develop
-  - git remote remove public || true
-  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
-  - git push public develop:main
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
+#sync_develop_to_public:
+#  stage: deploy
+#  script:
+#  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+#  - git fetch origin develop
+#  - git checkout develop
+#  - git pull origin develop
+#  - git remote remove public || true
+#  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
+#  - git push public develop:main
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "develop"'
 
     
-sync_release_to_public:
-  stage: deploy
-  script:
-  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
-  - git fetch origin master
-  - git checkout master
-  - git pull origin master
-  - git remote remove public || true
-  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
-  - git push public master:main
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+#sync_release_to_public:
+#  stage: deploy
+#  script:
+#  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+#  - git fetch origin master
+#  - git checkout master
+#  - git pull origin master
+#  - git remote remove public || true
+#  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
+#  - git push public master:main
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "master"'
 
 
 # =========================================================================
