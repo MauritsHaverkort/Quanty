@@ -388,8 +388,6 @@ int BlockTriDiagonalMatrixEffectiveHamiltonian(BlockTriDiagonalMatrixType const 
   return 0;
 }
 
-
-
 int BlockTriDiagonalMatrixFromEffectiveHamiltonian(BlockTriDiagonalMatrixType const * const Heff, BlockTriDiagonalMatrixType * const G)
 {
  G->N = Heff->N+1;
@@ -413,4 +411,118 @@ int BlockTriDiagonalMatrixFromEffectiveHamiltonian(BlockTriDiagonalMatrixType co
    }
  }
  return 0;
+}
+
+
+int BlockTriDiagonalMatrixGetTail(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N)
+{
+  if(N>A->N)
+  {
+    printf("Error in BlockTriDiagonalMatrixGetTail, N (%d) larger then A->N (%d)",N,A->N);
+    return 1;
+  }
+  const uint32_t Nshift = A->N - N;
+  B->N = N;
+  B->BlockSize = A->BlockSize;
+  B->mu = A->mu;
+  B->QComplex = A->QComplex;
+  InitBlockTridiagonalMatrix(B);
+  memcpy(B->BlockSizeList, &(A->BlockSizeList[Nshift]), N*sizeof(uint32_t));
+  if(A->QComplex==0)
+  {
+    memcpy(B->aRe, &(A->aRe[Nshift*A->BlockSize*A->BlockSize]), (N+1)*A->BlockSize*A->BlockSize*sizeof(double));
+    memcpy(B->bRe, &(A->bRe[Nshift*A->BlockSize*A->BlockSize]), (N)*A->BlockSize*A->BlockSize*sizeof(double));
+  }
+  else
+  {
+    memcpy(B->a, &(A->a[Nshift*A->BlockSize*A->BlockSize]), (N+1)*A->BlockSize*A->BlockSize*sizeof(Complex16));
+    memcpy(B->b, &(A->b[Nshift*A->BlockSize*A->BlockSize]), (N)*A->BlockSize*A->BlockSize*sizeof(Complex16));
+  }
+  return 0;
+}
+int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N)
+{
+  int i,j,k,pA,pB;
+  if(N>A->N)
+  {
+    printf("Error in BlockTriDiagonalMatrixGetTail, N (%d) larger then A->N (%d)",N,A->N);
+    return 1;
+  }
+  const uint32_t Nshift = A->N - N;
+  B->N = N;
+  B->BlockSize = A->BlockSize;
+  B->mu = A->mu;
+  B->QComplex = A->QComplex;
+  InitBlockTridiagonalMatrix(B);
+  memcpy(B->BlockSizeList, &(A->BlockSizeList[Nshift]), N*sizeof(uint32_t));
+  pA=Nshift*A->BlockSize*A->BlockSize;
+  pB=0;
+  if(A->QComplex==0)
+  {
+    for(k=0;k<N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->aRe[pB]=A->aRe[pA];
+          B->aRe[pB+A->BlockSize+1]=A->aRe[pA];
+          B->bRe[pB]=A->bRe[pA];
+          B->bRe[pB+A->BlockSize+1]=A->bRe[pA];
+          pB+=2;
+          pA++;
+        }
+        pB+=A->BlockSize;
+      }
+    }
+    k=N;
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->aRe[pB]=A->aRe[pA];
+          B->aRe[pB+A->BlockSize+1]=A->aRe[pA];
+          pB+=2;
+          pA++;
+        }
+        pB+=A->BlockSize;
+      }
+    }
+  }
+  else
+  {
+    for(k=0;k<N;k++)
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->a[pB]=A->a[pA];
+          B->a[pB+A->BlockSize+1]=A->a[pA];
+          B->b[pB]=A->b[pA];
+          B->b[pB+A->BlockSize+1]=A->b[pA];
+          pB+=2;
+          pA++;
+        }
+        pB+=A->BlockSize;
+      }
+    }
+    k=N;
+    {
+      for(i=0;i<A->BlockSize;i++)
+      {
+        for(j=0;j<A->BlockSize;j++)
+        {
+          B->a[pB]=A->a[pA];
+          B->a[pB+A->BlockSize+1]=A->a[pA];
+          pB+=2;
+          pA++;
+        }
+        pB+=A->BlockSize;
+      }
+    }
+    
+  }
+  return 0;
 }

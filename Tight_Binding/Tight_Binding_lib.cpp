@@ -1989,6 +1989,13 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       }
       iAtomsuper++;
     }
+  }
+  iHsuper = 0;
+  for (iCell = 0; iCell < SuperCell.NCell; iCell++)
+  {
+    ia = SuperCell.CellPos[iCell][0];
+    ib = SuperCell.CellPos[iCell][1];
+    ic = SuperCell.CellPos[iCell][2];
     // set information about hopping
     for (iH = 0; iH < A.nH; iH++)
     {

@@ -2476,10 +2476,12 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   Options.Nc = UINT32_MAX;
   LuaOptionsType LuaOptions[]={
     {"AddSpin","bool",&(Options.AddSpin)},
- //   {"TransformImpurity","bool",&(Options.TransformImpurity)},
+ // Option not implemented  {"TransformImpurity","bool",&(Options.TransformImpurity)},
     {"FermionShift","uint32_t",&(Options.FermionShift)},
     {"Nc","uint32_t",&(Options.Nc)},
     {"Nv","uint32_t",&(Options.Nv)},
+    {"Ncon","uint32_t",&(Options.Nc)},
+    {"Nval","uint32_t",&(Options.Nv)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t) lua_gettop(L);
   if(LuaTestOptionsList(L, -1))
@@ -2533,6 +2535,15 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     case 'N':
     case 'n':
     {
+      // returns the operator, and the table of bitmasks, but aditionally, when Nv or Nc are set also
+      // a table containing 4 elements:
+      //    GvalBath
+      //    HvalBath
+      //    GconBath
+      //    HconBath
+      //    These contain the tails of the vanlence and conduction chain
+      //                  as well as the Hamiltonian acting on the last site of the impurity
+      //
       if(M->Block==true)
       {
         // copy and shorten M->data if Nv and Nc set
@@ -2542,7 +2553,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=Options.Nc;
         if(Options.TransformImpurity == true)
         {
-          // TODO
+          // TODO -- currently works as Options.TransformImpurity can not be true
         }
         else // impurity is not transformed
         {
@@ -2558,7 +2569,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=Options.Nc;
         if(Options.TransformImpurity == true)
         {
-          //TOD
+          // TODO -- currently works as Options.TransformImpurity can not be true
         }
         else // impurity is not transformed
         {
@@ -2574,10 +2585,6 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     }
   }
   ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
-  // push Gv and Gc to stack if Nv or Nc are set
-  //TODO
-  
-  
   // undo changes to M
   if((M->type=='N')||(M->type=='n'))
   {
@@ -2594,8 +2601,296 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
     }
   }
-  FreeResponsefunctionIncludingOriginalPointer(M);
-  return 2;
+  // push Gv, Hv, Gc, and Hc to stack if Nv or Nc are set
+  if( ((M->type=='N')||(M->type=='n')) && ((MNv>Options.Nv)||(MNc>Options.Nc)))
+  {
+    lua_createtable(L,0,4);
+    // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
+    if(Options.AddSpin==true)
+    {
+      if(M->Block==true) // add spin and block true
+      {
+        if(MNv>Options.Nv)
+        {
+          ResponsefunctionType *GvalBath;
+          lua_pushstring(L, "GvalBath");
+          GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GvalBath->type = 't';
+          GvalBath->Block=true;
+          GvalBath->NSuggestedGridPoints=0;
+          GvalBath->SuggestedGrid=NULL;
+          GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+          lua_settable(L, -3);
+          if(Options.Nv==0)
+          {
+            printf("push HvalBath when Nv=0\n");
+            // TODO: push HvalBath
+            lua_pushstring(L, "HvalBath");
+            lua_pushnil(L);
+            lua_settable(L, -3);
+          }
+          else if(Options.Nv==1)
+          {
+            printf("push HvalBath when Nv=1\n");
+            // TODO: push HvalBath
+            lua_pushstring(L, "HvalBath");
+            lua_pushnil(L);
+            lua_settable(L, -3);
+          }
+          else
+          {
+            OperatorType *HvalBath;
+            uint32_t BlockSize = 2*(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize);
+            uint32_t NFermion = Options.FermionShift + (Options.Nv + Min(MNc,Options.Nc)) * BlockSize;
+            uint16_t Crindex;
+            lua_pushstring(L, "HvalBath");
+            lua_createtable(L,BlockSize,0);
+            for(int i=0;i<BlockSize;i++)
+            {
+              HvalBath = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
+              luaL_setmetatable(L, "Operator_Type");
+              Crindex = i + Options.Nv * BlockSize + Options.FermionShift;
+              CreateOperatorCreate(NFermion, Crindex, HvalBath);
+              lua_rawseti(L,-2,i+1);
+            }
+            lua_settable(L, -3);
+          }
+        }
+        else // push nil for G and H valence Bath
+        {
+          lua_pushstring(L, "GvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+        if(MNc>Options.Nc)
+        {
+          ResponsefunctionType *GconBath;
+          lua_pushstring(L, "GconBath");
+          GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GconBath->type = 't';
+          GconBath->Block=true;
+          GconBath->NSuggestedGridPoints=0;
+          GconBath->SuggestedGrid=NULL;
+          GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+          lua_settable(L, -3);
+          // TODO: push HconBath
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          
+        }
+        else // push nil for G and H conduction Bath
+        {
+          lua_pushstring(L, "GconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+      }
+      else // add spin true and block false
+      {
+        if(MNv>Options.Nv)
+        {
+          //TODO -- currently crashes
+        }
+        else // push nil for G and H valence Bath
+        {
+          lua_pushstring(L, "GvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+        if(MNc>Options.Nc)
+        {
+          //TODO -- currently crashes
+          
+        }
+        else // push nil for G and H conduction Bath
+        {
+          lua_pushstring(L, "GconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+      }
+    }
+    else // no spin added
+    {
+      if(M->Block==true) // no spin and block true
+      {
+        if(MNv>Options.Nv)
+        {
+          ResponsefunctionType *GvalBath;
+          lua_pushstring(L, "GvalBath");
+          GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GvalBath->type = 't';
+          GvalBath->Block=true;
+          GvalBath->NSuggestedGridPoints=0;
+          GvalBath->SuggestedGrid=NULL;
+          GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockTriDiagonalMatrixGetTail(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+          lua_settable(L, -3);
+          // set HvalBath
+          if(Options.Nv==0)
+          {
+            printf("push HvalBath when Nv=0\n");
+            // TODO: push HvalBath
+            lua_pushstring(L, "HvalBath");
+            lua_pushnil(L);
+            lua_settable(L, -3);
+          }
+          else if(Options.Nv==1)
+          {
+            printf("push HvalBath when Nv=1\n");
+            // TODO: push HvalBath
+            lua_pushstring(L, "HvalBath");
+            lua_pushnil(L);
+            lua_settable(L, -3);
+          }
+          else
+          {
+            OperatorType *HvalBath;
+            uint32_t BlockSize = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize);
+            uint32_t NFermion = Options.FermionShift + (Options.Nv + Min(MNc,Options.Nc)) * BlockSize;
+            uint16_t Crindex;
+            lua_pushstring(L, "HvalBath");
+            lua_createtable(L,BlockSize,0);
+            for(int i=0;i<BlockSize;i++)
+            {
+              HvalBath = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
+              luaL_setmetatable(L, "Operator_Type");
+              Crindex = i + Options.Nv * BlockSize + Options.FermionShift;
+              CreateOperatorCreate(NFermion, Crindex, HvalBath);
+              lua_rawseti(L,-2,i+1);
+            }
+            lua_settable(L, -3);
+          }
+        }
+        else // push nil for G and H valence Bath
+        {
+          lua_pushstring(L, "GvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+        if(MNc>Options.Nc)
+        {
+          ResponsefunctionType *GconBath;
+          lua_pushstring(L, "GconBath");
+          GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GconBath->type = 't';
+          GconBath->Block=true;
+          GconBath->NSuggestedGridPoints=0;
+          GconBath->SuggestedGrid=NULL;
+          GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+          BlockTriDiagonalMatrixGetTail(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+          lua_settable(L, -3);
+          // TODO: push HconBath
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          
+        }
+        else // push nil for G and H conduction Bath
+        {
+          lua_pushstring(L, "GconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+      }
+      else // no spin and block false
+      {
+        if(MNv>Options.Nv)
+        {
+          ResponsefunctionType *GvalBath;
+          lua_pushstring(L, "GvalBath");
+          GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GvalBath->type = 't';
+          GvalBath->Block=false;
+          GvalBath->NSuggestedGridPoints=0;
+          GvalBath->SuggestedGrid=NULL;
+          GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
+          TriDiagonalMatrixPart(&(((BADoubleTriDiagonalMatrixType*)(M->data))->val), *((TriDiagonalMatrixType*)(GvalBath->data)), MNv-Options.Nv, MNv);
+          lua_settable(L, -3);
+          // TODO: push HvalBath
+          lua_pushstring(L, "HvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          
+          
+          
+          
+        }
+        else // push nil for G and H valence Bath
+        {
+          lua_pushstring(L, "GvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HvalBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+        if(MNc>Options.Nc)
+        {
+          ResponsefunctionType *GconBath;
+          lua_pushstring(L, "GconBath");
+          GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GconBath->type = 't';
+          GconBath->Block=false;
+          GconBath->NSuggestedGridPoints=0;
+          GconBath->SuggestedGrid=NULL;
+          GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
+          TriDiagonalMatrixPart(&(((BADoubleTriDiagonalMatrixType*)(M->data))->con), *((TriDiagonalMatrixType*)(GconBath->data)), MNc-Options.Nc, MNc);
+          lua_settable(L, -3);
+          // TODO: push HvalBath
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          
+          
+          
+        }
+        else // push nil for G and H conduction Bath
+        {
+          lua_pushstring(L, "GconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+          lua_pushstring(L, "HconBath");
+          lua_pushnil(L);
+          lua_settable(L, -3);
+        }
+      }
+    }
+    FreeResponsefunctionIncludingOriginalPointer(M);
+    return 3;
+  }
+  else
+  {
+    FreeResponsefunctionIncludingOriginalPointer(M);
+    return 2;
+  }
 }
 
 

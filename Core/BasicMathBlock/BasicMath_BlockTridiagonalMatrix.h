@@ -8,3 +8,5 @@ uint32_t CopyBlockTridiagonalMatrix(BlockTriDiagonalMatrixType A, BlockTriDiagon
 int BlockTriDiagonalMatrixEffectiveHamiltonian(BlockTriDiagonalMatrixType const * const G, BlockTriDiagonalMatrixType * const Heff);
 int BlockTriDiagonalMatrixFromEffectiveHamiltonian(BlockTriDiagonalMatrixType const * const Heff, BlockTriDiagonalMatrixType * const G);
 uint32_t BlockTridiagonalMatrixChopReduceDimension(BlockTriDiagonalMatrixType *const A, double const Epsilon);
+int BlockTriDiagonalMatrixGetTail(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N);
+int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N);

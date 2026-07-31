@@ -522,7 +522,7 @@ static int LuaCalculateBands(lua_State *L)
   }
   int lenklist = (int)lua_objlen(L, 2);
   int Nktot = (lenklist+1)/2;
-  if(lenklist&&1==0)
+  if((lenklist&1)==0)
   {
     return luaL_error(L, "Error CalculateBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\nThe length should be odd and not %d\n",lenklist);
   }
