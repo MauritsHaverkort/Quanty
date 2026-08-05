@@ -8,6 +8,7 @@ int TriDiagonalMatrixEffectiveHamiltonian(TriDiagonalMatrixType const * const G,
 void TriDiagonalMatrixAdd(TriDiagonalMatrixType * const M, TriDiagonalMatrixType B, double alphaRe);
 void TriDiagonalMatrixScalarMultiply(TriDiagonalMatrixType * const M, double alphaRe);
 uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd);
+uint32_t TriDiagonalMatrixPartAddSpin(BlockTriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd);
 uint32_t TriDiagonalMatrixCopy(TriDiagonalMatrixType * const M, TriDiagonalMatrixType A);
 void RealTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *const x, double *const y);
 void ComplexTriDiagonalMatrixVector(TriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm);

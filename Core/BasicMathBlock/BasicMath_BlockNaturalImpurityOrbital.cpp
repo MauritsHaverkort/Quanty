@@ -336,7 +336,7 @@ uint32_t GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalIm
   T->QComplex=(B->val.QComplex+B->con.QComplex)?1:0;
   T->Ni=2*B->BlockSize;
   T->Nj=2*B->BlockSize;
-  if(InitCompactIdentityMatrix(T))
+  if(InitCompactMatrix(T))
   {
     printf("InitCompactIdentityMatrix(T) failed in SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType");
     return 1;

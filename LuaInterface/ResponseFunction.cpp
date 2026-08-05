@@ -952,8 +952,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
-          NImpurity = 2*((BlockAndersonMatrixType*)(M->data))->BlockSize;
-          NBath     = NImpurity * (((BlockAndersonMatrixType*)(M->data))->N-1);
+          if(((BlockAndersonMatrixType*)(M->data))->N==0)
+          {
+            NImpurity=0;
+            NBath=0;
+          }
+          else
+          {
+            NImpurity = 2*((BlockAndersonMatrixType*)(M->data))->BlockSize;
+            NBath     = NImpurity * (((BlockAndersonMatrixType*)(M->data))->N-1);
+          }
           NBathVal  = 0;
           NBathCon  = 0;
           NBathExt  = 0;
@@ -1152,8 +1160,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
-          NImpurity = ((BlockAndersonMatrixType*)(M->data))->BlockSize;
-          NBath     = NImpurity * (((BlockAndersonMatrixType*)(M->data))->N-1);
+          if(((BlockAndersonMatrixType*)(M->data))->N==0)
+          {
+            NImpurity=0;
+            NBath=0;
+          }
+          else
+          {
+            NImpurity = ((BlockAndersonMatrixType*)(M->data))->BlockSize;
+            NBath     = NImpurity * (((BlockAndersonMatrixType*)(M->data))->N-1);
+          }
           NBathVal  = 0;
           NBathCon  = 0;
           NBathExt  = 0;
@@ -1295,8 +1311,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
-          NImpurity = 2;
-          NBath     = NImpurity * (((AndersonMatrixType*)(M->data))->N-1);
+          if(((AndersonMatrixType*)(M->data))->N==0)
+          {
+            NImpurity=0;
+            NBath = 0;
+          }
+          else
+          {
+            NImpurity = 2;
+            NBath     = NImpurity * (((AndersonMatrixType*)(M->data))->N-1);
+          }
           NBathVal  = 0;
           NBathCon  = 0;
           NBathExt  = 0;
@@ -1443,8 +1467,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
-          NImpurity = 1;
-          NBath     = NImpurity * (((AndersonMatrixType*)(M->data))->N-1);
+          if(((AndersonMatrixType*)(M->data))->N==0)
+          {
+            NImpurity=0;
+            NBath = 0;
+          }
+          else
+          {
+            NImpurity = 1;
+            NBath     = NImpurity * (((AndersonMatrixType*)(M->data))->N-1);
+          }
           NBathVal  = 0;
           NBathCon  = 0;
           NBathExt  = 0;
@@ -1555,8 +1587,15 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
       {
         if(AddSpin==true)
         {
+          if(((BlockTriDiagonalMatrixType*)(M->data))->N==0)
+          {
+            NImpurity=0;
+          }
+          else
+          {
+            NImpurity = 2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
+          }
           NCore     = FermionShift;
-          NImpurity = 2*((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
           NBath     = 0;
           if(Deflate==true)
           {
@@ -1626,8 +1665,15 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         }
         else // AddSpin == false
         {
+          if(((BlockTriDiagonalMatrixType*)(M->data))->N==0)
+          {
+            NImpurity=0;
+          }
+          else
+          {
+            NImpurity = ((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
+          }
           NCore     = FermionShift;
-          NImpurity = ((BlockTriDiagonalMatrixType*)(M->data))->BlockSize;
           NBath     = 0;
           if(Deflate==true)
           {
@@ -1695,8 +1741,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
-          NImpurity = 2;
-          NBath     = NImpurity * (((TriDiagonalMatrixType*)(M->data))->N-1);
+          if(((TriDiagonalMatrixType*)(M->data))->N==0)
+          {
+            NImpurity = 0;
+            NBath = 0;
+          }
+          else
+          {
+            NImpurity = 2;
+            NBath     = NImpurity * (((TriDiagonalMatrixType*)(M->data))->N-1);
+          }
           NBathVal  = 0;
           NBathCon  = 0;
           NBathExt  = 0;
@@ -1758,8 +1812,16 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
-          NImpurity = 1;
-          NBath     = NImpurity * (((TriDiagonalMatrixType*)(M->data))->N-1);
+          if(((TriDiagonalMatrixType*)(M->data))->N==0)
+          {
+            NImpurity = 0;
+            NBath = 0;
+          }
+          else
+          {
+            NImpurity = 1;
+            NBath     = NImpurity * (((TriDiagonalMatrixType*)(M->data))->N-1);
+          }
           NBathVal  = 0;
           NBathCon  = 0;
           NBathExt  = 0;
@@ -1822,25 +1884,49 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
-          NImpurity = 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
-          NBathExt  = NImpurity;
-          if(Deflate==true)
+          if(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N + ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N == 0)
           {
-            NBathVal  = 0;
-            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
-            {
-              NBathVal+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
-            }
-            NBathCon  = 0;
-            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
-            {
-              NBathCon+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
-            }
+            NImpurity=0;
+            NBathExt=0;
+            NBathVal=0;
+            NBathCon=0;
           }
           else
           {
-            NBathVal = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N-1) * 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
-            NBathCon = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N-1) * 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NImpurity = 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NBathExt  = NImpurity;
+            if(Deflate==true)
+            {
+              NBathVal  = 0;
+              for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+              {
+                NBathVal+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+              }
+              NBathCon  = 0;
+              for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+              {
+                NBathCon+=2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+              }
+            }
+            else
+            {
+              if(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N==0)
+              {
+                NBathVal=0;
+              }
+              else
+              {
+                NBathVal = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N-1) * 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+              }
+              if(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N==0)
+              {
+                NBathCon=0;
+              }
+              else
+              {
+                NBathCon = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N-1) * 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+              }
+            }
           }
           NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
@@ -1973,25 +2059,49 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
-          NImpurity = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
-          NBathExt  = NImpurity;
-          if(Deflate==true)
+          if(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N + ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N == 0)
           {
-            NBathVal  = 0;
-            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
-            {
-              NBathVal+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
-            }
-            NBathCon  = 0;
-            for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
-            {
-              NBathCon+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
-            }
+            NImpurity=0;
+            NBathExt=0;
+            NBathVal=0;
+            NBathCon=0;
           }
           else
           {
-            NBathVal = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N-1) * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
-            NBathCon = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N-1) * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NImpurity = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NBathExt  = NImpurity;
+            if(Deflate==true)
+            {
+              NBathVal  = 0;
+              for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N;k++)
+              {
+                NBathVal+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.BlockSizeList[k];
+              }
+              NBathCon  = 0;
+              for(k=2;k<=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N;k++)
+              {
+                NBathCon+=((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.BlockSizeList[k];
+              }
+            }
+            else
+            {
+              if(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N==0)
+              {
+                NBathVal=0;
+              }
+              else
+              {
+                NBathVal = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N-1) * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+              }
+              if(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N==0)
+              {
+                NBathCon=0;
+              }
+              else
+              {
+                NBathCon = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N-1) * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+              }
+            }
           }
           NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
@@ -2095,10 +2205,34 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
-          NImpurity = 2;
-          NBathExt  = NImpurity;
-          NBathVal = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->val.N-2;
-          NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-2;
+          if(((BADoubleTriDiagonalMatrixType*)(M->data))->val.N + ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N == 0)
+          {
+            NImpurity=0;
+            NBathExt=0;
+            NBathVal=0;
+            NBathCon=0;
+          }
+          else
+          {
+            NImpurity = 2;
+            NBathExt  = NImpurity;
+            if(((BADoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
+            {
+              NBathVal=0;
+            }
+            else
+            {
+              NBathVal = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->val.N-2;
+            }
+            if(((BADoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
+            {
+              NBathCon=0;
+            }
+            else
+            {
+              NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-2;
+            }
+          }
           NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
           Core          = (char*)malloc((NF+1)*sizeof(char));
@@ -2229,10 +2363,34 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
-          NImpurity = 1;
-          NBathExt  = NImpurity;
-          NBathVal = ((BADoubleTriDiagonalMatrixType*)(M->data))->val.N-1;
-          NBathCon = ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-1;
+          if(((BADoubleTriDiagonalMatrixType*)(M->data))->val.N + ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N == 0)
+          {
+            NImpurity=0;
+            NBathExt=0;
+            NBathVal=0;
+            NBathCon=0;
+          }
+          else
+          {
+            NImpurity = 1;
+            NBathExt  = NImpurity;
+            if(((BADoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
+            {
+              NBathVal=0;
+            }
+            else
+            {
+              NBathVal = ((BADoubleTriDiagonalMatrixType*)(M->data))->val.N-1;
+            }
+            if(((BADoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
+            {
+              NBathCon=0;
+            }
+            else
+            {
+              NBathCon = ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-1;
+            }
+          }
           NBath     = NBathVal + NBathCon + NBathExt;
           NF = NCore + NImpurity + NBath;
           Core       = (char*)malloc((NF+1)*sizeof(char));
@@ -2331,10 +2489,26 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         T->Nj=2;
         InitCompactMatrix(T);
         T->OnLuaStack=true;
-        T->VRe[0]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.b[0] );
-        T->VRe[1]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.b[0] );
-        T->VRe[2]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.b[0] );
-        T->VRe[3]=-( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.b[0] );
+        if( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.N==0  )
+        {
+          T->VRe[0]=0;
+          T->VRe[3]=0;
+        }
+        else
+        {
+          T->VRe[0]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.b[0] );
+          T->VRe[3]=-( ((BADoubleTriDiagonalMatrixType*)(M->data))->val.b[0] );
+        }
+        if( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.N == 0)
+        {
+          T->VRe[1]=0;
+          T->VRe[2]=0;
+        }
+        else
+        {
+          T->VRe[1]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.b[0] );
+          T->VRe[2]= ( ((BADoubleTriDiagonalMatrixType*)(M->data))->con.b[0] );
+        }
         if(AddSpin==true)
         {
           CompactMatrixType Tspin;
@@ -2451,8 +2625,10 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
 }
 
 
-/*
- *
+/*   On the lua stack we have a response function and optional a set of options
+ *   pushes an operator on the stack
+ *   push information about the operator to the stack
+ *   if Ncon and or Nval is set and G is in And or Nat format aditionally pushes a table onto the stack that contians Gv, and or Gc
  */
 static int LuaResponseFunctionToOperator(lua_State * L)
 {
@@ -2536,13 +2712,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     case 'n':
     {
       // returns the operator, and the table of bitmasks, but aditionally, when Nv or Nc are set also
-      // a table containing 4 elements:
+      // a table containing 2 elements:
       //    GvalBath
-      //    HvalBath
       //    GconBath
-      //    HconBath
       //    These contain the tails of the vanlence and conduction chain
-      //                  as well as the Hamiltonian acting on the last site of the impurity
       //
       if(M->Block==true)
       {
@@ -2601,10 +2774,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
     }
   }
-  // push Gv, Hv, Gc, and Hc to stack if Nv or Nc are set
+  // push Gv, and, Gc to stack if Nv or Nc are set
   if( ((M->type=='N')||(M->type=='n')) && ((MNv>Options.Nv)||(MNc>Options.Nc)))
   {
-    lua_createtable(L,0,4);
+    lua_createtable(L,0,2);
     // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
     if(Options.AddSpin==true)
     {
@@ -2623,47 +2796,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
           BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
           lua_settable(L, -3);
-          if(Options.Nv==0)
-          {
-            printf("push HvalBath when Nv=0\n");
-            // TODO: push HvalBath
-            lua_pushstring(L, "HvalBath");
-            lua_pushnil(L);
-            lua_settable(L, -3);
-          }
-          else if(Options.Nv==1)
-          {
-            printf("push HvalBath when Nv=1\n");
-            // TODO: push HvalBath
-            lua_pushstring(L, "HvalBath");
-            lua_pushnil(L);
-            lua_settable(L, -3);
-          }
-          else
-          {
-            OperatorType *HvalBath;
-            uint32_t BlockSize = 2*(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize);
-            uint32_t NFermion = Options.FermionShift + (Options.Nv + Min(MNc,Options.Nc)) * BlockSize;
-            uint16_t Crindex;
-            lua_pushstring(L, "HvalBath");
-            lua_createtable(L,BlockSize,0);
-            for(int i=0;i<BlockSize;i++)
-            {
-              HvalBath = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
-              luaL_setmetatable(L, "Operator_Type");
-              Crindex = i + Options.Nv * BlockSize + Options.FermionShift;
-              CreateOperatorCreate(NFermion, Crindex, HvalBath);
-              lua_rawseti(L,-2,i+1);
-            }
-            lua_settable(L, -3);
-          }
         }
-        else // push nil for G and H valence Bath
+        else // push nil for G valence Bath
         {
           lua_pushstring(L, "GvalBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HvalBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
@@ -2680,18 +2816,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
           BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
           lua_settable(L, -3);
-          // TODO: push HconBath
-          lua_pushstring(L, "HconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          
         }
-        else // push nil for G and H conduction Bath
+        else // push nil for G conduction Bath
         {
           lua_pushstring(L, "GconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HconBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
@@ -2700,28 +2828,41 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       {
         if(MNv>Options.Nv)
         {
-          //TODO -- currently crashes
+          ResponsefunctionType *GvalBath;
+          lua_pushstring(L, "GvalBath");
+          GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GvalBath->type = 't';
+          GvalBath->Block=false;
+          GvalBath->NSuggestedGridPoints=0;
+          GvalBath->SuggestedGrid=NULL;
+          GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+          TriDiagonalMatrixPartAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), *((TriDiagonalMatrixType*)(GvalBath->data)), MNv-Options.Nv, MNv);
+          lua_settable(L, -3);
         }
-        else // push nil for G and H valence Bath
+        else // push nil for G valence Bath
         {
           lua_pushstring(L, "GvalBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HvalBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
         if(MNc>Options.Nc)
         {
-          //TODO -- currently crashes
-          
+          ResponsefunctionType *GconBath;
+          lua_pushstring(L, "GconBath");
+          GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+          luaL_setmetatable(L, "ResponseFunction_Type");
+          GconBath->type = 't';
+          GconBath->Block=false;
+          GconBath->NSuggestedGridPoints=0;
+          GconBath->SuggestedGrid=NULL;
+          GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+          TriDiagonalMatrixPartAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), *((TriDiagonalMatrixType*)(GconBath->data)), MNc-Options.Nc, MNc);
+          lua_settable(L, -3);
         }
-        else // push nil for G and H conduction Bath
+        else // push nil for G conduction Bath
         {
           lua_pushstring(L, "GconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HconBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
@@ -2744,48 +2885,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
           BlockTriDiagonalMatrixGetTail(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
           lua_settable(L, -3);
-          // set HvalBath
-          if(Options.Nv==0)
-          {
-            printf("push HvalBath when Nv=0\n");
-            // TODO: push HvalBath
-            lua_pushstring(L, "HvalBath");
-            lua_pushnil(L);
-            lua_settable(L, -3);
-          }
-          else if(Options.Nv==1)
-          {
-            printf("push HvalBath when Nv=1\n");
-            // TODO: push HvalBath
-            lua_pushstring(L, "HvalBath");
-            lua_pushnil(L);
-            lua_settable(L, -3);
-          }
-          else
-          {
-            OperatorType *HvalBath;
-            uint32_t BlockSize = (((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize);
-            uint32_t NFermion = Options.FermionShift + (Options.Nv + Min(MNc,Options.Nc)) * BlockSize;
-            uint16_t Crindex;
-            lua_pushstring(L, "HvalBath");
-            lua_createtable(L,BlockSize,0);
-            for(int i=0;i<BlockSize;i++)
-            {
-              HvalBath = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
-              luaL_setmetatable(L, "Operator_Type");
-              Crindex = i + Options.Nv * BlockSize + Options.FermionShift;
-              CreateOperatorCreate(NFermion, Crindex, HvalBath);
-              lua_rawseti(L,-2,i+1);
-            }
-            lua_settable(L, -3);
-          }
         }
-        else // push nil for G and H valence Bath
+        else // push nil for G valence Bath
         {
           lua_pushstring(L, "GvalBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HvalBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
@@ -2802,18 +2905,11 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
           BlockTriDiagonalMatrixGetTail(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
           lua_settable(L, -3);
-          // TODO: push HconBath
-          lua_pushstring(L, "HconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
           
         }
-        else // push nil for G and H conduction Bath
+        else // push nil for G conduction Bath
         {
           lua_pushstring(L, "GconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HconBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
@@ -2833,21 +2929,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
           TriDiagonalMatrixPart(&(((BADoubleTriDiagonalMatrixType*)(M->data))->val), *((TriDiagonalMatrixType*)(GvalBath->data)), MNv-Options.Nv, MNv);
           lua_settable(L, -3);
-          // TODO: push HvalBath
-          lua_pushstring(L, "HvalBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          
-          
-          
-          
         }
-        else // push nil for G and H valence Bath
+        else // push nil for G valence Bath
         {
           lua_pushstring(L, "GvalBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HvalBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }
@@ -2864,20 +2949,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
           TriDiagonalMatrixPart(&(((BADoubleTriDiagonalMatrixType*)(M->data))->con), *((TriDiagonalMatrixType*)(GconBath->data)), MNc-Options.Nc, MNc);
           lua_settable(L, -3);
-          // TODO: push HvalBath
-          lua_pushstring(L, "HconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          
-          
-          
         }
-        else // push nil for G and H conduction Bath
+        else // push nil for G conduction Bath
         {
           lua_pushstring(L, "GconBath");
-          lua_pushnil(L);
-          lua_settable(L, -3);
-          lua_pushstring(L, "HconBath");
           lua_pushnil(L);
           lua_settable(L, -3);
         }

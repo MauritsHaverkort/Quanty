@@ -674,8 +674,12 @@ void ReduceListOfPolesWeigth(ListOfPoles * M, double const bmin, double const Ef
  */
 void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef)
 {
-  if (M->N < N)
+  if (M->N < N) return;
+  if (N==0)
+  {
+    M->N = 0;
     return;
+  }
   uint32_t i, imin;
   double biminLeft, biminRight, temp;
   OrderListOfPoles(M);
@@ -786,8 +790,12 @@ void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef)
  */
 void ReduceListOfPolesNumber(ListOfPoles * M, uint32_t N)
 {
-  if (M->N < N)
+  if (M->N < N) return;
+  if (N==0)
+  {
+    M->N = 0;
     return;
+  }
   uint32_t i, imin;
   double biminLeft, biminRight, temp;
   OrderListOfPoles(M);

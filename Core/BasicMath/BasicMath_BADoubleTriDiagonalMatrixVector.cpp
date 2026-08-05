@@ -101,10 +101,26 @@ void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M)
   M->acvB = Sqr(M->val.b[0]) * M->val.a[1] + Sqr(M->con.b[0]) * M->con.a[1];
   M->acvA = Sqr(M->val.b[0]) * M->con.a[1] + Sqr(M->con.b[0]) * M->val.a[1];
   M->acvBA = M->val.b[0] * M->con.b[0] * (M->val.a[1] - M->con.a[1]);
-  M->bvB0 = M->val.b[0] * M->val.b[1];
-  M->bcB0 = M->con.b[0] * M->con.b[1];
-  M->bvA0 = M->con.b[0] * M->val.b[1];
-  M->bcA0 = -M->val.b[0] * M->con.b[1];
+  if(M->val.N==1)
+  {
+    M->bvB0 = 0;
+    M->bvA0 = 0;
+  }
+  else
+  {
+    M->bvB0 = M->val.b[0] * M->val.b[1];
+    M->bvA0 = M->con.b[0] * M->val.b[1];
+  }
+  if(M->con.N==1)
+  {
+    M->bcB0 = 0;
+    M->bcA0 = 0;
+  }
+  else
+  {
+    M->bcB0 =  M->con.b[0] * M->con.b[1];
+    M->bcA0 = -M->val.b[0] * M->con.b[1];
+  }
 }
 
 /*

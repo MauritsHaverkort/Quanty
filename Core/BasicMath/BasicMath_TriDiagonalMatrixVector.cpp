@@ -228,6 +228,34 @@ uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatri
   M->a[M->N] = A.a[iEnd];
   return 0;
 }
+uint32_t TriDiagonalMatrixPartAddSpin(BlockTriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd)
+{
+  uint32_t i;
+  if ((iEnd < iStart) || (iEnd > A.N))
+  {
+    printf("TriDiagonalMatrixPart called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
+    return 1;
+  }
+  M->N = 1 + iEnd - iStart;
+  M->QComplex=0;
+  M->BlockSize=2;
+  InitBlockTridiagonalMatrix(M);
+  M->aRe[0] = A.a[0];
+  M->bRe[0] = A.b[0];
+  M->aRe[3] = A.a[0];
+  M->bRe[3] = A.b[0];
+  for (i = 1; i < M->N; i++)
+  {
+    M->aRe[4*i]   = A.a[i + iStart - 1];
+    M->bRe[4*i]   = A.b[i + iStart - 1];
+    M->aRe[4*i+3] = A.a[i + iStart - 1];
+    M->bRe[4*i+3] = A.b[i + iStart - 1];
+  }
+  M->mu = A.mu;
+  M->aRe[4*M->N]   = A.a[iEnd];
+  M->aRe[4*M->N+3] = A.a[iEnd];
+  return 0;
+}
 
 /*  M<-A
  */

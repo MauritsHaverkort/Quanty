@@ -785,7 +785,80 @@ collectgarbage("collect")
 
 
 
+print("--------------------------------------------------------")
+print("-- Some indexing examples                             --")
+print("--------------------------------------------------------")
 
+
+G = ResponseFunction.New({ {1.234}, {}, mu=0, type="ListOfPoles", name="G"})
+GT = ResponseFunction.ChangeType(G,"Tri")
+GA = ResponseFunction.ChangeType(G,"And")
+GN = ResponseFunction.ChangeType(G,"Nat")
+print("G with zero poles, but A0=1.234 as list of poles")
+print(G)
+print("G with zero poles, but A0=1.234 as tridiagonal matrix")
+print(GT)
+print(ResponseFunction.ToOperator(GT))
+print("G with zero poles, but A0=1.234 as Anderson matrix")
+print(GA)
+print(ResponseFunction.ToOperator(GA))
+print("G with zero poles, but A0=1.234 as natural impurity matrix")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+
+print("One pole below chemical potential")
+G = ResponseFunction.New({ {1.234,-1.0}, {1.3}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+print("One pole below above potential")
+G = ResponseFunction.New({ {1.234, 1.0}, {1.3}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+
+
+print("One matrix pole below chemical potential")
+G = ResponseFunction.New({ {{{1.234}},-1.0}, {{{1.3}}}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))[1][1]~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+print("One matrix pole below above potential")
+G = ResponseFunction.New({ {{{1.234}}, 1.0}, {{{1.3}}}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))[1][1]~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
 
 
 collectgarbage()

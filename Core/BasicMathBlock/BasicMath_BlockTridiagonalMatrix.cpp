@@ -450,11 +450,14 @@ int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * c
   }
   const uint32_t Nshift = A->N - N;
   B->N = N;
-  B->BlockSize = A->BlockSize;
+  B->BlockSize = 2*A->BlockSize;
   B->mu = A->mu;
   B->QComplex = A->QComplex;
   InitBlockTridiagonalMatrix(B);
-  memcpy(B->BlockSizeList, &(A->BlockSizeList[Nshift]), N*sizeof(uint32_t));
+  for(i=0;i<=N;i++)
+  {
+    B->BlockSizeList[i] = 2*A->BlockSizeList[Nshift+i];
+  }
   pA=Nshift*A->BlockSize*A->BlockSize;
   pB=0;
   if(A->QComplex==0)
@@ -466,13 +469,13 @@ int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * c
         for(j=0;j<A->BlockSize;j++)
         {
           B->aRe[pB]=A->aRe[pA];
-          B->aRe[pB+A->BlockSize+1]=A->aRe[pA];
+          B->aRe[pB+B->BlockSize+1]=A->aRe[pA];
           B->bRe[pB]=A->bRe[pA];
-          B->bRe[pB+A->BlockSize+1]=A->bRe[pA];
+          B->bRe[pB+B->BlockSize+1]=A->bRe[pA];
           pB+=2;
           pA++;
         }
-        pB+=A->BlockSize;
+        pB+=B->BlockSize;
       }
     }
     k=N;
@@ -482,11 +485,11 @@ int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * c
         for(j=0;j<A->BlockSize;j++)
         {
           B->aRe[pB]=A->aRe[pA];
-          B->aRe[pB+A->BlockSize+1]=A->aRe[pA];
+          B->aRe[pB+B->BlockSize+1]=A->aRe[pA];
           pB+=2;
           pA++;
         }
-        pB+=A->BlockSize;
+        pB+=B->BlockSize;
       }
     }
   }
@@ -499,13 +502,13 @@ int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * c
         for(j=0;j<A->BlockSize;j++)
         {
           B->a[pB]=A->a[pA];
-          B->a[pB+A->BlockSize+1]=A->a[pA];
+          B->a[pB+B->BlockSize+1]=A->a[pA];
           B->b[pB]=A->b[pA];
-          B->b[pB+A->BlockSize+1]=A->b[pA];
+          B->b[pB+B->BlockSize+1]=A->b[pA];
           pB+=2;
           pA++;
         }
-        pB+=A->BlockSize;
+        pB+=B->BlockSize;
       }
     }
     k=N;
@@ -515,11 +518,11 @@ int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * c
         for(j=0;j<A->BlockSize;j++)
         {
           B->a[pB]=A->a[pA];
-          B->a[pB+A->BlockSize+1]=A->a[pA];
+          B->a[pB+B->BlockSize+1]=A->a[pA];
           pB+=2;
           pA++;
         }
-        pB+=A->BlockSize;
+        pB+=B->BlockSize;
       }
     }
     

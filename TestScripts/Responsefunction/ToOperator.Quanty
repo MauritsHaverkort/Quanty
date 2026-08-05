@@ -509,30 +509,61 @@ if( (M5==M2)~=true) then error("Response operator comparison failed\n",1) end
 if( ( Matrix.Flatten({{Matrix.Zero(6),0},{0,M1}}) == M3) ~=true ) then error("Response operator comparison failed\n",1) end
 if( ( Matrix.Flatten({{Matrix.Zero(6),0},{0,M2}}) == M4) ~=true ) then error("Response operator comparison failed\n",1) end
 
--- comparison with add spin and fermion shift and Nc=2
-O1, A, B = ResponseFunction.ToOperator(G,{{"Nc",2}})
-print(G)
-print(O1)
-print(OperatorToMatrix(O1))
 
+O1=nil
+O2=nil
+O3=nil
+O4=nil
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+
+-- comparison with add spin and fermion shift and Nc=2
+print("A")
+O1, A, B = ResponseFunction.ToOperator(G,{{"Nc",2}})
 print(A)
 print(B)
-
-os.exit()
-
-
-
-
-O2 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"Nc",2}})
+print("A")
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("B")
+O2, A, B = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"Nc",2}})
+print("C")
+print(A)
+print(B)
+print("A")
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("B")
 O3 = ResponseFunction.ToOperator(G,{{"FermionShift",6},{"Nc",2}})
+print("A")
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("B")
 O4 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"FermionShift",6},{"Nc",2}})
 
+print("A")
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("B")
 
+print("A")
 M1=OperatorToMatrix(O1)
+print("A")
 M2=OperatorToMatrix(O2)
+print("A")
 M3=OperatorToMatrix(O3)
+print("A")
 M4=OperatorToMatrix(O4)
+print("A")
 M5 = Matrix.AddSpin(M1)
+print("A")
 
 if( (M5==M2)~=true) then
 	print(O1)

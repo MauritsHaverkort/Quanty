@@ -35,6 +35,8 @@ uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType * c
 uint32_t TriDiagonalMatrixToCompactMatrix(const TriDiagonalMatrixType * const M, CompactMatrixType * const A);
 uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon);
 uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatrixType const M,BADoubleTriDiagonalMatrixType * const A,uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef,double Occupation);
+uint32_t TriDiagonalMatrixToBlockTriDiagonalMatrix(TriDiagonalMatrixType const * const Min, BlockTriDiagonalMatrixType * Mout);
+uint32_t ConvertTriDiagonalMatrixToBlockTriDiagonalMatrixNoCopy(TriDiagonalMatrixType * Min, BlockTriDiagonalMatrixType * Mout);
 uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag);
 uint32_t BADoubleTriDiagonalMatrixTypeToEigenSystemCompact(const BADoubleTriDiagonalMatrixType * const M, double * val, CompactMatrixType * const T);
 uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalMatrixType * const M, CompactMatrixType * const H);

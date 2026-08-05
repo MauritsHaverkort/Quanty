@@ -1631,8 +1631,33 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatri
   return 0;
 }
 
-
-
+/*  Convert a tridiagonal matrix to a Blocktridiagonal matrix
+ *
+ */
+uint32_t TriDiagonalMatrixToBlockTriDiagonalMatrix(TriDiagonalMatrixType const * const Min, BlockTriDiagonalMatrixType * Mout)
+{
+  Mout->BlockSize = 1;
+  Mout->N = Min->N;
+  Mout->QComplex = 0;
+  if(InitBlockTridiagonalMatrix(Mout)) return 1;
+  memcpy(Mout->Name, Min->Name, sizeof(char)*MAXStrLength);
+  memcpy(Mout->aRe, Min->a, sizeof(double)*(Min->N+1));
+  memcpy(Mout->bRe, Min->b, sizeof(double)*(Min->N));
+  return 0;
+}
+uint32_t ConvertTriDiagonalMatrixToBlockTriDiagonalMatrixNoCopy(TriDiagonalMatrixType * Min, BlockTriDiagonalMatrixType * Mout)
+{
+  Mout->BlockSize = 1;
+  Mout->N = Min->N;
+  Mout->QComplex = 0;
+  if(InitBlockTridiagonalMatrix(Mout)) return 1;
+  memcpy(Mout->Name, Min->Name, sizeof(char)*MAXStrLength);
+  Mout->aRe = Min->a;
+  Min->a=NULL;
+  Mout->bRe = Min->b;
+  Min->b=NULL;
+  return 0;
+}
 
 
 /********************************************************************************/
@@ -3990,8 +4015,24 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTri
   ListOfPolesCopyVal(&LPval, A, mu, Epsilon);
   ReduceListOfPolesNumber(&LPcon, NTriDiagcon);
   ReduceListOfPolesNumber(&LPval, NTriDiagval);
-  ListOfPolesToTridiagonalMatrix(LPcon, &(M->con), NTriDiagcon);
-  ListOfPolesToTridiagonalMatrix(LPval, &(M->val), NTriDiagval);
+  ListOfPolesToTridiagonalMatrix(LPcon, &(M->con), Min(NTriDiagcon,LPcon.N));
+  ListOfPolesToTridiagonalMatrix(LPval, &(M->val), Min(NTriDiagval,LPval.N));
+  if((M->val.N==0)&&(M->con.N!=0))
+  {
+    M->val.a = (double*)realloc(M->val.a,2*sizeof(double));
+    M->val.b = (double*)realloc(M->val.b,sizeof(double));
+    M->val.a[1]=0;
+    M->val.b[0]=0;
+    M->val.N=1;
+  }
+  if((M->con.N==0)&&(M->val.N!=0))
+  {
+    M->con.a = (double*)realloc(M->con.a,2*sizeof(double));
+    M->con.b = (double*)realloc(M->con.b,sizeof(double));
+    M->con.a[1]=0;
+    M->con.b[0]=0;
+    M->con.N=1;
+  }
   M->con.a[0]=0;
   M->val.a[0]=0;
   M->a0 = A.a0;

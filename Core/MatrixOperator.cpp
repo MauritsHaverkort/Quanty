@@ -29,6 +29,7 @@ int TriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, TriDiagonalMatrixTy
       O->NFermion = NF;
     }
   }
+  if(M->N==0) return 0;
   O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8);
   InitOperatorFixedLength(O, 2, 8);
   if(AddSpin==true)
@@ -105,6 +106,7 @@ int AndersonMatrixToImpurityHamiltonian(OperatorType * O, AndersonMatrixType * M
       O->NFermion = NF;
     }
   }
+  if(M->N==0) return 0;
   O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8);
   InitOperatorFixedLength(O, 2, 8);
   if(AddSpin==true)
@@ -181,6 +183,7 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
       O->NFermion = NF;
     }
   }
+  if((M->val.N==0) || (M->con.N)==0) return 0;
   O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8);
   InitOperatorFixedLength(O, 2, 8);
   if(AddSpin==true)
