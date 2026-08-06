@@ -34,6 +34,7 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
       printf("Number of Fermions enlarged\n");
     }
   }
+  H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   if(A->N==0) return 0;
   InitOperatorFixedLength(H, 2, 8);
   if(A->QComplex)
@@ -288,6 +289,8 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonianPerturbation(OperatorType *c
       printf("Number of Fermions enlarged\n");
     }
   }
+  
+  H->NWord = Min(H->NFermion, 1 + (H->NFermion - 1) / 8);
   
   InitOperatorFixedLength(H, 2, 8);
   
@@ -709,6 +712,7 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
       printf("Number of Fermions enlarged\n");
     }
   }
+  H->NWord=Min(H->NFermion,1+(H->NFermion-1)/8);
   if(A->N==0) return 0;
   InitOperatorFixedLength(H, 2, 8);
   if(A->QComplex)
