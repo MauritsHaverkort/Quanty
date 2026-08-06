@@ -2,6 +2,8 @@
 -- Options: Enable or disable calculation modules
 -- ============================================================================
 Verbosity(0xFFFFFFFF)-- Set verbosity level (0xff for maximum output)
+
+Verbosity(0x0)-- Set verbosity level (0xff for maximum output)
 -- ============================================================================
 -- Physical and Model Parameters
 -- ============================================================================
@@ -348,6 +350,9 @@ print("---------------  Calculate Eigenstates  --------------")
 print("--------------- Different startingpoint  -------------")
 print("------------------------------------------------------")
 
+Hamiltonian.Restrictions = CalculationRestrictions
+
+HamiltonianLFTtri.Restrictions = CalculationRestrictions
 
 Npsi=1
 psi0A = Eigensystem(Hamiltonian, StartRestrictions, Npsi, {{"Restrictions",StartRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
