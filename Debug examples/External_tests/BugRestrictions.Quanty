@@ -1,0 +1,394 @@
+-- ============================================================================
+-- Options: Enable or disable calculation modules
+-- ============================================================================
+Verbosity(0xFFFFFFFF)-- Set verbosity level (0xff for maximum output)
+-- ============================================================================
+-- Physical and Model Parameters
+-- ============================================================================
+
+Ntri1 = 50
+
+-- Ligand field parameters
+Delta  = -2.3 --adjusted this so that T Kondo=1 K. E(S=1)-E(S=0)=8.617 10^{-5} eV
+tv     = 0.1 -- valence hopping (eV)
+
+
+-- Spin-orbit coupling and magnetic field
+zeta4f = 0.0759   -- 4f spin-orbit coupling (eV)
+-- 3d spin-orbit coupling (in eV)
+zeta3d = 7.291 
+
+Uff  = 7.2 -- 4f-4f Coulomb interaction (eV)
+-- Slater integrals for 4f-4f Coulomb interaction (in eV)
+F2ff = 1 * 10.7
+--0.7 * 10.7
+F4ff = 1 * 6.6--0.6 * 6.6
+F6ff = 1 * 4.8--0.6 * 4.8
+F0ff = Uff + (4/195) * F2ff + (2/143) * F4ff + (100/5577) * F6ff
+
+-- Slater integrals for 3d-4f Coulomb interaction (in eV)
+F2df = 1 * 6.26295
+F4df = 1 * 2.77908
+
+-- Exchange integrals for 3d-4f (in eV)
+Udf  = 9.5 -- 3d-4f Coulomb interaction (eV)
+G1df = 0.98 * 4.1515
+G3df = 0.98 * 2.42235
+G5df = 0.98 * 1.67015
+F0df = Udf + (3/70) * G1df + (2/105) * G3df + (5/231) * G5df
+
+
+-- ============================================================================
+-- Electronic Bath Parameters
+-- ============================================================================
+NLigands = 1  -- Number of Ligands explicitly in the Basis.
+NcoreShift=10 --shift of the Indeces due to the 3d core shell
+
+--Bath Settings for LFT. Bath from 0 to 1 eV with NLigands
+centerBathV = -0.5 -- Center of the valence bath (eV)
+EBathListV  = {centerBathV-0.5,centerBathV+0.5} -- set min and max energy points
+NBathListV  = {NLigands} -- set the number of bath states per interval
+tBathListV  = {tv}
+
+
+
+
+-- ============================================================================
+-- Energy and Broadening Parameters
+-- ============================================================================
+
+NpsiSpec = 1 --states considered for the spectra
+XASShift  = 891.9   -- Energy shift for XAS (eV)
+Gamma3d   = 0.83     -- Lorentzian broadening for 3d (eV)
+
+
+-- ============================================================================
+-- Embed 4f CEF Hamiltonian, define operators, and construct full Hamiltonian
+-- ============================================================================
+
+NFimpVal = 14 --Valence Impurity NF
+NFimp = NFimpVal + NcoreShift --Total number of orbitals in the impurity basis (including core)
+NB = 0    -- Number of bosonic orbitals
+IndexDn_4f = {0, 2, 4, 6, 8, 10, 12}
+IndexUp_4f = {1, 3, 5, 7, 9, 11, 13}
+
+Oppldots=NewOperator("ldots",NFimpVal, IndexUp_4f, IndexDn_4f)
+OppJz   =NewOperator("Jz"   ,NFimpVal, IndexUp_4f, IndexDn_4f)
+OppCF = zeta4f*Oppldots
+
+
+-- Function Create single particle Hamiltonian from onsite energies and bath setting
+function CreateDiscreteAndersonImpurityModelGreensfunctionBlock(MatHimp,EBathList,NBathList,tBathList)
+  local Norbs = #MatHimp
+  local A = {Matrix.Identity(Norbs,{{"userdata",false}})}--A0 is zero
+  A[#A+1] = MatHimp --A1 is the Himpurity Hamiltonian
+  local B    = {Matrix.Identity(Norbs,{{"userdata",false}})} --
+  for i=1,(#EBathList)-1 do
+    local dE = (EBathList[i+1]-EBathList[i]) / (NBathList[i])
+    for j=1,NBathList[i] do
+      A[#A+1] = (EBathList[i] + (j-0.5)*dE) * Matrix.Identity(Norbs,{{"userdata",false}})
+      B[#B+1] = tBathList[i] * sqrt(dE) * Matrix.Identity(Norbs,{{"userdata",false}})
+    end
+  end
+  return ResponseFunction.New({A,B,mu=0,type="And", name="GAnd"})
+end
+
+--get Response function in Anderson Impurity Model and convert to Natural Impurity Orbital Basis
+GAnd = CreateDiscreteAndersonImpurityModelGreensfunctionBlock(OperatorToMatrix(OppCF),EBathListV,NBathListV,tBathListV)
+HAnd, BitMaskAnd = ResponseFunction.ToOperator(GAnd)
+
+--BlockBandDiagonalize to get to chain geometry
+GTri,T=BlockBandDiagonalize(OperatorToMatrix(HAnd),14,{{"Ntri",NLigands+1}})
+--bring to Operator 
+OppLFTTri, BitMaskTri = ResponseFunction.ToOperator(GTri,{{"FermionShift",NcoreShift}})
+
+--There is a Bug in ResponseFunction.ToOperator and we have a problem in CreateSpectra. Solve with this.
+--OppLFTTri= Matrix.ToOperator(OperatorToMatrix(OppLFTTri))
+
+--define Indexes complete basis
+NF,IndexImp = BitMaskToIndex(BitMaskTri.Impurity)
+NF,IndexBath = BitMaskToIndex(BitMaskTri.Bath)
+NF,Index_4f=BitMaskToIndex(BitMaskTri.Impurity)
+NF,Index_3d=BitMaskToIndex(BitMaskTri.Core)
+OppCF.NF = NF
+
+IndexDn_4f={}
+IndexUp_4f={}
+
+for key,i in pairs(Index_4f) do
+  if i % 2 == 0 then
+    table.insert(IndexDn_4f, i)
+  else
+    table.insert(IndexUp_4f, i)
+  end
+end
+
+IndexDn_3d={}
+IndexUp_3d={}
+
+for key,i in pairs(Index_3d) do
+  if i % 2 == 0 then
+    table.insert(IndexDn_3d, i)
+  else
+    table.insert(IndexUp_3d, i)
+  end
+end
+
+print("IndexDn_4f=",IndexDn_4f)
+print("IndexUp_4f=",IndexUp_4f)
+print("IndexDn_3d=",IndexDn_3d)
+print("IndexUp_3d=",IndexUp_3d)
+
+
+--Counting Operators
+OppNBathList={}
+OppNBath = 0
+for j=1,NLigands do
+  OppList={}
+  for i=(j)*NFimpVal+NcoreShift,(j)*NFimpVal+13+NcoreShift do
+      OppList[#OppList+1] = {i,-(i),1}
+  end
+  local Opp=NewOperator(NF,0,OppList)
+  Opp.Name="NBathV"..j
+  OppNBathList[j] = Opp
+  OppNBath = OppNBath + Opp
+end
+OppNBath.Name="NBathV"
+
+------------------------------Set Operators Impurity without Rotation----------------------------------------
+-- We define several operators 
+OppSx   = NewOperator("Sx"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppSx.NF = NF
+OppSy   = NewOperator("Sy"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppSy.NF = NF
+OppSz   = NewOperator("Sz"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppSz.NF = NF
+OppSsqr = NewOperator("Ssqr" ,NFimp, IndexUp_4f, IndexDn_4f)
+OppSsqr.NF = NF
+OppSplus= NewOperator("Splus",NFimp, IndexUp_4f, IndexDn_4f)
+OppSplus.NF = NF
+OppSmin = NewOperator("Smin" ,NFimp, IndexUp_4f, IndexDn_4f)
+OppSmin.NF = NF
+
+OppLx   = NewOperator("Lx"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppLx.NF = NF
+OppLy   = NewOperator("Ly"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppLy.NF = NF
+OppLz   = NewOperator("Lz"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppLz.NF = NF
+OppLsqr = NewOperator("Lsqr" ,NFimp, IndexUp_4f, IndexDn_4f)
+OppLsqr.NF = NF
+OppLplus= NewOperator("Lplus",NFimp, IndexUp_4f, IndexDn_4f)
+OppLplus.NF = NF
+OppLmin = NewOperator("Lmin" ,NFimp, IndexUp_4f, IndexDn_4f)
+OppLmin.NF = NF
+
+OppJx   = NewOperator("Jx"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppJx.NF = NF
+OppJy   = NewOperator("Jy"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppJy.NF = NF
+OppJz   = NewOperator("Jz"   ,NFimp, IndexUp_4f, IndexDn_4f)
+OppJz.NF = NF
+OppJsqr = NewOperator("Jsqr" ,NFimp, IndexUp_4f, IndexDn_4f)
+OppJsqr.NF = NF
+OppJplus= NewOperator("Jplus",NFimp, IndexUp_4f, IndexDn_4f)
+OppJplus.NF = NF
+OppJmin = NewOperator("Jmin" ,NFimp, IndexUp_4f, IndexDn_4f)
+OppJmin.NF = NF
+
+--4f SOC
+Oppldots=NewOperator("ldots",NFimp, IndexUp_4f, IndexDn_4f)
+Oppldots.NF = NF
+
+--3d SOC
+Oppldots3d=Chop(NewOperator("ldots",NFimp, IndexUp_3d, IndexDn_3d),1E-12)
+Oppldots3d.NF = NF
+
+--4f-4f Coulomb
+OppUff = Chop(NewOperator("U", NFimp, IndexUp_4f, IndexDn_4f, {F0ff,F2ff,F4ff,F6ff}),1E-12)
+OppUff.NF = NF
+OppUff=1/2*(OppUff+ConjugateTranspose(OppUff))
+
+--3d-4f Coulomb
+OppUdf = Chop(NewOperator("U", NFimp, IndexUp_3d, IndexDn_3d, IndexUp_4f, IndexDn_4f, {F0df,F2df,F4df}, {G1df,G3df,G5df}),1E-12)
+OppUdf.NF = NF
+OppUdf=1/2*(OppUdf+ConjugateTranspose(OppUdf))
+
+--counting Operators
+--core shell
+OppList={}
+for i=0,NcoreShift-1 do
+    OppList[#OppList+1] = {i,-(i),1}
+end
+OppNd = NewOperator(NF,0,OppList)
+
+--valence shell
+OppList={}
+for i=0+NcoreShift,13+NcoreShift do
+    OppList[#OppList+1] = {i,-(i),1}
+end
+OppNf = NewOperator(NF,0,OppList)
+
+
+------------------------------------Configuration Formalism, Create Hamiltonians--------------------------------------------------------
+
+--Ground State
+--NL eL + n ef + n (n - 1) U/2 + offset == -Delta
+--(NL-1) eL + (n + 1) ef + (n + 1) n U/2 + offset == 0
+--(NL-2) eL + (n + 2) ef + (n + 1) (n + 2) U/2 + offset == Delta + U
+
+--where we have:
+--n=0 starting configuration valence shell 
+--eL=centerBathV (adjust, You may want to set it to 0 for many bath states)
+--NL=14 size Ligand shell
+--N1=10 size Core shell
+
+--we solve for: eC, e4f, offset.
+--indexes
+
+--Ground State
+e4f = Delta + centerBathV
+offset = -Delta - 14 * centerBathV 
+print("e4f=",e4f)
+print("offset=",offset)
+
+-- ============================================================================
+-- Compute The Ground State----------------------------------------------------
+-- ============================================================================
+
+-------------------------------------------Set Restrictions----------------------------------------
+StartRestrictions = {BitMaskTri.NF,0,{BitMaskTri.Core,10,10},{BitMaskTri.Impurity,0,0},{BitMaskTri.Bath,BitMaskTri.NBath,BitMaskTri.NBath}}
+CalculationRestrictions = {BitMaskTri.NF,0,{BitMaskTri.Impurity,0,1}}
+CalculationRestrictionsXAS = {BitMaskTri.NF,0,{BitMaskTri.Impurity,1,3}}
+
+print("StartRestrictions:")
+print(StartRestrictions)
+
+print("CalculationRestrictions:")
+print(CalculationRestrictions)
+
+print("CalculationRestrictions XAS:")
+print(CalculationRestrictionsXAS)
+
+print("Restrictions OppLFTTri")
+print(OppLFTTri.Restrictions)
+
+--Hamiltonian when OppLFTTri is the first summand.
+HamiltonianLFTtri   = Chop(OppLFTTri +  (e4f * OppNf) + offset + OppUff )
+--Case Two: OppNf is the first summand
+Hamiltonian   = Chop((e4f * OppNf) + offset + OppUff+OppLFTTri)
+
+print("The difference between the two operators")
+print(Chop(HamiltonianLFTtri-Hamiltonian))
+
+Hamiltonian.Print({{"Full",true}})
+HamiltonianLFTtri.Print({{"Full",true}})
+
+
+
+
+
+print("------------------------------------------------------")
+print("---------------  Calculate Eigenstates  --------------")
+print("------------------------------------------------------")
+
+-- Case 1 eigenstates
+Npsi = 1 -- Number of eigenstates to calculate
+TimeStart("Eigensystem H with HLFT as first summand")
+psiListTri1 = Eigensystem(HamiltonianLFTtri, StartRestrictions, Npsi, {{"Restrictions",CalculationRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+TimeEnd("Eigensystem H with HLFT as first summand")
+TimePrint()
+
+-- Case 2 eigenstates
+Npsi = 1 -- Number of eigenstates to calculate
+TimeStart("Eigensystem H with other summands first")
+psiListTri2 = Eigensystem(Hamiltonian, StartRestrictions, Npsi, {{"Restrictions",CalculationRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+TimeEnd("Eigensystem H with other summands first")
+TimePrint()
+
+
+print("Overlap of the two eigenstates should be e^{I theta}, i.e. in this case plus or minus 1")
+print(psiListTri1 * psiListTri2)
+
+print("The energy of the states using the two different eigenstates and the two different Hamiltonian operators")
+print(psiListTri1 * HamiltonianLFTtri * psiListTri1)
+print(psiListTri1 * Hamiltonian * psiListTri1)
+print(psiListTri2 * HamiltonianLFTtri * psiListTri2)
+print(psiListTri2 * Hamiltonian * psiListTri2)
+
+print("The variance fo the two states")
+print(psiListTri1 * Hamiltonian * Hamiltonian * psiListTri1 - ( psiListTri1 * Hamiltonian * psiListTri1 ) ^2)
+print(psiListTri2 * Hamiltonian * Hamiltonian * psiListTri2 - ( psiListTri2 * Hamiltonian * psiListTri2 ) ^2)
+
+
+print("Re-running the eigensystem, but now starting from the state previously found")
+
+TimeStart("Eigensystem H with other summands first")
+Eigensystem(Hamiltonian, psiListTri2, {{"Restrictions",CalculationRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+TimeEnd("Eigensystem H with other summands first")
+TimePrint()
+
+
+print(psiListTri1 * psiListTri2)
+
+print(psiListTri1 * HamiltonianLFTtri * psiListTri1)
+print(psiListTri1 * Hamiltonian * psiListTri1)
+print(psiListTri2 * HamiltonianLFTtri * psiListTri2)
+print(psiListTri2 * Hamiltonian * psiListTri2)
+
+
+print(psiListTri1 * Hamiltonian * Hamiltonian * psiListTri1 - ( psiListTri1 * Hamiltonian * psiListTri1 ) ^2)
+print(psiListTri2 * Hamiltonian * Hamiltonian * psiListTri2 - ( psiListTri2 * Hamiltonian * psiListTri2 ) ^2)
+
+
+
+
+print("------------------------------------------------------")
+print("---------------  Calculate Eigenstates  --------------")
+print("--------------- Different startingpoint  -------------")
+print("------------------------------------------------------")
+
+
+Npsi=1
+psi0A = Eigensystem(Hamiltonian, StartRestrictions, Npsi, {{"Restrictions",StartRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+psi1A = Hamiltonian * psi0A
+psi2A = Hamiltonian * psi1A
+
+psi0B = Eigensystem(HamiltonianLFTtri, StartRestrictions, Npsi, {{"Restrictions",StartRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+psi1B = HamiltonianLFTtri * psi0B
+psi2B = HamiltonianLFTtri * psi1B
+
+
+print(psi1A)
+print(psi1B)
+print(Chop(psi1A-psi1B,0))
+
+print(psi2A)
+print(psi2B)
+print(Chop(psi2A-psi2B,0))
+
+psi2A.Normalize()
+
+psi2B.Normalize()
+
+TimeStart("Eigensystem Hamiltonian psi2A")
+print("Start of Eigensystem Hamiltonian and psi2A")
+Eigensystem(Hamiltonian,       psi2A, {{"Restrictions",CalculationRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+TimeEnd("Eigensystem Hamiltonian psi2A")
+
+TimeStart("Eigensystem HamiltonianLFTtri psi2B")
+print("Start of Eigensystem HamiltonianLFTtri and psi2B")
+Eigensystem(HamiltonianLFTtri, psi2B, {{"Restrictions",CalculationRestrictions}, {"Epsilon",1E-10},{"Zero",1E-9}})
+TimeEnd("Eigensystem HamiltonianLFTtri psi2B")
+
+print(psi2A * psi2B)
+
+print(psi2A * HamiltonianLFTtri * psi2A)
+print(psi2A * Hamiltonian * psi2A)
+print(psiListTri2 * HamiltonianLFTtri * psi2B)
+print(psiListTri2 * Hamiltonian * psi2B)
+
+print(psi2A * Hamiltonian * Hamiltonian * psi2A - ( psi2A * Hamiltonian * psi2A ) ^2)
+print(psi2B * Hamiltonian * Hamiltonian * psi2B - ( psi2B * Hamiltonian * psi2B ) ^2)
+
+TimePrint()
