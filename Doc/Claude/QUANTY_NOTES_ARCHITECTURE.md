@@ -34,21 +34,104 @@ translation unit reports a spurious `luai_hashnum` error from the bundled Lua;
 a real compile succeeds. Build takes roughly 80 s at `-O2`.
 
 
-## The four core objects
+## The central structures
+
+Quanty is organised around a small set of data structures and the functions that
+act on them. The style is functional rather than object-oriented — there are no
+methods on the C side, only free functions taking struct pointers — but the
+structs are still the spine of the program, and the natural way in.
 
 Defined in `Core/StructDef.cpp` (1802 lines). Note that `Core/StructDef.h`
 contains only a single function prototype — the struct definitions live in the
 `.cpp`, which is consistent with the single-translation-unit build.
 
-| Struct | Line | Role |
+**Five structures carry the physics.** Each is exposed to Lua as an object, and
+the user-facing behaviour of that object is documented on quanty.org:
+
+| # | Struct | Line | Lua object | Role | User documentation |
+|---|---|---|---|---|---|
+| 1 | `WaveFunctionType` | 172 | `Wavefunction` | Slater-determinant expansion | [objects/wavefunction](https://www.quanty.org/documentation/language_reference/objects/wavefunction/start) |
+| 2 | `OperatorType` | 222 | `Operator` | Sum of ladder-operator products | [objects/operator](https://www.quanty.org/documentation/language_reference/objects/operator/start) |
+| 3 | `SpectraType` | 918 | `Spectra` | Discretised spectrum | [objects/spectra](https://www.quanty.org/documentation/language_reference/objects/spectra/start) |
+| 4 | `ResponsefunctionType` | 869 | `ResponseFunction` | Green's function dispatcher | [objects/responsefunction](https://www.quanty.org/documentation/language_reference/objects/responsefunction/start) |
+| 5 | `TightBindingDef` | 1005 | `TightBinding` | Periodic hopping model | [objects/tightbinding](https://www.quanty.org/documentation/language_reference/objects/tightbinding/start) |
+
+Two naming mismatches to be aware of when moving between the Lua side and the C
+side, both verified against the `luaL_checkudata` calls:
+
+- The Lua `Spectra` object wraps **`SpectraTypeArray`** (`:939`), a bundle of
+  `SpectraType` columns sharing one energy axis — not a bare `SpectraType`.
+  That is why one `CreateSpectra` call can return several polarisations at once.
+- `TightBindingDef` is the only one of the five not named `...Type`.
+
+### Supporting structures
+
+These exist to serve the calculations above rather than to represent physics in
+their own right. The first three are also exposed to Lua as objects:
+
+| Struct | Line | Lua object | Role | User documentation |
+|---|---|---|---|---|
+| `Complex16` | 53 | `Complex` | `{Re, Im}` pair; the scalar type throughout | [objects/complex](https://www.quanty.org/documentation/language_reference/objects/complex/start) |
+| `CompactMatrixType` | 353 | `Matrix` | Dense matrix as exposed to Lua | [objects/matrix](https://www.quanty.org/documentation/language_reference/objects/matrix/start) |
+| `CompactTensorType` | 376 | `Tensor` | Rank-`n` tensor, with per-rank co/contravariance | *(not documented on the site)* |
+| `Interpolation::InterpolatingFunction` | — | `InterpolatingFunction` | Splines; see below | [objects/interpolatingfunction](https://www.quanty.org/documentation/language_reference/objects/interpolatingfunction/start) |
+| `MatrixType` | 325 | — | Internal dense matrix, `VRe[i][j]` | |
+| `CompactVectorType` | 397 | — | Vector, real or complex | |
+| `SparseMatrixType` | 415 | — | Sparse matrix | |
+| `OperatorFixedLengthType` | 207 | — | One length-`l` block of an `OperatorType` | |
+| `DeterminantRestrictionType` | 195 | — | Occupation restrictions | |
+| `ConvergenceSettingsType` | 236 | — | Lanczos / convergence knobs | |
+| `LuaOptionsType` | 884 | — | Option-table parsing for the bindings | |
+| `AtomType`, `CrystalStructureType` | 949, 965 | — | Geometry, used by `TightBindingDef` | |
+| `BandstructurePointType`, `BandstructurePathType` | 1016, 1024 | — | k-paths for band structures | |
+
+#### MatrixType versus CompactMatrixType — use CompactMatrixType in new code
+
+Both are live, and the distinction is historical rather than functional.
+`MatrixType` came first. It stores elements as `double **VRe, **VIm`: a row
+pointer array plus one allocation per row, and real and imaginary parts in two
+separate blocks — so a complex `Ni × Nj` matrix costs on the order of
+`2*(Ni+1)` allocations. At some point the code was spending **99%+ of its time
+allocating memory**. Removing allocations was the fix, and `CompactMatrixType`
+is the result:
+
+| | `MatrixType` (325) | `CompactMatrixType` (353) |
 |---|---|---|
-| `WaveFunctionType` | 172 | Slater-determinant expansion |
-| `OperatorType` | 222 | Sum of ladder-operator products |
-| `OperatorFixedLengthType` | 207 | One length-`l` block of an operator |
-| `SpectraType` | 918 | Discretised spectrum |
-| `ResponsefunctionType` | 869 | Green's function dispatcher |
-| `DeterminantRestrictionType` | 195 | Occupation restrictions |
-| `ConvergenceSettingsType` | 236 | Lanczos / convergence knobs |
+| storage | `double **VRe, **VIm` | `union { double *VRe; Complex16 *V; }` |
+| allocations | one per row, per part | **one**, flat |
+| element `(i,j)` | `VRe[i][j]` | `VRe[i*Nj+j]`, or `V[i*Nj+j]` if complex |
+| complex layout | two separate blocks | interleaved `Complex16` |
+| `Name` | inline `char[MAXStrLength]` | `char *` |
+| Lua ownership | — | `OnLuaStack` suppresses the free |
+
+**New code should use `CompactMatrixType`.** A full rewrite of the remaining
+`MatrixType` call sites is expensive and has not been done, so the old struct
+stays and conversion is allowed: `MatrixToCompactMatrix`
+(`Core/BasicMath/BasicMath_MatrixTypeConversion.h:60`). Note there is no reverse
+conversion — the flow is one-way, which matches the intended direction of
+travel. `MatrixType` is still what several internals pass around; it is the
+hopping-matrix member of `TightBindingDefHopping`, for instance.
+
+Both carry `a0`, `b0` and `mu`, used when the matrix represents a continued
+fraction. See `TODO.md` for the migration.
+
+`InterpolatingFunction` is the one place among these that is genuine C++: a
+class hierarchy in `namespace Interpolation` under
+`Core/BasicMath/Interpolation/` (`InterpolatingFunction.h`, `CubicSpline`,
+`CubicHermiteSpline`), used through virtual dispatch.
+
+It got there by drift rather than by design. Maurits started it in C — the
+commented-out `InterpolatingFunctionType` at `StructDef.cpp:1796` is that
+original — and a student then took it over and rewrote it as real C++. It sits
+within what `README.md` tolerates, being separated from the core, but it should
+not be read as a worked example of how to write new Quanty code. **An overhaul
+is expected when the next student picks it up, and whether it ends up in C or in
+C++ is genuinely open.** Treat the current shape as provisional; see `TODO.md`.
+
+A further large family of structs — `TriDiagonalMatrixType`,
+`AndersonMatrixType`, their `Double`, `Second` and `Block` variants, and
+`BlockNaturalImpurityOrbitalMatrixType` — are the concrete payloads behind
+`ResponsefunctionType`; see that entry below.
 
 ### WaveFunctionType
 
@@ -67,6 +150,13 @@ over ladder strings, with real (`VRe`) or complex (`V`) values.
 
 `QComplex` is tri-state: 0 = all real, 1 = all complex, 2 = mixed.
 
+### SpectraType
+
+A discretised spectrum. The Lua object is the array form, `SpectraTypeArray`
+(`:939`) — several spectra over a shared energy grid — which is what makes
+`Spectra` support `+` and scalar `*` for Boltzmann averaging over a list of
+eigenstates.
+
 ### ResponsefunctionType
 
 Deliberately thin — a `type` tag (`l,a,t,n` / `L,A,T,N`), a `Block` flag, and
@@ -74,6 +164,24 @@ Deliberately thin — a `type` tag (`l,a,t,n` / `L,A,T,N`), a `Block` flag, and
 points at: `TriDiagonalMatrixType`, `AndersonMatrixType`,
 `BlockAndersonMatrixType`, `BlockNaturalImpurityOrbitalMatrixType`, and so on,
 all defined further down `StructDef.cpp`.
+
+This is the one place where the codebase uses a tagged-union dispatch instead of
+a concrete struct, which is why response functions have their own conversion
+routines rather than plain arithmetic.
+
+### TightBindingDef
+
+A periodic hopping model: a `CrystalStructureType Cell` for the geometry, and
+`nH` hopping entries `TightBindingDefHopping` (`:993`). Each hopping carries the
+two atom/shell endpoints, the integer translation between unit cells
+(`TransVecs[3]`), the resulting `ConnectingVector[3]` in the cell's units, and a
+`MatrixType Hop` holding the hopping matrix itself. `NFermion` and
+`FermionIndex` map the model onto spin-orbital indices, which is how a tight-
+binding model becomes an `OperatorType`.
+
+This is the entry point for external electronic-structure data: `IO/` reads
+Wannier90, Dresden FPLO and Stuttgart NMTO output into this struct
+(`TightBindingDefFromDresdenFPLO`, `TightBindingDefFromStuttgartCTRLHAMR`).
 
 
 ## Hashing
@@ -179,7 +287,8 @@ outside collaboration with their author.
 `Plot/` is the first example of pulling structure definitions out of the
 monolith: `Plot/StructDef.cpp` (163 lines) holds `GraphicsType`, `LineType`,
 `CurveType`, `ArcType`, `TextType`, `BitMapType` and the plot option structs,
-independent of the physics core. More of this splitting is intended.
+independent of the physics core. More of this splitting is intended — see
+`TODO.md`.
 
 
 ## Coding conventions
@@ -196,13 +305,5 @@ Portability targets are deliberately wide: no external dependencies beyond
 BLAS and LAPACK (no boost, HDF5, or FFT libraries), so it builds on very old
 cluster toolchains.
 
-
-## Open TODO noted during this work
-
-The C routines are broadly unguarded, and the code does not warn or error when
-asked a physically meaningless question. The concrete example that came up: a
-starting state containing determinants outside the requested restrictions makes
-`BlockGroundState` cycle without converging until it hits the 100-loop limit,
-with no diagnostic pointing at the real cause. Maurits intends to add asserts
-and guards **coherently across the whole codebase** rather than piecemeal, so
-individual guards should not be added ad hoc while fixing unrelated bugs.
+Note that the C routines are broadly unguarded and do no type checking. This is
+a known state of affairs rather than an oversight; see `TODO.md`.
