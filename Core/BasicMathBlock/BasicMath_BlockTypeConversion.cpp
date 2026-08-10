@@ -2788,7 +2788,182 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
   return 0;
 }
 
+/* Given a strictly increasing array E[0..n-1], return the index i of the interval
+ * that contains val, i.e.  E[i] <= val < E[i+1].
+ *   returns -1   if val <  E[0]     (below the grid)
+ *   returns n-1  if val >= E[n-1]   (at or above the last grid point)
+ * The second convention is taken from TightBindingHamiltonianToBlockListOfPoles(), where val == Emax is also
+ * counted as "outside" and pushed into the pole above the grid; see also the notes for TightBindingHamiltonianToBlockListOfPolesGrid().
+ */
+static int FindEnergyInterval(double const * const E, int const n, double const val)
+{
+  int lo, hi, mid;
+  if (val <  E[0])   return -1;
+  if (val >= E[n-1]) return n-1;
+  lo = 0;
+  hi = n-1;
+  while (hi - lo > 1)
+  {
+    mid = (lo + hi) / 2;
+    if (val < E[mid]) hi = mid;
+    else              lo = mid;
+  }
+  return lo;
+}
 
+/*  Given a tight binding Hamiltonian, a k-mesh defined by the number of divisions of
+ *  a, b and c (Nk), and an arbitrary strictly increasing energy grid Egrid[0..NEgrid-1],
+ *  returns the Green's function matrix of size A.NFermion by A.NFermion as a list of
+ *  NEgrid+2 poles: the NEgrid grid points, plus one pole below and one above the grid
+ *  that collect everything outside, positioned such that weight and first moment are exact.
+ *  For each k and eigenvalue i the weight h_{jk} = fun[i,j] * fun[i,k]^* is distributed
+ *  linearly over the two poles bracketing the eigenvalue.
+ */
+uint32_t TightBindingHamiltonianToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  MatrixType H;
+  CompactMatrixType T;
+  double q[3], val[A.NFermion], rest, totmin=0, totmax=0, totnow;
+  int    iq[3],ival,iE,i,j,ii;
+  double diq[3],Nktot;
+  if(NEgrid<2)
+  {
+    printf("Error in TightBindingHamiltonianToBlockListOfPolesGrid: the energy grid needs at least 2 points\n");
+    return 1;
+  }
+  G->BlockSize=A.NFermion;
+  G->N=NEgrid+2;
+  G->QComplex=1;
+  strcpy(G->Name, A.Name);
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in TightBindingHamiltonianToBlockListOfPolesGrid\n");
+    return 1;
+  }
+  ii=-1;
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    if(ii<0)                  G->V[i].Re=Egrid[0] - (Egrid[1] - Egrid[0]);
+    else if(ii<(int)NEgrid)   G->V[i].Re=Egrid[ii];
+    else                      G->V[i].Re=Egrid[NEgrid-1] + (Egrid[NEgrid-1] - Egrid[NEgrid-2]);
+    ii++;
+  }
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
+        EigensystemToCompact(H, &T, val);
+        //printf("\n");
+        for(ival=0;ival<A.NFermion;ival++)
+        {
+          //printf("%f ",val[ival]);
+          /* calculate matrix B for eigen-value ival */
+          if(H.QComplex)
+          {
+            ComplexEigenFunctionToCharacter(&(T.V[ival*A.NFermion]), &H);
+          }
+          else
+          {
+            RealEigenFunctionToCharacter(&(T.VRe[ival*A.NFermion]), &H);
+          }
+          /* determine the position of the pole in the list of poles */
+          iE = FindEnergyInterval(Egrid, (int)NEgrid, val[ival]);
+          if (iE >= (int)NEgrid-1)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmax+totnow<10*DBL_MIN)
+            {
+              totmax+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)].Re + totnow * val[ival]) / (totmax + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmax+=totnow;
+          }
+          else if (iE < 0)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmin+totnow<10*DBL_MIN)
+            {
+              totmin+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[0].Re = (totmin * G->V[0].Re + totnow * val[ival]) / (totmin + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmin+=totnow;
+          }
+          else
+          {
+            rest = (val[ival] - Egrid[iE]) / (Egrid[iE+1] - Egrid[iE]);  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(1-rest)*H.VRe[i][j];
+                G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(  rest)*H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(1-rest)*H.VIm[i][j];
+                  G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(  rest)*H.VIm[i][j];
+                }
+              }
+            }
+          }
+        }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
+      }
+    }
+  }
+  Nktot=Nk[0]*Nk[1]*Nk[2];
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    for(j=1;j<1+G->BlockSize*G->BlockSize;j++)
+    {
+      G->V[i+j].Re/=Nktot;
+      G->V[i+j].Im/=Nktot;
+    }
+  }
+  ChopBlockListOfPoles(G, DBL_EPSILON);
+  return 0;
+}
 
 
 /*  Given an tight binding Hamiltonian and a k-mesh defined by the number of divisions of a, b and c (Nk)
@@ -3176,6 +3351,230 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
           else
           {
             rest -= iE;  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(1-rest)*H.VRe[i][j];
+                G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(  rest)*H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(1-rest)*H.VIm[i][j];
+                  G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(  rest)*H.VIm[i][j];
+                }
+              }
+            }
+          }
+        }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
+      }
+    }
+  }
+  Nktot=Nk[0]*Nk[1]*Nk[2];
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    for(j=1;j<1+G->BlockSize*G->BlockSize;j++)
+    {
+      G->V[i+j].Re/=Nktot;
+      G->V[i+j].Im/=Nktot;
+    }
+  }
+  ChopBlockListOfPoles(G, DBL_EPSILON);
+  return 0;
+}
+
+
+/*  Given a tight binding Hamiltonian, a k-mesh defined by the number of divisions of
+ *  a, b and c (Nk), and an arbitrary strictly increasing energy grid Egrid[0..NEgrid-1],
+ *  returns the Green's function matrix of size A.NFermion by A.NFermion as a list of
+ *  NEgrid+2 poles: the NEgrid grid points, plus one pole below and one above the grid
+ *  that collect everything outside, positioned such that weight and first moment are exact.
+ *  For each k and eigenvalue i the weight h_{jk} = fun[i,j] * fun[i,k]^* is distributed
+ *  linearly over the two poles bracketing the eigenvalue.
+ *  Sigma must have dimensions BlockSize equal to A.NFermion
+ */
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  MatrixType H;
+  CompactMatrixType T, HSigma, HSigmaComplex;
+  double q[3], val[A.NFermion*(Sigma.N+1)], rest, totmin=0, totmax=0, totnow;
+  int    iq[3],ival,iE,i,j,ii;
+  double diq[3],Nktot;
+  // test if sigma size is ok
+  if(Sigma.BlockSize!=A.NFermion)
+  {
+    printf("in TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles\nThe dimension of the self energy (%i) is not equal to the dimension of the tight binding Hamiltonian (%i)\n",Sigma.BlockSize,A.NFermion);
+    return 1;
+  }
+  // init G
+  G->BlockSize=A.NFermion;
+  G->N=NEgrid+2;
+  G->QComplex=1;
+  strcpy(G->Name, A.Name);
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in TightBindingHamiltonianToBlockListOfPoles\n");
+    return 1;
+  }
+  // set energy of G
+  ii=-1;
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    if(ii<0)                  G->V[i].Re=Egrid[0] - (Egrid[1] - Egrid[0]);
+    else if(ii<(int)NEgrid)   G->V[i].Re=Egrid[ii];
+    else                      G->V[i].Re=Egrid[NEgrid-1] + (Egrid[NEgrid-1] - Egrid[NEgrid-2]);
+    ii++;
+  }
+  // create HSigma
+  BlockListOfPolesInversedToCompactMatrix(&Sigma, &HSigma);
+  if(Sigma.QComplex==0)
+  {
+    CompactMatrixCopy(HSigma, &HSigmaComplex);
+    MakeCompactRealMatrixComplex(&HSigmaComplex);
+  }
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
+        if(H.QComplex)
+        {
+          if(Sigma.QComplex)
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigma.V[i*HSigma.Nj+j].Re=Sigma.a0[i*Sigma.BlockSize+j].Re + H.VRe[i][j];
+                HSigma.V[i*HSigma.Nj+j].Im=Sigma.a0[i*Sigma.BlockSize+j].Im + H.VIm[i][j];
+              }
+            }
+            CompactMatrixEigensystem(&HSigma, &T, val);
+          }
+          else
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigmaComplex.V[i*HSigma.Nj+j].Re=Sigma.a0Re[i*Sigma.BlockSize+j] + H.VRe[i][j];
+                HSigmaComplex.V[i*HSigma.Nj+j].Im=                                  H.VIm[i][j];
+              }
+            }
+            CompactMatrixEigensystem(&HSigmaComplex, &T, val);
+          }
+        }
+        else
+        {
+          if(Sigma.QComplex)
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigma.V[i*HSigma.Nj+j].Re=Sigma.a0[i*Sigma.BlockSize+j].Re + H.VRe[i][j];
+                HSigma.V[i*HSigma.Nj+j].Im=Sigma.a0[i*Sigma.BlockSize+j].Im;
+              }
+            }
+            CompactMatrixEigensystem(&HSigma, &T, val);
+          }
+          else
+          {
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                HSigma.VRe[i*HSigma.Nj+j]=Sigma.a0Re[i*Sigma.BlockSize+j] + H.VRe[i][j];
+              }
+            }
+            CompactMatrixEigensystem(&HSigma, &T, val);
+          }
+        }
+        if(T.QComplex)
+        {
+          if(H.QComplex==0) MakeRealMatrixComplex(&H);
+        }
+        else
+        {
+          if(H.QComplex) MakeComplexMatrixReal(&H);
+        }
+        for(ival=0;ival<T.Nj;ival++)
+        {
+          /* calculate matrix B for eigen-value ival */
+          if(H.QComplex)
+          {
+            ComplexEigenFunctionToCharacter(&(T.V[ival*T.Nj]), &H);
+          }
+          else
+          {
+            RealEigenFunctionToCharacter(&(T.VRe[ival*T.Nj]), &H);
+          }
+          /* determine the position of the pole in the list of poles */
+          iE = FindEnergyInterval(Egrid, (int)NEgrid, val[ival]);
+          if (iE >= (int)NEgrid-1)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmax+totnow<10*DBL_MIN)
+            {
+              totmax+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)].Re + totnow * val[ival]) / (totmax + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmax+=totnow;
+          }
+          else if (iE < 0)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmin+totnow<10*DBL_MIN)
+            {
+              totmin+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[0].Re = (totmin * G->V[0].Re + totnow * val[ival]) / (totmin + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmin+=totnow;
+          }
+          else
+          {
+            rest = (val[ival] - Egrid[iE]) / (Egrid[iE+1] - Egrid[iE]);  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
             for(i=0;i<A.NFermion;i++)
             {
               for(j=0;j<A.NFermion;j++)

@@ -722,12 +722,13 @@ static int LuaCalculateFermi(lua_State *L)
  *       Emin
  *       Emax
  *       NE
+ *       EnergyGrid -> arbirary increasing energy grid for the poles of the response function (in place of Emin, Emax, NE)
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Type
  */
 static int LuaCalculateG(lua_State *L)
 {
-  uint32_t len;
+  uint32_t len, i;
   TightBindingDef *a;
   ResponsefunctionType *G, *Sigma=NULL;
   bool FreeSigma=false;
@@ -742,16 +743,18 @@ static int LuaCalculateG(lua_State *L)
   } Options;
   Options.Nk = NULL;
   //Options.Method    = "Mesh";
-  Options.Emin=-10;
-  Options.Emax=10;
-  Options.NE=2000;
+  Options.Emin=NAN;
+  Options.Emax=NAN;
+  Options.NE=0;
   Options.Type="ListOfPoles";
+  CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateGOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
     //{"Method",     "char*",    &(Options.Method)},
     {"Emin",       "double",   &(Options.Emin)},
     {"Emax",       "double",   &(Options.Emax)},
     {"NE",         "uint32_t", &(Options.NE)},
+    {"EnergyGrid", "Vector",   &Grid},
     {"Type",       "char*",    &(Options.Type)},
     {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
@@ -759,6 +762,29 @@ static int LuaCalculateG(lua_State *L)
   {
     LuaCheckOptions(L,-1,LuaCalculateGOptions);
     len--;
+  }
+  if (Grid.Ni != 0)
+  {
+    if (!isnan(Options.Emin) || !isnan(Options.Emax) || Options.NE != 0)
+      return luaL_error(L, "Error CalculateG: option EnergyGrid cannot be combined with Emin, Emax or NE.\n");
+    if (Grid.Ni < 2) return luaL_error(L, "Error CalculateG: option EnergyGrid needs at least 2 energies.\n");
+    if (Grid.QComplex) return luaL_error(L, "Error CalculateG: option EnergyGrid needs a real vector.\n");
+    for (i=0; (i+1)<Grid.Ni; i++)
+    {
+      if (!(Grid.VRe[i+1] > Grid.VRe[i]))
+      {
+        return luaL_error(L, "Error CalculateG: EnergyGrid must be strictly increasing, but element %d (%f) is not larger than element %d (%f).\n",
+                          (int)i+2, Grid.VRe[i+1], (int)i+1, Grid.VRe[i]);
+      }
+    }
+  }
+  else
+  {
+    if (isnan(Options.Emin)) Options.Emin = -10;
+    if (isnan(Options.Emax)) Options.Emax =  10;
+    if (Options.NE == 0)     Options.NE   =  2000;
+    if (Options.Emax <= Options.Emin)
+      return luaL_error(L, "Error CalculateG: Emax needs to be larger than Emin.\n");
   }
   if(!(len==1||len==2))
   {
@@ -818,7 +844,14 @@ static int LuaCalculateG(lua_State *L)
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
   if(Sigma==NULL)
   {
-    TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    if (Grid.Ni==0)
+    {
+      TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    }
+    else
+    {
+      TightBindingHamiltonianToBlockListOfPolesGrid(*a, Options.Nk, (BlockListOfPoles*)G->data, Grid.VRe, Grid.Ni);
+    }
   }
   else
   {
@@ -826,7 +859,14 @@ static int LuaCalculateG(lua_State *L)
     {
       return luaL_error(L, "Error BlockSize of Sigma (%d) and NFermion of TB Hamiltonian (%d) need to be equivalent ",((BlockListOfPoles*)Sigma->data)->BlockSize , a->NFermion);
     }
-    TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    if (Grid.Ni==0)
+    {
+      TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    }
+    else
+    {
+      TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Grid.VRe, Grid.Ni);
+    }
   }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
   if(strcmp(Options.Type, "ListOfPoles")!=0)
