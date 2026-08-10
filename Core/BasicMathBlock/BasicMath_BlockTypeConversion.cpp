@@ -2853,7 +2853,7 @@ uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef cons
           /* determine the position of the pole in the list of poles */
           rest = (val[ival] - Emin) / dE;
           iE = (int)(floor(rest));
-          if (iE >= NE)
+          if (iE >= (int)NE)
           {
             totnow=0;
             for(i=0;i<A.NFermion;i++)
@@ -3121,7 +3121,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
           /* determine the position of the pole in the list of poles */
           rest = (val[ival] - Emin) / dE;
           iE = (int)(floor(rest));
-          if (iE >= NE)
+          if (iE >= (int)NE)
           {
             totnow=0;
             for(i=0;i<A.NFermion;i++)
@@ -3348,7 +3348,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
           /* determine the position of the pole in the list of poles */
           rest = (val[ival] - Emin) / dE;
           iE = (int)(floor(rest));
-          if (iE >= NE)
+          if (iE >= (int)NE)
           {
             totnow=0;
             for(i=0;i<A.NFermion;i++)
@@ -3620,7 +3620,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
           /* determine the position of the pole in the list of poles */
           rest = (val[ival] - Emin) / dE;
           iE = (int)(floor(rest));
-          if (iE >= NE)
+          if (iE >= (int)NE)
           {
             totnow=0;
             for(i=0;i<2*A.NFermion;i++)
@@ -3851,7 +3851,7 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
           /* determine the position of the pole in the list of poles */
           rest = (val[ival] - Emin) / dE;
           iE = (int)(floor(rest));
-          if (iE >= NE)
+          if (iE >= (int)NE)
           {
             totnow=0;
             for(i=0;i<2*A.NFermion;i++)
