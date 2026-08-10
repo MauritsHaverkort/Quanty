@@ -3438,7 +3438,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
       iE = (int)(floor(rest));
       if(G->QComplex)
       {
-        if (iE >= NE)
+        if (iE >= (int)NE)
         {
           totnow=0;
           for(ic=0;ic<G0->BlockSize;ic++)
@@ -3501,7 +3501,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
       }
       else /* all are real */
       {
-        if (iE >= NE)
+        if (iE >= (int)NE)
         {
           totnow=0;
           for(ic=0;ic<G0->BlockSize;ic++)
