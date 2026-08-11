@@ -521,49 +521,29 @@ collectgarbage()
 collectgarbage()
 
 -- comparison with add spin and fermion shift and Nc=2
-print("A")
 O1, A, B = ResponseFunction.ToOperator(G,{{"Nc",2}})
-print(A)
-print(B)
-print("A")
 collectgarbage()
 collectgarbage()
 collectgarbage()
-print("B")
 O2, A, B = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"Nc",2}})
-print("C")
-print(A)
-print(B)
-print("A")
 collectgarbage()
 collectgarbage()
 collectgarbage()
-print("B")
 O3 = ResponseFunction.ToOperator(G,{{"FermionShift",6},{"Nc",2}})
-print("A")
 collectgarbage()
 collectgarbage()
 collectgarbage()
-print("B")
 O4 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"FermionShift",6},{"Nc",2}})
 
-print("A")
 collectgarbage()
 collectgarbage()
 collectgarbage()
-print("B")
 
-print("A")
 M1=OperatorToMatrix(O1)
-print("A")
 M2=OperatorToMatrix(O2)
-print("A")
 M3=OperatorToMatrix(O3)
-print("A")
 M4=OperatorToMatrix(O4)
-print("A")
 M5 = Matrix.AddSpin(M1)
-print("A")
 
 if( (M5==M2)~=true) then
 	print(O1)
@@ -576,18 +556,12 @@ end
 if( ( Matrix.Flatten({{Matrix.Zero(6),0},{0,M1}}) == M3) ~=true ) then error("Response operator comparison failed\n",1) end
 if( ( Matrix.Flatten({{Matrix.Zero(6),0},{0,M2}}) == M4) ~=true ) then error("Response operator comparison failed\n",1) end
 
-
-print("A")
-
 -- comparison with add spin and fermion shift and Nv=1
 
 O1 = ResponseFunction.ToOperator(G,{{"Nv",1}})
 O2 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"Nv",1}})
 O3 = ResponseFunction.ToOperator(G,{{"FermionShift",6},{"Nv",1}})
 O4 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"FermionShift",6},{"Nv",1}})
-
-
-print("B")
 
 M1=OperatorToMatrix(O1)
 M2=OperatorToMatrix(O2)
@@ -844,6 +818,7 @@ if(Chop(OS-O2S)==Chop(0*OS)~=true) then
 	error("Response operator comparison failed\n",1)
 end
 
+print("-- And with bitmask for valence, conduction and mixed states and posibility to set Nv, Nc, Nmix  --")
 
 print("-- Nat                                                --")
 
