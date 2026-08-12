@@ -3286,6 +3286,38 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[6][1] = 1/sqrt(2.);
 		out.VRe[6][5] = 1/sqrt(2.);
 	}
+  else if (multiplicity == 18)
+  {
+    //    g-shell
+    out.VRe[0][0] =  sqrt( 5./24.);
+    out.VRe[0][4] =  sqrt(14./24.);
+    out.VRe[0][8] =  sqrt( 5./24.);
+    out.VRe[1][2] =  sqrt( 1./2. );
+    out.VRe[1][6] =  sqrt( 1./2. );
+    out.VRe[2][0] =  sqrt( 7./24.);
+    out.VRe[2][4] = -sqrt(10./24.);
+    out.VRe[2][8] =  sqrt( 7./24.);
+    out.VIm[3][1] = -sqrt( 1./16.);
+    out.VIm[3][3] = -sqrt( 7./16.);
+    out.VIm[3][5] = -sqrt( 7./16.);
+    out.VIm[3][7] = -sqrt( 1./16.);
+    out.VRe[4][1] = -sqrt( 1./16.);
+    out.VRe[4][3] =  sqrt( 7./16.);
+    out.VRe[4][5] = -sqrt( 7./16.);
+    out.VRe[4][7] =  sqrt( 1./16.);
+    out.VIm[5][0] =  sqrt(12./24.);
+    out.VIm[5][8] = -sqrt(12./24.);
+    out.VIm[6][1] =  sqrt( 7./16.);
+    out.VIm[6][3] = -sqrt( 1./16.);
+    out.VIm[6][5] = -sqrt( 1./16.);
+    out.VIm[6][7] =  sqrt( 7./16.);
+    out.VRe[7][1] = -sqrt( 7./16.);
+    out.VRe[7][3] = -sqrt( 1./16.);
+    out.VRe[7][5] =  sqrt( 1./16.);
+    out.VRe[7][7] =  sqrt( 7./16.);
+    out.VIm[8][2] =  sqrt( 1./2. );
+    out.VIm[8][6] = -sqrt( 1./2. );
+  }
   else if ((multiplicity - 2) % 4 == 0)
 	{
 		cout << "YToKMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
@@ -3346,6 +3378,25 @@ MatrixType ZToKMatrix(const int multiplicity, const bool addSpin)
     out.VRe[5][0] = -sqrt(3./8.);
     out.VRe[5][2] =  sqrt(5./8.);
     out.VRe[6][5] = 1;
+  }
+  else if (multiplicity == 18)
+  {
+    //    g-shell
+    out.VRe[0][4] =  sqrt(7./12.);
+    out.VRe[0][8] =  sqrt(5./12.);
+    out.VRe[1][6] = 1;
+    out.VRe[2][4] = -sqrt(5./12.);
+    out.VRe[2][8] =  sqrt(7./12.);
+    out.VRe[3][1] = -sqrt(1./8. );
+    out.VRe[3][3] = -sqrt(7./8. );
+    out.VRe[4][5] =  sqrt(7./8. );
+    out.VRe[4][7] = -sqrt(1./8. );
+    out.VRe[5][0] = 1;
+    out.VRe[6][1] =  sqrt(7./8. );
+    out.VRe[6][3] = -sqrt(1./8. );
+    out.VRe[7][5] = -sqrt(1./8. );
+    out.VRe[7][7] = -sqrt(7./8. );
+    out.VRe[8][2] = 1;
   }
   else if ((multiplicity - 2) % 4 == 0)
   {

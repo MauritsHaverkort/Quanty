@@ -13,3 +13,8 @@ double SlaterCoefficientC(int k, int l1, int m1, int l2, int m2);
 double SlaterCoefficientCjcoupling(int k, int l1, int twoj1, int twojz1, int l2, int twoj2, int twojz2);
 int cmpuint32t (const void * a, const void *b);
 int cmpdouble (const void * a, const void *b);
+double IntPower(double x, int n);
+double WignerSmallD(int twoj, int twomp, int twom, double beta);
+uint32_t WignerSmallDMatrix(int twoj, double beta, CompactMatrixType * const d);
+uint32_t WignerD(int twoj, double alpha, double beta, double gamma, CompactMatrixType * const D);
+

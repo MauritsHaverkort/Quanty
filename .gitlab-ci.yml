@@ -234,6 +234,7 @@ test-jobs-tightbinding:
           - "Derivative"
           - "New"
           - "PhaseTests"
+          - "SlaterKoster"
           - "UnitTest"
   script:
     - export OMP_NUM_THREADS=8

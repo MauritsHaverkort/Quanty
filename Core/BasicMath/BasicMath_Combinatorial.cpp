@@ -254,3 +254,150 @@ int cmpdouble (const void * a, const void *b)
 {
   return (*(double*)a<*(double*)b)?(1):(-1);
 }
+
+/*
+ *  Integer power x^n, n>=0. Used instead of pow() so we never hit a domain
+ *  issue evaluating a negative base to a large exponent that happens to be
+ *  exactly integral.
+ */
+double IntPower(double x, int n)
+{
+  int    i;
+  double result = 1.0;
+  for (i = 0; i < n; i++) result *= x;
+  return result;
+}
+
+/*
+ *  Wigner (small) d-matrix element, standard physics phase convention:
+ *
+ *    d^{j}_{m' m}(beta) = < j m' | exp(-i beta Jy) | j m >
+ *
+ *  evaluated via Wigner's explicit sum formula. j, m' and m are passed as
+ *  doubled integers (twoj=2j, twomp=2m', twom=2m), same convention as
+ *  ThreeJSymbolHalf, so half-integer angular momenta use exact integer
+ *  bookkeeping throughout -- no half-integer comparisons or roundoff.
+ */
+double WignerSmallD(int twoj, int twomp, int twom, double beta)
+{
+  int    jPlusMp, jMinusMp, jPlusM, jMinusM, diff, s, sMin, sMax, cosExp, sinExp;
+  double d, cb, sb;
+
+  if ((Abs(twomp) > twoj) || (Abs(twom) > twoj)) return 0;
+
+  jPlusMp  = (twoj + twomp) / 2;
+  jMinusMp = (twoj - twomp) / 2;
+  jPlusM   = (twoj + twom)  / 2;
+  jMinusM  = (twoj - twom)  / 2;
+  diff     = (twomp - twom) / 2;          /* m' - m, always an integer */
+
+  sMin = Max(0, -diff);
+  sMax = Min(jPlusM, jMinusMp);
+
+  cb = cos(beta / 2.0);
+  sb = sin(beta / 2.0);
+
+  d = 0;
+  for (s = sMin; s <= sMax; s++)
+  {
+    cosExp = twoj - diff - 2 * s;
+    sinExp = diff + 2 * s;
+    d += (double)(1 - 2 * (Abs(diff + s) & 1)) *
+         IntPower(cb, cosExp) * IntPower(sb, sinExp) /
+         (Factorial(jPlusM - s) * Factorial(s) * Factorial(diff + s) * Factorial(jMinusMp - s));
+  }
+  d *= sqrt(Factorial(jPlusMp) * Factorial(jMinusMp) * Factorial(jPlusM) * Factorial(jMinusM));
+  return d;
+}
+
+/*
+ *  Fills the (twoj+1) x (twoj+1) real Wigner small-d matrix d^{j}_{m'm}(beta)
+ *  into an uninitialized CompactMatrixType. Row m' and column m both run
+ *  from -j to j in increasing order (row 0 / column 0 correspond to -j).
+ *
+ *  Exposed separately from WignerD so beta-dependence can be computed once
+ *  and reused across many (alpha,gamma) calls at fixed (j,beta).
+ */
+uint32_t WignerSmallDMatrix(int twoj, double beta, CompactMatrixType * const d)
+{
+  int i, k, twomp, twom;
+
+  d->QComplex = 0;
+  d->Ni = twoj + 1;
+  d->Nj = twoj + 1;
+  if (InitCompactMatrix(d))
+  {
+    printf("InitCompactMatrix(d) failed in WignerSmallDMatrix\n");
+    return 1;
+  }
+  strcpy(d->Name, "Wigner small-d matrix");
+
+  for (i = 0; i <= twoj; i++)
+  {
+    twomp = -twoj + 2 * i;
+    for (k = 0; k <= twoj; k++)
+    {
+      twom = -twoj + 2 * k;
+      d->VRe[i * d->Nj + k] = WignerSmallD(twoj, twomp, twom, beta);
+    }
+  }
+  return 0;
+}
+
+/*
+ *  Wigner D-matrix, standard physics (Rose/Wigner) phase convention --
+ *  deliberately NOT the Wolfram/Mathematica convention, which flips the
+ *  sign of both outer phases:
+ *
+ *    D^{j}_{m'm}(alpha,beta,gamma) = < j m' | R(alpha,beta,gamma) | j m >
+ *    R(alpha,beta,gamma) = exp(-i alpha Jz) exp(-i beta Jy) exp(-i gamma Jz)
+ *                        = exp(-i m' alpha) d^{j}_{m'm}(beta) exp(-i m gamma)
+ *
+ *  twoj = 2j (integer, allows half-integer j).
+ *  D is filled as a (twoj+1) x (twoj+1) complex CompactMatrixType; row m'
+ *  and column m both run from -j to j in increasing order.
+ *
+ *  D must be an already declared but not yet initialized CompactMatrixType;
+ *  this function sets its dimensions, allocates it via InitCompactMatrix,
+ *  and fills it. Returns 0 on success, 1 on allocation failure.
+ */
+uint32_t WignerD(int twoj, double alpha, double beta, double gamma, CompactMatrixType * const D)
+{
+  CompactMatrixType dMat;
+  int    i, k, twomp, twom;
+  double calpha, salpha, cgamma, sgamma, dsmall;
+
+  if (WignerSmallDMatrix(twoj, beta, &dMat)) return 1;
+
+  D->QComplex = 1;
+  D->Ni = twoj + 1;
+  D->Nj = twoj + 1;
+  if (InitCompactMatrix(D))
+  {
+    printf("InitCompactMatrix(D) failed in WignerD\n");
+    FreeCompactMatrix(&dMat);
+    return 1;
+  }
+  strcpy(D->Name, "Wigner D matrix");
+
+  for (i = 0; i <= twoj; i++)
+  {
+    twomp  = -twoj + 2 * i;
+    calpha = cos(0.5 * twomp * alpha);
+    salpha = sin(0.5 * twomp * alpha);
+    for (k = 0; k <= twoj; k++)
+    {
+      twom   = -twoj + 2 * k;
+      cgamma = cos(0.5 * twom * gamma);
+      sgamma = sin(0.5 * twom * gamma);
+      dsmall = dMat.VRe[i * dMat.Nj + k];
+
+      /* exp(-i m' alpha) * d * exp(-i m gamma)
+       *   = (calpha - i salpha) * dsmall * (cgamma - i sgamma) */
+      D->V[i * D->Nj + k].Re =  dsmall * (calpha * cgamma - salpha * sgamma);
+      D->V[i * D->Nj + k].Im = -dsmall * (calpha * sgamma + salpha * cgamma);
+    }
+  }
+  FreeCompactMatrix(&dMat);
+  return 0;
+}

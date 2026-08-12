@@ -94,6 +94,68 @@ static int LuaTightBindingDerivative(lua_State * L)
   return 3;
 }
 
+/*  On stack l1, l2, {x,y,z}, {l1_l2_sigma, ...}
+ *  Return the Slater Koster hopping matrix elements as table on a basis of Kubic Harmonics
+ */
+static int LuaSlaterKosterTable(lua_State * L)
+{
+  double x,y,z;
+  double params[5];
+  
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=4)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected on stack l1, l2, {x,y,z} ,{hopping parameters}\nFound only %d parameters",len);
+  }
+  uint32_t l1 = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t l2 = (uint32_t)luaL_checkunsigned(L, 2);
+  if((l1>4)||(l2>4))
+  {
+    luaL_error(L,"Slater Koster Table only implemented for s,p,d,f and g orbitals");
+  }
+  luaL_checktype(L, 3, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 3);
+  if(len !=3)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected the directional cosins {x,y,z} on position 3 on the stack. Found a table with length %d\n",len);
+  }
+  lua_rawgeti(L, 3, 1);
+  x = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, 3, 2);
+  y = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, 3, 3);
+  z = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  if(Abs(x)+Abs(y)+Abs(z)==0)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, Hopping vector should not be {0,0,0}\n",len);
+  }
+  luaL_checktype(L,4, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 4);
+  if(len !=Min(l1,l2)+1)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected the hopping parameters on position 4 on the stack.\nThe number of hopping parameters should be Min(l1,l2)+1.\nFound a table with length %d\n",len);
+  }
+  for (int i=0;i<=Min(l1,l2);i++)
+  {
+    lua_rawgeti(L, 4, i+1);
+    params[i] = (double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  CompactMatrixType *H;
+  H = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if( SlaterKosterTable(l1, l2, x, y, z, params, H) )
+  {
+    luaL_error(L, "SlaterKosterTable failed\nFatal Error\n");
+  }
+  luaL_setmetatable(L, "Matrix_Type");
+  H->OnLuaStack=true;
+  return 1;
+}
+
+
 
 static int LuaFileReadStuttgartCTRL(lua_State * L)
 {
@@ -2225,7 +2287,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   }
   // read H
   lua_rawgeti(L, narg, 4);
-  if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
+  if((lua_type(L,-1)!=LUA_TTABLE) && (luaL_testudata(L, -1, "Matrix_Type") == NULL) ) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
   //TODO: check if dimension of H->Hop corresponds to the size of the atoms known in the structure
   
@@ -2675,13 +2737,14 @@ static int LuaDresdenFPLODestroy(lua_State * L)
 }
 
 static const struct luaL_Reg TightBinding_func[] = {
-  {"New",            LuaNewTightBinding},
-  {"Chop",           LuaTightBindingChop},
-  {"Copy",           LuaTightBindingCopy},
-  {"AddSpin",        LuaTightBindingAddSpin},
-  {"Derivative",     LuaTightBindingDerivative},
-  {"CalculateG",     LuaCalculateG},
-  {"CalculateBands", LuaCalculateBands},
+  {"New",               LuaNewTightBinding},
+  {"Chop",              LuaTightBindingChop},
+  {"Copy",              LuaTightBindingCopy},
+  {"AddSpin",           LuaTightBindingAddSpin},
+  {"Derivative",        LuaTightBindingDerivative},
+  {"CalculateG",        LuaCalculateG},
+  {"CalculateBands",    LuaCalculateBands},
+  {"SlaterKosterTable", LuaSlaterKosterTable},
   {NULL, NULL}
 };
   
