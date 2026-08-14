@@ -48,3 +48,42 @@ int IndexToBitMask(int NF, int *Index, int len, char**BitMask)
   }
   return 0;
 }
+
+
+/* Looks up Name in PhysicalConstants (SI units) and returns its value.
+ * Returns 0 and sets *Value if found, 1 (leaving *Value untouched)
+ * otherwise. Uses sizeof(PhysicalConstants) rather than a stored
+ * count, so this stays correct as entries are added, removed, or
+ * reordered. */
+int GetPhysicalConstant(const char *Name, double *Value)
+{
+  size_t N = sizeof(PhysicalConstants)/sizeof(PhysicalConstants[0]);
+  size_t i;
+  for(i=0;i<N;i++)
+    if(strcmp(PhysicalConstants[i].name,Name)==0)
+    {
+      *Value = PhysicalConstants[i].value;
+      return 0;
+    }
+  return 1;
+}
+
+
+/* Looks up Name in EnergyUnits (matching either namelong or
+ * nameshort, e.g. "electron Volt" or "eV") and returns its value in
+ * Joule. Returns 0 and sets *Value if found, 1 (leaving *Value
+ * untouched) otherwise. Uses sizeof(EnergyUnits) rather than a stored
+ * count, so this stays correct as entries are added, removed, or
+ * reordered. */
+int GetEnergyUnit(const char *Name, double *Value)
+{
+  size_t N = sizeof(EnergyUnits)/sizeof(EnergyUnits[0]);
+  size_t i;
+  for(i=0;i<N;i++)
+    if(strcmp(EnergyUnits[i].namelong,Name)==0 || strcmp(EnergyUnits[i].nameshort,Name)==0)
+    {
+      *Value = EnergyUnits[i].value;
+      return 0;
+    }
+  return 1;
+}

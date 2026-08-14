@@ -2620,6 +2620,15 @@ static int LuaTightBindingToString(lua_State * L)
   return 1;
 }
 
+static int LuaCrystalStructureToCIF(lua_State *L)
+{
+  char *Buffer;
+  TightBindingDef *res = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  CrystalStructureTypeToCif(&(res->Cell), &Buffer);
+  lua_pushstring(L, Buffer);
+  free(Buffer);
+  return 1;
+}
 
 static int LuaTightBindingCall(lua_State * L)
 {
@@ -2745,6 +2754,7 @@ static const struct luaL_Reg TightBinding_func[] = {
   {"CalculateG",        LuaCalculateG},
   {"CalculateBands",    LuaCalculateBands},
   {"SlaterKosterTable", LuaSlaterKosterTable},
+  {"ExportCIF",         LuaCrystalStructureToCIF},
   {NULL, NULL}
 };
   

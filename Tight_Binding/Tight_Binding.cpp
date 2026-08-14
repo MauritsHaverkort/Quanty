@@ -4,6 +4,7 @@
 #include "../Tight_Binding/ImpurityUnfolding.cpp"
 #include "../Tight_Binding/StuttgartNMTO.cpp"
 #include "../Tight_Binding/DresdenFPLO.cpp"
+#include "../Tight_Binding/Cif.cpp"
 
 
 

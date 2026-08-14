@@ -1,4 +1,5 @@
 uint32_t AtomNameToNumber(const char* Name);
+const char *AtomNumberToName(uint32_t Z);
 int FreeAtomType(AtomType *A);
 int FreeCrystalStructureType(CrystalStructureType *A);
 int FreeTightBindingDef(TightBindingDef * A);
