@@ -5308,8 +5308,8 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
     {
       for(j=0;j<=i;j++)
       {
-        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>((fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re)*epsilon+DBL_MIN*100))) return 0;
-        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>((fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im)*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+DBL_MIN*100) return 0;
+        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+DBL_MIN*100) return 0;
       }
     }
   }
