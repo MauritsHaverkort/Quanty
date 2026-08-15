@@ -210,7 +210,7 @@ void MatrixChop(MatrixType * const M, double const epsilon)
           QStillComplex = 1;
       }
     }
-    if (QStillComplex == 0)
+    if ((QStillComplex == 0) && (M->Ni!=0) && (M->Nj!=0) )
     {
       free(M->VIm[0]);
       free(M->VIm);

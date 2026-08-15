@@ -903,6 +903,49 @@ static int LuaCalculateG(lua_State *L)
   return 1;
 }
 
+static int LuaCalculateMu(lua_State *L)
+{
+  uint32_t len;
+  TightBindingDef *A;
+  len = (uint32_t)lua_gettop(L);
+  A = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  int NStateEF, NoccEF;
+  double mu, Emin, Emax, gap;
+  struct
+  {
+    int *Nk;
+    double nd;
+    double kBT;
+    //char* Method;   //only method implemented is the mesh/grid.
+  } Options;
+  Options.Nk = (int*)malloc(3*sizeof(int));
+  Options.Nk[0]=40;
+  Options.Nk[1]=40;
+  Options.Nk[2]=40;
+  Options.nd =0.5 * A->NFermion;
+  Options.kBT=1E-10;
+  LuaOptionsType LuaCalculateMuOptions[]={
+    {"Nk", "array-uint32_t-3", &(Options.Nk)},
+    {"n", "double"           , &(Options.nd)},
+    {"kbT","double"          , &(Options.kBT)},
+    {"kBT","double"          , &(Options.kBT)},
+    {NULL, NULL, NULL}};
+  if (LuaTestOptionsList(L,len))
+  {
+    LuaCheckOptions(L,len,LuaCalculateMuOptions);
+    len--;
+  }
+  TightBindingDetermineMu(A, Options.Nk, Options.nd, Options.kBT, &mu, &Emin, &Emax, &gap, &NStateEF, &NoccEF);
+  lua_pushnumber(L,mu);
+  lua_pushnumber(L,Emin);
+  lua_pushnumber(L,Emax);
+  lua_pushnumber(L,gap);
+  lua_pushnumber(L,NStateEF);
+  lua_pushnumber(L,NoccEF);
+  return 6;
+}
+
+
 
 /* Calculate the Density matrix from a given tight-binding Hamiltonian.
  * Input on stack:
@@ -2289,10 +2332,13 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   lua_rawgeti(L, narg, 4);
   if((lua_type(L,-1)!=LUA_TTABLE) && (luaL_testudata(L, -1, "Matrix_Type") == NULL) ) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
-  //TODO: check if dimension of H->Hop corresponds to the size of the atoms known in the structure
-  
-  
-  
+  if( (H->Hop.Ni!=Cell->Atom[H->Atompos1].shelldegeneracy[H->Shellpos1]) || (H->Hop.Nj!=Cell->Atom[H->Atompos2].shelldegeneracy[H->Shellpos2]) )
+  {
+    printf("Matrix found\n");
+    PrintMatrix(H->Hop);
+    printf("Expected dimension, %d %d\n",Cell->Atom[H->Atompos1].shelldegeneracy[H->Shellpos1],Cell->Atom[H->Atompos2].shelldegeneracy[H->Shellpos2]);
+    return luaL_error(L, "ReadHopping found inconsistency in matrix defining the hopping");
+  }
   lua_pop(L,1);
   return 0;
 }
@@ -2752,6 +2798,7 @@ static const struct luaL_Reg TightBinding_func[] = {
   {"AddSpin",           LuaTightBindingAddSpin},
   {"Derivative",        LuaTightBindingDerivative},
   {"CalculateG",        LuaCalculateG},
+  {"CalculateMu",       LuaCalculateMu},
   {"CalculateBands",    LuaCalculateBands},
   {"SlaterKosterTable", LuaSlaterKosterTable},
   {"ExportCIF",         LuaCrystalStructureToCIF},

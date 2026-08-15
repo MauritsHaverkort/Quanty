@@ -988,6 +988,160 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
   return 0;
 }
 
+/*    A is a tight binding definition
+ *    Nk the number of k-points in the a, b and c direction
+ *    val an array of doulbes of length Nk[0]*Nk[1]*Nk[2]*A->NFermion
+ */
+int TightBindingEigenValues(TightBindingDef const * const A, int Nk[3], double * val)
+{
+  MatrixType H;
+  double q[3], diq[3];
+  int    iq[3];
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A->Cell.gUnitCell[0][0] + diq[1] * A->Cell.gUnitCell[1][0] + diq[2] * A->Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A->Cell.gUnitCell[0][1] + diq[1] * A->Cell.gUnitCell[1][1] + diq[2] * A->Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A->Cell.gUnitCell[0][2] + diq[1] * A->Cell.gUnitCell[1][2] + diq[2] * A->Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*A, q, &H);
+        Eigenvalues(H, &(val[(iq[2]+iq[1]*Nk[2]+iq[0]*Nk[2]*Nk[1]) * A->NFermion]));
+        FreeMatrix(&H);
+      }
+    }
+  }
+  qsort(val, Nk[0]*Nk[1]*Nk[2]*A->NFermion, sizeof(double), &qsortcomparedoubles);
+  return 0;
+}
+
+/* First index i in eps[0..Ntot-1] (ascending) with eps[i] >= value.
+   Equivalent to std::lower_bound. */
+size_t LowerBound(const double* eps, size_t Ntot, double value)
+{
+  size_t mid, lo = 0, hi = Ntot;
+  while (lo < hi)
+  {
+    mid = lo + (hi - lo) / 2;
+    if (eps[mid] < value)
+    {
+      lo = mid + 1;
+    }
+    else
+    {
+      hi = mid;
+    }
+  }
+  return lo;
+}
+
+void OccupationAndDerivative(const double* val, size_t Ntot, double mu, double kbT, double* N, double* dNdmu)
+{
+  double f;
+  double cutoff = 40.0 * kbT;
+  size_t lo = LowerBound(val, Ntot, mu - cutoff);
+  size_t hi = LowerBound(val, Ntot, mu + cutoff);
+  size_t i;
+  *N = (double)lo;   /* fully occupied levels below the window */
+  *dNdmu = 0.0;
+  for (i = lo; i < hi; ++i)
+  {
+    f = FermiFunction(val[i], mu, kbT);
+    *N += f;
+    *dNdmu += f * (1.0 - f);
+  }
+  if (kbT > 0.0) *dNdmu /= kbT;
+}
+
+/* Safeguarded Newton (rtsafe-style) for mu(kbT, Ntarget).
+   Ntot, Nd must be > 0; caller is expected to check. */
+double ChemicalPotential(const double* eps, size_t Ntot, double Nd, double kBT, double tol, int maxIter)
+{
+  size_t N=lround(Nd);
+  double mu, mu_lo, mu_hi;
+  int iter;
+  if (kBT <= 0)
+  {
+    if (Nd <= 0) return eps[0] - 1.0;
+    if (Nd >= Ntot) return eps[Ntot - 1] + 1.0;
+    return 0.5 * (eps[N - 1] + eps[N]);
+  }
+  if (Nd <= 0) return eps[0] - 1.0 - 40*kBT;
+  if (Nd >= Ntot) return eps[Ntot-1] + 1.0 + 40*kBT;
+  if(N==0)
+  {
+    mu = eps[0];
+    mu_lo = eps[0] - 40 * kBT;
+    mu_hi = eps[0] + 40 * kBT;
+  }
+  else
+  {
+    mu =  0.5 * (eps[N - 1] + eps[N]);
+    mu_lo = eps[N-1] - 40 * kBT;
+    mu_hi = eps[N]   + 40 * kBT;
+  }
+  for (iter = 0; iter < maxIter; ++iter)
+  {
+    double Nmu, dNdmu, F, muNext;
+    OccupationAndDerivative(eps, Ntot, mu, kBT, &Nmu, &dNdmu);
+    F = Nmu - N;
+    if (fabs(F) < tol) return mu;
+    if (F > 0.0) mu_hi = mu; else mu_lo = mu;
+    if (dNdmu > 0.0) muNext = mu - F / dNdmu; else muNext = 0.5 * (mu_lo + mu_hi);
+    if (muNext <= mu_lo || muNext >= mu_hi) muNext = 0.5 * (mu_lo + mu_hi); /* Newton left the bracket */
+    mu = muNext;
+  }
+  return mu;
+}
+
+
+/*
+ *
+ */
+int TightBindingDetermineMu(TightBindingDef const * const A, int Nk[3], double nd, double kBT, double *mu, double *Emin, double *Emax, double *gap, int *NStateEF, int *NoccEF)
+{
+  double *val;
+  const double tol = 1E-14;
+  const int maxIter = 200;
+  int i;
+  size_t N;
+  const size_t Ntot = (size_t)(Nk[0]*Nk[1]*Nk[2]*A->NFermion);
+  val = (double*)malloc(sizeof(double)*Nk[0]*Nk[1]*Nk[2]*A->NFermion);
+  TightBindingEigenValues(A, Nk, val);
+  *Emin = val[0];
+  *Emax = val[Nk[0]*Nk[1]*Nk[2]*A->NFermion-1];
+  *mu = ChemicalPotential(val, Ntot, nd * (Nk[0]*Nk[1]*Nk[2]), kBT, tol, maxIter);
+  N=floorl( nd * (Nk[0]*Nk[1]*Nk[2]) * (1+DBL_EPSILON));
+  if(N+1<Ntot)
+  {
+    *gap = val[N+1] - val[N];
+  }
+  else
+  {
+    *gap=INFINITY;
+  }
+  if(N>=Ntot)
+  {
+    *NStateEF=0;
+    *NoccEF=0;
+  }
+  else
+  {
+    i=1;
+    while( (N>i) && (val[N] - val[N-i] < tol)) i++;
+    *NStateEF=i;
+    *NoccEF=i;
+    i=1;
+    while( (N+i<Ntot) && (val[N+i] - val[N] < tol)) i++;
+    *NStateEF+=(i-1);
+  }
+  free(val);
+  return 0;
+}
 
 /*
  *

@@ -52,6 +52,7 @@ uint32_t MatrixToTriDiagonalMatrix(MatrixType const M, MatrixType * const T, Tri
 uint32_t MatrixToTriDiagonalMatrixNonOrthogonal(MatrixType const M, TriDiagonalMatrixType * const H);
 uint32_t Eigensystem(MatrixType const M, MatrixType * const T, double *val);
 uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *val);
+uint32_t Eigenvalues(MatrixType const M, double *val);
 uint32_t EigensystemToCompact(MatrixType const M, CompactMatrixType * const T, double *val);
 uint32_t GeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot,  double *val);
 uint32_t MatrixToGeneralizedEigensystem(MatrixType const M, MatrixType const S, MatrixType * const T, MatrixType * const Sroot, double *val);

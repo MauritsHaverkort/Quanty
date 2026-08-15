@@ -48,6 +48,7 @@ int TightBindingFermiCharacter(TightBindingDef A, double Emin, double Emax, int 
 int TightBindingFermiCharacterUnfolding(TightBindingDef A, double Emin, double Emax, int NE, double k0[3], double k1[3], double k2[3], int Nk1, int Nk2, MatrixType Fermi[], int Ncharacter, int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *));
 int TightBindingDOSCharacter(TightBindingDef A, int Nk[3], SpectraType * DOS, int Ncharacter, int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *));
 int TightBindingBANDSCharacter(TightBindingDef A, BandstructurePathType kList, MatrixType * BANDS, int Ncharacter, MatrixType Character[], int (*EigenFunctionToCharacters) (TightBindingDef, MatrixType, double *, MatrixType, MatrixType *));
+int TightBindingDetermineMu(TightBindingDef const * const A, int Nk[3], double nd, double kBT, double *mu, double *Emin, double *Emax, double *gap, int *NStateEF, int *NoccEF);
 uint32_t CreateUSuperCell(OperatorType U, OperatorType * USuperCell, CrystalStructureSuperCellType SuperCell);
 int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCellType SuperCell, CrystalStructureType * Cell);
 int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, CrystalStructureSuperCellType SuperCell);
