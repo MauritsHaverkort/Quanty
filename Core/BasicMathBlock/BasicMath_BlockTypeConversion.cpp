@@ -970,6 +970,55 @@ uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles c
 }
 
 
+/*  Given a Green's function in a block list of poles representation
+ *    G = A0 + sum_i B_i / (w - a_i)
+ *  the one particle density matrix of the block is
+ *    rho = sum_i f(a_i, mu, kbT) B_i
+ *  with f the Fermi function. A pole exactly at mu is counted half.
+ *  The constant offset A0 carries no spectral weight and does not contribute to rho.
+ *  rho is a matrix of size BlockSize by BlockSize
+ */
+uint32_t BlockListOfPolesToDensityMatrix(BlockListOfPoles const * const A, CompactMatrixType * const rho, double const mu, double const kbT)
+{
+  uint32_t i, k, itot=0, NBlock=Sqr(A->BlockSize);
+  double weigth;
+  rho->Ni=A->BlockSize;
+  rho->Nj=A->BlockSize;
+  rho->QComplex=A->QComplex;
+  InitCompactMatrix(rho);
+  rho->mu=mu;
+  strncpy(rho->Name, A->Name, MAXStrLength);
+  if(A->QComplex)
+  {
+    for(i=0;i<A->N;i++)
+    {
+      weigth = FermiFunction(A->V[itot].Re, mu, kbT);
+      itot++;
+      for(k=0;k<NBlock;k++)
+      {
+        rho->V[k].Re += weigth * A->V[itot].Re;
+        rho->V[k].Im += weigth * A->V[itot].Im;
+        itot++;
+      }
+    }
+  }
+  else
+  {
+    for(i=0;i<A->N;i++)
+    {
+      weigth = FermiFunction(A->VRe[itot], mu, kbT);
+      itot++;
+      for(k=0;k<NBlock;k++)
+      {
+        rho->VRe[k] += weigth * A->VRe[itot];
+        itot++;
+      }
+    }
+  }
+  return 0;
+}
+
+
 /*  =========================================================================
  *  BlockAndersonMatrixType to __
  *  ========================================================================= */

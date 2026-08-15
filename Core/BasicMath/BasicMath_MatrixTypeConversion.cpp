@@ -4020,6 +4020,31 @@ uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, Matrix
 /****************************************************************************/
 
 
+/*  Given a Green's function in a list of poles representation
+ *    g = a0 + sum_i b_i / (w - a_i)
+ *  the occupation is
+ *    rho = sum_i f(a_i, mu, kbT) b_i
+ *  with f the Fermi function. A pole exactly at mu is counted half.
+ *  The constant offset a0 carries no spectral weight and does not contribute to rho.
+ *  rho is returned as a 1 by 1 matrix such that the scalar and the block case return the same type
+ */
+uint32_t ListOfPolesToDensityMatrix(ListOfPoles const M, CompactMatrixType * const rho, double const mu, double const kbT)
+{
+  uint32_t i;
+  rho->Ni=1;
+  rho->Nj=1;
+  rho->QComplex=0;
+  InitCompactMatrix(rho);
+  rho->mu=mu;
+  strncpy(rho->Name, M.Name, MAXStrLength);
+  for(i=0;i<M.N;i++)
+  {
+    rho->VRe[0] += FermiFunction(M.a[i], mu, kbT) * M.b[i];
+  }
+  return 0;
+}
+
+
 /*
  *
  */

@@ -971,18 +971,28 @@ static int LuaCalculateMu(lua_State *L)
 
 
 
-/* Calculate the Density matrix from a given tight-binding Hamiltonian.
+/* Calculate the Density matrix from a given tight-binding Hamiltonian or from a given
+ * Green's function represented as a response function.
  * Input on stack:
  *   TB : TightBinding_Type
  *   Options
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
+ *  or
+ *   G  : ResponseFunction_Type
+ *   Options (see LuaResponseFunctionCalculateRho)
  */
 static int LuaCalculateRho(lua_State *L)
 {
   uint32_t len;
   TightBindingDef *a;
   CompactMatrixType *rho;
-  
+
+  /* a Green's function is handled by the response function version of CalculateRho */
+  if(luaL_testudata(L, 1, "TightBinding_Type") == NULL)
+  {
+    return LuaResponseFunctionCalculateRho(L);
+  }
+
   struct
   {
     int *Nk;

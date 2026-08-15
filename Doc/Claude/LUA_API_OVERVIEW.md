@@ -107,6 +107,11 @@ Source: `global_functions[]` in `LuaInterface/ssp.cpp`, registered via
 A handful of entries are commented out in the source (dead but present as intent): `CalculateBands`,
 `CalculateFermi`, `EvolveToGroundstate`, `Help`, `ImpurityGreensFunction`.
 
+`CalculateRho` dispatches on the type of its first argument: a `TightBinding_Type` is handled in
+`LuaCalculateRho` (`TightBinding.cpp`), anything else is passed on to
+`LuaResponseFunctionCalculateRho` (`ResponseFunction.cpp`), which is also reachable as
+`ResponseFunction.CalculateRho`.
+
 ### Standard math functions promoted to globals
 
 `luaopen_ssp` also calls `luaMWH_RegisterGlobalFunctions(L, mathlib)`, where `mathlib` is Lua's own
@@ -228,6 +233,7 @@ is the operator-overload metatable; every named method/property is hand-dispatch
   `ToTable→LuaResponseFunctionToTable`, `ToMatrix→LuaResponseFunctionToCompactMatrix`,
   `ToSpectra→LuaResponseFunctionToSpectra`, `ToUserdata→LuaResponseFunctionToUserdata`,
   `ToTightBinding→LuaResponseFunctionToTightBinding`, `ToOperator→LuaResponseFunctionToOperator`,
+  `CalculateRho→LuaResponseFunctionCalculateRho`,
   `CalculateSelfEnergy→LuaCalculateSelfEnergy`,
   `CalculateHybridizationFunction→LuaCalculateHybridizationFunction`,
   `CalculateGfromG0andSigma→LuaCalculateGfromG0andSigma`,

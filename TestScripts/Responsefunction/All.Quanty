@@ -12,6 +12,7 @@ dofile(directory.."/__div.Quanty")
 dofile(directory.."/__call.Quanty")
 
 dofile(directory.."/CalculateHybridizationFunction.Quanty")
+dofile(directory.."/CalculateRho.Quanty")
 dofile(directory.."/CalculateSelfEnergy.Quanty")
 dofile(directory.."/ChangeType.Quanty")
 dofile(directory.."/Chop.Quanty")
