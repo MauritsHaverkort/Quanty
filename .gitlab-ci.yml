@@ -235,6 +235,7 @@ test-jobs-tightbinding:
           - "Derivative"
           - "New"
           - "PhaseTests"
+          - "ShiftOnsiteEnergy"
           - "SlaterKoster"
           - "UnitTest"
   script:
