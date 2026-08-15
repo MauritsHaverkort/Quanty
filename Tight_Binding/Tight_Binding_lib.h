@@ -7,6 +7,7 @@ int InitTigthBindingDef(TightBindingDef *A);
 int CopyTightBindingDef(TightBindingDef const *const A, TightBindingDef *const B);
 int ChopTightBindingDefSize(TightBindingDef *const A,  double const epsilon);
 int ChopTightBindingDefDistance(TightBindingDef *const A,  double const distance);
+int TightBindingShiftOnsiteEnergy(TightBindingDef *const A, double const shift);
 int CopyAtomType(const AtomType *const A, AtomType *B);
 int CopyAtomTypeAddSpin(const AtomType *const A, AtomType *B);
 bool QInteger(double x, double epsilon);

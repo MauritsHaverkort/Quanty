@@ -214,6 +214,108 @@ int ChopTightBindingDefDistance(TightBindingDef *const A,  double const distance
   return 0;
 }
 
+/*  Shift the onsite energy of all shells by shift, i.e. H -> H + shift * 1
+ *
+ *  The onsite ellements are the hopping ellements that connect a shell to itself
+ *  within one and the same unit cell, i.e. Atompos1==Atompos2, Shellpos1==Shellpos2
+ *  and TransVecs=={0,0,0}. Hopping ellements between two different shells of the same
+ *  atom have a connecting vector of zero as well, but are not diagonal in orbital
+ *  space and are thus not shifted.
+ *
+ *  Each shell is shifted exactly once. A tight binding definition need not contain an
+ *  onsite ellement for every shell (a shell with zero onsite energy is often simply
+ *  not listed) and it may contain the same onsite ellement more than once (the
+ *  Hamiltonian adds them). We therefore loop over the shells and not over the hopping
+ *  ellements, shift the first onsite ellement found, and create one if there is none.
+ */
+int TightBindingShiftOnsiteEnergy(TightBindingDef *const A, double const shift)
+{
+  uint32_t iAtom, i;
+  int    iShell, iH, nMissing, nHOld;
+  bool   found;
+  /*  count the shells without an onsite ellement first, such that the list of hopping
+   *  ellements can be enlarged in one go. It can not be enlarged in blocks as it is
+   *  allocated at exactly nH ellements by CopyTightBindingDef and by the lua interface
+   */
+  nMissing = 0;
+  for (iAtom = 0; iAtom < A->Cell.NAtoms; iAtom++)
+  {
+    for (iShell = 0; iShell < A->Cell.Atom[iAtom].Nshell; iShell++)
+    {
+      found = false;
+      for (iH = 0; iH < A->nH; iH++)
+      {
+        if(   (A->H[iH].Atompos1     == (int)iAtom ) && (A->H[iH].Atompos2  == (int)iAtom )
+           && (A->H[iH].Shellpos1    == iShell     ) && (A->H[iH].Shellpos2 == iShell     )
+           && (A->H[iH].TransVecs[0] == 0) && (A->H[iH].TransVecs[1] == 0) && (A->H[iH].TransVecs[2] == 0) )
+        {
+          found = true;
+          break;
+        }
+      }
+      if (found == false) nMissing++;
+    }
+  }
+  nHOld = A->nH;
+  if (nMissing != 0)
+  {
+    A->H = (TightBindingDefHopping*)realloc(A->H, (nHOld + nMissing) * sizeof(TightBindingDefHopping));
+    if ((A->H) == NULL)
+    {
+      printf("Error in TightBindingShiftOnsiteEnergy\nrealloc failed for A->H\nI will crash soon\n");
+      return 1;
+    }
+  }
+  for (iAtom = 0; iAtom < A->Cell.NAtoms; iAtom++)
+  {
+    for (iShell = 0; iShell < A->Cell.Atom[iAtom].Nshell; iShell++)
+    {
+      found = false;
+      for (iH = 0; iH < nHOld; iH++)
+      {
+        if(   (A->H[iH].Atompos1     == (int)iAtom ) && (A->H[iH].Atompos2  == (int)iAtom )
+           && (A->H[iH].Shellpos1    == iShell     ) && (A->H[iH].Shellpos2 == iShell     )
+           && (A->H[iH].TransVecs[0] == 0) && (A->H[iH].TransVecs[1] == 0) && (A->H[iH].TransVecs[2] == 0) )
+        {
+          for (i = 0; i < A->H[iH].Hop.Ni; i++)
+          {
+            A->H[iH].Hop.VRe[i][i] += shift;
+          }
+          found = true;
+          break;
+        }
+      }
+      if (found == false)
+      {
+        /*  no onsite ellement defined for this shell, create one containing shift * 1
+         *  the connecting vector of an onsite ellement is zero for absolute as well as
+         *  for relative units
+         */
+        A->H[A->nH].Atompos1  = iAtom;
+        A->H[A->nH].Shellpos1 = iShell;
+        A->H[A->nH].Atompos2  = iAtom;
+        A->H[A->nH].Shellpos2 = iShell;
+        A->H[A->nH].TransVecs[0] = 0;
+        A->H[A->nH].TransVecs[1] = 0;
+        A->H[A->nH].TransVecs[2] = 0;
+        A->H[A->nH].ConnectingVector[0] = 0;
+        A->H[A->nH].ConnectingVector[1] = 0;
+        A->H[A->nH].ConnectingVector[2] = 0;
+        A->H[A->nH].Hop.Ni = A->Cell.Atom[iAtom].shelldegeneracy[iShell];
+        A->H[A->nH].Hop.Nj = A->Cell.Atom[iAtom].shelldegeneracy[iShell];
+        A->H[A->nH].Hop.QComplex = 0;
+        InitMatrix(&(A->H[A->nH].Hop));
+        for (i = 0; i < A->H[A->nH].Hop.Ni; i++)
+        {
+          A->H[A->nH].Hop.VRe[i][i] = shift;
+        }
+        A->nH++;
+      }
+    }
+  }
+  return 0;
+}
+
 /*   In (A) is a pointer to an allocated and defined TightBindingDefinition
  *   Out (B) is a pointer to an allocated TightBindingDefinition
  *   Out becomes a TightBindingDefinition with
@@ -2906,8 +3008,8 @@ uint32_t RemoveCrystalInformationFromTightBinding(TightBindingDef *TB, TightBind
     {
       // absolute positions
       StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][0])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][0])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][0]));
-      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][1]));
-      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][2]));
+      StripedTB->H[StripedTB->nH].ConnectingVector[1] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][1]));
+      StripedTB->H[StripedTB->nH].ConnectingVector[2] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][2]));
     }
     else
     {

@@ -80,6 +80,30 @@ static int LuaTightBindingAddSpin(lua_State * L)
   return 1;
 }
 
+/*  TightBinding.ShiftOnsiteEnergy(TB, dE) leaves TB untouched and returns a shifted copy
+ */
+static int LuaTightBindingShiftOnsiteEnergy(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  double shift = (double)luaL_checknumber(L, 2);
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  TightBindingShiftOnsiteEnergy(TBNew, shift);
+  return 1;
+}
+
+/*  TB.ShiftOnsiteEnergy(dE) shifts TB itself, TB is the upvalue set in LuaTightBindingIndex
+ */
+static int LuaTightBindingShiftOnsiteEnergyMethod(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, lua_upvalueindex(1), "TightBinding_Type");
+  double shift = (double)luaL_checknumber(L, 1);
+  TightBindingShiftOnsiteEnergy(TB, shift);
+  return 0;
+}
+
 static int LuaTightBindingDerivative(lua_State * L)
 {
   TightBindingDef *TBDx, *TBDy, *TBDz;
@@ -2467,6 +2491,12 @@ static int LuaTightBindingIndex(lua_State * L)
     lua_pushinteger(L, a->NFermion);
     return 1;
   }
+  else if (strcmp(str, "ShiftOnsiteEnergy")==0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaTightBindingShiftOnsiteEnergyMethod, 1);
+    return 1;
+  }
   return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
 }
 
@@ -2797,6 +2827,7 @@ static const struct luaL_Reg TightBinding_func[] = {
   {"Copy",              LuaTightBindingCopy},
   {"AddSpin",           LuaTightBindingAddSpin},
   {"Derivative",        LuaTightBindingDerivative},
+  {"ShiftOnsiteEnergy", LuaTightBindingShiftOnsiteEnergy},
   {"CalculateG",        LuaCalculateG},
   {"CalculateMu",       LuaCalculateMu},
   {"CalculateBands",    LuaCalculateBands},
