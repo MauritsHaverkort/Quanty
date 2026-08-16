@@ -3022,8 +3022,10 @@ uint32_t MatrixToCompactMatrix(MatrixType *A, CompactMatrixType *B)
     }
     if((A->Ni!=0)&&(A->Nj!=0))
     {
+      free(A->VRe[0]);
       free(A->VRe);
-      free(A->VRe);
+      free(A->VIm[0]);
+      free(A->VIm);
     }
   }
   B->a0=A->a0;
