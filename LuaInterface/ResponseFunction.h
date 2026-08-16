@@ -1,4 +1,5 @@
 static int LuaChangeTypeResponseFunction(lua_State *L);
+static int LuaResponseFunctionCalculateRho(lua_State *L);
 static int LuaResponseFunctionToUserdata(lua_State *L);
 static int LuaResponseFunctionToTable(lua_State *L);
 static int LuaReducePolesResponseFunction(lua_State *L);

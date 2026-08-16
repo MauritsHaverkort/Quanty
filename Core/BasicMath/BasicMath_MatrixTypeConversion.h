@@ -69,6 +69,7 @@ uint32_t MatrixToBlokTriDiagonalMatrix(MatrixType const M, MatrixType * const T,
 uint32_t MatrixToBlokAndersonMatrix(MatrixType const M, MatrixType * const T, BlokAndersonMatrixType * const H, const uint32_t BlokDim);
 uint32_t MatrixToDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval, MatrixType * const Tcon, DoubleTriDiagonalMatrixType * const H, double const Ef);
 uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, MatrixType * const Tval, MatrixType * const Tcon, BlokDoubleTriDiagonalMatrixType * const H, const uint32_t BlokDim, double const Ef);
+uint32_t ListOfPolesToDensityMatrix(ListOfPoles const M, CompactMatrixType * const rho, double const mu, double const kbT);
 uint32_t ListOfPolesToEigensystemCompact(const ListOfPoles * const A, double * val, CompactMatrixType * const T);
 uint32_t ListOfPolesToCompactMatrix(const ListOfPoles * const A, CompactMatrixType * const AM);
 uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDiagonalMatrixType * const M, uint32_t NTriDiag);

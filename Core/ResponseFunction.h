@@ -2,6 +2,8 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
 uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
 uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
 uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
+double ResponseFunctionGetMu(const ResponsefunctionType *const a);
+uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactMatrixType *rho, double mu, double kbT);
 int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G0, const ResponsefunctionType *const Sigma, ResponsefunctionType * G, double Epsilon);
 int ResponseFunctionAddSelfEnergyDenseTriTriLP(const TriDiagonalMatrixType *const G0, const TriDiagonalMatrixType *const Sigma, ListOfPoles * G);
 int ResponseFunctionAddSelfEnergyDenseBlockTriTriLP(const BlockTriDiagonalMatrixType *const G0, const BlockTriDiagonalMatrixType *const Sigma, BlockListOfPoles * G);
