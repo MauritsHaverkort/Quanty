@@ -212,4 +212,19 @@ Rho=CalculateRho(HClTB,{{"Nk",{Nx,Ny,Nz}}})
 --Check some basics of Rho
 checkPhysicalRho(Rho,Nx*Ny*Nz*Norbs)
 
+
+
+--CalculateRho also accepts a Green's function represented as a response function
+--the details are tested in TestScripts/Responsefunction/CalculateRho.Quanty
+a = {0, -2, -1, 1, 2}
+b = {   0.1, 0.2, 0.15, 0.05}
+G = {a,b,mu=0,type="ListOfPoles", name="scalar"}
+setmetatable(G, ResponseFunctionMeta)
+G = ResponseFunction.ToUserdata(G)
+
+Rho=CalculateRho(G)
+print(Rho)
+assert(Chop(Matrix.ToTable(Rho)[1][1]-0.3)==0,"Error: Rho of a response function is wrong")
+
+
 print("Test for Calculate Rho is passed")

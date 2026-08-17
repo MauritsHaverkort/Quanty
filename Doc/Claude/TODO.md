@@ -133,3 +133,81 @@ core.
 `GraphicsType`, `LineType`, `CurveType`, `ArcType`, `TextType`, `BitMapType` and
 the plot option structs now live with the plotting code, independent of the
 physics. More of this separation is intended.
+
+
+## Tight binding models with `Units = "Relative"`
+
+**Status:** open. One confirmed bug with a known one-token fix, held back
+because it sits inside a larger unresolved convention question. Needs
+attention; normal use is `Absolute`, which is the default and is unaffected.
+
+`TightBindingDefHopping.ConnectingVector` (`Core/StructDef.cpp:1005`) is the
+vector from atom 1 to atom 2 of a hopping, atom 2 taken in its translated cell:
+
+    ConnectingVector = TransVecs·(a,b,c) + Pos2 - Pos1
+
+That definition is fixed by the absolute-units branch of `LuaReadHopping`
+(`LuaInterface/TightBinding.cpp:2289` and `:2296`), and `CreateClusterHamiltonian`
+depends on it — it matches hoppings by testing `ConnectingVector == Position[j] -
+Position[i]` (`LuaInterface/TightBinding.cpp:1704`) against a cluster it has
+forced to absolute positions (`:1572`). So `ConnectingVector` is meant to be
+**Cartesian, always**, whatever the model's `Units`.
+
+### The confirmed bug
+
+`LuaInterface/TightBinding.cpp:2327`, the relative-units branch, reads
+
+    Cell->Atom[H->Atompos2].Position[j] - Cell->Atom[H->Atompos2].Position[j]
+
+`Atompos2` twice. The difference is identically zero, so the intra-cell atom
+offset drops out and `ConnectingVector` collapses to `TransVecs·(a,b,c)`. The
+fix is to make the second one `Atompos1`.
+
+Measured on one physical model written both ways — simple cubic `a = 4`, atom A
+at the origin, atom B at `(2,0,0)` = `(0.5,0,0)` in units of `a,b,c`, hopping
+A→B within the cell and to the cell at `+a`:
+
+| | bond within cell | bond to next cell |
+|---|---|---|
+| `Absolute` | `2.0, 0, 0` | `6.0, 0, 0` |
+| `Relative` | `0.0, 0, 0` | `4.0, 0, 0` |
+
+Consequences for relative-units models: `ChopTightBindingDefDistance`
+(`Tight_Binding/Tight_Binding_lib.cpp:203`) sees wrong bond lengths and chops the
+wrong terms; `TightBindingDerivative` (`:391`) forms `dH/dk` from
+`ConnectingVector` and is wrong; `CreateClusterHamiltonian` silently matches no
+hopping between atoms at different positions in the cell and drops those terms
+from the cluster Hamiltonian without a diagnostic. Onsite terms, where
+`Pos1 == Pos2`, are unaffected.
+
+### Why it has not simply been fixed
+
+Two sibling routines write `ConnectingVector` in **lattice** coordinates in their
+relative branches, with no multiplication by `rUnitCell`:
+`RemoveCrystalInformationFromTightBinding`
+(`Tight_Binding/Tight_Binding_lib.cpp:2915`) and
+`AddCrystalInformationFromTightBinding` (`:2990`). That is the opposite
+convention to the one above. Repairing line 2327 alone is a strict improvement —
+it makes the two unit conventions agree for the same physical model — but it
+does not resolve which convention is canonical, and the struct comment at
+`Core/StructDef.cpp:1005` ("in units according to Units") reads as endorsing the
+lattice-coordinate one. That decision is yours to make before anyone edits the
+siblings.
+
+### Unverified, related
+
+`CreateHamiltonianFromTightBindingDef` builds its phase vector as
+`Pos1 - Pos2 + TransVecs·(a,b,c)` (`Tight_Binding/Tight_Binding_lib.cpp:587`),
+deliberately, per the comment at `:572` giving the phase as `e^{i k (x_1 - x_2)}`.
+`ConnectingVector` carries `Pos2 - Pos1 + TransVecs·(a,b,c)` — the atomic part
+has the opposite sign. `TightBindingDerivative` forms `dH/dk` from
+`ConnectingVector`, so for cells with more than one atom position the two do not
+match. This was found by reading, not by testing, and is independent of the
+`Units` question above: it would apply to absolute-units models too. It needs
+checking before it is either fixed or dismissed. `TestScripts/TightBindingDef/PhaseTests.Quanty`
+is the natural place to start.
+
+**Meanwhile:** define tight binding models with `Units = "Absolute"`. Treat any
+existing relative-units model as suspect, in particular if it has more than one
+atom in the unit cell and has been through `Chop` with a distance,
+`TightBinding.Derivative`, or `CreateClusterHamiltonian`.

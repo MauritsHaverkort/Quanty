@@ -80,6 +80,30 @@ static int LuaTightBindingAddSpin(lua_State * L)
   return 1;
 }
 
+/*  TightBinding.ShiftOnsiteEnergy(TB, dE) leaves TB untouched and returns a shifted copy
+ */
+static int LuaTightBindingShiftOnsiteEnergy(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  double shift = (double)luaL_checknumber(L, 2);
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  TightBindingShiftOnsiteEnergy(TBNew, shift);
+  return 1;
+}
+
+/*  TB.ShiftOnsiteEnergy(dE) shifts TB itself, TB is the upvalue set in LuaTightBindingIndex
+ */
+static int LuaTightBindingShiftOnsiteEnergyMethod(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, lua_upvalueindex(1), "TightBinding_Type");
+  double shift = (double)luaL_checknumber(L, 1);
+  TightBindingShiftOnsiteEnergy(TB, shift);
+  return 0;
+}
+
 static int LuaTightBindingDerivative(lua_State * L)
 {
   TightBindingDef *TBDx, *TBDy, *TBDz;
@@ -93,6 +117,68 @@ static int LuaTightBindingDerivative(lua_State * L)
   TightBindingDerivative(TB, TBDx, TBDy , TBDz);
   return 3;
 }
+
+/*  On stack l1, l2, {x,y,z}, {l1_l2_sigma, ...}
+ *  Return the Slater Koster hopping matrix elements as table on a basis of Kubic Harmonics
+ */
+static int LuaSlaterKosterTable(lua_State * L)
+{
+  double x,y,z;
+  double params[5];
+  
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=4)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected on stack l1, l2, {x,y,z} ,{hopping parameters}\nFound only %d parameters",len);
+  }
+  uint32_t l1 = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t l2 = (uint32_t)luaL_checkunsigned(L, 2);
+  if((l1>4)||(l2>4))
+  {
+    luaL_error(L,"Slater Koster Table only implemented for s,p,d,f and g orbitals");
+  }
+  luaL_checktype(L, 3, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 3);
+  if(len !=3)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected the directional cosins {x,y,z} on position 3 on the stack. Found a table with length %d\n",len);
+  }
+  lua_rawgeti(L, 3, 1);
+  x = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, 3, 2);
+  y = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, 3, 3);
+  z = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  if(Abs(x)+Abs(y)+Abs(z)==0)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, Hopping vector should not be {0,0,0}\n",len);
+  }
+  luaL_checktype(L,4, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 4);
+  if(len !=Min(l1,l2)+1)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected the hopping parameters on position 4 on the stack.\nThe number of hopping parameters should be Min(l1,l2)+1.\nFound a table with length %d\n",len);
+  }
+  for (int i=0;i<=Min(l1,l2);i++)
+  {
+    lua_rawgeti(L, 4, i+1);
+    params[i] = (double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  CompactMatrixType *H;
+  H = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if( SlaterKosterTable(l1, l2, x, y, z, params, H) )
+  {
+    luaL_error(L, "SlaterKosterTable failed\nFatal Error\n");
+  }
+  luaL_setmetatable(L, "Matrix_Type");
+  H->OnLuaStack=true;
+  return 1;
+}
+
 
 
 static int LuaFileReadStuttgartCTRL(lua_State * L)
@@ -881,19 +967,72 @@ static int LuaCalculateG(lua_State *L)
   return 1;
 }
 
+static int LuaCalculateMu(lua_State *L)
+{
+  uint32_t len;
+  TightBindingDef *A;
+  len = (uint32_t)lua_gettop(L);
+  A = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  int NStateEF, NoccEF;
+  double mu, Emin, Emax, gap;
+  struct
+  {
+    int *Nk;
+    double nd;
+    double kBT;
+    //char* Method;   //only method implemented is the mesh/grid.
+  } Options;
+  Options.Nk = (int*)malloc(3*sizeof(int));
+  Options.Nk[0]=40;
+  Options.Nk[1]=40;
+  Options.Nk[2]=40;
+  Options.nd =0.5 * A->NFermion;
+  Options.kBT=1E-10;
+  LuaOptionsType LuaCalculateMuOptions[]={
+    {"Nk", "array-uint32_t-3", &(Options.Nk)},
+    {"n", "double"           , &(Options.nd)},
+    {"kbT","double"          , &(Options.kBT)},
+    {"kBT","double"          , &(Options.kBT)},
+    {NULL, NULL, NULL}};
+  if (LuaTestOptionsList(L,len))
+  {
+    LuaCheckOptions(L,len,LuaCalculateMuOptions);
+    len--;
+  }
+  TightBindingDetermineMu(A, Options.Nk, Options.nd, Options.kBT, &mu, &Emin, &Emax, &gap, &NStateEF, &NoccEF);
+  lua_pushnumber(L,mu);
+  lua_pushnumber(L,Emin);
+  lua_pushnumber(L,Emax);
+  lua_pushnumber(L,gap);
+  lua_pushnumber(L,NStateEF);
+  lua_pushnumber(L,NoccEF);
+  return 6;
+}
 
-/* Calculate the Density matrix from a given tight-binding Hamiltonian.
+
+
+/* Calculate the Density matrix from a given tight-binding Hamiltonian or from a given
+ * Green's function represented as a response function.
  * Input on stack:
  *   TB : TightBinding_Type
  *   Options
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
+ *  or
+ *   G  : ResponseFunction_Type
+ *   Options (see LuaResponseFunctionCalculateRho)
  */
 static int LuaCalculateRho(lua_State *L)
 {
   uint32_t len;
   TightBindingDef *a;
   CompactMatrixType *rho;
-  
+
+  /* a Green's function is handled by the response function version of CalculateRho */
+  if(luaL_testudata(L, 1, "TightBinding_Type") == NULL)
+  {
+    return LuaResponseFunctionCalculateRho(L);
+  }
+
   struct
   {
     int *Nk;
@@ -2265,12 +2404,15 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   }
   // read H
   lua_rawgeti(L, narg, 4);
-  if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
+  if((lua_type(L,-1)!=LUA_TTABLE) && (luaL_testudata(L, -1, "Matrix_Type") == NULL) ) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
-  //TODO: check if dimension of H->Hop corresponds to the size of the atoms known in the structure
-  
-  
-  
+  if( (H->Hop.Ni!=Cell->Atom[H->Atompos1].shelldegeneracy[H->Shellpos1]) || (H->Hop.Nj!=Cell->Atom[H->Atompos2].shelldegeneracy[H->Shellpos2]) )
+  {
+    printf("Matrix found\n");
+    PrintMatrix(H->Hop);
+    printf("Expected dimension, %d %d\n",Cell->Atom[H->Atompos1].shelldegeneracy[H->Shellpos1],Cell->Atom[H->Atompos2].shelldegeneracy[H->Shellpos2]);
+    return luaL_error(L, "ReadHopping found inconsistency in matrix defining the hopping");
+  }
   lua_pop(L,1);
   return 0;
 }
@@ -2397,6 +2539,12 @@ static int LuaTightBindingIndex(lua_State * L)
   else if (strcmp(str, "NF")==0)
   {
     lua_pushinteger(L, a->NFermion);
+    return 1;
+  }
+  else if (strcmp(str, "ShiftOnsiteEnergy")==0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaTightBindingShiftOnsiteEnergyMethod, 1);
     return 1;
   }
   return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
@@ -2598,6 +2746,15 @@ static int LuaTightBindingToString(lua_State * L)
   return 1;
 }
 
+static int LuaCrystalStructureToCIF(lua_State *L)
+{
+  char *Buffer;
+  TightBindingDef *res = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  CrystalStructureTypeToCif(&(res->Cell), &Buffer);
+  lua_pushstring(L, Buffer);
+  free(Buffer);
+  return 1;
+}
 
 static int LuaTightBindingCall(lua_State * L)
 {
@@ -2715,13 +2872,17 @@ static int LuaDresdenFPLODestroy(lua_State * L)
 }
 
 static const struct luaL_Reg TightBinding_func[] = {
-  {"New",            LuaNewTightBinding},
-  {"Chop",           LuaTightBindingChop},
-  {"Copy",           LuaTightBindingCopy},
-  {"AddSpin",        LuaTightBindingAddSpin},
-  {"Derivative",     LuaTightBindingDerivative},
-  {"CalculateG",     LuaCalculateG},
-  {"CalculateBands", LuaCalculateBands},
+  {"New",               LuaNewTightBinding},
+  {"Chop",              LuaTightBindingChop},
+  {"Copy",              LuaTightBindingCopy},
+  {"AddSpin",           LuaTightBindingAddSpin},
+  {"Derivative",        LuaTightBindingDerivative},
+  {"ShiftOnsiteEnergy", LuaTightBindingShiftOnsiteEnergy},
+  {"CalculateG",        LuaCalculateG},
+  {"CalculateMu",       LuaCalculateMu},
+  {"CalculateBands",    LuaCalculateBands},
+  {"SlaterKosterTable", LuaSlaterKosterTable},
+  {"ExportCIF",         LuaCrystalStructureToCIF},
   {NULL, NULL}
 };
   

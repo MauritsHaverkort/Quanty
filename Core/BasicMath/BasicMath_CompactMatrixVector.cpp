@@ -1690,6 +1690,45 @@ uint32_t CompactMatrixSub(CompactMatrixType * const A, CompactMatrixType const *
 }
 
 
+double RealMatrixTrace(const CompactMatrixType *M)
+{
+  double trace = 0;
+  const int N = Min(M->Ni,M->Nj);
+  for (int i = 0; i < N; ++i)
+    trace += M->VRe[i * M->Nj + i];
+  return trace;
+}
+
+Complex16 ComplexMatrixTrace(const CompactMatrixType *M)
+{
+  Complex16 trace;
+  trace.Re = 0;
+  trace.Im = 0;
+  const int N = Min(M->Ni,M->Nj);
+  for (int i = 0; i < N; ++i)
+  {
+    trace.Re += M->V[i * M->Nj + i].Re;
+    trace.Im += M->V[i * M->Nj + i].Im;
+  }
+  return trace;
+}
+
+Complex16 CompactMatrixTrace(const CompactMatrixType *M)
+{
+  if(M->QComplex==0)
+  {
+    Complex16 trace;
+    trace.Re = RealMatrixTrace(M);
+    trace.Im = 0;
+    return trace;
+  }
+  else
+  {
+    return ComplexMatrixTrace(M);
+  }
+}
+
+
 /* M[i ... i+B.Ni][j ... j+B.Nj] = M[i ... i+B.Ni][j ... j+B.Nj] + alpha B
  */
 uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatrixType B, double const alphaRe, double const alphaIm, int ishift, int jshift)
@@ -5308,8 +5347,8 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
     {
       for(j=0;j<=i;j++)
       {
-        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>((fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re)*epsilon+DBL_MIN*100))) return 0;
-        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>((fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im)*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+DBL_MIN*100) return 0;
+        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+DBL_MIN*100) return 0;
       }
     }
   }
@@ -5549,6 +5588,36 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs)
   return MatrixFlatten(allMs, false);
 }
 
+
+CompactMatrixType removeSpin(const CompactMatrixType &M)
+{
+  CompactMatrixType out;
+  out.Ni = M.Ni / 2;
+  out.Nj = M.Nj / 2;
+  out.QComplex = M.QComplex;
+  InitCompactMatrix(&out);
+  if (out.QComplex == 0)
+  {
+    for (int i = 0; i < out.Ni; ++i)
+    {
+      for (int j = 0; j < out.Nj; ++j)
+      {
+        out.VRe[i * out.Nj + j] = M.VRe[2 * i * M.Nj + 2 * j];
+      }
+    }
+  } else
+  {
+    for (int i = 0; i < out.Ni; ++i)
+    {
+      for (int j = 0; j < out.Nj; ++j)
+      {
+        out.V[i * out.Nj + j].Re = M.V[2 * i * M.Nj + 2 * j].Re;
+        out.V[i * out.Nj + j].Im = M.V[2 * i * M.Nj + 2 * j].Im;
+      }
+    }
+  }
+  return out;
+}
 
 CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im = 0)
 {

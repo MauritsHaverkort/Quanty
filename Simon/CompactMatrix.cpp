@@ -143,53 +143,6 @@ CompactMatrixType MatrixTypeToCompactMatrixType(const MatrixType &M)
 	return out;
 }
 
-CompactMatrixType removeSpin(const CompactMatrixType &M)
-{
-	CompactMatrixType out;
-	out.Ni = M.Ni / 2;
-	out.Nj = M.Nj / 2;
-	out.QComplex = M.QComplex;
-	InitCompactMatrix(&out);
-	if (out.QComplex == 0)
-	{
-		for (int i = 0; i < out.Ni; ++i)
-		{
-			for (int j = 0; j < out.Nj; ++j)
-			{
-				out.VRe[i * out.Nj + j] = M.VRe[2 * i * M.Nj + 2 * j];
-			}
-		}
-	} else
-	{
-		for (int i = 0; i < out.Ni; ++i)
-		{
-			for (int j = 0; j < out.Nj; ++j)
-			{
-				out.V[i * out.Nj + j].Re = M.V[2 * i * M.Nj + 2 * j].Re;
-				out.V[i * out.Nj + j].Im = M.V[2 * i * M.Nj + 2 * j].Im;
-			}
-		}
-	}
-	return out;
-}
-
-static int LuaRemoveSpin(lua_State *L)
-{
-	CompactMatrixType M, Mout;
-	int len = lua_gettop(L);
-	if (len != 1)
-		return luaL_error(L, "Error: LuaRemoveSpin called with %d argmuents, only 1 expected, a Matrix.", len);
-	lua_check(L, 1, M);
-	if (M.Ni % 2 != 0 || M.Nj % 2 != 0)
-		return luaL_error(L, "Error: LuaRemoveSpin called with a matrix of dimension %d times %d. Number of rows and columns must each be even.", M.Ni, M.Nj);
-  Mout = removeSpin(M);
-  Mout.OnLuaStack = M.OnLuaStack;
-  lua_push(L, Mout);
-  FreeCompactMatrix(&M);
-  FreeCompactMatrix(&Mout);
-	return 1;
-}
-
 CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &rows, const vector<uint32_t> &cols)
 {
 	for (int i = 0; i < rows.size(); ++i)
@@ -231,27 +184,6 @@ CompactMatrixType Submatrix(const CompactMatrixType &M, const vector<uint32_t> &
 		}
 	}
 	return Msub;
-}
-
-double RealMatrixTrace(const CompactMatrixType *M)
-{
-	double trace = 0;
-	for (int i = 0; i < M->Ni; ++i)
-		trace += M->VRe[i * M->Nj + i];
-	return trace;
-}
-
-Complex16 ComplexMatrixTrace(const CompactMatrixType *M)
-{
-	Complex16 trace;
-	trace.Re = 0;
-	trace.Im = 0;
-	for (int i = 0; i < M->Ni; ++i)
-	{
-		trace.Re += M->V[i * M->Nj + i].Re;
-		trace.Im += M->V[i * M->Nj + i].Im;
-	}
-	return trace;
 }
 
 CompactMatrixType GSOrthogonalizeWithNonOrthoBasis(const CompactMatrixType &in, const CompactMatrixType &Overlap)
@@ -314,35 +246,3 @@ static int LuaOrthogonalizeWithNonOrthoBasis(lua_State *L)
 	lua_push(L, GSOrthogonalizeWithNonOrthoBasis(in, Overlap));
 	return 1;
 }
-
-static int LuaMatrixTrace(lua_State *L)
-{
-	CompactMatrixType *M=NULL;
-	SparseMatrixType *S=NULL;
-	uint32_t len = (uint32_t) lua_gettop(L);
-	if (len != 1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.", len);
-	if (luaL_isType(L, 1, *M))
-	{
-		lua_check(L, 1, M);
-		if (M->Ni != M->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
-		if (M->QComplex == 0)
-			lua_push(L, RealMatrixTrace(M));
-		else
-			lua_push(L, ComplexMatrixTrace(M));
-	}
-	else if (luaL_isType(L, 1, *S))
-	{
-		lua_check(L, 1, S);
-		if (S->Ni != S->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
-		if (S->QComplex == 0)
-			lua_push(L, RealSparseMatrixTrace(S));
-		else
-			lua_push(L, ComplexSparseMatrixTrace(S));
-	}
-	else
-	{
-		return luaL_error(L, "MatrixTrace called with an unrecognised type!");
-	}
-	return 1;
-}
-

@@ -18,6 +18,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon);
 uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAndersonMatrixType *const B, int const NBlockMax, double const SingularValue);
 uint32_t BlockListOfPolesToBlockAndersonMatrixReduceDimension(BlockListOfPoles const A, BlockAndersonMatrixType *B, CompactMatrixType const *AT, int const NBlockMax);
+uint32_t BlockListOfPolesToDensityMatrix(BlockListOfPoles const * const A, CompactMatrixType * const rho, double const mu, double const kbT);
 
 uint32_t BlockAndersonMatrixToSpectra(const double Energy, const BlockAndersonMatrixType *const A, SpectraType *G, double Emin, double Emax, uint32_t N);
 uint32_t BlockAndersonMatrixToSpectraWithBroadening(const double Energy, const BlockAndersonMatrixType *const A, SpectraType *G, double Emin, double Emax, uint32_t N, double const Gamma);

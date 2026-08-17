@@ -844,6 +844,41 @@ static int math_ThreeJSymbol(lua_State *L)
   return 1;
 }
 
+static int math_Wignerd(lua_State *L)
+{
+  CompactMatrixType *d;
+  double j, beta;
+  int twoj;
+  if(lua_gettop(L)!=2) return luaL_error(L, "math.Wignerd expects 2 parameters j and beta");
+  j=(double)luaL_checknumber(L, 1);
+  beta=(double)luaL_checknumber(L, 2);
+  twoj = (int)round(2*j);
+  if ((twoj<0) || (2*j-twoj) != 0) return luaL_error(L, "math.Wignerd j should be integer or half integer");
+  d = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if(WignerSmallDMatrix(twoj, beta, d)) return luaL_error(L, "math.Wignerd WignerSmallDMatrix failed");
+  luaL_setmetatable(L, "Matrix_Type");
+  d->OnLuaStack=true;
+  return 1;
+}
+
+static int math_WignerD(lua_State *L)
+{
+  CompactMatrixType *D;
+  double j, alpha,beta,gamma;
+  int twoj;
+  if(lua_gettop(L)!=4) return luaL_error(L, "math.WignerD expects 4 parameters j and alpha, beta, gamma");
+  j=(double)luaL_checknumber(L, 1);
+  alpha=(double)luaL_checknumber(L, 2);
+  beta =(double)luaL_checknumber(L, 3);
+  gamma=(double)luaL_checknumber(L, 4);
+  twoj = (int)round(2*j);
+  if ((twoj<0) || (2*j-twoj) != 0) return luaL_error(L, "math.WignerD j should be integer or half integer");
+  D = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if(WignerD(twoj, alpha, beta, gamma, D)) return luaL_error(L, "math.WignerD WignerSmallDMatrix failed");
+  luaL_setmetatable(L, "Matrix_Type");
+  D->OnLuaStack=true;
+  return 1;
+}
 
 static int math_SlaterCoefficientC(lua_State *L)
 {
@@ -1055,6 +1090,8 @@ static const luaL_Reg mathlib[] = {
   {"Binomial",   math_binomial},{"BinomialCoefficient",   math_binomial},
   {"ThreeJ",   math_ThreeJSymbol},{"ThreeJSymbol",   math_ThreeJSymbol},
   {"SlaterCoefficientC", math_SlaterCoefficientC},
+  {"Wignerd", math_Wignerd},
+  {"WignerD", math_WignerD},
   {"SphericalHarmonicY", math_SphericalHarmonicY},
   {"SphericalHarmonicC", math_SphericalHarmonicC},
   {"TesseralHarmonicZ",  math_TesseralHarmonicZ},

@@ -48,6 +48,9 @@ uint32_t CompactMatrixScale(CompactMatrixType * const A, double alpha);
 uint32_t CompactMatrixScaleComplex(CompactMatrixType * const A, Complex16 alpha);
 uint32_t CompactMatrixAdd(CompactMatrixType * const A, CompactMatrixType const * B);
 uint32_t CompactMatrixSub(CompactMatrixType * const A, CompactMatrixType const * B);
+double RealMatrixTrace(const CompactMatrixType *M);
+Complex16 ComplexMatrixTrace(const CompactMatrixType *M);
+Complex16 CompactMatrixTrace(const CompactMatrixType *M);
 uint32_t CompactMatrixAddShifted(CompactMatrixType * const M, const CompactMatrixType B, double const alphaRe, double const alphaIm, int ishift, int jshift);
 uint32_t CompactMatrixSVDOrthogonalizeRow(CompactMatrixType * A, const double SingularValue, const bool ReduceDimension);
 uint32_t CompactMatrixSVDOrthogonalizeRowplusT(CompactMatrixType * A, CompactMatrixType *const Anew, CompactMatrixType *const T, CompactMatrixType *const Tinv, double const SingularValue, bool const ReduceDimension);
@@ -103,6 +106,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool p
 CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs);
 CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs, bool printWarnings);
 CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs);
+CompactMatrixType removeSpin(const CompactMatrixType &M);
 CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im);
 CompactMatrixType MatrixEnlarge(CompactMatrixType M, int size);
 CompactMatrixType MatrixExpand(const CompactMatrixType M, const int size, const Complex16 newEntries);

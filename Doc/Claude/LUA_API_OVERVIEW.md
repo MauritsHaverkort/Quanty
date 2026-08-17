@@ -107,6 +107,11 @@ Source: `global_functions[]` in `LuaInterface/ssp.cpp`, registered via
 A handful of entries are commented out in the source (dead but present as intent): `CalculateBands`,
 `CalculateFermi`, `EvolveToGroundstate`, `Help`, `ImpurityGreensFunction`.
 
+`CalculateRho` dispatches on the type of its first argument: a `TightBinding_Type` is handled in
+`LuaCalculateRho` (`TightBinding.cpp`), anything else is passed on to
+`LuaResponseFunctionCalculateRho` (`ResponseFunction.cpp`), which is also reachable as
+`ResponseFunction.CalculateRho`.
+
 ### Standard math functions promoted to globals
 
 `luaopen_ssp` also calls `luaMWH_RegisterGlobalFunctions(L, mathlib)`, where `mathlib` is Lua's own
@@ -200,11 +205,18 @@ is the operator-overload metatable; every named method/property is hand-dispatch
 
 - Static: `New→LuaNewTightBinding`, `Chop→LuaTightBindingChop`, `Copy→LuaTightBindingCopy`,
   `AddSpin→LuaTightBindingAddSpin`, `Derivative→LuaTightBindingDerivative`,
-  `CalculateG→LuaCalculateG`, `CalculateBands→LuaCalculateBands`
+  `ShiftOnsiteEnergy→LuaTightBindingShiftOnsiteEnergy`, `CalculateG→LuaCalculateG`,
+  `CalculateMu→LuaCalculateMu`, `CalculateBands→LuaCalculateBands`,
+  `SlaterKosterTable→LuaSlaterKosterTable`, `ExportCIF→LuaCrystalStructureToCIF`
 - Instance operators (`TightBinding_meta`): `__index→LuaTightBindingIndex __newindex __tostring
   __call __gc`
 - Properties via `LuaTightBindingIndex`: `Name`, `NF`, `NAtoms`, `Atoms`, `Cell`, `ReciprocalCell`,
   `Hopping`, `Hk`, `Units`, `Absolute`, `Relative`, `Bohr`, `Angstrom`, `nm`, `NoPi`
+- Instance methods via `LuaTightBindingIndex`: `ShiftOnsiteEnergy`. Returned as a C closure over
+  the object (`lua_pushvalue`/`lua_pushcclosure`, read back with `lua_upvalueindex(1)`), the same
+  idiom `Operator`, `Wavefunction` and `Spectra` use. This is what makes the dot call
+  `TB.ShiftOnsiteEnergy(dE)` work without a `self` argument — see the value/reference convention
+  in section 5.
 - Related file-reader helper types with (currently empty) metatables: `StuttgartCTRL_Type`,
   `StuttgartHAMR_Type`; `DresdenFPLO_Type` has `__gc`/`__tostring` only. Their populating functions
   (`FileReadStuttgartCTRL/HAMR`, `FileReadDresdenFPLO`, `TightBindingDefFrom...`) are global functions.
@@ -221,6 +233,7 @@ is the operator-overload metatable; every named method/property is hand-dispatch
   `ToTable→LuaResponseFunctionToTable`, `ToMatrix→LuaResponseFunctionToCompactMatrix`,
   `ToSpectra→LuaResponseFunctionToSpectra`, `ToUserdata→LuaResponseFunctionToUserdata`,
   `ToTightBinding→LuaResponseFunctionToTightBinding`, `ToOperator→LuaResponseFunctionToOperator`,
+  `CalculateRho→LuaResponseFunctionCalculateRho`,
   `CalculateSelfEnergy→LuaCalculateSelfEnergy`,
   `CalculateHybridizationFunction→LuaCalculateHybridizationFunction`,
   `CalculateGfromG0andSigma→LuaCalculateGfromG0andSigma`,
@@ -346,5 +359,17 @@ bindings are listed under the `GaussianRadialFunction`/`SparseMatrix` classes ab
 - The `Operator`/`Wavefunction`/`Spectra`/`TightBinding`/`ResponseFunction` `__index`-dispatch
   functions are hand-written `strcmp` chains rather than tables — worth keeping in mind for any
   refactor that wants a uniform binding mechanism.
+- **Value versus reference semantics — the intended convention.** For an operation that modifies
+  an object, the static form takes the object as its first argument, leaves it untouched, and
+  returns a modified copy; the method form reached through `__index` modifies the object itself
+  and returns nothing:
+
+      TB2 = TightBinding.ShiftOnsiteEnergy(TB, dE)   -- TB unchanged, TB2 is new
+      TB.ShiftOnsiteEnergy(dE)                       -- TB itself is shifted
+
+  The C routine does the modifying and takes a pointer; it is the static wrapper that calls
+  `CopyTightBindingDef` first, so the copying lives in the Lua layer and never in the C library.
+  `TightBinding.ShiftOnsiteEnergy` and `TightBinding.Chop` follow this; not every existing
+  binding does, so do not infer the convention from an arbitrary neighbouring function.
 - Given the branch is called `develop`, it may be worth diffing this against `master`/tags if the
   goal is understanding recent additions vs. the stable API surface.

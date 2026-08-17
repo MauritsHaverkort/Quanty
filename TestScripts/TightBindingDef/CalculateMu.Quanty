@@ -1,0 +1,113 @@
+
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - CalculateMu                   --")
+print("--------------------------------------------------------")
+
+
+HTB = NewTightBinding()
+ed = -0.123
+t  = -1
+tp = 0
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = {{"Cu",{0,0,0},{{"d",{"x2-y2"}}}}}
+HTB.Hopping = {{"Cu.d","Cu.d",{ 0, 0, 0},{{ed}}},
+	             {"Cu.d","Cu.d",{ 0, 0, 1},{{t}}},
+							 {"Cu.d","Cu.d",{ 0, 0,-1},{{t}}},
+	             {"Cu.d","Cu.d",{ 0, 1, 0},{{t}}},
+	             {"Cu.d","Cu.d",{ 0,-1, 0},{{t}}},
+							 {"Cu.d","Cu.d",{ 0, 1, 1},{{tp}}},
+				       {"Cu.d","Cu.d",{ 0, 1,-1},{{tp}}},
+				       {"Cu.d","Cu.d",{ 0,-1, 1},{{tp}}},
+				       {"Cu.d","Cu.d",{ 0,-1,-1},{{tp}}}
+              }
+mu, EbandMin, EbandMax, gapEf, NstateEf, NoccEf = TightBinding.CalculateMu(HTB,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+
+print(mu, EbandMin, EbandMax, gapEf, NstateEf, NoccEf)
+
+if(Chop(mu+0.123)~=0) then error("The wrong chemical potential\n",1) end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+
+function RocksaltTightBinding(TM, Ligand, pds, pdp, pps, ppp, edeg, edt2g, ep)
+	-- We use a generic distance of 2A between the TM and Ligand atom:
+		-- this is ok for most plotting programs and atoms to render resonable atomic sphere sized
+		-- and automatic bond finding
+	-- We assume nearest neighbour hopping between TM and Ligand (6 neighbours)
+	-- We assume nearest neighbour hopping between Ligands (12 neighbours)
+	-- We assume a ligand p-shell and TM d-shell in the TB model
+	local HTB = NewTightBinding()
+	HTB.Name = TM..Ligand
+	HTB.Cell = {{0,2,2},
+							{2,0,2},
+							{2,2,0}}
+	HTB.Atoms = {{TM,     {  0,  0,  0}, {{"d",{"x2-y2","z2","yz","xz","xy"}}}},
+							 {Ligand, {  2,  0,  0}, {{"p",{"x","y","z"}}}}                }
+	local A = TM..".d"
+	local B = Ligand..".p"
+							 
+	HTB.Hopping = {{A,A,{0,0,0},{{ edeg,    0,     0,     0,     0},
+															 {    0, edeg,     0,     0,     0},
+															 {    0,    0, edt2g,     0,     0},
+															 {    0,    0,     0, edt2g,     0},
+															 {    0,    0,     0,     0, edt2g}}},
+								 {B,B,{0,0,0},{{ ep,  0,  0},
+															 {  0, ep,  0},
+															 {  0,  0, ep}}},
+															 
+								 {B, B,{ 2, 2, 0}, TightBinding.SlaterKosterTable(1,1,{ 2, 2, 0},{pps,ppp}) },
+								 {B, B,{-2,-2, 0}, TightBinding.SlaterKosterTable(1,1,{-2,-2, 0},{pps,ppp}) },
+								 {B, B,{-2, 2, 0}, TightBinding.SlaterKosterTable(1,1,{-2, 2, 0},{pps,ppp}) },
+								 {B, B,{ 2,-2, 0}, TightBinding.SlaterKosterTable(1,1,{ 2,-2, 0},{pps,ppp}) },
+								 {B, B,{ 2, 0, 2}, TightBinding.SlaterKosterTable(1,1,{ 2, 0, 2},{pps,ppp}) },
+								 {B, B,{-2, 0,-2}, TightBinding.SlaterKosterTable(1,1,{-2, 0,-2},{pps,ppp}) },
+								 {B, B,{-2, 0, 2}, TightBinding.SlaterKosterTable(1,1,{-2, 0, 2},{pps,ppp}) },
+								 {B, B,{ 2, 0,-2}, TightBinding.SlaterKosterTable(1,1,{ 2, 0,-2},{pps,ppp}) },
+								 {B, B,{ 0, 2, 2}, TightBinding.SlaterKosterTable(1,1,{ 0, 2, 2},{pps,ppp}) },
+								 {B, B,{ 0,-2,-2}, TightBinding.SlaterKosterTable(1,1,{ 0,-2,-2},{pps,ppp}) },
+								 {B, B,{ 0,-2, 2}, TightBinding.SlaterKosterTable(1,1,{ 0,-2, 2},{pps,ppp}) },
+								 {B, B,{ 0, 2,-2}, TightBinding.SlaterKosterTable(1,1,{ 0, 2,-2},{pps,ppp}) },
+								 
+								 {B, A,{ 2, 0, 0}, TightBinding.SlaterKosterTable(1,2,{ 2, 0, 0},{pds,pdp}) },
+								 {B, A,{-2, 0, 0}, TightBinding.SlaterKosterTable(1,2,{-2, 0, 0},{pds,pdp}) },
+								 {B, A,{ 0, 2, 0}, TightBinding.SlaterKosterTable(1,2,{ 0, 2, 0},{pds,pdp}) },
+								 {B, A,{ 0,-2, 0}, TightBinding.SlaterKosterTable(1,2,{ 0,-2, 0},{pds,pdp}) },
+								 {B, A,{ 0, 0, 2}, TightBinding.SlaterKosterTable(1,2,{ 0, 0, 2},{pds,pdp}) },
+								 {B, A,{ 0, 0,-2}, TightBinding.SlaterKosterTable(1,2,{ 0, 0,-2},{pds,pdp}) },
+								 
+								 {A, B,{ 2, 0, 0}, TightBinding.SlaterKosterTable(2,1,{ 2, 0, 0},{pds,pdp}) },
+								 {A, B,{-2, 0, 0}, TightBinding.SlaterKosterTable(2,1,{-2, 0, 0},{pds,pdp}) },
+								 {A, B,{ 0, 2, 0}, TightBinding.SlaterKosterTable(2,1,{ 0, 2, 0},{pds,pdp}) },
+								 {A, B,{ 0,-2, 0}, TightBinding.SlaterKosterTable(2,1,{ 0,-2, 0},{pds,pdp}) },
+								 {A, B,{ 0, 0, 2}, TightBinding.SlaterKosterTable(2,1,{ 0, 0, 2},{pds,pdp}) },
+								 {A, B,{ 0, 0,-2}, TightBinding.SlaterKosterTable(2,1,{ 0, 0,-2},{pds,pdp}) }
+								}
+	return HTB
+end
+
+
+pds   = -2
+pdp   =  1
+pps   = -4
+ppp   =  2
+edeg  =  1
+edt2g = -1
+ep    = -6
+
+HTB = RocksaltTightBinding("Ni", "O", pds, pdp, pps, ppp, edeg, edt2g, ep)
+
+
+mu, EbandMin, EbandMax, gapEf, NstateEf, NoccEf = TightBinding.CalculateMu(HTB,{{"n",7},{"kBT",0.001},{"Nk",{40,40,40}}})
+
+print(mu, EbandMin, EbandMax, gapEf, NstateEf, NoccEf)
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

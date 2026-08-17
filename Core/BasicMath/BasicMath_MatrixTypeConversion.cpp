@@ -2286,8 +2286,131 @@ uint32_t MatrixToEigensystem(MatrixType const M, MatrixType * const T, double *v
 
 /*  This function is outdated use the functions acting on compact matrix instead
  *  you find them in the file BasicMatch_CompactMatrixVector
+ *
+ *  Returns only the eigenvalues of M, not the eigenvectors.
+ *  input M defined; val must point to an array of at least M.Ni doubles.
+ *
  */
-/*  Calculates the eigen values (val) and eigen functions (T) of matrix M
+uint32_t Eigenvalues(MatrixType const M, double *val)
+{
+  int    info;
+  const char *jobz = "N";
+  const char *uplo = "U";
+  uint32_t    lwork = 1 + 6 * M.Ni + 2 * Sqr(M.Ni);
+  uint32_t    liwork = 3 + 5 * M.Ni;
+  double *work;
+  int   *iwork;
+  if (M.Ni != M.Nj)
+  {
+    printf("Eigenvalues called with non-square matrix\n");
+    printf("ERORR!!!!!!\n");
+    return 1;
+  }
+  work = (double*)malloc(lwork * sizeof(double));
+  if (work == NULL)
+  {
+    printf("malloc of work failed in Eigenvalues\n");
+    return 1;
+  };
+  iwork = (int*)malloc(liwork * sizeof(int));
+  if (iwork == NULL)
+  {
+    printf("malloc of iwork failed in Eigenvalues\n");
+    free(work);
+    return 1;
+  };
+  if (M.QComplex == 0)
+  {                             /* Real */
+    double *MRe = (double*)malloc(M.Ni * M.Ni * sizeof(double));
+    if (MRe == NULL)
+    {
+      printf("malloc of MRe failed in Eigenvalues\n");
+      free(work);
+      free(iwork);
+      return 1;
+    }
+    memcpy(MRe, M.VRe[0], M.Ni * M.Ni * sizeof(double));
+    dsyev(jobz, uplo, &M.Ni, MRe, &M.Ni, val, work, &lwork, &info);
+    if (info)
+    {
+      printf("dsyv failed in Eigenvalues with info value %i\n", info);
+      printf("While working on matrix %s\n", M.Name);
+      printf("continue diagonalization with dsyvd\n");
+      fflush(stdout);
+      memcpy(MRe, M.VRe[0], M.Ni * M.Ni * sizeof(double));
+      dsyevd(jobz, uplo, &M.Ni, MRe, &M.Ni, val, work, &lwork, iwork, &liwork, &info);
+      if (info)
+      {
+        printf("also dsyvd failed in Eigenvalues with info value %i\n", info);
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        free(MRe);
+        free(work);
+        free(iwork);
+        return 1;
+      }
+    }
+    free(MRe);
+  }
+  else
+  {                             /* complex */
+    uint32_t    lcwork = 2 * M.Ni + Sqr(M.Ni);
+    Complex16 *MReIm = (Complex16*)malloc(M.Ni * M.Ni * sizeof(Complex16));
+    Complex16 *cwork = (Complex16*)malloc(lcwork * sizeof(Complex16));
+    int    i;
+    if (MReIm == NULL || cwork == NULL)
+    {
+      printf("malloc of MReIm/cwork failed in Eigenvalues\n");
+      free(MReIm);
+      free(cwork);
+      free(work);
+      free(iwork);
+      return 1;
+    }
+    for (i = 0; i < M.Ni * M.Ni; i++)
+    {
+      MReIm[i].Re = M.VRe[0][i];
+      MReIm[i].Im = M.VIm[0][i];
+    }
+    zheev(jobz, uplo, &M.Ni, MReIm, &M.Ni, val, cwork, &lcwork, work, &info);
+    if (info != 0)
+    {
+      printf("zheev failed in Eigenvalues with info value %i\n", info);
+      printf("While working on matrix %s\n", M.Name);
+      printf("continue diagonalization with zheevd\n");
+      fflush(stdout);
+      for (i = 0; i < M.Ni * M.Ni; i++)
+      {
+        MReIm[i].Re = M.VRe[0][i];
+        MReIm[i].Im = M.VIm[0][i];
+      }
+      zheevd(jobz, uplo, &M.Ni, MReIm, &M.Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+      if (info != 0)
+      {
+        printf("also zheevd failed in Eigenvalues with info value %i\n", info);
+        printf("ERORR!!!!!!!!!!\n");
+        fflush(stdout);
+        free(MReIm);
+        free(cwork);
+        free(work);
+        free(iwork);
+        return 1;
+      }
+    }
+    free(MReIm);
+    free(cwork);
+  }
+  free(work);
+  free(iwork);
+  return 0;
+}
+
+
+
+
+/*  This function is outdated use the functions acting on compact matrix instead
+ *  you find them in the file BasicMatch_CompactMatrixVector
+ *  Calculates the eigen values (val) and eigen functions (T) of matrix M
  *  H=T^*.M.T^T with H a diagonal matrix with the values val on the diagonal
  *  input M defined, H and T not initiallized
  */
@@ -2899,8 +3022,10 @@ uint32_t MatrixToCompactMatrix(MatrixType *A, CompactMatrixType *B)
     }
     if((A->Ni!=0)&&(A->Nj!=0))
     {
+      free(A->VRe[0]);
       free(A->VRe);
-      free(A->VRe);
+      free(A->VIm[0]);
+      free(A->VIm);
     }
   }
   B->a0=A->a0;
@@ -3895,6 +4020,31 @@ uint32_t MatrixToBlokDoubleTriDiagonalMatrixNoOverlap(MatrixType const M, Matrix
 /********************         Matrix conversions         ********************/
 /********************         ListOfPoles To ...         ********************/
 /****************************************************************************/
+
+
+/*  Given a Green's function in a list of poles representation
+ *    g = a0 + sum_i b_i / (w - a_i)
+ *  the occupation is
+ *    rho = sum_i f(a_i, mu, kbT) b_i
+ *  with f the Fermi function. A pole exactly at mu is counted half.
+ *  The constant offset a0 carries no spectral weight and does not contribute to rho.
+ *  rho is returned as a 1 by 1 matrix such that the scalar and the block case return the same type
+ */
+uint32_t ListOfPolesToDensityMatrix(ListOfPoles const M, CompactMatrixType * const rho, double const mu, double const kbT)
+{
+  uint32_t i;
+  rho->Ni=1;
+  rho->Nj=1;
+  rho->QComplex=0;
+  InitCompactMatrix(rho);
+  rho->mu=mu;
+  strncpy(rho->Name, M.Name, MAXStrLength);
+  for(i=0;i<M.N;i++)
+  {
+    rho->VRe[0] += FermiFunction(M.a[i], mu, kbT) * M.b[i];
+  }
+  return 0;
+}
 
 
 /*

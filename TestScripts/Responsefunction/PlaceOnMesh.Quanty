@@ -29,7 +29,6 @@ G1 = ResponseFunction.PlaceOnMesh(G,{1,6})
 print(G1)
 
 
-os.exit()
 
 
 

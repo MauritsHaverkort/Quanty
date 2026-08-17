@@ -2969,6 +2969,51 @@ static int LuaResponseFunctionToOperator(lua_State * L)
 }
 
 
+/* Calculate the density matrix of a Green's function given as a response function.
+ * Input on stack:
+ *   G : ResponseFunction_Type
+ *   Options
+ *       mu  -> chemical potential                      standard the chemical potential stored in G
+ *       kBT -> temperature times the Boltzman constant  standard 0
+ * Returns a BlockSize by BlockSize matrix (1 by 1 for a scalar Green's function)
+ */
+static int LuaResponseFunctionCalculateRho(lua_State *L)
+{
+  uint32_t len;
+  ResponsefunctionType *A;
+  CompactMatrixType *rho;
+  struct
+  {
+    double mu;
+    double kbT;
+  } Options;
+
+  len = (uint32_t)lua_gettop(L);
+  if(!(len==1||len==2))
+  {
+    return luaL_error(L, "Error CalculateRho: called with %d arguments, 1 or 2 expected (a Green's function and options).\n",len);
+  }
+  A = luaL_checkResponsefunction(L,1);
+  Options.mu = ResponseFunctionGetMu(A);
+  Options.kbT= 0;
+  LuaOptionsType LuaCalculateRhoOptions[]={
+    {"mu", "double", &(Options.mu)},
+    {"kbT","double", &(Options.kbT)},
+    {"kBT","double", &(Options.kbT)},
+    {NULL, NULL, NULL}};
+  if(len==2)
+  {
+    LuaCheckOptions(L, 2, LuaCalculateRhoOptions);
+  }
+  rho = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  luaL_setmetatable(L, "Matrix_Type");
+  ResponseFunctionToDensityMatrix(A, rho, Options.mu, Options.kbT);
+  rho->OnLuaStack=true;
+  FreeResponsefunctionIncludingOriginalPointer(A);
+  return 1;
+}
+
+
 static int LuaResponseFunctionToCompactMatrix(lua_State *L)
 {
   ResponsefunctionType *A;
@@ -3679,6 +3724,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"ToUserdata", LuaResponseFunctionToUserdata},
   {"ToTightBinding", LuaResponseFunctionToTightBinding},
   {"ToOperator", LuaResponseFunctionToOperator},
+  {"CalculateRho", LuaResponseFunctionCalculateRho},
   {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
   {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
   {"CalculateGfromG0andSigma",LuaCalculateGfromG0andSigma},

@@ -1,19 +1,35 @@
 uint32_t AtomNameToNumber(const char* Name)
 {
   uint32_t i;
-  const char *PeriodicTable[] = {"H" ,                                                                                                                                                          "He",
-                                 "Li","Be",                                                                                                                            "B", "C", "N", "O", "F", "Ne",
-                                 "Na","Mg",                                                                                                                           "Al","Si", "P", "S","Cl", "Ar",
-                                 "K", "Ca",                                                                        "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn", "Ga","Ge","As","Se","Br", "Kr",
-                                 "Rb","Sr",                                                                         "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd", "In","Sn","Sb","Te", "I", "Xe",
-                                 "Cs","Ba", "La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb", "Lu","Hf","Ta", "W","Re","Os","Ir","Pt","Au","Hg", "Tl","Pb","Bi","Po","At", "Rn",
-                                 "Fr","Ra", "Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No", "Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn"};
-  for(i=0;i<112;i++)
+  const char *PeriodicTable[] = {"H" ,                                                                                                                                                         "He",
+                                 "Li","Be",                                                                                                                            "B", "C", "N", "O", "F","Ne",
+                                 "Na","Mg",                                                                                                                           "Al","Si", "P", "S","Cl","Ar",
+                                 "K", "Ca",                                                                        "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn", "Ga","Ge","As","Se","Br","Kr",
+                                 "Rb","Sr",                                                                         "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd", "In","Sn","Sb","Te", "I","Xe",
+                                 "Cs","Ba", "La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb", "Lu","Hf","Ta", "W","Re","Os","Ir","Pt","Au","Hg", "Tl","Pb","Bi","Po","At","Rn",
+                                 "Fr","Ra", "Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No", "Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn", "Nh","Fl","Mc","Lv","Ts","Og"};
+  for(i=0;i<118;i++)
   {
     if(strcmp(Name, PeriodicTable[i] )==0) return i+1;
   }
   return 0;
 }
+
+const char *AtomNumberToName(uint32_t Z)
+{
+  const char *PeriodicTable[] = {"H" ,                                                                                                                                                         "He",
+                                 "Li","Be",                                                                                                                            "B", "C", "N", "O", "F","Ne",
+                                 "Na","Mg",                                                                                                                           "Al","Si", "P", "S","Cl","Ar",
+                                 "K", "Ca",                                                                        "Sc","Ti", "V","Cr","Mn","Fe","Co","Ni","Cu","Zn", "Ga","Ge","As","Se","Br","Kr",
+                                 "Rb","Sr",                                                                         "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd", "In","Sn","Sb","Te", "I","Xe",
+                                 "Cs","Ba", "La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb", "Lu","Hf","Ta", "W","Re","Os","Ir","Pt","Au","Hg", "Tl","Pb","Bi","Po","At","Rn",
+                                 "Fr","Ra", "Ac","Th","Pa", "U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No", "Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn", "Nh","Fl","Mc","Lv","Ts","Og"};
+  if(Z>118) return "XX";
+  if(Z==0) return "XX";
+  return PeriodicTable[Z-1];
+  return 0;
+}
+
 
 int FreeAtomType(AtomType *A)
 {
@@ -193,6 +209,108 @@ int ChopTightBindingDefDistance(TightBindingDef *const A,  double const distance
       }
       i=i-1;
       A->nH = A->nH-1;
+    }
+  }
+  return 0;
+}
+
+/*  Shift the onsite energy of all shells by shift, i.e. H -> H + shift * 1
+ *
+ *  The onsite ellements are the hopping ellements that connect a shell to itself
+ *  within one and the same unit cell, i.e. Atompos1==Atompos2, Shellpos1==Shellpos2
+ *  and TransVecs=={0,0,0}. Hopping ellements between two different shells of the same
+ *  atom have a connecting vector of zero as well, but are not diagonal in orbital
+ *  space and are thus not shifted.
+ *
+ *  Each shell is shifted exactly once. A tight binding definition need not contain an
+ *  onsite ellement for every shell (a shell with zero onsite energy is often simply
+ *  not listed) and it may contain the same onsite ellement more than once (the
+ *  Hamiltonian adds them). We therefore loop over the shells and not over the hopping
+ *  ellements, shift the first onsite ellement found, and create one if there is none.
+ */
+int TightBindingShiftOnsiteEnergy(TightBindingDef *const A, double const shift)
+{
+  uint32_t iAtom, i;
+  int    iShell, iH, nMissing, nHOld;
+  bool   found;
+  /*  count the shells without an onsite ellement first, such that the list of hopping
+   *  ellements can be enlarged in one go. It can not be enlarged in blocks as it is
+   *  allocated at exactly nH ellements by CopyTightBindingDef and by the lua interface
+   */
+  nMissing = 0;
+  for (iAtom = 0; iAtom < A->Cell.NAtoms; iAtom++)
+  {
+    for (iShell = 0; iShell < A->Cell.Atom[iAtom].Nshell; iShell++)
+    {
+      found = false;
+      for (iH = 0; iH < A->nH; iH++)
+      {
+        if(   (A->H[iH].Atompos1     == (int)iAtom ) && (A->H[iH].Atompos2  == (int)iAtom )
+           && (A->H[iH].Shellpos1    == iShell     ) && (A->H[iH].Shellpos2 == iShell     )
+           && (A->H[iH].TransVecs[0] == 0) && (A->H[iH].TransVecs[1] == 0) && (A->H[iH].TransVecs[2] == 0) )
+        {
+          found = true;
+          break;
+        }
+      }
+      if (found == false) nMissing++;
+    }
+  }
+  nHOld = A->nH;
+  if (nMissing != 0)
+  {
+    A->H = (TightBindingDefHopping*)realloc(A->H, (nHOld + nMissing) * sizeof(TightBindingDefHopping));
+    if ((A->H) == NULL)
+    {
+      printf("Error in TightBindingShiftOnsiteEnergy\nrealloc failed for A->H\nI will crash soon\n");
+      return 1;
+    }
+  }
+  for (iAtom = 0; iAtom < A->Cell.NAtoms; iAtom++)
+  {
+    for (iShell = 0; iShell < A->Cell.Atom[iAtom].Nshell; iShell++)
+    {
+      found = false;
+      for (iH = 0; iH < nHOld; iH++)
+      {
+        if(   (A->H[iH].Atompos1     == (int)iAtom ) && (A->H[iH].Atompos2  == (int)iAtom )
+           && (A->H[iH].Shellpos1    == iShell     ) && (A->H[iH].Shellpos2 == iShell     )
+           && (A->H[iH].TransVecs[0] == 0) && (A->H[iH].TransVecs[1] == 0) && (A->H[iH].TransVecs[2] == 0) )
+        {
+          for (i = 0; i < A->H[iH].Hop.Ni; i++)
+          {
+            A->H[iH].Hop.VRe[i][i] += shift;
+          }
+          found = true;
+          break;
+        }
+      }
+      if (found == false)
+      {
+        /*  no onsite ellement defined for this shell, create one containing shift * 1
+         *  the connecting vector of an onsite ellement is zero for absolute as well as
+         *  for relative units
+         */
+        A->H[A->nH].Atompos1  = iAtom;
+        A->H[A->nH].Shellpos1 = iShell;
+        A->H[A->nH].Atompos2  = iAtom;
+        A->H[A->nH].Shellpos2 = iShell;
+        A->H[A->nH].TransVecs[0] = 0;
+        A->H[A->nH].TransVecs[1] = 0;
+        A->H[A->nH].TransVecs[2] = 0;
+        A->H[A->nH].ConnectingVector[0] = 0;
+        A->H[A->nH].ConnectingVector[1] = 0;
+        A->H[A->nH].ConnectingVector[2] = 0;
+        A->H[A->nH].Hop.Ni = A->Cell.Atom[iAtom].shelldegeneracy[iShell];
+        A->H[A->nH].Hop.Nj = A->Cell.Atom[iAtom].shelldegeneracy[iShell];
+        A->H[A->nH].Hop.QComplex = 0;
+        InitMatrix(&(A->H[A->nH].Hop));
+        for (i = 0; i < A->H[A->nH].Hop.Ni; i++)
+        {
+          A->H[A->nH].Hop.VRe[i][i] = shift;
+        }
+        A->nH++;
+      }
     }
   }
   return 0;
@@ -972,6 +1090,160 @@ int TightBindingDOS(TightBindingDef A, int Nk[3], SpectraType * DOS)
   return 0;
 }
 
+/*    A is a tight binding definition
+ *    Nk the number of k-points in the a, b and c direction
+ *    val an array of doulbes of length Nk[0]*Nk[1]*Nk[2]*A->NFermion
+ */
+int TightBindingEigenValues(TightBindingDef const * const A, int Nk[3], double * val)
+{
+  MatrixType H;
+  double q[3], diq[3];
+  int    iq[3];
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A->Cell.gUnitCell[0][0] + diq[1] * A->Cell.gUnitCell[1][0] + diq[2] * A->Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A->Cell.gUnitCell[0][1] + diq[1] * A->Cell.gUnitCell[1][1] + diq[2] * A->Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A->Cell.gUnitCell[0][2] + diq[1] * A->Cell.gUnitCell[1][2] + diq[2] * A->Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*A, q, &H);
+        Eigenvalues(H, &(val[(iq[2]+iq[1]*Nk[2]+iq[0]*Nk[2]*Nk[1]) * A->NFermion]));
+        FreeMatrix(&H);
+      }
+    }
+  }
+  qsort(val, Nk[0]*Nk[1]*Nk[2]*A->NFermion, sizeof(double), &qsortcomparedoubles);
+  return 0;
+}
+
+/* First index i in eps[0..Ntot-1] (ascending) with eps[i] >= value.
+   Equivalent to std::lower_bound. */
+size_t LowerBound(const double* eps, size_t Ntot, double value)
+{
+  size_t mid, lo = 0, hi = Ntot;
+  while (lo < hi)
+  {
+    mid = lo + (hi - lo) / 2;
+    if (eps[mid] < value)
+    {
+      lo = mid + 1;
+    }
+    else
+    {
+      hi = mid;
+    }
+  }
+  return lo;
+}
+
+void OccupationAndDerivative(const double* val, size_t Ntot, double mu, double kbT, double* N, double* dNdmu)
+{
+  double f;
+  double cutoff = 40.0 * kbT;
+  size_t lo = LowerBound(val, Ntot, mu - cutoff);
+  size_t hi = LowerBound(val, Ntot, mu + cutoff);
+  size_t i;
+  *N = (double)lo;   /* fully occupied levels below the window */
+  *dNdmu = 0.0;
+  for (i = lo; i < hi; ++i)
+  {
+    f = FermiFunction(val[i], mu, kbT);
+    *N += f;
+    *dNdmu += f * (1.0 - f);
+  }
+  if (kbT > 0.0) *dNdmu /= kbT;
+}
+
+/* Safeguarded Newton (rtsafe-style) for mu(kbT, Ntarget).
+   Ntot, Nd must be > 0; caller is expected to check. */
+double ChemicalPotential(const double* eps, size_t Ntot, double Nd, double kBT, double tol, int maxIter)
+{
+  size_t N=lround(Nd);
+  double mu, mu_lo, mu_hi;
+  int iter;
+  if (kBT <= 0)
+  {
+    if (Nd <= 0) return eps[0] - 1.0;
+    if (Nd >= Ntot) return eps[Ntot - 1] + 1.0;
+    return 0.5 * (eps[N - 1] + eps[N]);
+  }
+  if (Nd <= 0) return eps[0] - 1.0 - 40*kBT;
+  if (Nd >= Ntot) return eps[Ntot-1] + 1.0 + 40*kBT;
+  if(N==0)
+  {
+    mu = eps[0];
+    mu_lo = eps[0] - 40 * kBT;
+    mu_hi = eps[0] + 40 * kBT;
+  }
+  else
+  {
+    mu =  0.5 * (eps[N - 1] + eps[N]);
+    mu_lo = eps[N-1] - 40 * kBT;
+    mu_hi = eps[N]   + 40 * kBT;
+  }
+  for (iter = 0; iter < maxIter; ++iter)
+  {
+    double Nmu, dNdmu, F, muNext;
+    OccupationAndDerivative(eps, Ntot, mu, kBT, &Nmu, &dNdmu);
+    F = Nmu - N;
+    if (fabs(F) < tol) return mu;
+    if (F > 0.0) mu_hi = mu; else mu_lo = mu;
+    if (dNdmu > 0.0) muNext = mu - F / dNdmu; else muNext = 0.5 * (mu_lo + mu_hi);
+    if (muNext <= mu_lo || muNext >= mu_hi) muNext = 0.5 * (mu_lo + mu_hi); /* Newton left the bracket */
+    mu = muNext;
+  }
+  return mu;
+}
+
+
+/*
+ *
+ */
+int TightBindingDetermineMu(TightBindingDef const * const A, int Nk[3], double nd, double kBT, double *mu, double *Emin, double *Emax, double *gap, int *NStateEF, int *NoccEF)
+{
+  double *val;
+  const double tol = 1E-14;
+  const int maxIter = 200;
+  int i;
+  size_t N;
+  const size_t Ntot = (size_t)(Nk[0]*Nk[1]*Nk[2]*A->NFermion);
+  val = (double*)malloc(sizeof(double)*Nk[0]*Nk[1]*Nk[2]*A->NFermion);
+  TightBindingEigenValues(A, Nk, val);
+  *Emin = val[0];
+  *Emax = val[Nk[0]*Nk[1]*Nk[2]*A->NFermion-1];
+  *mu = ChemicalPotential(val, Ntot, nd * (Nk[0]*Nk[1]*Nk[2]), kBT, tol, maxIter);
+  N=floorl( nd * (Nk[0]*Nk[1]*Nk[2]) * (1+DBL_EPSILON));
+  if(N+1<Ntot)
+  {
+    *gap = val[N+1] - val[N];
+  }
+  else
+  {
+    *gap=INFINITY;
+  }
+  if(N>=Ntot)
+  {
+    *NStateEF=0;
+    *NoccEF=0;
+  }
+  else
+  {
+    i=1;
+    while( (N>i) && (val[N] - val[N-i] < tol)) i++;
+    *NStateEF=i;
+    *NoccEF=i;
+    i=1;
+    while( (N+i<Ntot) && (val[N+i] - val[N] < tol)) i++;
+    *NStateEF+=(i-1);
+  }
+  free(val);
+  return 0;
+}
 
 /*
  *
@@ -2736,8 +3008,8 @@ uint32_t RemoveCrystalInformationFromTightBinding(TightBindingDef *TB, TightBind
     {
       // absolute positions
       StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][0])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][0])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][0]));
-      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][1]));
-      StripedTB->H[StripedTB->nH].ConnectingVector[0] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][2]));
+      StripedTB->H[StripedTB->nH].ConnectingVector[1] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][1])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][1]));
+      StripedTB->H[StripedTB->nH].ConnectingVector[2] = ((StripedTB->H[StripedTB->nH].TransVecs[0]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[0] * StripedTB->Cell.rUnitCell[0][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[1]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[1] * StripedTB->Cell.rUnitCell[1][2])) + ((StripedTB->H[StripedTB->nH].TransVecs[2]==0)?0:(StripedTB->H[StripedTB->nH].TransVecs[2] * StripedTB->Cell.rUnitCell[2][2]));
     }
     else
     {
@@ -3286,6 +3558,38 @@ MatrixType YToKMatrix(const int multiplicity, const bool addSpin)
 		out.VRe[6][1] = 1/sqrt(2.);
 		out.VRe[6][5] = 1/sqrt(2.);
 	}
+  else if (multiplicity == 18)
+  {
+    //    g-shell
+    out.VRe[0][0] =  sqrt( 5./24.);
+    out.VRe[0][4] =  sqrt(14./24.);
+    out.VRe[0][8] =  sqrt( 5./24.);
+    out.VRe[1][2] =  sqrt( 1./2. );
+    out.VRe[1][6] =  sqrt( 1./2. );
+    out.VRe[2][0] =  sqrt( 7./24.);
+    out.VRe[2][4] = -sqrt(10./24.);
+    out.VRe[2][8] =  sqrt( 7./24.);
+    out.VIm[3][1] = -sqrt( 1./16.);
+    out.VIm[3][3] = -sqrt( 7./16.);
+    out.VIm[3][5] = -sqrt( 7./16.);
+    out.VIm[3][7] = -sqrt( 1./16.);
+    out.VRe[4][1] = -sqrt( 1./16.);
+    out.VRe[4][3] =  sqrt( 7./16.);
+    out.VRe[4][5] = -sqrt( 7./16.);
+    out.VRe[4][7] =  sqrt( 1./16.);
+    out.VIm[5][0] =  sqrt(12./24.);
+    out.VIm[5][8] = -sqrt(12./24.);
+    out.VIm[6][1] =  sqrt( 7./16.);
+    out.VIm[6][3] = -sqrt( 1./16.);
+    out.VIm[6][5] = -sqrt( 1./16.);
+    out.VIm[6][7] =  sqrt( 7./16.);
+    out.VRe[7][1] = -sqrt( 7./16.);
+    out.VRe[7][3] = -sqrt( 1./16.);
+    out.VRe[7][5] =  sqrt( 1./16.);
+    out.VRe[7][7] =  sqrt( 7./16.);
+    out.VIm[8][2] =  sqrt( 1./2. );
+    out.VIm[8][6] = -sqrt( 1./2. );
+  }
   else if ((multiplicity - 2) % 4 == 0)
 	{
 		cout << "YToKMatrix not yet implemented for an atomic shell of multiplicity " << multiplicity << ", sorry!" << endl;
@@ -3346,6 +3650,25 @@ MatrixType ZToKMatrix(const int multiplicity, const bool addSpin)
     out.VRe[5][0] = -sqrt(3./8.);
     out.VRe[5][2] =  sqrt(5./8.);
     out.VRe[6][5] = 1;
+  }
+  else if (multiplicity == 18)
+  {
+    //    g-shell
+    out.VRe[0][4] =  sqrt(7./12.);
+    out.VRe[0][8] =  sqrt(5./12.);
+    out.VRe[1][6] = 1;
+    out.VRe[2][4] = -sqrt(5./12.);
+    out.VRe[2][8] =  sqrt(7./12.);
+    out.VRe[3][1] = -sqrt(1./8. );
+    out.VRe[3][3] = -sqrt(7./8. );
+    out.VRe[4][5] =  sqrt(7./8. );
+    out.VRe[4][7] = -sqrt(1./8. );
+    out.VRe[5][0] = 1;
+    out.VRe[6][1] =  sqrt(7./8. );
+    out.VRe[6][3] = -sqrt(1./8. );
+    out.VRe[7][5] = -sqrt(1./8. );
+    out.VRe[7][7] = -sqrt(7./8. );
+    out.VRe[8][2] = 1;
   }
   else if ((multiplicity - 2) % 4 == 0)
   {

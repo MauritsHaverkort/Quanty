@@ -961,6 +961,11 @@ AtomType;
 /*  rUnitCell contains the unit cell in Angstrom
  *  gUnitCell contains the reciprocal lattice vectors
  *  NAtoms the number of atoms within the basis
+ *  Any of the vectors in rUnitCell is allowed to be set to INFINITY indicating this direction has no periodicity
+ *  If the norm of all vectors in rUnitCell is finite we have a 3D crystal
+ *  If the norm of only two vectors in rUnitCell is finite we have a 2D slab
+ *  If the norm of only one vector in rUnitCell is finite we have a 1D chain
+ *  If the norm of all vectors in rUnitCell is INFINITY we have a molecule
  */
 typedef struct CrystalStructureType
 {

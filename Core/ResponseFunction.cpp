@@ -580,6 +580,111 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
  return 0;
 }
 
+/*  Given a Green's function in any of the representations a response function can take
+ *  the one particle density matrix of the impurity block is returned as a matrix of
+ *  size BlockSize by BlockSize (1 by 1 for a scalar response function)
+ *    rho = sum_i f(a_i, mu, kbT) B_i
+ *  All representations that are not a list of poles are first converted to a list of poles.
+ *  Note that this conversion is a diagonalization of the full matrix and thus not cheap.
+ *  Note furthermore that the conversion projects onto the first block, the occupation of the
+ *  bath states is not part of rho.
+ */
+uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactMatrixType *rho, double mu, double kbT)
+{
+  if(M->Block)
+  {
+    BlockListOfPoles G;
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        return BlockListOfPolesToDensityMatrix((BlockListOfPoles*)(M->data), rho, mu, kbT);
+      }
+      case 't':
+      {
+        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G))
+        {
+          printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'a':
+      {
+        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G))
+        {
+          printf("BlockAndersonMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'n':
+      {
+        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G))
+        {
+          printf("BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      default:
+      {
+        printf("Error in ResponseFunctionToDensityMatrix: unrecognized type %c\n",M->type);
+        return 1;
+      }
+    }
+    BlockListOfPolesToDensityMatrix(&G, rho, mu, kbT);
+    FreeBlockListOfPoles(&G);
+    return 0;
+  }
+  else
+  {
+    ListOfPoles L;
+    switch (M->type|32)
+    {
+      case 'l':
+      {
+        return ListOfPolesToDensityMatrix(*(ListOfPoles*)(M->data), rho, mu, kbT);
+      }
+      case 't':
+      {
+        if(TriDiagonalMatrixToListOfPoles(*(TriDiagonalMatrixType*)(M->data), &L))
+        {
+          printf("TriDiagonalMatrixToListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'a':
+      {
+        if(AndersonMatrixToListOfPoles(*(AndersonMatrixType*)(M->data), &L))
+        {
+          printf("AndersonMatrixToListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'n':
+      {
+        if(BADoubleTriDiagonalMatrixToListOfPoles((BADoubleTriDiagonalMatrixType*)(M->data), &L))
+        {
+          printf("BADoubleTriDiagonalMatrixToListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      default:
+      {
+        printf("Error in ResponseFunctionToDensityMatrix: unrecognized type %c\n",M->type);
+        return 1;
+      }
+    }
+    ListOfPolesToDensityMatrix(L, rho, mu, kbT);
+    FreeListOfPoles(&L);
+    return 0;
+  }
+}
+
 uint32_t ResponseFunctionGetBlockSize(const ResponsefunctionType *const a)
 {
   if(a->Block==false) return 1;
@@ -649,6 +754,44 @@ uint32_t ResponseFunctionGetQComplex(const ResponsefunctionType *const a)
     default:
     {
       printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+      return 0;
+    }
+  }
+}
+
+/*  returns the chemical potential stored in the response function
+ */
+double ResponseFunctionGetMu(const ResponsefunctionType *const a)
+{
+  switch(a->type)
+  {
+    case 'L':
+    case 'l':
+    {
+      if(a->Block) return ((BlockListOfPoles*)a->data)->mu;
+      return ((ListOfPoles*)a->data)->mu;
+    }
+    case 'A':
+    case 'a':
+    {
+      if(a->Block) return ((BlockAndersonMatrixType*)a->data)->mu;
+      return ((AndersonMatrixType*)a->data)->mu;
+    }
+    case 'T':
+    case 't':
+    {
+      if(a->Block) return ((BlockTriDiagonalMatrixType*)a->data)->mu;
+      return ((TriDiagonalMatrixType*)a->data)->mu;
+    }
+    case 'N':
+    case 'n':
+    {
+      if(a->Block) return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->mu;
+      return ((BADoubleTriDiagonalMatrixType*)a->data)->mu;
+    }
+    default:
+    {
+      printf("Error in ResponseFunctionGetMu: unrecognized type %c",a->type);
       return 0;
     }
   }

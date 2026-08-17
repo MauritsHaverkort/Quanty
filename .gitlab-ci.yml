@@ -25,6 +25,26 @@ build-job:
     - Quanty.exe
     expire_in: 1 week
 
+sync_develop_to_public:
+  stage: deploy
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - git push "https://git:${QuantyBotDevelop}@git.quanty.org/Quanty/develop.git" "${CI_COMMIT_SHA}:refs/heads/main"
+  rules:
+    - if: '$IS_PRIVATE_REPO == "true" && $CI_COMMIT_BRANCH == "develop"'
+
+sync_release_to_public:
+  stage: deploy
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - git push "https://git:${QuantyBotRelease}@git.quanty.org/Quanty/release.git" "${CI_COMMIT_SHA}:refs/heads/main"
+  rules:
+    - if: '$IS_PRIVATE_REPO == "true" && $CI_COMMIT_BRANCH == "master"'
+
+
+
 #sync_develop_to_public:
 #  stage: deploy
 #  script:
@@ -163,6 +183,7 @@ test-jobs-Responsefunction:
           - "__sub"
           - "CalculateGfromG0AndSigma"
           - "CalculateHybridizationFunction"
+          - "CalculateRho"
           - "CalculateSelfEnergy"
           - "ChangeType"
           - "Chop"
@@ -209,11 +230,14 @@ test-jobs-tightbinding:
           - "AddSpin"
           - "CalculateBands"
           - "CalculateG"
+          - "CalculateMu"
           - "Chop"
           - "Copy"
           - "Derivative"
           - "New"
           - "PhaseTests"
+          - "ShiftOnsiteEnergy"
+          - "SlaterKoster"
           - "UnitTest"
   script:
     - export OMP_NUM_THREADS=8
