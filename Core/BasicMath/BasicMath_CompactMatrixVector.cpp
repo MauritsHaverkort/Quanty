@@ -1489,6 +1489,73 @@ uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M)
   return 0;
 }
 
+int SquareCompactMatrixMakeHermitian(CompactMatrixType * const M)
+{
+  if(M->Ni!=M->Nj) return 1;
+  if(M->QComplex==0)
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->VRe[j + i * M->Nj] += M->VRe[i + j * M->Nj];
+        M->VRe[j + i * M->Nj] /=  2;
+        M->VRe[i + j * M->Nj] = M->VRe[j + i * M->Nj];
+      }
+    }
+  }
+  else
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      M->V[i + i * M->Nj].Im = 0;
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->V[j + i * M->Nj].Re += M->V[i + j * M->Nj].Re;
+        M->V[j + i * M->Nj].Im -= M->V[i + j * M->Nj].Im;
+        M->V[j + i * M->Nj] /=  2;
+        M->V[i + j * M->Nj].Re = M->V[j + i * M->Nj].Re;
+        M->V[i + j * M->Nj].Im =-M->V[j + i * M->Nj].Im;
+      }
+    }
+  }
+  return 0;
+}
+
+int SquareCompactMatrixMakeAntiHermitian(CompactMatrixType * const M)
+{
+  if(M->Ni!=M->Nj) return 1;
+  if(M->QComplex==0)
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      M->VRe[i + i * M->Nj] = 0;
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->VRe[j + i * M->Nj] -= M->VRe[i + j * M->Nj];
+        M->VRe[j + i * M->Nj] /=  2;
+        M->VRe[i + j * M->Nj] =-M->VRe[j + i * M->Nj];
+      }
+    }
+  }
+  else
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      M->V[i + i * M->Nj].Re = 0;
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->V[j + i * M->Nj].Re -= M->V[i + j * M->Nj].Re;
+        M->V[j + i * M->Nj].Im += M->V[i + j * M->Nj].Im;
+        M->V[j + i * M->Nj] /=  2;
+        M->V[i + j * M->Nj].Re =-M->V[j + i * M->Nj].Re;
+        M->V[i + j * M->Nj].Im = M->V[j + i * M->Nj].Im;
+      }
+    }
+  }
+  return 0;
+}
+
 /* M=M^{-1}
  */
 double CompactMatrixInverse(CompactMatrixType * const M)

@@ -1852,14 +1852,24 @@ int   CalculateGBathFromGandSigmaDirectSubtract(ResponsefunctionType  * const G,
     }
     else
     { // Block Single
-      
+      BlockListOfPoles SigmaLPBlock;
+      CopyListOfPolesToBlockListOfPoles((ListOfPoles *)(SigmaLP.data), &SigmaLPBlock);
+      SubtractBlockListOfPoles((BlockListOfPoles*)(HeffLP.data), &SigmaLPBlock);
+      FreeBlockListOfPoles(&SigmaLPBlock);
     }
   }
   else
   {
     if(SigmaLP.Block==true)
     { // Single Block
-      
+      BlockListOfPoles *HeffLPBlock;
+      HeffLPBlock = (BlockListOfPoles *)malloc(sizeof(BlockListOfPoles));
+      CopyListOfPolesToBlockListOfPoles((ListOfPoles *)(HeffLP.data), HeffLPBlock);
+      SubtractBlockListOfPoles(HeffLPBlock, (BlockListOfPoles*)(SigmaLP.data));
+      FreeListOfPoles((ListOfPoles *)(HeffLP.data));
+      free(HeffLP.data);
+      HeffLP.data = HeffLPBlock;
+      HeffLP.Block=true;
     }
     else
     { // Single Single
@@ -1884,6 +1894,7 @@ int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, Re
   InitCompactMatrix(&MGBath);
   CompactMatrixAddShifted(&MGBath, MG, 1, 0, 0, 0);
   CompactMatrixAddShifted(&MGBath, MSigma, 1, 0, MG.Ni, MG.Nj);
+  
 
   PrintCompactMatrixMinimal(MGBath);
   

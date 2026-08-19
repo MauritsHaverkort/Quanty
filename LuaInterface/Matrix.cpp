@@ -82,6 +82,66 @@ static int LuaMatrixConjugate(lua_State * L)
   return 1;
 }
 
+
+/*
+ *
+ */
+static int LuaMatrixHermitianPart(lua_State * L)
+{
+  CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(A->Ni!=A->Nj) luaL_error(L, "HarmitianPart can only be called on square matrices");
+  if(len!=1) luaL_error(L, "Matrix.Conjugate called with %d arguments, only one expected",len);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    SquareCompactMatrixMakeHermitian(A);
+    LuaPushTable_CompactMatrixType(L, A);
+    FreeCompactMatrix(A);
+    free(A);
+  }
+  else
+  {
+    CompactMatrixType *B;
+    B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
+    CompactMatrixCopy(*A, B);
+    SquareCompactMatrixMakeHermitian(B);
+  }
+  return 1;
+}
+
+/*
+ *
+ */
+static int LuaMatrixAntiHermitianPart(lua_State * L)
+{
+  CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(A->Ni!=A->Nj) luaL_error(L, "AntiHarmitianPart can only be called on square matrices");
+  if(len!=1) luaL_error(L, "Matrix.Conjugate called with %d arguments, only one expected",len);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    SquareCompactMatrixMakeAntiHermitian(A);
+    LuaPushTable_CompactMatrixType(L, A);
+    FreeCompactMatrix(A);
+    free(A);
+  }
+  else
+  {
+    CompactMatrixType *B;
+    B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
+    CompactMatrixCopy(*A, B);
+    SquareCompactMatrixMakeAntiHermitian(B);
+  }
+  return 1;
+}
+
+
 /*
  *
  */
@@ -2691,6 +2751,7 @@ static int LauMatrixNew(lua_State *L)
 
 static const struct luaL_Reg Matrix_func[] = {
 	{"AddSpin", LuaMatrixAddSpin},
+  {"AntiHermitianPart", LuaMatrixAntiHermitianPart},
   {"Conjugate", LuaMatrixConjugate},
   {"ConjugateTranspose", LuaMatrixConjugateTranspose},
   {"Diagonal", LuaMatrixDiagonal},
@@ -2698,6 +2759,7 @@ static const struct luaL_Reg Matrix_func[] = {
   {"Exp", LuaMatrixExp},
 	{"Expand", LuaMatrixExpand},
 	{"Flatten",LuaMatrixFlatten},
+  {"HermitianPart", LuaMatrixHermitianPart},
   {"Identity", LuaMatrixIdentity},
   {"Inverse", LuaMatrixInverse},
   {"New", LauMatrixNew},

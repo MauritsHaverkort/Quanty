@@ -2,7 +2,7 @@ print("--------------------------------------------------------")
 print("-- Responsefunction CalculateGBathFromGAndSigma       --")
 print("--------------------------------------------------------")
 
-print("Non - Block - Default method")
+print("Scalar - Default method")
 a = {0, 0, 2.5,  3.0, 3.5}
 b = {   1, 0.5,  0.6, 0.7}
 G0 = ResponseFunction.New({a,b,mu=0,type="And", name="D0"})
@@ -44,15 +44,9 @@ setmetatable(GBathmat, MatrixMeta)
 GBathTri = Matrix.Tridiagonalize(GBathmat)
 GBathOrig = ResponseFunction.ChangeType(GBathTri,"And")
 
-print(Chop(GBathOrig))
-
 G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma)
 
 GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(G,Sigma))
-
-print(GBath)
-
-
 
 if( not( GBath==GBathOrig )) then
 	print("GBath")
@@ -71,21 +65,21 @@ for omega=-5,5,0.1 do
 		print("GBathOrig")
 		print(GBathOrig)
 		print("omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))")
-		print(omega, Gamma, GBath(omega,Gamma), 1/(1/GTri(omega,Gamma) + Sigma(omega,Gamma))  )
+		print(omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))  )
 		print(Chop(GBath(omega,Gamma)-1/(1/G(omega,Gamma) + Sigma(omega,Gamma)) ,Epsilon))
 		error("Calculation of GBath from G and Sigma failed\n",1)
   end
 end
 
 
-print(" Block - Default method")
+print("Block - Default method")
 a = {{{0}}, {{0}}, {{2.5}},  {{3.0}}, {{3.5}}}
 b = {   {{1}}, {{0.5}},  {{0.6}}, {{0.7}}}
-G0 = ResponseFunction.New({a,b,mu=0,type="And", name="D0"})
+G0B = ResponseFunction.New({a,b,mu=0,type="And", name="D0"})
 
 a = {{{1.0}}, {{1.5}}, {{2.0}}}
 b = {     {{0.2}}, {{0.3}}}
-Sigma = ResponseFunction.New({a,b,mu=0,type="Tri", name="Sigma"})
+SigmaB = ResponseFunction.New({a,b,mu=0,type="Tri", name="Sigma"})
 
 Gmat     = {{1.0, 0.2, 0  , 0.5, 0  , 0  , 0.6, 0  , 0  , 0.7, 0  , 0  },
 						{0.2, 1.5, 0.3, 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  },
@@ -120,9 +114,9 @@ setmetatable(GBathmat, MatrixMeta)
 GBathTri = Matrix.Tridiagonalize(GBathmat)
 GBathOrig = ResponseFunction.ChangeType(GBathTri,"And")
 
-G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma)
+GB = ResponseFunction.CalculateGfromG0andSigma(G0B,SigmaB)
 
-GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(G,Sigma))
+GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(GB,SigmaB))
 
 if( not( GBath==GBathOrig )) then
 	print("GBath")
@@ -137,20 +131,91 @@ Epsilon = 1E-11
 omega=-5
 
 for omega=-5,5,0.1 do
-	if not( Chop(GBath(omega,Gamma)[1][1]-1/(1/G(omega,Gamma)[1][1] + Sigma(omega,Gamma)[1][1]) ,Epsilon)==0 ) then
+	if not( Chop(GBath(omega,Gamma)[1][1]-1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1]) ,Epsilon)==0 ) then
 		print("GBath")
-		print(GBath)
+		print(GBathB)
 		print("GBathOrig")
 		print(GBathOrig)
 		print("omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))")
-		print(omega, Gamma, GBath(omega,Gamma), 1/(1/GTri(omega,Gamma)[1][1] + Sigma(omega,Gamma)[1][1])  )
-		print(Chop(GBath(omega,Gamma)-1/(1/G(omega,Gamma)[1][1] + Sigma(omega,Gamma)[1][1]) ,Epsilon))
+		print(omega, Gamma, GBathB(omega,Gamma), 1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1])  )
+		print(Chop(GBath(omega,Gamma)-1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1]) ,Epsilon))
 		error("Calculation of GBath from G and Sigma failed\n",1)
 	end
 end
 
 
 
+
+
+print("Block - Scalar - Default method")
+
+GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(GB,Sigma))
+
+if( not( GBath==GBathOrig )) then
+	print("GBath")
+	print(GBath)
+	print("GBathOrig")
+	print(GBathOrig)
+	error("Calculation of GBath from G and Sigma failed\n",1)
+end
+
+Gamma=0.1
+Epsilon = 1E-11
+omega=-5
+
+for omega=-5,5,0.1 do
+	if not( Chop(GBath(omega,Gamma)[1][1]-1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1]) ,Epsilon)==0 ) then
+		print("GBath")
+		print(GBathB)
+		print("GBathOrig")
+		print(GBathOrig)
+		print("omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))")
+		print(omega, Gamma, GBathB(omega,Gamma), 1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1])  )
+		print(Chop(GBath(omega,Gamma)-1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1]) ,Epsilon))
+		error("Calculation of GBath from G and Sigma failed\n",1)
+	end
+end
+
+
+
+
+print("Scalar - Block - Default method")
+
+GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(G,SigmaB))
+
+if( not( GBath==GBathOrig )) then
+	print("GBath")
+	print(GBath)
+	print("GBathOrig")
+	print(GBathOrig)
+	error("Calculation of GBath from G and Sigma failed\n",1)
+end
+
+Gamma=0.1
+Epsilon = 1E-11
+omega=-5
+
+for omega=-5,5,0.1 do
+	if not( Chop(GBath(omega,Gamma)[1][1]-1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1]) ,Epsilon)==0 ) then
+		print("GBath")
+		print(GBathB)
+		print("GBathOrig")
+		print(GBathOrig)
+		print("omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))")
+		print(omega, Gamma, GBathB(omega,Gamma), 1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1])  )
+		print(Chop(GBath(omega,Gamma)-1/(1/GB(omega,Gamma)[1][1] + SigmaB(omega,Gamma)[1][1]) ,Epsilon))
+		error("Calculation of GBath from G and Sigma failed\n",1)
+	end
+end
+
+
+
+
+
+print("Scalar - Eigensystem")
+
+
+GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(GB,SigmaB,{{"Method","Eigensystem"}}))
 
 
 print("--------------------------------------------------------")

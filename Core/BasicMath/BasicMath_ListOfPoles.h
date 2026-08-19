@@ -34,3 +34,4 @@ uint32_t ShiftListOfPolesToMakeChemPotZero(ListOfPoles * const M, double const o
 uint32_t ShiftListOfPoles(ListOfPoles * const M, double const munew);
 uint32_t ShiftListOfPolesToMakeFirstMomentZero(ListOfPoles * const M);
 uint32_t ListOfPolesCalculateChemicalPotential(ListOfPoles const M, double const occupation, double *const mu);
+int CopyListOfPolesToBlockListOfPoles(ListOfPoles const * const M, BlockListOfPoles *MB);

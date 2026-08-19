@@ -1,0 +1,38 @@
+
+M1 = {{5, 1, 2, 0},
+			{2, 5, 3, 2},
+			{2, 0, 5, 1},
+			{0, 2, 4, 5}}
+setmetatable(M1, MatrixMeta)
+M1D = Matrix.New(M1)
+
+M1C = {{5,-I, 3,   I},
+			 {I, 5, 0,   2},
+			 {2, 0, 5-I,-I},
+			 {0, 2, I+1, 5}}
+setmetatable(M1C, MatrixMeta)
+M1CD = Matrix.New(M1C)
+
+M1H   = Matrix.HermitianPart(M1)
+M1AH  = Matrix.AntiHermitianPart(M1)
+M1DH  = Matrix.HermitianPart(M1D)
+M1DAH = Matrix.AntiHermitianPart(M1D)
+
+print(M1H)
+print(M1AH)
+print(M1DH)
+print(M1DAH)
+print(M1H+M1AH - M1)
+print(M1DH+M1DAH - M1D)
+
+M1H   = Matrix.HermitianPart(M1C)
+M1AH  = Matrix.AntiHermitianPart(M1C)
+M1DH  = Matrix.HermitianPart(M1CD)
+M1DAH = Matrix.AntiHermitianPart(M1CD)
+
+print(M1H)
+print(M1AH)
+print(M1DH)
+print(M1DAH)
+print(M1H+M1AH - M1C)
+print(M1DH+M1DAH - M1CD)

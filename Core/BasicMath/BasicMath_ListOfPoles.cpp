@@ -1905,3 +1905,23 @@ uint32_t ListOfPolesCalculateChemicalPotential(ListOfPoles const M, double const
   printf("that aint working. Returned %22.15E as chemical potential\n", *mu);
   return 1;
 }
+
+
+
+int CopyListOfPolesToBlockListOfPoles(ListOfPoles const * const M, BlockListOfPoles *MB)
+{
+  MB->N = M->N;
+  MB->BlockSize = 1;
+  MB->QComplex = 0;
+  if(InitBlockListOfPoles(MB)) return 1;
+  strncpy(MB->Name, M->Name, MAXStrLength-1);
+  MB->Name[MAXStrLength-1]='\0';
+  MB->a0Re[0] = M->a0;
+  MB->mu = M->mu;
+  for(int i=0;i<M->N;i++)
+  {
+    MB->VRe[2*i  ]=M->a[i];
+    MB->VRe[2*i+1]=M->b[i];
+  }
+  return 0;
+}
