@@ -15,6 +15,10 @@ uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType
 uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G,TriDiagonalMatrixType * const Sigma);
 uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType const G0, AndersonMatrixType const G,ListOfPoles * const Sigma);
 uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixType const G0,TriDiagonalMatrixType const G, ListOfPoles * const Sigma);
+
+int   CalculateGBathFromGandSigma(ResponsefunctionType  * const G, ResponsefunctionType  * const Sigma, ResponsefunctionType  * const GBath, double Epsilon, CompactVectorType *const Grid, uint32_t Nv, uint32_t Nc, ResponsefunctionType  * const Gv, ResponsefunctionType  * const Gc, char const * const Method, char const * const Type);
+
+
 uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const mu, TriDiagonalMatrixType const Sigma,AndersonMatrixType * const G);
 uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma,TriDiagonalMatrixType * const GBath, uint32_t NTriDiag);
 uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma,AndersonMatrixType * const G);

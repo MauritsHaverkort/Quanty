@@ -1826,6 +1826,107 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
  return 0;
 }
 
+/*  Calculate GBath(w) = ( G^-1 - Simga(w) )^-1
+ *
+ *  Calcualte G^-1
+ *  Convert this to a list of poles
+ *  Subtract list of poles to list of poles, mergin negative weight ( https://doi.org/10.1103/PhysRevB.90.085102 )
+ *  Invert list of poles to GBath in Anderson Matrix form.
+ */
+
+int   CalculateGBathFromGandSigmaDirectSubtract(ResponsefunctionType  * const G, ResponsefunctionType  * const Sigma, ResponsefunctionType  * const GBath)
+{
+  ResponsefunctionType Heff, HeffLP, SigmaLP;
+  CompactMatrixType A0, B0;
+  ResponseFunctionEffectiveHamiltonian(G, &Heff, &A0, &B0);
+  FreeCompactMatrix(&A0);
+  FreeCompactMatrix(&B0);
+  ConvertResponsefunction(&Heff, &HeffLP,  'L', 0, 0); // capital L as C has controle of pointer
+  FreeResponsefunction(&Heff);
+  ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0); // capital L as C has controle of pointer
+  if(HeffLP.Block==true)
+  {
+    if(SigmaLP.Block==true)
+    { // Block Block
+      SubtractBlockListOfPoles((BlockListOfPoles*)(HeffLP.data), (BlockListOfPoles*)(SigmaLP.data));
+    }
+    else
+    { // Block Single
+      
+    }
+  }
+  else
+  {
+    if(SigmaLP.Block==true)
+    { // Single Block
+      
+    }
+    else
+    { // Single Single
+      SubtractListOfPoles((ListOfPoles *)(HeffLP.data), (ListOfPoles *)(SigmaLP.data));
+    }
+  }
+  FreeResponsefunction(&SigmaLP);
+  ResponseFunctionFromEffectiveHamiltonian(&HeffLP, GBath);
+  FreeResponsefunction(&HeffLP);
+  return 0;
+}
+
+
+int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, ResponsefunctionType  * const Sigma, ResponsefunctionType  * const GBath, double Epsilon, CompactVectorType *const Grid, uint32_t Nv, uint32_t Nc, ResponsefunctionType  * const Gv, ResponsefunctionType  * const Gc)
+{
+  CompactMatrixType MGBath, MG, MSigma;
+  ResponseFunctionToCompactMatrix(G, &MG, true, Epsilon);
+  ResponseFunctionToCompactMatrix(Sigma, &MSigma, true, Epsilon);
+  MGBath.Ni = MG.Ni + MSigma.Ni;
+  MGBath.Nj = MG.Nj + MSigma.Nj;
+  MGBath.QComplex = 1;
+  InitCompactMatrix(&MGBath);
+  CompactMatrixAddShifted(&MGBath, MG, 1, 0, 0, 0);
+  CompactMatrixAddShifted(&MGBath, MSigma, 1, 0, MG.Ni, MG.Nj);
+
+  PrintCompactMatrixMinimal(MGBath);
+  
+  FreeCompactMatrix(&MGBath);
+  return 0;
+}
+
+
+int   CalculateGBathFromGandSigma(ResponsefunctionType  * const G, ResponsefunctionType  * const Sigma, ResponsefunctionType  * const GBath, double Epsilon, CompactVectorType *const Grid, uint32_t Nv, uint32_t Nc, ResponsefunctionType  * const Gv, ResponsefunctionType  * const Gc, char const * const Method, char const * const Type)
+{
+  char GBathType;
+  int retval;
+  if(Method==NULL)                               retval = CalculateGBathFromGandSigmaDirectSubtract(G, Sigma, GBath);
+  else if (strncmp("Subtract",    Method, 8)==0) retval = CalculateGBathFromGandSigmaDirectSubtract(G, Sigma, GBath);
+  else if (strncmp("Eigensystem", Method,11)==0) retval = CalculateGBathFromGandSigmaEigensystem(G, Sigma, GBath, Epsilon, Grid, Nv, Nc, Gv, Gc);
+  else return 1;
+  if(retval!=0) return retval;
+  
+  // check if GBath->type equals Type, if not convert to the requested type. if Type is Null accept all types
+  if(Type==NULL)                     GBathType=GBath->type;
+  else if (strcmp("and",Type) == 0 ) GBathType='a';
+  else if (strcmp("And",Type) == 0 ) GBathType='a';
+  else if (strcmp("LP", Type) == 0 ) GBathType='l';
+  else if (strcmp("lp", Type) == 0 ) GBathType='l';
+  else if (strcmp("Tri",Type) == 0 ) GBathType='t';
+  else if (strcmp("tri",Type) == 0 ) GBathType='t';
+  else if (strcmp("Nat",Type) == 0 ) GBathType='n';
+  else if (strcmp("nat",Type) == 0 ) GBathType='n';
+  else
+  {
+    printf("WARNING: Unrecognzied type of required bath green's function in CalculateGBathFromGandSigma\n");
+    printf("Returned arbetrary type %c \n",GBath->type);
+    GBathType=GBath->type;
+  }
+  // TODO: change type to requested type
+  
+  // TODO: check if we need to set Gv and or Gc
+  
+  return 0;
+}
+
+
+
 /*  calculate G = G0( omega - Sigma(omega) )
  *
  *  represent G0 and S as a list of poles then

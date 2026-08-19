@@ -552,6 +552,45 @@ static int LuaCalculateHybridizationFunction(lua_State *L)
   return 1;
 }
 
+static int LuaCalculateGBathFromGandSigma(lua_State *L)
+{
+  ResponsefunctionType *G,*Sigma,*GBath,*Gv=NULL,*Gc=NULL;
+  CompactVectorType Grid={0,0,NULL};
+  uint32_t Nv=UINT32_MAX, Nc=UINT32_MAX;
+  double Epsilon=1000*DBL_EPSILON;
+  char * GBathFormat=NULL;
+  char * Method=NULL;
+  LuaOptionsType CalculateybridizationFunctionOptions[]={
+    {"Epsilon","double",&(Epsilon)},
+    {"EnergyGrid","Vector",&Grid},
+    {"Format","char*",&(GBathFormat)},
+    {"Method","char*",&(Method)},
+    {"Nc","uint32_t",&Nc},
+    {"Nv","uint32_t",&Nv},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if( LuaTestOptionsList(L,-1) )
+  {
+    LuaCheckOptions(L,-1,CalculateybridizationFunctionOptions);
+    len--;
+  }
+  G    = luaL_checkResponsefunction(L,1);
+  Sigma = luaL_checkResponsefunction(L,2);
+  if(BlockResponseFunctionGetBlockSize(G) != BlockResponseFunctionGetBlockSize(Sigma)) return luaL_error(L, "CalculateHybridizationFunction should be called with G and Sigma with same dimension of BlockSize\n");
+  GBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  
+  CalculateGBathFromGandSigma(G, Sigma, GBath, Epsilon, &Grid, Nv, Nc, Gv, Gc, Method, GBathFormat);
+  // we give the controle of the allocation of the memory of Gout to Lua
+  // turn the type to a lower case letter
+  GBath->type = GBath->type | 32;
+  luaL_setmetatable(L, "ResponseFunction_Type");
+  FreeResponsefunction(G);
+  FreeResponsefunction(Sigma);
+  return 1;
+}
+
+
+
 /*   Given G_0(omega) and Sigma(omega) on the stack as response functons *
  *   Calculate G_0(omega-Sigma(omega))
  *   This yields the reponse function of a tight binding model whereby all sites get the self energy Sigma(omega)
@@ -3728,6 +3767,7 @@ static const struct luaL_Reg ResponseFunction_func[] = {
   {"CalculateSelfEnergy", LuaCalculateSelfEnergy},
   {"CalculateHybridizationFunction", LuaCalculateHybridizationFunction},
   {"CalculateGfromG0andSigma",LuaCalculateGfromG0andSigma},
+  {"CalculateGbathfromGandSigma",LuaCalculateGBathFromGandSigma},
   {"InvertEnergy", LuaResponseFunctionInvertEnergy},
   {"Transpose", LuaResponseFunctionTranspose},
   {"Elements", LuaResponseFunctionElement},
