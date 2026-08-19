@@ -181,6 +181,7 @@ test-jobs-Responsefunction:
           - "__index"
           - "__mul"
           - "__sub"
+          - "CalculateGBathFromGAndSigma"
           - "CalculateGfromG0AndSigma"
           - "CalculateHybridizationFunction"
           - "CalculateRho"
