@@ -4225,15 +4225,8 @@ uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrix
     B0->Nj=B0->Ni;
     InitCompactMatrix(B0);
     B0->mu=M->mu;
-    /*  In the natural impurity orbital representation B0 is not taken out of the representation, but is kept inside
-     *  the matrix T. The first BlockSize rows of T are [ bv0 | bc0 ] with bv0 = val.b[0] and bc0 = con.b[0]. Both the
-     *  valence and the conduction chain carry unit weight, such that the total spectral weight is
-     *  B0 . B0^C = bv0 . bv0^C + bc0 . bc0^C. For a physical Green's function B0 = 1, but for a self energy, a
-     *  hybridization function or other types of spectra this is not the case.
-     *  (compare the non block version SetBADoubleTriDiagonalMatrixConVal: b0 = sqrt( val.b[0]^2 + con.b[0]^2 ) )
-     */
     GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType(M, &T);
-    Bcoup=T;              /* the first BlockSize rows of T, i.e. [ bv0 | bc0 ]. T owns the memory, do not free Bcoup */
+    Bcoup=T;              
     Bcoup.Ni=M->BlockSize;
     CompactMatrixMultiply('N', 'C', &Bcoup, &Bcoup, &B0B0);
     SquareCompactMatrixMakeHermitian(&B0B0);

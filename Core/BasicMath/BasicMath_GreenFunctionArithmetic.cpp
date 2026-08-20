@@ -1902,7 +1902,7 @@ int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, Re
     ResponseFunctionGetA0(Sigma, &a0);
     ResponseFunctionGetB0(Sigma, &b0);
     MGBath.V[0].Re-=a0;
-    // Note we add I*b0 on the off diagonal making the matrix non hermitian. The coupling enters as I^2 = -1 which we need to get the subtraction
+    // Note we add -I*b0 on the off diagonal making the matrix non hermitian. The coupling enters as I^2 = -1 which we need to get the subtraction
     MGBath.V[MG.Ni].Im =-b0;
     MGBath.V[MG.Ni * MGBath.Nj].Im =-b0;
   }

@@ -143,9 +143,8 @@ GBathM = Matrix.Flatten({{A1,           B4,           0,            B1,         
 
 
 val, funL, funR = Eigensystem(GBathM)
-print(Chop(val))
-print(Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR)-Matrix.Identity(33),1E-6))
-print(Chop(Matrix.Conjugate(funL)*GBathM*Matrix.Transpose(funR)-Matrix.Diagonal(val),1E-6))
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*Matrix.Transpose(funR)-Matrix.Identity(33),1E-6))
+TestIfMatrixIsZero(Chop(Matrix.Conjugate(funL)*GBathM*Matrix.Transpose(funR)-Matrix.Diagonal(val),1E-6))
 
 
 collectgarbage()

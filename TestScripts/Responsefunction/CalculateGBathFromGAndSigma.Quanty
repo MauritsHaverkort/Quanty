@@ -44,8 +44,6 @@ setmetatable(GBathmat, MatrixMeta)
 GBathTri = Matrix.Tridiagonalize(GBathmat)
 GBathOrig = ResponseFunction.ChangeType(GBathTri,"And")
 GBathLP = ResponseFunction.ChangeType(GBathTri,"LP")
-print(Chop(GBathOrig))
-print(Chop(GBathLP))
 
 G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma)
 
@@ -329,23 +327,43 @@ GM     = Matrix.Flatten({{A1+A3,        B4,           0,            B1,         
 GT     = BlockBandDiagonalize(GM,3)
 GL     = ResponseFunction.ChangeType(GT,"LP")
 
-print(GM)
-print(GbathM)
-
-
 GBathStandard = Chop(ResponseFunction.CalculateGbathfromGandSigma(GL,Sigma))
 GBathMatrix   = Chop(ResponseFunction.CalculateGbathfromGandSigma(GL,Sigma,{{"Method","Eigensystem"}}))
 
-print(GBathStandard)
+Gamma=0.1
+Epsilon = 1E-12
+omega=-5
 
+for omega=-5,5,0.1 do
+	if not( Chop(GBathStandard(0.3,0.1)-GbathT(0.3,0.1),Epsilon)==Chop(0*GbathT(0.3,0.1))) then
+	  print(omega, Gamma)
+		print("GBath")
+		print(GbathT)
+		print("GBathOrig")
+		print(GBathStandard)
+		print("Error")
+		print(Chop(GBathStandard(0.3,0.1)-GbathT(0.3,0.1),Epsilon))
+		error("Calculation of GBath from G and Sigma failed\n",1)
+	end
+end
 
-print(GbathL)
-print(GBathMatrix)
+-- note the matrix version via eigensystem has less accuracy...
+Gamma=0.1
+Epsilon = 1E-11
+omega=-5
 
-print(Chop( GBathStandard(0.3,0.2) - GbathL(0.3,0.2) ,1E-13))
-
-print(Chop( GBathMatrix(0.3,0.2) - GbathL(0.3,0.2) ,1E-13))
-
+for omega=-5,5,0.1 do
+	if not( Chop(GBathMatrix(0.3,0.1)-GbathT(0.3,0.1),Epsilon)==Chop(0*GbathT(0.3,0.1))) then
+		print(omega, Gamma)
+		print("GBath")
+		print(GbathT)
+		print("GBathOrig")
+		print(GBathMatrix)
+		print("Error")
+		print(Chop(GBathMatrix(0.3,0.1)-GbathT(0.3,0.1),Epsilon))
+		error("Calculation of GBath from G and Sigma failed\n",1)
+	end
+end
 
 print("--------------------------------------------------------")
 print("-- End                                                --")
