@@ -1885,7 +1885,8 @@ int   CalculateGBathFromGandSigmaDirectSubtract(ResponsefunctionType  * const G,
 
 int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, ResponsefunctionType  * const Sigma, ResponsefunctionType  * const GBath, double Epsilon, CompactVectorType *const Grid, uint32_t Nv, uint32_t Nc, ResponsefunctionType  * const Gv, ResponsefunctionType  * const Gc)
 {
-  CompactMatrixType MGBath, MG, MSigma;
+  CompactMatrixType MGBath, MG, MSigma, funL, funR;
+  Complex16 *val;
   ResponseFunctionToCompactMatrix(G, &MG, true, Epsilon);
   ResponseFunctionToCompactMatrix(Sigma, &MSigma, true, Epsilon);
   MGBath.Ni = MG.Ni + MSigma.Ni;
@@ -1894,11 +1895,99 @@ int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, Re
   InitCompactMatrix(&MGBath);
   CompactMatrixAddShifted(&MGBath, MG, 1, 0, 0, 0);
   CompactMatrixAddShifted(&MGBath, MSigma, 1, 0, MG.Ni, MG.Nj);
+  SquareCompactMatrixMakeHermitian(&MGBath);
+  if(Sigma->Block==false)
+  {
+    double a0, b0;
+    ResponseFunctionGetA0(Sigma, &a0);
+    ResponseFunctionGetB0(Sigma, &b0);
+    MGBath.V[0].Re-=a0;
+    // Note we add I*b0 on the off diagonal making the matrix non hermitian. The coupling enters as I^2 = -1 which we need to get the subtraction
+    MGBath.V[MG.Ni].Im =-b0;
+    MGBath.V[MG.Ni * MGBath.Nj].Im =-b0;
+  }
+  else
+  {
+    CompactMatrixType A0, B0;
+    BlockResponseFunctionGetA0(Sigma, &A0);
+    BlockResponseFunctionGetB0(Sigma, &B0);
+    SquareCompactMatrixMakeHermitian(&A0);
+    SquareCompactMatrixMakeHermitian(&B0);
+    CompactMatrixAddShifted(&MGBath, A0, -1, 0, 0, 0);
+    // Note we add I*B0 on the off diagonal making the matrix non hermitian. The coupling enters as I^2 = -1 which we need to get the subtraction
+    CompactMatrixAddShifted(&MGBath, B0,  0,-1, MG.Ni, 0);
+    CompactMatrixAddShifted(&MGBath, B0,  0,-1, 0, MG.Nj);
+    FreeCompactMatrix(&A0);
+    FreeCompactMatrix(&B0);
+  }
+  val = (Complex16*)malloc(MGBath.Ni * sizeof(Complex16));
+  NonHermitianCompactMatrixEigensystem(&MGBath, &funL, &funR, val);
+  GBath->type='L';
+  GBath->Block=G->Block;
+  GBath->SuggestedGrid=NULL;
+  GBath->NSuggestedGridPoints=0;
+  if(GBath->Block==true)
+  {
+    uint32_t pos=0;
+    int i,j,k;
+    BlockListOfPoles *GBathLP;
+    GBath->data=malloc(sizeof(BlockListOfPoles));
+    GBathLP = (BlockListOfPoles*)GBath->data;
+    GBathLP->BlockSize = BlockResponseFunctionGetBlockSize(G);
+    GBathLP->N = MGBath.Ni;
+    GBathLP->QComplex=1;
+    InitBlockListOfPoles(GBathLP);
+    GBathLP->mu=ResponseFunctionGetMu(G);
+    for(k=0;k<GBathLP->N;k++)
+    {
+      GBathLP->V[pos].Re = val[k].Re;
+      pos++;
+      for(i=0;i<GBathLP->BlockSize;i++)
+      {
+        for(j=0;j<GBathLP->BlockSize;j++)
+        {
+          GBathLP->V[pos].Re = funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Re * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Re + funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Im * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Im;
+          GBathLP->V[pos].Im = funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Re * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Im - funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Im * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Re;;
+          pos++;
+        }
+      }
+    }
+    BlockListOfPolesMergeDegeneratePoles(GBathLP, Epsilon);
+    MakeBlockListOfPolesPhysical(GBathLP);
+  }
+  else
+  {
+    ListOfPoles *GBathLP;
+    GBath->data=malloc(sizeof(ListOfPoles));
+    GBathLP = (ListOfPoles*)GBath->data;
+    GBathLP->N=MGBath.Ni;
+    InitListOfPoles(GBathLP);
+    GBathLP->mu=ResponseFunctionGetMu(G);
+    for(int i=0;i<GBathLP->N;i++)
+    {
+      GBathLP->a[i] = val[i].Re;
+      GBathLP->b[i] = funL.V[i*GBathLP->N].Re * funR.V[i*GBathLP->N].Re + funL.V[i*GBathLP->N].Im * funR.V[i*GBathLP->N].Im;
+    }
+    ReduceListOfPolesSpacing(GBathLP, Epsilon);
+    MakeListOfPolesPhysical(GBathLP);
+  }
   
-
+/*
   PrintCompactMatrixMinimal(MGBath);
-  
+  PrintCompactMatrixMinimal(funL);
+  PrintCompactMatrixMinimal(funR);
+  Complex16 Weight;
+  for(int i=0;i<MGBath.Ni;i++)
+  {
+    Weight.Re = funL.V[i * MGBath.Ni].Re * funR.V[i * MGBath.Ni].Re + funL.V[i * MGBath.Ni].Im * funR.V[i * MGBath.Ni].Im;
+    Weight.Im = funL.V[i * MGBath.Ni].Re * funR.V[i * MGBath.Ni].Im - funL.V[i * MGBath.Ni].Im * funR.V[i * MGBath.Ni].Re;
+    printf("val ( %17.10E %17.10E ) weight ( %17.10E %17.10E ) \n",val[i].Re,val[i].Im,Weight.Re,Weight.Im);
+  }
+*/
+  free(val);
   FreeCompactMatrix(&MGBath);
+  FreeCompactMatrix(&funL);
+  FreeCompactMatrix(&funR);
   return 0;
 }
 

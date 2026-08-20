@@ -43,6 +43,8 @@ int FunTrDotFunCC(CompactMatrixType const * const fun, int i, CompactMatrixType 
 uint32_t CompactMatrixTranspose(CompactMatrixType * const M);
 uint32_t CompactMatrixConjugate(CompactMatrixType * const M);
 uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M);
+int SquareCompactMatrixMakeHermitian(CompactMatrixType * const M);
+int SquareCompactMatrixMakeAntiHermitian(CompactMatrixType * const M);
 double CompactMatrixInverse(CompactMatrixType * const M);
 uint32_t CompactMatrixScale(CompactMatrixType * const A, double alpha);
 uint32_t CompactMatrixScaleComplex(CompactMatrixType * const A, Complex16 alpha);

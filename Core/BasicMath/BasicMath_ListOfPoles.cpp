@@ -1414,6 +1414,41 @@ uint32_t SubtractListOfPoles(ListOfPoles * const A,  ListOfPoles const * const B
   return 0;
 }
 
+int MakeListOfPolesPhysical(ListOfPoles *const A)
+{
+  int i,j;
+  ListOfPoles B;
+  B.N=A->N;
+  InitListOfPoles(&B);
+  B.mu=A->mu;
+  j=0;
+  for(i=0;i<A->N;i++)
+  {
+    if(A->b[i]<=0)
+    {
+      B.a[j] = A->a[i];
+      B.b[j] =-A->b[i];
+      if(i+1!=A->N)
+      {
+        memcpy(&(A->a[i]), &(A->a[i+1]), (A->N-i-1)*sizeof(double));
+        memcpy(&(A->b[i]), &(A->b[i+1]), (A->N-i-1)*sizeof(double));
+      }
+      A->N--;
+      B.N--;
+      j++;
+    }
+    else
+    {
+      B.N--;
+    }
+  }
+  SubtractListOfPoles(A, &B);
+  FreeListOfPoles(&B);
+  return 0;
+}
+
+
+
 /*  a list of poles will be Gaussian broadened
  *  returned is a new list of length 2Nmul+1
  *  

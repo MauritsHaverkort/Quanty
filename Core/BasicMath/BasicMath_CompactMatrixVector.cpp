@@ -2813,7 +2813,6 @@ uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const
 }
 
 
-//TODO: test definition of fulL and funR
 /*
  *  D=funL^*.A.funR^{T} with D a diagonal matrix with the values val on the diagonal and
  *  funL^* . funR^T = I
@@ -3974,7 +3973,7 @@ uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, Bl
  */
 uint32_t ResponseFunctionGetA0(ResponsefunctionType const *A, double *a0)
 {
-  if(A->Block==false) return 1;
+  if(A->Block==true) return 1;
   if((32|A->type)=='t')
   {
     *a0 = ((TriDiagonalMatrixType*)(A->data))->a[0];
@@ -4105,7 +4104,7 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
  */
 uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
 {
-  if(A->Block==false) return 1;
+  if(A->Block==true) return 1;
   if((32|A->type)=='t')
   {
     *b0 = ((TriDiagonalMatrixType*)(A->data))->b[0];

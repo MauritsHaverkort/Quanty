@@ -43,6 +43,9 @@ setmetatable(GBathmat, MatrixMeta)
 
 GBathTri = Matrix.Tridiagonalize(GBathmat)
 GBathOrig = ResponseFunction.ChangeType(GBathTri,"And")
+GBathLP = ResponseFunction.ChangeType(GBathTri,"LP")
+print(Chop(GBathOrig))
+print(Chop(GBathLP))
 
 G = ResponseFunction.CalculateGfromG0andSigma(G0,Sigma)
 
@@ -214,8 +217,134 @@ end
 
 print("Scalar - Eigensystem")
 
+GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(G,Sigma,{{"Method","Eigensystem"}}))
+
+if( not( GBath==GBathOrig )) then
+	print("GBath")
+	print(GBath)
+	print("GBathOrig")
+	print(GBathOrig)
+	error("Calculation of GBath from G and Sigma failed\n",1)
+end
+
+Gamma=0.1
+Epsilon = 1E-12
+omega=-5
+
+for omega=-5,5,0.1 do
+	if not( Chop(GBath(omega,Gamma)-1/(1/G(omega,Gamma) + Sigma(omega,Gamma)) ,Epsilon)==0 ) then
+		print("GBath")
+		print(GBath)
+		print("GBathOrig")
+		print(GBathOrig)
+		print("omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))")
+		print(omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))  )
+		print(Chop(GBath(omega,Gamma)-1/(1/G(omega,Gamma) + Sigma(omega,Gamma)) ,Epsilon))
+		error("Calculation of GBath from G and Sigma failed\n",1)
+	end
+end
+
+
+print("Matrix - Eigensystem")
 
 GBath = Chop(ResponseFunction.CalculateGbathfromGandSigma(GB,SigmaB,{{"Method","Eigensystem"}}))
+
+if( not( GBath==GBathOrig )) then
+	print("GBath")
+	print(GBath)
+	print("GBathOrig")
+	print(GBathOrig)
+	error("Calculation of GBath from G and Sigma failed\n",1)
+end
+
+Gamma=0.1
+Epsilon = 1E-12
+omega=-5
+
+for omega=-5,5,0.1 do
+	if not( Chop(GBath(omega,Gamma)[1][1]-1/(1/G(omega,Gamma) + Sigma(omega,Gamma)) ,Epsilon)==0 ) then
+		print("GBath")
+		print(GBath)
+		print("GBathOrig")
+		print(GBathOrig)
+		print("omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))")
+		print(omega, Gamma, GBath(omega,Gamma), 1/(1/G(omega,Gamma) + Sigma(omega,Gamma))  )
+		print(Chop(GBath(omega,Gamma)[1][1]-1/(1/G(omega,Gamma) + Sigma(omega,Gamma)) ,Epsilon))
+		error("Calculation of GBath from G and Sigma failed\n",1)
+	end
+end
+
+print("Matrix second - define real matrices and true G, G0, Sigma and Gbath")
+-- Note that all sub-matrices need to be (can be taken to be) Hermitian.
+M1 = {{1,0,0},{0,1,0},{0,0,1}}
+setmetatable(M1, MatrixMeta)
+M0 = {{0,0,0},{0,0,0},{0,0,0}}
+setmetatable(M0, MatrixMeta)
+
+A1 = {{1,0,0},{0,2,0},{0,0,3}}
+setmetatable(A1, MatrixMeta)
+A2 = {{-1,0,0},{0,-2,1},{0,1,-2}}
+setmetatable(A2, MatrixMeta)
+A3 = {{-1,1,0},{1,-2,1},{0,1,-2}}
+setmetatable(A3, MatrixMeta)
+A4 = {{0,1,0},{1,0,1},{0,1,0}}
+setmetatable(A4, MatrixMeta)
+
+B1 = {{1,1,3},{1,5,6},{3,6,9}}
+setmetatable(B1, MatrixMeta)
+B2 = {{2,0,3},{0,5,6},{3,6,9}}
+setmetatable(B2, MatrixMeta)
+B3 = {{3,0,3},{0,5,6},{3,6,9}}
+setmetatable(B3, MatrixMeta)
+B4 = {{3,0,3},{0,5,2},{3,2,1}}
+setmetatable(B4, MatrixMeta)
+B5 = {{3,0,3},{0,1,2},{3,2,1}}
+setmetatable(B5, MatrixMeta)
+
+-- test for a self energy that contains no poles and a greens function that contains one pole
+
+G0 = ResponseFunction.New({ {M0,A1,A2,A3}, {M1,B1,B2}, mu=0, type="And", name="G0"})
+Sigma = ResponseFunction.New({ {A3,A4,A2}, {B4,B5}, mu=0, type="Tri", name="Sigma"})
+
+GbathM = Matrix.Flatten({{A1,           B1,           0,            0,            B2,           0,            0 },
+												 {Transpose(B1),A2+A3,        B4,           0,            0,            0,            0 },
+												 {0,            Transpose(B4),A4,           B5,           0,            0,            0 },
+												 {0,            0,            Transpose(B5),A2,           0,            0,            0 },
+												 {Transpose(B2),0,            0,            0,            A3+A3,        B4,           0 },
+												 {0,            0,            0,            0,            Transpose(B4),A4,           B5},
+												 {0,            0,            0,            0,            0,            Transpose(B5),A2}})
+GbathT = BlockBandDiagonalize(GbathM,3)
+GbathL = ResponseFunction.ChangeType(GbathT,"LP")
+
+
+GM     = Matrix.Flatten({{A1+A3,        B4,           0,            B1,           0,            0,            B2,           0,            0 },
+												 {Transpose(B4),A4,           B5,           0,            0,            0,            0,            0,            0 },
+												 {0,            Transpose(B5),A2,           0,            0,            0,            0,            0,            0 },
+												 {Transpose(B1),0,            0,            A2+A3,        B4,           0,            0,            0,            0 },
+												 {0,            0,            0,            Transpose(B4),A4,           B5,           0,            0,            0 },
+												 {0,            0,            0,            0,            Transpose(B5),A2,           0,            0,            0 },
+												 {Transpose(B2),0,            0,            0,            0,            0,            A3+A3,        B4,           0 },
+												 {0,            0,            0,            0,            0,            0,            Transpose(B4),A4,           B5},
+												 {0,            0,            0,            0,            0,            0,            0,            Transpose(B5),A2}})
+GT     = BlockBandDiagonalize(GM,3)
+GL     = ResponseFunction.ChangeType(GT,"LP")
+
+print(GM)
+print(GbathM)
+
+
+GBathStandard = Chop(ResponseFunction.CalculateGbathfromGandSigma(GL,Sigma))
+GBathMatrix   = Chop(ResponseFunction.CalculateGbathfromGandSigma(GL,Sigma,{{"Method","Eigensystem"}}))
+
+print(GBathStandard)
+
+
+print(GbathL)
+print(GBathMatrix)
+
+print(Chop( GBathStandard(0.3,0.2) - GbathL(0.3,0.2) ,1E-13))
+
+print(Chop( GBathMatrix(0.3,0.2) - GbathL(0.3,0.2) ,1E-13))
 
 
 print("--------------------------------------------------------")
