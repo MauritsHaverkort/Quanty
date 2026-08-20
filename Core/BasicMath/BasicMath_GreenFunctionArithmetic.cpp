@@ -1946,8 +1946,8 @@ int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, Re
       {
         for(j=0;j<GBathLP->BlockSize;j++)
         {
-          GBathLP->V[pos].Re = funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Re * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Re + funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Im * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Im;
-          GBathLP->V[pos].Im = funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Re * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Im - funL.V[(i+k*GBathLP->BlockSize)*funL.Nj+j].Im * funR.V[(j+k*GBathLP->BlockSize)*funL.Nj+i].Re;;
+          GBathLP->V[pos].Re = funL.V[k*funL.Nj+i].Re * funR.V[k*funR.Nj+j].Re + funL.V[k*funL.Nj+i].Im * funR.V[k*funR.Nj+j].Im;
+          GBathLP->V[pos].Im = funL.V[k*funL.Nj+i].Re * funR.V[k*funR.Nj+j].Im - funL.V[k*funL.Nj+i].Im * funR.V[k*funR.Nj+j].Re;
           pos++;
         }
       }

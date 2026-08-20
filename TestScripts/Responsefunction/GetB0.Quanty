@@ -1,0 +1,112 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction GetB0                             --")
+print("--------------------------------------------------------")
+
+-- A response function is represented as G = A0 + B0^* [ 1 / (w - M) ]_00 B0^T
+-- ResponseFunction.ChangeType(G,"Dense") returns the three matrices M, A0 and B0. They are separate
+-- objects on the lua stack and only the three of them together represent G.
+-- For a tridiagonal or an Anderson matrix B0 is stored in the representation and returned verbatim.
+-- For a list of poles B0 has to be calculated from the weight of the poles and for the natural
+-- impurity orbital representation from the coupling of the impurity to the valence and conduction chain.
+-- All representations of the same response function have to return the same B0.
+
+function IsZero(M)
+	local n = #Matrix.ToTable(M)
+	return Chop(M,1E-8) == Matrix.Zero(n)
+end
+
+function GetB0(G)
+	local M, A0, B0 = ResponseFunction.ChangeType(G,"Dense")
+	return B0
+end
+
+-- G = A0 + B0^* [ 1 / (w + I Gamma/2 - M) ]_00 B0^T
+function Reconstruct(M, A0, B0, omega, Gamma)
+	local g = Matrix.Sub(Matrix.Inverse(Complex.New(omega,Gamma/2) * Matrix.Identity(#Matrix.ToTable(M)) - M), #Matrix.ToTable(B0))
+	return A0 + Matrix.Conjugate(B0) * g * Matrix.Transpose(B0)
+end
+
+a = { {{0  ,0  },{0  ,0  }},
+      {{1.0,0.2},{0.2,1.5}},
+      {{2.0,0.0},{0.0,2.5}},
+      {{3.0,0.1},{0.1,3.2}} }
+
+print("b0 Hermitian and positive definite -- all representations return the same B0")
+
+b = { {{0.8,0.3},{0.3,0.6}}, {{0.5,0.0},{0.0,0.4}}, {{0.3,0.1},{0.1,0.35}} }
+GReal = ResponseFunction.New({a,b,mu=0,type="Tri",name="GReal"})
+
+b = { {{0.8,Complex.New(0.2,0.15)},{Complex.New(0.2,-0.15),0.6}}, {{0.5,0.0},{0.0,0.4}}, {{0.3,0.1},{0.1,0.35}} }
+GComplex = ResponseFunction.New({a,b,mu=0,type="Tri",name="GComplex"})
+
+for i,G in ipairs({GReal,GComplex}) do
+	B0ref = GetB0(G)
+	for j,ty in ipairs({"And","LP","Nat"}) do
+		B0 = GetB0(ResponseFunction.ChangeType(G,ty))
+		if not IsZero(B0 - B0ref) then
+			print("b0 of the tridiagonal form")
+			print(B0ref)
+			print("B0 of the "..ty.." form")
+			print(B0)
+			error("B0 of the "..ty.." form differs from b0 of the tridiagonal form\n",1)
+		end
+	end
+end
+
+print("b0 not Hermitian -- B0 is defined up to a gauge, B0^* . B0^T (the spectral weight) is not")
+
+b = { {{0.8,0.3},{-0.1,0.6}}, {{0.5,0.0},{0.0,0.4}}, {{0.3,0.1},{0.1,0.35}} }
+GGauge = ResponseFunction.New({a,b,mu=0,type="Tri",name="GGauge"})
+B0ref = GetB0(GGauge)
+Wref  = Matrix.Conjugate(B0ref) * Matrix.Transpose(B0ref)
+for i,ty in ipairs({"LP","Nat"}) do
+	B0 = GetB0(ResponseFunction.ChangeType(GGauge,ty))
+	if not IsZero(Matrix.Conjugate(B0) * Matrix.Transpose(B0) - Wref) then
+		print("b0^* . b0^T of the tridiagonal form")
+		print(Wref)
+		print("B0^* . B0^T of the "..ty.." form")
+		print(Matrix.Conjugate(B0) * Matrix.Transpose(B0))
+		error("the spectral weight of the "..ty.." form differs from the one of the tridiagonal form\n",1)
+	end
+end
+
+print("the dense form together with A0 and B0 reproduces the response function")
+
+for i,G in ipairs({GReal,GComplex,GGauge}) do
+	for j,ty in ipairs({"Tri","And","LP"}) do
+		M, A0, B0 = ResponseFunction.ChangeType(ResponseFunction.ChangeType(G,ty),"Dense")
+		for omega=-2,4,0.5 do
+			if not IsZero(Reconstruct(M,A0,B0,omega,0.2) - G(omega,0.2)) then
+				print("A0 + B0^* [ 1 / (w - M) ]_00 B0^T of the "..ty.." form at omega = "..omega)
+				print(Reconstruct(M,A0,B0,omega,0.2))
+				print("G(omega,Gamma)")
+				print(G(omega,0.2))
+				error("the dense form of the "..ty.." form does not reproduce the response function\n",1)
+			end
+		end
+	end
+end
+
+print("a normalized (physical) response function has B0 = 1")
+
+-- Note that for the natural impurity orbital representation B0 is not taken out of the representation but
+-- is kept inside the matrix T.
+b = { {{1,0},{0,1}}, {{0.5,0.0},{0.0,0.4}}, {{0.3,0.1},{0.1,0.35}} }
+GNorm = ResponseFunction.New({a,b,mu=0,type="Tri",name="GNorm"})
+for i,ty in ipairs({"LP","Nat"}) do
+	M, A0, B0 = ResponseFunction.ChangeType(ResponseFunction.ChangeType(GNorm,ty),"Dense")
+	if not IsZero(B0 - Matrix.Identity(2)) then
+		print("B0 of the "..ty.." form")
+		print(B0)
+		error("B0 of the "..ty.." form of a normalized response function is not 1\n",1)
+	end
+	for omega=-2,4,0.5 do
+		if not IsZero(Reconstruct(M,A0,B0,omega,0.2) - GNorm(omega,0.2)) then
+			print("A0 + B0^* [ 1 / (w - M) ]_00 B0^T of the "..ty.." form at omega = "..omega)
+			print(Reconstruct(M,A0,B0,omega,0.2))
+			print("G(omega,Gamma)")
+			print(GNorm(omega,0.2))
+			error("the dense form of the "..ty.." form does not reproduce the response function\n",1)
+		end
+	end
+end

@@ -192,6 +192,7 @@ test-jobs-Responsefunction:
           - "Deflation"
           - "EffectiveHamiltonian"
           - "FromEffectiveHamiltonian"
+          - "GetB0"
           - "InvertEnergy"
           - "LengthZero"
           - "MergePolesInInterval"

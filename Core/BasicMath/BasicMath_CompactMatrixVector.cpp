@@ -4169,21 +4169,88 @@ uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrix
   }
   else if((32|A->type)=='l')
   {
-    B0->QComplex=((BlockListOfPoles*)A->data)->QComplex;
-    B0->Ni=((BlockListOfPoles*)A->data)->BlockSize;
+    BlockListOfPoles const * const L=(BlockListOfPoles*)A->data;
+    CompactMatrixType SqrtB0B0;
+    uint32_t i,k,iN,NBlock;
+    B0->QComplex=L->QComplex;
+    B0->Ni=L->BlockSize;
     B0->Nj=B0->Ni;
     InitCompactMatrix(B0);
-    B0->mu=((BlockListOfPoles*)A->data)->mu;
-    //TODO: get B0 from list of poles, see transformation to tridiagonal form
+    B0->mu=L->mu;
+    /*  B0^* . B0^T is the total spectral weight, i.e. the sum of the weight of all poles.
+     *  This is the same B0 as the one created when transforming to a block tridiagonal form:
+     *  BlockListOfPolesToBlockTridiagonalMatrix creates the starting vectors psi as the square root of the weight of
+     *  each pole and CompactMatrixBlockBandDiagonalize sets b0 = psi . psi_ortho^C. As psi_ortho is created by an SVD
+     *  returning the polar factor (U V^T) this is the Hermitian positive semi definite square root of
+     *  psi . psi^C = sum_i B_i^T. (the transpose enters as the starting vectors are created with
+     *  CompactMatrixTranspose, which does not conjugate, and is needed for the convention G = A0 + B0^* G1 B0^T)
+     *  (compare the non block version in ResponseFunctionGetB0: b0 = sqrt( sum_i b_i ) )
+     */
+    NBlock=B0->Ni*B0->Nj;
+    iN=0;
+    for(k=0;k<L->N;k++)
+    {
+      if(B0->QComplex)
+      {
+        for(i=0;i<NBlock;i++) B0->V[i]  +=L->V[iN+1+i];
+      }
+      else
+      {
+        for(i=0;i<NBlock;i++) B0->VRe[i]+=L->VRe[iN+1+i];
+      }
+      iN+=1+NBlock;
+    }
+    CompactMatrixTranspose(B0);
+    /*  the weight of a pole of a physical response function is Hermitian. Non Hermitian weights, as created by the
+     *  non Hermitian eigenstates in CalculateGBathFromGandSigmaEigensystem, have no Hermitian square root
+     */
+    SquareCompactMatrixMakeHermitian(B0);
+    CompactMatrixSqrt(B0, &SqrtB0B0);
+    if(B0->QComplex)
+    {
+      memcpy(B0->V, SqrtB0B0.V, NBlock*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(B0->VRe, SqrtB0B0.VRe, NBlock*sizeof(double));
+    }
+    FreeCompactMatrix(&SqrtB0B0);
   }
   else if((32|A->type)=='n')
   {
-    B0->QComplex=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->QComplex;
-    B0->Ni=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->BlockSize;
+    BlockNaturalImpurityOrbitalMatrixType * const M=(BlockNaturalImpurityOrbitalMatrixType*)A->data;
+    CompactMatrixType T,Bcoup,B0B0,SqrtB0B0;
+    B0->QComplex=M->QComplex;
+    B0->Ni=M->BlockSize;
     B0->Nj=B0->Ni;
     InitCompactMatrix(B0);
-    B0->mu=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->mu;
-    //TODO: get B0 from BlockNaturalImpurityOrbitalMatrixType, see transformation to tridiagonal form
+    B0->mu=M->mu;
+    /*  In the natural impurity orbital representation B0 is not taken out of the representation, but is kept inside
+     *  the matrix T. The first BlockSize rows of T are [ bv0 | bc0 ] with bv0 = val.b[0] and bc0 = con.b[0]. Both the
+     *  valence and the conduction chain carry unit weight, such that the total spectral weight is
+     *  B0 . B0^C = bv0 . bv0^C + bc0 . bc0^C. For a physical Green's function B0 = 1, but for a self energy, a
+     *  hybridization function or other types of spectra this is not the case.
+     *  (compare the non block version SetBADoubleTriDiagonalMatrixConVal: b0 = sqrt( val.b[0]^2 + con.b[0]^2 ) )
+     */
+    GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType(M, &T);
+    Bcoup=T;              /* the first BlockSize rows of T, i.e. [ bv0 | bc0 ]. T owns the memory, do not free Bcoup */
+    Bcoup.Ni=M->BlockSize;
+    CompactMatrixMultiply('N', 'C', &Bcoup, &Bcoup, &B0B0);
+    SquareCompactMatrixMakeHermitian(&B0B0);
+    CompactMatrixSqrt(&B0B0, &SqrtB0B0);
+    if(B0->QComplex)
+    { /* val and con can be real while the natural impurity orbital matrix is complex */
+      MakeCompactRealMatrixComplex(&SqrtB0B0);
+      memcpy(B0->V, SqrtB0B0.V, B0->Ni*B0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      MakeCompactComplexMatrixReal(&SqrtB0B0);
+      memcpy(B0->VRe, SqrtB0B0.VRe, B0->Ni*B0->Nj*sizeof(double));
+    }
+    FreeCompactMatrix(&SqrtB0B0);
+    FreeCompactMatrix(&B0B0);
+    FreeCompactMatrix(&T);
   }
   return 0;
 }

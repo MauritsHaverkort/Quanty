@@ -640,14 +640,14 @@ uint32_t BlockListOfPolesEigenValues(const BlockListOfPoles * const A, double * 
   {
     for(i=0;i<A->N;i++)
     {
-      val[i] = A->VRe[(i-1)*(1+A->BlockSize*A->BlockSize)];
+      val[i] = A->VRe[i*(1+A->BlockSize*A->BlockSize)];
     }
   }
   else
   {
     for(i=0;i<A->N;i++)
     {
-      val[i] = A->V[(i-1)*(1+A->BlockSize*A->BlockSize)].Re;
+      val[i] = A->V[i*(1+A->BlockSize*A->BlockSize)].Re;
     }
   }
   return 0;
