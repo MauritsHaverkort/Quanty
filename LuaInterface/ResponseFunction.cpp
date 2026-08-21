@@ -2872,11 +2872,11 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
           luaL_setmetatable(L, "ResponseFunction_Type");
           GvalBath->type = 't';
-          GvalBath->Block=false;
+          GvalBath->Block=true;
           GvalBath->NSuggestedGridPoints=0;
           GvalBath->SuggestedGrid=NULL;
           GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
-          TriDiagonalMatrixPartAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), *((TriDiagonalMatrixType*)(GvalBath->data)), MNv-Options.Nv, MNv);
+          TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GvalBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
           lua_settable(L, -3);
         }
         else // push nil for G valence Bath
@@ -2892,11 +2892,11 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
           luaL_setmetatable(L, "ResponseFunction_Type");
           GconBath->type = 't';
-          GconBath->Block=false;
+          GconBath->Block=true;
           GconBath->NSuggestedGridPoints=0;
           GconBath->SuggestedGrid=NULL;
           GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
-          TriDiagonalMatrixPartAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), *((TriDiagonalMatrixType*)(GconBath->data)), MNc-Options.Nc, MNc);
+          TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GconBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
           lua_settable(L, -3);
         }
         else // push nil for G conduction Bath
@@ -2966,7 +2966,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GvalBath->NSuggestedGridPoints=0;
           GvalBath->SuggestedGrid=NULL;
           GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
-          TriDiagonalMatrixPart(&(((BADoubleTriDiagonalMatrixType*)(M->data))->val), *((TriDiagonalMatrixType*)(GvalBath->data)), MNv-Options.Nv, MNv);
+          TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GvalBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
           lua_settable(L, -3);
         }
         else // push nil for G valence Bath
@@ -2986,7 +2986,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           GconBath->NSuggestedGridPoints=0;
           GconBath->SuggestedGrid=NULL;
           GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
-          TriDiagonalMatrixPart(&(((BADoubleTriDiagonalMatrixType*)(M->data))->con), *((TriDiagonalMatrixType*)(GconBath->data)), MNc-Options.Nc, MNc);
+          TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GconBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
           lua_settable(L, -3);
         }
         else // push nil for G conduction Bath
