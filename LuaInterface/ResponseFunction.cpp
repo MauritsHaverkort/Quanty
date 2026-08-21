@@ -2788,23 +2788,23 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           BADoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BADoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
         }
       }
-      ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
-      // undo changes to M
-      if(M->Block==true)
+      if((MNv>Options.Nv)||(MNc>Options.Nc))
       {
-        // expand M->data if Nv and Nc set
-        if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=MNv;
-        if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=MNc;
-      }
-      else
-      {
-        // expand M->data if Nv and Nc set
-        if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
-        if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
-      }
-      // push Gv, and, Gc to stack if Nv or Nc are set
-      if( (MNv>Options.Nv)||(MNc>Options.Nc))
-      {
+        ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
+        // undo changes to M
+        if(M->Block==true)
+        {
+          // expand M->data if Nv and Nc set
+          if(MNv>Options.Nv) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val.N=MNv;
+          if(MNc>Options.Nc) ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con.N=MNc;
+        }
+        else
+        {
+          // expand M->data if Nv and Nc set
+          if(MNv>Options.Nv) ((BADoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+          if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
+        }
+        // push Gv, and, Gc to stack
         lua_createtable(L,0,2);
         // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
         if(Options.AddSpin==true)
@@ -2991,10 +2991,8 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       }
       else
       {
-        FreeResponsefunctionIncludingOriginalPointer(M);
-        return 2;
+        break;
       }
-      break; // should not be reached as this branch always ends with return
     }
     default:
     {
