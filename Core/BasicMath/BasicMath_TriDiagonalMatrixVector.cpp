@@ -205,20 +205,24 @@ void TriDiagonalMatrixScalarMultiply(TriDiagonalMatrixType * const M, double alp
 /* Create a new matrix that has dimensions (1+iEnd-iStart,1+iEnd-iStart)
  * and is a copy of a part of A
  * namely A[{iStart;;iEnd}][{iStart;;iEnd}]
+ * a[0] and b[0] are set to A.a[iStart-1] and A.b[iStart-1], the on site energy of the
+ * last site before the part and the hopping connecting it to the part, such that the
+ * result evaluates as the Green's function of the part as seen from site iStart-1.
+ * For iStart=1 this reduces to the offset a[0] and the scaling b[0] of A.
  * M not allocated on call of the subroutine
  */
 uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd)
 {
   uint32_t i;
-  if ((iEnd < iStart) || (iEnd > A.N))
+  if ((iEnd < iStart) || (iEnd > A.N) || (iStart == 0))
   {
     printf("TriDiagonalMatrixPart called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
     return 1;
   }
   M->N = 1 + iEnd - iStart;
   InitTriDiagonalMatrix(M);
-  M->a[0] = A.a[0];
-  M->b[0] = A.b[0];
+  M->a[0] = A.a[iStart-1];
+  M->b[0] = A.b[iStart-1];
   for (i = 1; i < M->N; i++)
   {
     M->a[i] = A.a[i + iStart - 1];
@@ -228,22 +232,24 @@ uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatri
   M->a[M->N] = A.a[iEnd];
   return 0;
 }
+/*  as TriDiagonalMatrixPart, but each site is doubled in order to represent spin up and spin down
+ */
 uint32_t TriDiagonalMatrixPartAddSpin(BlockTriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd)
 {
   uint32_t i;
-  if ((iEnd < iStart) || (iEnd > A.N))
+  if ((iEnd < iStart) || (iEnd > A.N) || (iStart == 0))
   {
-    printf("TriDiagonalMatrixPart called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
+    printf("TriDiagonalMatrixPartAddSpin called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
     return 1;
   }
   M->N = 1 + iEnd - iStart;
   M->QComplex=0;
   M->BlockSize=2;
   InitBlockTridiagonalMatrix(M);
-  M->aRe[0] = A.a[0];
-  M->bRe[0] = A.b[0];
-  M->aRe[3] = A.a[0];
-  M->bRe[3] = A.b[0];
+  M->aRe[0] = A.a[iStart-1];
+  M->bRe[0] = A.b[iStart-1];
+  M->aRe[3] = A.a[iStart-1];
+  M->bRe[3] = A.b[iStart-1];
   for (i = 1; i < M->N; i++)
   {
     M->aRe[4*i]   = A.a[i + iStart - 1];
