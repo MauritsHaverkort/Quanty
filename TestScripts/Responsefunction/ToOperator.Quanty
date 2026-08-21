@@ -152,6 +152,135 @@ if((OS==O2S)~=true) then
 	error("Response operator comparison failed\n",1)
 end
 
+print("-- Nat with Nv and Nc                                 --")
+
+-- G defined above has a valence chain with val.N=3 and a conduction chain with con.N=3
+-- The 6 orbitals of the operator are ordered as
+--   0,1 the two natural impurity orbitals, 2,3 the valence chain, 4,5 the conduction chain
+-- Setting Nv or Nc drops sites from the end of the corresponding chain. The dropped tail is
+-- returned as a Green's function whose a0 and b0 are the on site energy of the last kept site
+-- and the hopping connecting it to the tail.
+
+MexpNv2 = Matrix.New({ { -2140   , -480    ,  156    ,  6      ,  0      } ,
+											 { -480    ,  660    ,  26     , -36     ,  0      } ,
+											 {  156    ,  26     , -16     ,  0      ,  0      } ,
+											 {  6      , -36     ,  0      ,  6      ,  4      } ,
+											 {  0      ,  0      ,  0      ,  4      ,  7      } })
+MexpNc2 = Matrix.New({ { -2140   , -480    ,  156    ,  0      ,  6      } ,
+											 { -480    ,  660    ,  26     ,  0      , -36     } ,
+											 {  156    ,  26     , -16     ,  14     ,  0      } ,
+											 {  0      ,  0      ,  14     , -17     ,  0      } ,
+											 {  6      , -36     ,  0      ,  0      ,  6      } })
+MexpNv2Nc2 = Matrix.New({ { -2140   , -480    ,  156    ,  6      } ,
+													{ -480    ,  660    ,  26     , -36     } ,
+													{  156    ,  26     , -16     ,  0      } ,
+													{  6      , -36     ,  0      ,  6      } })
+
+GvalBathExp = ResponseFunction.New({{-16,-17},{14},mu=0,type="Tri"})
+GconBathExp = ResponseFunction.New({{  6,  7},{ 4},mu=0,type="Tri"})
+GvalBathExpS = ResponseFunction.New({{Matrix.New({{-16,0},{0,-16}}),Matrix.New({{-17,0},{0,-17}})},
+																		 {Matrix.New({{ 14,0},{0, 14}})},mu=0,type="Tri"})
+GconBathExpS = ResponseFunction.New({{Matrix.New({{  6,0},{0,  6}}),Matrix.New({{  7,0},{0,  7}})},
+																		 {Matrix.New({{  4,0},{0,  4}})},mu=0,type="Tri"})
+
+-- only the valence chain is shortened
+O1, BM1, Bath1 = ResponseFunction.ToOperator(G,{{"Nv",2}})
+if((O1==Matrix.ToOperator(MexpNv2))~=true) then
+	print("Error")
+	print("O\n",OperatorToMatrix(O1))
+	print("Oexp\n",MexpNv2)
+	error("Response operator comparison failed\n",1)
+end
+if((Bath1.GvalBath==GvalBathExp)~=true) then
+	print("Error")
+	print("GvalBath\n",ResponseFunction.ToTable(Bath1.GvalBath))
+	print("expected\n",ResponseFunction.ToTable(GvalBathExp))
+	error("Response function comparison failed\n",1)
+end
+if(Bath1.GconBath~=nil) then error("GconBath should not be returned when Nc is not set\n",1) end
+
+-- only the conduction chain is shortened
+O2, BM2, Bath2 = ResponseFunction.ToOperator(G,{{"Nc",2}})
+if((O2==Matrix.ToOperator(MexpNc2))~=true) then
+	print("Error")
+	print("O\n",OperatorToMatrix(O2))
+	print("Oexp\n",MexpNc2)
+	error("Response operator comparison failed\n",1)
+end
+if((Bath2.GconBath==GconBathExp)~=true) then
+	print("Error")
+	print("GconBath\n",ResponseFunction.ToTable(Bath2.GconBath))
+	print("expected\n",ResponseFunction.ToTable(GconBathExp))
+	error("Response function comparison failed\n",1)
+end
+if(Bath2.GvalBath~=nil) then error("GvalBath should not be returned when Nv is not set\n",1) end
+
+-- both chains are shortened
+O3, BM3, Bath3 = ResponseFunction.ToOperator(G,{{"Nv",2},{"Nc",2}})
+if((O3==Matrix.ToOperator(MexpNv2Nc2))~=true) then
+	print("Error")
+	print("O\n",OperatorToMatrix(O3))
+	print("Oexp\n",MexpNv2Nc2)
+	error("Response operator comparison failed\n",1)
+end
+if((Bath3.GvalBath==GvalBathExp)~=true) then error("Response function comparison failed\n",1) end
+if((Bath3.GconBath==GconBathExp)~=true) then error("Response function comparison failed\n",1) end
+
+-- the bitmasks follow the shortened chains
+if(BM3.Impurity   ~="1000") then print(BM3.Impurity);   error("Bitmask comparison failed\n",1) end
+if(BM3.ImpurityExt~="1100") then print(BM3.ImpurityExt);error("Bitmask comparison failed\n",1) end
+if(BM3.BathExt    ~="0100") then print(BM3.BathExt);    error("Bitmask comparison failed\n",1) end
+if(BM3.BathVal    ~="0010") then print(BM3.BathVal);    error("Bitmask comparison failed\n",1) end
+if(BM3.BathCon    ~="0001") then print(BM3.BathCon);    error("Bitmask comparison failed\n",1) end
+if(BM3.Bath       ~="0111") then print(BM3.Bath);       error("Bitmask comparison failed\n",1) end
+if(BM3.NF~=4) then print(BM3.NF); error("Bitmask comparison failed\n",1) end
+
+-- Nv and Nc larger than the chains leave the operator untouched and return no bath
+O4, BM4, Bath4 = ResponseFunction.ToOperator(G,{{"Nv",5},{"Nc",5}})
+if((O4==ResponseFunction.ToOperator(G))~=true) then error("Response operator comparison failed\n",1) end
+if(Bath4~=nil) then error("No bath should be returned when nothing is dropped\n",1) end
+
+-- comparison with add spin and fermion shift
+O1 = ResponseFunction.ToOperator(G,{{"Nv",2},{"Nc",2}})
+O2, BM2, Bath2 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"Nv",2},{"Nc",2}})
+O3 = ResponseFunction.ToOperator(G,{{"FermionShift",6},{"Nv",2},{"Nc",2}})
+O4 = ResponseFunction.ToOperator(G,{{"AddSpin",true},{"FermionShift",6},{"Nv",2},{"Nc",2}})
+
+M1=OperatorToMatrix(O1)
+M2=OperatorToMatrix(O2)
+M3=OperatorToMatrix(O3)
+M4=OperatorToMatrix(O4)
+M5=Matrix.AddSpin(M1)
+
+if((M5==M2)~=true) then
+	print(M2)
+	print(M5)
+	error("Response operator comparison failed\n",1)
+end
+if( ( Matrix.Flatten({{Matrix.Zero(6),0},{0,M1}}) == M3) ~=true ) then error("Response operator comparison failed\n",1) end
+if( ( Matrix.Flatten({{Matrix.Zero(6),0},{0,M2}}) == M4) ~=true ) then error("Response operator comparison failed\n",1) end
+
+-- with AddSpin the returned tails are block tri-diagonal with the spin doubled blocks
+if((Bath2.GvalBath==GvalBathExpS)~=true) then
+	print("Error")
+	print("GvalBath\n",ResponseFunction.ToTable(Bath2.GvalBath))
+	print("expected\n",ResponseFunction.ToTable(GvalBathExpS))
+	error("Response function comparison failed\n",1)
+end
+if((Bath2.GconBath==GconBathExpS)~=true) then
+	print("Error")
+	print("GconBath\n",ResponseFunction.ToTable(Bath2.GconBath))
+	print("expected\n",ResponseFunction.ToTable(GconBathExpS))
+	error("Response function comparison failed\n",1)
+end
+
+O1=nil
+O2=nil
+O3=nil
+O4=nil
+collectgarbage()
+collectgarbage()
+
 print("-- LP                                                 --")
 
 a = {0, -sqrt(2), 0,   sqrt(2)}
