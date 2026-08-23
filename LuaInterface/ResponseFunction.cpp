@@ -224,6 +224,19 @@ static int LuaResponseFunctionToTable(lua_State *L)
       }
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      if(M->Block==true)
+      {
+        LuaPushTable_BlockDoubleTriDiagonal(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_DoubleTriDiagonal(L, M->data);
+      }
+      break;
+    }
     default:
     {
       printf("Error in ResponseFunctionToTable: unrecognized type %c\n",M->type);

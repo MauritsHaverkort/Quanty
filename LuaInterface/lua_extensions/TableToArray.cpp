@@ -1388,7 +1388,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
 
 /*
  *  The format of DoubleTriDiagonalMatrixType should be
- *    { {a0, b0}, val=Gval, con=Gcon, mu=0, type="Nat" }
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, kBT=0, type="DoubleTri" }
  *    and defines the Green's function
  *    a0 + b0^2 ( 1/ ( w - Gval(w) - Gcon(w) ) )
  */
@@ -2844,7 +2844,7 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
     buff->type='D';
     if(buff->Block==true)
     {
-      buff->data = (void*)luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+      buff->data = (void*)luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
     }
     else
     {
@@ -3769,6 +3769,96 @@ void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, void * const M)
 }
 
 
+/*  The table pushed is of the form
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, kBT=0, type="DoubleTri", name="" }
+ *  The field is named kBT (and not epsilon as for the NaturalImpurityOrbital type) as
+ *  luaL_checkDoubleTriDiagonalMatrixType reads kBT. Writing epsilon here would loose the
+ *  temperature when a response function is converted to a table and read back.
+ */
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, DoubleTriDiagonalMatrixType * const M)
+{
+  lua_createtable(L, 1, 4);
+  /* push {a0, b0} */
+  lua_createtable(L,2,0);
+  lua_pushnumber(L,M->a0);
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L,M->b0);
+  lua_rawseti(L, -2, 2);
+  lua_rawseti(L, -2, 1);
+  /* push val */
+  LuaPushTable_TriDiagonalMatrixType(L, &(M->val));
+  lua_setfield(L, -2, "val");
+  /* push con */
+  LuaPushTable_TriDiagonalMatrixType(L, &(M->con));
+  lua_setfield(L, -2, "con");
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push kBT */
+  lua_pushnumber(L, M->kBT);
+  lua_setfield(L,-2,"kBT");
+  /* push type */
+  lua_pushstring(L, "DoubleTri");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, void * const M)
+{
+	DoubleTriDiagonalMatrixType *MTypecast = (DoubleTriDiagonalMatrixType*) M;
+	LuaPushTable_DoubleTriDiagonal(L, MTypecast);
+}
+
+
+/*  As LuaPushTable_DoubleTriDiagonal, but for matrix valued response functions.
+ *  Note that B0 is pushed from M->b0 and not as an identity matrix (as is done for the
+ *  BlockNaturalImpurityOrbital type, which has no b0 of its own).
+ */
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, BlockDoubleTriDiagonalMatrixType * const M)
+{
+  lua_createtable(L, 1, 4);
+  /* push {A0, B0} */
+  lua_createtable(L,2,0);
+  LuaPushTable_CompactMatrixType(L, &(M->a0));
+  lua_rawseti(L, -2, 1);
+  LuaPushTable_CompactMatrixType(L, &(M->b0));
+  lua_rawseti(L, -2, 2);
+  lua_rawseti(L, -2, 1);
+  /* push val */
+  LuaPushTable_BlockTriDiagonalMatrixType(L, &(M->val));
+  lua_setfield(L, -2, "val");
+  /* push con */
+  LuaPushTable_BlockTriDiagonalMatrixType(L, &(M->con));
+  lua_setfield(L, -2, "con");
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push kBT */
+  lua_pushnumber(L, M->kBT);
+  lua_setfield(L,-2,"kBT");
+  /* push type */
+  lua_pushstring(L, "DoubleTri");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, void * const M)
+{
+	BlockDoubleTriDiagonalMatrixType *MTypecast = (BlockDoubleTriDiagonalMatrixType*) M;
+	LuaPushTable_BlockDoubleTriDiagonal(L, MTypecast);
+}
+
+
 /*  if at position len of the lua stack a table is found it is over writen by the table in matrix M
  *  otherwise an error is thrown
  */
@@ -3890,9 +3980,21 @@ void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M
       }
       return;
     }
+    case 'D':
+    {
+      if(M->Block==true)
+      {
+        LuaPushTable_BlockDoubleTriDiagonal(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_DoubleTriDiagonal(L, M->data);
+      }
+      return;
+    }
     default:
     {
-      printf("Error in LuaPush_ResponseFunction: Type of response function should be either t/T,a/A,l/L, or n/N\n");
+      printf("Error in LuaPush_ResponseFunction: Type of response function should be either t/T,a/A,l/L,n/N, or d/D\n");
       return;
     }
   }

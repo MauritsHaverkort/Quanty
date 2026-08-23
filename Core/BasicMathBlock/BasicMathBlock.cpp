@@ -305,6 +305,25 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
       }
     }
     break;
+    case 'd': // original double tri-diagonal
+    {
+      switch (type|32)
+      {
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          CopyBlockDoubleTriDiagonalMatrix(*(BlockDoubleTriDiagonalMatrixType*)Min->data, (BlockDoubleTriDiagonalMatrixType*)Mout->data);
+        }
+        break;
+        default:
+        {
+          //TODO: conversions from BlockDoubleTriDiagonalMatrixType to other types
+          printf("Error in ConvertBlockMatrix conversion from DoubleTri to %c is not implemented\n",type);
+        }
+        break;
+      }
+    }
+    break;
     default:
     {
       printf("Error in ConvertBlockMatrix unrecognized type of M: %c",Min->type);

@@ -56,6 +56,10 @@ void LuaPushTable_NaturalImpurityOrbital(lua_State* L, BADoubleTriDiagonalMatrix
 void LuaPushTable_NaturalImpurityOrbital(lua_State* L, void * const M);
 void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, BlockNaturalImpurityOrbitalMatrixType * const M);
 void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, void * const M);
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, DoubleTriDiagonalMatrixType * const M);
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, void * const M);
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, BlockDoubleTriDiagonalMatrixType * const M);
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, void * const M);
 void LuaInsertTable_CompactMatrixType(lua_State*L, int len, CompactMatrixType const * const M);
 void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const M);
 void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M);

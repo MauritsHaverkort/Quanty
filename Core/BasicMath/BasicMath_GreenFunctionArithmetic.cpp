@@ -4292,6 +4292,25 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
       }
     }
     break;
+    case 'd': // original double tri-diagonal (DoubleTriDiagonalMatrixType)
+    {
+      switch (type|32)
+      {
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(DoubleTriDiagonalMatrixType));
+          DoubleTriDiagonalMatrixCopy((DoubleTriDiagonalMatrixType*)Mout->data, *(DoubleTriDiagonalMatrixType*)Min->data);
+        }
+        break;
+        default:
+        {
+          //TODO: conversions from DoubleTriDiagonalMatrixType to other types
+          printf("Error in ConvertResponsefunction conversion from DoubleTri to %c is not implemented\n",type);
+        }
+        break;
+      }
+    }
+    break;
     default:
     {
       printf("Error in ConvertResponsefunction unrecognized type of M: %c\n",Min->type);
