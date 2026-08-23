@@ -4666,6 +4666,16 @@ uint32_t FreeResponsefunction(ResponsefunctionType *M)
       free((BADoubleTriDiagonalMatrixType *)(M->data));
       return 0;
     }
+    case 'd':
+    {
+      return 0;
+    }
+    case 'D':
+    {
+      FreeDoubleTriDiagonalMatrix((DoubleTriDiagonalMatrixType *)M->data);
+      free((DoubleTriDiagonalMatrixType *)(M->data));
+      return 0;
+    }
     default:
     {
       printf("Error in FreeResponsefunction unrecognized type %c",M->type);

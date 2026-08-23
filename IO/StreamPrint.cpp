@@ -1207,7 +1207,7 @@ uint32_t StreamPrintDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType M, FILE 
 {
   M.Name[MAXStrLength - 1] = '\0';
   fprintf(stream, "%s =\n", M.Name);
-  fprintf(stream, "DoubleTriDiagonalMatrix mu = %22.15E Epsilon = %22.15E\n", M.mu, M.Epsilon);
+  fprintf(stream, "DoubleTriDiagonalMatrix mu = %22.15E     kBT = %22.15E\n", M.mu, M.kBT);
   fprintf(stream, "                        a0 = %22.15E      b0 = %22.15E\n", M.a0, M.b0);
   fprintf(stream, "Valence part (E<Ef):\n");
   StreamPrintTriDiagonalMatrix(M.val, stream);

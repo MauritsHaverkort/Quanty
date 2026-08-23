@@ -380,7 +380,7 @@ uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArr
     break;
     case 'n':
     {
-      strncpy(A->Name, ((DoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+      strncpy(A->Name, ((BADoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
     }
     break;
   }
@@ -716,7 +716,7 @@ uint32_t ResponseFunctionGetBlockSize(const ResponsefunctionType *const a)
     }
     default:
     {
-      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
       return 0;
     }
   }
@@ -753,7 +753,7 @@ uint32_t ResponseFunctionGetQComplex(const ResponsefunctionType *const a)
     }
     default:
     {
-      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
       return 0;
     }
   }
@@ -833,7 +833,7 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
       }
       default:
       {
-        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
         return 1;
       }
     }
@@ -924,7 +924,7 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
       }
       default:
       {
-        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c",a->type);
+        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
         return 0;
       }
     }

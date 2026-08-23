@@ -302,6 +302,19 @@ uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, 
 	return EvaluateBlockTriDiagonalMatrix(ATypecast, Gw, omega, Gamma);
 }
 
+uint32_t EvaluateBlockDoubleTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  // TODO:
+  printf("TODO: EvaluateBlockDoubleTriDiagonalMatrix\n");
+  return 1;
+}
+uint32_t EvaluateBlockDoubleTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
+{
+  BlockDoubleTriDiagonalMatrixType *ATypecast = (BlockDoubleTriDiagonalMatrixType*) A;
+  return EvaluateBlockDoubleTriDiagonalMatrix(ATypecast, Gw, omega, Gamma);
+}
+
+
 /*
  *
  */
@@ -811,6 +824,12 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
+uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+{
+  // TODO:
+  printf("TODO ");
+  return 1;
+}
 
 /*  on entry A contains the Green's function in a BlockListOfPoles format.
  *  on exit B contains the Green's function in a NaturalImpurityOrbital format.
@@ -1192,6 +1211,12 @@ uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType con
   BlockListOfPolesToBlockTridiagonalMatrix(G, B, A->N+1, SingularValue);
   FreeBlockListOfPoles(&G);
   return 0;
+}
+uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT)
+{
+  //TODO;
+  printf("TODO: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix");
+  return 1;
 }
 uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)
 {
@@ -2314,6 +2339,13 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   return 0;
 }
 
+uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT)
+{
+  //TODO:
+  printf("TODO: BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
+  return 1;
+}
+
 uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT)
 {
   BlockListOfPoles ABlock;
@@ -2326,6 +2358,53 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
   FreeBlockListOfPoles(&ABlock);
   return 0;
 }
+
+
+
+
+/*  =========================================================================
+ *  BlockDoubleTriDiagonalMatrixType to __
+ *  ========================================================================= */
+
+uint32_t BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockTriDiagonalMatrixType * const H, uint32_t NTriDiag)
+{
+  //TODO
+  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
+  return 1;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockAndersonMatrixType * const H)
+{
+  //TODO
+  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+  return 1;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockNaturalImpurityOrbitalMatrixType * const H)
+{
+  //TODO
+  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+  return 1;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToBlockListOfPoles(BlockDoubleTriDiagonalMatrixType const M, BlockListOfPoles * const H)
+{
+  //TODO
+  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+  return 1;
+}
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
+{
+  //TODO
+  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrix\n");
+  return 1;
+}
+
+
+
+
+
+
 
 
 /*  =========================================================================
@@ -2500,6 +2579,14 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNa
   printf("Not implemented BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid\n");
   return 1;
 }
+
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue)
+{
+  //TODO:
+  printf("TODO: BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
+  return 1;
+}
+
 
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue)
 {

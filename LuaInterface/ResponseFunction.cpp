@@ -226,7 +226,7 @@ static int LuaResponseFunctionToTable(lua_State *L)
     }
     default:
     {
-      printf("Error in ResponseFunctionToTable: unrecognized type %c",M->type);
+      printf("Error in ResponseFunctionToTable: unrecognized type %c\n",M->type);
       return 0;
     }
   }
@@ -455,7 +455,7 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     }
     default:
     {
-      printf("Error in ResponseFunctionToTable: unrecognized type %c",M->type);
+      printf("Error in ResponseFunctionToTable: unrecognized type %c\n",M->type);
       return 0;
     }
   }

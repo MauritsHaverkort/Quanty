@@ -273,6 +273,8 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
 *  diagonal energies in the AndersonMatrix larger  then Ef+epsilon belong to the conduction part of the double tri diagonal matrix
 *  diagonal energies in the AndersonMatrix smaller then Ef-epsilon belong to the valence    part of the double tri diagonal matrix
 *  diagonal energies in the AndersonMatrix in the interval Ef-epsilon to Ef+epsilon contribute partly to the valence, partly to the conductin part, weighted according to distance with Ef
+*  TODO
+*  epsilon is replaced in name by kBT, not yet changed the implementation
 */
 uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T, DoubleTriDiagonalMatrixType * const H, double const mu, double const epsilon)
 {
@@ -385,7 +387,8 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M
   H->con.N = MCTri.N - 1;
   InitDoubleTriDiagonalMatrix(H);
   H->mu = mu;
-  H->Epsilon = epsilon;
+  // TODO implementation needs to be changed
+  H->kBT = epsilon;
   H->a0 = M.a[0];
   H->b0 = M.b[0];
   for (i = 0; i < H->val.N; i++)
@@ -1734,6 +1737,38 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
   return 0;
 }
 
+uint32_t DoubleTriDiagonalMatrixToAndersonMatrixMatrix(DoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
+{
+  //TODO
+  printf("TODO: DoubleTriDiagonalMatrixToAndersonMatrixMatrix\n");
+  return 1;
+}
+
+uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H)
+{
+  //TODO
+  printf("TODO: DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
+  return 1;
+}
+
+uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const M, ListOfPoles * const H)
+{
+  //TODO
+  printf("TODO: DoubleTriDiagonalMatrixToListOfPoles\n");
+  return 1;
+}
+uint32_t DoubleTriDiagonalMatrixToCompactMatrix(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
+{
+  //TODO
+  printf("TODO: DoubleTriDiagonalMatrixToCompactMatrix\n");
+  return 1;
+}
+
+/********************************************************************************/
+/********************         Matrix conversions             ********************/
+/********************         BADoubleTriDiagonalMatrix To ... ******************/
+/********************************************************************************/
+
 uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalMatrixType * const M, CompactMatrixType * const A)
 {
   if((M->val.N==0)&&(M->con.N==0))
@@ -1834,6 +1869,13 @@ uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixT
   CompactMatrixTriDiagonalize(&Mc, T, H);
   FreeCompactMatrix(&Mc);
   return 0;
+}
+
+uint32_t BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType * const H)
+{
+  //TODO:
+  printf("TODO BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+  return 1;
 }
 
 uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType * const M, ListOfPoles * const H)
@@ -4233,6 +4275,13 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, B
   FreeListOfPoles(&LPval);
   FreeListOfPoles(&LPcon);
   return 0;
+}
+
+uint32_t ListOfPolesToDoubleTridiagonalMatrix(const ListOfPoles A, DoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double kBT)
+{
+  //TODO:
+  printf("TODO: ListOfPolesToDoubleTridiagonalMatrix\n");
+  return 1;
 }
 
 /****************************************************************************/

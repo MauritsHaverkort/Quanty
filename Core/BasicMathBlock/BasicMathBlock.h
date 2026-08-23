@@ -3,6 +3,7 @@
 #include "BasicMath_BlockMatrixToOperator.h"
 #include "BasicMath_BlockNaturalImpurityOrbital.h"
 #include "BasicMath_BlockTridiagonalMatrix.h"
+#include "BasicMath_BlockDoubleTridiagnonalMatrix.h"
 #include "BasicMath_BlockTypeConversion.h"
 
 uint32_t FreeBlockMatrix(ResponsefunctionType *M);

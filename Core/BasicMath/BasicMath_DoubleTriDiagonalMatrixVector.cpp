@@ -23,7 +23,7 @@ void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
   FreeTriDiagonalMatrix(&M->val);
   FreeTriDiagonalMatrix(&M->con);
   M->mu = 0;
-  M->Epsilon = 0;
+  M->kBT = 0;
   M->a0 = 0;
   M->b0 = 0;
   strcpy(M->Name, "free");
@@ -209,7 +209,7 @@ uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, Doub
   M->con.N = iEndcon;
   InitDoubleTriDiagonalMatrix(M);
   M->mu = A.mu;
-  M->Epsilon = A.Epsilon;
+  M->kBT = A.kBT;
   M->a0 = A.a0;
   M->b0 = A.b0;
   for (i = 0; i < M->val.N; i++)
@@ -236,7 +236,7 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
   M->con.N = A.con.N;
   InitDoubleTriDiagonalMatrix(M);
   M->mu = A.mu;
-  M->Epsilon = A.Epsilon;
+  M->kBT = A.kBT;
   M->a0 = A.a0;
   M->b0 = A.b0;
   for (i = 0; i < M->val.N; i++)

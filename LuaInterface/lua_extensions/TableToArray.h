@@ -13,6 +13,9 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg);
 BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, int narg);
 AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg);
 BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int narg);
+DoubleTriDiagonalMatrixType * luaL_checkDoubleTriDiagonalMatrixType(lua_State *L, int narg);
+BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lua_State *L, int narg);
+
 BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_State *L, int narg);
 BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMatrixType(lua_State *L, int narg);
 ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg);

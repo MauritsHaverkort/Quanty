@@ -3,6 +3,7 @@
 #include "BasicMath_BlockMatrixToOperator.cpp"
 #include "BasicMath_BlockNaturalImpurityOrbital.cpp"
 #include "BasicMath_BlockTridiagonalMatrix.cpp"
+#include "BasicMath_BlockDoubleTridiagnonalMatrix.cpp"
 #include "BasicMath_BlockTypeConversion.cpp"
 
 /* Free the BlockMatrix, independent if the type is capital or small */
@@ -97,6 +98,16 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
     {
       FreeBlockNaturalImpurityOrbitalMatrix((BlockNaturalImpurityOrbitalMatrixType *)M->data);
       free((BlockNaturalImpurityOrbitalMatrixType *)(M->data));
+      return 0;
+    }
+    case 'd':
+    {
+      return 0;
+    }
+    case 'D':
+    {
+      FreeBlockDoubleTriDiagonalMatrix((BlockDoubleTriDiagonalMatrixType *)M->data);
+      free((BlockDoubleTriDiagonalMatrixType *)(M->data));
       return 0;
     }
     default:

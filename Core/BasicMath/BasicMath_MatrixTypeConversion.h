@@ -38,9 +38,14 @@ uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrixOccupation(TriDiagonalMatri
 uint32_t TriDiagonalMatrixToBlockTriDiagonalMatrix(TriDiagonalMatrixType const * const Min, BlockTriDiagonalMatrixType * Mout);
 uint32_t ConvertTriDiagonalMatrixToBlockTriDiagonalMatrixNoCopy(TriDiagonalMatrixType * Min, BlockTriDiagonalMatrixType * Mout);
 uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag);
+uint32_t DoubleTriDiagonalMatrixToAndersonMatrixMatrix(DoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H);
+uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H);
+uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const M, ListOfPoles * const H);
+uint32_t DoubleTriDiagonalMatrixToCompactMatrix(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H);
 uint32_t BADoubleTriDiagonalMatrixTypeToEigenSystemCompact(const BADoubleTriDiagonalMatrixType * const M, double * val, CompactMatrixType * const T);
 uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalMatrixType * const M, CompactMatrixType * const H);
 uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, TriDiagonalMatrixType * const H);
+uint32_t BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType * const H);
 uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType * const M, ListOfPoles * const H);
 uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType * const M, AndersonMatrixType * const H);
 uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType const M,TriDiagonalMatrixType * const H, uint32_t const NTriDiag);
