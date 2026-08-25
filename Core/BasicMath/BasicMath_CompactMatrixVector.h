@@ -97,6 +97,7 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, const uint32_t iStart, const uint32_t iEnd);
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B, bool const deflate);
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(CompactMatrixType const *A, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t NBlockMax, uint32_t BlockSize);

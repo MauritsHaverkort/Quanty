@@ -42,6 +42,7 @@ uint32_t DoubleTriDiagonalMatrixToAndersonMatrixMatrix(DoubleTriDiagonalMatrixTy
 uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H);
 uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const M, ListOfPoles * const H);
 uint32_t DoubleTriDiagonalMatrixToCompactMatrix(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H);
+uint32_t DoubleTriDiagonalMatrixToCompactMatrixWithDeflation(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H);
 uint32_t BADoubleTriDiagonalMatrixTypeToEigenSystemCompact(const BADoubleTriDiagonalMatrixType * const M, double * val, CompactMatrixType * const T);
 uint32_t BADoubleTriDiagonalMatrixTypeToCompactMatrix(const BADoubleTriDiagonalMatrixType * const M, CompactMatrixType * const H);
 uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, TriDiagonalMatrixType * const H);

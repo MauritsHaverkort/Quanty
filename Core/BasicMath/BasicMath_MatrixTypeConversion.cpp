@@ -1757,11 +1757,95 @@ uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const 
   printf("TODO: DoubleTriDiagonalMatrixToListOfPoles\n");
   return 1;
 }
+/*  Create the matrix whose resolvent is the Green's function represented by M: one impurity
+ *  site with a valence and a conduction chain attached to it.
+ *
+ *  The dimension is 1 + val.N + con.N. The two chains are the matrices that
+ *  TriDiagonalMatrixToCompactMatrix returns for val and con, the impurity site energy is
+ *  val.a[0] + con.a[0] (both chains share this site, see StructDef.cpp) and the hopping from
+ *  the impurity into the first site of a chain is val.b[0] resp. con.b[0]. Those four numbers
+ *  are the a0 and b0 that TriDiagonalMatrixToCompactMatrix leaves in Mval and Mcon.
+ *
+ *          ( aval0+acon0 | bval0 | 0     | bcon0 | 0     )
+ *      H = ( bval0       |       Mval    | 0     | 0     )
+ *          ( bcon0       | 0     | 0     |     Mcon      )
+ *
+ *  H.a0 and H.b0 are the a0 and b0 of M itself, so that
+ *    G(w) = H.a0 + H.b0^2 * [ 1/(w - H) ]_{0,0}
+ *
+ *  H not allocated on entry.
+ */
 uint32_t DoubleTriDiagonalMatrixToCompactMatrix(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToCompactMatrix\n");
-  return 1;
+  uint32_t i,j,offset;
+  CompactMatrixType Mval, Mcon;
+  if (TriDiagonalMatrixToCompactMatrix(&(M.val), &Mval))
+  {
+    printf("TriDiagonalMatrixToCompactMatrix failed for val in DoubleTriDiagonalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  if (TriDiagonalMatrixToCompactMatrix(&(M.con), &Mcon))
+  {
+    printf("TriDiagonalMatrixToCompactMatrix failed for con in DoubleTriDiagonalMatrixToCompactMatrix\n");
+    FreeCompactMatrix(&Mval);
+    return 1;
+  }
+  H->QComplex = 0;
+  H->Ni = 1 + Mval.Ni + Mcon.Ni;
+  H->Nj = H->Ni;
+  if (InitCompactMatrix(H))
+  {
+    printf("InitCompactMatrix failed in DoubleTriDiagonalMatrixToCompactMatrix\n");
+    FreeCompactMatrix(&Mval);
+    FreeCompactMatrix(&Mcon);
+    return 1;
+  }
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->Name[MAXStrLength-1]='\0';
+  H->a0 = M.a0;
+  H->b0 = M.b0;
+  H->mu = M.mu;
+  /* the impurity site, shared by the two chains */
+  H->VRe[0] = Mval.a0 + Mcon.a0;
+  /* the valence chain and its hopping to the impurity */
+  if (Mval.Ni != 0)
+  {
+    H->VRe[0*H->Nj + 1] = Mval.b0;
+    H->VRe[1*H->Nj + 0] = Mval.b0;
+    for (i = 0; i < Mval.Ni; i++)
+    {
+      for (j = 0; j < Mval.Nj; j++)
+      {
+        H->VRe[(1+i)*H->Nj + 1+j] = Mval.VRe[i*Mval.Nj + j];
+      }
+    }
+  }
+  /* the conduction chain and its hopping to the impurity */
+  if (Mcon.Ni != 0)
+  {
+    offset = 1 + Mval.Ni;
+    H->VRe[0*H->Nj + offset] = Mcon.b0;
+    H->VRe[offset*H->Nj + 0] = Mcon.b0;
+    for (i = 0; i < Mcon.Ni; i++)
+    {
+      for (j = 0; j < Mcon.Nj; j++)
+      {
+        H->VRe[(offset+i)*H->Nj + offset+j] = Mcon.VRe[i*Mcon.Nj + j];
+      }
+    }
+  }
+  FreeCompactMatrix(&Mval);
+  FreeCompactMatrix(&Mcon);
+  return 0;
+}
+
+/*  A non block matrix has no BlockSizeList and thus nothing to deflate. Present so that the
+ *  block and the non block branch of ResponseFunctionToCompactMatrix can be written the same
+ *  way.
+ */
+uint32_t DoubleTriDiagonalMatrixToCompactMatrixWithDeflation(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
+{
+  return DoubleTriDiagonalMatrixToCompactMatrix(M, H);
 }
 
 /********************************************************************************/

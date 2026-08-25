@@ -4300,19 +4300,14 @@ uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrix
   }
   else if((32|A->type)=='d')
   {
-    B0->QComplex=((BlockDoubleTriDiagonalMatrixType*)A->data)->QComplex;
-    B0->Ni=((BlockDoubleTriDiagonalMatrixType*)A->data)->BlockSize;
-    B0->Nj=B0->Ni;
-    InitCompactMatrix(B0);
+    /*  b0 of the DoubleTriDiagonal type is a matrix of its own, copy it. Do not select the
+     *  union member from the QComplex of the enclosing struct: the two need not agree. The
+     *  lua reader takes b0 from a user supplied matrix, which can be real while val, con or
+     *  a0 make the struct complex. Reading b0.V in that case both misreads the numbers and
+     *  runs off the end of the allocation. See the TODO on the preallocation convention.
+     */
+    CompactMatrixCopy(((BlockDoubleTriDiagonalMatrixType*)A->data)->b0, B0);
     B0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
-    if(B0->QComplex)
-    {
-      memcpy(B0->V, ((BlockDoubleTriDiagonalMatrixType*)A->data)->b0.V, B0->Ni*B0->Nj*sizeof(Complex16));
-    }
-    else
-    {
-      memcpy(B0->VRe, ((BlockDoubleTriDiagonalMatrixType*)A->data)->b0.VRe, B0->Ni*B0->Nj*sizeof(double));
-    }
   }
   else
   {
@@ -5150,16 +5145,173 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
   return 0;
 }
 
+/*  Create the matrix whose resolvent is the Green's function represented by A: one impurity
+ *  block with a valence and a conduction chain attached to it. The two public entry points
+ *  BlockDoubleTriDiagonalMatrixToCompactMatrix and ...WithDeflation both come here, the only
+ *  difference being which of the two chain converters is used and hence how many orbitals
+ *  each chain block contributes.
+ *
+ *  The dimension is BlockSize + dim(Mval) + dim(Mcon), with Mval and Mcon the matrices that
+ *  BlockTriDiagonalMatrixToCompactMatrix[WithDeflation] returns for val and con. The impurity
+ *  block is val.a[0] + con.a[0] (both chains share this block, see StructDef.cpp).
+ *
+ *          ( Aval0+Acon0 | Bval0^* | 0     | Bcon0^* | 0     )
+ *      B = ( Bval0^T     |        Mval     | 0       | 0     )
+ *          ( Bcon0^T     | 0       | 0     |      Mcon       )
+ *
+ *  The head coupling plays the role of b0 of its chain, which enters the Green's function as
+ *  b0^* . G . b0^T and not as b0 . G . b0^+ the way the couplings inside a chain do (see
+ *  BlockTriDiagonalMatrixType in StructDef.cpp). A hermitian matrix with X in the upper right
+ *  block gives X . G . X^+, so X has to be b0^*.
+ *
+ *  A->a0 and A->b0 are the offset and the scaling of the Green's function and are not part of
+ *  this matrix. Read them with BlockResponseFunctionGetA0 and ...GetB0, so that
+ *    G(w) = A0 + B0^* [ 1/(w - B) ]_{0,0} B0^T
+ *
+ *  A dense matrix has no mixed representation, so B is real when val and con are both real
+ *  and complex otherwise. A mixed A (QComplex 2) therefore lands on QComplex 1 here, unless
+ *  it is only a0 or b0 that is complex, as those do not enter this matrix.
+ *
+ *  With deflation the first block of a chain can be smaller than BlockSize, in which case
+ *  only the first BlockSizeList[1] columns of b[0] are non-zero, so only those are copied.
+ *
+ *  B not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B, bool const deflate)
+{
+  uint32_t i,j,bs,nval1,ncon1,offset;
+  double re,im;
+  CompactMatrixType Mval, Mcon;
+  bs = A->BlockSize;
+  if (deflate)
+  {
+    if (BlockTriDiagonalMatrixToCompactMatrixWithDeflation(&(A->val), &Mval)) return 1;
+    if (BlockTriDiagonalMatrixToCompactMatrixWithDeflation(&(A->con), &Mcon))
+    {
+      FreeCompactMatrix(&Mval);
+      return 1;
+    }
+  }
+  else
+  {
+    if (BlockTriDiagonalMatrixToCompactMatrix(&(A->val), &Mval)) return 1;
+    if (BlockTriDiagonalMatrixToCompactMatrix(&(A->con), &Mcon))
+    {
+      FreeCompactMatrix(&Mval);
+      return 1;
+    }
+  }
+  /* how many orbitals the first block of each chain contributes */
+  nval1 = 0;
+  if (A->val.N != 0) nval1 = deflate ? A->val.BlockSizeList[1] : bs;
+  ncon1 = 0;
+  if (A->con.N != 0) ncon1 = deflate ? A->con.BlockSizeList[1] : bs;
+  B->QComplex = ((A->val.QComplex!=0) || (A->con.QComplex!=0)) ? 1 : 0;
+  B->Ni = bs + Mval.Ni + Mcon.Ni;
+  B->Nj = B->Ni;
+  if (InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockDoubleTriDiagonalMatrixToCompactMatrix\n");
+    FreeCompactMatrix(&Mval);
+    FreeCompactMatrix(&Mcon);
+    return 1;
+  }
+  strncpy(B->Name, A->Name, MAXStrLength);
+  B->Name[MAXStrLength-1]='\0';
+  B->mu = A->mu;
+  /* one chain can be real while the other is complex, promote so that both can be copied */
+  if ((B->QComplex!=0) && (Mval.QComplex==0)) MakeCompactRealMatrixComplex(&Mval);
+  if ((B->QComplex!=0) && (Mcon.QComplex==0)) MakeCompactRealMatrixComplex(&Mcon);
+  /*  the impurity block, shared by the two chains. Each chain is read according to its own
+   *  QComplex, which for a mixed A need not be the QComplex of A itself.
+   */
+  for (i = 0; i < bs; i++)
+  {
+    for (j = 0; j < bs; j++)
+    {
+      re = 0;
+      im = 0;
+      if (A->val.QComplex) { re += A->val.a[i*bs + j].Re; im += A->val.a[i*bs + j].Im; }
+      else                 { re += A->val.aRe[i*bs + j]; }
+      if (A->con.QComplex) { re += A->con.a[i*bs + j].Re; im += A->con.a[i*bs + j].Im; }
+      else                 { re += A->con.aRe[i*bs + j]; }
+      if (B->QComplex) { B->V[i*B->Nj + j].Re = re; B->V[i*B->Nj + j].Im = im; }
+      else             { B->VRe[i*B->Nj + j] = re; }
+    }
+  }
+  /* hopping impurity <-> first valence block, as b0^* in the upper right and b0^T below */
+  for (i = 0; i < bs; i++)
+  {
+    for (j = 0; j < nval1; j++)
+    {
+      if (A->val.QComplex) { re = A->val.b[i*bs + j].Re; im = A->val.b[i*bs + j].Im; }
+      else                 { re = A->val.bRe[i*bs + j];  im = 0; }
+      if (B->QComplex)
+      {
+        B->V[i*B->Nj + bs+j].Re   =  re;
+        B->V[i*B->Nj + bs+j].Im   = -im;
+        B->V[(bs+j)*B->Nj + i].Re =  re;
+        B->V[(bs+j)*B->Nj + i].Im =  im;
+      }
+      else
+      {
+        B->VRe[i*B->Nj + bs+j]   = re;
+        B->VRe[(bs+j)*B->Nj + i] = re;
+      }
+    }
+  }
+  /* hopping impurity <-> first conduction block */
+  offset = bs + Mval.Ni;
+  for (i = 0; i < bs; i++)
+  {
+    for (j = 0; j < ncon1; j++)
+    {
+      if (A->con.QComplex) { re = A->con.b[i*bs + j].Re; im = A->con.b[i*bs + j].Im; }
+      else                 { re = A->con.bRe[i*bs + j];  im = 0; }
+      if (B->QComplex)
+      {
+        B->V[i*B->Nj + offset+j].Re   =  re;
+        B->V[i*B->Nj + offset+j].Im   = -im;
+        B->V[(offset+j)*B->Nj + i].Re =  re;
+        B->V[(offset+j)*B->Nj + i].Im =  im;
+      }
+      else
+      {
+        B->VRe[i*B->Nj + offset+j]   = re;
+        B->VRe[(offset+j)*B->Nj + i] = re;
+      }
+    }
+  }
+  /* the two chains */
+  for (i = 0; i < Mval.Ni; i++)
+  {
+    for (j = 0; j < Mval.Nj; j++)
+    {
+      if (B->QComplex) B->V[(bs+i)*B->Nj + bs+j] = Mval.V[i*Mval.Nj + j];
+      else             B->VRe[(bs+i)*B->Nj + bs+j] = Mval.VRe[i*Mval.Nj + j];
+    }
+  }
+  for (i = 0; i < Mcon.Ni; i++)
+  {
+    for (j = 0; j < Mcon.Nj; j++)
+    {
+      if (B->QComplex) B->V[(offset+i)*B->Nj + offset+j] = Mcon.V[i*Mcon.Nj + j];
+      else             B->VRe[(offset+i)*B->Nj + offset+j] = Mcon.VRe[i*Mcon.Nj + j];
+    }
+  }
+  FreeCompactMatrix(&Mval);
+  FreeCompactMatrix(&Mcon);
+  return 0;
+}
+
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
-  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation\n");
-  return 1;
+  return BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(A, B, true);
 }
 
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
-  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrix\n");
-  return 1;
+  return BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(A, B, false);
 }
 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
