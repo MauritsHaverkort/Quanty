@@ -304,7 +304,7 @@ uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, 
 
 uint32_t EvaluateBlockDoubleTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  Complex16 z = {omega,Gamma};
+  Complex16 z = {omega,Gamma/2};
   CompactMatrixType val,con, det;
   EvaluateBlockTriDiagonalMatrix(&(A->val), &val, omega, Gamma);
   EvaluateBlockTriDiagonalMatrix(&(A->con), &con, omega, Gamma);
@@ -318,6 +318,9 @@ uint32_t EvaluateBlockDoubleTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType c
   CompactMatrixInverse(&det);
   CompactMatrixMultiply3('*', 'N', 'T', &(A->b0), &det, &(A->b0), Gw);
   CompactMatrixAdd(Gw,&(A->a0));
+  FreeCompactMatrix(&val);
+  FreeCompactMatrix(&con);
+  FreeCompactMatrix(&det);
   return 0;
 }
 uint32_t EvaluateBlockDoubleTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, const double omega, const double Gamma)

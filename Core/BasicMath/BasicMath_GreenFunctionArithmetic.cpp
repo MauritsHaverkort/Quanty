@@ -4091,7 +4091,7 @@ Complex16 EvaluateDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const * A,
 {
   Complex16 res;
   res.Re = omega;
-  res.Im = Gamma;
+  res.Im = Gamma/2;
   res -= EvaluateTriDiagonalMatrix(&(A->val),omega,Gamma);
   res -= EvaluateTriDiagonalMatrix(&(A->con),omega,Gamma);
   res = A->a0 + A->b0 * A->b0 / res;
@@ -4127,7 +4127,7 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
     case 'n':
     case 'N':
     {
-      return EvaluateBADoubleTriDiagonalMatrix((DoubleTriDiagonalMatrixType*)A->data, omega, Gamma);
+      return EvaluateBADoubleTriDiagonalMatrix(A->data, omega, Gamma);
     }
     case 'd':
     case 'D':
@@ -4136,7 +4136,7 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
     }
     default:
     {
-      printf("Error in LuaEvaluateResponseFunction: Type of Response function should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
+      printf("Error in EvaluateResponseFunction: Type of Response function should be either T/t,A/a,L/l, N/n or D/d and not %c\n",A->type);
       return res;
     }
   }
