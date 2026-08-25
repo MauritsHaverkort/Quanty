@@ -714,6 +714,12 @@ uint32_t ResponseFunctionGetBlockSize(const ResponsefunctionType *const a)
       return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->BlockSize;
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      return ((BlockDoubleTriDiagonalMatrixType*)a->data)->BlockSize;
+      break;
+    }
     default:
     {
       printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
@@ -751,9 +757,15 @@ uint32_t ResponseFunctionGetQComplex(const ResponsefunctionType *const a)
       return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->QComplex;
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      return ((BlockDoubleTriDiagonalMatrixType*)a->data)->QComplex;
+      break;
+    }
     default:
     {
-      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
+      printf("Error in ResponseFunctionGetQComplex: unrecognized type %c\n",a->type);
       return 0;
     }
   }
@@ -831,9 +843,15 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
         M->VRe[0] = ((BADoubleTriDiagonalMatrixType*)a->data)->a0;
         break;
       }
+      case 'D':
+      case 'd':
+      {
+        M->VRe[0] = ((DoubleTriDiagonalMatrixType*)a->data)->a0;
+        break;
+      }
       default:
       {
-        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
+        printf("Error in ResponseFunctionGetA0: unrecognized type %c\n",a->type);
         return 1;
       }
     }
@@ -922,9 +940,29 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
         }
         break;
       }
+      case 'D':
+      case 'd':
+      {
+        if(M->QComplex==0)
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->VRe[i] = ((BlockDoubleTriDiagonalMatrixType*)a->data)->a0.VRe[i];
+          }
+        }
+        else
+        {
+          for(int i=0; i<Sqr(M->Ni);i++)
+          {
+            M->V[i].Re = ((BlockDoubleTriDiagonalMatrixType*)a->data)->a0.V[i].Re;
+            M->V[i].Im = ((BlockDoubleTriDiagonalMatrixType*)a->data)->a0.V[i].Im;
+          }
+        }
+        break;
+      }
       default:
       {
-        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
+        printf("Error in ResponseFunctionGetA0: unrecognized type %c\n",a->type);
         return 0;
       }
     }

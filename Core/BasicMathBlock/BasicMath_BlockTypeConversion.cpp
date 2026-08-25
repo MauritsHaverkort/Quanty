@@ -304,9 +304,21 @@ uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, 
 
 uint32_t EvaluateBlockDoubleTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  // TODO:
-  printf("TODO: EvaluateBlockDoubleTriDiagonalMatrix\n");
-  return 1;
+  Complex16 z = {omega,Gamma};
+  CompactMatrixType val,con, det;
+  EvaluateBlockTriDiagonalMatrix(&(A->val), &val, omega, Gamma);
+  EvaluateBlockTriDiagonalMatrix(&(A->con), &con, omega, Gamma);
+  det.Ni=val.Ni;
+  det.Nj=val.Nj;
+  det.QComplex=1;
+  InitCompactIdentityMatrix(&det);
+  CompactMatrixScaleComplex(&det, z);
+  CompactMatrixSub(&det, &val);
+  CompactMatrixSub(&det, &con);
+  CompactMatrixInverse(&det);
+  CompactMatrixMultiply3('*', 'N', 'T', &(A->b0), &det, &(A->b0), Gw);
+  CompactMatrixAdd(Gw,&(A->a0));
+  return 0;
 }
 uint32_t EvaluateBlockDoubleTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
@@ -364,6 +376,11 @@ uint32_t EvaluateBlockResponsefunctionType(ResponsefunctionType const *A, Compac
     case 'N':
     {
       return EvaluateBlockNaturalImpurityOrbital(A->data, Gw, omega, Gamma);
+    }
+    case 'd':
+    case 'D':
+    {
+      return EvaluateBlockDoubleTriDiagonalMatrix(A->data, Gw, omega, Gamma);
     }
     default:
     {

@@ -4011,6 +4011,9 @@ uint32_t BlockResponseFunctionGetBlockSize(ResponsefunctionType const *A)
     case 'n':
       return ((BlockNaturalImpurityOrbitalMatrixType*)(A->data))->BlockSize;
     break;
+    case 'd':
+      return ((BlockDoubleTriDiagonalMatrixType*)(A->data))->BlockSize;
+    break;
     default:
       return 0;
     break;
@@ -4125,6 +4128,15 @@ uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
   else if((32|A->type)=='n')
   {
     *b0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->b0;
+  }
+  else if((32|A->type)=='d')
+  {
+    *b0 = ((DoubleTriDiagonalMatrixType*)(A->data))->b0;
+  }
+  else
+  {
+    printf("ERORR: Unrecognized type in ResponseFunctionGetB0\n");
+    return 1;
   }
   return 0;
 }
@@ -4244,6 +4256,27 @@ uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrix
     FreeCompactMatrix(&SqrtB0B0);
     FreeCompactMatrix(&B0B0);
     FreeCompactMatrix(&T);
+  }
+  else if((32|A->type)=='d')
+  {
+    B0->QComplex=((BlockDoubleTriDiagonalMatrixType*)A->data)->QComplex;
+    B0->Ni=((BlockDoubleTriDiagonalMatrixType*)A->data)->BlockSize;
+    B0->Nj=B0->Ni;
+    InitCompactMatrix(B0);
+    B0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
+    if(B0->QComplex)
+    {
+      memcpy(B0->V, ((BlockDoubleTriDiagonalMatrixType*)A->data)->b0.V, B0->Ni*B0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(B0->VRe, ((BlockDoubleTriDiagonalMatrixType*)A->data)->b0.VRe, B0->Ni*B0->Nj*sizeof(double));
+    }
+  }
+  else
+  {
+    printf("ERROR in BlockResponseFunctionGetB0 unrecognized type");
+    return 1;
   }
   return 0;
 }
