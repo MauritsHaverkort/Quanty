@@ -387,7 +387,7 @@ uint32_t EvaluateBlockResponsefunctionType(ResponsefunctionType const *A, Compac
     }
     default:
     {
-      printf("Error in EvaluateBlockResponsefunctionType: Type of Response function should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
+      printf("Error in EvaluateBlockResponsefunctionType: Type of Response function should be either T/t,A/a,L/l, N/n, or D/d and not %c\n",A->type);
       return 0;
     }
   }

@@ -4136,7 +4136,7 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
     }
     default:
     {
-      printf("Error in EvaluateResponseFunction: Type of Response function should be either T/t,A/a,L/l, N/n or D/d and not %c\n",A->type);
+      printf("Error in EvaluateResponseFunction: Type of Response function should be either T/t,A/a,L/l, N/n, or D/d and not %c\n",A->type);
       return res;
     }
   }

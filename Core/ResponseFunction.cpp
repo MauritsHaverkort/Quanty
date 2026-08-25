@@ -801,9 +801,15 @@ double ResponseFunctionGetMu(const ResponsefunctionType *const a)
       if(a->Block) return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->mu;
       return ((BADoubleTriDiagonalMatrixType*)a->data)->mu;
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block) return ((BlockDoubleTriDiagonalMatrixType*)a->data)->mu;
+      return ((DoubleTriDiagonalMatrixType*)a->data)->mu;
+    }
     default:
     {
-      printf("Error in ResponseFunctionGetMu: unrecognized type %c",a->type);
+      printf("Error in ResponseFunctionGetMu: unrecognized type %c\n",a->type);
       return 0;
     }
   }

@@ -3990,6 +3990,15 @@ uint32_t ResponseFunctionGetA0(ResponsefunctionType const *A, double *a0)
   {
     *a0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->a0;
   }
+  else if((32|A->type)=='d')
+  {
+    *a0 = ((DoubleTriDiagonalMatrixType*)(A->data))->a0;
+  }
+  else
+  {
+    printf("ERROR: Unrecognized type in ResponseFunctionGetA0\n");
+    return 1;
+  }
   return 0;
 }
 
@@ -4097,6 +4106,20 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
         A0->VRe[i] += ((BlockNaturalImpurityOrbitalMatrixType*)A->data)->con.aRe[i];
       }
     }
+  }
+  else if((32|A->type)=='d')
+  {
+    /*  a0 of the DoubleTriDiagonal type is a matrix of its own, copy it. The shared impurity
+     *  site (val.a[0] + con.a[0]) is part of the denominator and not of a0, so unlike the
+     *  NaturalImpurityOrbital case above nothing is added here.
+     */
+    CompactMatrixCopy(((BlockDoubleTriDiagonalMatrixType*)A->data)->a0, A0);
+    A0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
+  }
+  else
+  {
+    printf("ERROR: Unrecognized type in BlockResponseFunctionGetA0\n");
+    return 1;
   }
   return 0;
 }
