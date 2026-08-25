@@ -95,6 +95,24 @@ uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t 
 /* sets all values of M to zero
  *
  */
+/*  Set M to an empty matrix that owns no data. FreeCompactMatrix on such a matrix only calls
+ *  free(NULL), so it is safe to leave it to the lua garbage collector. Use it on a freshly
+ *  allocated CompactMatrixType before filling it in, when the filling in can fail.
+ */
+uint32_t SetCompactMatrixEmpty(CompactMatrixType * const M)
+{
+  M->Name=NULL;
+  M->Ni=0;
+  M->Nj=0;
+  M->QComplex=0;
+  M->VRe=NULL;
+  M->a0=0;
+  M->b0=0;
+  M->mu=0;
+  M->OnLuaStack=false;
+  return 0;
+}
+
 uint32_t SetCompactMatrixToZero(CompactMatrixType * const M)
 {
   uint32_t i;
@@ -4356,13 +4374,12 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
     { // convert block double tridiagonal matrix to compact matrix
       if(deflate==true)
       {
-        BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
+        return BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
       }
       else
       {
-        BlockDoubleTriDiagonalMatrixToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
+        return BlockDoubleTriDiagonalMatrixToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
       }
-      return 0;
     }
   }
   else
@@ -4389,8 +4406,7 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
     }
     if((32|A->type)=='d')
     {
-      DoubleTriDiagonalMatrixToCompactMatrix( *((DoubleTriDiagonalMatrixType*)(A->data)), B);
-      return 0;
+      return DoubleTriDiagonalMatrixToCompactMatrix( *((DoubleTriDiagonalMatrixType*)(A->data)), B);
     }
   }
   printf("Error: Unidentified type of response function %c in ResponseFunctionToCompactMatrix\n",A->type);
@@ -5136,14 +5152,14 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
 
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
-  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation");
-  return 0;
+  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation\n");
+  return 1;
 }
 
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
 {
-  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrix");
-  return 0;
+  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrix\n");
+  return 1;
 }
 
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks

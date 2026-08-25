@@ -847,7 +847,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
 uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   // TODO:
-  printf("TODO ");
+  printf("TODO: BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
   return 1;
 }
 
@@ -1235,7 +1235,7 @@ uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType con
 uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT)
 {
   //TODO;
-  printf("TODO: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix");
+  printf("TODO: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
   return 1;
 }
 uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)

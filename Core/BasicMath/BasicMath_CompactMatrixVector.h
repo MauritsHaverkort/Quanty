@@ -2,6 +2,7 @@ void FreeCompactMatrix(CompactMatrixType * const M);
 void FreeCompactMatrixIncludingPointer(CompactMatrixType * const M);
 uint32_t InitCompactMatrix(CompactMatrixType * const M);
 uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t Nj);
+uint32_t SetCompactMatrixEmpty(CompactMatrixType * const M);
 uint32_t SetCompactMatrixToZero(CompactMatrixType * const M);
 uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const B);
 uint32_t CompactMatrixCopyToMatrix(MatrixType * const M, CompactMatrixType const A);
