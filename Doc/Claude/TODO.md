@@ -211,3 +211,50 @@ is the natural place to start.
 existing relative-units model as suspect, in particular if it has more than one
 atom in the unit cell and has been through `Chop` with a distance,
 `TightBinding.Derivative`, or `CreateClusterHamiltonian`.
+
+
+## Who sizes the output matrix — the preallocation convention for `Get…` routines
+
+**Status:** deferred — needs one codebase-wide decision, not a local fix.
+
+Routines that hand back a `CompactMatrixType` follow the original convention that
+the **caller** sets `Ni`, `Nj` and `QComplex` before the call and the routine only
+fills in the data. As a consequence many of them choose which union member to read
+or write from the *destination's* `QComplex`, not from the source's.
+
+The concrete case that surfaced this is `BlockResponseFunctionGetB0`
+([Core/BasicMath/BasicMath_CompactMatrixVector.cpp](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp))
+for response functions of type `d`. It sets `B0->QComplex` from the enclosing
+`BlockDoubleTriDiagonalMatrixType` and then `memcpy`s from `b0.V` or `b0.VRe`
+according to that. For `d` the two can disagree:
+`luaL_checkBlockDoubleTriDiagonalMatrixType` assigns `buff->a0 = *tempM` and
+`buff->b0 = *tempM` wholesale from a user-supplied `Matrix_Type`, so
+`b0.QComplex` is whatever the user's matrix happened to be, independent of the
+`QComplex` of the struct that holds it. A real `b0` inside a complex struct, or
+the reverse, then reads the wrong union member — silently.
+
+The `d` branch of `BlockResponseFunctionGetA0` avoids it by using
+`CompactMatrixCopy`, which takes `Ni`, `Nj` and `QComplex` from the source and
+allocates accordingly. That is very likely the behaviour wanted everywhere.
+
+**Why it is deferred rather than fixed:** adopting it means *relaxing* the
+preallocation requirement, and that requirement is relied on both by callers and
+by a long list of sibling implementations — the `t`/`a`/`l`/`n` branches of these
+same two functions, `BlockResponseFunctionGetB0`, `BlockTriDiagonalMatrixToCompactMatrix`
+and its friends, and the `Evaluate…` family. Relaxing it one function at a time
+produces a codebase where some routines size their own output and some require it
+presized, with nothing at the call site to say which — strictly worse than either
+convention applied consistently. It wants one pass with a stated policy, and a
+decision on whether `InitCompactMatrix` on an already-initialised matrix is a
+no-op, an error, or a reallocation.
+
+There is a smaller alternative worth weighing in that pass: instead of changing
+the accessors, make the readers normalise on the way in, so
+`luaL_check…DoubleTriDiagonalMatrixType` converts `a0` and `b0` to the struct's
+`QComplex` and the invariant "a member matrix has the same QComplex as its
+struct" holds by construction. That fixes the observed case without touching any
+accessor, but only for the types whose readers are updated.
+
+**Meanwhile:** set `Ni`, `Nj` and `QComplex` on the destination before calling
+these routines, and where a struct holds a `CompactMatrixType` member, do not
+assume that member's `QComplex` matches the enclosing struct's.
