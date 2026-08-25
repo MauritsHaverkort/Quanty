@@ -4323,12 +4323,12 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
       }
       return 0;
     }
-    if((32|A->type)=='a')
+    else if((32|A->type)=='a')
     { // convert block anderson matrix to compact matrix
       BlockAndersonMatrixToCompactMatrix((BlockAndersonMatrixType*)A->data, B);      
       return 0;
     }
-    if((32|A->type)=='l')
+    else if((32|A->type)=='l')
     { // convert block list of poles response function to compact matrix
       if(deflate==true)
       {
@@ -4340,7 +4340,7 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
       }
       return 0;
     }
-    if((32|A->type)=='n')
+    else if((32|A->type)=='n')
     { // convert block natural impurity matrix to compact matrix
       if(deflate==true)
       {
@@ -4349,6 +4349,18 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
       else
       {
         BlockNaturalImpurityOrbitalMatrixToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)A->data, B);
+      }
+      return 0;
+    }
+    else if((32|A->type)=='d')
+    { // convert block double tridiagonal matrix to compact matrix
+      if(deflate==true)
+      {
+        BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
+      }
+      else
+      {
+        BlockDoubleTriDiagonalMatrixToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
       }
       return 0;
     }
@@ -4373,6 +4385,11 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
     if((32|A->type)=='n')
     { // convert natural impurity matrix to compact matrix
       BADoubleTriDiagonalMatrixTypeToCompactMatrix((BADoubleTriDiagonalMatrixType*)(A->data), B);
+      return 0;
+    }
+    if((32|A->type)=='d')
+    {
+      DoubleTriDiagonalMatrixToCompactMatrix( *((DoubleTriDiagonalMatrixType*)(A->data)), B);
       return 0;
     }
   }
@@ -5114,6 +5131,18 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
       bposL+=(A->BlockSize*B->Nj);
     }
   }
+  return 0;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
+{
+  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation");
+  return 0;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
+{
+  printf("TODO: BlockDoubleTriDiagonalMatrixToCompactMatrix");
   return 0;
 }
 
