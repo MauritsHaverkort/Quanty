@@ -1565,7 +1565,7 @@ uint32_t TriDiagonalMatrixToSpectrumGaussian(const double Energy, const TriDiago
 *   output      : G.Im
 *               : G.Re
 *
-*   a0 + b0^2 / (w-avc0-bc0^2/(w-ac1-bc1^2/(w-ac2-bc2^2/(...))-bv0^2/(w-av1-bv1^2/(w-av2-bv2^2/(...)))
+*   a0 + b0^2 / (w-av0-ac0-bc0^2/(w-ac1-bc1^2/(w-ac2-bc2^2/(...))-bv0^2/(w-av1-bv1^2/(w-av2-bv2^2/(...)))
 *
 */
 void DoubleTriDiagonalMatrixToSpectrum(const double Energy, const DoubleTriDiagonalMatrixType M, SpectraType * const G)
@@ -1580,7 +1580,7 @@ void DoubleTriDiagonalMatrixToSpectrum(const double Energy, const DoubleTriDiago
   for (i = 0; i <= G->N; i++)
   {
     hnu = ((double)i * G->dE) + G->Emin + Energy;
-    denom = Sqr(G->Gamma * 0.5 - GV.Im[i] - GC.Im[i]) + Sqr(hnu - (M.val.a[0] + M.con.a[0]) / 2 - GV.Re[i] - GC.Re[i]);
+    denom = Sqr(G->Gamma * 0.5 - GV.Im[i] - GC.Im[i]) + Sqr(hnu - M.val.a[0] - M.con.a[0]  - GV.Re[i] - GC.Re[i]);
     G->Re[i] = M.a0 + Sqr(M.b0) * (hnu - (M.val.a[0] + M.con.a[0]) / 2 - GV.Re[i] - GC.Re[i]) / denom;
     G->Im[i] = Sqr(M.b0) * (-G->Gamma * 0.5 + GV.Im[i] + GC.Im[i]) / denom;
   }

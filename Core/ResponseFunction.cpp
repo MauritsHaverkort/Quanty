@@ -383,6 +383,16 @@ uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArr
       strncpy(A->Name, ((BADoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
     }
     break;
+    case 'd':
+    {
+      strncpy(A->Name, ((DoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+    }
+    break;
+    default:
+    {
+      printf("Unrecognized type %c in ResponseFunctionToSpectra\n",M->type);
+      return 1;
+    }
   }
   return NoneBlockResponseFunctionToSpectra(M, A->Spec, GroundStateEnergy, Emin, Emax, GammaG, GammaL, NE);
 }
@@ -442,6 +452,20 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         BlockNaturalImpurityOrbitalMatrixToSpectra(GroundStateEnergy,(BlockNaturalImpurityOrbitalMatrixType*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
+      case 'd':
+      {
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockDoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+
+      }
+      break;
+      default:
+      {
+        printf("Unrecognized type %c in BlockResponseFunctionToSpectra\n",M->type);
+        return 1;
+      }
     }
   }
   else // transform to spectra with non-zero Gamma
@@ -484,6 +508,20 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockNaturalImpurityOrbitalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
+      case 'd':
+      {
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockDoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+        
+      }
+      break;
+      default:
+      {
+        printf("Unrecognized type %c in BlockResponseFunctionToSpectra\n",M->type);
+        return 1;
+      }
     }
   }
   if(GammaG!=0)
@@ -544,6 +582,11 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
         BADoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(BADoubleTriDiagonalMatrixType*)M->data, A);
       }
         break;
+      case 'd':
+      {
+        DoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(DoubleTriDiagonalMatrixType*)M->data, A);
+      }
+        break;
     }
   }
   else // transform to spectra with non-zero Gamma
@@ -568,6 +611,11 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
      case 'n':
      {
        BADoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(BADoubleTriDiagonalMatrixType*)M->data, A);
+     }
+     break;
+     case 'd':
+     {
+       DoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(DoubleTriDiagonalMatrixType*)M->data, A);
      }
      break;
    }

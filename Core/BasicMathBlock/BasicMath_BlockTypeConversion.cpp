@@ -2421,6 +2421,44 @@ uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatri
 }
 
 
+uint32_t BlockDoubleTriDiagonalMatrixToSpectraWithBroadening(const double Energy, BlockDoubleTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+{
+  int iw,i;
+  double omega;
+  CompactMatrixType Gw;
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A->Name);
+  for(iw=0;iw<=N;iw++)
+  {
+    omega = Emin + iw * G[0].dE + Energy;
+    EvaluateBlockDoubleTriDiagonalMatrix(A, &Gw, omega, Gamma);
+    // add Gw to G
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      G[i].Re[iw]=Gw.V[i].Re;
+      G[i].Im[iw]=Gw.V[i].Im;
+    }
+  }
+  FreeCompactMatrix(&Gw);
+  return 0;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToSpectra(const double Energy, BlockDoubleTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
+{
+ BlockListOfPoles ALP;
+ BlockDoubleTriDiagonalMatrixToBlockListOfPoles(*A, &ALP);
+ BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
+ FreeBlockListOfPoles(&ALP);
+ return 0;
+}
+
 
 
 
