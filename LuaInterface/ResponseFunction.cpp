@@ -55,15 +55,24 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     if(Min->type<94)
     { // upercase push table on stack
       CompactMatrixType MCompactOut,A0,B0;
-      ResponseFunctionToCompactMatrix(Min, &MCompactOut, deflate, SingularValue);
+      if(ResponseFunctionToCompactMatrix(Min, &MCompactOut, deflate, SingularValue))
+      {
+        return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
+      }
       LuaPushTable_CompactMatrixType(L, &MCompactOut);
       FreeCompactMatrix(&MCompactOut);
       if(Min->Block==true)
       {
-        BlockResponseFunctionGetA0(Min, &A0);
+        if(BlockResponseFunctionGetA0(Min, &A0))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+        }
         LuaPushTable_CompactMatrixType(L, &A0);
         FreeCompactMatrix(&A0);
-        BlockResponseFunctionGetB0(Min, &B0);
+        if(BlockResponseFunctionGetB0(Min, &B0))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+        }
         LuaPushTable_CompactMatrixType(L, &B0);
         FreeCompactMatrix(&B0);
         FreeResponsefunction(Min);
@@ -71,8 +80,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
       else
       {
         double a0,b0;
-        ResponseFunctionGetA0(Min, &a0);
-        ResponseFunctionGetB0(Min, &b0);
+        if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+        }
         lua_pushnumber(L, a0);
         lua_pushnumber(L, b0);
       }
@@ -82,24 +93,43 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
       CompactMatrixType *MCompactOut,*A0,*B0;
       MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
       luaL_setmetatable(L, "Matrix_Type");
-      ResponseFunctionToCompactMatrix(Min, MCompactOut, deflate, SingularValue);
+      /*  Set the fresh user data to an empty matrix before it is filled. If the call below
+       *  fails we leave through a lua error and the garbage collector will still run
+       *  FreeCompactMatrix on this user data, which frees Name and V. With both NULL that is
+       *  a no-op, on the uninitiallized struct it would free two arbitrary pointers.
+       */
+      SetCompactMatrixEmpty(MCompactOut);
+      if(ResponseFunctionToCompactMatrix(Min, MCompactOut, deflate, SingularValue))
+      {
+        return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
+      }
       MCompactOut->OnLuaStack=true;
       if(Min->Block==true)
       {
         A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
         luaL_setmetatable(L, "Matrix_Type");
-        BlockResponseFunctionGetA0(Min, A0);
+        SetCompactMatrixEmpty(A0);
+        if(BlockResponseFunctionGetA0(Min, A0))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+        }
         A0->OnLuaStack=true;
         B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
         luaL_setmetatable(L, "Matrix_Type");
-        BlockResponseFunctionGetB0(Min, B0);
+        SetCompactMatrixEmpty(B0);
+        if(BlockResponseFunctionGetB0(Min, B0))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+        }
         B0->OnLuaStack=true;
       }
       else
       {
         double a0,b0;
-        ResponseFunctionGetA0(Min, &a0);
-        ResponseFunctionGetB0(Min, &b0);
+        if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+        }
         lua_pushnumber(L, a0);
         lua_pushnumber(L, b0);
       }

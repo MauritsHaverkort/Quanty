@@ -211,3 +211,138 @@ is the natural place to start.
 existing relative-units model as suspect, in particular if it has more than one
 atom in the unit cell and has been through `Chop` with a distance,
 `TightBinding.Derivative`, or `CreateClusterHamiltonian`.
+
+
+## Who sizes the output matrix — the preallocation convention for `Get…` routines
+
+**Status:** deferred — needs one codebase-wide decision, not a local fix.
+
+Routines that hand back a `CompactMatrixType` follow the original convention that
+the **caller** sets `Ni`, `Nj` and `QComplex` before the call and the routine only
+fills in the data. As a consequence many of them choose which union member to read
+or write from the *destination's* `QComplex`, not from the source's.
+
+The concrete case that surfaced this is `BlockResponseFunctionGetB0`
+([Core/BasicMath/BasicMath_CompactMatrixVector.cpp](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp))
+for response functions of type `d`. It sets `B0->QComplex` from the enclosing
+`BlockDoubleTriDiagonalMatrixType` and then `memcpy`s from `b0.V` or `b0.VRe`
+according to that. For `d` the two can disagree:
+`luaL_checkBlockDoubleTriDiagonalMatrixType` assigns `buff->a0 = *tempM` and
+`buff->b0 = *tempM` wholesale from a user-supplied `Matrix_Type`, so
+`b0.QComplex` is whatever the user's matrix happened to be, independent of the
+`QComplex` of the struct that holds it. A real `b0` inside a complex struct, or
+the reverse, then reads the wrong union member — silently.
+
+The `d` branch of `BlockResponseFunctionGetA0` avoids it by using
+`CompactMatrixCopy`, which takes `Ni`, `Nj` and `QComplex` from the source and
+allocates accordingly. That is very likely the behaviour wanted everywhere.
+
+**Why it is deferred rather than fixed:** adopting it means *relaxing* the
+preallocation requirement, and that requirement is relied on both by callers and
+by a long list of sibling implementations — the `t`/`a`/`l`/`n` branches of these
+same two functions, `BlockResponseFunctionGetB0`, `BlockTriDiagonalMatrixToCompactMatrix`
+and its friends, and the `Evaluate…` family. Relaxing it one function at a time
+produces a codebase where some routines size their own output and some require it
+presized, with nothing at the call site to say which — strictly worse than either
+convention applied consistently. It wants one pass with a stated policy, and a
+decision on whether `InitCompactMatrix` on an already-initialised matrix is a
+no-op, an error, or a reallocation.
+
+There is a smaller alternative worth weighing in that pass: instead of changing
+the accessors, make the readers normalise on the way in, so
+`luaL_check…DoubleTriDiagonalMatrixType` converts `a0` and `b0` to the struct's
+`QComplex` and the invariant "a member matrix has the same QComplex as its
+struct" holds by construction. That fixes the observed case without touching any
+accessor, but only for the types whose readers are updated.
+
+**Decided since, and no longer part of this item.** `QComplex` on an object whose
+sub-parts can each be real or complex is `0` all real, `1` all complex, `2`
+mixed — the convention `SetQComplexOperator` already uses for `OperatorType`.
+Sub-parts carry their own `0`/`1`. A representation with no mixed form (a
+`CompactMatrixType`, a block tri-diagonal) narrows a `2` to `1` on conversion.
+The block `DoubleTri` and `NaturalImpurityOrbital` readers and the `a0`/`b0`
+accessors follow this; the rest of the codebase has not been audited against it.
+
+That decision does **not** settle this item: it makes the mismatch *legitimate*
+rather than accidental, so reading a member matrix by the enclosing struct's flag
+is now definitely wrong rather than merely fragile.
+
+**Meanwhile:** set `Ni`, `Nj` and `QComplex` on the destination before calling
+these routines, and where a struct holds a `CompactMatrixType` member, read that
+member by its own `QComplex` — for a mixed object it will not match the
+enclosing struct's.
+
+
+## The mixed real/complex case for response functions
+
+**Status:** open, and only partly handled. Flagged after the convention was
+settled, not before — most of the code predates it.
+
+`QComplex` on an object whose sub-parts can each be real or complex is `0` all
+real, `1` all complex, `2` mixed, as `SetQComplexOperator` does for
+`OperatorType`. Sub-parts carry their own `0`/`1`. A representation with no mixed
+form narrows a `2` to `1` on conversion.
+
+Of the response function types only two are compound and can therefore ever be
+`2`:
+
+| type | sub-parts | can be mixed |
+|---|---|---|
+| `BlockDoubleTriDiagonalMatrixType` | `a0`, `b0`, `val`, `con` | **yes** |
+| `BlockNaturalImpurityOrbitalMatrixType` | `a0`, `TMT`, `val`, `con` | **yes** |
+| `BlockTriDiagonalMatrixType` | — | no, always 0/1 |
+| `BlockAndersonMatrixType` | — | no |
+| `BlockListOfPoles` | — | no |
+| every non-block type | — | no `QComplex` at all |
+
+So the audit is bounded: everything that touches those two types.
+
+### Already done
+
+The two lua readers set `0`/`1`/`2` by counting. `ResponseFunctionGetA0`,
+`BlockResponseFunctionGetA0` and `BlockResponseFunctionGetB0` read each member
+matrix by that member's own flag and narrow to `0`/`1` on the way out.
+`BlockDoubleTriDiagonalMatrixToCompactMatrix` decides from `val` and `con` only,
+promotes whichever chain is real, and leaves the matrix real when only `a0` or
+`b0` is complex. `SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType`
+already narrowed correctly.
+
+### Known to be wrong for a mixed object
+
+- **`InitBlockDoubleTriDiagonalMatrix` and `InitBlockNaturalImpurityOrbitalMatrix`
+  push the compound flag down into every sub-part** (`A->val.QComplex=A->QComplex;`
+  and so on for `con`, `a0`, `b0`/`TMT`). Handed a `2` they write `2` into
+  sub-objects that have no mixed state, and they cannot construct a mixed object
+  at all. This is where the convention breaks first, and it is the reason a mixed
+  object can currently only arrive from lua.
+- **`BlockNaturalImpurityOrbitalMatrixChop`** does `if(A->QComplex)` and then reads
+  `A->val.a[i]` as `Complex16`. That is the compound flag selecting a sub-part's
+  union member: with `val` real it reads past the end of the allocation.
+- **`BlockNaturalImpurityOrbitalMatrixChopReduceDimension`** does
+  `if(A->QComplex==true)`. `true` converts to `1`, so `2` compares false: a mixed
+  object silently takes the real branch, then reads `A->a0.VRe` when `a0` may be
+  complex.
+
+### Not yet checked
+
+Everything else reading `QComplex` of those two types, in particular
+`ComplexBlockNaturalImpurityOrbitalMatrixToReal` and its inverse,
+`CopyBlockNaturalImpurityOrbitalMatrix` / `CopyBlockDoubleTriDiagonalMatrix`
+(which copy the struct wholesale, so they are probably fine),
+`ResponsefunctionMul`, `ResponseFunctionInvertEnergy`, `ResponsefunctionChop`,
+`BlockResponseFunctionRotate`, `ResponseFunctionEq`, and every `... To ...`
+conversion, each of which has to narrow to `1` because no other representation
+has a mixed form.
+
+**Why it is not simply fixed:** the two `Init` functions define how every
+compound object is built, so changing them means deciding whether `Init` takes a
+per-part specification or whether mixed objects are only ever assembled by the
+readers and the conversions. That is a small design decision, but it wants making
+once rather than per call site. `Core/Lanczos.cpp` and
+`Core/BlockWaveFunctionArithmetic.cpp` show the shape to copy: `if(==0) … else
+if(==1) … else` for the mixed case, on the operator flag.
+
+**Meanwhile:** a mixed response function can only be created from a lua table.
+Read every member matrix by its own `QComplex`, never by the enclosing struct's,
+and never compare `QComplex` against `1` or `true` when the object is compound —
+use `!=0` for "has any complex part". See the entry above on who sizes the output matrix.

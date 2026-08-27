@@ -867,7 +867,10 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
 {
   M->Ni = ResponseFunctionGetBlockSize(a);
   M->Nj = M->Ni;
-  M->QComplex = ResponseFunctionGetQComplex(a);
+  /*  A CompactMatrixType is not a compound object and has no mixed state, so the 0/1/2
+   *  QComplex of the response function is narrowed to 0 or 1 here.
+   */
+  M->QComplex = ResponseFunctionGetQComplex(a) ? 1 : 0;
   InitCompactMatrix(M);
   if(a->Block==false)
   {
@@ -977,19 +980,23 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
       case 'N':
       case 'n':
       {
-        if(M->QComplex==0)
+        /*  a0 carries its own QComplex, which for a mixed response function (QComplex 2)
+         *  need not be the one of the response function, so read a0 by its own flag and
+         *  write M by M's. a0 complex forces M complex, so nothing is ever dropped.
+         */
+        CompactMatrixType const * const a0 = &(((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0);
+        for(int i=0; i<Sqr(M->Ni);i++)
         {
-          for(int i=0; i<Sqr(M->Ni);i++)
+          double re = a0->QComplex ? a0->V[i].Re : a0->VRe[i];
+          double im = a0->QComplex ? a0->V[i].Im : 0;
+          if(M->QComplex==0)
           {
-            M->VRe[i] = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.VRe[i];
+            M->VRe[i] = re;
           }
-        }
-        else
-        {
-          for(int i=0; i<Sqr(M->Ni);i++)
+          else
           {
-            M->V[i].Re = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.V[i].Re;
-            M->V[i].Im = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.V[i].Im;
+            M->V[i].Re = re;
+            M->V[i].Im = im;
           }
         }
         break;
@@ -997,19 +1004,23 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
       case 'D':
       case 'd':
       {
-        if(M->QComplex==0)
+        /*  a0 carries its own QComplex, which for a mixed response function (QComplex 2)
+         *  need not be the one of the response function, so read a0 by its own flag and
+         *  write M by M's. a0 complex forces M complex, so nothing is ever dropped.
+         */
+        CompactMatrixType const * const a0 = &(((BlockDoubleTriDiagonalMatrixType*)a->data)->a0);
+        for(int i=0; i<Sqr(M->Ni);i++)
         {
-          for(int i=0; i<Sqr(M->Ni);i++)
+          double re = a0->QComplex ? a0->V[i].Re : a0->VRe[i];
+          double im = a0->QComplex ? a0->V[i].Im : 0;
+          if(M->QComplex==0)
           {
-            M->VRe[i] = ((BlockDoubleTriDiagonalMatrixType*)a->data)->a0.VRe[i];
+            M->VRe[i] = re;
           }
-        }
-        else
-        {
-          for(int i=0; i<Sqr(M->Ni);i++)
+          else
           {
-            M->V[i].Re = ((BlockDoubleTriDiagonalMatrixType*)a->data)->a0.V[i].Re;
-            M->V[i].Im = ((BlockDoubleTriDiagonalMatrixType*)a->data)->a0.V[i].Im;
+            M->V[i].Re = re;
+            M->V[i].Im = im;
           }
         }
         break;

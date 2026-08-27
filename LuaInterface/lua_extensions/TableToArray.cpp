@@ -1721,7 +1721,15 @@ BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lu
     }
     lua_pop(L,1);
     // set QComplex
-    buff->QComplex = buff->a0.QComplex + buff->b0.QComplex + buff->con.QComplex + buff->val.QComplex;
+    /*  QComplex of an object with sub-parts that can each be real or complex:
+     *  0 all real, 1 all complex, 2 mixed. Same convention as SetQComplexOperator.
+     */
+    {
+      uint32_t ncomplex = (buff->a0.QComplex!=0) + (buff->b0.QComplex!=0) + (buff->con.QComplex!=0) + (buff->val.QComplex!=0);
+      if(ncomplex==0)      buff->QComplex = 0;
+      else if(ncomplex==4) buff->QComplex = 1;
+      else                 buff->QComplex = 2;
+    }
     // set blocksize and test consistency
     buff->BlockSize = buff->a0.Ni;
     if(buff->a0.Nj!=buff->BlockSize) luaL_error(L, "Reading DoubleTri matrix A0 is not quadratic\n Number of rows   %d\n Number of columns %d",buff->a0.Ni,buff->a0.Nj);
@@ -2116,7 +2124,15 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     }
     lua_pop(L,1);
     // set QComplex
-    buff->QComplex = buff->a0.QComplex + buff->con.QComplex + buff->val.QComplex;
+    /*  0 all real, 1 all complex, 2 mixed. TMT is not counted, it is derived from val and
+     *  con. Same convention as SetQComplexOperator.
+     */
+    {
+      uint32_t ncomplex = (buff->a0.QComplex!=0) + (buff->con.QComplex!=0) + (buff->val.QComplex!=0);
+      if(ncomplex==0)      buff->QComplex = 0;
+      else if(ncomplex==3) buff->QComplex = 1;
+      else                 buff->QComplex = 2;
+    }
     // set blocksize and test consistency
     buff->BlockSize = buff->a0.Ni;
     if(buff->a0.Nj!=buff->BlockSize) luaL_error(L, "Reading NaturalImpurityOrbital matrix A0 is not quadratic\n Number of rows   %d\n Number of columns %d",buff->a0.Ni,buff->a0.Nj);
