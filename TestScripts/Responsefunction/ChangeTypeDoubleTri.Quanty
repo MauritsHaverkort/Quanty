@@ -1,0 +1,120 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction ChangeType to DoubleTri            --")
+print("--------------------------------------------------------")
+
+-- The double tri-diagonal representation holds one impurity site with a valence
+-- chain and a conduction chain hanging off it:
+--
+--   G(w) = a0 + b0^2 / ( w - Gval(w) - Gcon(w) )
+--
+-- with Gval and Gcon ordinary tri-diagonal response functions. The impurity
+-- energy is val.a[0] + con.a[0], the plain sum, and each chain is given half of
+-- it by convention.
+--
+-- Converting an Anderson matrix to this form splits the bath at the chemical
+-- potential with a Fermi function, so a bath level within 40 kBT of mu ends up
+-- in both chains, with weight f and 1-f. Nothing is truncated, so the result
+-- has to reproduce the original response function exactly.
+
+function MakeAnderson(nb, eimp, mu)
+	local a = {0.0, eimp}		-- a[1] is the offset a0, a[2] the impurity energy
+	local b = {1.4}			-- b[1] is the overall scale b0
+	for i = 1, nb do
+		local E = -5.0 + 10.0 * (i - 0.5) / nb
+		a[#a + 1] = E
+		b[#b + 1] = 0.5 * math.sqrt(math.max(0.0, 25.0 - E * E)) / math.sqrt(nb)
+	end
+	return ResponseFunction.New({a, b, mu = mu, type = "And", name = "bath"})
+end
+
+-- largest relative difference between two response functions on a grid
+function MaxRelDiff(G1, G2, gamma)
+	local worst = 0.0
+	for i = 0, 400 do
+		local w = -7.0 + 14.0 * i / 400
+		local v1, v2 = G1(w, gamma), G2(w, gamma)
+		local d = math.sqrt((v1.Re - v2.Re)^2 + (v1.Im - v2.Im)^2)
+		local n = math.sqrt(v1.Re^2 + v1.Im^2)
+		if (n > 0) and ((d / n) > worst) then worst = d / n end
+	end
+	return worst
+end
+
+function Check(name, nb, eimp, mu, kBT)
+	local GA = MakeAnderson(nb, eimp, mu)
+	local GD = ResponseFunction.ChangeType(GA, "DoubleTri", {{"EffectivekBT", kBT}})
+	local e = math.max(MaxRelDiff(GA, GD, 0.3), MaxRelDiff(GA, GD, 0.02))
+	local t = ResponseFunction.ToTable(GD)
+	local ta, tb = ResponseFunction.ToTable(GA)[1], ResponseFunction.ToTable(GA)[2]
+	-- the impurity energy is shared between the two chains and must add up
+	if math.abs(t.val[1][1] + t.con[1][1] - ta[2]) > 1E-12 * (1 + math.abs(ta[2])) then
+		error("ChangeType DoubleTri: val.a[0] + con.a[0] is not the impurity energy for " .. name, 1)
+	end
+	-- the two chains together carry the whole hybridization weight. An empty
+	-- chain has no b at all, its b[0] would be the zeroth element of a list of
+	-- length zero, so it contributes nothing
+	local W = 0.0
+	for i = 2, #tb do W = W + tb[i] * tb[i] end
+	local Wval = (#(t.val[2]) > 0) and t.val[2][1]^2 or 0.0
+	local Wcon = (#(t.con[2]) > 0) and t.con[2][1]^2 or 0.0
+	if math.abs(Wval + Wcon - W) > 1E-12 * (1 + W) then
+		error("ChangeType DoubleTri: the two chains do not carry the whole weight for " .. name, 1)
+	end
+	-- the result has to survive a round trip through a lua table
+	local e2 = MaxRelDiff(GD, ResponseFunction.ToUserdata(ResponseFunction.ToTable(GD)), 0.02)
+	if e2 > 1E-11 then
+		error("ChangeType DoubleTri does not survive a table round trip for " .. name, 1)
+	end
+	print(string.format("  %-30s Nval=%4d Ncon=%4d   max relative error %9.2e",
+	      name, #(t.val[1]) - 1, #(t.con[1]) - 1, e))
+	if e > 1E-11 then
+		error("ChangeType DoubleTri does not reproduce the original function for " .. name, 1)
+	end
+end
+
+print("Anderson to DoubleTri, agreement with the original function")
+Check("kBT finite, eimp nonzero", 999, 1.7,  0.0, 0.025)
+Check("kBT zero",                 999, 1.7,  0.0, 0.0)
+Check("mu off centre",            999, 0.0, -1.3, 0.1)
+Check("valence chain empty",      999, 1.7, -6.0, 0.025)
+Check("conduction chain empty",   999, 1.7,  6.0, 0.025)
+Check("small bath",                 6, 1.7,  0.0, 0.3)
+Check("single bath level",          1, 1.7,  0.0, 0.3)
+
+-- Degenerate bath levels have to be merged before the chain is built, or the
+-- measure has a smaller support than the number of poles and the recursion
+-- breaks down. Every level here appears three times.
+a = {0.0, 1.7}
+b = {1.4}
+for i = 1, 12 do
+	a[#a + 1] = -3.0 + 6.0 * (math.floor((i - 1) / 3) + 0.5) / 4
+	b[#b + 1] = 0.2 + 0.01 * i
+end
+GAdeg = ResponseFunction.New({a, b, mu = 0.0, type = "And", name = "degenerate"})
+GDdeg = ResponseFunction.ChangeType(GAdeg, "DoubleTri", {{"EffectivekBT", 0.1}})
+edeg = math.max(MaxRelDiff(GAdeg, GDdeg, 0.3), MaxRelDiff(GAdeg, GDdeg, 0.02))
+tdeg = ResponseFunction.ToTable(GDdeg)
+print(string.format("  %-30s Nval=%4d Ncon=%4d   max relative error %9.2e",
+      "degenerate bath levels", #(tdeg.val[1]) - 1, #(tdeg.con[1]) - 1, edeg))
+if edeg > 1E-11 then
+	error("ChangeType DoubleTri does not reproduce a bath with degenerate levels", 1)
+end
+-- 12 levels on 4 distinct energies, so neither chain can be longer than 4
+if (#(tdeg.val[1]) - 1 > 4) or (#(tdeg.con[1]) - 1 > 4) then
+	error("ChangeType DoubleTri did not merge degenerate bath levels", 1)
+end
+
+-- A tri-diagonal and a list of poles reach the double tri-diagonal form through
+-- the Anderson form, so they have to agree with it as well.
+GA = MakeAnderson(200, 1.7, 0.0)
+for i, ty in ipairs({"Tri", "LP"}) do
+	G = ResponseFunction.ChangeType(GA, ty)
+	GD = ResponseFunction.ChangeType(G, "DoubleTri", {{"EffectivekBT", 0.05}})
+	e = math.max(MaxRelDiff(G, GD, 0.3), MaxRelDiff(G, GD, 0.02))
+	print(string.format("  %-30s max relative error %9.2e", ty .. " to DoubleTri", e))
+	if e > 1E-11 then
+		error("ChangeType DoubleTri does not reproduce the original function from " .. ty, 1)
+	end
+end
+
+print("--------------------------------------------------------")

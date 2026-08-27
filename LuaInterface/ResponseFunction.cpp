@@ -20,7 +20,7 @@
  *   change between representation as table or usertype (table capital, user data small)
  *   parameters on lua stack (responsefunction, typedef)
  *   typedef being a string of the form:
- *   Tri, And, ListOfPoles, NaturalImpurityOrbital, Userdata, Table, Dense
+ *   Tri, And, ListOfPoles, NaturalImpurityOrbital, DoubleTri, Userdata, Table, Dense
  *
  *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
  *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
@@ -152,6 +152,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     type='N'|(32&Min->type);
   }
+  else if((strcmp(convert, "DoubleTri")==0)||(strcmp(convert, "DTri")==0))
+  {
+    type='D'|(32&Min->type);
+  }
   else if(strcmp(convert, "Userdata")==0)
   {
     type=(32)|Min->type; // to lower case
@@ -162,9 +166,14 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"Userdata\", \"Table\" and not %s\n",convert);
+    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"DoubleTri\", \"DTri\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
-  ConvertResponsefunction(Min, &Mout, type, T, SingularValue);
+  if(ConvertResponsefunction(Min, &Mout, type, T, SingularValue))
+  {
+    char typein=Min->type;
+    FreeResponsefunction(Min);
+    return luaL_error(L, "Error in ChangeType, the conversion of a response function of type %c to type %c is not implemented\n",typein,type);
+  }
   LuaPush_ResponseFunction(L, &Mout);
   FreeResponsefunction(&Mout);
   FreeResponsefunction(Min);

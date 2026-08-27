@@ -4157,6 +4157,9 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
   Mout->Block = false;
+  /*  every implemented cell below allocates Mout->data. A cell that is not
+   *  implemented only prints, so data staying NULL is what marks the failure */
+  Mout->data = NULL;
   Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
   if(Mout->NSuggestedGridPoints==0)
   {
@@ -4197,6 +4200,12 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
           ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->mu, T);
         }
         break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(DoubleTriDiagonalMatrixType));
+          ListOfPolesToDoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (DoubleTriDiagonalMatrixType*)Mout->data, ((ListOfPoles*)(Min->data))->mu, T);
+        }
+        break;
         default:
         {
           printf("Error in ConvertResponsefunction unrecognized type to convert to: %c\n", type);
@@ -4231,6 +4240,12 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
           TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->mu, T);
+        }
+        break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(DoubleTriDiagonalMatrixType));
+          TriDiagonalMatrixToDoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)Min->data, (DoubleTriDiagonalMatrixType*)Mout->data, ((TriDiagonalMatrixType*)Min->data)->mu, T);
         }
         break;
         default:
@@ -4269,6 +4284,12 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
           AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->mu, T);
         }
         break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(DoubleTriDiagonalMatrixType));
+          AndersonMatrixToDoubleTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (DoubleTriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->mu, T);
+        }
+        break;
         default:
         {
           printf("Error in ConvertResponsefunction unrecognized type of M: %c",Min->type);
@@ -4305,6 +4326,12 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
           BADoubleTriDiagonalMatrixCopy((BADoubleTriDiagonalMatrixType*)Mout->data, *(BADoubleTriDiagonalMatrixType*)Min->data);
         }
         break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(DoubleTriDiagonalMatrixType));
+          BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix((BADoubleTriDiagonalMatrixType*)Min->data, (DoubleTriDiagonalMatrixType*)Mout->data, ((BADoubleTriDiagonalMatrixType*)(Min->data))->mu, T);
+        }
+        break;
         default:
         {
           printf("Error in ConvertResponsefunction unrecognized type to convert to: %c\n",type);
@@ -4337,6 +4364,16 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
       printf("Error in ConvertResponsefunction unrecognized type of M: %c\n",Min->type);
     }
     break;
+  }
+  if(Mout->data==NULL)
+  {
+    if(Mout->NSuggestedGridPoints!=0)
+    {
+      free(Mout->SuggestedGrid);
+      Mout->SuggestedGrid=NULL;
+      Mout->NSuggestedGridPoints=0;
+    }
+    return 1;
   }
   return 0;
 }

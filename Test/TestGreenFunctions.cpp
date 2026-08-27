@@ -150,10 +150,8 @@ void GreenTransforms()
   FreeMatrix(&T);
   TriDiagonalMatrixToListOfPoles(MTri, &MList);
 
-  TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(MTri, &T, &MDoubleTri, 0.0, 0.0);
-  FreeMatrix(&T);
-  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(MTri, &T, &MSecDoubleTri, 0.0, 0.0);
-  FreeMatrix(&T);
+  TriDiagonalMatrixToDoubleTriDiagonalMatrix(MTri, &MDoubleTri, 0.0, 0.0);
+  TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(MTri, &MSecDoubleTri, 0.0, 0.0);
 
   printf("===============\n");
   PrintTriDiagonalMatrix(MTri);

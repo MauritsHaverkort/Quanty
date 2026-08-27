@@ -11,11 +11,72 @@ Scope decided: **the single-valued (non-block) type first.** The block type
 
 ---
 
-## 0. Status as of `23018386` (2026-08-27)
+## 0. Status as of `b57cd101` (2026-08-28)
 
-The type exists, evaluates, prints, converts to a dense matrix and produces
-spectra, all verified against each other. What is missing is the conversions to
-and from the other response function formats, and the operator.
+The type exists, evaluates, prints, converts to a dense matrix, produces spectra
+and can now be **built** from any of the other four non-block formats, all
+verified against each other. What is missing is the conversions *out* of `d`,
+the block conversions, and the operator.
+
+### The `-> d` column of `ConvertResponsefunction` is done (non-block)
+
+`ResponseFunction.ChangeType(G,"DoubleTri")` works from `a`, `t`, `l` and `n`,
+and reproduces the original response function to 1e-13 relative.
+`TestScripts/Responsefunction/ChangeTypeDoubleTri.Quanty` is the test: a 999
+level bath at finite `kBT`, at `kBT = 0`, with `mu` off centre, with `mu` outside
+the band on either side so one chain comes out empty, a six level bath, a single
+bath level, a bath with threefold degenerate levels, and a table round trip.
+
+`a -> d` is the real one; `t -> d`, `l -> d` and `n -> d` route through it.
+Note that `l -> d` **cannot** split the poles at `mu` and tri-diagonalize each
+half, which is what §4 item 1 used to say: that is the `n` recipe and it works
+there only because `n` adds its two chains where `d` nests them. A list of poles
+is the function itself, so it first has to become the chain whose spectrum it is,
+i.e. the Anderson form.
+
+### The chain construction is shared, and no longer O(N^3)
+
+`PolesToTriDiagonalCoefficients` in
+[BasicMath_MatrixTypeConversion.cpp](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp)
+builds the Jacobi matrix of a discrete measure by the method of Rutishauser,
+Kahan, Pal and Walker (Gragg and Harrod, Numer. Math. 44 (1984) 317). It is used
+by `AndersonMatrixToTriDiagonalMatrix`, `ListOfPolesToTridiagonalMatrix` and both
+chains of `AndersonMatrixToDoubleTriDiagonalMatrix`.
+
+It replaces Lanczos with full re-orthogonalization, which needed the whole
+`N x N` basis. Measured in Quanty on `l -> t`:
+
+| poles | before | after |
+|---|---|---|
+| 500 | 0.054 s | 0.002 s |
+| 1000 | 0.530 s | 0.007 s |
+| 2000 | 5.46 s | 0.028 s |
+
+at O(N) instead of O(N^2) memory. The coefficients agree with the old routine to
+1e-14 relative; the resulting `G` is accurate to ~1e-13 where the old one reached
+~1e-14, which is the honest cost of not re-orthogonalizing. Plain Lanczos without
+re-orthogonalization, for contrast, is wrong by 1e-2 at 1000 poles.
+
+Two guards in that routine are load bearing rather than cosmetic: poles at the
+same energy are **merged**, and the chain is capped at the number of distinct
+poles carrying weight. RKPW is not robust against a measure whose support is
+smaller than the number of poles handed to it -- on a measure with every node
+exactly doubled it is wrong by 0.37 relative where re-orthogonalized Lanczos is
+right to 1e-14 -- and degenerate bath levels are common.
+
+### Conventions §3.0 and §3.1 are settled on this path
+
+`AndersonMatrixToDoubleTriDiagonalMatrix` writes `val.a[0] = con.a[0] =
+M.a[1]/2`, so their **sum** is the impurity energy, and it splits with a true
+**Fermi function**, storing `kBT` in the struct. The old code wrote the full
+`M.a[1]` in both, which is a relative error of 190 on `G` for an impurity energy
+of 1.7 -- invisible only because every existing test has a zero impurity energy.
+The dummy bath site the old code invented for an empty branch is gone: an empty
+branch is `val.N = 0` with `val.b[0] = 0`, which is exact.
+
+The other consumers listed in §3.0 still read `(val.a[0] + con.a[0]) / 2` and are
+now inconsistent with what the constructors produce. That sweep is the next thing
+to do, and it is no longer optional.
 
 ### Working and verified
 
@@ -30,13 +91,17 @@ and from the other response function formats, and the operator.
 | accessors | `GetMu`, `GetQComplex`, `GetBlockSize`, `GetA0`, `GetB0`, block and non-block |
 | `Free` | `FreeResponsefunction`, `FreeBlockMatrixFromLua` |
 
-### The 14 conversions that are still stubs
+### The conversions that are still stubs
 
-Non-block (`BasicMath_MatrixTypeConversion.cpp`):
-`ListOfPolesToDoubleTridiagonalMatrix`, `DoubleTriDiagonalMatrixToListOfPoles`,
+Non-block (`BasicMath_MatrixTypeConversion.cpp`), all of them *out* of `d`:
+`DoubleTriDiagonalMatrixToListOfPoles`,
 `DoubleTriDiagonalMatrixToAndersonMatrixMatrix`,
-`DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix`,
-`BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix`.
+`DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix`.
+
+`ChangeType` now refuses these with a catchable lua error instead of pushing a
+response function that was never converted: `ConvertResponsefunction` sets
+`Mout->data` to `NULL` up front and returns non-zero if no cell filled it in.
+Before that, `ChangeType(Gd,"Tri")` pushed an uninitiallized pointer.
 
 Block (`BasicMath_BlockTypeConversion.cpp`):
 `BlockListOfPolesToBlockDoubleTriDiagonalMatrix`,
@@ -453,12 +518,19 @@ the round-trip test of §7 rather than an eyeball check.
 ([BasicMath_GreenFunctionArithmetic.cpp:4130](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp#L4130))
 is a complete N×N table. A fifth type takes 4×4 = 16 cells to 5×5 = 25 — **9 new cells**.
 
-Already present, and consistent with the convention:
+Done:
 
-- `AndersonMatrixToDoubleTriDiagonalMatrix` / `…PlusT` — splits the Anderson poles at `mu`,
-  Lanczos'es each half, writes the chains. Correct in structure; the splitting rule itself is
-  replaced per §3.1 and the head values per §3.0
-- `TriDiagonalMatrixToDoubleTriDiagonalMatrix` / `…PlusT` — routes via Anderson
+- `AndersonMatrixToDoubleTriDiagonalMatrix` — splits the Anderson bath at `mu` with a Fermi
+  function and builds the two chains with `PolesToTriDiagonalCoefficients`. Rewritten; §3.0
+  and §3.1 are implemented here. The `…PlusT` variant is **gone**, together with
+  `TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT` and
+  `TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT`: the transformation matrix is not
+  exposed on the lua level by any `ChangeType`, nothing read it, and producing it costs the
+  O(N^2) memory the new routine exists to avoid. Reinstating `T` across all the conversions
+  is its own project.
+- `TriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via Anderson
+- `ListOfPolesToDoubleTridiagonalMatrix` — routes via Anderson, see §0
+- `BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via the poles, see §0
 - `DoubleTriDiagonalMatrixToTriDiagonalMatrix`
 - **`DoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** and
   **`BlockDoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** — done, see §0
@@ -469,13 +541,14 @@ To write:
 
 | # | function | note |
 |---|---|---|
-| 1 | `ListOfPolesToDoubleTriDiagonalMatrix` | split the pole residues by `FermiFunction(E, mu, kBT)` / `1 − FermiFunction(…)` (§3.1), then Lanczos each half onto the shared impurity site. The real algorithm; `CopyBlockListOfPolesVal` / `…Con` are the reference for the weighting, `AndersonMatrixToDoubleTriDiagonalMatrixPlusT` for the chain construction |
-| 2 | `ListOfPolesToDoubleTriDiagonalMatrixOccupation` | only if the occupation-constrained variant is wanted, cf. `ListOfPolesToBADoubleTridiagonalMatrixOccupation` — note that one stores `Abs(mu − muOccupation)` in the field, a third meaning again (§11) |
-| 3 | `DoubleTriDiagonalMatrixToListOfPoles` | diagonalise; the other real algorithm |
-| 4 | `DoubleTriDiagonalMatrixToAndersonMatrix` | may route via `l` |
-| 5 | `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` | `d → n`: rotate the shared site + first bath orbitals into the natural pair |
-| 6 | `BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix` | `n → d`: undo it. Not always exactly possible — decide what happens then |
-| 7 | `DoubleTriDiagonalMatrixCopy` | exists |
+| 1 | `ListOfPolesToDoubleTriDiagonalMatrixOccupation` | only if the occupation-constrained variant is wanted, cf. `ListOfPolesToBADoubleTridiagonalMatrixOccupation` — note that one stores `Abs(mu − muOccupation)` in the field, a third meaning again (§11) |
+| 2 | `DoubleTriDiagonalMatrixToListOfPoles` | diagonalise; the one real algorithm still missing. `TriDiagonalMatrixToEigensystemCompact` on the dense form is the obvious route, and `DoubleTriDiagonalMatrixToCompactMatrix` already builds it |
+| 3 | `DoubleTriDiagonalMatrixToAndersonMatrix` | route via `l` |
+| 4 | `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` | `d → n`: route via `l`, as `n → d` does. A rotation of the shared site into the natural pair is not available — the two forms combine their chains differently (§1) |
+| 5 | `DoubleTriDiagonalMatrixCopy` | exists |
+
+Item 2 unlocks 3 and 4 and closes the `d →` row, which is all that is left of the non-block
+conversion table.
 
 `AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal`
 ([…cpp:257](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L257)) is a
@@ -759,17 +832,24 @@ Stages 0 to 2 of the original plan are done. What is left, in the order I would 
 
 | # | content | why this order |
 |---|---|---|
-| 1 | `d ↔ ListOfPoles`, both forms | the keystone: it unblocks both zero-broadening spectrum paths, and by routing through `l` it gives `d → t`, `d → a` and `d → n` without writing each one |
-| 2 | the two that misbehave today: `FreeBlockMatrix`, `lua_isBlockGreensfunction` | small, and they are wrong rather than absent |
-| 3 | the `§3.0` head sweep and the `§3.1` Fermi switch | the remaining consumers disagree with the struct comment; do it before anything is built on the matrix–vector products |
-| 4 | §2(b) and §2(c) | dormant functions, but they will be reached once the conversions exist |
+| ~~0~~ | ~~the `→ d` column, non-block~~ | **done**, see §0 |
+| 1 | the `§3.0` head sweep | now urgent rather than tidy: the constructors write halves, the five matrix–vector products and the eight sites in the two `…ToAndersonImpurityOperator` builders still read the average, so they disagree with what `ChangeType` produces |
+| 2 | `DoubleTriDiagonalMatrixToListOfPoles` | closes the `d →` row: it unblocks the zero-broadening spectrum path, and by routing through `l` it gives `d → t`, `d → a` and `d → n` without writing each one |
+| 3 | the two that misbehave today: `FreeBlockMatrix`, `lua_isBlockGreensfunction` | small, and they are wrong rather than absent |
+| 4 | §2(b) and §2(c) | dormant functions, but they are reachable now that the conversions exist |
 | 5 | the six Lua index metamethods | `G.type`, `G.mu`, `G.name` on a `d` userdata |
 | 6 | §6, the operator and the bitmask | the original goal |
-| 7 | the rest of the §0 dispatch list, and the deflated path once something can build a deflated `d` | |
+| 7 | the rest of the §0 dispatch list, the block conversions, and the deflated path once something can build a deflated `d` | |
 
-Nothing so far has changed existing behaviour: `d`/`D` is a new letter, no existing signature
-changed, and the `Nv`/`Nc` guards were widened rather than narrowed. The one thing to keep
-watching is the `default:` branches that print and continue (§5).
+This is no longer a purely additive change. `AndersonMatrixToTriDiagonalMatrix` and
+`ListOfPolesToTridiagonalMatrix` were rewritten onto the shared kernel, so `a → t`, `l → t`,
+`l → a` and the non-block `→ n` path all move by about 1e-14; the 510 assertions in
+`TestScripts/Responsefunction/All.Quanty` still pass, and the chain coefficients were compared
+against a binary built from the previous commit. Three `…PlusT` functions were deleted (§4).
+`ListOfPolesToTridiagonalMatrix` now propagates `mu` from the list of poles, where it used to
+leave it at 0. And the `default:` branches of `ConvertResponsefunction` no longer print and
+continue: an unimplemented cell leaves `Mout->data` at `NULL` and the function returns
+non-zero (§0).
 
 ---
 
