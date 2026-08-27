@@ -346,3 +346,79 @@ if(==1) … else` for the mixed case, on the operator flag.
 Read every member matrix by its own `QComplex`, never by the enclosing struct's,
 and never compare `QComplex` against `1` or `true` when the object is compound —
 use `!=0` for "has any complex part". See the entry above on who sizes the output matrix.
+
+
+## `ReducePoles{Nval, Ncon}` corrupts memory on a non-block response function
+
+**Status:** open, confirmed by reading. A live crash with a mechanical fix; held
+out of the `d` work only because it is unrelated to it.
+
+The four-argument overload `ReduceListOfPolesNumberFermi`
+([Core/BasicMath/BasicMath_ListOfPoles.cpp:888](../../Core/BasicMath/BasicMath_ListOfPoles.cpp#L888))
+reads:
+
+```c
+void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t Nval, uint32_t Ncon, double Ef)
+{
+  ListOfPoles Mval, Mcon;
+  ListOfPolesCopyVal(M, Mval, Ef, DBL_MIN);
+  ListOfPolesCopyCon(M, Mcon, Ef, DBL_MIN);
+  FreeListOfPoles(M);
+  *M = Mval;
+  ReduceListOfPolesNumber(&Mval,Nval);
+  ReduceListOfPolesNumber(&Mcon,Ncon);
+  AddListOfPoles(M, Mcon);
+}
+```
+
+Three separate faults:
+
+1. **Destination and source are swapped.** `ListOfPolesCopyVal(ListOfPoles *M,
+   ListOfPoles B, …)` takes the destination as the pointer and the source by
+   value, so this copies the *uninitialised stack variable* `Mval` into `M`.
+   `ListOfPolesCopy` ([:1507](../../Core/BasicMath/BasicMath_ListOfPoles.cpp#L1507))
+   sets `M->N = B.N` from garbage, calls `InitListOfPoles` on that length —
+   leaking the caller's two arrays — and then reads `B.a[i]` / `B.b[i]` through
+   garbage pointers. Undefined behaviour, in practice a crash or silent heap
+   corruption. `Mval` and `Mcon` are never written by anything.
+2. **`*M = Mval` happens before the reduction.** Even with the arguments the
+   right way round, `M` would take a snapshot of `Mval` and then
+   `ReduceListOfPolesNumber(&Mval, Nval)` would lower `Mval.N` without `M`
+   seeing it, so `M->N` would be the *pre*-reduction count over the same
+   arrays.
+3. **`Mcon` is leaked.** `AddListOfPoles`
+   ([:285](../../Core/BasicMath/BasicMath_ListOfPoles.cpp#L285)) appends and does
+   not take ownership.
+
+The three-argument overload
+([:675](../../Core/BasicMath/BasicMath_ListOfPoles.cpp#L675)) is a separate,
+self-contained implementation and is fine.
+
+**It is reachable from Lua.** `G.ReducePoles{Nval, Ncon}` on a **non-block**
+response function lands here: `LuaReducePolesResponseFunction`
+([LuaInterface/ResponseFunction.cpp:318](../../LuaInterface/ResponseFunction.cpp#L318)).
+`G.ReducePoles{N}` takes the sound three-argument overload, and the block case
+takes `ReduceBlockListOfPoles`, so only the two-number non-block call is
+affected.
+
+The block sibling `ReduceBlockListOfPoles(BlockListOfPoles*, uint32_t, uint32_t)`
+([Core/BasicMathBlock/BasicMath_BlockListOfPoles.cpp:1210](../../Core/BasicMathBlock/BasicMath_BlockListOfPoles.cpp#L1210))
+is the correct model and is very likely the code this was transcribed from —
+note that `CopyBlockListOfPolesVal(*A, &Aval, …)` takes source first and
+destination second, the **opposite** order to the non-block
+`ListOfPolesCopyVal(&Mval, *M, …)`. That inconsistency is presumably how the
+swap happened, and is worth removing at the same time.
+
+**Why it is not simply fixed:** it is not a design question — the fix is to swap
+the two argument pairs, move the reduction ahead of `FreeListOfPoles(M)`, and
+free `Mcon`. It is recorded rather than done because it was found while working
+on the `d` conversions and does not belong in that commit. Two things do want
+deciding when someone picks it up: the overload is **not declared in
+[BasicMath_ListOfPoles.h](../../Core/BasicMath/BasicMath_ListOfPoles.h)** (only
+the three-argument one is) and resolves only through the unity build; and it
+splits with `ListOfPolesCopyVal/Con` at `Epsilon = DBL_MIN`, i.e. the linear
+ramp degenerated to a step, which the Fermi-function decision recorded in
+[PLAN_DoubleTriDiagonal.md](PLAN_DoubleTriDiagonal.md) §3.1 and §11 replaces.
+
+**Meanwhile:** call `G.ReducePoles{N}` with a single number, or convert to a
+block response function first.
