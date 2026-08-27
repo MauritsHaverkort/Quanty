@@ -2435,25 +2435,39 @@ uint32_t BlockDoubleTriDiagonalMatrixToSpectraWithBroadening(const double Energy
   G[0].Gamma=Gamma;
   G[0].ResonantEnergy=NAN;
   strcpy(G[0].Name, A->Name);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
   for(iw=0;iw<=N;iw++)
   {
     omega = Emin + iw * G[0].dE + Energy;
+    /*  Evaluate allocates Gw on every call, so it has to be freed inside the loop and not
+     *  once at the end.
+     */
     EvaluateBlockDoubleTriDiagonalMatrix(A, &Gw, omega, Gamma);
-    // add Gw to G
+    // add Gw to G, Gw is always complex as Evaluate inverts w + i Gamma/2 - ...
     for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
       G[i].Re[iw]=Gw.V[i].Re;
       G[i].Im[iw]=Gw.V[i].Im;
     }
+    FreeCompactMatrix(&Gw);
   }
-  FreeCompactMatrix(&Gw);
   return 0;
 }
 
 uint32_t BlockDoubleTriDiagonalMatrixToSpectra(const double Energy, BlockDoubleTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
 {
  BlockListOfPoles ALP;
- BlockDoubleTriDiagonalMatrixToBlockListOfPoles(*A, &ALP);
+ /*  A spectrum without broadening is a set of delta functions, which needs the poles. Do not
+  *  continue when that conversion is not there: ALP would be left uninitiallized.
+  */
+ if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles(*A, &ALP))
+ {
+   printf("Error in BlockDoubleTriDiagonalMatrixToSpectra: can not create a spectrum without broadening without BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+   return 1;
+ }
  BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
  FreeBlockListOfPoles(&ALP);
  return 0;

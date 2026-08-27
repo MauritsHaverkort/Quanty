@@ -3152,7 +3152,17 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
   }
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
-  ResponseFunctionToSpectra(A,Spec, Options.EnergyShift, Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE);
+  /*  Set the fresh user data to an empty array before it is filled. If the call below fails we
+   *  leave through a lua error and the garbage collector still runs FreeSpectraTypeArray on
+   *  this user data.
+   */
+  Spec->NSpectra=0;
+  Spec->Spec=NULL;
+  Spec->Name=NULL;
+  if(ResponseFunctionToSpectra(A,Spec, Options.EnergyShift, Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE))
+  {
+    return luaL_error(L, "Error in ToSpectra: can not create a spectrum for a response function of type %c\n",A->type);
+  }
   return 1;
 }
 

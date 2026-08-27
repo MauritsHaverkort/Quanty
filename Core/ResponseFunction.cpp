@@ -248,6 +248,63 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
         return 0;
       }
       break;
+      case 'd':
+      {
+        double Emin2, Emax2, diag, Rrow, av, ac;
+        ResponsefunctionType R;
+        BlockDoubleTriDiagonalMatrixType *A=(BlockDoubleTriDiagonalMatrixType*)(M->data);
+        /*  the two chains, each as a block tri-diagonal matrix. Unlike the natural impurity
+         *  orbital case above both chains are ordinary baths here, so take the widest range
+         *  of the two rather than the valence minimum and the conduction maximum.
+         */
+        R.type='t';
+        R.Block=true;
+        R.SuggestedGrid=NULL;
+        R.NSuggestedGridPoints=0;
+        R.data = (void*)(&(A->val));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, EminPole, EmaxPole);
+        R.data = (void*)(&(A->con));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, &Emin2, &Emax2);
+        if(*EminPole > Emin2) *EminPole = Emin2;
+        if(*EmaxPole < Emax2) *EmaxPole = Emax2;
+        /*  A block tri-diagonal matrix starts at a[1], so the impurity block that this type
+         *  puts in front of the two chains is not covered above. Add a Gershgorin bound for
+         *  its rows. Summing the magnitudes of the val and the con contribution separately
+         *  only widens the bound, which is safe. Each chain is read by its own QComplex, it
+         *  need not be the one of A for a mixed object.
+         */
+        for(j=0;j<A->BlockSize;j++)
+        {
+          diag = 0;
+          Rrow = 0;
+          for(k=0;k<A->BlockSize;k++)
+          {
+            uint32_t idx = j*A->BlockSize + k;
+            av = A->val.QComplex ? sqrt(Sqr(A->val.a[idx].Re)+Sqr(A->val.a[idx].Im)) : fabs(A->val.aRe[idx]);
+            ac = A->con.QComplex ? sqrt(Sqr(A->con.a[idx].Re)+Sqr(A->con.a[idx].Im)) : fabs(A->con.aRe[idx]);
+            if(k==j)
+            {
+              diag += A->val.QComplex ? A->val.a[idx].Re : A->val.aRe[idx];
+              diag += A->con.QComplex ? A->con.a[idx].Re : A->con.aRe[idx];
+            }
+            else
+            {
+              Rrow += av + ac;
+            }
+            if(A->val.N!=0) Rrow += A->val.QComplex ? sqrt(Sqr(A->val.b[idx].Re)+Sqr(A->val.b[idx].Im)) : fabs(A->val.bRe[idx]);
+            if(A->con.N!=0) Rrow += A->con.QComplex ? sqrt(Sqr(A->con.b[idx].Re)+Sqr(A->con.b[idx].Im)) : fabs(A->con.bRe[idx]);
+          }
+          if(diag - Rrow < *EminPole) *EminPole = diag - Rrow;
+          if(diag + Rrow > *EmaxPole) *EmaxPole = diag + Rrow;
+        }
+        if(*EminPole >= *EmaxPole)
+        {
+          *EminPole -= 1;
+          *EmaxPole += 1;
+        }
+        return 0;
+      }
+      break;
     }
   }
   else
@@ -341,6 +398,43 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
         ResponseFunctionEstimateEminAndEmaxPole(&R, &temp, EmaxPole);
         R.data = (void*)(&(A->val));
         ResponseFunctionEstimateEminAndEmaxPole(&R, EminPole, &temp);
+        return 0;
+      }
+      break;
+      case 'd':
+      {
+        double eimp, Rrow;
+        DoubleTriDiagonalMatrixType *A=(DoubleTriDiagonalMatrixType*)(M->data);
+        /*  Gershgorin bound over the rows of the matrix this type represents: one impurity
+         *  site with energy val.a[0]+con.a[0], coupled to the two chains by val.b[0] and
+         *  con.b[0]. The chains themselves are val.a[1..N] and con.a[1..N]. val.b has
+         *  length val.N, so b[0] only exists when the chain is not empty.
+         */
+        eimp = A->val.a[0] + A->con.a[0];
+        Rrow = 0;
+        if(A->val.N!=0) Rrow += fabs(A->val.b[0]);
+        if(A->con.N!=0) Rrow += fabs(A->con.b[0]);
+        *EminPole = eimp - Rrow;
+        *EmaxPole = eimp + Rrow;
+        for(i=1;i<=A->val.N;i++)
+        {
+          Rrow = fabs(A->val.b[i-1]);
+          if(i<A->val.N) Rrow += fabs(A->val.b[i]);
+          if(*EminPole > A->val.a[i] - Rrow) *EminPole = A->val.a[i] - Rrow;
+          if(*EmaxPole < A->val.a[i] + Rrow) *EmaxPole = A->val.a[i] + Rrow;
+        }
+        for(i=1;i<=A->con.N;i++)
+        {
+          Rrow = fabs(A->con.b[i-1]);
+          if(i<A->con.N) Rrow += fabs(A->con.b[i]);
+          if(*EminPole > A->con.a[i] - Rrow) *EminPole = A->con.a[i] - Rrow;
+          if(*EmaxPole < A->con.a[i] + Rrow) *EmaxPole = A->con.a[i] + Rrow;
+        }
+        if(*EminPole >= *EmaxPole)
+        {
+          *EminPole -= 1;
+          *EmaxPole += 1;
+        }
         return 0;
       }
       break;
@@ -458,7 +552,18 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         A->NSpectra = Sqr((((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize));
         A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
         strncpy(A->Name, ((BlockDoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
-
+        if(BlockDoubleTriDiagonalMatrixToSpectra(GroundStateEnergy,(BlockDoubleTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE))
+        {
+          /*  Nothing inside A->Spec was allocated, so hand back an empty array. Leaving the
+           *  half built one would have FreeSpectraTypeArray free spectra that do not exist.
+           */
+          free(A->Spec);
+          free(A->Name);
+          A->Spec=NULL;
+          A->Name=NULL;
+          A->NSpectra=0;
+          return 1;
+        }
       }
       break;
       default:
@@ -514,7 +619,7 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         A->NSpectra = Sqr((((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize));
         A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
         strncpy(A->Name, ((BlockDoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
-        
+        BlockDoubleTriDiagonalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockDoubleTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
       default:
