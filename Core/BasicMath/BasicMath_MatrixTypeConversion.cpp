@@ -500,6 +500,169 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
   return 1;
 }
 
+/*  Kept for its history and to be reimplemented; not called by anything.
+ *
+ *  This is the version that returned the transformation matrix T. It does not
+ *  agree with AndersonMatrixToDoubleTriDiagonalMatrix below: it writes the whole
+ *  impurity energy in both chains rather than half of it in each, it splits with
+ *  a linear ramp over [mu-epsilon,mu+epsilon] rather than with a Fermi function,
+ *  it invents a bath site with zero coupling when a branch would be empty, and
+ *  it tri-diagonalizes with re-orthogonalized Lanczos, which costs the O(N^2)
+ *  memory that PolesToTriDiagonalCoefficients exists to avoid. Use the routine
+ *  below until this one is rewritten on top of it.
+ */
+/*
+*  M=T.H.T^{\dag}
+*  input M defined, H and T not initiallized
+*  note that when epsilon != 0 it can happen that M.N > H.N
+*  in that case M is only roughly T.H.T^{\dag} as the transformation made is not unitary
+*  The transformation made requires an aditional multiplication of Sqrt(0.5) to the doubled elements in H (only for the coupling)
+*  and M.V and M.C are not orthonormal after the transformation. The overlap should be set to zero.
+*  The eigenvalues of M contain the eigenvalues of H.
+*  The aditional eigenvalues of M have zero values for the first element of their corresponding eigenfunctions.
+*
+*  diagonal energies in the AndersonMatrix larger  then Ef+epsilon belong to the conduction part of the double tri diagonal matrix
+*  diagonal energies in the AndersonMatrix smaller then Ef-epsilon belong to the valence    part of the double tri diagonal matrix
+*  diagonal energies in the AndersonMatrix in the interval Ef-epsilon to Ef+epsilon contribute partly to the valence, partly to the conductin part, weighted according to distance with Ef
+*  TODO
+*  epsilon is replaced in name by kBT, not yet changed the implementation
+*/
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T, DoubleTriDiagonalMatrixType * const H, double const mu, double const epsilon)
+{
+  AndersonMatrixType MV, MC;
+  TriDiagonalMatrixType MVTri, MCTri;
+  MatrixType AtoTV, AtoTC;
+  uint32_t mapV[M.N + 1], mapC[M.N + 1];
+  int    i, j;
+  if (M.N <= 1)
+  {
+    printf("Can't create a double tri diagonal matrix of a constant\n");
+    return 2;
+  };
+  MV.N = M.N;
+  MC.N = M.N;
+  if (InitAndersonMatrix(&MV))
+  {
+    printf("InitAndersonMatrix failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  };
+  if (InitAndersonMatrix(&MC))
+  {
+    FreeAndersonMatrix(&MV);
+    printf("InitAndersonMatrix failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  mapV[0] = 0;
+  mapC[0] = 0;
+  MV.N = 1;
+  MC.N = 1;
+  MV.a[0] = 0;
+  MV.b[0] = 1;
+  MC.a[0] = 0;
+  MC.b[0] = 1;
+  MV.a[1] = M.a[1];
+  MC.a[1] = M.a[1];
+  for (i = 2; i <= M.N; i++)
+  {
+    if (fabs(M.b[i - 1]) > 100 * DBL_MIN)
+    {
+      if (M.a[i] < mu - epsilon)
+      {
+        MV.N++;
+        MV.a[MV.N] = M.a[i];
+        MV.b[MV.N - 1] = M.b[i - 1];
+        mapV[MV.N - 1] = i - 1;
+      }
+      else if (M.a[i] > mu + epsilon)
+      {
+        MC.N++;
+        MC.a[MC.N] = M.a[i];
+        MC.b[MC.N - 1] = M.b[i - 1];
+        mapC[MC.N - 1] = i - 1;
+      }
+      else
+      {
+        MV.N++;
+        MV.a[MV.N] = M.a[i];
+        MV.b[MV.N - 1] = M.b[i - 1] * sqrt(0.5 - (M.a[i] - mu) / (DBL_MIN + 2 * epsilon));
+        mapV[MV.N - 1] = i - 1;
+        MC.N++;
+        MC.a[MC.N] = M.a[i];
+        MC.b[MC.N - 1] = M.b[i - 1] * sqrt(0.5 + (M.a[i] - mu) / (DBL_MIN + 2 * epsilon));
+        mapC[MC.N - 1] = i - 1;
+      }
+    }
+  }
+  if (MV.N == 1)
+  {
+    MV.N++;
+    MV.a[MV.N] = mu - epsilon - (10 * fabs(mu) * DBL_EPSILON);
+    MV.b[MV.N - 1] = 0;
+    mapV[MV.N - 1] = 0;
+  }
+  if (MC.N == 1)
+  {
+    MC.N++;
+    MC.a[MC.N] = mu + epsilon + (10 * fabs(mu) * DBL_EPSILON);
+    MC.b[MC.N - 1] = 0;
+    mapC[MC.N - 1] = 0;
+  }
+  AndersonMatrixToTriDiagonalMatrixPlusT(MV, &AtoTV, &MVTri, MV.N);
+  AndersonMatrixToTriDiagonalMatrixPlusT(MC, &AtoTC, &MCTri, MC.N);
+  T->Ni = MV.N + MC.N - 1;
+  T->Nj = M.N;
+  T->QComplex = 0;
+  InitMatrix(T);
+  for (i = 1; i < T->Ni; i++)
+  {
+    T->VRe[i][0] = 0;
+  }
+  T->VRe[0][0] = 1;
+  for (i = 1; i < AtoTV.Ni; i++)
+  {
+    for (j = 1; j < AtoTV.Nj; j++)
+    {
+      T->VRe[i][mapV[j]] = AtoTV.VRe[i][j];
+    }
+  }
+  for (i = 1; i < AtoTC.Ni; i++)
+  {
+    for (j = 1; j < AtoTC.Nj; j++)
+    {
+      T->VRe[i + AtoTV.Ni - 1][mapC[j]] = AtoTC.VRe[i][j];
+    }
+  }
+  H->val.N = MVTri.N - 1;
+  H->con.N = MCTri.N - 1;
+  InitDoubleTriDiagonalMatrix(H);
+  H->mu = mu;
+  // TODO implementation needs to be changed
+  H->kBT = epsilon;
+  H->a0 = M.a[0];
+  H->b0 = M.b[0];
+  for (i = 0; i < H->val.N; i++)
+  {
+    H->val.a[i] = MVTri.a[i + 1];
+    H->val.b[i] = MVTri.b[i + 1];
+  }
+  H->val.a[H->val.N] = MVTri.a[H->val.N + 1];
+  for (i = 0; i < H->con.N; i++)
+  {
+    H->con.a[i] = MCTri.a[i + 1];
+    H->con.b[i] = MCTri.b[i + 1];
+  }
+  H->con.a[H->con.N] = MCTri.a[H->con.N + 1];
+  FreeMatrix(&AtoTV);
+  FreeMatrix(&AtoTC);
+  FreeAndersonMatrix(&MV);
+  FreeAndersonMatrix(&MC);
+  FreeTriDiagonalMatrix(&MVTri);
+  FreeTriDiagonalMatrix(&MCTri);
+  return 0;
+}
+
 
 /*  Split the bath of an Anderson matrix at the chemical potential and put the
  *  two halves in the two chains of a double tri-diagonal matrix,
@@ -1692,6 +1855,53 @@ uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType 
   SecTri.a = &(M.a[1]);
   SecTri.b = &(M.b[1]);
   return TriDiagonalMatrixToDoubleTriDiagonalMatrix(SecTri, &(A->Dt), Ef, epsilon);
+}
+
+/*  Kept for its history and to be reimplemented; not called by anything outside
+ *  Test/. It routes through AndersonMatrixToDoubleTriDiagonalMatrixPlusT and so
+ *  inherits every difference listed there.
+ */
+uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T, DoubleTriDiagonalMatrixType * const A, double Ef,  double epsilon)
+{
+  AndersonMatrixType An;
+  MatrixType Tone, Ttwo;
+  if (TriDiagonalMatrixToAndersonMatrixPlusT(M, &Tone, &An))
+  {
+    printf("TriDiagonalMatrixToAndersonMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  };
+  if (AndersonMatrixToDoubleTriDiagonalMatrixPlusT(An, &Ttwo, A, Ef, epsilon))
+  {
+    printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  };
+  FreeAndersonMatrix(&An);
+  if (MatrixMultiply(T, Ttwo, Tone))
+  {
+    printf("MatrixMultiply failed in TriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  };
+  FreeMatrix(&Tone);
+  FreeMatrix(&Ttwo);
+  return 0;
+}
+
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,  SecondDoubleTriDiagonalMatrixType * const A, double Ef, double epsilon)
+{
+  TriDiagonalMatrixType SecTri;
+  if (M.N < 2)
+  {
+    printf("Help error in TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix catch not programmed yet\n");
+  };
+  A->a0 = M.a[0];
+  A->b0 = M.b[0];
+  SecTri.N = M.N - 1;
+  SecTri.a = &(M.a[1]);
+  SecTri.b = &(M.b[1]);
+  return TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(SecTri, T, &(A->Dt), Ef, epsilon);
 }
 
 

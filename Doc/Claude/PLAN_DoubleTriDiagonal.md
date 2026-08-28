@@ -522,12 +522,7 @@ Done:
 
 - `AndersonMatrixToDoubleTriDiagonalMatrix` — splits the Anderson bath at `mu` with a Fermi
   function and builds the two chains with `PolesToTriDiagonalCoefficients`. Rewritten; §3.0
-  and §3.1 are implemented here. The `…PlusT` variant is **gone**, together with
-  `TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT` and
-  `TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT`: the transformation matrix is not
-  exposed on the lua level by any `ChangeType`, nothing read it, and producing it costs the
-  O(N^2) memory the new routine exists to avoid. Reinstating `T` across all the conversions
-  is its own project.
+  and §3.1 are implemented here.
 - `TriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via Anderson
 - `ListOfPolesToDoubleTridiagonalMatrix` — routes via Anderson, see §0
 - `BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via the poles, see §0
@@ -550,9 +545,26 @@ To write:
 Item 2 unlocks 3 and 4 and closes the `d →` row, which is all that is left of the non-block
 conversion table.
 
-`AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal`
-([…cpp:257](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L257)) is a
-`/* To DO */` stub that returns 1. Nothing calls it; leave or delete.
+`AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal` is a `/* To DO */` stub that returns
+1. Nothing calls it; leave it.
+
+### The three `…PlusT` variants are kept, and are now the odd ones out
+
+`AndersonMatrixToDoubleTriDiagonalMatrixPlusT`,
+`TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT` and
+`TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT` still hold the original
+implementation, to be rewritten rather than replaced. Nothing outside `Test/` calls them, and
+`Test/` is not in the build.
+
+They no longer agree with the routine that `ChangeType` uses: they write the whole impurity
+energy in both chains instead of half in each, split with the linear ramp instead of a Fermi
+function, invent a zero-coupling bath site for an empty branch, and tri-diagonalize with
+re-orthogonalized Lanczos. A comment on each says so, so that a caller who binds to one by
+accident finds out. Rewriting them on top of `PolesToTriDiagonalCoefficients` means deciding
+how `T` is produced — the recurrence gives it in O(NPoles*N) but only to 3e-8 orthogonality,
+so machine precision still costs one Gram–Schmidt sweep and the O(NPoles*N) basis. `T` is not
+exposed by any `ChangeType` on the lua level, so that is a project of its own rather than a
+loose end here.
 
 Cells 4 and 6 can legitimately route through `l` (`ConvertResponsefunction` already recurses
 that way elsewhere) — only 1, 3 and 5 are new mathematics.
@@ -845,9 +857,9 @@ This is no longer a purely additive change. `AndersonMatrixToTriDiagonalMatrix` 
 `ListOfPolesToTridiagonalMatrix` were rewritten onto the shared kernel, so `a → t`, `l → t`,
 `l → a` and the non-block `→ n` path all move by about 1e-14; the 510 assertions in
 `TestScripts/Responsefunction/All.Quanty` still pass, and the chain coefficients were compared
-against a binary built from the previous commit. Three `…PlusT` functions were deleted (§4).
-`ListOfPolesToTridiagonalMatrix` now propagates `mu` from the list of poles, where it used to
-leave it at 0. And the `default:` branches of `ConvertResponsefunction` no longer print and
+against a binary built from the previous commit. The three `…PlusT` variants keep their
+original implementation and now disagree with it (§4). `ListOfPolesToTridiagonalMatrix` now
+propagates `mu` from the list of poles, where it used to leave it at 0. And the `default:` branches of `ConvertResponsefunction` no longer print and
 continue: an unimplemented cell leaves `Mout->data` at `NULL` and the function returns
 non-zero (§0).
 

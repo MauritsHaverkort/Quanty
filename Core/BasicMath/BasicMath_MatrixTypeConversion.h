@@ -7,6 +7,7 @@ uint32_t AndersonMatrixToTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const
 uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T,TriDiagonalMatrixType * const H, uint32_t NTriDiag);
 uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag);
 uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H, double const Ef, double const epsilon);
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M, MatrixType * const T,DoubleTriDiagonalMatrixType * const H, double const mu,double const epsilon);
 uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H, double const mu, double const kBT);
 uint32_t AndersonMatrixInverseToListOfPoles(AndersonMatrixType const M, ListOfPoles * const H);
 uint32_t AndersonMatrixToEigensystemOnsiteShift(AndersonMatrixType const M, double const shift, MatrixType * const T, double *val);
@@ -31,6 +32,8 @@ uint32_t TriDiagonalMatrixToAndersonMatrix(TriDiagonalMatrixType const M, Anders
 uint32_t TriDiagonalMatrixToAndersonMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,AndersonMatrixType * const A);
 uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, DoubleTriDiagonalMatrixType * const A, double Ef, double epsilon);
 uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, SecondDoubleTriDiagonalMatrixType * const A, double Ef, double epsilon);
+uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,DoubleTriDiagonalMatrixType * const A, double Ef,double epsilon);
+uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,SecondDoubleTriDiagonalMatrixType * const A, double Ef,double epsilon);
 uint32_t TriDiagonalMatrixToMatrix(TriDiagonalMatrixType const M, MatrixType * const A);
 uint32_t TriDiagonalMatrixToCompactMatrix(const TriDiagonalMatrixType * const M, CompactMatrixType * const A);
 uint32_t TriDiagonalMatrixToBADoubleTriDiagonalMatrix(TriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const A, uint32_t NTriDiagVal, uint32_t NTriDiagCon, double Ef, double Epsilon);

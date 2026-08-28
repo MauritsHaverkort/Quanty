@@ -2119,8 +2119,9 @@ void TestTriDiagonalMatrix()
 
   printf("\n\n\n\n\n");
 
-  AndersonMatrixToDoubleTriDiagonalMatrix(C, &D, 0.0, 0.0001);
+  AndersonMatrixToDoubleTriDiagonalMatrixPlusT(C, &T2, &D, 0.0, 0.0001);
   PrintDoubleTriDiagonalMatrix(D);
+  PrintMatrix(T2);
 
 
   printf("\n\n\n\n\n");
