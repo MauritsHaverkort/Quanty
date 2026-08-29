@@ -7,7 +7,7 @@
 *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
 *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
 *
-*   a0 = (a0val + a0con)/2 
+*   a0 = a0val + a0con
 *
 *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
 *
@@ -134,7 +134,7 @@ double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, Matri
     fflush(stdout);
     return -1;
   }
-  MI->VRe[0][0] = (M.con.a[0] + M.val.a[0]) / 2.0;
+  MI->VRe[0][0] = M.con.a[0] + M.val.a[0];
   for (i = 1; i <= M.val.N; i++)
   {
     MI->VRe[i - 1][i] = M.val.b[i - 1];
@@ -263,7 +263,7 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
 uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
-  y[0] = (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
+  y[0] = (M.val.a[0] + M.con.a[0]) * x[0];
   for (i = 1; i <= M.val.N; i++)
   {
     y[i] = M.val.a[i] * x[i];
@@ -295,8 +295,8 @@ uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, 
 uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
-  yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0;
-  yIm[0] = (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;
+  yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0];
+  yIm[0] = (M.val.a[0] + M.con.a[0]) * xIm[0];
   for (i = 1; i <= M.val.N; i++)
   {
     yRe[i] = M.val.a[i] * xRe[i];
@@ -336,7 +336,7 @@ uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const 
 uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
-  *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
+  *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0];
   for (i = 1; i <= M.val.N; i++)
   {
     *y += x[i] * M.val.a[i] * x[i];
@@ -364,7 +364,7 @@ uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType con
 uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
-  *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0 + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;
+  *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0];
   *yIm = 0;
   for (i = 1; i <= M.val.N; i++)
   {

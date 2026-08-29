@@ -74,9 +74,9 @@ of 1.7 -- invisible only because every existing test has a zero impurity energy.
 The dummy bath site the old code invented for an empty branch is gone: an empty
 branch is `val.N = 0` with `val.b[0] = 0`, which is exact.
 
-The other consumers listed in §3.0 still read `(val.a[0] + con.a[0]) / 2` and are
-now inconsistent with what the constructors produce. That sweep is the next thing
-to do, and it is no longer optional.
+The rest of §3.0 is done too: every consumer that read `(val.a[0] + con.a[0]) / 2`
+now reads the sum, and the one remaining producer on the old convention,
+`AndersonMatrixToDoubleTriDiagonalMatrixPlusT`, writes halves.
 
 ### Working and verified
 
@@ -362,41 +362,40 @@ The struct itself needs no change, and the §1 formulas are now in its comment i
 [StructDef.cpp](../../Core/StructDef.cpp#L529). Of the lists below, items 5 (`Evaluate`) and
 the `…ToCompactMatrix` pair are done; the two sweeps §3.0 and §3.1 are not. See §0.
 
-### 3.0 Convention sweep: the eight `/2` sites
+### 3.0 Convention sweep: the shared impurity site — DONE
 
-The struct itself needs no new member under option 1, but the current code encodes the *old*
-average reading — `(val.a[0] + con.a[0]) / 2` — in eight places. Each becomes the plain sum,
-i.e. the `/ 2` is deleted:
+`avc0 = val.a[0] + con.a[0]`, the plain sum, everywhere. Every consumer that read
+`(val.a[0] + con.a[0]) / 2` has had the `/ 2` deleted, and every producer writes half of the
+impurity energy into each head slot:
 
-| # | function | file:line |
-|---|---|---|
-| 1 | `DoubleTriDiagonalMatrixToSpectrum` | [Spectral.cpp:1583–1584](../../Core/Spectral.cpp#L1583) — delete the whole term, see §2a |
-| 2 | `DoubleTriDiagonalMatrixInverse` | [BasicMath_DoubleTriDiagonalMatrixVector.cpp:137](../../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp#L137) |
-| 3 | `RealDoubleTriDiagonalMatrixVector` | [:266](../../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp#L266) |
-| 4 | `ComplexDoubleTriDiagonalMatrixVector` | [:298–299](../../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp#L298) |
-| 5 | `RealVectorDoubleTriDiagonalMatrixVector` | [:339](../../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp#L339) |
-| 6 | `ComplexVectorDoubleTriDiagonalMatrixVector` | [:367](../../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp#L367) |
-| 7 | `DoubleTriDiagonalMatrixToAndersonImpurityOperator` | [MatrixOperator.cpp:765, 790, 815, 840](../../Core/MatrixOperator.cpp#L765) |
-| 8 | `SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator` | [MatrixOperator.cpp:635, 660, 685, 710](../../Core/MatrixOperator.cpp#L635) — operates on the wrapped `Dt` |
+| file | function |
+|---|---|
+| `BasicMath_DoubleTriDiagonalMatrixVector.cpp` | the file header comment, `DoubleTriDiagonalMatrixInverse`, `Real…MatrixVector`, `Complex…MatrixVector`, `RealVector…MatrixVector`, `ComplexVector…MatrixVector` |
+| `MatrixOperator.cpp` | `DoubleTriDiagonalMatrixToAndersonImpurityOperator` and `SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator`, four sites each |
+| `StructDef.cpp` | the `SecondDoubleTriDiagonalMatrixType` comment, which said `/2` about the `DoubleTriDiagonalMatrixType Dt` it wraps |
+| `BasicMath_MatrixTypeConversion.cpp` | `AndersonMatrixToDoubleTriDiagonalMatrixPlusT` now writes `0.5 * M.a[1]` into each head, as `AndersonMatrixToDoubleTriDiagonalMatrix` already did |
+| `Test/LanczosDyson.cpp` | the one site outside `Core/` |
 
-`DoubleTriDiagonalMatrixToTriDiagonalMatrix`
-([BasicMath_MatrixTypeConversion.cpp:1668](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L1668))
-does not read the head directly — it goes through `RealDoubleTriDiagonalMatrixVector`
-(line 1697) — so item 3 fixes it too.
+`DoubleTriDiagonalMatrixToTriDiagonalMatrix` needed no edit of its own: it goes through
+`RealDoubleTriDiagonalMatrixVector`, so its first Lanczos coefficient is now the same
+impurity energy that `DoubleTriDiagonalMatrixToCompactMatrix` puts in `VRe[0]`.
 
-And the *producing* side must write halves. `AndersonMatrixToDoubleTriDiagonalMatrixPlusT`
-([:277](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L277)) currently writes
-`H->val.a[0] = MVTri.a[1]` and `H->con.a[0] = MCTri.a[1]`, both equal to the full impurity
-energy; under option 1 each takes half of it. Net effect on every consumer is unchanged —
-this is a re-partition of where the factor lives, not a change of physics — which is why it
-can land as one commit with a round-trip test either side.
+**Deliberately not touched**, and still on the average: `MapSecondoubleTridiagonalMatrixToBA`
+([BasicMath_BADoubleTriDiagonalMatrixVector.cpp:136](../../Core/BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.cpp#L136)),
+which reads `A.Dt.val.a[0]` — a `DoubleTriDiagonalMatrixType` head — but lives in the
+`BADouble…` file and writes a `BADouble…` field. It is one token, and it belongs with the
+`BADouble…` pass rather than this one. `DoubleTriDiagonalMatrixToSpectrumOld` averages both
+the head and `b0^2`; `…Old` functions are kept for reference and are out of scope.
 
-`Test/LanczosDyson.cpp:290` also hard-codes the average and will need the same edit; it is
-the only place outside `Core/` that does.
+**Not verified by any test**, because none of these functions has a live caller yet: the four
+matrix–vector products are reached only through `DoubleTriDiagonalMatrixToTriDiagonalMatrix`,
+which `ConvertResponsefunction` does not call, and the two operator builders only from
+`Test/`, which is not in the build. The sweep is verified by inspection and by now agreeing
+with `Evaluate` and `…ToCompactMatrix`, which are tested. The first thing that will exercise
+it is the `d →` row.
 
-Note the two `…ToAndersonImpurityOperator` functions are DMFT-specific two-spin + `U`
-builders, not the general `…ToImpurityHamiltonian` of §6.1 — but they are the working
-reference for the site layout, so keeping them consistent is worth the four-line change.
+Note that deleting the `/ 2` does **not** make `DoubleTriDiagonalMatrixInverse` correct: it
+still builds the conduction block from `M.val` instead of `M.con`, which is §2(b).
 
 ### 3.1 Convention sweep: `Epsilon` → `kBT`, linear ramp → Fermi function
 
@@ -845,7 +844,7 @@ Stages 0 to 2 of the original plan are done. What is left, in the order I would 
 | # | content | why this order |
 |---|---|---|
 | ~~0~~ | ~~the `→ d` column, non-block~~ | **done**, see §0 |
-| 1 | the `§3.0` head sweep | now urgent rather than tidy: the constructors write halves, the five matrix–vector products and the eight sites in the two `…ToAndersonImpurityOperator` builders still read the average, so they disagree with what `ChangeType` produces |
+| ~~1~~ | ~~the `§3.0` head sweep~~ | **done**, see §3.0 |
 | 2 | `DoubleTriDiagonalMatrixToListOfPoles` | closes the `d →` row: it unblocks the zero-broadening spectrum path, and by routing through `l` it gives `d → t`, `d → a` and `d → n` without writing each one |
 | 3 | the two that misbehave today: `FreeBlockMatrix`, `lua_isBlockGreensfunction` | small, and they are wrong rather than absent |
 | 4 | §2(b) and §2(c) | dormant functions, but they are reachable now that the conversions exist |

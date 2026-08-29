@@ -502,12 +502,13 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
 
 /*  Kept for its history and to be reimplemented; not called by anything.
  *
- *  This is the version that returned the transformation matrix T. It does not
- *  agree with AndersonMatrixToDoubleTriDiagonalMatrix below: it writes the whole
- *  impurity energy in both chains rather than half of it in each, it splits with
- *  a linear ramp over [mu-epsilon,mu+epsilon] rather than with a Fermi function,
- *  it invents a bath site with zero coupling when a branch would be empty, and
- *  it tri-diagonalizes with re-orthogonalized Lanczos, which costs the O(N^2)
+ *  This is the version that returned the transformation matrix T. It follows the
+ *  same convention for the shared impurity site as everything else, half of the
+ *  energy in each head slot, but it still differs from
+ *  AndersonMatrixToDoubleTriDiagonalMatrix below: it splits with a linear ramp
+ *  over [mu-epsilon,mu+epsilon] rather than with a Fermi function, it invents a
+ *  bath site with zero coupling when a branch would be empty, and it
+ *  tri-diagonalizes with re-orthogonalized Lanczos, which costs the O(N^2)
  *  memory that PolesToTriDiagonalCoefficients exists to avoid. Use the routine
  *  below until this one is rewritten on top of it.
  */
@@ -562,8 +563,10 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M
   MV.b[0] = 1;
   MC.a[0] = 0;
   MC.b[0] = 1;
-  MV.a[1] = M.a[1];
-  MC.a[1] = M.a[1];
+  /*  the impurity site is shared by the two chains and its energy is the sum of
+   *  the two head slots, so each chain is built with half of it */
+  MV.a[1] = 0.5 * M.a[1];
+  MC.a[1] = 0.5 * M.a[1];
   for (i = 2; i <= M.N; i++)
   {
     if (fabs(M.b[i - 1]) > 100 * DBL_MIN)

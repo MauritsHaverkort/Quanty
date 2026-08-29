@@ -553,7 +553,7 @@ DoubleTriDiagonalMatrixType;
  *     ( 0              | 0              | 0              | 0           | 0           | A[6][5]=bc1 | A[6][6]=ac2 | A[6][7]=bc2 )
  *     ( 0              | 0              | 0              | 0           | 0           | 0           | A[7][6]=bc2 | A[7][7]=ac3 )
  *
- *   avc0 = (a0val + a0con)/2
+ *   avc0 = a0val + a0con
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *

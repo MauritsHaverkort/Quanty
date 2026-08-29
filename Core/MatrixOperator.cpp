@@ -632,7 +632,7 @@ uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * 
   /* spin up valence */
   oadd[1] = CrAnMask + 2;
   oadd[0] = 2;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.Dt.val.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.Dt.val.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 2;
   oadd[0] = 4;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.Dt.val.b[0], &QDetNotOrderedFcFaBcBa);
@@ -657,7 +657,7 @@ uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * 
   /* spin up conductance */
   oadd[1] = CrAnMask + 2;
   oadd[0] = 2;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.Dt.con.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.Dt.con.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 2;
   oadd[0] = Mup.Dt.val.N + 4;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.Dt.con.b[0], &QDetNotOrderedFcFaBcBa);
@@ -682,7 +682,7 @@ uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * 
   /* spin dn valence */
   oadd[1] = CrAnMask + 3;
   oadd[0] = 3;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.Dt.val.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.Dt.val.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 3;
   oadd[0] = Mup.Dt.val.N + Mup.Dt.con.N + 4;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.Dt.val.b[0], &QDetNotOrderedFcFaBcBa);
@@ -707,7 +707,7 @@ uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * 
   /* spin dn conductance */
   oadd[1] = CrAnMask + 3;
   oadd[0] = 3;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.Dt.con.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.Dt.con.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 3;
   oadd[0] = Mup.Dt.val.N + Mup.Dt.con.N + Mdn.Dt.val.N + 4;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.Dt.con.b[0], &QDetNotOrderedFcFaBcBa);
@@ -762,7 +762,7 @@ uint32_t DoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, Dou
   /* spin up valence */
   oadd[1] = CrAnMask + 0;
   oadd[0] = 0;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.val.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.val.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 0;
   oadd[0] = 2;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.val.b[0], &QDetNotOrderedFcFaBcBa);
@@ -787,7 +787,7 @@ uint32_t DoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, Dou
   /* spin up conductance */
   oadd[1] = CrAnMask + 0;
   oadd[0] = 0;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.con.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.con.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 0;
   oadd[0] = Mup.val.N + 2;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mup.con.b[0], &QDetNotOrderedFcFaBcBa);
@@ -812,7 +812,7 @@ uint32_t DoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, Dou
   /* spin dn valence */
   oadd[1] = CrAnMask + 1;
   oadd[0] = 1;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.val.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.val.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 1;
   oadd[0] = Mup.val.N + Mup.con.N + 2;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.val.b[0], &QDetNotOrderedFcFaBcBa);
@@ -837,7 +837,7 @@ uint32_t DoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, Dou
   /* spin dn conductance */
   oadd[1] = CrAnMask + 1;
   oadd[0] = 1;
-  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.con.a[0] / 2.0, &QDetNotOrderedFcFaBcBa);
+  RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.con.a[0], &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 1;
   oadd[0] = Mup.val.N + Mup.con.N + Mdn.val.N + 2;
   RealOperatorAddLaderNormalOrder(O, oadd, 2, Mdn.con.b[0], &QDetNotOrderedFcFaBcBa);
