@@ -531,7 +531,8 @@ Done:
   each chain, so the whole minor is a single chain read `av_N … av2 A ac2 … ac_N`. It used to
   build the dense matrix and call `CompactMatrixToAndersonMatrix`, which is O(N^3) with
   `2*N^2` of *stack* workspace — it segfaults above about N = 600 — and which also lost `a0`
-  and `b0`, so the result did not reproduce `G` at all (see [TODO.md](TODO.md)). `n → d` is
+  and `b0`, so the result did not reproduce `G` at all (that half is fixed in
+  `CompactMatrixCopy`). `n → d` is
   about twice as fast as the old route through the poles, which needed three tri-diagonal
   eigenvalue problems and a tri-diagonalization where this needs one.
 - `DoubleTriDiagonalMatrixToTriDiagonalMatrix`
