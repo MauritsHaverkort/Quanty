@@ -107,7 +107,7 @@ end
 -- A tri-diagonal and a list of poles reach the double tri-diagonal form through
 -- the Anderson form, so they have to agree with it as well.
 GA = MakeAnderson(200, 1.7, 0.0)
-for i, ty in ipairs({"Tri", "LP"}) do
+for i, ty in ipairs({"Tri", "LP", "Nat"}) do
 	G = ResponseFunction.ChangeType(GA, ty)
 	GD = ResponseFunction.ChangeType(G, "DoubleTri", {{"EffectivekBT", 0.05}})
 	e = math.max(MaxRelDiff(G, GD, 0.3), MaxRelDiff(G, GD, 0.02))
