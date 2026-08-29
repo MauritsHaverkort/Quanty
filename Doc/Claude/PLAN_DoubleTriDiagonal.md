@@ -524,7 +524,16 @@ Done:
   and §3.1 are implemented here.
 - `TriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via Anderson
 - `ListOfPolesToDoubleTridiagonalMatrix` — routes via Anderson, see §0
-- `BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via the poles, see §0
+- `BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix` — routes via the Anderson form
+- `BADoubleTriDiagonalMatrixToAndersonMatrix` — rewritten. The bath of an `n` object, seen
+  from the observed orbital, is **one tri-diagonal eigenvalue problem**: drop the observed
+  orbital B and the extra natural orbital A is left with exactly two neighbours, the head of
+  each chain, so the whole minor is a single chain read `av_N … av2 A ac2 … ac_N`. It used to
+  build the dense matrix and call `CompactMatrixToAndersonMatrix`, which is O(N^3) with
+  `2*N^2` of *stack* workspace — it segfaults above about N = 600 — and which also lost `a0`
+  and `b0`, so the result did not reproduce `G` at all (see [TODO.md](TODO.md)). `n → d` is
+  about twice as fast as the old route through the poles, which needed three tri-diagonal
+  eigenvalue problems and a tri-diagonalization where this needs one.
 - `DoubleTriDiagonalMatrixToTriDiagonalMatrix`
 - **`DoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** and
   **`BlockDoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** — done, see §0

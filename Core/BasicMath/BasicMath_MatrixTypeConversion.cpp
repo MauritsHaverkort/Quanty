@@ -2335,25 +2335,27 @@ uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixT
 
 /*  The natural impurity orbital form adds its two chains, the double tri-diagonal
  *  form nests them, so there is no rotation from one to the other. The route is
- *  through the poles of the function, which both forms agree on.
+ *  through the Anderson form, whose bath is one tri-diagonal eigenvalue problem
+ *  away (see BADoubleTriDiagonalMatrixToAndersonMatrix) and is already the list
+ *  of levels and hoppings that the split at mu needs.
  */
 uint32_t BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType * const H, double const mu, double const kBT)
 {
-  ListOfPoles LP;
-  if (BADoubleTriDiagonalMatrixToListOfPoles(M, &LP))
+  AndersonMatrixType An;
+  if (BADoubleTriDiagonalMatrixToAndersonMatrix(M, &An))
   {
-    printf("BADoubleTriDiagonalMatrixToListOfPoles failed in BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    printf("BADoubleTriDiagonalMatrixToAndersonMatrix failed in BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
     fflush(stdout);
     return 1;
   }
-  if (ListOfPolesToDoubleTridiagonalMatrix(LP, H, mu, kBT))
+  if (AndersonMatrixToDoubleTriDiagonalMatrix(An, H, mu, kBT))
   {
-    printf("ListOfPolesToDoubleTridiagonalMatrix failed in BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
     fflush(stdout);
-    FreeListOfPoles(&LP);
+    FreeAndersonMatrix(&An);
     return 1;
   }
-  FreeListOfPoles(&LP);
+  FreeAndersonMatrix(&An);
   return 0;
 }
 
@@ -2369,13 +2371,141 @@ uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType * 
   return 0;
 }
 
+/*  The bath of an n object, seen from the observed orbital, is tri-diagonal
+ *
+ *  In the B/A basis the matrix holds the observed orbital B, the extra natural
+ *  orbital A, and the two chains from their second site onwards. B couples to A
+ *  and to both chain heads, and so does A:
+ *
+ *      av_N ... av2 - B - ac2 ... ac_N            av2 - A - ac2
+ *                     |                                 |
+ *                     A                                 B
+ *
+ *  Drop B, which is what the Anderson form asks for, and what is left is a
+ *  single chain read from one end to the other,
+ *
+ *      av_N - ... - av3 - av2 - A - ac2 - ac3 - ... - ac_N
+ *
+ *  because A is left with exactly two neighbours, the head of each chain. So the
+ *  bath of the Anderson form is one tri-diagonal eigenvalue problem, and the
+ *  hoppings are what B sees of each eigenvector: bvB0 on av2, acvBA on A and
+ *  bcB0 on ac2.
+ *
+ *  This used to go through the dense matrix, which costs a full symmetric
+ *  eigenvalue problem and 2*N^2 of workspace; the route through the poles of G
+ *  costs three tri-diagonal eigenvalue problems and a tri-diagonalization.
+ *
+ *  val.a[0] and con.a[0] are dropped, as they are by the dense matrix and by
+ *  BADoubleTriDiagonalMatrixToListOfPoles: an additive constant on G has no home
+ *  in an auxiliary matrix. Only Evaluate honours them.
+ */
 uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType * const M, AndersonMatrixType * const H)
 {
-  CompactMatrixType Mc,T;
-  BADoubleTriDiagonalMatrixTypeToCompactMatrix(M, &Mc);
-  CompactMatrixToAndersonMatrix(&Mc, &T, H);
-  FreeCompactMatrix(&T);
-  FreeCompactMatrix(&Mc);
+  TriDiagonalMatrixType Mminor;
+  CompactMatrixType Tminor;
+  uint32_t k, p, nv, nc, n;
+  double *Eminor, V;
+  /*  a chain of length zero on one side leaves an ordinary tri-diagonal matrix,
+   *  the same three cases BADoubleTriDiagonalMatrixTypeToCompactMatrix has */
+  if ((M->val.N == 0) && (M->con.N == 0))
+  {
+    H->N = 0;
+    if (InitAndersonMatrix(H)) return 1;
+    H->a[0] = M->a0;
+    H->mu = M->mu;
+    strncpy(H->Name, M->Name, MAXStrLength);
+    return 0;
+  }
+  if ((M->val.N == 0) || (M->con.N == 0))
+  {
+    if (TriDiagonalMatrixToAndersonMatrix((M->val.N == 0) ? M->con : M->val, H))
+    {
+      printf("TriDiagonalMatrixToAndersonMatrix failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    H->a[0] = M->a0;
+    H->b[0] *= M->b0;
+    H->mu = M->mu;
+    strncpy(H->Name, M->Name, MAXStrLength);
+    return 0;
+  }
+  /*  a chain of length one contributes nothing beyond the rotation that made B
+   *  and A, so it has no site of its own here and its hopping is not read */
+  nv = (M->val.N > 1) ? M->val.N - 1 : 0;
+  nc = (M->con.N > 1) ? M->con.N - 1 : 0;
+  n = 1 + nv + nc;
+  Mminor.N = n;
+  if (InitTriDiagonalMatrix(&Mminor))
+  {
+    printf("InitTriDiagonalMatrix failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  Mminor.a[0] = 0;
+  Mminor.b[0] = 1;
+  /*  the valence chain backwards, then A, then the conduction chain forwards */
+  for (p = 0; p < nv; p++)
+  {
+    Mminor.a[1 + p] = M->val.a[M->val.N - p];
+  }
+  Mminor.a[1 + nv] = M->acvA;
+  for (p = 0; p < nc; p++)
+  {
+    Mminor.a[2 + nv + p] = M->con.a[2 + p];
+  }
+  for (p = 0; p + 1 < nv; p++)
+  {
+    Mminor.b[1 + p] = M->val.b[M->val.N - 1 - p];
+  }
+  if (nv > 0) Mminor.b[nv] = M->bvA0;
+  if (nc > 0) Mminor.b[1 + nv] = M->bcA0;
+  for (p = 0; p + 1 < nc; p++)
+  {
+    Mminor.b[2 + nv + p] = M->con.b[2 + p];
+  }
+  if ((Eminor = (double*)malloc(n * sizeof(double))) == NULL)
+  {
+    printf("malloc for Eminor failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&Mminor);
+    return 1;
+  }
+  if (TriDiagonalMatrixToEigensystemCompact(&Mminor, Eminor, &Tminor))
+  {
+    printf("TriDiagonalMatrixToEigensystemCompact failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&Mminor);
+    free(Eminor);
+    return 1;
+  }
+  FreeTriDiagonalMatrix(&Mminor);
+  H->N = 1 + n;
+  if (InitAndersonMatrix(H))
+  {
+    printf("InitAndersonMatrix failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    FreeCompactMatrix(&Tminor);
+    free(Eminor);
+    return 1;
+  }
+  H->a[0] = M->a0;
+  H->b[0] = M->b0;
+  H->a[1] = M->acvB;
+  H->mu = M->mu;
+  strncpy(H->Name, M->Name, MAXStrLength);
+  /*  Tminor.VRe[k*n+j] is component j of eigenvector k. The sign of a hopping is
+   *  a gauge on the bath orbital, so only the absolute value is kept */
+  for (k = 0; k < n; k++)
+  {
+    H->a[2 + k] = Eminor[k];
+    V = M->acvBA * Tminor.VRe[k * n + nv];
+    if (nv > 0) V += M->bvB0 * Tminor.VRe[k * n + nv - 1];
+    if (nc > 0) V += M->bcB0 * Tminor.VRe[k * n + nv + 1];
+    H->b[1 + k] = fabs(V);
+  }
+  FreeCompactMatrix(&Tminor);
+  free(Eminor);
   return 0;
 }
 

@@ -104,6 +104,35 @@ if (#(tdeg.val[1]) - 1 > 4) or (#(tdeg.con[1]) - 1 > 4) then
 	error("ChangeType DoubleTri did not merge degenerate bath levels", 1)
 end
 
+-- The natural orbital form reaches the double tri-diagonal form through the
+-- Anderson form, and its bath is one tri-diagonal eigenvalue problem away: drop
+-- the observed orbital and the extra natural orbital is left with exactly two
+-- neighbours, the head of each chain, so the whole minor is a single chain. That
+-- step has to reproduce the original function on its own.
+av = {0.0}
+bv = {math.sqrt(0.5)}
+ac = {0.0}
+bc = {math.sqrt(0.5)}
+for i = 1, 40 do
+	av[#av + 1] = -5.0 + 4.9 * (i - 0.5) / 40
+	ac[#ac + 1] =  0.1 + 4.9 * (i - 0.5) / 40
+	if i < 40 then
+		bv[#bv + 1] = 0.30 * (1.0 + 0.3 * math.sin(3.0 * i))
+		bc[#bc + 1] = 0.28 * (1.0 + 0.3 * math.sin(3.0 * i))
+	end
+end
+Gval = {av, bv, mu = 0, type = "Tri"}
+setmetatable(Gval, ResponseFunctionMeta)
+Gcon = {ac, bc, mu = 0, type = "Tri"}
+setmetatable(Gcon, ResponseFunctionMeta)
+GNat = ResponseFunction.New({{0.3, 1.2}, val = Gval, con = Gcon, mu = 0, type = "Nat", name = "N"})
+GNatA = ResponseFunction.ChangeType(GNat, "And")
+eNatA = math.max(MaxRelDiff(GNat, GNatA, 0.3), MaxRelDiff(GNat, GNatA, 0.02))
+print(string.format("  %-30s max relative error %9.2e", "Nat to And", eNatA))
+if eNatA > 1E-11 then
+	error("ChangeType from Nat to And does not reproduce the original function", 1)
+end
+
 -- A tri-diagonal and a list of poles reach the double tri-diagonal form through
 -- the Anderson form, so they have to agree with it as well.
 GA = MakeAnderson(200, 1.7, 0.0)
