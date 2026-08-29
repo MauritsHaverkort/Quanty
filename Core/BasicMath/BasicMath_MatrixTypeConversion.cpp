@@ -3910,6 +3910,7 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   const uint32_t NBmax = 128;
   uint32_t lwork, lrwork;
   double *work=NULL, *rwork=NULL;
+  double pRe, pIm, vRe, vIm;
   Complex16 *cwork=NULL;
   Complex16  alpha;
   Complex16  beta;
@@ -3988,13 +3989,41 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
     free(rwork);
     T->V[0].Re=1;
     T->V[0].Im=0;
-    zgemv(&trans, &i, &i, &alpha, &(T->V[1+M->Ni]), &M->Ni, &(M->V[1]), &j, &beta, cwork, &j);
+    /*  the impurity couples to the bath through the column below it, M[r][0].
+     *  For a real symmetric matrix that is the same as the row M[0][r] the real
+     *  branch reads, but for a Hermitian one it is its complex conjugate, and
+     *  the conjugate is the wrong one here: a row major C array read column
+     *  major by fortran is conj(M), so zheev returns the eigenvectors of conj(M)
+     *  and the coupling U^dagger w comes out as a plain, unconjugated sum over
+     *  them. Hence the column, with M->Ni as the stride, and not the row.
+     */
+    zgemv(&trans, &i, &i, &alpha, &(T->V[1+M->Ni]), &M->Ni, &(M->V[M->Ni]), &M->Ni, &beta, cwork, &j);
+    /*  cwork[i-1] is the coupling of the impurity to eigenvector i-1, which sits
+     *  in row i of T. An AndersonMatrixType keeps its hoppings real, and it may:
+     *  the phase of a coupling is a gauge on the bath orbital it points at, so
+     *  rotating that orbital by the conjugate phase makes the hopping real and
+     *  positive and leaves the matrix Hermitian. This is the complex version of
+     *  the sign flip the real branch does just above.
+     */
     for(i=1;i<M->Ni;i++)
     {
       T->V[i].Re=0;
       T->V[i*M->Ni].Re=0;
       T->V[i].Im=0;
       T->V[i*M->Ni].Im=0;
+      H->b[i] = sqrt(Sqr(cwork[i-1].Re) + Sqr(cwork[i-1].Im));
+      if(H->b[i]>0)
+      {
+        pRe =  cwork[i-1].Re / H->b[i];
+        pIm = -cwork[i-1].Im / H->b[i];
+        for(j=1;j<M->Ni;j++)
+        {
+          vRe = T->V[i*T->Nj+j].Re;
+          vIm = T->V[i*T->Nj+j].Im;
+          T->V[i*T->Nj+j].Re = vRe*pRe - vIm*pIm;
+          T->V[i*T->Nj+j].Im = vRe*pIm + vIm*pRe;
+        }
+      }
     }
     free(cwork);
   }
