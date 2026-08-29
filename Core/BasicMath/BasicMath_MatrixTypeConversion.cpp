@@ -3895,12 +3895,24 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   const char jobz  = 'V';
   const char trans = 'T'; // Difference between C and Fortran Matrix_C . Vector_C = Matrix_{Fortran}^T . Vector_{Fortran}
   const char uplo  = 'U';
-  const uint32_t lwork = 1 + 6 * M->Ni + 2 * Sqr(M->Ni);
-  const uint32_t  lcwork = 2 * M->Ni + Sqr(M->Ni);
-  double work[lwork];
+  /*  dsyev and zheev are QR iterations and want a workspace of O(N): (NB+2)*N
+   *  doubles and (NB+1)*N Complex16 for the block size NB the library picks,
+   *  plus 3N-2 doubles of rwork for zheev. What used to stand here was
+   *  1+6N+2N^2 doubles and 2N+N^2 Complex16, which is what dsyevd and zheevd,
+   *  the divide and conquer solvers, want -- and they were stack arrays. That is
+   *  30 Mb at N=1000 and 3 Gb at N=10000, so this function died with SIGSEGV
+   *  above about N=500.
+   *
+   *  NB is 32 in Accelerate; 128 is taken here as an upper bound over libraries.
+   *  Being generous costs nothing, LAPACK uses no more than the blocked size, so
+   *  this runs at exactly the speed the oversized workspace did.
+   */
+  const uint32_t NBmax = 128;
+  uint32_t lwork, lrwork;
+  double *work=NULL, *rwork=NULL;
+  Complex16 *cwork=NULL;
   Complex16  alpha;
   Complex16  beta;
-  Complex16  cwork[lcwork];
   alpha.Re=1; alpha.Im=0;
   beta.Re=0;  beta.Im=0;
   if (M->Ni != M->Nj)
@@ -3920,7 +3932,17 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   if (T->QComplex == 0)
   {
     H->a[1] = M->VRe[0];
+    lwork = (NBmax + 2) * i + 1;                  /* the documented minimum is 3N-1 */
+    work = (double*)malloc(lwork * sizeof(double));
+    if (work == NULL)
+    {
+      printf("malloc of work failed in CompactMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
     dsyev(&jobz, &uplo, &i, &(T->VRe[1+M->Ni]), &M->Ni, &(H->a[2]), work, &lwork, &info);
+    if (info != 0) printf("dsyev failed in CompactMatrixToAndersonMatrix with info value %i\n", info);
+    free(work);
     T->VRe[0]=1;
     dgemv(&trans, &i, &i, &(alpha.Re), &(T->VRe[1+M->Ni]), &M->Ni, &(M->VRe[1]), &j, &(beta.Re), &(H->b[1]), &j);
     for(i=1;i<M->Ni;i++)
@@ -3940,7 +3962,30 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   else
   {
     H->a[1] = M->V[0].Re;
-    zheev(&jobz, &uplo, &i, &(T->V[1+M->Ni]),   &M->Ni, &(H->a[2]), cwork, &lcwork, work, &info);
+    /*  zheev keeps its real workspace apart from its complex one, and wants
+     *  only 3N-2 of it */
+    lrwork = 3 * i + 1;
+    rwork = (double*)malloc(lrwork * sizeof(double));
+    if (rwork == NULL)
+    {
+      printf("malloc of rwork failed in CompactMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    /*  the documented minimum is 2N-1, and zgemv below writes i elements into
+     *  cwork, so (NBmax+1)*i+1 covers both */
+    lwork = (NBmax + 1) * i + 1;
+    cwork = (Complex16*)malloc(lwork * sizeof(Complex16));
+    if (cwork == NULL)
+    {
+      printf("malloc of cwork failed in CompactMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      free(rwork);
+      return 1;
+    }
+    zheev(&jobz, &uplo, &i, &(T->V[1+M->Ni]),   &M->Ni, &(H->a[2]), cwork, &lwork, rwork, &info);
+    if (info != 0) printf("zheev failed in CompactMatrixToAndersonMatrix with info value %i\n", info);
+    free(rwork);
     T->V[0].Re=1;
     T->V[0].Im=0;
     zgemv(&trans, &i, &i, &alpha, &(T->V[1+M->Ni]), &M->Ni, &(M->V[1]), &j, &beta, cwork, &j);
@@ -3951,7 +3996,7 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
       T->V[i].Im=0;
       T->V[i*M->Ni].Im=0;
     }
-    
+    free(cwork);
   }
   return 0;
 }
