@@ -4344,6 +4344,12 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
     {
       switch (type|32)
       {
+        case 'a':
+        {
+          Mout->data = (void*) malloc(sizeof(AndersonMatrixType));
+          DoubleTriDiagonalMatrixToAndersonMatrix(*(DoubleTriDiagonalMatrixType*)Min->data, (AndersonMatrixType*)Mout->data);
+        }
+        break;
         case 'd':
         {
           Mout->data = (void*) malloc(sizeof(DoubleTriDiagonalMatrixType));

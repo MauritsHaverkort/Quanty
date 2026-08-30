@@ -1,0 +1,122 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction ChangeType from DoubleTri          --")
+print("--------------------------------------------------------")
+
+-- Read a double tri-diagonal matrix in the order val_N ... val_1, impurity,
+-- con_1 ... con_N and it is one ordinary tri-diagonal chain with the impurity in
+-- the middle. Deleting the impurity, which is what the Anderson form asks for,
+-- leaves two chains that do not touch, so the Anderson bath is the two chain
+-- spectra side by side and the impurity reaches eigenvector k of a chain only
+-- through that chain's head.
+--
+-- Hence: the dimension is preserved, the impurity energy is val.a[0]+con.a[0],
+-- the bath carries val.b[0]^2+con.b[0]^2 of hybridization weight, and the whole
+-- response function is unchanged.
+
+function MaxRelDiff(G1, G2, gamma)
+	local worst = 0.0
+	for i = 0, 300 do
+		local w = -8.0 + 16.0 * i / 300
+		local v1, v2 = G1(w, gamma), G2(w, gamma)
+		local d = math.sqrt((v1.Re - v2.Re)^2 + (v1.Im - v2.Im)^2)
+		local n = math.sqrt(v1.Re^2 + v1.Im^2)
+		if (n > 0) and ((d / n) > worst) then worst = d / n end
+	end
+	return worst
+end
+
+function MakeAnderson(nb, eimp, mu)
+	local a, b = {0.3, eimp}, {1.4}
+	for i = 1, nb do
+		local E = -5.0 + 10.0 * (i - 0.5) / nb
+		a[#a + 1] = E
+		b[#b + 1] = 0.5 * math.sqrt(math.max(0.0, 25.0 - E * E)) / math.sqrt(nb)
+	end
+	return ResponseFunction.New({a, b, mu = mu, type = "And", name = "bath"})
+end
+
+-- everything that has to hold of the Anderson form of a double tri-diagonal one
+function CheckAgainst(name, GD)
+	local GA = ResponseFunction.ChangeType(GD, "And")
+	local td, ta = ResponseFunction.ToTable(GD), ResponseFunction.ToTable(GA)
+	local nv, nc = #(td.val[1]) - 1, #(td.con[1]) - 1
+	if (#(ta[1]) - 1) ~= (1 + nv + nc) then
+		error("ChangeType DoubleTri to And: dimension is not 1+val.N+con.N for " .. name, 1)
+	end
+	if math.abs(ta[1][2] - (td.val[1][1] + td.con[1][1])) > 1E-12 * (1 + math.abs(ta[1][2])) then
+		error("ChangeType DoubleTri to And: the impurity is not val.a[0]+con.a[0] for " .. name, 1)
+	end
+	local W, Wd = 0.0, 0.0
+	for i = 2, #ta[2] do W = W + ta[2][i] * ta[2][i] end
+	if #(td.val[2]) > 0 then Wd = Wd + td.val[2][1]^2 end
+	if #(td.con[2]) > 0 then Wd = Wd + td.con[2][1]^2 end
+	if math.abs(W - Wd) > 1E-12 * (1 + Wd) then
+		error("ChangeType DoubleTri to And: the bath weight is not val.b[0]^2+con.b[0]^2 for " .. name, 1)
+	end
+	for i = 3, #(ta[1]) - 1 do
+		if ta[1][i] > ta[1][i + 1] then
+			error("ChangeType DoubleTri to And: the bath is not ordered for " .. name, 1)
+		end
+	end
+	local e = math.max(MaxRelDiff(GD, GA, 0.3), MaxRelDiff(GD, GA, 0.02))
+	print(string.format("  %-32s val.N=%4d con.N=%4d  dim %5d   max relative error %9.2e",
+	      name, nv, nc, #(ta[1]) - 1, e))
+	if e > 1E-11 then
+		error("ChangeType DoubleTri to And does not reproduce the original function for " .. name, 1)
+	end
+	return GA
+end
+
+print("from a double tri-diagonal matrix built out of an Anderson matrix")
+CheckAgainst("kBT finite, eimp nonzero",
+             ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckAgainst("kBT zero",
+             ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.0}}))
+CheckAgainst("mu off centre",
+             ResponseFunction.ChangeType(MakeAnderson(999, 0.0, -1.3), "DoubleTri", {{"EffectivekBT", 0.1}}))
+CheckAgainst("valence chain empty",
+             ResponseFunction.ChangeType(MakeAnderson(999, 1.7, -6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckAgainst("conduction chain empty",
+             ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckAgainst("small bath",
+             ResponseFunction.ChangeType(MakeAnderson(6, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.3}}))
+CheckAgainst("single bath level",
+             ResponseFunction.ChangeType(MakeAnderson(1, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.3}}))
+
+-- A double tri-diagonal matrix written by hand rather than converted from an
+-- Anderson one, so that both head slots carry energy of their own.
+function Chain(n, elo, ehi, b, head)
+	local a, bb = {head}, {0.6}
+	for i = 1, n do
+		a[#a + 1] = elo + (ehi - elo) * (i - 0.5) / n
+		if i < n then bb[#bb + 1] = b * (1.0 + 0.3 * math.sin(3.0 * i)) end
+	end
+	return a, bb
+end
+
+function MakeD(nv, nc)
+	local av, bv = Chain(nv, -5.0, -0.2, 0.30, 0.9)
+	local ac, bc = Chain(nc,  0.2,  5.0, 0.28, 0.8)
+	local Gval = {av, bv, mu = 0, type = "Tri"}
+	setmetatable(Gval, ResponseFunctionMeta)
+	local Gcon = {ac, bc, mu = 0, type = "Tri"}
+	setmetatable(Gcon, ResponseFunctionMeta)
+	return ResponseFunction.New({{0.3, 1.2}, val = Gval, con = Gcon, mu = 0, kBT = 0.05,
+	                             type = "DoubleTri", name = "D"})
+end
+
+print("from a double tri-diagonal matrix written by hand")
+for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
+	CheckAgainst("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
+end
+
+-- and the whole way round
+GA0 = MakeAnderson(300, 1.7, 0.0)
+GA1 = ResponseFunction.ChangeType(ResponseFunction.ChangeType(GA0, "DoubleTri", {{"EffectivekBT", 0.05}}), "And")
+eround = math.max(MaxRelDiff(GA0, GA1, 0.3), MaxRelDiff(GA0, GA1, 0.02))
+print(string.format("  %-32s max relative error %9.2e", "round trip And to DoubleTri to And", eround))
+if eround > 1E-11 then
+	error("And to DoubleTri to And does not reproduce the original function", 1)
+end
+
+print("--------------------------------------------------------")

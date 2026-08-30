@@ -95,7 +95,6 @@ now reads the sum, and the one remaining producer on the old convention,
 
 Non-block (`BasicMath_MatrixTypeConversion.cpp`), all of them *out* of `d`:
 `DoubleTriDiagonalMatrixToListOfPoles`,
-`DoubleTriDiagonalMatrixToAndersonMatrixMatrix`,
 `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix`.
 
 `ChangeType` now refuses these with a catchable lua error instead of pushing a
@@ -535,6 +534,16 @@ Done:
   `CompactMatrixCopy`). `n → d` is
   about twice as fast as the old route through the poles, which needed three tri-diagonal
   eigenvalue problems and a tri-diagonalization where this needs one.
+- `DoubleTriDiagonalMatrixToAndersonMatrix` — the first of the `d →` row. Read the matrix as
+  `val_N … val_1, impurity, con_1 … con_N` and it is one ordinary tri-diagonal chain with the
+  impurity in the middle, so deleting the impurity leaves the two chains **disconnected**: the
+  Anderson bath is the two chain spectra side by side, and the impurity reaches eigenvector `k`
+  of a chain only through that chain's head, with hopping `b[0]·c_k`. Two tri-diagonal
+  eigenvalue problems of size `val.N` and `con.N`, against roughly four times that for a route
+  through `l`, which would form `G`'s poles only to undo them. Dimension preserving, bath
+  ordered, zero-hopping levels kept for `Chop` to remove. It was the stub called
+  `…ToAndersonMatrixMatrix`, with `Matrix` twice; renamed, and its one caller — the lua reader
+  that reads a `DoubleTri` table as an `And` — follows
 - `DoubleTriDiagonalMatrixToTriDiagonalMatrix`
 - **`DoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** and
   **`BlockDoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** — done, see §0
@@ -546,13 +555,14 @@ To write:
 | # | function | note |
 |---|---|---|
 | 1 | `ListOfPolesToDoubleTriDiagonalMatrixOccupation` | only if the occupation-constrained variant is wanted, cf. `ListOfPolesToBADoubleTridiagonalMatrixOccupation` — note that one stores `Abs(mu − muOccupation)` in the field, a third meaning again (§11) |
-| 2 | `DoubleTriDiagonalMatrixToListOfPoles` | diagonalise; the one real algorithm still missing. `TriDiagonalMatrixToEigensystemCompact` on the dense form is the obvious route, and `DoubleTriDiagonalMatrixToCompactMatrix` already builds it |
-| 3 | `DoubleTriDiagonalMatrixToAndersonMatrix` | route via `l` |
-| 4 | `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` | `d → n`: route via `l`, as `n → d` does. A rotation of the shared site into the natural pair is not available — the two forms combine their chains differently (§1) |
+| 2 | `DoubleTriDiagonalMatrixToListOfPoles` | the poles of `G` itself, not of the hybridization, so this is **not** the two chain spectra — it is the spectrum of the whole matrix. Under the same reordering that matrix is plain tri-diagonal, so it is one eigenvalue problem of size `1+val.N+con.N` with the weights read off the impurity component, which sits in the middle rather than at the end |
+| 3 | `DoubleTriDiagonalMatrixToTriDiagonalMatrix` | exists, and is the only live consumer of the §3.0 matrix–vector products. Whether to keep it as Lanczos on those products or to go through `a` wants deciding — going through `a` would leave that sweep with no caller at all |
+| 4 | `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` | `d → n`: the two forms combine their chains differently (§1), so there is no rotation between them; it needs the poles of `G`, hence item 2 |
 | 5 | `DoubleTriDiagonalMatrixCopy` | exists |
 
-Item 2 unlocks 3 and 4 and closes the `d →` row, which is all that is left of the non-block
-conversion table.
+Each of these wants its own thought. `d → a` above is not a template for the rest: it works
+because the *hybridization* splits into the two chains, which is a statement about the minor,
+not about `G`.
 
 `AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal` is a `/* To DO */` stub that returns
 1. Nothing calls it; leave it.
@@ -855,7 +865,8 @@ Stages 0 to 2 of the original plan are done. What is left, in the order I would 
 |---|---|---|
 | ~~0~~ | ~~the `→ d` column, non-block~~ | **done**, see §0 |
 | ~~1~~ | ~~the `§3.0` head sweep~~ | **done**, see §3.0 |
-| 2 | `DoubleTriDiagonalMatrixToListOfPoles` | closes the `d →` row: it unblocks the zero-broadening spectrum path, and by routing through `l` it gives `d → t`, `d → a` and `d → n` without writing each one |
+| ~~2a~~ | ~~`DoubleTriDiagonalMatrixToAndersonMatrix`~~ | **done**, see §4 |
+| 2b | `DoubleTriDiagonalMatrixToListOfPoles` | what is left of the `d →` row, together with `d → n` which needs it. It unblocks the zero-broadening spectrum path |
 | 3 | the two that misbehave today: `FreeBlockMatrix`, `lua_isBlockGreensfunction` | small, and they are wrong rather than absent |
 | 4 | §2(b) and §2(c) | dormant functions, but they are reachable now that the conversions exist |
 | 5 | the six Lua index metamethods | `G.type`, `G.mu`, `G.name` on a `d` userdata |

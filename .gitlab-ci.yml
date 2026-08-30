@@ -188,6 +188,7 @@ test-jobs-Responsefunction:
           - "CalculateSelfEnergy"
           - "ChangeType"
           - "ChangeTypeDoubleTri"
+          - "ChangeTypeFromDoubleTri"
           - "Chop"
           - "CreateBitMasks"
           - "Deflation"

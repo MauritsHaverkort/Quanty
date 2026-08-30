@@ -1062,7 +1062,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkDoubleTriDiagonalMatrixType(L, narg);
     buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
-    DoubleTriDiagonalMatrixToAndersonMatrixMatrix(*temp, buff);
+    DoubleTriDiagonalMatrixToAndersonMatrix(*temp, buff);
     FreeDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;

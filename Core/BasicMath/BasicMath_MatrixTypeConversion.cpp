@@ -2115,11 +2115,107 @@ uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType 
   return 0;
 }
 
-uint32_t DoubleTriDiagonalMatrixToAndersonMatrixMatrix(DoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
+/*  The bath of a double tri-diagonal matrix is its two chains, side by side
+ *
+ *  Read the matrix in the order val_N ... val_1, impurity, con_1 ... con_N and it
+ *  is one ordinary tri-diagonal chain with the impurity in the middle. Deleting
+ *  the impurity, which is what the Anderson form asks for, therefore leaves two
+ *  chains that do not touch: the valence chain and the conduction chain. The
+ *  bath is the two spectra side by side, and the impurity reaches eigenvector k
+ *  of a chain only through that chain's head, so the hopping is b[0]*c_k with
+ *  c_k the first component of that eigenvector.
+ *
+ *  The same thing falls out of the algebra. EvaluateTriDiagonalMatrix returns
+ *  a[0] + b[0]^2 g, with g the continued fraction over a[1...N], so
+ *
+ *    w - Gval - Gcon = w - (val.a[0]+con.a[0]) - [ val.b[0]^2 g_val + con.b[0]^2 g_con ]
+ *
+ *  which is the Anderson denominator with the impurity at val.a[0]+con.a[0] and
+ *  a hybridization whose poles are the two chain spectra.
+ *
+ *  So this costs two tri-diagonal eigenvalue problems of size val.N and con.N.
+ *  Going through a list of poles instead would need one of size 1+val.N+con.N to
+ *  build G's poles, a tri-diagonalization to get back to a chain and a second
+ *  eigenvalue problem on its minor, which is about four times the work for
+ *  chains of equal length and forms G's poles only to undo them again.
+ *
+ *  The dimension is preserved, 1+val.N+con.N: this is a rotation of the bath
+ *  into its eigenbasis and nothing else. Eigenvectors whose head component
+ *  vanishes are kept, with a hopping of zero; Chop removes them.
+ */
+uint32_t DoubleTriDiagonalMatrixToAndersonMatrix(DoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToAndersonMatrixMatrix\n");
-  return 1;
+  CompactMatrixType T;
+  uint32_t k, NBath;
+  double *EB;                   /* the bath as (energy,hopping) pairs, so that it can be sorted */
+  NBath = M.val.N + M.con.N;
+  H->N = 1 + NBath;
+  if (InitAndersonMatrix(H))
+  {
+    printf("InitAndersonMatrix failed in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->mu   = M.mu;
+  H->a[0] = M.a0;
+  H->b[0] = M.b0;
+  H->a[1] = M.val.a[0] + M.con.a[0];   /* the impurity site is shared, its energy is the sum */
+  if (NBath == 0)
+  {
+    return 0;
+  }
+  if (M.val.N != 0)
+  {
+    if (TriDiagonalMatrixToEigensystemCompact(&(M.val), &(H->a[2]), &T))
+    {
+      printf("TriDiagonalMatrixToEigensystemCompact failed for val in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    /*  T.VRe[k*N+j] is component j of eigenvector k. The sign of a hopping is a
+     *  gauge on the bath orbital, so only the absolute value is kept */
+    for (k = 0; k < M.val.N; k++)
+    {
+      H->b[1 + k] = fabs(M.val.b[0] * T.VRe[k * M.val.N]);
+    }
+    FreeCompactMatrix(&T);       /* freed before the second one, so the peak is the larger chain, not the sum */
+  }
+  if (M.con.N != 0)
+  {
+    if (TriDiagonalMatrixToEigensystemCompact(&(M.con), &(H->a[2 + M.val.N]), &T))
+    {
+      printf("TriDiagonalMatrixToEigensystemCompact failed for con in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    for (k = 0; k < M.con.N; k++)
+    {
+      H->b[1 + M.val.N + k] = fabs(M.con.b[0] * T.VRe[k * M.con.N]);
+    }
+    FreeCompactMatrix(&T);
+  }
+  /*  each half leaves LAPACK in ascending order, but the two halves interleave
+   *  wherever the Fermi window put a level in both chains, so order the bath */
+  if ((EB = (double*)malloc(2 * NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for EB failed in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  for (k = 0; k < NBath; k++)
+  {
+    EB[2 * k    ] = H->a[2 + k];
+    EB[2 * k + 1] = H->b[1 + k];
+  }
+  qsort((void *)EB, NBath, 2 * sizeof(double), (compfn) OrderListOfPolesCompare);
+  for (k = 0; k < NBath; k++)
+  {
+    H->a[2 + k] = EB[2 * k    ];
+    H->b[1 + k] = EB[2 * k + 1];
+  }
+  free(EB);
+  return 0;
 }
 
 uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H)
