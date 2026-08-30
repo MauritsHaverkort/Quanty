@@ -2291,18 +2291,123 @@ uint32_t DoubleTriDiagonalMatrixToAndersonMatrix(DoubleTriDiagonalMatrixType con
   return 0;
 }
 
-uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H)
+/*  The natural impurity orbital form adds its two chains where the double
+ *  tri-diagonal form nests them (see the struct comments), so there is no
+ *  rotation from one to the other -- the two split the same G differently. What
+ *  they agree on are the poles of G, so that is the route, and it is the same one
+ *  BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix takes the other way.
+ *
+ *  Going through the poles also means d -> n splits at mu exactly as l -> n does,
+ *  with ListOfPolesCopyVal and ListOfPolesCopyCon, so the two agree by
+ *  construction.
+ */
+uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H, double const mu, double const kBT)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
-  return 1;
+  ListOfPoles LP;
+  if (DoubleTriDiagonalMatrixToListOfPoles(M, &LP))
+  {
+    printf("DoubleTriDiagonalMatrixToListOfPoles failed in DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (ListOfPolesToBADoubleTridiagonalMatrix(LP, H, LP.N, LP.N, mu, kBT))
+  {
+    printf("ListOfPolesToBADoubleTridiagonalMatrix failed in DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeListOfPoles(&LP);
+    return 1;
+  }
+  FreeListOfPoles(&LP);
+  strncpy(H->Name, M.Name, MAXStrLength);
+  return 0;
 }
 
+/*  The whole matrix is tri-diagonal, with the impurity in the middle
+ *
+ *  The poles of G are the eigenvalues of the whole matrix, with weights the
+ *  square of what the impurity sees of each eigenvector -- not the two chain
+ *  spectra, which are the poles of the hybridization and are what
+ *  DoubleTriDiagonalMatrixToAndersonMatrix wants.
+ *
+ *  So this needs the whole matrix diagonalized, and it is cheap: read it as
+ *
+ *      val_N ... val_2, val_1, impurity, con_1, con_2, ... con_N
+ *
+ *  and it is an ordinary tri-diagonal matrix, half bandwidth 1. Only the observed
+ *  site sits in the middle rather than at an end, which costs nothing here --
+ *  the weights are read from the middle row of the eigenvectors instead of the
+ *  first. One tri-diagonal eigenvalue problem of size 1+val.N+con.N and no more.
+ *
+ *  (The interleaved ordering that DoubleTriDiagonalMatrixToTriDiagonalMatrix uses
+ *  is only needed when the observed site has to come first, which a Lanczos chain
+ *  requires and an eigenvalue decomposition does not.)
+ *
+ *  Poles of zero weight are kept, as everywhere else in the d row; ReducePoles
+ *  and Chop remove them. dstevd returns the eigenvalues ascending, so the list
+ *  comes out ordered.
+ */
 uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const M, ListOfPoles * const H)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToListOfPoles\n");
-  return 1;
+  TriDiagonalMatrixType T;
+  CompactMatrixType U;
+  uint32_t N, k, imp;
+  N = 1 + M.val.N + M.con.N;
+  imp = M.val.N;                 /* 0 based index of the impurity, site M.val.N+1 */
+  T.N = N;
+  if (InitTriDiagonalMatrix(&T))
+  {
+    printf("InitTriDiagonalMatrix failed in DoubleTriDiagonalMatrixToListOfPoles\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(T.Name, M.Name, MAXStrLength);
+  /*  the valence chain backwards, then the impurity, then the conduction chain.
+   *  b[i] is the bond between site i and site i+1 */
+  for (k = 1; k <= M.val.N; k++)
+  {
+    T.a[M.val.N + 1 - k] = M.val.a[k];
+  }
+  T.a[M.val.N + 1] = M.val.a[0] + M.con.a[0];
+  for (k = 1; k <= M.con.N; k++)
+  {
+    T.a[M.val.N + 1 + k] = M.con.a[k];
+  }
+  for (k = 1; k < M.val.N; k++)
+  {
+    T.b[M.val.N - k] = M.val.b[k];
+  }
+  if (M.val.N != 0) T.b[M.val.N    ] = M.val.b[0];
+  if (M.con.N != 0) T.b[M.val.N + 1] = M.con.b[0];
+  for (k = 1; k < M.con.N; k++)
+  {
+    T.b[M.val.N + 1 + k] = M.con.b[k];
+  }
+  H->N = N;
+  if (InitListOfPoles(H))
+  {
+    printf("InitListOfPoles failed in DoubleTriDiagonalMatrixToListOfPoles\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&T);
+    return 1;
+  }
+  if (TriDiagonalMatrixToEigensystemCompact(&T, H->a, &U))
+  {
+    printf("TriDiagonalMatrixToEigensystemCompact failed in DoubleTriDiagonalMatrixToListOfPoles\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&T);
+    return 1;
+  }
+  FreeTriDiagonalMatrix(&T);
+  /*  U.VRe[k*N+j] is component j of eigenvector k */
+  for (k = 0; k < N; k++)
+  {
+    H->b[k] = Sqr(M.b0 * U.VRe[k * N + imp]);
+  }
+  FreeCompactMatrix(&U);
+  H->a0 = M.a0;
+  H->mu = M.mu;
+  strncpy(H->Name, M.Name, MAXStrLength);
+  return 0;
 }
 /*  Create the matrix whose resolvent is the Green's function represented by M: one impurity
  *  site with a valence and a conduction chain attached to it.

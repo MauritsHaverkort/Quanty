@@ -4344,10 +4344,22 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
     {
       switch (type|32)
       {
+        case 'l':
+        {
+          Mout->data = (void*) malloc(sizeof(ListOfPoles));
+          DoubleTriDiagonalMatrixToListOfPoles(*(DoubleTriDiagonalMatrixType*)Min->data, (ListOfPoles*)Mout->data);
+        }
+        break;
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
           DoubleTriDiagonalMatrixToTriDiagonalMatrix(*(DoubleTriDiagonalMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data);
+        }
+        break;
+        case 'n':
+        {
+          Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(DoubleTriDiagonalMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((DoubleTriDiagonalMatrixType*)(Min->data))->mu, T);
         }
         break;
         case 'a':

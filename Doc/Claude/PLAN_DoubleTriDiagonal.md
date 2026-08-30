@@ -91,16 +91,19 @@ now reads the sum, and the one remaining producer on the old convention,
 | accessors | `GetMu`, `GetQComplex`, `GetBlockSize`, `GetA0`, `GetB0`, block and non-block |
 | `Free` | `FreeResponsefunction`, `FreeBlockMatrixFromLua` |
 
-### The conversions that are still stubs
+### The non-block conversion table is complete
 
-Non-block (`BasicMath_MatrixTypeConversion.cpp`), all of them *out* of `d`:
-`DoubleTriDiagonalMatrixToListOfPoles`,
-`DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix`.
+Every cell of `ConvertResponsefunction` involving `d` is implemented, in both
+directions: `l`, `t`, `a`, `n` → `d` and `d` → `l`, `t`, `a`, `n`, plus the `d → d`
+copy. `TestScripts/Responsefunction/ChangeTypeFromDoubleTri.Quanty` and
+`ChangeTypeDoubleTri.Quanty` cover them, at 5e-13 or better on `G` — read with
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) in mind for what that
+number does and does not say.
 
-`ChangeType` now refuses these with a catchable lua error instead of pushing a
-response function that was never converted: `ConvertResponsefunction` sets
-`Mout->data` to `NULL` up front and returns non-zero if no cell filled it in.
-Before that, `ChangeType(Gd,"Tri")` pushed an uninitiallized pointer.
+Where a cell is still missing elsewhere in the table, `ChangeType` refuses with a
+catchable lua error instead of pushing a response function that was never
+converted: `ConvertResponsefunction` sets `Mout->data` to `NULL` up front and
+returns non-zero if no cell filled it in.
 
 Block (`BasicMath_BlockTypeConversion.cpp`):
 `BlockListOfPolesToBlockDoubleTriDiagonalMatrix`,
@@ -566,9 +569,9 @@ To write:
 | # | function | note |
 |---|---|---|
 | 1 | `ListOfPolesToDoubleTriDiagonalMatrixOccupation` | only if the occupation-constrained variant is wanted, cf. `ListOfPolesToBADoubleTridiagonalMatrixOccupation` — note that one stores `Abs(mu − muOccupation)` in the field, a third meaning again (§11) |
-| 2 | `DoubleTriDiagonalMatrixToListOfPoles` | the poles of `G` itself, not of the hybridization, so this is **not** the two chain spectra — it is the spectrum of the whole matrix. Under the same reordering that matrix is plain tri-diagonal, so it is one eigenvalue problem of size `1+val.N+con.N` with the weights read off the impurity component, which sits in the middle rather than at the end |
+| ~~2~~ | ~~`DoubleTriDiagonalMatrixToListOfPoles`~~ | **done**. The poles of `G` itself, not of the hybridization, so this is **not** the two chain spectra — it is the spectrum of the whole matrix. Read as `val_N … val_1, impurity, con_1 … con_N` that matrix is plain tri-diagonal, half bandwidth 1, so it is one eigenvalue problem of size `1+val.N+con.N`, with the weights read off the impurity component, which sits in the middle rather than at the end. The interleaved ordering `d → t` needs is only for putting the observed site first, which a Lanczos chain requires and an eigendecomposition does not |
 | ~~3~~ | ~~`DoubleTriDiagonalMatrixToTriDiagonalMatrix`~~ | **done**, see the entry above |
-| 4 | `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` | `d → n`: the two forms combine their chains differently (§1), so there is no rotation between them; it needs the poles of `G`, hence item 2 |
+| ~~4~~ | ~~`DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix`~~ | **done**, `d → l → n`. The two forms combine their chains differently (§1), so there is no rotation between them; the poles of `G` are the only thing they agree on. Going through them also means `d → n` splits at `mu` exactly as `l → n` does, by construction |
 | 5 | `DoubleTriDiagonalMatrixCopy` | exists |
 
 Each of these wants its own thought. `d → a` is not a template for the rest: it works because
@@ -893,7 +896,7 @@ Stages 0 to 2 of the original plan are done. What is left, in the order I would 
 | ~~0~~ | ~~the `→ d` column, non-block~~ | **done**, see §0 |
 | ~~1~~ | ~~the `§3.0` head sweep~~ | **done**, see §3.0 |
 | ~~2a~~ | ~~`DoubleTriDiagonalMatrixToAndersonMatrix`~~ | **done**, see §4 |
-| 2b | `DoubleTriDiagonalMatrixToListOfPoles` | what is left of the `d →` row, together with `d → n` which needs it. It unblocks the zero-broadening spectrum path |
+| ~~2b~~ | ~~`DoubleTriDiagonalMatrixToListOfPoles`~~ | **done**, and with it `d → n`. The `d →` row is complete |
 | 3 | the two that misbehave today: `FreeBlockMatrix`, `lua_isBlockGreensfunction` | small, and they are wrong rather than absent |
 | 4 | §2(b) and §2(c) | dormant functions, but they are reachable now that the conversions exist |
 | 5 | the six Lua index metamethods | `G.type`, `G.mu`, `G.name` on a `d` userdata |

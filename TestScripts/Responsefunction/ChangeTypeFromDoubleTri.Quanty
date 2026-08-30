@@ -185,6 +185,75 @@ if eboth > 1E-11 * (1 + scale) then
 	error("the band reduction and the route through And do not give the same chain", 1)
 end
 
+-- The poles of G are the eigenvalues of the whole matrix, not the two chain
+-- spectra: read it as val_N ... val_1, impurity, con_1 ... con_N and it is an
+-- ordinary tri-diagonal matrix, so one eigenvalue problem gives them, with the
+-- weights read from the middle row of the eigenvectors rather than the first.
+-- The natural orbital form then follows through the poles, which is the only
+-- thing the two forms agree on: one adds its chains where the other nests them.
+function CheckPoles(name, GD)
+	local GL = ResponseFunction.ChangeType(GD, "LP")
+	local td, tl = ResponseFunction.ToTable(GD), ResponseFunction.ToTable(GL)
+	local nv, nc = #(td.val[1]) - 1, #(td.con[1]) - 1
+	if (#(tl[1]) - 1) ~= (1 + nv + nc) then
+		error("ChangeType DoubleTri to LP: not 1+val.N+con.N poles for " .. name, 1)
+	end
+	-- the poles carry b0^2 of weight in total
+	local W, b0 = 0.0, td[1][2]
+	for i = 1, #tl[2] do W = W + tl[2][i] end
+	if math.abs(W - b0 * b0) > 1E-11 * (1 + b0 * b0) then
+		error("ChangeType DoubleTri to LP: the poles do not carry b0^2 for " .. name, 1)
+	end
+	-- tl[1][1] is the offset a0, the pole energies start at 2 and come out ordered
+	for i = 3, #(tl[1]) do
+		if tl[1][i] < tl[1][i - 1] then
+			error("ChangeType DoubleTri to LP: the poles are not ordered for " .. name, 1)
+		end
+	end
+	local el = math.max(MaxRelDiff(GD, GL, 0.3), MaxRelDiff(GD, GL, 0.02))
+	local GN = ResponseFunction.ChangeType(GD, "Nat")
+	local en = math.max(MaxRelDiff(GD, GN, 0.3), MaxRelDiff(GD, GN, 0.02))
+	print(string.format("  %-32s val.N=%4d con.N=%4d  poles %5d   to LP %9.2e   to Nat %9.2e",
+	      name, nv, nc, #(tl[1]) - 1, el, en))
+	if el > 1E-11 then
+		error("ChangeType DoubleTri to LP does not reproduce the original function for " .. name, 1)
+	end
+	if en > 1E-11 then
+		error("ChangeType DoubleTri to Nat does not reproduce the original function for " .. name, 1)
+	end
+end
+
+print("to a list of poles, and on to the natural orbital form")
+CheckPoles("kBT finite, eimp nonzero",
+           ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckPoles("mu off centre",
+           ResponseFunction.ChangeType(MakeAnderson(999, 0.0, -1.3), "DoubleTri", {{"EffectivekBT", 0.1}}))
+CheckPoles("valence chain empty",
+           ResponseFunction.ChangeType(MakeAnderson(999, 1.7, -6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckPoles("conduction chain empty",
+           ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckPoles("single bath level",
+           ResponseFunction.ChangeType(MakeAnderson(1, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.3}}))
+for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
+	CheckPoles("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
+end
+
+-- the whole row at once, and back again
+GDrow = MakeD(30, 22)
+for i, ty in ipairs({"LP", "Tri", "And", "Nat"}) do
+	local e = MaxRelDiff(GDrow, ResponseFunction.ChangeType(GDrow, ty), 0.02)
+	print(string.format("  %-32s max relative error %9.2e", "DoubleTri to " .. ty, e))
+	if e > 1E-11 then
+		error("ChangeType DoubleTri to " .. ty .. " does not reproduce the original function", 1)
+	end
+	local eback = MaxRelDiff(GDrow,
+	              ResponseFunction.ChangeType(ResponseFunction.ChangeType(GDrow, ty), "DoubleTri",
+	                                          {{"EffectivekBT", 0.05}}), 0.02)
+	if eback > 1E-11 then
+		error("DoubleTri to " .. ty .. " and back does not reproduce the original function", 1)
+	end
+end
+
 -- and the whole way round
 GA0 = MakeAnderson(300, 1.7, 0.0)
 GA1 = ResponseFunction.ChangeType(ResponseFunction.ChangeType(GA0, "DoubleTri", {{"EffectivekBT", 0.05}}), "And")

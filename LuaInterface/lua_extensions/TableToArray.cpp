@@ -1886,7 +1886,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     lua_pop(L, 1);
     temp = luaL_checkDoubleTriDiagonalMatrixType(L, narg);
     buff = (BADoubleTriDiagonalMatrixType*)malloc(sizeof(BADoubleTriDiagonalMatrixType));
-    DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(*temp, buff);
+    DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(*temp, buff, temp->mu, temp->kBT);
     FreeDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;
