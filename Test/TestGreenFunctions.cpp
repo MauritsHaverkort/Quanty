@@ -178,7 +178,7 @@ void GreenTransforms()
   PrintTriDiagonalMatrix(MTriBack);
   FreeTriDiagonalMatrix(&MTriBack);
 
-  DoubleTriDiagonalMatrixToTriDiagonalMatrix(MDoubleTri, &MTriBack, 7);
+  DoubleTriDiagonalMatrixToTriDiagonalMatrix(MDoubleTri, &MTriBack);
   printf("=============== Back from DoubleTri ============\n");
   PrintTriDiagonalMatrix(MTriBack);
   FreeTriDiagonalMatrix(&MTriBack);

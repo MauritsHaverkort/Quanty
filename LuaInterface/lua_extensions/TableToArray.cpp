@@ -599,7 +599,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkDoubleTriDiagonalMatrixType(L, narg);
     buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
-    DoubleTriDiagonalMatrixToTriDiagonalMatrix(*temp, buff, temp->val.N+temp->con.N+1);
+    DoubleTriDiagonalMatrixToTriDiagonalMatrix(*temp, buff);
     FreeDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;

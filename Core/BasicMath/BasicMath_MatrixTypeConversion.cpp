@@ -2046,72 +2046,145 @@ uint32_t ConvertTriDiagonalMatrixToBlockTriDiagonalMatrixNoCopy(TriDiagonalMatri
 /********************         DoubleTriDiagonalMatrix To ... ********************/
 /********************************************************************************/
 
-uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
+/*  A double tri-diagonal matrix is a band matrix of half bandwidth 2
+ *
+ *  Tri-diagonalizing G from the impurity has its first step for free: the format
+ *  already gives a[1] = val.a[0]+con.a[0] and b[1] = sqrt(val.b[0]^2+con.b[0]^2).
+ *  What is left is the minor, two chains that do not touch, seen from
+ *  (val.b[0] val_1 + con.b[0] con_1)/b[1] -- the Jacobi matrix of a sum of two
+ *  measures.
+ *
+ *  Read the matrix as val_N ... val_1, impurity, con_1 ... con_N and it is
+ *  tri-diagonal, but that puts the impurity in the middle and Lanczos has to
+ *  start at it. Interleave the two chains behind the impurity instead,
+ *
+ *      impurity, val_1, con_1, val_2, con_2, val_3, con_3, ...
+ *          1       2      3      4      5      6      7
+ *
+ *  and every coupling sits at distance 1 or 2: impurity to val_1 and to con_1,
+ *  then val_k to val_k+1 and con_k to con_k+1. So the whole matrix is a symmetric
+ *  band matrix of half bandwidth 2, block tri-diagonal with 2x2 blocks, and the
+ *  starting vector is e_1 with no rotation needed. Chains of unequal length are
+ *  no different: once the shorter one runs out the rest of the longer one is
+ *  consecutive, at distance 1.
+ *
+ *  dsbtrd then reduces it with Givens rotations, annihilating only in planes 2
+ *  and beyond, so it leaves e_1 alone and what comes out is the Lanczos chain
+ *  from the impurity -- computed by orthogonal similarity rather than by the
+ *  three term recurrence. That is the point: the recurrence loses orthogonality
+ *  and needs every vector kept and re-orthogonalized, O(N^2) of memory, while a
+ *  band reduction is backward stable by construction, T = Q^T (A+E) Q with
+ *  |E| = O(eps |A|), and needs 4N doubles. It also costs O(N^2 kd) rather than
+ *  the two eigenvalue problems a route through the Anderson form would need.
+ *
+ *  The signs of the off diagonals are a gauge -- flipping a basis vector flips
+ *  the two hoppings that touch it, and taking them in turn makes all of them
+ *  positive -- so the result is made positive.
+ */
+uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H)
 {
-  uint32_t i, j;
-  double tempRe;
-  MatrixType T;
-  T.QComplex = 0;
-  T.Ni = NTriDiag;
-  T.Nj = M.val.N + M.con.N + 1;
-  InitMatrix(&T);
-  H->N = NTriDiag;
+  char const *VECT = "N";
+  char const *UPLO = "U";
+  const uint32_t KD = 2;
+  const uint32_t LDAB = 3;
+  uint32_t N, k, m, p, q;
+  double *AB, *WORK;
+  int INFO = 0;
+  N = 1 + M.val.N + M.con.N;
+  H->N = N;
   if (InitTriDiagonalMatrix(H))
   {
-    FreeMatrix(&T);
     printf("InitTriDiagonalMatrix failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
     return 1;
   }
-  strcpy(T.Name, "TriDiagonalizer of ");
-  strncat(T.Name, M.Name, Max(0, MAXStrLength - 20));
-  strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->mu   = M.mu;
   H->a[0] = M.a0;
   H->b[0] = M.b0;
-  for (i = 0; i < M.val.N + M.con.N + 1; i++)
+  H->a[1] = M.val.a[0] + M.con.a[0];   /* the impurity site is shared, its energy is the sum */
+  if (N == 1)
   {
-    T.VRe[0][i] = 0;
+    return 0;                          /* both chains empty, only the impurity is left */
   }
-  T.VRe[0][0] = 1;
-  for (i = 1; i < NTriDiag; i++)
+  if ((M.val.N == 0) || (M.con.N == 0))
   {
-    RealDoubleTriDiagonalMatrixVector(M, T.VRe[i - 1], T.VRe[i]);
-    for (j = 0; j < i - 1; j++)
+    /*  one chain empty: the minor is a single chain and already tri-diagonal,
+     *  so the answer is the impurity in front of it */
+    TriDiagonalMatrixType const * const C = (M.val.N == 0) ? &(M.con) : &(M.val);
+    H->b[1] = fabs(C->b[0]);
+    for (k = 1; k <= C->N; k++)
     {
-      RealVectorDotVector(T.VRe[j], T.VRe[i], T.Nj, &tempRe);
-      RealVectorAdd(T.VRe[i], T.VRe[j], T.Nj, -tempRe);
+      H->a[1 + k] = C->a[k];
     }
-    RealVectorDotVector(T.VRe[i - 1], T.VRe[i], T.Nj, &(H->a[i]));
-    RealVectorAdd(T.VRe[i], T.VRe[i - 1], T.Nj, -H->a[i]);
-    RealVectorDotVector(T.VRe[i], T.VRe[i], T.Nj, &(H->b[i]));
-    H->b[i] = sqrt(H->b[i]);
-    if (H->b[i] > 100 * DBL_MIN)
+    for (k = 1; k < C->N; k++)
     {
-      RealVectorMultiply(T.VRe[i], T.Nj, 1.0 / H->b[i]);
-      for (j = 0; j < i; j++)
-      {
-        RealVectorDotVector(T.VRe[j], T.VRe[i], T.Nj, &tempRe);
-        RealVectorAdd(T.VRe[i], T.VRe[j], T.Nj, -tempRe);
-      }
-      RealVectorDotVector(T.VRe[i], T.VRe[i], T.Nj, &tempRe);
-      tempRe = sqrt(tempRe);
-      H->b[i] *= tempRe;
-      if (tempRe > 100 * DBL_MIN)
-      {
-        RealVectorMultiply(T.VRe[i], T.Nj, 1.0 / tempRe);
-      }
-      else
-      {
-        RealVectorMultiply(T.VRe[i], T.Nj, 0);
-      }
+      H->b[1 + k] = fabs(C->b[k]);
     }
-    else
-    {
-      RealVectorMultiply(T.VRe[i], T.Nj, 0);
-    }
+    return 0;
   }
-  RealVectorDoubleTriDiagonalMatrixVector(M, T.VRe[NTriDiag - 1], &(H->a[NTriDiag]));
-  FreeMatrix(&T);
+  if ((AB = (double*)calloc(LDAB * N, sizeof(double))) == NULL)
+  {
+    printf("calloc for AB failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if ((WORK = (double*)malloc(N * sizeof(double))) == NULL)
+  {
+    printf("malloc for WORK failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(AB);
+    return 1;
+  }
+  /*  band storage, UPLO='U': the element A(i,j) with i<=j of the fortran matrix
+   *  lives at AB(KD+1+i-j,j), which is AB[(KD+i-j) + (j-1)*LDAB] here. Site
+   *  numbers are 1 based, val_k at 2k and con_k at 2k+1 while both chains last,
+   *  and consecutive afterwards */
+  m = Min(M.val.N, M.con.N);
+  #define DoubleTriPosVal(k) (((k) <= m) ? (2 * (k)) : (m + (k) + 1))
+  #define DoubleTriPosCon(k) (((k) <= m) ? (2 * (k) + 1) : (m + (k) + 1))
+  #define DoubleTriBandSet(i,j,v) AB[(KD + (i) - (j)) + ((j) - 1) * LDAB] = (v)
+  DoubleTriBandSet(1, 1, M.val.a[0] + M.con.a[0]);
+  for (k = 1; k <= M.val.N; k++)
+  {
+    p = DoubleTriPosVal(k);
+    DoubleTriBandSet(p, p, M.val.a[k]);
+  }
+  for (k = 1; k <= M.con.N; k++)
+  {
+    p = DoubleTriPosCon(k);
+    DoubleTriBandSet(p, p, M.con.a[k]);
+  }
+  DoubleTriBandSet(1, DoubleTriPosVal(1), M.val.b[0]);
+  DoubleTriBandSet(1, DoubleTriPosCon(1), M.con.b[0]);
+  for (k = 1; k < M.val.N; k++)
+  {
+    p = DoubleTriPosVal(k);
+    q = DoubleTriPosVal(k + 1);
+    DoubleTriBandSet(p, q, M.val.b[k]);
+  }
+  for (k = 1; k < M.con.N; k++)
+  {
+    p = DoubleTriPosCon(k);
+    q = DoubleTriPosCon(k + 1);
+    DoubleTriBandSet(p, q, M.con.b[k]);
+  }
+  #undef DoubleTriPosVal
+  #undef DoubleTriPosCon
+  #undef DoubleTriBandSet
+  dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(H->a[1]), &(H->b[1]), NULL, &N, WORK, &INFO);
+  free(AB);
+  free(WORK);
+  if (INFO != 0)
+  {
+    printf("dsbtrd failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix with INFO %i\n", INFO);
+    fflush(stdout);
+    return 1;
+  }
+  for (k = 1; k < N; k++)
+  {
+    H->b[k] = fabs(H->b[k]);
+  }
   return 0;
 }
 
@@ -2613,20 +2686,23 @@ uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType
 
 uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t const NTriDiag)
 {
-  uint32_t i;
+  uint32_t i, Ncopy;
   TriDiagonalMatrixType Hlow;
+  Hlow.N = 0;
   if (NTriDiag > 1)
-    if (DoubleTriDiagonalMatrixToTriDiagonalMatrix(M.Dt, &Hlow, NTriDiag - 1))
+    if (DoubleTriDiagonalMatrixToTriDiagonalMatrix(M.Dt, &Hlow))
     {
       printf("DoubleTriDiagonalMatrixToTriDiagonalMatrix failed in SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
       return 1;
     };
+  /*  the inner conversion returns the whole chain now, so take what fits */
+  Ncopy = Min(NTriDiag - 1, Hlow.N);
   H->N = NTriDiag;
   InitTriDiagonalMatrix(H);
   H->a[0] = M.a0;
   H->b[0] = M.b0;
   H->a[1] = Hlow.a[0];
-  for (i = 0; i < NTriDiag - 1; i++)
+  for (i = 0; i < Ncopy; i++)
   {
     H->b[i + 1] = Hlow.b[i];
     H->a[i + 2] = Hlow.a[i + 1];

@@ -544,7 +544,18 @@ Done:
   ordered, zero-hopping levels kept for `Chop` to remove. It was the stub called
   `…ToAndersonMatrixMatrix`, with `Matrix` twice; renamed, and its one caller — the lua reader
   that reads a `DoubleTri` table as an `And` — follows
-- `DoubleTriDiagonalMatrixToTriDiagonalMatrix`
+- `DoubleTriDiagonalMatrixToTriDiagonalMatrix` — rewritten as a **band reduction**. Behind the
+  impurity, interleave the chains as `impurity, val_1, con_1, val_2, con_2, …` and every
+  coupling is at distance 1 or 2, so the matrix is a symmetric band matrix of half bandwidth 2
+  and the starting vector is `e_1`, with no rotation needed. `dsbtrd` annihilates only in
+  planes ≥ 2, so it leaves `e_1` alone and returns the Lanczos chain from the impurity —
+  computed by orthogonal similarity rather than by the three-term recurrence, hence backward
+  stable, with no re-orthogonalization and `4N` doubles of memory. Measured against
+  `d → a → t`: 4 to 8 times faster and slightly more accurate (5e-14 against 7e-14…2e-13 on
+  `G`). `NTriDiag` is gone, the full chain always comes back and `Chop` trims it. `val.N == 0`
+  or `con.N == 0` is a real physical case and is handled separately, the minor then being a
+  single chain that is already tri-diagonal. The five `d` matrix–vector routines this used to
+  go through are now uncalled and renamed `…Old`
 - **`DoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** and
   **`BlockDoubleTriDiagonalMatrixToCompactMatrix[WithDeflation]`** — done, see §0
 - the `d → d` copy cell in `ConvertResponsefunction` and `ConvertBlockMatrix`, which is what
@@ -556,13 +567,27 @@ To write:
 |---|---|---|
 | 1 | `ListOfPolesToDoubleTriDiagonalMatrixOccupation` | only if the occupation-constrained variant is wanted, cf. `ListOfPolesToBADoubleTridiagonalMatrixOccupation` — note that one stores `Abs(mu − muOccupation)` in the field, a third meaning again (§11) |
 | 2 | `DoubleTriDiagonalMatrixToListOfPoles` | the poles of `G` itself, not of the hybridization, so this is **not** the two chain spectra — it is the spectrum of the whole matrix. Under the same reordering that matrix is plain tri-diagonal, so it is one eigenvalue problem of size `1+val.N+con.N` with the weights read off the impurity component, which sits in the middle rather than at the end |
-| 3 | `DoubleTriDiagonalMatrixToTriDiagonalMatrix` | exists, and is the only live consumer of the §3.0 matrix–vector products. Whether to keep it as Lanczos on those products or to go through `a` wants deciding — going through `a` would leave that sweep with no caller at all |
+| ~~3~~ | ~~`DoubleTriDiagonalMatrixToTriDiagonalMatrix`~~ | **done**, see the entry above |
 | 4 | `DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` | `d → n`: the two forms combine their chains differently (§1), so there is no rotation between them; it needs the poles of `G`, hence item 2 |
 | 5 | `DoubleTriDiagonalMatrixCopy` | exists |
 
-Each of these wants its own thought. `d → a` above is not a template for the rest: it works
-because the *hybridization* splits into the two chains, which is a statement about the minor,
-not about `G`.
+Each of these wants its own thought. `d → a` is not a template for the rest: it works because
+the *hybridization* splits into the two chains, which is a statement about the minor, not
+about `G`. `d → t` is not one either: it works because the *whole* matrix, impurity included,
+is narrow-banded in an interleaved ordering.
+
+### A property of long chains, found while checking `d → t`
+
+The map from a measure to its recurrence coefficients is **exponentially ill conditioned in
+the chain index**. The band reduction and the route through `a` are different, both backward
+stable, algorithms for the same chain, and they agree to 3e-14 for a chain of 41 sites — but
+part company at site 31 of 61, and at site 27 of 115, where they end up differing by 5. Both
+still reproduce `G` to 1e-13, because the deep tail of a chain has almost no influence on it.
+
+So a long chain reproduces `G`, but its tail coefficients are not determined at double
+precision, and two correct routines will not agree on them. Compare `G`, never the deep
+coefficients. It is also why `Chop` matters: the tail hoppings of the 121-site chain in that
+test are ~1e-4 and carry nothing.
 
 `AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal` is a `/* To DO */` stub that returns
 1. Nothing calls it; leave it.

@@ -122,7 +122,7 @@ void DoubleTriDiagonalMatrixChop(DoubleTriDiagonalMatrixType * const M, double c
 /*  MI=M^-1
  *  MI not initiallized on call
  */
-double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, MatrixType * const MI)
+double DoubleTriDiagonalMatrixInverseOld(DoubleTriDiagonalMatrixType const M, MatrixType * const MI)
 {
   uint32_t i;
   MI->Ni = M.val.N + M.con.N + 1;
@@ -130,7 +130,7 @@ double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, Matri
   MI->QComplex = 0;
   if (InitMatrix(MI))
   {
-    printf("InitMatrix failed in DoubleTriDiagonalMatrixInverse\n");
+    printf("InitMatrix failed in DoubleTriDiagonalMatrixInverseOld\n");
     fflush(stdout);
     return -1;
   }
@@ -260,7 +260,7 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
+uint32_t RealDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
   y[0] = (M.val.a[0] + M.con.a[0]) * x[0];
@@ -292,7 +292,7 @@ uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, 
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0];
@@ -333,7 +333,7 @@ uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const 
  * y already allocated
  * y=sum_ij x[i] M[i][j] x[j]
  */
-uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
+uint32_t RealVectorDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
   *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0];
@@ -361,7 +361,7 @@ uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType con
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexVectorDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
   *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0];

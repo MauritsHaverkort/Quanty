@@ -110,6 +110,81 @@ for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
 	CheckAgainst("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
 end
 
+-- Tri-diagonalizing from the impurity. Interleaved behind the impurity as
+--   impurity, val_1, con_1, val_2, con_2, ...
+-- every coupling is at distance 1 or 2, so the matrix is a band matrix of half
+-- bandwidth 2 and the starting vector is e_1. A band reduction leaves e_1 alone,
+-- so what comes out is the Lanczos chain from the impurity, but computed by
+-- orthogonal similarity rather than by the three term recurrence.
+function CheckTri(name, GD)
+	local GT = ResponseFunction.ChangeType(GD, "Tri")
+	local td, tt = ResponseFunction.ToTable(GD), ResponseFunction.ToTable(GT)
+	local nv, nc = #(td.val[1]) - 1, #(td.con[1]) - 1
+	if (#(tt[1]) - 1) ~= (1 + nv + nc) then
+		error("ChangeType DoubleTri to Tri: dimension is not 1+val.N+con.N for " .. name, 1)
+	end
+	if math.abs(tt[1][2] - (td.val[1][1] + td.con[1][1])) > 1E-11 * (1 + math.abs(tt[1][2])) then
+		error("ChangeType DoubleTri to Tri: the first site is not val.a[0]+con.a[0] for " .. name, 1)
+	end
+	-- the first hopping is what the impurity sees of the two chains together
+	local Wv = (#(td.val[2]) > 0) and td.val[2][1]^2 or 0.0
+	local Wc = (#(td.con[2]) > 0) and td.con[2][1]^2 or 0.0
+	if math.abs(tt[2][2] - math.sqrt(Wv + Wc)) > 1E-11 * (1 + math.sqrt(Wv + Wc)) then
+		error("ChangeType DoubleTri to Tri: the first hopping is not sqrt(val.b[0]^2+con.b[0]^2) for " .. name, 1)
+	end
+	-- the sign of a hopping is a gauge and they are all made positive
+	for i = 2, #tt[2] do
+		if tt[2][i] < 0 then
+			error("ChangeType DoubleTri to Tri: hopping " .. i .. " is negative for " .. name, 1)
+		end
+	end
+	local e = math.max(MaxRelDiff(GD, GT, 0.3), MaxRelDiff(GD, GT, 0.02))
+	print(string.format("  %-32s val.N=%4d con.N=%4d  dim %5d   max relative error %9.2e",
+	      name, nv, nc, #(tt[1]) - 1, e))
+	if e > 1E-11 then
+		error("ChangeType DoubleTri to Tri does not reproduce the original function for " .. name, 1)
+	end
+end
+
+print("to a tri-diagonal matrix, by band reduction")
+CheckTri("kBT finite, eimp nonzero",
+         ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckTri("valence chain empty",
+         ResponseFunction.ChangeType(MakeAnderson(999, 1.7, -6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckTri("conduction chain empty",
+         ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckTri("single bath level",
+         ResponseFunction.ChangeType(MakeAnderson(1, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.3}}))
+for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
+	CheckTri("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
+end
+
+-- The band reduction and the route through the Anderson form are different
+-- algorithms for the same chain, so they have to agree on it -- but only as far
+-- as the chain is determined. The map from a measure to its recurrence
+-- coefficients is exponentially ill conditioned in the chain index: deep in the
+-- tail two very different chains give the same G to the last digit, and the two
+-- algorithms, both backward stable, part company there. At 2m=40 they agree to
+-- 3e-14, at 2m=60 they part at site 31, at 2m=120 at site 27. So this compares a
+-- chain short enough to be determined; what has to hold for the long ones is
+-- that G is reproduced, which is checked above.
+GDx = MakeD(20, 15)
+TA = ResponseFunction.ToTable(ResponseFunction.ChangeType(ResponseFunction.ChangeType(GDx, "And"), "Tri"))
+TB = ResponseFunction.ToTable(ResponseFunction.ChangeType(GDx, "Tri"))
+eboth, scale = 0.0, 0.0
+for i = 1, #TA[1] do
+	if math.abs(TA[1][i]) > scale then scale = math.abs(TA[1][i]) end
+	if math.abs(TA[1][i] - TB[1][i]) > eboth then eboth = math.abs(TA[1][i] - TB[1][i]) end
+end
+for i = 1, #TA[2] do
+	if math.abs(TA[2][i] - TB[2][i]) > eboth then eboth = math.abs(TA[2][i] - TB[2][i]) end
+end
+print(string.format("  %-32s max difference %9.2e on a scale of %6.3f",
+      "band reduction vs via And", eboth, scale))
+if eboth > 1E-11 * (1 + scale) then
+	error("the band reduction and the route through And do not give the same chain", 1)
+end
+
 -- and the whole way round
 GA0 = MakeAnderson(300, 1.7, 0.0)
 GA1 = ResponseFunction.ChangeType(ResponseFunction.ChangeType(GA0, "DoubleTri", {{"EffectivekBT", 0.05}}), "And")
