@@ -11,167 +11,131 @@ Scope decided: **the single-valued (non-block) type first.** The block type
 
 ---
 
-## 0. Status as of `b57cd101` (2026-08-28)
+## 0. Status as of `65f4f9a4` (2026-08-30)
 
-The type exists, evaluates, prints, converts to a dense matrix, produces spectra
-and can now be **built** from any of the other four non-block formats, all
-verified against each other. What is missing is the conversions *out* of `d`,
-the block conversions, and the operator.
+**Regenerated from the source, not from memory.** The lists below were produced by
+scanning the tree; redo the scans rather than trusting this section after a few
+more commits.
 
-### The `-> d` column of `ConvertResponsefunction` is done (non-block)
+### Starting a new session from here
 
-`ResponseFunction.ChangeType(G,"DoubleTri")` works from `a`, `t`, `l` and `n`,
-and reproduces the original response function to 1e-13 relative.
-`TestScripts/Responsefunction/ChangeTypeDoubleTri.Quanty` is the test: a 999
-level bath at finite `kBT`, at `kBT = 0`, with `mu` off centre, with `mu` outside
-the band on either side so one chain comes out empty, a six level bath, a single
-bath level, a bath with threefold degenerate levels, and a table round trip.
+Read this section, then §1 for what `d` means and how it differs from `n`, then
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) for what the accuracy
+numbers do and do not say. The next piece of work is **the block conversions**,
+§8 and the list at the end of this section. Everything non-block that is left is
+listed under "still open, non-block" below and is independent of it.
 
-`a -> d` is the real one; `t -> d`, `l -> d` and `n -> d` route through it.
-Note that `l -> d` **cannot** split the poles at `mu` and tri-diagonalize each
-half, which is what §4 item 1 used to say: that is the `n` recipe and it works
-there only because `n` adds its two chains where `d` nests them. A list of poles
-is the function itself, so it first has to become the chain whose spectrum it is,
-i.e. the Anderson form.
+The two test files are `TestScripts/Responsefunction/ChangeTypeDoubleTri.Quanty`
+(into `d`) and `ChangeTypeFromDoubleTri.Quanty` (out of `d`). Both are registered
+in `All.Quanty` **and** in `.gitlab-ci.yml`; a new test needs both.
 
-### The chain construction is shared, and no longer O(N^3)
+### Done: the whole non-block conversion table
 
-`PolesToTriDiagonalCoefficients` in
-[BasicMath_MatrixTypeConversion.cpp](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp)
-builds the Jacobi matrix of a discrete measure by the method of Rutishauser,
-Kahan, Pal and Walker (Gragg and Harrod, Numer. Math. 44 (1984) 317). It is used
-by `AndersonMatrixToTriDiagonalMatrix`, `ListOfPolesToTridiagonalMatrix` and both
-chains of `AndersonMatrixToDoubleTriDiagonalMatrix`.
+Every cell of `ConvertResponsefunction` involving `d` works, both ways —
+`l`,`t`,`a`,`n` → `d` and `d` → `l`,`t`,`a`,`n`, plus the copy. Each direction
+uses a different reading of the same matrix, and none was a template for the next:
 
-It replaces Lanczos with full re-orthogonalization, which needed the whole
-`N x N` basis. Measured in Quanty on `l -> t`:
-
-| poles | before | after |
+| | how | cost |
 |---|---|---|
-| 500 | 0.054 s | 0.002 s |
-| 1000 | 0.530 s | 0.007 s |
-| 2000 | 5.46 s | 0.028 s |
+| `a → d` | Fermi split of the bath, RKPW on each half | O(N·k), the shared `PolesToTriDiagonalCoefficients` |
+| `t → d`, `l → d`, `n → d` | route through `a` | — |
+| `d → a` | the minor is the two chains, **disconnected** | two tri-diagonal eigenproblems |
+| `d → t` | interleaved `imp, val_1, con_1, val_2, con_2, …` is a band matrix, `kd = 2`, observed site first | one `dsbtrd` |
+| `d → l` | `val_N … val_1, imp, con_1 … con_N` is plain tri-diagonal, `kd = 1`, weights from the middle row | one `dstevd` |
+| `d → n` | through `d → l`, the only thing the two forms agree on | — |
 
-at O(N) instead of O(N^2) memory. The coefficients agree with the old routine to
-1e-14 relative; the resulting `G` is accurate to ~1e-13 where the old one reached
-~1e-14, which is the honest cost of not re-orthogonalizing. Plain Lanczos without
-re-orthogonalization, for contrast, is wrong by 1e-2 at 1000 poles.
+Also done and verified: the struct in both forms, `Evaluate`, the four
+`…ToCompactMatrix[WithDeflation]`, `ToSpectra`, the accessors, `Free`, the lua
+table round trip, §3.0 (the shared site is the **sum** of the two head slots,
+everywhere) and §3.1 on the `a → d` path (a true Fermi function, `kBT` stored).
 
-Two guards in that routine are load bearing rather than cosmetic: poles at the
-same energy are **merged**, and the chain is capped at the number of distinct
-poles carrying weight. RKPW is not robust against a measure whose support is
-smaller than the number of poles handed to it -- on a measure with every node
-exactly doubled it is wrong by 0.37 relative where re-orthogonalized Lanczos is
-right to 1e-14 -- and degenerate bath levels are common.
+### Still open, non-block
 
-### Conventions §3.0 and §3.1 are settled on this path
+**The original goal, §6.** `DoubleTriDiagonalMatrixToImpurityHamiltonian` and the
+`d` case of `LuaResponseFunctionToOperator` with `Nv`/`Nc`, and
+`ResponseFunctionToLuaBitMask`. None of it is written.
 
-`AndersonMatrixToDoubleTriDiagonalMatrix` writes `val.a[0] = con.a[0] =
-M.a[1]/2`, so their **sum** is the impurity energy, and it splits with a true
-**Fermi function**, storing `kBT` in the struct. The old code wrote the full
-`M.a[1]` in both, which is a relative error of 190 on `G` for an impurity energy
-of 1.7 -- invisible only because every existing test has a zero impurity energy.
-The dummy bath site the old code invented for an empty branch is gone: an empty
-branch is `val.N = 0` with `val.b[0] = 0`, which is exact.
+**Eight helpers that do not exist** (§3): `DoubleTriDiagonalMatrixTypeToEigenSystemCompact`,
+`DoubleTriDiagonalMatrixToEigenvalues`, `SymmetrizeDoubleTriDiagonalMatrix`,
+`ShiftDoubleTriDiagonalMatrix`, `DoubleTriDiagonalMatrixTranspose`,
+`DoubleTriDiagonalMatrixEffectiveHamiltonian`,
+`DoubleTriDiagonalMatrixFromEffectiveHamiltonian`,
+`SetDoubleTriDiagonalMatrixConVal`. Note `…ToEigenvalues` and
+`…ToEigenSystemCompact` are now nearly free: the `d → l` reordering makes the
+matrix plain tri-diagonal, so they are one `dstevd` each.
 
-The rest of §3.0 is done too: every consumer that read `(val.a[0] + con.a[0]) / 2`
-now reads the sum, and the one remaining producer on the old convention,
-`AndersonMatrixToDoubleTriDiagonalMatrixPlusT`, writes halves.
+**§2(c)**, still there: `DoubleTriDiagonalMatrixAdd` loops `i < M->val.N - 1`, so
+the last element of each chain is never added, and with `val.N == 0` the
+`uint32_t` underflows into a runaway loop. `DoubleTriDiagonalMatrixScalarMultiply`
+scales the matrix and then resets `a0 = 0`, `b0 = 1`; which of the two it should
+do needs deciding before `ResponsefunctionMul` reaches it.
 
-### Working and verified
+**21 dispatch sites with no `d` case**, regenerated by scanning for functions that
+branch on `'n'` and not on `'d'`:
 
-| | |
-|---|---|
-| struct, both forms | `DoubleTriDiagonalMatrixType` (with `kBT`), `BlockDoubleTriDiagonalMatrixType` |
-| type letter | `d`/`D`; Lua `"DoubleTri"` / `"DTri"` |
-| Lua table ⇄ struct | read and write, `kBT` round-trips, `ToTable`, `New`, `ChangeType(…,"Table"/"Userdata")`, `print` |
-| `Evaluate` | non-block and block, checked against an independent continued fraction to ~1e-15 |
-| dense matrix | all four `…ToCompactMatrix[WithDeflation]`, checked against `Evaluate` for real, complex and mixed, `BlockSize` 1 and 2, and empty chains |
-| spectra | `ToSpectra` with broadening, non-block and block, agrees with `Evaluate` to the last digit |
-| accessors | `GetMu`, `GetQComplex`, `GetBlockSize`, `GetA0`, `GetB0`, block and non-block |
-| `Free` | `FreeResponsefunction`, `FreeBlockMatrixFromLua` |
-
-### The non-block conversion table is complete
-
-Every cell of `ConvertResponsefunction` involving `d` is implemented, in both
-directions: `l`, `t`, `a`, `n` → `d` and `d` → `l`, `t`, `a`, `n`, plus the `d → d`
-copy. `TestScripts/Responsefunction/ChangeTypeFromDoubleTri.Quanty` and
-`ChangeTypeDoubleTri.Quanty` cover them, at 5e-13 or better on `G` — read with
-[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) in mind for what that
-number does and does not say.
-
-Where a cell is still missing elsewhere in the table, `ChangeType` refuses with a
-catchable lua error instead of pushing a response function that was never
-converted: `ConvertResponsefunction` sets `Mout->data` to `NULL` up front and
-returns non-zero if no cell filled it in.
-
-Block (`BasicMath_BlockTypeConversion.cpp`):
-`BlockListOfPolesToBlockDoubleTriDiagonalMatrix`,
-`BlockDoubleTriDiagonalMatrixToBlockListOfPoles`,
-`BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix`,
-`BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix`,
-`BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix`,
-`BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix`,
-`BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix`,
-`BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix`, and
-`BlockDoubleTriDiagonalMatrixToCompactMatrix` **by value** — see the trap below.
-
-Also stubs, silently returning 0: `BlockDoubleTriDiagonalMatrixChop` and
-`…ChopReduceDimension`. A chop that does nothing is harmless in a way a
-conversion that does nothing is not, so those were left; they want a comment
-saying the no-op is deliberate.
-
-### A trap worth removing
-
-There are **two overloads** of `BlockDoubleTriDiagonalMatrixToCompactMatrix`:
-
-- `(BlockDoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)` —
-  by value, a TODO stub at `BasicMath_BlockTypeConversion.cpp:2416`, declared in
-  that header;
-- `(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)` —
-  by pointer, the working implementation at
-  `BasicMath_CompactMatrixVector.cpp:5312`.
-
-The live call site passes a pointer and so gets the working one, but a caller who
-dereferences silently gets the stub. Delete the by-value declaration and stub.
-
-### Dispatch sites still without a `d` case
-
-`ResponseFunctionToDensityMatrix`, `ResponseFunctionEq`, the three
-`ResponseFunctionAddSelfEnergy…`, `ResponseFunctionInvertEnergy`,
-`ResponseFunctionTranspose`, `ResponseFunctionEffectiveHamiltonian`,
-`ResponseFunctionFromEffectiveHamiltonian`, `ResponsefunctionChop`,
-`ResponsefunctionMul`, `FreeBlockMatrix`, `BlockResponseFunctionRotate`,
+`ResponseFunctionInvertEnergy`, `ResponseFunctionTranspose`,
+`ResponseFunctionEffectiveHamiltonian`, `ResponseFunctionFromEffectiveHamiltonian`,
+`ResponsefunctionChop`, `ResponsefunctionMul`
+(`BasicMath_GreenFunctionArithmetic.cpp`); `ResponseFunctionToDensityMatrix`,
+`ResponseFunctionAddSelfEnergyDenseViaTri`,
+`ResponseFunctionAddSelfEnergyOnGridViaG0Tri`,
+`ResponseFunctionAddSelfEnergyViaAndLP` (`Core/ResponseFunction.cpp`);
 `LuaResponseFunctionEigensystem`, `ResponseFunctionToLuaBitMask`,
 `LuaResponseFunctionToTightBinding`, `LuaResponseFunctionToOperator`,
-`LuaResponseFunctionLen`, `LuaResponseFunctionIndexMu`, `…IndexType`,
-`…IndexName`, `…NewIndexMu`, `…NewIndexName`, `lua_isBlockGreensfunction`.
+`LuaResponseFunctionLen`, `LuaResponseFunctionIndexMu`,
+`LuaResponseFunctionIndexType`, `LuaResponseFunctionIndexName`,
+`LuaResponseFunctionNewIndexMu`, `LuaResponseFunctionNewIndexName`
+(`LuaInterface/ResponseFunction.cpp`); `LuaReadSingleSelfenergy`
+(`TableToArray.cpp`).
 
-Two of those bite today: `FreeBlockMatrix` leaks and complains for a block `d`
-(it is called from `FreeSelfEnergyArrayFromLua` and `LuaImpurityGreensFunction`),
-and `lua_isBlockGreensfunction` rejects `"DoubleTri"`, which silently excludes
-`d` from the self-energy reader. The six index metamethods mean `G.type`, `G.mu`
-and `G.name` do not work on a `d` userdata.
+The six index metamethods are the cheap ones and are user visible: `G.type`,
+`G.mu` and `G.name` do not work on a `d` userdata. Several of these `switch`es
+end in a `default:` that prints and continues, so a half-finished `d` gives wrong
+numbers rather than stopping — add `d` to the guard before adding it to the body.
 
-### Still open from §2, §3.0 and §3.1
+**§3.1 beyond `d`:** `ListOfPolesCopyVal` / `…Con` still use the linear ramp, so
+the non-block `→ n` path still disagrees with `EffectivekBT`'s documented meaning,
+and five structs still carry `Epsilon`.
 
-- §2(b) `DoubleTriDiagonalMatrixInverse` builds the conduction block from
-  `M.val`, and uses `MatrixType`.
-- §2(c) `DoubleTriDiagonalMatrixAdd` loop bound, and the `uint32_t` underflow at
-  `val.N == 0`.
-- §3.0, the averaged head. `DoubleTriDiagonalMatrixToSpectrum` is fixed, but the
-  four matrix–vector products and `…MatrixInverse`
-  (`BasicMath_DoubleTriDiagonalMatrixVector.cpp:137, 266, 298, 339, 367`) and the
-  eight sites in the two `…ToAndersonImpurityOperator` builders
-  (`MatrixOperator.cpp:635…840`) still read `(val.a[0] + con.a[0]) / 2`.
-- §3.1, the split rule. `kBT` replaced `Epsilon` in `DoubleTriDiagonalMatrixType`
-  and `BlockDoubleTriDiagonalMatrixType`, but
-  `AndersonMatrixToDoubleTriDiagonalMatrixPlusT:338` still uses the linear ramp,
-  and the other five structs still carry `Epsilon`.
+### Still open, block
+
+`ConvertBlockMatrix` has no `d` row or column at all
+([BasicMathBlock.cpp:321](../../Core/BasicMathBlock/BasicMathBlock.cpp#L321) is
+its "not implemented" default). Nine stubs, all in
+`BasicMath_BlockTypeConversion.cpp`:
+
+`BlockListOfPolesToBlockDoubleTriDiagonalMatrix`,
+`BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix`,
+`BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix`,
+`BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix`,
+`BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix`,
+`BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix`,
+`BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix`,
+`BlockDoubleTriDiagonalMatrixToBlockListOfPoles`, and
+`BlockDoubleTriDiagonalMatrixToCompactMatrix` **by value** — a second overload of
+a name that already has a working by-pointer version in
+`BasicMath_CompactMatrixVector.cpp`. Delete the by-value declaration and stub
+rather than implementing it; a caller who passes by value binds to the stub
+silently.
+
+Exists for the block type: `Init`, `Free`, `Copy`, `Evaluate`,
+`…ToCompactMatrix[WithDeflation]`, `…ToSpectra[WithBroadening]`, and the two
+`Chop` routines — but both `Chop`s are `//TODO:` bodies that return 0 without
+doing anything. Missing: `…Part` (the `Nv`/`Nc` primitive), `…Add`,
+`…ToImpurityHamiltonian`.
+
+**The non-block insights carry over directly**, and are the reason the block row
+should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is
+**block tri-diagonal**, and interleaved behind the impurity it is a band matrix of
+half bandwidth `2·BlockSize`. `dsbtrd` is already used on block tri-diagonal
+matrices in
+[BasicMath_BlockTypeConversion.cpp:1425](../../Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp#L1425).
+`BADoubleTriDiagonalMatrixToTriDiagonalMatrix` is still on the dense O(N³) route
+and the same trick fixes it.
 
 ### Not testable yet
 
-The deflated block path. Nothing can build a deflated block `d`: the Lua reader
+The deflated block path. Nothing can build a deflated block `d`: the lua reader
 derives `BlockSize` from the matrices and takes no per-block list, and both
 `BlockListOfPolesToBlockDoubleTriDiagonalMatrix` and
 `BlockDoubleTriDiagonalMatrixChopReduceDimension` are stubs. `WithDeflation` is
@@ -179,16 +143,21 @@ verified only to agree with the plain version when there is nothing to deflate.
 
 ### Tooling notes, learned the hard way
 
-- **Quanty Lua options are a list of `{"name", value}` pairs.** A table with
-  named keys (`{Emin=-4}`) has an empty array part, passes `LuaTestOptionsList`
-  and is then silently ignored. Every option in this document must be written
-  `{{"Emin",-4},{"GammaL",0.3}}`.
+- **Quanty lua options are a list of `{"name", value}` pairs.** A table with named
+  keys (`{Emin=-4}`) has an empty array part, passes `LuaTestOptionsList` and is
+  then silently ignored. Write `{{"Emin",-4},{"GammaL",0.3}}`.
 - Piped stdout is block buffered and the buffer is lost when the process dies, so
   a crash looks silent. Re-run under `script -q /dev/null` to see the last
   `printf`.
-- `Matrix.Sub` is 1-based. `Complex.Abs` and `Complex.Conjugate` do not exist.
+- In a lua `ListOfPoles` table `a[1]` is the offset `a0` and the poles start at
+  `a[2]`, while `b[1]` is the first weight. A `Tri` or `And` table has `#a = N+1`
+  and `#b = N`, `a[1]` and `b[1]` being `a0` and `b0`.
+- `Matrix.Sub(M,n)` returns the leading `n × n` **matrix**, not an element, and is
+  1-based. `Complex.Abs` and `Complex.Conjugate` do not exist.
   `Spectra.ToTable(sp)` gives `sp[ispectrum][ipoint] = {energy, value}`.
 - `ToSpectra` broadening is `GammaL`, not `Gamma`.
+- Running a test script rewrites the `.svg` files under
+  `TestScripts/*/OutputPlots/`; `git checkout --` them before committing.
 
 ---
 
@@ -897,6 +866,7 @@ Stages 0 to 2 of the original plan are done. What is left, in the order I would 
 | ~~1~~ | ~~the `§3.0` head sweep~~ | **done**, see §3.0 |
 | ~~2a~~ | ~~`DoubleTriDiagonalMatrixToAndersonMatrix`~~ | **done**, see §4 |
 | ~~2b~~ | ~~`DoubleTriDiagonalMatrixToListOfPoles`~~ | **done**, and with it `d → n`. The `d →` row is complete |
+| **next** | **the block conversions, §8** | the nine stubs in §0. The non-block insights carry over: a block `d` is block tri-diagonal in the reversed-val ordering and a band matrix of half bandwidth `2·BlockSize` interleaved behind the impurity, and `dsbtrd` is already used on block tri-diagonal matrices next door |
 | 3 | the two that misbehave today: `FreeBlockMatrix`, `lua_isBlockGreensfunction` | small, and they are wrong rather than absent |
 | 4 | §2(b) and §2(c) | dormant functions, but they are reachable now that the conversions exist |
 | 5 | the six Lua index metamethods | `G.type`, `G.mu`, `G.name` on a `d` userdata |
