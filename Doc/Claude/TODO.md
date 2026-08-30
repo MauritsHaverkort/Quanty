@@ -422,3 +422,21 @@ ramp degenerated to a step, which the Fermi-function decision recorded in
 
 **Meanwhile:** call `G.ReducePoles{N}` with a single number, or convert to a
 block response function first.
+
+## Accuracy of the response function conversions — its own file
+
+**Status:** open, and a programme rather than a defect. See
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md).
+
+Every conversion is checked against the same probe: the largest relative
+difference in `G` over a uniform grid across the band, at `Gamma` of 0.3 and
+0.02. So "agrees to 1e-13" means that and nothing more. Small `Gamma`, `w`
+between poles, and above all `w` near the chemical potential on a logarithmic
+mesh are untested, and that last one is where the physics is.
+
+The separate file records what has been measured, the three things already known
+that bear on it — the chain tail not being determined at double precision, full
+re-orthogonalization being a measured factor of five to seven better on `G` than
+RKPW at a hundredfold cost, and two tolerances that sit exactly where a log mesh
+near `mu` would go — and the shape of the `Algorithm` option that should come out
+of it, so that a user who needs the last digit can pay for it.

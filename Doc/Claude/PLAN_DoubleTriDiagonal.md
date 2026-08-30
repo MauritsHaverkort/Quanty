@@ -586,7 +586,9 @@ still reproduce `G` to 1e-13, because the deep tail of a chain has almost no inf
 
 So a long chain reproduces `G`, but its tail coefficients are not determined at double
 precision, and two correct routines will not agree on them. Compare `G`, never the deep
-coefficients. It is also why `Chop` matters: the tail hoppings of the 121-site chain in that
+coefficients — and note that "reproduces `G`" here means on a uniform grid at two broadenings,
+which is the whole of what any of these conversions has been measured against; see
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md). It is also why `Chop` matters: the tail hoppings of the 121-site chain in that
 test are ~1e-4 and carry nothing.
 
 `AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal` is a `/* To DO */` stub that returns
