@@ -695,9 +695,24 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Dou
   double *Ebath, *Wval, *Wcon, Wvaltot, Wcontot, x, f, g;
   if (M.N == 0)
   {
-    printf("AndersonMatrixToDoubleTriDiagonalMatrix called with a matrix of dimension 0\n");
-    fflush(stdout);
-    return 1;
+    H->val.N = 0;
+    H->con.N = 0;
+    if (InitDoubleTriDiagonalMatrix(H))
+    {
+      printf("InitDoubleTriDiagonalMatrix failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    strncpy(H->Name, M.Name, MAXStrLength);
+    H->mu = mu;
+    H->kBT = kBT;
+    H->a0 = M.a[0];
+    H->b0 = 0;
+    H->val.a[0] = 0;
+    H->con.a[0] = 0;
+    H->val.N = 0;
+    H->con.N = 0;
+    return 0;
   }
   NBath = M.N - 1;
   /*  each chain can hold at most one site per bath level, so both are allocated
@@ -2075,6 +2090,15 @@ uint32_t ConvertTriDiagonalMatrixToBlockTriDiagonalMatrixNoCopy(TriDiagonalMatri
  */
 uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H)
 {
+  if(M.b0==0)
+  {
+    H->N=0;
+    InitTriDiagonalMatrix(H);
+    strncpy(H->Name, M.Name, MAXStrLength);
+    H->mu   = M.mu;
+    H->a[0] = M.a0;
+    return 0;
+  }
   char const *VECT = "N";
   char const *UPLO = "U";
   const uint32_t KD = 2;
@@ -2215,6 +2239,10 @@ uint32_t DoubleTriDiagonalMatrixToAndersonMatrix(DoubleTriDiagonalMatrixType con
   double *EB;                   /* the bath as (energy,hopping) pairs, so that it can be sorted */
   NBath = M.val.N + M.con.N;
   H->N = 1 + NBath;
+  if(M.b0==0)
+  {
+    H->N=0;
+  }
   if (InitAndersonMatrix(H))
   {
     printf("InitAndersonMatrix failed in DoubleTriDiagonalMatrixToAndersonMatrix\n");
@@ -2224,6 +2252,10 @@ uint32_t DoubleTriDiagonalMatrixToAndersonMatrix(DoubleTriDiagonalMatrixType con
   strncpy(H->Name, M.Name, MAXStrLength);
   H->mu   = M.mu;
   H->a[0] = M.a0;
+  if(H->N==0)
+  {
+    return 0;
+  }
   H->b[0] = M.b0;
   H->a[1] = M.val.a[0] + M.con.a[0];   /* the impurity site is shared, its energy is the sum */
   if (NBath == 0)
@@ -2340,6 +2372,15 @@ uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMat
  */
 uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const M, ListOfPoles * const H)
 {
+  if(M.b0==0)
+  {
+    H->N=0;
+    InitListOfPoles(H);
+    H->a0 = M.a0;
+    H->mu = M.mu;
+    strncpy(H->Name, M.Name, MAXStrLength);
+    return 0;
+  }
   TriDiagonalMatrixType T;
   CompactMatrixType U;
   uint32_t N, k, imp;

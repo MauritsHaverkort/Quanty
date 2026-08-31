@@ -30,7 +30,7 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   };
   M->b = (double*)malloc(M->N * sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc for M->b failed in InitTriDiagonalMatrix\n");
@@ -62,7 +62,7 @@ uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   };
   M->b = (double*)calloc((M->N), sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc for M->b failed in InitTriDiagonalMatrix\n");

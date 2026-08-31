@@ -2,14 +2,14 @@ uint32_t InitListOfPoles(ListOfPoles * M)
 {
   strcpy(M->Name, "List of Poles");
   M->a = (double*)malloc((M->N) * sizeof(double));
-  if (M->a == NULL)
+  if ((M->a == NULL)&&(M->N !=0))
   {
     printf("malloc for M->a failed in ListOfPoles\n");
     fflush(stdout);
     return 1;
   };
   M->b = (double*)malloc((M->N) * sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N !=0))
   {
     free(M->a);
     printf("malloc for M->b failed in ListOfPoles\n");
