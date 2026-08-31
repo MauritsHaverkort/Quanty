@@ -31,15 +31,17 @@ void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 
 /*  Init Tri diagonal matrix
  *  M.val.N M.con.N must be set
+ *
+ *  A chain of length zero is allowed and means that branch is absent: the
+ *  branch then contributes only its site energy a[0] to the denominator of
+ *  G, no hopping and no bath site. That happens whenever the chemical
+ *  potential lies outside the bath, so that the Fermi function puts all of
+ *  the hybridization weight in the other chain. InitTriDiagonalMatrix
+ *  handles N = 0 (it allocates a[0] and no b, and leaves b[0] alone).
  */
 uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
   strcpy(M->Name, "Matrix");
-  if ((M->val.N == 0) || (M->con.N == 0))
-  {
-    printf("Error in InitDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n", M->val.N, M->con.N);
-    return 2;
-  };
   if (InitTriDiagonalMatrix(&M->val))
   {
     printf("InitTriDiagonalMatrix failed in InitDoubleTriDiagonalMatrix\n");
@@ -61,16 +63,15 @@ uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 
 /*  Init double tri-diagonal matrix and set diagonal (a) equal to one
  *  M.val.N M.con.N must be set
+ *
+ *  A chain of length zero is allowed, as in InitDoubleTriDiagonalMatrix: that
+ *  branch is absent and contributes only its site energy a[0] to the
+ *  denominator of G. Since the head slot is an offset rather than a diagonal
+ *  element it stays zero here, so an absent branch contributes nothing.
  */
 uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
   strcpy(M->Name, "I_Matrix");
-  if ((M->val.N == 0) || (M->con.N == 0))
-  {
-    printf("Error in InitIdentityDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n", M->val.N, M->con.N);
-    fflush(stdout);
-    return 2;
-  };
   if (InitIdentityTriDiagonalMatrix(&M->val))
   {
     printf("InitIdentityTriDiagonalMatrix failed in InitIdentityDoubleTriDiagonalMatrix\n");

@@ -700,21 +700,13 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, Dou
     return 1;
   }
   NBath = M.N - 1;
-  /*  each chain can hold at most one site per bath level. InitDoubleTriDiagonalMatrix
-   *  refuses a chain of length zero, which the convention above allows, so the two
-   *  chains are allocated directly */
+  /*  each chain can hold at most one site per bath level, so both are allocated
+   *  for NBath sites here and their length set to what the Lanczos returns */
   H->val.N = NBath;
   H->con.N = NBath;
-  if (InitTriDiagonalMatrix(&(H->val)))
+  if (InitDoubleTriDiagonalMatrix(H))
   {
-    printf("InitTriDiagonalMatrix failed for val in AndersonMatrixToDoubleTriDiagonalMatrix\n");
-    fflush(stdout);
-    return 1;
-  }
-  if (InitTriDiagonalMatrix(&(H->con)))
-  {
-    FreeTriDiagonalMatrix(&(H->val));
-    printf("InitTriDiagonalMatrix failed for con in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    printf("InitDoubleTriDiagonalMatrix failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
     fflush(stdout);
     return 1;
   }

@@ -85,8 +85,10 @@ CheckAgainst("single bath level",
 
 -- A double tri-diagonal matrix written by hand rather than converted from an
 -- Anderson one, so that both head slots carry energy of their own.
+-- n = 0 is a branch that is absent: one site energy, and no hopping into it
 function Chain(n, elo, ehi, b, head)
-	local a, bb = {head}, {0.6}
+	local a, bb = {head}, {}
+	if n > 0 then bb[1] = 0.6 end
 	for i = 1, n do
 		a[#a + 1] = elo + (ehi - elo) * (i - 0.5) / n
 		if i < n then bb[#bb + 1] = b * (1.0 + 0.3 * math.sin(3.0 * i)) end
@@ -106,7 +108,7 @@ function MakeD(nv, nc)
 end
 
 print("from a double tri-diagonal matrix written by hand")
-for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
+for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}, {0, 7}, {7, 0}, {0, 0}}) do
 	CheckAgainst("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
 end
 
@@ -129,7 +131,9 @@ function CheckTri(name, GD)
 	-- the first hopping is what the impurity sees of the two chains together
 	local Wv = (#(td.val[2]) > 0) and td.val[2][1]^2 or 0.0
 	local Wc = (#(td.con[2]) > 0) and td.con[2][1]^2 or 0.0
-	if math.abs(tt[2][2] - math.sqrt(Wv + Wc)) > 1E-11 * (1 + math.sqrt(Wv + Wc)) then
+	-- with both chains empty the matrix is the impurity alone and has no hopping
+	if (nv + nc > 0) and
+	   (math.abs(tt[2][2] - math.sqrt(Wv + Wc)) > 1E-11 * (1 + math.sqrt(Wv + Wc))) then
 		error("ChangeType DoubleTri to Tri: the first hopping is not sqrt(val.b[0]^2+con.b[0]^2) for " .. name, 1)
 	end
 	-- the sign of a hopping is a gauge and they are all made positive
@@ -155,7 +159,7 @@ CheckTri("conduction chain empty",
          ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
 CheckTri("single bath level",
          ResponseFunction.ChangeType(MakeAnderson(1, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.3}}))
-for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
+for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}, {0, 7}, {7, 0}, {0, 0}}) do
 	CheckTri("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
 end
 
@@ -234,23 +238,26 @@ CheckPoles("conduction chain empty",
            ResponseFunction.ChangeType(MakeAnderson(999, 1.7, 6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
 CheckPoles("single bath level",
            ResponseFunction.ChangeType(MakeAnderson(1, 1.7, 0.0), "DoubleTri", {{"EffectivekBT", 0.3}}))
-for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}}) do
+for i, s in ipairs({{5, 5}, {40, 25}, {1, 1}, {1, 7}, {7, 1}, {0, 7}, {7, 0}, {0, 0}}) do
 	CheckPoles("val.N " .. s[1] .. " con.N " .. s[2], MakeD(s[1], s[2]))
 end
 
--- the whole row at once, and back again
-GDrow = MakeD(30, 22)
-for i, ty in ipairs({"LP", "Tri", "And", "Nat"}) do
-	local e = MaxRelDiff(GDrow, ResponseFunction.ChangeType(GDrow, ty), 0.02)
-	print(string.format("  %-32s max relative error %9.2e", "DoubleTri to " .. ty, e))
-	if e > 1E-11 then
-		error("ChangeType DoubleTri to " .. ty .. " does not reproduce the original function", 1)
-	end
-	local eback = MaxRelDiff(GDrow,
-	              ResponseFunction.ChangeType(ResponseFunction.ChangeType(GDrow, ty), "DoubleTri",
-	                                          {{"EffectivekBT", 0.05}}), 0.02)
-	if eback > 1E-11 then
-		error("DoubleTri to " .. ty .. " and back does not reproduce the original function", 1)
+-- the whole row at once, and back again, for full chains and for empty ones
+for j, s in ipairs({{30, 22}, {0, 9}, {9, 0}, {0, 0}}) do
+	local GDrow = MakeD(s[1], s[2])
+	local shape = "val.N " .. s[1] .. " con.N " .. s[2]
+	for i, ty in ipairs({"LP", "Tri", "And", "Nat", "DoubleTri"}) do
+		local e = MaxRelDiff(GDrow, ResponseFunction.ChangeType(GDrow, ty), 0.02)
+		print(string.format("  %-32s max relative error %9.2e", "to " .. ty .. ", " .. shape, e))
+		if e > 1E-11 then
+			error("ChangeType DoubleTri to " .. ty .. " does not reproduce " .. shape, 1)
+		end
+		local eback = MaxRelDiff(GDrow,
+		              ResponseFunction.ChangeType(ResponseFunction.ChangeType(GDrow, ty), "DoubleTri",
+		                                          {{"EffectivekBT", 0.05}}), 0.02)
+		if eback > 1E-11 then
+			error("DoubleTri to " .. ty .. " and back does not reproduce " .. shape, 1)
+		end
 	end
 end
 

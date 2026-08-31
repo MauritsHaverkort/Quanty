@@ -80,6 +80,31 @@ Check("valence chain empty",      999, 1.7, -6.0, 0.025)
 Check("conduction chain empty",   999, 1.7,  6.0, 0.025)
 Check("small bath",                 6, 1.7,  0.0, 0.3)
 Check("single bath level",          1, 1.7,  0.0, 0.3)
+Check("no bath at all",             0, 1.7,  0.0, 0.025)
+
+-- A chain of length zero is a legal double tri-diagonal matrix: that branch is
+-- absent and contributes only its site energy to the denominator. It happens
+-- whenever the chemical potential lies outside the bath, and with no bath at all
+-- both chains are empty. Copying such a matrix has to work, which is what
+-- converting a double tri-diagonal one to its own type does.
+for i, s in ipairs({{"both empty", 0.0}, {"valence empty", -6.0}, {"conduction empty", 6.0}}) do
+	local GD = ResponseFunction.ChangeType(MakeAnderson((s[2] == 0.0) and 0 or 40, 1.7, s[2]),
+	                                       "DoubleTri", {{"EffectivekBT", 0.01}})
+	local t = ResponseFunction.ToTable(GD)
+	local nv, nc = #(t.val[1]) - 1, #(t.con[1]) - 1
+	if (s[2] <= 0.0) and (nv ~= 0) then
+		error("ChangeType DoubleTri: expected an empty valence chain, got " .. nv, 1)
+	end
+	if (s[2] >= 0.0) and (nc ~= 0) then
+		error("ChangeType DoubleTri: expected an empty conduction chain, got " .. nc, 1)
+	end
+	local e = MaxRelDiff(GD, ResponseFunction.ChangeType(GD, "DoubleTri"), 0.02)
+	print(string.format("  %-30s Nval=%4d Ncon=%4d   max relative error %9.2e",
+	      "copy, " .. s[1], nv, nc, e))
+	if e > 1E-11 then
+		error("copying a DoubleTri, " .. s[1] .. ", does not reproduce it", 1)
+	end
+end
 
 -- Degenerate bath levels have to be merged before the chain is built, or the
 -- measure has a smaller support than the number of poles and the recursion
