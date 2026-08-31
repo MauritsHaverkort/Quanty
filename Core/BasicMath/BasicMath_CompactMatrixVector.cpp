@@ -4150,13 +4150,15 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
 uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
 {
   if(A->Block==true) return 1;
+  /*  a chain or a bath of length zero has no b[0]: nothing couples to the matrix,
+   *  so b0 = 0 */
   if((32|A->type)=='t')
   {
-    *b0 = ((TriDiagonalMatrixType*)(A->data))->b[0];
+    *b0 = (((TriDiagonalMatrixType*)(A->data))->N == 0) ? 0 : ((TriDiagonalMatrixType*)(A->data))->b[0];
   }
   else if((32|A->type)=='a')
   {
-    *b0 = ((AndersonMatrixType*)(A->data))->b[0];
+    *b0 = (((AndersonMatrixType*)(A->data))->N == 0) ? 0 : ((AndersonMatrixType*)(A->data))->b[0];
   }
   else if((32|A->type)=='l')
   {

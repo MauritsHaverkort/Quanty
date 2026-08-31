@@ -89,6 +89,92 @@ reads `val.b[0]`, `con.b[0]`, `val.a[1]` and `con.a[1]` unconditionally to build
 
 **This is a real difference between `d` and `n`, not an inconsistency** — see the
 end of §1.
+
+**Dimension zero, `b0 == 0` — DONE by Maurits in `8b112855`.** Distinct from an
+empty chain: no bath *and* no observed site, so `G(w) = a0`, a constant with no
+matrix behind it. Other types write it as `{{a0}, {}}`; in `d` it is `b0 = 0` with
+two empty chains, `b0` being the hopping onto the observed site. So the guards
+test `b0` and not `val.N + con.N` — an impurity with no bath also has two empty
+chains but keeps `b0` nonzero and stays a 1×1 matrix.
+`AndersonMatrixToDoubleTriDiagonalMatrix` accepts `M.N == 0` and emits it;
+`…ToTriDiagonalMatrix`, `…ToAndersonMatrix` and `…ToListOfPoles` short-circuit on
+it. `malloc(0)` returning `NULL` is no longer treated as failure in
+`InitListOfPoles`, `InitTriDiagonalMatrix`, `InitIdentityTriDiagonalMatrix`.
+Tested both ways; `a0` comes back bit for bit through every conversion.
+
+**Three `N = 0` heap-buffer-overflows found with `-fsanitize=address`, none of
+them introduced by that commit, two of them now on the `d` row. 1 and 2 are
+fixed; 3 is open.**
+
+1. `EvaluateAndersonMatrix`
+   ([BasicMath_GreenFunctionArithmetic.cpp:4046](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp#L4046))
+   has no `N == 0` branch: it reads `A->a[1]` and `A->b[0]` unconditionally, and
+   for `N == 0` those are `a` of length 1 and `b` of length 0. It is the **only**
+   evaluator missing that branch — `EvaluateTriDiagonalMatrix` has it explicitly,
+   `EvaluateListOfPoles` and `EvaluateBADoubleTriDiagonalMatrix` are safe by
+   construction. Newly reachable because `d → a` now produces `H->N = 0`.
+   **Fixed** with the same early return `EvaluateTriDiagonalMatrix` has.
+2. `SetBADoubleTriDiagonalMatrixConVal`
+   ([BasicMath_BADoubleTriDiagonalMatrixVector.cpp:96](../../Core/BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.cpp#L96))
+   reads `val.b[0]`, `con.b[0]`, `val.a[1]`, `con.a[1]`.
+   `ListOfPolesToBADoubleTridiagonalMatrix`
+   ([BasicMath_MatrixTypeConversion.cpp:5218](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L5218))
+   pads an empty chain to `N = 1` with zeros when *one* chain is empty — exactly
+   so both heads exist — but not when **both** are, and then calls it. Reachable
+   as `ChangeType(G, "Nat")` on a dimension-zero `ListOfPoles`, with no `d`
+   involved at all; `d → n` hits it because it routes through `l`. **Fixed**: with
+   no poles the function returns early with `b0 = 0`, `a0` from the pole list, and
+   two chains of **one** site carrying only zeros — the existing padding extended
+   to the both-empty case. `SetBADoubleTriDiagonalMatrixConVal` is deliberately
+   not called there, since it divides by `b0`. So `d → n` of a dimension-zero
+   matrix has chains of length 1 where `d → d` has length 0: the §1 asymmetry,
+   visible in the result.
+3. `luaL_checkNatrualImpurityOrbitalMatrixType`
+   ([TableToArray.cpp:1877](../../LuaInterface/lua_extensions/TableToArray.cpp#L1877))
+   reads `buff->val.b[1]` and `buff->con.b[1]` when a chain has `N == 1`.
+   **`LengthZero.Quanty` trips this today** on its "size 1+1 natural" case,
+   unrelated to `d`. Those seven lines duplicate the second half of
+   `SetBADoubleTriDiagonalMatrixConVal` **without** its `N == 1` guards. Proposed
+   fix: split that function — leave the `b0 = sqrt(val.b[0]² + con.b[0]²)`
+   normalization and head rescaling in `SetBADoubleTriDiagonalMatrixConVal`, move
+   the `acv`/`bv`/`bc` derivation and its guards into a new
+   `SetBADoubleTriDiagonalMatrixConValFromChains`, and have the reader call the
+   new one. The reader cannot call the existing one as-is: it has already read
+   `b0` from the table's `{a0, b0}` pair, and the normalization would overwrite it
+   with `sqrt(val.b[0]² + con.b[0]²)`, which is 1 for a correctly normalized
+   table. **Fixed** that way. `…FromChains` accepts a chain of length zero and
+   gives it one site of zero energy and zero coupling — the padding factored out
+   as `AddSiteToEmptyTriDiagonalChain`, which `SetBADoubleTriDiagonalMatrixConVal`
+   also calls before its normalization, since that reads the two head hoppings.
+   That normalization now skips the division when `b0 == 0`, which would otherwise
+   make the two heads NaN. The reader warns when it is handed a chain of length
+   zero; in the current suite that fires 3 times in `LengthZero.Quanty` and once
+   in `Chop.Quanty`, all on `Nat` tables written with an empty chain.
+
+**Fixing 3 uncovered two more of the same one-line kind, both fixed:**
+`AndersonMatrixToCompactMatrix` and `AndersonMatrixToMatrix`
+([BasicMath_MatrixTypeConversion.cpp:196](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L196))
+read `b[0]` of a dimension-zero Anderson matrix, and `ResponseFunctionGetB0`
+([BasicMath_CompactMatrixVector.cpp:4150](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp#L4150))
+does the same for both `t` and `a`. All now yield `b0 = 0`, which is the same
+convention `d` uses: nothing couples to the matrix. ASan halts at the first
+error, so each was hidden behind the previous one — the five are one bug repeated,
+not five independent ones.
+
+**Still open, a different class and not touched:**
+`ChopBlockListOfPolesReduceDimension`
+([BasicMath_BlockListOfPoles.cpp:302 and :346](../../Core/BasicMathBlock/BasicMath_BlockListOfPoles.cpp#L302))
+shifts poles down with `memcpy` on **overlapping** ranges, which is undefined.
+The same shift is written with `memmove` three times elsewhere in the same file
+(:400, :443, :1068), so it is a slip and the fix is one word, twice. Reached from
+`Chop()` on a block response function; `Chop.Quanty` trips it.
+
+All the `N = 0` reads landed on heap that happened to be zero, so the affected
+tests passed and gave the right answer; only ASan saw them. `ChangeTypeDoubleTri`, `ChangeTypeFromDoubleTri`,
+`LengthZero`, `ChangeType` and `NaturalOrbitals` all now run to completion under
+ASan with zero errors, and the whole suite is unchanged number for number by the
+five fixes. The **whole** suite under ASan gets as far as `Chop.Quanty` and stops
+only on the overlapping `memcpy` above.
 Tested in both directions — an Anderson matrix with no bath at all, the `d → d`
 copy with either or both chains empty, and hand-written `d` matrices of shape
 `(0,7)`, `(7,0)` and `(0,0)` through the whole `d →` row and back.

@@ -261,6 +261,107 @@ for j, s in ipairs({{30, 22}, {0, 9}, {9, 0}, {0, 0}}) do
 	end
 end
 
+-- A double tri-diagonal matrix of dimension zero: b0 = 0 and both chains empty,
+-- so G(w) = a0 and there is no matrix behind it. b0 is the hopping onto the
+-- observed site, so b0 = 0 is what says there is nothing to hop onto -- the
+-- three readings of the matrix above all have to notice that and hand back an
+-- object of dimension zero rather than a one site one. Nothing is computed, so a0
+-- comes back bit for bit.
+--
+-- Contrast the 1x1 case: an impurity with no bath also has two empty chains, but
+-- b0 is nonzero and every conversion gives dimension 1. b0 is what tells the two
+-- apart, and that is why every guard tests b0 and not val.N + con.N.
+function CheckZeroDimRow(name, GD, a0)
+	local exact = true
+	for i, ty in ipairs({"LP", "Tri", "And", "Nat", "DoubleTri"}) do
+		local G = ResponseFunction.ChangeType(GD, ty)
+		local t = ResponseFunction.ToTable(G)
+		if (ty == "Nat") or (ty == "DoubleTri") then
+			-- t[1] is the {a0, b0} pair, the chains are separate fields, and b0 = 0
+			-- is what says the matrix is unobservable
+			if t[1][2] ~= 0.0 then
+				error("ChangeType DoubleTri to " .. ty .. ": b0 is not zero for " .. name, 1)
+			end
+			-- d drops an absent branch entirely; n keeps one site per chain, because
+			-- its observed orbital is a linear combination of the two chain heads and
+			-- that is only defined if both exist. Either way every number is zero.
+			local want = (ty == "Nat") and 1 or 0
+			if (#(t.val[1]) - 1 ~= want) or (#(t.con[1]) - 1 ~= want) then
+				error("ChangeType DoubleTri to " .. ty .. ": chains of length " .. want ..
+				      " expected for " .. name, 1)
+			end
+			-- the two sites n keeps are built fresh and carry nothing. DoubleTri is a
+			-- copy, so it keeps whatever head energies the source was given; with
+			-- b0 = 0 those are unobservable either way.
+			if ty == "Nat" then
+				for k, chain in ipairs({t.val, t.con}) do
+					for m = 1, #(chain[1]) do
+						if chain[1][m] ~= 0.0 then
+							error("ChangeType DoubleTri to Nat: a chain energy is not zero for " .. name, 1)
+						end
+					end
+					for m = 1, #(chain[2]) do
+						if chain[2][m] ~= 0.0 then
+							error("ChangeType DoubleTri to Nat: a chain coupling is not zero for " .. name, 1)
+						end
+					end
+				end
+			end
+		else
+			-- t[1] is {a0, then the sites or poles}, t[2] the couplings
+			if (#(t[1]) ~= 1) or (#(t[2]) ~= 0) then
+				error("ChangeType DoubleTri to " .. ty .. ": dimension is not zero for " .. name, 1)
+			end
+		end
+		if t[1][1] ~= a0 then
+			error("ChangeType DoubleTri to " .. ty .. ": a0 was not kept for " .. name, 1)
+		end
+		for k = 0, 30 do
+			local w = -6.0 + 12.0 * k / 30
+			for j, gamma in ipairs({0.3, 0.02, 1E-6}) do
+				local v = G(w, gamma)
+				if (v.Re ~= a0) or (v.Im ~= 0.0) then exact = false end
+			end
+		end
+		-- and back again
+		local vback = ResponseFunction.ChangeType(G, "DoubleTri", {{"EffectivekBT", 0.05}})(0.5, 0.1)
+		if (vback.Re ~= a0) or (vback.Im ~= 0.0) then
+			error("DoubleTri to " .. ty .. " and back is not exactly a0 for " .. name, 1)
+		end
+	end
+	-- ToMatrix has to run, but nothing about what it returns is observable: b0 = 0
+	-- decouples the observed site, so any site energy still written into the matrix
+	-- is multiplied by b0^2 = 0. It reports dimension 1 here where the other types
+	-- report 0 for the same function, which is the one place in the row that does
+	-- not test b0; hence dim is printed and not asserted.
+	local M = ResponseFunction.ToMatrix(GD)
+	print(string.format("  %-32s a0=%8.3f  ToMatrix dim %d  exactly a0 in the whole row: %s",
+	      name, a0, #M, tostring(exact)))
+	if not exact then
+		error("a DoubleTri of dimension zero is not exactly a0 somewhere in the row for " .. name, 1)
+	end
+end
+
+print("from a double tri-diagonal matrix of dimension zero")
+CheckZeroDimRow("converted from And",
+                ResponseFunction.ChangeType(
+                    ResponseFunction.New({{1.234}, {}, mu=0, type="And", name="z"}),
+                    "DoubleTri", {{"EffectivekBT", 0.05}}), 1.234)
+
+-- written by hand, with the two chains present but empty and b0 given as zero
+function MakeD0(a0, av, ac)
+	local Gval = {{av}, {}, mu = 0, type = "Tri"}
+	setmetatable(Gval, ResponseFunctionMeta)
+	local Gcon = {{ac}, {}, mu = 0, type = "Tri"}
+	setmetatable(Gcon, ResponseFunctionMeta)
+	return ResponseFunction.New({{a0, 0.0}, val = Gval, con = Gcon, mu = 0, kBT = 0.05,
+	                             type = "DoubleTri", name = "D0"})
+end
+CheckZeroDimRow("written by hand", MakeD0(1.234, 0.0, 0.0), 1.234)
+CheckZeroDimRow("a0 zero", MakeD0(0.0, 0.0, 0.0), 0.0)
+-- b0 = 0 decouples the observed site, so the head energies are unobservable too
+CheckZeroDimRow("head energies not zero", MakeD0(-2.5, 0.9, 0.8), -2.5)
+
 -- and the whole way round
 GA0 = MakeAnderson(300, 1.7, 0.0)
 GA1 = ResponseFunction.ChangeType(ResponseFunction.ChangeType(GA0, "DoubleTri", {{"EffectivekBT", 0.05}}), "And")

@@ -194,7 +194,8 @@ uint32_t AndersonMatrixToMatrix(AndersonMatrixType const M, MatrixType * const M
   };
   Mfull->mu = M.mu;
   Mfull->a0 = M.a[0];
-  Mfull->b0 = M.b[0];
+  /* an Anderson matrix of dimension zero has no b[0]; nothing couples to it, so b0 = 0 */
+  Mfull->b0 = (M.N == 0) ? 0 : M.b[0];
   strcpy(Mfull->Name, M.Name);
   for (i = 0; i < M.N; i++)
   {
@@ -221,7 +222,8 @@ uint32_t AndersonMatrixToCompactMatrix(AndersonMatrixType * const M, CompactMatr
   };
   Mfull->mu = M->mu;
   Mfull->a0 = M->a[0];
-  Mfull->b0 = M->b[0];
+  /* an Anderson matrix of dimension zero has no b[0]; nothing couples to it, so b0 = 0 */
+  Mfull->b0 = (M->N == 0) ? 0 : M->b[0];
   strcpy(Mfull->Name, M->Name);
   for (i = 0; i < M->N; i++)
   {
@@ -5209,6 +5211,36 @@ uint32_t ListOfPolesToAndersonMatrix(const ListOfPoles A, AndersonMatrixType * c
 uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double Epsilon)
 {
   ListOfPoles LPcon, LPval;
+  if (A.N == 0)
+  { /*  No poles, so G(w) = a0, a constant with no matrix behind it. The two chains
+     *  are kept at one site each: the observed orbital of a BADoubleTriDiagonalMatrix
+     *  is a linear combination of the first site of the val and the con chain, which
+     *  is only defined if both exist. Their energies and couplings are zero and
+     *  b0 = 0, so nothing of the matrix is observable. This is the same padding the
+     *  two branches below do when exactly one of the chains comes out empty.
+     *  SetBADoubleTriDiagonalMatrixConVal is deliberately not called: it divides by
+     *  b0, and the cached acv/bv/bc it would fill are already zero here. */
+    M->val.N = 1;
+    M->con.N = 1;
+    if (InitBADoubleTriDiagonalMatrix(M))
+    {
+      printf("InitBADoubleTriDiagonalMatrix failed in ListOfPolesToBADoubleTridiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    M->val.a[0] = 0;
+    M->val.a[1] = 0;
+    M->val.b[0] = 0;
+    M->con.a[0] = 0;
+    M->con.a[1] = 0;
+    M->con.b[0] = 0;
+    M->a0 = A.a0;
+    M->b0 = 0;
+    M->mu = mu;
+    M->Epsilon = Epsilon;
+    snprintf(M->Name, MAXStrLength, "%s", A.Name);
+    return 0;
+  }
   ListOfPolesCopyCon(&LPcon, A, mu, Epsilon);
   ListOfPolesCopyVal(&LPval, A, mu, Epsilon);
   ReduceListOfPolesNumber(&LPcon, NTriDiagcon);

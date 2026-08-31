@@ -4050,6 +4050,12 @@ Complex16 EvaluateAndersonMatrix(AndersonMatrixType const * A, const double omeg
   double denom;
   res.Im=0;
   res.Re=0;
+  if(A->N==0)
+  { /* no observed site and no bath, so G(w) = a[0]. There is no a[1] and no b[0] to read */
+    res.Re = A->a[0];
+    res.Im = 0;
+    return res;
+  }
   for (j = A->N; j >= 2; j--)
   {
     denom = Sqr(Gamma * 0.5) + Sqr(omega - A->a[j]);

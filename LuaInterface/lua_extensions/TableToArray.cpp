@@ -1870,14 +1870,15 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
       buff->Epsilon=0;
     }
     lua_pop(L,1);
-    /* set aditional values */
-    buff->acvB  = Sqr(buff->val.b[0]) * buff->val.a[1] + Sqr(buff->con.b[0]) * buff->con.a[1];
-    buff->acvA  = Sqr(buff->val.b[0]) * buff->con.a[1] + Sqr(buff->con.b[0]) * buff->val.a[1];
-    buff->acvBA =  buff->val.b[0] * buff->con.b[0] * (buff->val.a[1]-buff->con.a[1]);
-    buff->bvB0  =  buff->val.b[0] * buff->val.b[1];
-    buff->bcB0  =  buff->con.b[0] * buff->con.b[1];
-    buff->bvA0  =  buff->con.b[0] * buff->val.b[1];
-    buff->bcA0  = -buff->val.b[0] * buff->con.b[1];
+    /*  set aditional values. SetBADoubleTriDiagonalMatrixConValFromChains and not
+     *  SetBADoubleTriDiagonalMatrixConVal: b0 has just been read from the {a0,b0} pair
+     *  above, and the latter would overwrite it with sqrt(val.b[0]^2+con.b[0]^2) */
+    if((buff->val.N==0)||(buff->con.N==0))
+    {
+      printf("\n\n WARNING: Read a NaturalImpurityOrbital matrix %s with a chain of length zero (val.N=%i, con.N=%i). The observed orbital of this type is a linear combination of the first site of the val and of the con chain, so both of those sites have to exist. A site of zero energy and zero coupling was added to the empty chain, which leaves G unchanged.\n\n", buff->Name, buff->val.N, buff->con.N);
+      fflush(stdout);
+    }
+    SetBADoubleTriDiagonalMatrixConValFromChains(buff);
     return buff;
   }
   if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
