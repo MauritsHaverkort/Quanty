@@ -1430,8 +1430,8 @@ int MakeListOfPolesPhysical(ListOfPoles *const A)
       B.b[j] =-A->b[i];
       if(i+1!=A->N)
       {
-        memcpy(&(A->a[i]), &(A->a[i+1]), (A->N-i-1)*sizeof(double));
-        memcpy(&(A->b[i]), &(A->b[i+1]), (A->N-i-1)*sizeof(double));
+        memmove(&(A->a[i]), &(A->a[i+1]), (A->N-i-1)*sizeof(double));
+        memmove(&(A->b[i]), &(A->b[i+1]), (A->N-i-1)*sizeof(double));
       }
       A->N--;
       B.N--;

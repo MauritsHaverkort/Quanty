@@ -99,8 +99,8 @@ void AndersonMatrixChopReduceDimension(AndersonMatrixType * const M, double cons
   {
     if ((fabs(M->b[i]) < epsilon))
     {
-      memcpy(&(M->b[i]),   &(M->b[i+1]), (M->N-i-1)*sizeof(double));
-      memcpy(&(M->a[i+1]), &(M->a[i+2]), (M->N-i-1)*sizeof(double));
+      memmove(&(M->b[i]),   &(M->b[i+1]), (M->N-i-1)*sizeof(double));
+      memmove(&(M->a[i+1]), &(M->a[i+2]), (M->N-i-1)*sizeof(double));
       M->N--;
       i--;
     }

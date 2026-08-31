@@ -161,20 +161,35 @@ convention `d` uses: nothing couples to the matrix. ASan halts at the first
 error, so each was hidden behind the previous one — the five are one bug repeated,
 not five independent ones.
 
-**Still open, a different class and not touched:**
-`ChopBlockListOfPolesReduceDimension`
-([BasicMath_BlockListOfPoles.cpp:302 and :346](../../Core/BasicMathBlock/BasicMath_BlockListOfPoles.cpp#L302))
-shifts poles down with `memcpy` on **overlapping** ranges, which is undefined.
-The same shift is written with `memmove` three times elsewhere in the same file
-(:400, :443, :1068), so it is a slip and the fix is one word, twice. Reached from
-`Chop()` on a block response function; `Chop.Quanty` trips it.
+**A different class, also fixed: 14 self-overlapping `memcpy` calls.** They are
+all one idiom — delete an element and shift the tail down over it — and `memcpy`
+is undefined when the ranges overlap. The same shift is already written with
+`memmove` three times in `BasicMath_BlockListOfPoles.cpp` (:400, :443, :1068), so
+these are slips rather than a convention. ASan found two of them one run apart;
+the rest came from scanning every `memcpy` in the tree whose destination and
+source index the same array, which is what makes this a complete sweep rather
+than another peel:
+
+| file | sites |
+|---|---|
+| `BasicMath_AndersonMatrixVector.cpp` | 2, in `AndersonMatrixChopReduceDimension` |
+| `BasicMath_ListOfPoles.cpp` | 2, in `MakeListOfPolesPhysical` |
+| `BasicMath_BlockAndersonMatrix.cpp` | 2, in `BlockAndersonMatrixChopReduceDimension` |
+| `BasicMath_BlockListOfPoles.cpp` | 8, in `ChopBlockListOfPolesReduceDimension` and the merge routines |
+
+`memmove` is valid wherever `memcpy` is, so the conversion cannot change a
+result; four of the eight in `BasicMath_BlockListOfPoles.cpp` move only the `a0`
+block, where the gap provably exceeds the length, and were converted for
+uniformity rather than necessity. One apparent hit is a false positive and was
+left alone: `OperatorArithmetic.cpp:300` copies `Oset.Res.Determinant[i]` into
+`O->Res.Determinant[i]`, two different objects, into memory just `malloc`ed.
 
 All the `N = 0` reads landed on heap that happened to be zero, so the affected
 tests passed and gave the right answer; only ASan saw them. `ChangeTypeDoubleTri`, `ChangeTypeFromDoubleTri`,
 `LengthZero`, `ChangeType` and `NaturalOrbitals` all now run to completion under
 ASan with zero errors, and the whole suite is unchanged number for number by the
-five fixes. The **whole** suite under ASan gets as far as `Chop.Quanty` and stops
-only on the overlapping `memcpy` above.
+five fixes. The **whole** suite now runs to completion
+under ASan with zero errors.
 Tested in both directions — an Anderson matrix with no bath at all, the `d → d`
 copy with either or both chains empty, and hand-written `d` matrices of shape
 `(0,7)`, `(7,0)` and `(0,0)` through the whole `d →` row and back.

@@ -299,7 +299,8 @@ uint32_t ChopBlockListOfPolesReduceDimension(BlockListOfPoles *A, double const e
       }
       if(KeepBlock==false)
       {
-        memcpy(&(A->V[i*((1+A->BlockSize*A->BlockSize))]), &(A->V[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16) );
+        /* the source and the destination overlap, so this has to be memmove */
+        memmove(&(A->V[i*((1+A->BlockSize*A->BlockSize))]), &(A->V[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16) );
         i--;
         A->N--;
         A->a0 = &(A->V[(A->N)*((1+A->BlockSize*A->BlockSize))]);
@@ -343,7 +344,8 @@ uint32_t ChopBlockListOfPolesReduceDimension(BlockListOfPoles *A, double const e
       }
       if(KeepBlock==false)
       {
-        memcpy(&(A->VRe[i*((1+A->BlockSize*A->BlockSize))]), &(A->VRe[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double) );
+        /* the source and the destination overlap, so this has to be memmove */
+        memmove(&(A->VRe[i*((1+A->BlockSize*A->BlockSize))]), &(A->VRe[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double) );
         i--;
         A->N--;
         A->a0Re = &(A->VRe[(A->N)*((1+A->BlockSize*A->BlockSize))]);
@@ -1237,7 +1239,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
       {
         if(nMerged>1)
         {
-          memcpy(&(M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged-1);
           M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1263,7 +1265,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
     }
     if(nMerged>1)
     {
-      memcpy(&(M->VRe[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
+      memmove(&(M->VRe[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
       M->N-=(nMerged-1);
       M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -1276,7 +1278,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
       {
         if(nMerged>1)
         {
-          memcpy(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged-1);
           M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1304,7 +1306,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
     }
     if(nMerged>1)
     {
-      memcpy(&(M->V[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
+      memmove(&(M->V[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
       M->N-=(nMerged-1);
       M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -1324,7 +1326,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
       {
         if(nMerged>0)
         {
-          memcpy(&(M->VRe[(i-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->VRe[(i-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged);
           M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1337,7 +1339,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
     }
     if(nMerged>0)
     {
-      memcpy(&(M->VRe[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
+      memmove(&(M->VRe[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
       M->N-=(nMerged);
       M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -1350,7 +1352,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
       {
         if(nMerged>0)
         {
-          memcpy(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged);
           M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1363,7 +1365,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
     }
     if(nMerged>0)
     {
-      memcpy(&(M->V[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
+      memmove(&(M->V[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
       M->N-=(nMerged);
       M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
     }

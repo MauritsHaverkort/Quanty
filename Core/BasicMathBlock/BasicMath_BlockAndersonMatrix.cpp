@@ -213,8 +213,8 @@ uint32_t BlockAndersonMatrixChopReduceDimension(BlockAndersonMatrixType *const A
       {
         A->N--;
         if(A->N==i) return 0;
-        memcpy(&(A->aRe[(i+1)*Sqr(A->BlockSize)]), &( A->aRe[(i+2)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
-        memcpy(&(A->bRe[(i  )*Sqr(A->BlockSize)]), &( A->bRe[(i+1)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
+        memmove(&(A->aRe[(i+1)*Sqr(A->BlockSize)]), &( A->aRe[(i+2)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
+        memmove(&(A->bRe[(i  )*Sqr(A->BlockSize)]), &( A->bRe[(i+1)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
         i--;
       }
     }
