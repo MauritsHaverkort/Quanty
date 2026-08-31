@@ -55,6 +55,44 @@ everywhere) and §3.1 on the `a → d` path (a true Fermi function, `kBT` stored
 `d` case of `LuaResponseFunctionToOperator` with `Nv`/`Nc`, and
 `ResponseFunctionToLuaBitMask`. None of it is written.
 
+**Zero-length chains — DONE.** `InitDoubleTriDiagonalMatrix` refused
+`val.N == 0` or `con.N == 0` and returned 2 without allocating, so
+`DoubleTriDiagonalMatrixCopy` and `DoubleTriDiagonalMatrixPart` — which ignore
+the return value — then wrote through uninitialised pointers. `ChangeType` of a
+`d` with an empty chain to `d` died on it, verified against a build of
+`815f1e04`. The reject is gone; `InitTriDiagonalMatrix` already handled `N = 0`
+(it allocates `a[0]`, no `b`, and guards `b[0] = 1`), as does
+`InitBlockTridiagonalMatrix` on the block side, and `EvaluateTriDiagonalMatrix`
+returns `a[0]` for an empty chain, which is the right answer with no special
+case. `AndersonMatrixToDoubleTriDiagonalMatrix` no longer needs to allocate its
+two chains by hand and calls `InitDoubleTriDiagonalMatrix` again.
+`InitIdentityDoubleTriDiagonalMatrix` and `InitIdentityTriDiagonalMatrix` accept
+`N = 0` as well; the latter now guards `b[0] = 1` exactly as `InitTriDiagonalMatrix`
+does. Neither is reachable from lua — `InitIdentityTriDiagonalMatrix` is called
+only by `InitIdentityBADoubleTriDiagonalMatrix`, which has no callers at all — so
+those two are verified by compilation and inspection, not by a test.
+**Both `BADoubleTriDiagonalMatrixType` constructors keep their `N = 0` reject, and
+it is not an oversight.** Maurits: the `n` Green's function is defined as a
+*linear combination of the first bath site of the val and the con chain*, and that
+combination is only well defined if both sites exist. So an empty chain is
+meaningless for `n` — not merely awkward to allocate — and both
+`InitBADoubleTriDiagonalMatrix` and `InitIdentityBADoubleTriDiagonalMatrix` are
+right to refuse it. (I removed the reject from the identity one and put it back;
+the reason it looked safe — that it sets `acv`/`bv`/`bc` to constants inline
+rather than through `SetBADoubleTriDiagonalMatrixConVal` — was an argument about
+memory safety, not about what the type means.) The implementation agrees:
+`SetBADoubleTriDiagonalMatrixConVal`
+([BasicMath_BADoubleTriDiagonalMatrixVector.cpp:96](../../Core/BasicMath/BasicMath_BADoubleTriDiagonalMatrixVector.cpp#L96))
+reads `val.b[0]`, `con.b[0]`, `val.a[1]` and `con.a[1]` unconditionally to build
+`acvB`/`acvA`/`acvBA`, and is called from fourteen sites in
+`BasicMath_MatrixTypeConversion.cpp`.
+
+**This is a real difference between `d` and `n`, not an inconsistency** — see the
+end of §1.
+Tested in both directions — an Anderson matrix with no bath at all, the `d → d`
+copy with either or both chains empty, and hand-written `d` matrices of shape
+`(0,7)`, `(7,0)` and `(0,0)` through the whole `d →` row and back.
+
 **Eight helpers that do not exist** (§3): `DoubleTriDiagonalMatrixTypeToEigenSystemCompact`,
 `DoubleTriDiagonalMatrixToEigenvalues`, `SymmetrizeDoubleTriDiagonalMatrix`,
 `ShiftDoubleTriDiagonalMatrix`, `DoubleTriDiagonalMatrixTranspose`,
@@ -123,6 +161,10 @@ Exists for the block type: `Init`, `Free`, `Copy`, `Evaluate`,
 `Chop` routines — but both `Chop`s are `//TODO:` bodies that return 0 without
 doing anything. Missing: `…Part` (the `Nv`/`Nc` primitive), `…Add`,
 `…ToImpurityHamiltonian`.
+
+**`a → d` is designed and agreed** — see "Decided: how `a → d` is built in block
+form" in §8 for the algorithm, the signature, the `MergeTolerance` finding and the
+four traps in the primitives. That is the next thing to write.
 
 **The non-block insights carry over directly**, and are the reason the block row
 should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is
@@ -268,6 +310,23 @@ Cost, stated plainly: "the impurity site energy" is a sum of two fields, and how
 between them is a gauge with no canonical value. Normalise to equal halves in the
 constructors — as a *convention*, not an invariant, so nothing breaks silently if a caller
 shifts weight from one to the other.
+
+### An empty branch is legal for `d` and meaningless for `n`
+
+A direct consequence of the above, and the reason the two types differ on
+`Init`. In `d` the two branches are nested in **one** denominator, and each
+enters through `Gval` / `Gcon`, which for an empty chain is just its offset
+`a[0]`: `EvaluateTriDiagonalMatrix` returns `a[0]` when `N == 0` and never touches
+`b`. So `val.N = 0` means "this branch is absent, and contributes only its share
+of the impurity energy" — a well-defined matrix of dimension `1 + con.N`, which is
+exactly what the Fermi split produces whenever `mu` lies outside the bath.
+
+In `n` the observed orbital is a **linear combination of the two chain heads** —
+that is what `T` in the struct comment does and what the cached `acvB`/`acvA`/
+`acvBA`/`bvB0`/`bcB0`/`bvA0`/`bcA0` fields hold. That combination is only defined
+if both heads exist, so a chain of length zero is not a degenerate case of the `n`
+form; it is outside it. Both `BADouble…` constructors reject it, correctly, and
+that is not a guard to be tidied away.
 
 ### Consequence
 
@@ -754,7 +813,7 @@ for `ResponseFunction`. See [WIKI_EDITING_WORKFLOW.md](WIKI_EDITING_WORKFLOW.md)
 
 ---
 
-## 8. The block type — mostly done
+## 8. The block type — the struct and the evaluator are done, the conversions are not
 
 `BlockDoubleTriDiagonalMatrixType` exists with `Init`, `Free`, `Copy`, `Evaluate`,
 `…ToCompactMatrix[WithDeflation]` and `…ToSpectra[WithBroadening]`. What is left of this
@@ -829,6 +888,157 @@ Note the block tail extraction needs *no* new code: `BlockTriDiagonalMatrixGetTa
 `BlockTriDiagonalMatrixGetTailAndAddSpin` already act on a `BlockTriDiagonalMatrixType`, so
 they apply to `.val` and `.con` directly, as `TriDiagonalMatrixPart` does in the non-block
 case (§3).
+
+### Decided: how `a → d` is built in block form
+
+Settled with Maurits before writing any of it. Three corrections to earlier
+readings of this document are folded in.
+
+**The formula is `G = a0 + b0^*·(w − Gval − Gcon)⁻¹·b0^T`** — `b0^*`, the
+elementwise conjugate, on the left and `b0^T` on the right. That is what
+[StructDef.cpp:709](../../Core/StructDef.cpp#L709) says for
+`BlockTriDiagonalMatrixType`, what the `BlockAndersonMatrixType` comment says
+with `B0^*`/`B0^T`, and what `EvaluateBlockDoubleTriDiagonalMatrix` implements as
+`CompactMatrixMultiply3('*','N','T', b0, det, b0)`. It costs nothing on the real
+path. The same `^*`/`^T` question runs through `DiagonalMatrixBlockTridiagonalize`
+(contract written `psi . 1/(w−A) . psi^C`) and the `CompactMatrixTranspose` that
+`BlockListOfPolesToBlockTridiagonalMatrix` applies to its starting block, so the
+`QComplex` path is to be **verified against `Evaluate`**, not reasoned about.
+
+**Failures return 1 and the caller listens.** Every new function returns 1 on
+failure, `ConvertBlockMatrix`'s `default:` returns 1 instead of 0 with
+`Mout->data` unassigned, and the four dead branches of
+`luaL_checkBlockDoubleTriDiagonalMatrixType` — which today `malloc` and return
+*uninitialised memory silently* — `luaL_error` until they are written. A failed
+conversion has to reach the lua side as an error.
+
+**The rank-1 outer product is the mechanism, not a cost.** For a bath block with
+a degenerate group `D`, `Σ_{m∈D} (b·u_m)(b·u_m)^† = b·P_D·b^†` with `P_D` the
+spectral projector — basis-independent, so the arbitrary rotation LAPACK picks
+inside the degenerate subspace cancels exactly, while each individual rank-1 term
+depends on it. Spectral weight is the only additive object, which is why a
+`BlockListOfPoles` stores `W = B B^†` and not `B`. Maurits' case:
+`{{1,0,-0.811957,0.583717},{0,1,-0.583717,-0.811957},{-0.811957,-0.583717,2,0},{0.583717,-0.811957,0,2}}`
+with `BlockSize = 2`, one doubly degenerate bath block `2·I` and an orthogonal
+`b`, so `P_D = I`, the merged weight is `b b^† = I`, `sqrt(I) = I`, and the chain
+starts from the symmetric coupling of the rotated form
+`{{1,0,1,0},{0,1,0,1},{1,0,2,0},{0,1,0,2}}` whatever the eigensolver returned.
+This matters at the µeV level: magnetic splittings on a band of tens of eV.
+
+**One new primitive, then existing code.** The non-block precedent is
+`AndersonMatrixInverseToListOfPoles`
+([BasicMath_MatrixTypeConversion.cpp:809](../../Core/BasicMath/BasicMath_MatrixTypeConversion.cpp#L809)),
+which sets `a0 = M.a[1]` and lists the bath as `b_i²` at `a_{i+2}` — the pole
+list of *the thing in the denominator*. The block twin is what is missing:
+
+```
+BlockAndersonMatrixInverseToBlockListOfPoles(A, Delta)
+  for each bath block k = 1 … A->N-1:
+    CompactMatrixEigensystem(a[k+1]) -> U_k, e_k       // block-local, O(BlockSize^3)
+    V_k = b[k] . U_k
+    emit BlockSize poles at e_{k,m} with weight v_{k,m} v_{k,m}^dag
+  Delta.a0 = A->a[1];  Delta.mu = A->mu
+```
+
+Cost `O(NBath·BlockSize³)`, no dense assembly. Deliberately **not**
+`BlockAndersonMatrixToBlockListOfPoles`, which builds the whole matrix dense and
+diagonalizes it, `O((N·BlockSize)³)`, and returns the poles of `G` — the right
+source for `n`, the wrong one for `d`, whose chains are the hybridisation seen
+from the impurity and sit in the denominator.
+
+```
+BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(A, B, kbT, SingularValue, MergeTolerance)
+  BlockAndersonMatrixInverseToBlockListOfPoles(A, &Delta)
+  BlockListOfPolesMergeDegeneratePoles(&Delta, MergeTolerance)   // restores the symmetry
+  CopyBlockListOfPolesVal(Delta, &Dval, mu, kbT)                 // weights times f
+  CopyBlockListOfPolesCon(Delta, &Dcon, mu, kbT)                 // weights times 1-f
+  Dval.a0 *= 0.5;  Dcon.a0 *= 0.5                                // the shared site, §1
+  BlockListOfPolesToBlockTridiagonalMatrix(Dval, &B->val, NBath*BlockSize, SingularValue)
+  BlockListOfPolesToBlockTridiagonalMatrix(Dcon, &B->con, NBath*BlockSize, SingularValue)
+  B->a0 = A->a[0];  B->b0 = A->b[0];  + mu, kBT, BlockSize, QComplex, Name
+```
+
+Two things fall out. `CopyBlockListOfPoles*` copies `a0` and scales only the
+weights, and `BlockListOfPolesToBlockTridiagonalMatrix` writes the list's `a0`
+into `B->a[0]`, so halving `a0` on the two lists puts `0.5·A1` into `val.a[0]`
+and `con.a[0]` with no special-casing. And the Fermi factors are applied to poles
+that have already been merged, so degenerate partners get an identical `f` by
+construction and the split cannot break the symmetry the merge just restored.
+
+**Signature.** `SingularValue` and `MergeTolerance` are parameters, not
+constants. `ConvertBlockMatrix` carries only `T` and `SingularValue`, so
+`MergeTolerance <= 0` means "use the default" and `ChangeType` keeps working
+until an explicit lua option exists.
+
+**`MergeTolerance` — the existing default would erase real physics.**
+`BlockAndersonMatrixToBlockListOfPoles` passes
+`G->BlockSize * G->N * DBL_EPSILON * BandWidth`. At `BlockSize = 10`, a 50-block
+bath and a 60 eV band that is `5100 · 2.2e-16 · 60 ≈ 7e-11 eV ≈ 70 µeV`; even
+`BlockSize = 2` with 100 poles gives ≈ 3 µeV. That is the scale of the Zeeman
+splittings this type has to resolve. The error we are hiding under is
+`O(ε·‖a_k‖)` from *independent* `BlockSize × BlockSize` diagonalizations — it does
+not grow with the number of poles — so the default should be a few·`ε`·bandwidth,
+about `1e-13 eV`, nine orders below µeV. Belongs in
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) as a measured quantity.
+Keeping it tight also defuses the `//TODO: do not shift spectral weight through
+the chemical potential` in `BlockListOfPolesMergeDegeneratePoles`: we merge
+*before* splitting, and at `1e-13 eV` two merged poles straddling `mu` differ in
+`f` by `1e-13/kBT`.
+
+**`NBlockMax = NBath · BlockSize`, and why the obvious `NBath` is wrong.**
+`CompactMatrixBlockBandDiagonalizeReal`
+([BasicMath_CompactMatrixVector.cpp:5417](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp#L5417))
+*does* implement deflation — `CompactMatrixSVDOrthogonalizeRow` shrinks
+`veclist[i+1].Ni` and writes `B->BlockSizeList` (the
+`"deflation needed but not implemented"` printf is in the routine ending at
+:5409, a different function). So blocks shrink and a chain can run longer than
+`NBath` blocks, up to `NBath·BlockSize` of them in the limit of every block
+deflating to dimension 1. And the loop breaks on Krylov exhaustion —
+`if(veclist[i+1].Ni==0) { B->N=i; break; }` — so an over-large `NTri` is an
+allocation bound, not a truncation cap filled with rubbish. Over-allocating costs
+`NBath·BlockSize³` doubles, about 4 MB at `NBath = 50`, `BlockSize = 10`; the
+`veclist` entries are allocated inside the loop and unused ones cost nothing.
+
+**An empty pole list must not reach the primitive.** With `A->Ni == 0`,
+`CompactMatrixBlockBandDiagonalizeReal` sets `B->N = Min(0,NTri) = 0`, allocates
+`a` for one block and `b` for none, then runs one iteration and hits the
+exhaustion break, which sets `B->N = i = 1`. Every dgemm in that iteration has a
+zero dimension so nothing is written, but the result claims one more block than it
+owns and `b[0]` does not exist. So the conversion gets an explicit early return
+for the empty chain — `val.N = 0`, `InitBlockTridiagonalMatrix`,
+`val.a[0] = 0.5·A1` — the idiom `BlockListOfPolesToBlockAndersonMatrix` already
+uses for `A.N == 0`.
+
+**Drop exactly-zero-weight poles from each half.** `FermiFunction` returns exact
+`1.0` below `mu − 40·kbT` and exact `0.0` above, so after the split a pole outside
+the window has an exactly zero weight matrix in one of the two lists. Dropping
+those is exact, needs no tolerance, shrinks the working space, and makes "`mu`
+outside the bath" produce a genuinely empty list rather than a Lanczos that
+deflates to nothing on step one. Test for exact zero only — the tiny-weight poles
+near the window edge are kept, as the non-block code keeps them, so the two
+implementations stay comparable.
+
+**This path uses full re-orthogonalization.** `DiagonalMatrixBlockTridiagonalize`
+passes `ReOrthogonalize = true`, so block `a → d` is Lanczos with full
+re-orthogonalization while non-block `a → d` is RKPW. Per
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) that is the more accurate
+and more expensive of the two. **The two will not agree to the last digit on the
+same input, and the block one should be the better.** Expected, not a bug.
+
+**Memory, stated plainly.** After merging, the working space is
+`Npoles·BlockSize` and the dense diagonal matrix is its square. With a fully
+non-degenerate bath `Npoles = NBath·BlockSize`, so that is `BlockSize²` more than
+the bath dimension warrants — 200 MB at `NBath = 50`, `BlockSize = 10`. With
+degeneracy, which is the physically interesting case, merging collapses it toward
+`NBath·BlockSize` and 2 MB. Write it the reuse way and measure; if it bites, the
+fix is a rank-revealing square root emitting only `rank(W)` columns per pole,
+which is local to one helper and does not change the answer.
+
+**The test the merge asks for.** Build a block Anderson matrix, rotate its bath by
+an arbitrary orthogonal `U` — which leaves `G` invariant — convert both to `d`,
+and require the two results to agree **element by element** to machine precision,
+not just their spectra. Nothing in `TestScripts/Responsefunction/` tests that
+today, and it is the property the merge exists to protect.
 
 ### Build registration
 

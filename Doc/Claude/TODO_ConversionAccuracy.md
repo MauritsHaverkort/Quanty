@@ -72,6 +72,22 @@ Lanczos without re-orthogonalization is 1e-2 at 1000 poles and is not a candidat
 
 **Two tolerances sit exactly where the log mesh would go.**
 
+- **the block degenerate-pole merge is far too loose.**
+  `BlockAndersonMatrixToBlockListOfPoles` passes
+  `BlockSize * N * DBL_EPSILON * BandWidth` to
+  `BlockListOfPolesMergeDegeneratePoles`. At `BlockSize = 10`, a 50-block bath
+  and a 60 eV band that is `5100 · 2.2e-16 · 60 ≈ 70 µeV`; at `BlockSize = 2`
+  with 100 poles it is still ≈ 3 µeV. Magnetic fields give µeV splittings on
+  bands of tens of eV, so this threshold merges away exactly the physics the
+  block types exist to resolve. The eigenvalue error it is meant to hide under is
+  `O(ε·‖a_k‖)` from *independent* `BlockSize × BlockSize` diagonalizations and
+  does **not** grow with the number of poles, so a few·`ε`·bandwidth — about
+  `1e-13 eV` — is both sufficient and nine orders below µeV. Merging is not
+  optional: summing the rank-1 weights over a degenerate group gives `b·P_D·b^†`
+  with `P_D` the spectral projector, which is basis-independent, and that is what
+  makes the result independent of the arbitrary rotation LAPACK picks inside a
+  degenerate subspace. So the threshold has to be tight *and* nonzero, and
+  nothing has measured where it should sit.
 - `PolesToTriDiagonalCoefficients` merges poles closer than
   `4·DBL_EPSILON·(|E_i|+|E_j|)`. That is a relative tolerance, and a logarithmic
   mesh accumulating near `mu` is precisely where level spacings get small. It is
@@ -123,6 +139,14 @@ know they did not get it.
 ## Meanwhile
 
 Read "agrees to 1e-13" in the plan and the commit messages as "agrees to 1e-13 on
-a uniform grid at `Gamma` of 0.3 and 0.02". Do not read it as a statement about
+a uniform grid at `Gamma` of 0.3 and 0.02".
+
+Note also that the two families do not use the same algorithm.
+`DiagonalMatrixBlockTridiagonalize` passes `ReOrthogonalize = true`, so every
+`Block…` conversion that goes through a block Lanczos is the
+full-re-orthogonalization row of the table above, while the non-block `a → d` is
+RKPW. Block and non-block conversions of the same input therefore should *not*
+agree to the last digit, and the block one should be the more accurate. Do not
+read a 1e-14 disagreement between them as a defect in either. Do not read it as a statement about
 small `Gamma`, about `w` near `mu`, or about the coefficients of a long chain,
 none of which have been tested.
