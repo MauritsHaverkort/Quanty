@@ -440,3 +440,66 @@ re-orthogonalization being a measured factor of five to seven better on `G` than
 RKPW at a hundredfold cost, and two tolerances that sit exactly where a log mesh
 near `mu` would go — and the shape of the `Algorithm` option that should come out
 of it, so that a user who needs the last digit can pay for it.
+
+## A real number and a complex number are different lua types
+
+**Status:** open, **very low priority, and no good solution is known.** Recorded
+because it costs real time repeatedly, not because it is actionable.
+
+Quanty's complex numbers are userdata with a `Complex_Type` metatable; real
+numbers are lua's own `number`. To a user both are just numbers, so people write
+a complex number where a real one is expected, or read `a.Re` where `a` is real —
+and get an error, or worse, `nil`.
+
+`LuaPushTable_CompactMatrixType`
+([TableToArray.cpp](../../LuaInterface/lua_extensions/TableToArray.cpp)) makes
+this visible in a way that surprises people. It pushes **element by element**,
+and an element whose imaginary part is **exactly** zero is pushed as a plain
+number rather than as a `Complex`:
+
+```c
+if(M->QComplex)
+{
+  if(M->V[i*M->Nj+j].Im==0)  lua_pushnumber(L, ...Re);
+  else                       /* Complex userdata */
+}
+```
+
+So one lua table can hold both kinds, and routinely does. An ordinary
+block-diagonal `G` at finite `omega` and `Gamma`:
+
+```
+G[1][*] : userdata , number
+G[2][*] : number   , userdata
+G = { { (-0.7797 - 0.0949 I) , 0 } ,
+      { 0 , (-1.1458 - 0.2067 I) } }
+```
+
+The diagonal elements are `Complex`, the exactly-zero off-diagonal ones are plain
+`0`. Nothing has gone wrong: the matrix itself is complex — `Gw.QComplex` is 1 —
+and a response function evaluated at finite `Gamma` never returns a real matrix.
+It is only the per-element push. But it means `G(w,g)[i][j].Re` is relying on that
+element having a nonzero imaginary part, which for a block-diagonal `G` is false
+off the diagonal.
+
+**Why it is not simply fixed:** the fix is in the lua number implementation
+itself — making one type carry both, or giving real numbers a `.Re`/`.Im` — and
+that is a change to vendored lua that nobody has wanted to make. Uniformly
+pushing `Complex` userdata for every element of a complex matrix would remove the
+mixing, but it allocates a userdata per element and changes what every existing
+script sees back from `Matrix.ToTable`, so it is not obviously an improvement
+either.
+
+**Meanwhile:** in lua, read matrix elements through a helper rather than assuming
+`.Re` exists —
+
+```lua
+function ReIm(x)
+  if(type(x)=="number") then return x, 0 end
+  return x.Re, x.Im
+end
+```
+
+`Chop.Quanty` uses exactly this in its `DoubleTri` sections, with the reason
+written next to it. In C the question does not arise: every routine reads the
+`QComplex` of the operand it is handed.
