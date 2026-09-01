@@ -18,8 +18,10 @@ function MaxRelDiff(G1, G2, gamma)
 	for i = 0, 300 do
 		local w = -8.0 + 16.0 * i / 300
 		local v1, v2 = G1(w, gamma), G2(w, gamma)
-		local d = math.sqrt((v1.Re - v2.Re)^2 + (v1.Im - v2.Im)^2)
-		local n = math.sqrt(v1.Re^2 + v1.Im^2)
+		-- Complex.Re and Complex.Im are functions and return a value; they work whether
+		-- the argument is a complex userdata or a plain lua number
+		local d = math.sqrt((Complex.Re(v1) - Complex.Re(v2))^2 + (Complex.Im(v1) - Complex.Im(v2))^2)
+		local n = math.sqrt(Complex.Re(v1)^2 + Complex.Im(v1)^2)
 		if (n > 0) and ((d / n) > worst) then worst = d / n end
 	end
 	return worst
@@ -320,12 +322,12 @@ function CheckZeroDimRow(name, GD, a0)
 			local w = -6.0 + 12.0 * k / 30
 			for j, gamma in ipairs({0.3, 0.02, 1E-6}) do
 				local v = G(w, gamma)
-				if (v.Re ~= a0) or (v.Im ~= 0.0) then exact = false end
+				if (Complex.Re(v) ~= a0) or (Complex.Im(v) ~= 0.0) then exact = false end
 			end
 		end
 		-- and back again
 		local vback = ResponseFunction.ChangeType(G, "DoubleTri", {{"EffectivekBT", 0.05}})(0.5, 0.1)
-		if (vback.Re ~= a0) or (vback.Im ~= 0.0) then
+		if (Complex.Re(vback) ~= a0) or (Complex.Im(vback) ~= 0.0) then
 			error("DoubleTri to " .. ty .. " and back is not exactly a0 for " .. name, 1)
 		end
 	end

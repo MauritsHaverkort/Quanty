@@ -438,8 +438,14 @@ verified only to agree with the plain version when there is nothing to deflate.
   `a[2]`, while `b[1]` is the first weight. A `Tri` or `And` table has `#a = N+1`
   and `#b = N`, `a[1]` and `b[1]` being `a0` and `b0`.
 - `Matrix.Sub(M,n)` returns the leading `n × n` **matrix**, not an element, and is
-  1-based. `Complex.Abs` and `Complex.Conjugate` do not exist.
+  1-based. `Complex.Abs` and `Complex.Conjugate` do not exist, but `Complex.Re`,
+  `Complex.Im`, `Complex.New`, `Complex.I` and `Complex.Exp` do.
   `Spectra.ToTable(sp)` gives `sp[ispectrum][ipoint] = {energy, value}`.
+- **Read a number with `Complex.Re(x)`, never `x.Re`.** A method modifies its
+  object in Quanty and a function returns one, so `x.Re` is the wrong spelling;
+  and it fails outright on a plain lua number, which is what an element of a block
+  matrix becomes when its imaginary part is exactly zero. `Complex.Re` and
+  `Complex.Im` take either kind. See the entry in [TODO.md](TODO.md).
 - `ToSpectra` broadening is `GammaL`, not `Gamma`.
 - **Build outside the source tree.** `g++ … -o` takes any path and nothing in the
   build or the tests depends on where the binary lands, so put it in a scratch

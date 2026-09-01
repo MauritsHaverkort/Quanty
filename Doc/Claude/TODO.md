@@ -482,24 +482,46 @@ It is only the per-element push. But it means `G(w,g)[i][j].Re` is relying on th
 element having a nonzero imaginary part, which for a block-diagonal `G` is false
 off the diagonal.
 
-**Why it is not simply fixed:** the fix is in the lua number implementation
-itself — making one type carry both, or giving real numbers a `.Re`/`.Im` — and
-that is a change to vendored lua that nobody has wanted to make. Uniformly
-pushing `Complex` userdata for every element of a complex matrix would remove the
-mixing, but it allocates a userdata per element and changes what every existing
-script sees back from `Matrix.ToTable`, so it is not obviously an improvement
-either.
+### `a.Re` was the wrong spelling to begin with
 
-**Meanwhile:** in lua, read matrix elements through a helper rather than assuming
-`.Re` exists —
+Maurits: the convention in Quanty is that **a method modifies its object and a
+function returns a value**. So `a.Re` reads as "modify `a`", which is not what
+anyone means by it, and it only works at all when `a` happens to be a complex
+userdata. `Complex.Re(a)` is a function, returns the real part, and **works
+whether `a` is a complex userdata or a plain lua number**:
 
-```lua
-function ReIm(x)
-  if(type(x)=="number") then return x, 0 end
-  return x.Re, x.Im
-end
+```
+  number    Complex.Re -> 2.5   Complex.Im -> 0
+  userdata  Complex.Re -> 1     Complex.Im -> -2
 ```
 
-`Chop.Quanty` uses exactly this in its `DoubleTri` sections, with the reason
-written next to it. In C the question does not arise: every routine reads the
-`QComplex` of the operand it is handed.
+So on the reading side there is nothing to fix in the implementation — the right
+spelling already exists and already handles both types. What is needed is to stop
+using `a.Re` and `a.Im`. `Complex` also provides `New`, `I`, `Exp` and the
+lowercase aliases `re`, `im`; note `Complex.Abs` and `Complex.Conjugate` do
+**not** exist.
+
+The four `DoubleTri` test files were converted as the first instalment:
+`ChangeTypeDoubleTri`, `ChangeTypeFromDoubleTri`, `ChangeTypeDoubleTriBlock` and
+the `DoubleTri` sections of `Chop`. Converting the rest of `TestScripts/` and the
+documentation is a mechanical sweep nobody has done.
+
+**What this does not fix.** Only reading. Going the other way — *writing* a
+number into a lua table that C will read — the two formats are still distinct and
+the reader still has to be told which it is getting. `luaL_checkarray_complex16`
+accepts a plain number or a `{re,im}` pair per element but rejects a table mixing
+them, which is a real trap: `{{w, gamma/2}, {0, 0}}` works and
+`{{w, gamma/2}, 0}` does not. Nor does it fix the per-element push above; a table
+coming back from `Matrix.ToTable` still mixes numbers and userdata, it is just
+that `Complex.Re` no longer cares.
+
+**Why the rest is not simply fixed:** it would mean changing the lua number
+implementation itself so one type carries both, and that is vendored lua nobody
+has wanted to touch. Uniformly pushing `Complex` userdata for every element of a
+complex matrix would remove the mixing, but it allocates a userdata per element
+and changes what every existing script sees back from `Matrix.ToTable`, so it is
+not obviously an improvement either.
+
+**Meanwhile:** use `Complex.Re(x)` and `Complex.Im(x)`, never `x.Re`. In C the
+question does not arise: every routine reads the `QComplex` of the operand it is
+handed.

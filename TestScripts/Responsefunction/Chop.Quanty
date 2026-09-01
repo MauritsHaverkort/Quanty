@@ -289,8 +289,8 @@ if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFu
 -- and G really is the constant a0 now, at any energy and any broadening
 for i = 0, 8 do
 	local w = -4.0 + 8.0 * i / 8
-	if((G1(w,0.3).Re~=3) or (G1(w,0.3).Im~=0)) then error("a chopped DoubleTri is not exactly a0\n",1) end
-	if((G2(w,0.3).Re~=3) or (G2(w,0.3).Im~=0)) then error("a chopped DoubleTri is not exactly a0\n",1) end
+	if((Complex.Re(G1(w,0.3))~=3) or (Complex.Im(G1(w,0.3))~=0)) then error("a chopped DoubleTri is not exactly a0\n",1) end
+	if((Complex.Re(G2(w,0.3))~=3) or (Complex.Im(G2(w,0.3))~=0)) then error("a chopped DoubleTri is not exactly a0\n",1) end
 end
 
 
@@ -674,12 +674,11 @@ print("-- DoubleTri                                          --")
 -- element, and an element whose imaginary part is exactly zero is pushed as a plain lua
 -- number rather than as a Complex. So the table can be mixed, and routinely is: any G
 -- that is block diagonal has plain zeros off the diagonal, and once b0 has been chopped
--- away G is the real matrix A0 and every element is a plain number. Read through ReIm
--- rather than assuming .Re and .Im exist.
-function ReIm(x)
-	if(type(x)=="number") then return x, 0 end
-	return x.Re, x.Im
-end
+-- away G is the real matrix A0 and every element is a plain number.
+--
+-- Hence Complex.Re and Complex.Im, which are functions, return a value, and take either
+-- kind. In Quanty a method modifies its object and a function returns one, so x.Re reads
+-- as "modify x" and is the wrong spelling; use Complex.Re(x).
 
 -- Built by conversion, since that is how a block DoubleTri comes about; the expected
 -- chains are not written out by hand here, so this asserts shapes and values rather
@@ -702,8 +701,8 @@ for i, d in ipairs({false,true}) do
 		local w = -6.0 + 12.0*k/8
 		local u, v = MD(w,0.3), Chop(MD,1E-30,{{"Deflate",d}})(w,0.3)
 		for x = 1, 2 do for y = 1, 2 do
-			local ur, ui = ReIm(u[x][y])
-			local vr, vi = ReIm(v[x][y])
+			local ur, ui = Complex.Re(u[x][y]), Complex.Im(u[x][y])
+			local vr, vi = Complex.Re(v[x][y]), Complex.Im(v[x][y])
 			if(math.abs(ur-vr)+math.abs(ui-vi) > 1E-13) then
 				error("Chop of a block DoubleTri below every element changed G\n",1)
 			end
@@ -735,7 +734,7 @@ for i, G in ipairs({MD1, MD2}) do
 		local w = -6.0 + 12.0*k/8
 		local v = G(w,0.3)
 		for x = 1, 2 do for y = 1, 2 do
-			local vr, vi = ReIm(v[x][y])
+			local vr, vi = Complex.Re(v[x][y]), Complex.Im(v[x][y])
 			if((vr~=MDt[1][1][x][y]) or (vi~=0)) then
 				error("a chopped block DoubleTri is not exactly A0\n",1)
 			end
@@ -763,8 +762,8 @@ for i, d in ipairs({false,true}) do
 		local w = -5.0 + 10.0*k/12
 		local u, v = MX(w,0.3), GC(w,0.3)
 		for x = 1, 2 do for y = 1, 2 do
-			local ur, ui = ReIm(u[x][y])
-			local vr, vi = ReIm(v[x][y])
+			local ur, ui = Complex.Re(u[x][y]), Complex.Im(u[x][y])
+			local vr, vi = Complex.Re(v[x][y]), Complex.Im(v[x][y])
 			if(math.abs(ur-vr)+math.abs(ui-vi) > 1E-14) then
 				error("chopping a block DoubleTri of mixed real and complex parts changed G\n",1)
 			end
