@@ -1574,57 +1574,40 @@ BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lu
     luaL_error(L, "Error Reading Green's function without type declaration.");
   }
   type = lua_tolstring(L, -1, NULL);
-  if(strcmp(type, "Tri")==0)
-  {
-    BlockTriDiagonalMatrixType *temp;
-    lua_pop(L, 1);
-    temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
-    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-    //BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff, 1000 * DBL_MIN);
-    // TODO convert Tri to DoubleTri
-    
-    FreeBlockTridiagonalMatrix(temp);
-    free(temp);
-    return buff;
-  }
   if(strcmp(type, "And")==0)
   {
     BlockAndersonMatrixType *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-    //BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000*DBL_MIN);
-    // TODO convert And to DoubleTri
-    
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format And as DoubleTri");
+    }
+    /*  an And table carries no temperature, so the valence/conduction split is a sharp
+     *  step at mu. MergeTolerance 0 asks for the default. */
+    if(BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format And to DoubleTri");
+    }
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;
   }
+  /*  Tri, Nat and ListOfPoles have no route to the block DoubleTri form yet. Until they
+   *  do this has to fail loudly: the branches used to malloc a buffer, convert nothing
+   *  and hand back uninitialised memory without a word. */
+  if(strcmp(type, "Tri")==0)
+  {
+    luaL_error(L, "Reading a Green's function of format Tri as a block DoubleTri is not implemented");
+  }
   if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
-    BlockNaturalImpurityOrbitalMatrixType *temp;
-    lua_pop(L, 1);
-    temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
-    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-    //BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(temp, buff);
-    // TODO convert Nat to DoubleTri
-    
-    FreeBlockNaturalImpurityOrbitalMatrix(temp);
-    free(temp);
-    return buff;
+    luaL_error(L, "Reading a Green's function of format Nat as a block DoubleTri is not implemented");
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
-    BlockListOfPoles *temp;
-    lua_pop(L, 1);
-    temp = luaL_checkBlockListOfPoles(L, narg);
-    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    //BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000 * DBL_MIN, temp->N, temp->N);
-    // TODO convert ListOfPoles to DoubleTri
-    
-    FreeBlockListOfPoles(temp);
-    free(temp);
-    return buff;
+    luaL_error(L, "Reading a Green's function of format ListOfPoles as a block DoubleTri is not implemented");
   }
   if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
   {

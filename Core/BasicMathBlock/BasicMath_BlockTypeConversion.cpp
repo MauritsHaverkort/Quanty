@@ -704,6 +704,27 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   int k,i,ialpha,iN;
   char name[]="temp";
   CompactMatrixType betaisqr,betai,beta,T;
+  if(A.N==0)
+  { /*  No poles, so there is no chain and nothing to tri-diagonalize: what is left is
+     *  the offset a0. The block Lanczos below must not be handed a starting space of
+     *  dimension zero -- CompactMatrixBlockBandDiagonalize would allocate for no
+     *  blocks and then report one. */
+    B->N=0;
+    B->BlockSize=A.BlockSize;
+    B->QComplex=A.QComplex;
+    if(InitBlockTridiagonalMatrix(B))
+    {
+      printf("InitBlockTridiagonalMatrix failed in BlockListOfPolesToBlockTridiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    B->mu=A.mu;
+    strncpy(B->Name, A.Name, MAXStrLength);
+    B->Name[MAXStrLength-1]='\0';
+    if(A.QComplex) memcpy(B->a,   A.a0,   Sqr(A.BlockSize)*sizeof(Complex16));
+    else           memcpy(B->aRe, A.a0Re, Sqr(A.BlockSize)*sizeof(double));
+    return 0;
+  }
   
   betaisqr.QComplex=A.QComplex;
   betaisqr.Ni=A.BlockSize;
@@ -1383,11 +1404,157 @@ uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType con
   FreeBlockListOfPoles(&G);
   return 0;
 }
-uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT)
+/*  Split the bath of a block Anderson matrix at the chemical potential and put the two
+ *  halves in the two chains of a block double tri-diagonal matrix,
+ *
+ *    G(w) = A0 + B0^* . ( w - Gval(w) - Gcon(w) )^-1 . B0^T
+ *
+ *  The chains are the two halves of the hybridization as seen from the observed block,
+ *  so they sit in the denominator; that is what makes this different from the natural
+ *  orbital form, which adds two Green's functions and is therefore built from the poles
+ *  of G. Here the source is the pole list of the hybridization,
+ *  BlockAndersonMatrixInverseToBlockListOfPoles.
+ *
+ *  Four steps, and the order matters:
+ *
+ *   1. the bath as poles, one rank one weight per bath state;
+ *   2. merge the degenerate ones. This restores the symmetry of a degenerate multiplet:
+ *      the rank one weights of a degenerate group add to B P B^+ with P the spectral
+ *      projector, which does not depend on the basis the eigensolver picked inside the
+ *      group, while each weight separately does;
+ *   3. the Fermi split, f to the valence chain and 1-f to the conduction chain. It comes
+ *      after the merge so that degenerate partners get an identical f by construction
+ *      and the split cannot undo the symmetry the merge just restored;
+ *   4. a block Lanczos on each half.
+ *
+ *  MergeTolerance has to stay far below any physical splitting: micro eV Zeeman
+ *  splittings on a band of tens of eV are the case this type exists for. The error it
+ *  is meant to hide is the O(eps * |A_k|) of the individual BlockSize by BlockSize
+ *  diagonalizations, which does not grow with the number of poles, so the default is a
+ *  few eps times the band width. Pass a value <= 0 to get that default.
+ *
+ *  The impurity block is shared by the two branches: val.a[0] + con.a[0] is what enters
+ *  the denominator and each is given half of it. How it is split is a gauge with no
+ *  canonical value, so equal halves is a convention and not an invariant.
+ *
+ *  A chain can come out empty, with mu below or above the whole bath, and both can with
+ *  no bath at all. B is not allocated on entry.
+ */
+uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT, double const SingularValue, double const MergeTolerance)
 {
-  //TODO;
-  printf("TODO: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
-  return 1;
+  uint32_t BS, BS2, NBath, i, NBlockMax, stride;
+  double tol, BandWidth;
+  BlockListOfPoles Delta, Dval, Dcon;
+
+  BS    = A->BlockSize;
+  BS2   = BS * BS;
+  NBath = (A->N == 0) ? 0 : A->N - 1;
+
+  if (BlockAndersonMatrixInverseToBlockListOfPoles(A, &Delta))
+  {
+    printf("BlockAndersonMatrixInverseToBlockListOfPoles failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (Delta.N != 0)
+  {
+    tol = MergeTolerance;
+    if (tol <= 0)
+    { /*  the poles are ordered, so the first and the last give the band width */
+      stride = 1 + BS2;
+      if (Delta.QComplex) BandWidth = fabs(Delta.V[0].Re)   + fabs(Delta.V[(Delta.N-1)*stride].Re);
+      else                BandWidth = fabs(Delta.VRe[0])    + fabs(Delta.VRe[(Delta.N-1)*stride]);
+      tol = 8 * DBL_EPSILON * (BandWidth + DBL_EPSILON);
+    }
+    if (BlockListOfPolesMergeDegeneratePoles(&Delta, tol))
+    {
+      printf("BlockListOfPolesMergeDegeneratePoles failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+      fflush(stdout);
+      FreeBlockListOfPoles(&Delta);
+      return 1;
+    }
+  }
+  /*  CopyBlockListOfPoles* copies a0 along and scales only the weights */
+  if (CopyBlockListOfPolesVal(Delta, &Dval, A->mu, kbT) || CopyBlockListOfPolesCon(Delta, &Dcon, A->mu, kbT))
+  {
+    printf("CopyBlockListOfPolesVal/Con failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(&Delta);
+    return 1;
+  }
+  FreeBlockListOfPoles(&Delta);
+  /*  half of the impurity block into each head. BlockListOfPolesToBlockTridiagonalMatrix
+   *  writes a pole list's a0 into a[0] of the chain, so this needs no special casing */
+  for (i = 0; i < BS2; i++)
+  {
+    if (A->QComplex)
+    {
+      Dval.a0[i].Re *= 0.5;  Dval.a0[i].Im *= 0.5;
+      Dcon.a0[i].Re *= 0.5;  Dcon.a0[i].Im *= 0.5;
+    }
+    else
+    {
+      Dval.a0Re[i] *= 0.5;
+      Dcon.a0Re[i] *= 0.5;
+    }
+  }
+  /*  a level outside the +-40 kbT window has an exactly zero weight in one of the two
+   *  halves; dropping those is exact, and it is what makes an absent branch a pole list
+   *  with no poles */
+  BlockListOfPolesRemoveZeroWeightPoles(&Dval);
+  BlockListOfPolesRemoveZeroWeightPoles(&Dcon);
+  /*  a chain spans at most the whole bath, NBath*BlockSize states. Blocks shrink where
+   *  the block Lanczos deflates, so in the limit that is NBath*BlockSize blocks of
+   *  dimension one; the routine stops of its own accord once the Krylov space is
+   *  exhausted, so this bounds an allocation and does not truncate anything. */
+  NBlockMax = NBath * BS;
+  if (BlockListOfPolesToBlockTridiagonalMatrix(Dval, &(B->val), NBlockMax, SingularValue))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrix failed for val in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(&Dval);
+    FreeBlockListOfPoles(&Dcon);
+    return 1;
+  }
+  if (BlockListOfPolesToBlockTridiagonalMatrix(Dcon, &(B->con), NBlockMax, SingularValue))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrix failed for con in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockTridiagonalMatrix(&(B->val));
+    FreeBlockListOfPoles(&Dval);
+    FreeBlockListOfPoles(&Dcon);
+    return 1;
+  }
+  FreeBlockListOfPoles(&Dval);
+  FreeBlockListOfPoles(&Dcon);
+
+  B->BlockSize = BS;
+  B->QComplex  = A->QComplex;
+  B->mu        = A->mu;
+  B->kBT       = kbT;
+  strncpy(B->Name, A->Name, MAXStrLength);
+  B->Name[MAXStrLength-1] = '\0';
+  /*  a0 and b0 of the matrix itself. A matrix of dimension zero has an a[0] but no
+   *  b[0]; b0 then stays zero, which is what says nothing couples to it. */
+  B->a0.QComplex = A->QComplex;  B->a0.Ni = BS;  B->a0.Nj = BS;
+  B->b0.QComplex = A->QComplex;  B->b0.Ni = BS;  B->b0.Nj = BS;
+  if (InitCompactMatrix(&(B->a0)) || InitCompactMatrix(&(B->b0)))
+  {
+    printf("InitCompactMatrix failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (A->QComplex)
+  {
+    memcpy(B->a0.V, A->a, BS2 * sizeof(Complex16));
+    if (A->N != 0) memcpy(B->b0.V, A->b, BS2 * sizeof(Complex16));
+  }
+  else
+  {
+    memcpy(B->a0.VRe, A->aRe, BS2 * sizeof(double));
+    if (A->N != 0) memcpy(B->b0.VRe, A->bRe, BS2 * sizeof(double));
+  }
+  return 0;
 }
 uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)
 {

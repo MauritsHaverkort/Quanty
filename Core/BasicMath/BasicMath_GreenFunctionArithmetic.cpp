@@ -4156,9 +4156,9 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
 {
   if(Min->Block==true)
-  {
-    ConvertBlockMatrix(Min,Mout,type,T,SingularValue);
-    return 0;
+  { /*  pass the failure on, so that ChangeType raises a lua error rather than handing
+     *  back a response function whose data was never allocated */
+    return ConvertBlockMatrix(Min,Mout,type,T,SingularValue);
   }
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;

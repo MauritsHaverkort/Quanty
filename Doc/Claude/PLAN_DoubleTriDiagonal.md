@@ -263,9 +263,58 @@ Exists for the block type: `Init`, `Free`, `Copy`, `Evaluate`,
 doing anything. Missing: `…Part` (the `Nv`/`Nc` primitive), `…Add`,
 `…ToImpurityHamiltonian`.
 
-**`a → d` is designed and agreed** — see "Decided: how `a → d` is built in block
-form" in §8 for the algorithm, the signature, the `MergeTolerance` finding and the
-four traps in the primitives. That is the next thing to write.
+**`a → d` is written and works.** See "Decided: how `a → d` is built in block
+form" in §8 for the algorithm and the reasoning.
+`BlockAndersonMatrixInverseToBlockListOfPoles` and
+`BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(A, B, kbT, SingularValue, MergeTolerance)`
+exist, the `a → d` cell of `ConvertBlockMatrix` is wired, and
+`ResponseFunction.ChangeType(blockAnd, "DoubleTri", {{"EffectivekBT", …}})`
+reproduces the original `G` to 1e-13 on a 120-point grid at `Gamma` 0.3 and 0.02,
+including `mu` outside the bath in both directions:
+
+| case | val.N | con.N | max relative error |
+|---|---|---|---|
+| kBT finite, 20 bath blocks of 2 | 23 | 23 | 6.7e-14 |
+| kBT zero | 20 | 20 | 1.8e-13 |
+| mu off centre | 31 | 40 | 8.7e-14 |
+| valence chain empty | 0 | 40 | 4.3e-14 |
+| conduction chain empty | 40 | 0 | 4.2e-14 |
+| 3 bath blocks | 6 | 6 | 6.4e-14 |
+| 1 bath block | 1 | 2 | 3.7e-14 |
+
+Also `d → d` and the lua table round trip, both bit exact.
+
+Two supporting fixes were needed. `BlockListOfPolesToBlockTridiagonalMatrix` now
+returns early for a pole list with no poles — it used to hand the block Lanczos a
+starting space of dimension zero, which produced a matrix claiming one more block
+than it owned. And `ConvertResponsefunction` now **passes on**
+`ConvertBlockMatrix`'s return value instead of discarding it, so a `d →` cell that
+is not implemented reaches lua as an error rather than as a response function whose
+`data` was never allocated. One new helper,
+`BlockListOfPolesRemoveZeroWeightPoles`, exact and with no tolerance.
+
+**Chain lengths exceed `NBath` blocks, and the cap can bind.** With 20 bath blocks
+of size 2 the chains come out 23 and up to 40 blocks long, so `NBath` would have
+been the wrong bound and `NBath·BlockSize` is right — the rank-1 weights make the
+starting block deflate, blocks shrink, and the chain lengthens. But `con.N = 40` in
+the `mu` off centre case is **exactly** the cap, so there the chain was truncated
+rather than exhausted. `G` is still reproduced to 8.7e-14, which is precisely the
+situation [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) warns about: the
+tail of a chain barely shows on a uniform grid. Worth measuring before trusting long
+block chains.
+
+**The four type-dispatch branches of `luaL_checkBlockDoubleTriDiagonalMatrixType`
+are unreachable today.** Every caller — `luaL_checkResponsefunction` and the
+`"DoubleTri"` branches of the block `Tri`, `And` and `Nat` readers — passes a table
+that is already of type `DoubleTri`, so only that branch ever runs. The `"And"`
+branch is implemented anyway and the other three now `luaL_error`; the value is
+removing the trap, not fixing a live bug. **The non-block reader
+`luaL_checkDoubleTriDiagonalMatrixType` has the identical four dead branches**, and
+there all four conversions already exist, so those are four one-line calls whenever
+someone wants them.
+
+Still to do for the block row: a test file (step 4 of the order of work), and the
+`d →` cells.
 
 **The non-block insights carry over directly**, and are the reason the block row
 should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is

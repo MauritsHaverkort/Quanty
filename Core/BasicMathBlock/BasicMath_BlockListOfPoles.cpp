@@ -139,6 +139,65 @@ uint32_t CopyBlockListOfPolesVal(BlockListOfPoles A, BlockListOfPoles *B, double
   return 0;
 }
 
+/*  Remove every pole whose weight matrix is exactly zero.
+ *
+ *  The Fermi split of a hybridization multiplies each weight by f or by 1-f, and
+ *  FermiFunction returns exactly 1.0 below mu-40 kbT and exactly 0.0 above mu+40 kbT,
+ *  so a level outside that window comes out with an exactly zero weight in one of the
+ *  two halves. Dropping those is exact -- they contribute nothing to G -- and it is
+ *  what makes an absent branch come out as a pole list with no poles rather than as a
+ *  block Lanczos that deflates to nothing on its first step.
+ *
+ *  There is deliberately no tolerance here. A pole with a small but nonzero weight is
+ *  kept, so this can never quietly discard spectral weight; the tiny weights near the
+ *  edge of the Fermi window are exactly the ones the scalar code keeps as well.
+ */
+uint32_t BlockListOfPolesRemoveZeroWeightPoles(BlockListOfPoles * const A)
+{
+  uint32_t i, j, keep, stride;
+  bool zero;
+  stride = 1 + Sqr(A->BlockSize);
+  keep = 0;
+  for(i=0;i<A->N;i++)
+  {
+    zero = true;
+    for(j=1;j<stride;j++)
+    {
+      if(A->QComplex)
+      {
+        if((A->V[i*stride+j].Re!=0)||(A->V[i*stride+j].Im!=0)) { zero = false; break; }
+      }
+      else
+      {
+        if(A->VRe[i*stride+j]!=0) { zero = false; break; }
+      }
+    }
+    if(zero) continue;
+    if(keep!=i)
+    {
+      if(A->QComplex) memmove(&(A->V[keep*stride]),   &(A->V[i*stride]),   stride*sizeof(Complex16));
+      else            memmove(&(A->VRe[keep*stride]), &(A->VRe[i*stride]), stride*sizeof(double));
+    }
+    keep++;
+  }
+  if(keep!=A->N)
+  { /*  a0 sits at V[N*stride] and moves down with N */
+    if(A->QComplex)
+    {
+      memmove(&(A->V[keep*stride]), A->a0, Sqr(A->BlockSize)*sizeof(Complex16));
+      A->N  = keep;
+      A->a0 = &(A->V[A->N*stride]);
+    }
+    else
+    {
+      memmove(&(A->VRe[keep*stride]), A->a0Re, Sqr(A->BlockSize)*sizeof(double));
+      A->N    = keep;
+      A->a0Re = &(A->VRe[A->N*stride]);
+    }
+  }
+  return 0;
+}
+
 /*
  *   A <- scale * A
  */
