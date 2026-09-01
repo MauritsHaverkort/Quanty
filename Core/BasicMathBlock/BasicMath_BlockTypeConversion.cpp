@@ -1216,6 +1216,157 @@ uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A
   BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
   return 0;
 }
+/*  On entry A holds a Green's function as a BlockAndersonMatrix,
+ *
+ *    G(w)     = A0 + B0^* . ( w - A1 - Delta(w) )^-1 . B0^T
+ *    Delta(w) = sum_k B_k . ( w - A_{k+1} )^-1 . B_k^+          k = 1 ... A->N-1
+ *
+ *  On exit Delta holds everything that sits in that denominator, A1 + Delta(w), as a
+ *  block list of poles: a0 = A1, and one pole per bath state.
+ *
+ *  This is the block twin of AndersonMatrixInverseToListOfPoles, which for the scalar
+ *  type sets a0 = a[1] and lists the bath as b_i^2 at a_{i+2}. Here a bath block is a
+ *  matrix rather than a number, so each is diagonalized on its own,
+ *  A_{k+1} = U_k L_k U_k^+, and contributes BlockSize poles at its eigenvalues:
+ *
+ *    Delta(w) = sum_{k,m} v_{k,m} v_{k,m}^+ / ( w - l_{k,m} ),   v_{k,m} = (B_k U_k)[:,m]
+ *
+ *  Every weight is therefore a rank one Hermitian matrix, and that is the point rather
+ *  than a shortcoming. Summing the rank one weights over a degenerate group of levels
+ *  gives B_k P B_k^+ with P the spectral projector of that group, which does not depend
+ *  on the arbitrary basis LAPACK picks inside it, while each term separately does. So a
+ *  caller that needs the symmetry of a degenerate multiplet back merges the degenerate
+ *  poles, which adds their weight matrices -- spectral weight being the only thing that
+ *  may be added. See BlockListOfPolesMergeDegeneratePoles.
+ *
+ *  The bath blocks are uncoupled, so they are diagonalized one at a time, BlockSize by
+ *  BlockSize: O(NBath * BlockSize^3), and the full matrix is never assembled. Do not
+ *  confuse this with BlockAndersonMatrixToBlockListOfPoles, which builds the whole
+ *  matrix dense, diagonalizes it at O((N*BlockSize)^3) and returns the poles of G. The
+ *  poles of G are the right source for the natural orbital form, which adds two Green's
+ *  functions; the poles of the hybridization are the right source for the double
+ *  tri-diagonal form, whose two chains sit in the denominator.
+ *
+ *  The poles come out ordered by energy, which is what merging degenerate ones expects.
+ *
+ *  Delta is not allocated on entry.
+ */
+uint32_t BlockAndersonMatrixInverseToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const Delta)
+{
+  uint32_t k, m, i, j, BS, BS2, NBath, ipole, base;
+  char name[] = "bath block";
+  CompactMatrixType Abath, Bk, fun, Vk;
+  double *val;
+
+  BS    = A->BlockSize;
+  BS2   = BS * BS;
+  NBath = (A->N == 0) ? 0 : A->N - 1;
+
+  Delta->N         = NBath * BS;
+  Delta->BlockSize = BS;
+  Delta->QComplex  = A->QComplex;
+  if (InitBlockListOfPoles(Delta))
+  {
+    printf("InitBlockListOfPoles failed in BlockAndersonMatrixInverseToBlockListOfPoles\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(Delta->Name, A->Name, MAXStrLength);
+  Delta->Name[MAXStrLength-1] = '\0';
+  Delta->mu = A->mu;
+
+  /*  a0 is the impurity block A1. A matrix of dimension zero does not have one, and
+   *  InitBlockListOfPoles has already left a0 at zero for that case */
+  if (A->N != 0)
+  {
+    if (A->QComplex) memcpy(Delta->a0,   &(A->a[BS2]),   BS2 * sizeof(Complex16));
+    else             memcpy(Delta->a0Re, &(A->aRe[BS2]), BS2 * sizeof(double));
+  }
+  if (NBath == 0) return 0;
+
+  if ((val = (double*)malloc(BS * sizeof(double))) == NULL)
+  {
+    printf("malloc for val failed in BlockAndersonMatrixInverseToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(Delta);
+    return 1;
+  }
+  /*  Abath and Bk are views on A's own storage and are never freed */
+  Abath.Name = name;  Abath.Ni = BS;  Abath.Nj = BS;  Abath.QComplex = A->QComplex;
+  Abath.a0 = 0;  Abath.b0 = 1;  Abath.mu = 0;  Abath.OnLuaStack = false;
+  Bk = Abath;
+
+  ipole = 0;
+  for (k = 0; k < NBath; k++)
+  {
+    /*  the bath block A_{k+1} is A->a[k+2], the hopping B_k into it is A->b[k+1] */
+    if (A->QComplex)
+    {
+      Abath.V = &(A->a[(k+2)*BS2]);
+      Bk.V    = &(A->b[(k+1)*BS2]);
+    }
+    else
+    {
+      Abath.VRe = &(A->aRe[(k+2)*BS2]);
+      Bk.VRe    = &(A->bRe[(k+1)*BS2]);
+    }
+    /*  CompactMatrixEigensystem returns fun with fun^* . A . fun^T diagonal, so the
+     *  eigenvectors are the rows of fun and U_k is fun^T */
+    if (CompactMatrixEigensystem(&Abath, &fun, val))
+    {
+      printf("CompactMatrixEigensystem failed for bath block %u in BlockAndersonMatrixInverseToBlockListOfPoles\n", k);
+      fflush(stdout);
+      free(val);
+      FreeBlockListOfPoles(Delta);
+      return 1;
+    }
+    if (CompactMatrixMultiply('N', 'T', &Bk, &fun, &Vk))
+    {
+      printf("CompactMatrixMultiply failed for bath block %u in BlockAndersonMatrixInverseToBlockListOfPoles\n", k);
+      fflush(stdout);
+      FreeCompactMatrix(&fun);
+      free(val);
+      FreeBlockListOfPoles(Delta);
+      return 1;
+    }
+    /*  column m of Vk is v_{k,m}, and the pole at l_{k,m} carries v_{k,m} v_{k,m}^+ */
+    for (m = 0; m < BS; m++)
+    {
+      base = ipole * (1 + BS2);
+      if (A->QComplex)
+      {
+        Delta->V[base].Re = val[m];
+        Delta->V[base].Im = 0;
+        for (i = 0; i < BS; i++)
+        {
+          for (j = 0; j < BS; j++)
+          {
+            Delta->V[base + 1 + i*BS + j].Re =  Vk.V[i*BS+m].Re * Vk.V[j*BS+m].Re + Vk.V[i*BS+m].Im * Vk.V[j*BS+m].Im;
+            Delta->V[base + 1 + i*BS + j].Im = -Vk.V[i*BS+m].Re * Vk.V[j*BS+m].Im + Vk.V[i*BS+m].Im * Vk.V[j*BS+m].Re;
+          }
+        }
+      }
+      else
+      {
+        Delta->VRe[base] = val[m];
+        for (i = 0; i < BS; i++)
+        {
+          for (j = 0; j < BS; j++)
+          {
+            Delta->VRe[base + 1 + i*BS + j] = Vk.VRe[i*BS+m] * Vk.VRe[j*BS+m];
+          }
+        }
+      }
+      ipole++;
+    }
+    FreeCompactMatrix(&fun);
+    FreeCompactMatrix(&Vk);
+  }
+  free(val);
+  OrderBlockListOfPoles(Delta);
+  return 0;
+}
+
 uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
 {
   //TODO: all

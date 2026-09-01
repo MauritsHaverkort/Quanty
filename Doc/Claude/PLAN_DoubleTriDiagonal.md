@@ -1047,6 +1047,55 @@ diagonalizes it, `O((N·BlockSize)³)`, and returns the poles of `G` — the rig
 source for `n`, the wrong one for `d`, whose chains are the hybridisation seen
 from the impurity and sit in the denominator.
 
+**Written and verified.** `CompactMatrixEigensystem` returns `fun` with
+`fun^*·A·fun^T` diagonal, so the eigenvectors are the **rows** of `fun` and
+`U_k = fun^T`; the code forms `V_k = B_k·U_k` as
+`CompactMatrixMultiply('N','T', &Bk, &fun, &Vk)` and reads `v_{k,m}` off as column
+`m`. The poles are ordered on the way out, which is what the merge expects.
+`Abath` and `Bk` are views on the Anderson matrix's own storage and are never
+freed. `A->N == 0` gives an empty pole list with `a0 = 0`, per the `b0 == 0`
+convention.
+
+It has no caller yet, so it was verified by routing the block `a → l` cell of
+`ConvertBlockMatrix` through it temporarily, checking, and reverting. Against
+`A1 + Σ_k B_k (w − A_{k+1})⁻¹ B_k^+` computed independently in lua with
+`Matrix.Inverse`, on the real axis away from every pole:
+
+| case | max difference |
+|---|---|
+| `BlockSize` 1, 4 bath blocks — must match the scalar convention | 8.9e-16 |
+| `BlockSize` 2, 3 bath blocks, none diagonal | 4.4e-16 |
+| `BlockSize` 3, one bath block | 5.6e-17 |
+| a doubly degenerate 2×2 bath block | 1.1e-16 |
+
+And the property the rank-1 form exists for. Maurits' example to 64 digits, the
+bath block `2·I` with hopping `{{c,s},{s,-c}}`:
+
+```
+c = 0.5830044176323191546188243313891656343050509643544691478828829605
+s = 0.8124689834210290580594052941697557903194370438951662443780806694
+```
+
+The two rank-1 weights come out `{{c²,cs},{cs,s²}}` and `{{s²,-cs},{-cs,c²}}` —
+basis-dependent, as expected — and their sum has an off-diagonal that is
+**exactly** `0` and a diagonal that equals `c*c + s*s` **bit for bit**. So the
+merge recovers `b·b^+` with no error at all; the `±cs` cancel exactly.
+
+Those doubles satisfy `c² + s² = 1 - 1 ulp` (`-1.11e-16`), so the merged weight
+differs from the unrotated form's exact identity by exactly that — the input's own
+precision, not the conversion's. **Two consequences for the test:** assert against
+`b·b^+`, never against the identity; and note that
+`(c,s) = (0.6, 0.8)` and `(0.28, 0.96)` *are* exactly orthogonal in double
+(`c*c + s*s - 1 == 0`), so with a Pythagorean reflection the whole merged pole
+list is **bit identical** between the two bath bases, with no tolerance at all.
+Verified for `(0.6,0.8)`, `(0.28,0.96)` and `(-0.8,0.6)`. That is the form the
+bath-rotation test should take.
+
+Only the real path is exercised. The `QComplex` branch is written but nothing
+builds a complex block Anderson matrix in these tests, so it is unverified — and
+per the `b0^*`/`b0^T` note above that is exactly where a convention slip would
+hide.
+
 ```
 BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(A, B, kbT, SingularValue, MergeTolerance)
   BlockAndersonMatrixInverseToBlockListOfPoles(A, &Delta)
