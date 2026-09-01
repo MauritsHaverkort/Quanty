@@ -1596,8 +1596,9 @@ BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lu
     {
       luaL_error(L, "malloc failed reading a Green's function of format And as DoubleTri");
     }
-    /*  an And table carries no temperature, so the valence/conduction split is a sharp
-     *  step at mu. MergeTolerance 0 asks for the default. */
+    /*  none of these table formats carries a temperature, so the valence/conduction
+     *  split is a sharp step at the mu of the source. MergeTolerance 0 asks for the
+     *  default, a few DBL_EPSILON times the band width. */
     if(BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
     {
       luaL_error(L, "Failed to convert a Green's function of format And to DoubleTri");
@@ -1606,20 +1607,59 @@ BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lu
     free(temp);
     return buff;
   }
-  /*  Tri, Nat and ListOfPoles have no route to the block DoubleTri form yet. Until they
-   *  do this has to fail loudly: the branches used to malloc a buffer, convert nothing
-   *  and hand back uninitialised memory without a word. */
   if(strcmp(type, "Tri")==0)
   {
-    luaL_error(L, "Reading a Green's function of format Tri as a block DoubleTri is not implemented");
+    BlockTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format Tri as a block DoubleTri");
+    }
+    if(BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(*temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format Tri to a block DoubleTri");
+    }
+    FreeBlockTridiagonalMatrix(temp);
+    free(temp);
+    return buff;
   }
   if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
   {
-    luaL_error(L, "Reading a Green's function of format Nat as a block DoubleTri is not implemented");
+    BlockNaturalImpurityOrbitalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format Nat as a block DoubleTri");
+    }
+    if(BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format Nat to a block DoubleTri");
+    }
+    FreeBlockNaturalImpurityOrbitalMatrix(temp);
+    free(temp);
+    return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
   {
-    luaL_error(L, "Reading a Green's function of format ListOfPoles as a block DoubleTri is not implemented");
+    BlockListOfPoles *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockListOfPoles(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format ListOfPoles as a block DoubleTri");
+    }
+    if(BlockListOfPolesToBlockDoubleTriDiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format ListOfPoles to a block DoubleTri");
+    }
+    FreeBlockListOfPoles(temp);
+    free(temp);
+    return buff;
   }
   if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
   {

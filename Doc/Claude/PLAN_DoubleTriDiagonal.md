@@ -303,12 +303,18 @@ situation [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) warns about: 
 tail of a chain barely shows on a uniform grid. Worth measuring before trusting long
 block chains.
 
-**The four type-dispatch branches of `luaL_checkBlockDoubleTriDiagonalMatrixType`
-are unreachable today.** Every caller — `luaL_checkResponsefunction` and the
-`"DoubleTri"` branches of the block `Tri`, `And` and `Nat` readers — passes a table
-that is already of type `DoubleTri`, so only that branch ever runs. The `"And"`
-branch is implemented anyway and the other three now `luaL_error`; the value is
-removing the trap, not fixing a live bug.
+**Both `DoubleTri` readers now convert on all four branches**, block and non-block:
+`Tri`, `And`, `Nat` and `ListOfPoles`. They used to `malloc` a buffer, convert
+nothing and return it uninitialised without a word. Each is now one call to the
+corresponding conversion, with the `malloc` checked and a `luaL_error` on failure.
+`mu` comes from the source table and `kBT` is 0 — none of those table formats
+carries a temperature, so the split is a sharp step at `mu`.
+
+**All eight are unreachable from any current call site.** Every caller of either
+reader — `luaL_checkResponsefunction` and the `"DoubleTri"` branches of the `Tri`,
+`And` and `Nat` readers — passes a table that is already of type `DoubleTri`, so
+only that branch ever runs. The value is removing the uninitialised-memory trap,
+not fixing a live bug.
 
 **The non-block reader `luaL_checkDoubleTriDiagonalMatrixType` had the identical four
 dead branches, and all four are now written**, since every non-block conversion into
@@ -319,12 +325,34 @@ dead branches, and all four are now written**, since every non-block conversion 
 0 — none of those table formats carries a temperature, so the split is a sharp step at
 `mu`, the same choice the block reader's `And` branch makes.
 
-They are unreachable from any current call site for the same reason as the block ones,
-so they were verified with a temporary hook in `luaL_checkResponsefunction` that routes
-a table carrying `AsDoubleTri=1` through the `DoubleTri` reader whatever its own type
-says. Reverted afterwards; `G` agreed to 4.2e-16 from `And`, 2.5e-16 from `Tri`,
-2.2e-15 from `ListOfPoles` and 4.7e-16 from `Nat`, with `mu` carried across in all
-four. That hook is the way to reach these branches if they ever need testing again.
+**How to reach them for testing.** A temporary hook at the top of the type dispatch
+in `luaL_checkResponsefunction`:
+
+```c
+lua_getfield(L, narg, "AsDoubleTri");
+if(lua_isnil(L,-1)==0)
+{
+  lua_pop(L, 2);
+  buff->type='D';
+  if(buff->Block==true) buff->data=(void*)luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
+  else                  buff->data=(void*)luaL_checkDoubleTriDiagonalMatrixType(L, narg);
+  return buff;
+}
+lua_pop(L, 1);
+```
+
+Then a lua table carrying `AsDoubleTri=1` is read by the `DoubleTri` reader whatever
+its own `type` says. Both sets were checked this way and the hook reverted. `G` after
+the round trip, against the source:
+
+| source | non-block | block |
+|---|---|---|
+| `And` | 4.2e-16 | 5.2e-16 |
+| `Tri` | 2.5e-16 | 1.1e-15 |
+| `ListOfPoles` | 2.2e-15 | 1.6e-15 |
+| `Nat` | 4.7e-16 | 5.4e-15 |
+
+`mu` came across in all eight.
 
 **Tested by `TestScripts/Responsefunction/ChangeTypeDoubleTriBlock.Quanty`**,
 registered in `All.Quanty` and in `.gitlab-ci.yml`. Beyond the grid comparison it
