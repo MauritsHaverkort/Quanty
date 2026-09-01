@@ -97,10 +97,7 @@ for i=1,#responsfunctionList do
 end
 
 -- test Chop
--- ResponsefunctionChop has no DoubleTri case yet, so those are skipped here rather
--- than being fed to it
 for i=1,#responsfunctionList do
-	if(responsfunctionListType[i]=="DoubleTri") then goto continue end
 	temp  = Chop(responsfunctionList[i],0.2)
 	temp2 = Chop(responsfunctionList[i])
 	temp2.Chop(0.2)
@@ -108,7 +105,6 @@ for i=1,#responsfunctionList do
 		print(responsfunctionList[i])
 		error("Response type failed in loop ",i,",\n",1)
 	end
-	::continue::
 end
 
 

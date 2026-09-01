@@ -4474,6 +4474,18 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate)
         }
       }
         break;
+      case 'd':
+      {
+        if(Deflate==true)
+        {
+          BlockDoubleTriDiagonalMatrixChopReduceDimension((BlockDoubleTriDiagonalMatrixType*)(M->data), epsilon);
+        }
+        else
+        {
+          BlockDoubleTriDiagonalMatrixChop((BlockDoubleTriDiagonalMatrixType*)(M->data), epsilon);
+        }
+      }
+        break;
       default:
       {
         printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
@@ -4530,6 +4542,18 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate)
         else
         {
           BADoubleTriDiagonalMatrixChop((BADoubleTriDiagonalMatrixType *)(M->data), epsilon);
+        }
+      }
+        break;
+      case 'd':
+      {
+        if(Deflate==true)
+        {
+          DoubleTriDiagonalMatrixChopReduceDimension((DoubleTriDiagonalMatrixType *)(M->data), epsilon);
+        }
+        else
+        {
+          DoubleTriDiagonalMatrixChop((DoubleTriDiagonalMatrixType *)(M->data), epsilon);
         }
       }
         break;

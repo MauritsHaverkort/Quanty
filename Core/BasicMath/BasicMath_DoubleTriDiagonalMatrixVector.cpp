@@ -91,33 +91,44 @@ uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const
   return 0;
 }
 
-/* set elements with an absolute value smaller then epsilon to zero
+/*  set elements with an absolute value smaller then epsilon to zero, keeping the
+ *  dimensions. The two chains are ordinary tri-diagonal matrices, so they are chopped
+ *  by the tri-diagonal routine; what is left is the pair a0, b0 of the matrix itself.
  */
 void DoubleTriDiagonalMatrixChop(DoubleTriDiagonalMatrixType * const M, double const epsilon)
 {
-  uint32_t i;
-  for (i = 0; i < M->val.N; i++)
-  {
-    if ((fabs(M->val.a[i]) < epsilon))
-      M->val.a[i] = 0;
-    if ((fabs(M->val.b[i]) < epsilon))
-      M->val.b[i] = 0;
-  }
-  if ((fabs(M->val.a[M->val.N]) < epsilon))
-    M->val.a[M->val.N] = 0;
-  for (i = 0; i < M->con.N; i++)
-  {
-    if ((fabs(M->con.a[i]) < epsilon))
-      M->con.a[i] = 0;
-    if ((fabs(M->con.b[i]) < epsilon))
-      M->con.b[i] = 0;
-  }
-  if ((fabs(M->con.a[M->con.N]) < epsilon))
-    M->con.a[M->con.N] = 0;
-  if ((fabs(M->a0) < epsilon))
-    M->a0 = 0;
+  TriDiagonalMatrixChop(&(M->val), epsilon);
+  TriDiagonalMatrixChop(&(M->con), epsilon);
+  if ((fabs(M->a0) < epsilon)) M->a0 = 0;
+  if ((fabs(M->b0) < epsilon)) M->b0 = 0;
+}
+
+/*  as above, and shorten what a chopped hopping has disconnected.
+ *
+ *  There are three places a dimension can collapse and all three already mean
+ *  something:
+ *
+ *   - a small val.b[k] cuts the valence chain at k. TriDiagonalMatrixChopReduceDimension
+ *     does that;
+ *   - a small val.b[0] disconnects the whole branch, so val.N becomes 0 and the branch
+ *     contributes only its site energy val.a[0] to the denominator. That is the same
+ *     call: it sets N = i at the first small b, and i = 0 gives N = 0;
+ *   - a small b0 is the hopping onto the observed site itself. Nothing then couples to
+ *     the matrix at all, so G(w) = a0 and the matrix has no dimension left: both chains
+ *     go to zero. This is the b0 == 0 convention the conversions out of this type all
+ *     test for.
+ */
+void DoubleTriDiagonalMatrixChopReduceDimension(DoubleTriDiagonalMatrixType * const M, double const epsilon)
+{
+  TriDiagonalMatrixChopReduceDimension(&(M->val), epsilon);
+  TriDiagonalMatrixChopReduceDimension(&(M->con), epsilon);
+  if ((fabs(M->a0) < epsilon)) M->a0 = 0;
   if ((fabs(M->b0) < epsilon))
+  {
     M->b0 = 0;
+    M->val.N = 0;
+    M->con.N = 0;
+  }
 }
 
 /*  MI=M^-1
