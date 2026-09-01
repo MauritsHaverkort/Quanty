@@ -358,9 +358,21 @@ of emptying a branch. Fixed, one line. Nothing in the suite moved by a digit, wh
 means no existing test converts `t → a` or `t → n` with a nonzero `mu` — the bug was
 invisible to it.
 
-**`G.mu` on a block `d` userdata still fails**, which is how the `mu` bug was found:
-the probe died reading it. That is one of the 21 dispatch sites listed above with no
-`d` case, now confirmed to bite in practice rather than only in principle.
+**The six index metamethods are done.** `G.mu`, `G.type` and `G.name`, read and
+written, now work on a `d` userdata, block and non-block — `LuaResponseFunctionIndexMu`,
+`…IndexType`, `…IndexName`, `…NewIndexMu`, `…NewIndexName`. Exercised in
+`__index.Quanty`, which already loops over one response function of every type; the
+`Chop` loop there skips `d`, since `ResponsefunctionChop` still has no `d` case.
+
+That work started because a probe died reading `G.mu`, and it turned up a second
+defect worth knowing about. **Nine `luaL_error` calls in
+`LuaInterface/ResponseFunction.cpp` formatted a `char` with `%s`** —
+`luaL_error(L, "ResponseFunction of undifined type %s\n", a->type)` and two variants
+on `M->type`. A `char` promoted into a `%s` is read as a pointer, so the error path
+itself segfaulted instead of raising. That is why the probe *died* rather than
+reporting. All nine are now `%c`. Worth remembering when adding the remaining `d`
+cases: several of the 21 dispatch sites end in a `default:` like this, so the failure
+mode is a crash and not a message.
 
 Still to do for the block row: the `d →` cells, `l → d`, `n → d`, the index
 metamethods, and `Chop`/`Part`/`Add`/`ToImpurityHamiltonian`.

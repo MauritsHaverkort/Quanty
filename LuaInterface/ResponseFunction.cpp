@@ -2614,7 +2614,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
     }
     default:
     {
-      return luaL_error(L, "Error in Responsefunction.CreateBitMasks() unrecognized type in response function (%s)\n",M->type);
+      return luaL_error(L, "Error in Responsefunction.CreateBitMasks() unrecognized type in response function (%c)\n",M->type);
     }
   }
   return 0;
@@ -2707,7 +2707,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     }
     default:
     {
-      return luaL_error(L, "Error in Responsefunction.ToTightbinding() unrecognized type for conversion (%s)\n",M->type);
+      return luaL_error(L, "Error in Responsefunction.ToTightbinding() unrecognized type for conversion (%c)\n",M->type);
       return 0;
     }
   }
@@ -3048,7 +3048,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
     }
     default:
     {
-      return luaL_error(L, "Error in Responsefunction.ToOperator() unrecognized type for conversion (%s)\n",M->type);
+      return luaL_error(L, "Error in Responsefunction.ToOperator() unrecognized type for conversion (%c)\n",M->type);
       return 0;
     }
   }
@@ -3292,7 +3292,7 @@ static int LuaResponseFunctionLen(lua_State *L)
     }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
       return 0;
     }
   }
@@ -3359,9 +3359,23 @@ static int LuaResponseFunctionIndexMu(lua_State *L)
         return 1;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        lua_pushnumber(L, ((BlockDoubleTriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+      else
+      {
+        lua_pushnumber(L, ((DoubleTriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }
@@ -3398,9 +3412,16 @@ static int LuaResponseFunctionIndexType(lua_State *L)
       return 1;
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      lua_pushstring(L, "DoubleTri");
+      return 1;
+      break;
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
       return 0;
     }
   }
@@ -3467,9 +3488,23 @@ static int LuaResponseFunctionIndexName(lua_State *L)
         return 1;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        lua_pushstring(L, ((BlockDoubleTriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+      else
+      {
+        lua_pushstring(L, ((DoubleTriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }
@@ -3636,9 +3671,23 @@ static int LuaResponseFunctionNewIndexMu(lua_State *L)
         return 0;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        ((BlockDoubleTriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+      else
+      {
+        ((DoubleTriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }
@@ -3712,9 +3761,25 @@ static int LuaResponseFunctionNewIndexName(lua_State *L)
         return 0;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        strncpy(((BlockDoubleTriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((BlockDoubleTriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+      else
+      {
+        strncpy(((DoubleTriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((DoubleTriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }

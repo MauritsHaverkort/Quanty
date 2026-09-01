@@ -61,8 +61,14 @@ Mcon = ResponseFunction.New( { {A0,ac1,ac2,ac3}, {B1,B2,B3}, mu=0, type="ListOfP
 
 MN = ResponseFunction.New( {{A0,B0},val=Mval,con=Mcon,mu=0,type="Nat", name="MN"} )
 
-responsfunctionList = {GL,GT,GA,GN,ML,MT,MA,MN}
-responsfunctionListType = {"ListOfPoles","Tri","And","Nat","ListOfPoles","Tri","And","Nat"}
+-- The double tri-diagonal form, scalar and block. Made by conversion rather than
+-- written out, since a table of type DoubleTri needs its two chains spelled out and
+-- the point here is only to have one of each type to index.
+GD = ResponseFunction.ChangeType(GA, "DoubleTri", {{"EffectivekBT", 0.05}})
+MD = ResponseFunction.ChangeType(MA, "DoubleTri", {{"EffectivekBT", 0.05}})
+
+responsfunctionList = {GL,GT,GA,GN,GD,ML,MT,MA,MN,MD}
+responsfunctionListType = {"ListOfPoles","Tri","And","Nat","DoubleTri","ListOfPoles","Tri","And","Nat","DoubleTri"}
 
 -- test mu
 for i=1,#responsfunctionList do
@@ -91,7 +97,10 @@ for i=1,#responsfunctionList do
 end
 
 -- test Chop
+-- ResponsefunctionChop has no DoubleTri case yet, so those are skipped here rather
+-- than being fed to it
 for i=1,#responsfunctionList do
+	if(responsfunctionListType[i]=="DoubleTri") then goto continue end
 	temp  = Chop(responsfunctionList[i],0.2)
 	temp2 = Chop(responsfunctionList[i])
 	temp2.Chop(0.2)
@@ -99,6 +108,7 @@ for i=1,#responsfunctionList do
 		print(responsfunctionList[i])
 		error("Response type failed in loop ",i,",\n",1)
 	end
+	::continue::
 end
 
 
