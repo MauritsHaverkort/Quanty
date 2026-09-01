@@ -188,6 +188,7 @@ test-jobs-Responsefunction:
           - "CalculateSelfEnergy"
           - "ChangeType"
           - "ChangeTypeDoubleTri"
+          - "ChangeTypeDoubleTriBlock"
           - "ChangeTypeFromDoubleTri"
           - "Chop"
           - "CreateBitMasks"

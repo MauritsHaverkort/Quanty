@@ -1,0 +1,278 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction ChangeType to DoubleTri, block     --")
+print("--------------------------------------------------------")
+
+-- The block double tri-diagonal representation holds one observed block with a
+-- valence chain and a conduction chain hanging off it:
+--
+--   G(w) = A0 + B0^* . ( w - Gval(w) - Gcon(w) )^-1 . B0^T
+--
+-- with Gval and Gcon ordinary block tri-diagonal response functions. Note the
+-- conjugate on the left and the transpose on the right, which is the convention of
+-- every Block type; it only shows up for a complex matrix.
+--
+-- The observed block energy is val.a[0] + con.a[0], the plain sum, and each chain is
+-- given half of it by convention.
+--
+-- Converting a block Anderson matrix to this form is not the block version of the
+-- natural orbital conversion. The two chains here are the two halves of the
+-- hybridization as seen from the observed block, so they sit in the denominator,
+-- which means the object to split is the bath and not the poles of G. Each bath
+-- block is diagonalized on its own and contributes BlockSize poles carrying a rank
+-- one weight v v^+; degenerate ones are merged, which is what restores the symmetry
+-- of a multiplet, since the rank one weights of a degenerate group add up to
+-- B P B^+ with P the spectral projector and that does not depend on the basis the
+-- eigensolver picked inside the group. Only then is the Fermi split applied, so that
+-- degenerate partners get an identical f by construction.
+
+-- largest relative difference between two block response functions on a grid
+function MaxRelDiff(G1, G2, gamma)
+	local worst = 0.0
+	for i = 0, 120 do
+		local w = -7.0 + 14.0 * i / 120
+		local t1, t2 = G1(w, gamma), G2(w, gamma)
+		local num, den = 0.0, 0.0
+		for a = 1, #t1 do
+			for b = 1, #t1[a] do
+				local x, y = t1[a][b], t2[a][b]
+				num = num + (x.Re - y.Re)^2 + (x.Im - y.Im)^2
+				den = den + x.Re * x.Re + x.Im * x.Im
+			end
+		end
+		if (den > 0) then
+			local e = math.sqrt(num / den)
+			if e > worst then worst = e end
+		end
+	end
+	return worst
+end
+
+-- a block Anderson matrix of BlockSize 2 with nb bath blocks across the band
+function MakeBlockAnderson(nb, mu)
+	local a = {{{0.0, 0.0}, {0.0, 0.0}}, {{1.7, 0.2}, {0.2, 1.3}}}
+	local b = {{{1.4, 0.0}, {0.0, 1.4}}}
+	for i = 1, nb do
+		local E = -5.0 + 10.0 * (i - 0.5) / nb
+		local o = 0.15 * math.sin(i)
+		a[#a + 1] = {{E, o}, {o, E + 0.3 * math.cos(i)}}
+		local v = 0.5 * math.sqrt(math.max(0.0, 25.0 - E * E)) / math.sqrt(nb)
+		b[#b + 1] = {{v, 0.3 * v}, {-0.2 * v, 0.9 * v}}
+	end
+	return ResponseFunction.New({a, b, mu = mu, type = "And", name = "bath"}), a, b
+end
+
+-- A . B^T for two BlockSize by BlockSize real blocks given as lua tables
+function ABT(A, B)
+	local C = {}
+	for i = 1, #A do
+		C[i] = {}
+		for j = 1, #A do
+			C[i][j] = 0.0
+			for k = 1, #A do C[i][j] = C[i][j] + A[i][k] * B[j][k] end
+		end
+	end
+	return C
+end
+
+function Check(name, nb, mu, kBT)
+	local GA, a, b = MakeBlockAnderson(nb, mu)
+	local GD = ResponseFunction.ChangeType(GA, "DoubleTri", {{"EffectivekBT", kBT}})
+	local t = ResponseFunction.ToTable(GD)
+	local nv, nc = #(t.val[1]) - 1, #(t.con[1]) - 1
+	local e = math.max(MaxRelDiff(GA, GD, 0.3), MaxRelDiff(GA, GD, 0.02))
+	-- the observed block energy is shared by the two chains and has to add up. Each
+	-- head is given exactly half, so this is exact and not a tolerance
+	for i = 1, 2 do
+		for j = 1, 2 do
+			if (t.val[1][1][i][j] + t.con[1][1][i][j]) ~= a[2][i][j] then
+				error("ChangeType block DoubleTri: val.a[0]+con.a[0] is not A1 for " .. name, 1)
+			end
+		end
+	end
+	-- the two chains together carry the whole hybridization weight, sum_k B_k B_k^T
+	local W = {{0.0, 0.0}, {0.0, 0.0}}
+	for k = 2, #b do
+		local P = ABT(b[k], b[k])
+		for i = 1, 2 do for j = 1, 2 do W[i][j] = W[i][j] + P[i][j] end end
+	end
+	local Wv = (nv > 0) and ABT(t.val[2][1], t.val[2][1]) or {{0.0, 0.0}, {0.0, 0.0}}
+	local Wc = (nc > 0) and ABT(t.con[2][1], t.con[2][1]) or {{0.0, 0.0}, {0.0, 0.0}}
+	local scale = 1.0 + math.abs(W[1][1]) + math.abs(W[2][2])
+	for i = 1, 2 do
+		for j = 1, 2 do
+			if math.abs(Wv[i][j] + Wc[i][j] - W[i][j]) > 1E-12 * scale then
+				error("ChangeType block DoubleTri: the two chains do not carry the whole weight for " .. name, 1)
+			end
+		end
+	end
+	-- and it survives a round trip through a lua table
+	local e2 = MaxRelDiff(GD, ResponseFunction.ToUserdata(ResponseFunction.ToTable(GD)), 0.02)
+	if e2 > 1E-13 then
+		error("ChangeType block DoubleTri does not survive a table round trip for " .. name, 1)
+	end
+	print(string.format("  %-30s val.N=%3d con.N=%3d   max relative error %9.2e", name, nv, nc, e))
+	if e > 1E-11 then
+		error("ChangeType block DoubleTri does not reproduce the original function for " .. name, 1)
+	end
+	return GD, nv, nc
+end
+
+print("block Anderson to block DoubleTri, agreement with the original function")
+Check("kBT finite",        20,  0.0,  0.025)
+Check("kBT zero",          20,  0.0,  0.0)
+Check("mu off centre",     20, -1.3,  0.1)
+Check("small bath",         3,  0.0,  0.3)
+Check("one bath block",     1,  0.0,  0.3)
+
+-- A chain of length zero is a legal block double tri-diagonal matrix: that branch is
+-- absent and contributes only its share of the observed block energy to the
+-- denominator. It happens whenever the chemical potential lies outside the bath, and
+-- with no bath at all both chains are empty.
+GDv, nv, nc = Check("valence chain empty",    20, -6.0, 0.025)
+if nv ~= 0 then error("ChangeType block DoubleTri: expected an empty valence chain", 1) end
+GDc, nv, nc = Check("conduction chain empty", 20,  6.0, 0.025)
+if nc ~= 0 then error("ChangeType block DoubleTri: expected an empty conduction chain", 1) end
+GD0, nv, nc = Check("no bath at all",          0,  0.0, 0.025)
+if (nv ~= 0) or (nc ~= 0) then
+	error("ChangeType block DoubleTri: expected two empty chains with no bath", 1)
+end
+
+-- Copying has to work for those too, which is what converting a block double
+-- tri-diagonal matrix to its own type does
+for i, G in ipairs({GDv, GDc, GD0}) do
+	local e = MaxRelDiff(G, ResponseFunction.ChangeType(G, "DoubleTri"), 0.02)
+	if e ~= 0.0 then
+		error("copying a block DoubleTri with an empty chain is not exact", 1)
+	end
+end
+print("  copying a block DoubleTri with an empty chain is bit exact")
+
+-- ---------------------------------------------------------------------------
+-- Rotating the bath
+-- ---------------------------------------------------------------------------
+-- A unitary change of basis inside the bath leaves G alone: with A_k -> U^+ A_k U
+-- and B_k -> B_k U the hybridization is unchanged. What the double tri-diagonal form
+-- does with it is the interesting question, and the answer differs between a
+-- degenerate and a non-degenerate bath.
+--
+-- (c,s) = (0.6,0.8) is a reflection that is exactly orthogonal in double arithmetic,
+-- c*c + s*s - 1 == 0, so nothing below is limited by the precision of U itself.
+c, s = 0.6, 0.8
+U = {{c, s}, {s, -c}}          -- symmetric, so U^T = U and U*U = 1
+
+function Rotate(M)             -- U^T . M . U
+	local T = {}
+	for i = 1, 2 do
+		T[i] = {}
+		for j = 1, 2 do
+			T[i][j] = 0.0
+			for p = 1, 2 do for q = 1, 2 do T[i][j] = T[i][j] + U[p][i] * M[p][q] * U[q][j] end end
+		end
+	end
+	return T
+end
+
+function RightMul(M)           -- M . U
+	local T = {}
+	for i = 1, 2 do
+		T[i] = {}
+		for j = 1, 2 do T[i][j] = M[i][1] * U[1][j] + M[i][2] * U[2][j] end
+	end
+	return T
+end
+
+function RotateBath(a, b)
+	local ar, br = {a[1], a[2]}, {b[1]}
+	for k = 3, #a do ar[k] = Rotate(a[k]) end
+	for k = 2, #b do br[k] = RightMul(b[k]) end
+	return ar, br
+end
+
+function BothWays(a, b, kBT)
+	local ar, br = RotateBath(a, b)
+	return ResponseFunction.ChangeType(ResponseFunction.New({a, b, mu = 0, type = "And", name = "r"}),
+	                                   "DoubleTri", {{"EffectivekBT", kBT}}),
+	       ResponseFunction.ChangeType(ResponseFunction.New({ar, br, mu = 0, type = "And", name = "r"}),
+	                                   "DoubleTri", {{"EffectivekBT", kBT}})
+end
+
+-- A degenerate bath block is the case the rank one weights and the merge exist for:
+-- there the eigenvectors inside the degenerate subspace are arbitrary, so nothing
+-- would be reproducible without the merge. With it the two matrices must agree
+-- element by element, and they do bit for bit.
+function CheckRotationExact(name, a, b, kBT)
+	local G1, G2 = BothWays(a, b, kBT)
+	local t1, t2 = ResponseFunction.ToTable(G1), ResponseFunction.ToTable(G2)
+	local n, nexact = 0, 0
+	local function cmp(A, B, what)
+		if #A ~= #B then
+			error("bath rotation changed the " .. what .. " length for " .. name, 1)
+		end
+		for k = 1, #A do
+			for i = 1, 2 do
+				for j = 1, 2 do
+					n = n + 1
+					if A[k][i][j] == B[k][i][j] then nexact = nexact + 1 end
+				end
+			end
+		end
+	end
+	cmp(t1[1],     t2[1],     "a0 b0")
+	cmp(t1.val[1], t2.val[1], "val.a")
+	cmp(t1.val[2], t2.val[2], "val.b")
+	cmp(t1.con[1], t2.con[1], "con.a")
+	cmp(t1.con[2], t2.con[2], "con.b")
+	print(string.format("  %-30s val.N=%3d con.N=%3d   %d of %d elements bit exact",
+	      name, #(t1.val[1]) - 1, #(t1.con[1]) - 1, nexact, n))
+	if nexact ~= n then
+		error("a rotation of a degenerate bath does not reproduce the same matrix for " .. name, 1)
+	end
+end
+
+print("rotating the bath by an exactly orthogonal reflection")
+CheckRotationExact("degenerate block",
+	{{{0.0,0.0},{0.0,0.0}}, {{1.0,0.0},{0.0,1.0}}, {{2.0,0.0},{0.0,2.0}}},
+	{{{1.0,0.0},{0.0,1.0}}, {{1.0,0.0},{0.0,1.0}}}, 0.05)
+CheckRotationExact("two degenerate blocks",
+	{{{0.0,0.0},{0.0,0.0}}, {{1.0,0.0},{0.0,1.0}}, {{-2.0,0.0},{0.0,-2.0}}, {{2.0,0.0},{0.0,2.0}}},
+	{{{1.0,0.0},{0.0,1.0}}, {{0.5,0.0},{0.0,0.5}}, {{0.4,0.0},{0.0,0.4}}}, 0.05)
+
+-- A non-degenerate bath is a different statement, and a weaker one. The eigenvectors
+-- are determined up to a sign there, and v v^+ does not depend on that sign, so the
+-- pole list is invariant in exact arithmetic. But dsyev on U^T A U does not do the
+-- same arithmetic as dsyev on A, the eigenvalues come out perturbed at 1e-16, and the
+-- deflation inside the block Lanczos then cuts in a different place: the chain gets a
+-- different number of blocks. So the chain itself is not a basis invariant object
+-- here, only G is. That is the same "the chain tail is not determined" behaviour
+-- documented in Doc/Claude/TODO_ConversionAccuracy.md, showing up in the length
+-- rather than in the coefficients.
+function CheckRotationG(name, a, b, kBT)
+	local G1, G2 = BothWays(a, b, kBT)
+	local t1, t2 = ResponseFunction.ToTable(G1), ResponseFunction.ToTable(G2)
+	local e = math.max(MaxRelDiff(G1, G2, 0.3), MaxRelDiff(G1, G2, 0.02))
+	print(string.format("  %-30s val.N %d vs %d, con.N %d vs %d   G differs by %9.2e",
+	      name, #(t1.val[1]) - 1, #(t2.val[1]) - 1, #(t1.con[1]) - 1, #(t2.con[1]) - 1, e))
+	if e > 1E-11 then
+		error("a rotation of the bath changes G for " .. name, 1)
+	end
+end
+
+CheckRotationG("non degenerate bath",
+	{{{0.0,0.0},{0.0,0.0}}, {{1.7,0.2},{0.2,1.3}}, {{-2.0,0.4},{0.4,-1.6}}, {{0.5,-0.3},{-0.3,0.9}}},
+	{{{1.4,0.0},{0.0,1.4}}, {{0.5,0.1},{0.2,0.45}}, {{0.35,-0.2},{0.1,0.4}}}, 0.05)
+
+-- ---------------------------------------------------------------------------
+-- What is not implemented has to fail loudly
+-- ---------------------------------------------------------------------------
+-- ConvertBlockMatrix returns 1 for a cell that is not written, ConvertResponsefunction
+-- passes that on, and ChangeType turns it into a lua error. Without the middle step a
+-- caller got a response function whose data had never been allocated.
+GD = Check("a matrix to try them on", 6, 0.0, 0.05)
+for i, ty in ipairs({"LP", "Tri", "And", "Nat"}) do
+	if pcall(function() return ResponseFunction.ChangeType(GD, ty) end) then
+		error("ChangeType from a block DoubleTri to " .. ty .. " is not implemented and must fail", 1)
+	end
+end
+print("  the block DoubleTri to LP, Tri, And and Nat cells all raise an error")
+
+print("--------------------------------------------------------")

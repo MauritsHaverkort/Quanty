@@ -313,8 +313,32 @@ removing the trap, not fixing a live bug. **The non-block reader
 there all four conversions already exist, so those are four one-line calls whenever
 someone wants them.
 
-Still to do for the block row: a test file (step 4 of the order of work), and the
-`d →` cells.
+**Tested by `TestScripts/Responsefunction/ChangeTypeDoubleTriBlock.Quanty`**,
+registered in `All.Quanty` and in `.gitlab-ci.yml`. Beyond the grid comparison it
+pins down three things:
+
+- `val.a[0] + con.a[0] == A1` **exactly**, element for element, and the two chain
+  heads carry the whole hybridization weight `Σ_k B_k B_k^T` to 1e-12 relative.
+- **Rotating the bath by an exactly orthogonal reflection.** `(c,s) = (0.6,0.8)`
+  satisfies `c*c + s*s - 1 == 0` in double, so the test is not limited by the
+  precision of `U`. For a **degenerate** bath block the two `d` matrices come out
+  **bit identical**, every element — that is the property the rank-1 weights and the
+  merge exist for, since the eigenvectors inside a degenerate subspace are otherwise
+  arbitrary. For a **non-degenerate** bath the statement is weaker and the test says
+  so: `v v^+` is sign-independent so the pole list is invariant in exact arithmetic,
+  but `dsyev` on `U^T A U` perturbs the eigenvalues at 1e-16, the deflation inside
+  the block Lanczos then cuts elsewhere, and the chain comes out a **different
+  length** — 4 blocks against 6 in the case tested. `G` still agrees to 1.8e-14. So
+  the chain is not a basis-invariant object for a non-degenerate bath, only `G` is.
+  That is the "chain tail is not determined" behaviour of
+  [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) appearing in the length
+  rather than in the coefficients.
+- the four unimplemented `d →` cells each raise a lua error, which is the
+  regression test for the `ConvertBlockMatrix` → `ConvertResponsefunction` →
+  `ChangeType` failure path.
+
+Still to do for the block row: the `d →` cells, `l → d`, `t → d`, `n → d`, and
+`Chop`/`Part`/`Add`/`ToImpurityHamiltonian`.
 
 **The non-block insights carry over directly**, and are the reason the block row
 should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is
