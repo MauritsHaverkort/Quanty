@@ -188,6 +188,52 @@ if nc ~= 0 then
 end
 
 -- ---------------------------------------------------------------------------
+-- From the list of poles and from the natural orbital form
+-- ---------------------------------------------------------------------------
+-- Both also go through the Anderson form, and for the list of poles the detour is not
+-- avoidable: a list of poles holds the poles of G, while the two chains here are the
+-- two halves of the hybridization and sit in the denominator. Getting from one to the
+-- other means inverting, and the Anderson form is what does that.
+--
+-- The natural orbital form is not a change of basis on this one either -- it adds two
+-- Green's functions where this nests two chains -- so the only thing they agree on is
+-- G, and the route again goes through a form that holds G plainly.
+--
+-- These compose three and four conversions respectively, so the errors accumulate:
+-- measured worst case 4.6e-13 from the poles and 1.3e-12 from the natural orbital
+-- form, against 5e-13 for the one step routes. Hence 1e-10 here rather than the 1e-11
+-- used above; the headroom is deliberate and the measured numbers are in the printout.
+function CheckFromOther(name, ty, nb, mu, kBT)
+	local GA = MakeBlockAnderson(nb, mu)
+	local GS = ResponseFunction.ChangeType(GA, ty, {{"EffectivekBT", kBT}})
+	local GD = ResponseFunction.ChangeType(GS, "DoubleTri", {{"EffectivekBT", kBT}})
+	local t = ResponseFunction.ToTable(GD)
+	local nv, nc = #(t.val[1]) - 1, #(t.con[1]) - 1
+	local e = math.max(MaxRelDiff(GS, GD, 0.3), MaxRelDiff(GS, GD, 0.02))
+	print(string.format("  %-30s val.N=%3d con.N=%3d   max relative error %9.2e", name, nv, nc, e))
+	if e > 1E-10 then
+		error("ChangeType block " .. ty .. " to DoubleTri does not reproduce the original function for " .. name, 1)
+	end
+	return nv, nc
+end
+
+print("block ListOfPoles and Nat to block DoubleTri, through the Anderson form")
+for i, ty in ipairs({"LP", "Nat"}) do
+	CheckFromOther(ty .. ", kBT finite",    ty, 20,  0.0, 0.025)
+	CheckFromOther(ty .. ", mu off centre", ty, 20, -1.3, 0.1)
+	CheckFromOther(ty .. ", small bath",    ty,  6,  0.0, 0.05)
+	-- mu outside the bath has to empty a chain on these routes too
+	local nv, nc = CheckFromOther(ty .. ", valence empty",    ty, 20, -6.0, 0.025)
+	if nv ~= 0 then
+		error("block " .. ty .. " to DoubleTri: mu below the bath must give an empty valence chain", 1)
+	end
+	nv, nc = CheckFromOther(ty .. ", conduction empty", ty, 20,  6.0, 0.025)
+	if nc ~= 0 then
+		error("block " .. ty .. " to DoubleTri: mu above the bath must give an empty conduction chain", 1)
+	end
+end
+
+-- ---------------------------------------------------------------------------
 -- Rotating the bath
 -- ---------------------------------------------------------------------------
 -- A unitary change of basis inside the bath leaves G alone: with A_k -> U^+ A_k U

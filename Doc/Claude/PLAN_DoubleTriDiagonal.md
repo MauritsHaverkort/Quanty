@@ -374,8 +374,40 @@ reporting. All nine are now `%c`. Worth remembering when adding the remaining `d
 cases: several of the 21 dispatch sites end in a `default:` like this, so the failure
 mode is a crash and not a message.
 
-Still to do for the block row: the `d →` cells, `l → d`, `n → d`, the index
-metamethods, and `Chop`/`Part`/`Add`/`ToImpurityHamiltonian`.
+**`l → d` and `n → d` go the same way**, `l → a → d` and `n → a → d`, with the
+signature of the family: `(source, B, kbT, SingularValue, MergeTolerance)`. Both
+stubs had different parameter lists — `l → d` had `NBlockMaxVal`/`NBlockMaxCon`,
+which have no role once the chain lengths come from the bath size — and both were
+changed to match.
+
+For the pole list the detour is not avoidable: `l` holds the poles of `G`, while
+the two chains of `d` are the two halves of the hybridization and sit in the
+**denominator**, so getting from one to the other means inverting, and that is what
+the Anderson form is. Worth keeping straight from
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix`, which splits the poles of `G`
+directly and never inverts — it looks like the same function and is a different
+calculation. `n → d` is not a change of basis either, for the same §1 reason.
+
+Measured, against the source, on the 120-point grid at `Gamma` 0.3 and 0.02:
+
+| route | worst error |
+|---|---|
+| `a → d`, `t → d` | 5e-13 |
+| `l → d` | 4.6e-13 |
+| `n → d` | 1.3e-12 |
+
+`n → d` composes four conversions (`n → l → t → a → d`) and shows it, so the test
+allows 1e-10 on those two rows rather than the 1e-11 used elsewhere, with the
+measured numbers in the printout so the headroom is visible. `mu` outside the bath
+empties a chain on every route.
+
+Both intermediates were measured before being built on: block `l → a` and `n → a`
+reproduce `G` to 5e-13, like `t → a`.
+
+**The whole inbound block row is now done: `l`, `t`, `a`, `n` and the copy all reach
+`d`.** Still to do: the `d →` cells, and
+`Chop`/`Part`/`Add`/`ToImpurityHamiltonian`. `ResponsefunctionChop` having no `d`
+case is why `__index.Quanty`'s `Chop` loop skips the two `d` entries.
 
 **The non-block insights carry over directly**, and are the reason the block row
 should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is

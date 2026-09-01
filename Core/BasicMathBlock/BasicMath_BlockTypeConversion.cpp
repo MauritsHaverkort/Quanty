@@ -865,11 +865,42 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
-uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+/*  A block list of poles to the block double tri-diagonal form, through the Anderson
+ *  form, as the scalar type does.
+ *
+ *  The detour is not avoidable: a list of poles holds the poles of G, while the two
+ *  chains of the double tri-diagonal form are the two halves of the hybridization and
+ *  sit in the denominator. Getting from one to the other means inverting, which is
+ *  exactly what the Anderson form is: BlockListOfPolesToBlockAndersonMatrix
+ *  tri-diagonalizes the poles and then reads the bath off the chain.
+ *
+ *  Note this is not the route to the natural orbital form. That one splits the poles of
+ *  G directly and adds the two resulting Green's functions, so it never needs the
+ *  inversion -- see BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix, which looks
+ *  deceptively similar and is a different calculation.
+ *
+ *  B is not allocated on entry.
+ */
+uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, double const SingularValue, double const MergeTolerance)
 {
-  // TODO:
-  printf("TODO: BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  /*  the +1 mirrors the l -> a cell of ConvertBlockMatrix, which carries a TODO saying
+   *  it should not be needed */
+  if (BlockListOfPolesToBlockAndersonMatrix(*A, &AAnd, A->N + 1, SingularValue))
+  {
+    printf("BlockListOfPolesToBlockAndersonMatrix failed in BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kbT, SingularValue, MergeTolerance))
+  {
+    printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  return 0;
 }
 
 /*  on entry A contains the Green's function in a BlockListOfPoles format.
@@ -3005,11 +3036,40 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNa
   return 1;
 }
 
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue)
+/*  A block natural impurity orbital matrix to the block double tri-diagonal form,
+ *  through the Anderson form.
+ *
+ *  These two types are not a change of basis on each other. The natural orbital form
+ *  adds two Green's functions, G = A0 + B0^* (gval + gcon) B0^T, while the double
+ *  tri-diagonal form nests its two chains in one denominator. The only thing they agree
+ *  on is G, so the route is through a form that holds G plainly, and the Anderson form
+ *  is the one that then hands over a bath to split.
+ *
+ *  BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix goes by way of the poles of
+ *  G, so this composition diagonalizes twice. Its own comment says the algorithm can
+ *  be optimized; it reproduces G to 5e-13, which is what matters here, and a direct
+ *  route would still have to invert somewhere.
+ *
+ *  B is not allocated on entry.
+ */
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue, double const MergeTolerance)
 {
-  //TODO:
-  printf("TODO: BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  if (BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(A, &AAnd))
+  {
+    printf("BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix failed in BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MergeTolerance))
+  {
+    printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  return 0;
 }
 
 

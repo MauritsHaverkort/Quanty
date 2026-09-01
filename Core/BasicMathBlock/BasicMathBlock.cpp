@@ -167,6 +167,19 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
         }
         break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
+          if(BlockListOfPolesToBlockDoubleTriDiagonalMatrix((BlockListOfPoles*)(Min->data), (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, 0))
+          {
+            printf("BlockListOfPolesToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
         default:
         {
           printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c", type);
@@ -322,6 +335,19 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
           CopyBlockNaturalImpurityOrbitalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
+        }
+        break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
+          if(BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, 0))
+          {
+            printf("BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
         }
         break;
         default:
