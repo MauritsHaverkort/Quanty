@@ -308,10 +308,23 @@ are unreachable today.** Every caller — `luaL_checkResponsefunction` and the
 `"DoubleTri"` branches of the block `Tri`, `And` and `Nat` readers — passes a table
 that is already of type `DoubleTri`, so only that branch ever runs. The `"And"`
 branch is implemented anyway and the other three now `luaL_error`; the value is
-removing the trap, not fixing a live bug. **The non-block reader
-`luaL_checkDoubleTriDiagonalMatrixType` has the identical four dead branches**, and
-there all four conversions already exist, so those are four one-line calls whenever
-someone wants them.
+removing the trap, not fixing a live bug.
+
+**The non-block reader `luaL_checkDoubleTriDiagonalMatrixType` had the identical four
+dead branches, and all four are now written**, since every non-block conversion into
+`d` exists: `TriDiagonalMatrixToDoubleTriDiagonalMatrix`,
+`AndersonMatrixToDoubleTriDiagonalMatrix`,
+`BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix` and
+`ListOfPolesToDoubleTridiagonalMatrix`. `mu` comes from the source table and `kBT` is
+0 — none of those table formats carries a temperature, so the split is a sharp step at
+`mu`, the same choice the block reader's `And` branch makes.
+
+They are unreachable from any current call site for the same reason as the block ones,
+so they were verified with a temporary hook in `luaL_checkResponsefunction` that routes
+a table carrying `AsDoubleTri=1` through the `DoubleTri` reader whatever its own type
+says. Reverted afterwards; `G` agreed to 4.2e-16 from `And`, 2.5e-16 from `Tri`,
+2.2e-15 from `ListOfPoles` and 4.7e-16 from `Nat`, with `mu` carried across in all
+four. That hook is the way to reach these branches if they ever need testing again.
 
 **Tested by `TestScripts/Responsefunction/ChangeTypeDoubleTriBlock.Quanty`**,
 registered in `All.Quanty` and in `.gitlab-ci.yml`. Beyond the grid comparison it
