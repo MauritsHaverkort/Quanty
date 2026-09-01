@@ -337,8 +337,33 @@ pins down three things:
   regression test for the `ConvertBlockMatrix` → `ConvertResponsefunction` →
   `ChangeType` failure path.
 
-Still to do for the block row: the `d →` cells, `l → d`, `t → d`, `n → d`, and
-`Chop`/`Part`/`Add`/`ToImpurityHamiltonian`.
+**`t → d` is written too, through the Anderson form**, the same route the scalar
+type takes. Both steps need the bath diagonalized, so composing costs one dense
+`O((N·BlockSize)³)` diagonalization — what a direct route would cost as well — plus
+the block-local ones of the second step. It reproduces `G` to 5e-13 for 20 bath
+blocks of size 2, and `mu` outside the bath empties a chain as it should.
+
+`BlockTriDiagonalMatrixToBlockAndersonMatrix`'s `!!Does not work as intended yet!!`
+header turns out to be about the *shape* of its output and not about `G`: it
+reproduces `G` to 5e-13, and its two complaints — hoppings mixed between the
+orbitals of a block, bath blocks reordered because the eigenvalues are sorted — are
+both irrelevant on this path, since `a → d` diagonalizes every bath block again on
+its way to the hybridization poles.
+
+**But it dropped `mu`.** The `N == 0` and `N == 1` branches set `B->mu = ATri.mu`
+and the general branch did not, so anything converted through it came out with the
+chemical potential at zero and a Fermi split further downstream then happened in the
+wrong place: `t → d` with `mu = ±6` gave the same chain lengths as `mu = 0` instead
+of emptying a branch. Fixed, one line. Nothing in the suite moved by a digit, which
+means no existing test converts `t → a` or `t → n` with a nonzero `mu` — the bug was
+invisible to it.
+
+**`G.mu` on a block `d` userdata still fails**, which is how the `mu` bug was found:
+the probe died reading it. That is one of the 21 dispatch sites listed above with no
+`d` case, now confirmed to bite in practice rather than only in principle.
+
+Still to do for the block row: the `d →` cells, `l → d`, `n → d`, the index
+metamethods, and `Chop`/`Part`/`Add`/`ToImpurityHamiltonian`.
 
 **The non-block insights carry over directly**, and are the reason the block row
 should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is
@@ -372,8 +397,22 @@ verified only to agree with the plain version when there is nothing to deflate.
   1-based. `Complex.Abs` and `Complex.Conjugate` do not exist.
   `Spectra.ToTable(sp)` gives `sp[ispectrum][ipoint] = {energy, value}`.
 - `ToSpectra` broadening is `GammaL`, not `Gamma`.
-- Running a test script rewrites the `.svg` files under
-  `TestScripts/*/OutputPlots/`; `git checkout --` them before committing.
+- **Build outside the source tree.** `g++ … -o` takes any path and nothing in the
+  build or the tests depends on where the binary lands, so put it in a scratch
+  directory (or `build/`, which `.gitignore` already covers) rather than leaving a
+  `Quanty` in the repo root. CI builds `Quanty.exe` in the root and runs
+  `./Quanty.exe "TestScripts/Responsefunction/NAME.Quanty"` from there; both that
+  and running from inside the test directory work, since `All.Quanty` finds its own
+  directory with `debug.getinfo`.
+- Running the test suite does **not** normally rewrite the `.svg` files under
+  `TestScripts/*/OutputPlots/`; they come out byte-identical, from the repo root or
+  from inside the test directory, at `-O2` or at `-O1` with ASan. One did change
+  once, during the window when `AndersonMatrixToCompactMatrix` and
+  `ResponseFunctionGetB0` were still reading uninitialised memory for a
+  dimension-zero matrix — an uninitialised read is the one thing that would make a
+  plot change intermittently, and it has been stable since those were fixed. So
+  check `git status` after a run rather than reflexively `git checkout --`ing the
+  plots: a changed `.svg` is now a signal, not noise.
 
 ---
 

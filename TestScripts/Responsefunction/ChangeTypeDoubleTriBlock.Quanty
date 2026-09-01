@@ -148,6 +148,46 @@ end
 print("  copying a block DoubleTri with an empty chain is bit exact")
 
 -- ---------------------------------------------------------------------------
+-- From the block tri-diagonal form, through the Anderson form
+-- ---------------------------------------------------------------------------
+-- Both steps need the bath diagonalized, so composing costs one dense
+-- O((N*BlockSize)^3) diagonalization, which is what a direct route would cost too.
+--
+-- BlockTriDiagonalMatrixToBlockAndersonMatrix carries a comment saying it does not
+-- work as intended, about the hoppings coming out mixed between the orbitals of a
+-- block and the bath blocks being reordered. Both are about the shape of the Anderson
+-- form and not about G, and neither matters here: the second step diagonalizes every
+-- bath block again, so a mixed hopping or a permuted bath changes nothing downstream.
+function CheckFromTri(name, nb, mu, kBT)
+	local GT = ResponseFunction.ChangeType(MakeBlockAnderson(nb, mu), "Tri")
+	local GD = ResponseFunction.ChangeType(GT, "DoubleTri", {{"EffectivekBT", kBT}})
+	local t = ResponseFunction.ToTable(GD)
+	local nv, nc = #(t.val[1]) - 1, #(t.con[1]) - 1
+	local e = math.max(MaxRelDiff(GT, GD, 0.3), MaxRelDiff(GT, GD, 0.02))
+	print(string.format("  %-30s val.N=%3d con.N=%3d   max relative error %9.2e", name, nv, nc, e))
+	if e > 1E-11 then
+		error("ChangeType block Tri to DoubleTri does not reproduce the original function for " .. name, 1)
+	end
+	return nv, nc
+end
+
+print("block Tri to block DoubleTri, through the Anderson form")
+CheckFromTri("kBT finite",     20,  0.0, 0.025)
+CheckFromTri("mu off centre",  20, -1.3, 0.1)
+CheckFromTri("small bath",      3,  0.0, 0.3)
+-- mu outside the bath has to empty a chain here too. It did not until
+-- BlockTriDiagonalMatrixToBlockAndersonMatrix stopped dropping mu on its general
+-- path: the split then happened at zero whatever the source said.
+nv, nc = CheckFromTri("valence chain empty",    20, -6.0, 0.025)
+if nv ~= 0 then
+	error("block Tri to DoubleTri: mu below the bath must give an empty valence chain", 1)
+end
+nv, nc = CheckFromTri("conduction chain empty", 20,  6.0, 0.025)
+if nc ~= 0 then
+	error("block Tri to DoubleTri: mu above the bath must give an empty conduction chain", 1)
+end
+
+-- ---------------------------------------------------------------------------
 -- Rotating the bath
 -- ---------------------------------------------------------------------------
 -- A unitary change of basis inside the bath leaves G alone: with A_k -> U^+ A_k U

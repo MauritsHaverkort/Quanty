@@ -210,6 +210,19 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
         }
         break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
+          if(BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,0))
+          {
+            printf("BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
         default:
         {
           printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c",type);

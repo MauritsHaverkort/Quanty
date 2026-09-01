@@ -2520,6 +2520,10 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   B->N = ATri.N;
   B->BlockSize = ATri.BlockSize;
   InitBlockAndersonMatrix(B);
+  /*  the N == 0 and N == 1 branches above carry mu across; this one used to drop it,
+   *  which puts the chemical potential at zero for anything converted through here --
+   *  and a Fermi split further downstream then happens in the wrong place */
+  B->mu = ATri.mu;
   if(ATri.QComplex)
   {
     /* copy A0 and B0 */
@@ -2677,11 +2681,42 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT)
+/*  A block tri-diagonal matrix to the block double tri-diagonal form, through the
+ *  Anderson form -- the same route the scalar type takes.
+ *
+ *  Both steps need the bath diagonalized: BlockTriDiagonalMatrixToBlockAndersonMatrix
+ *  diagonalizes the chain from the second block onwards and transforms the coupling,
+ *  and there is no cheaper exact way to get the poles of a chain's hybridization. So
+ *  composing costs one dense O((N*BlockSize)^3) diagonalization, which is what a
+ *  direct route would cost too, plus the block-local ones of the second step.
+ *
+ *  BlockTriDiagonalMatrixToBlockAndersonMatrix carries a comment saying it does not
+ *  work as intended, about two things: the hoppings come out mixed between the
+ *  orbitals of a block, and the bath blocks are reordered because the eigenvalues are
+ *  sorted. Both are statements about the shape of the Anderson form and not about G,
+ *  which it reproduces to 5e-13 on a 120 point grid for 20 bath blocks of size 2.
+ *  Neither matters here: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix
+ *  diagonalizes every bath block again on its way to the hybridization poles, so a
+ *  mixed hopping or a permuted bath changes nothing downstream.
+ */
+uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, double const SingularValue, double const MergeTolerance)
 {
-  //TODO:
-  printf("TODO: BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  if (BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri, &AAnd))
+  {
+    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MergeTolerance))
+  {
+    printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  return 0;
 }
 
 uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT)
