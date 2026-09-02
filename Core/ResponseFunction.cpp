@@ -1826,7 +1826,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         // transform Sigma to tridiagonal type and call the function again.
         // this part can be replaced by filling the matrix with the anderson form without the aditional transformation
         ResponsefunctionType SigmaTri;
-        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', "Default", 0, Epsilon, 0, 0, false, false, false);
         // We already transformed G0ResTri to tridiagonal format so lets reuse this
         ResponsefunctionType G0ResTri;
         G0ResTri.type='t';
@@ -1851,7 +1851,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         // transform Sigma to tridiagonal type and call the function again.
         // this part can be replaced by filling the matrix with the natural orbital form without the aditional transformation
         ResponsefunctionType SigmaTri;
-        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', "Default", 0, Epsilon, 0, 0, false, false, false);
         // We already transformed G0ResTri to tridiagonal format so lets reuse this
         ResponsefunctionType G0ResTri;
         G0ResTri.type='t';
@@ -1875,7 +1875,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
       {
         // transform Sigma to tridiagonal type and call the function again.
         ResponsefunctionType SigmaTri;
-        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', "Default", 0, Epsilon, 0, 0, false, false, false);
         // We already transformed G0ResTri to tridiagonal format so lets reuse this
         ResponsefunctionType G0ResTri;
         G0ResTri.type='t';

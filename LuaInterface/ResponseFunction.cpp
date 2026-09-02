@@ -31,14 +31,37 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   ResponsefunctionType *Min, Mout;
   char const * convert;
   char type;
-  double T=sqrt(DBL_MIN);
-  double SingularValue=1000*DBL_EPSILON;
-  bool deflate=false;
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    char * Method;
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+    bool deflate;
+    bool relativeDistance;
+    bool relativeWeigth;
+  } Options;
+  // Standard values
+  Options.Method = (char*)"Default";
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T = ValueNotSet;
+  Options.deflate=false;
+  Options.relativeDistance=false;
+  Options.relativeWeigth=false;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaChangeTypeResponseFunctionOptions[]={
-    {"SingularValue","double",&(SingularValue)},
-    {"EffectivekBT","double",&(T)},
-    {"Deflate","bool",&deflate},
+    {"Method","char*",&(Options.Method)},
+    {"SingularValue","double",&(Options.SingularValue)},
+    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+    {"EffectivekBT","double",&(Options.T)},
+    {"Deflate","bool",&(Options.deflate)},
+    {"relativeDistance","bool",&(Options.relativeDistance)},
+    {"relativeWeigth","bool",&(Options.relativeWeigth)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L,-1)==1)
   {
@@ -48,93 +71,103 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
   Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
+  // select the type and do the conversion
   if(strcmp(convert, "Dense")==0)
   {
-    // Dense versions of response functions return 3 matrices, The response function, A0 and B0
-    // check if we push table or userdata type
-    if(Min->type<94)
-    { // upercase push table on stack
-      CompactMatrixType MCompactOut,A0,B0;
-      if(ResponseFunctionToCompactMatrix(Min, &MCompactOut, deflate, SingularValue))
-      {
-        return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
-      }
-      LuaPushTable_CompactMatrixType(L, &MCompactOut);
-      FreeCompactMatrix(&MCompactOut);
-      if(Min->Block==true)
-      {
-        if(BlockResponseFunctionGetA0(Min, &A0))
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      // set standard values for options
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;
+      // Dense versions of response functions return 3 matrices, The response function, A0 and B0
+      // check if we push table or userdata type
+      if(Min->type<94)
+      { // upercase push table on stack
+        CompactMatrixType MCompactOut,A0,B0;
+        if(ResponseFunctionToCompactMatrix(Min, &MCompactOut, Options.deflate, Options.SingularValue))
         {
-          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
         }
-        LuaPushTable_CompactMatrixType(L, &A0);
-        FreeCompactMatrix(&A0);
-        if(BlockResponseFunctionGetB0(Min, &B0))
+        LuaPushTable_CompactMatrixType(L, &MCompactOut);
+        FreeCompactMatrix(&MCompactOut);
+        if(Min->Block==true)
         {
-          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+          if(BlockResponseFunctionGetA0(Min, &A0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+          }
+          LuaPushTable_CompactMatrixType(L, &A0);
+          FreeCompactMatrix(&A0);
+          if(BlockResponseFunctionGetB0(Min, &B0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+          }
+          LuaPushTable_CompactMatrixType(L, &B0);
+          FreeCompactMatrix(&B0);
+          FreeResponsefunction(Min);
         }
-        LuaPushTable_CompactMatrixType(L, &B0);
-        FreeCompactMatrix(&B0);
-        FreeResponsefunction(Min);
-      }
-      else
-      {
-        double a0,b0;
-        if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+        else
         {
-          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+          double a0,b0;
+          if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+          }
+          lua_pushnumber(L, a0);
+          lua_pushnumber(L, b0);
         }
-        lua_pushnumber(L, a0);
-        lua_pushnumber(L, b0);
-      }
-    }
-    else
-    { // lowercase push userdata on stack
-      CompactMatrixType *MCompactOut,*A0,*B0;
-      MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-      luaL_setmetatable(L, "Matrix_Type");
-      /*  Set the fresh user data to an empty matrix before it is filled. If the call below
-       *  fails we leave through a lua error and the garbage collector will still run
-       *  FreeCompactMatrix on this user data, which frees Name and V. With both NULL that is
-       *  a no-op, on the uninitiallized struct it would free two arbitrary pointers.
-       */
-      SetCompactMatrixEmpty(MCompactOut);
-      if(ResponseFunctionToCompactMatrix(Min, MCompactOut, deflate, SingularValue))
-      {
-        return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
-      }
-      MCompactOut->OnLuaStack=true;
-      if(Min->Block==true)
-      {
-        A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-        luaL_setmetatable(L, "Matrix_Type");
-        SetCompactMatrixEmpty(A0);
-        if(BlockResponseFunctionGetA0(Min, A0))
-        {
-          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
-        }
-        A0->OnLuaStack=true;
-        B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-        luaL_setmetatable(L, "Matrix_Type");
-        SetCompactMatrixEmpty(B0);
-        if(BlockResponseFunctionGetB0(Min, B0))
-        {
-          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
-        }
-        B0->OnLuaStack=true;
       }
       else
-      {
-        double a0,b0;
-        if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+      { // lowercase push userdata on stack
+        CompactMatrixType *MCompactOut,*A0,*B0;
+        MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        luaL_setmetatable(L, "Matrix_Type");
+        /*  Set the fresh user data to an empty matrix before it is filled. If the call below
+         *  fails we leave through a lua error and the garbage collector will still run
+         *  FreeCompactMatrix on this user data, which frees Name and V. With both NULL that is
+         *  a no-op, on the uninitiallized struct it would free two arbitrary pointers.
+         */
+        SetCompactMatrixEmpty(MCompactOut);
+        if(ResponseFunctionToCompactMatrix(Min, MCompactOut, Options.deflate, Options.SingularValue))
         {
-          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
         }
-        lua_pushnumber(L, a0);
-        lua_pushnumber(L, b0);
+        MCompactOut->OnLuaStack=true;
+        if(Min->Block==true)
+        {
+          A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+          luaL_setmetatable(L, "Matrix_Type");
+          SetCompactMatrixEmpty(A0);
+          if(BlockResponseFunctionGetA0(Min, A0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+          }
+          A0->OnLuaStack=true;
+          B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+          luaL_setmetatable(L, "Matrix_Type");
+          SetCompactMatrixEmpty(B0);
+          if(BlockResponseFunctionGetB0(Min, B0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+          }
+          B0->OnLuaStack=true;
+        }
+        else
+        {
+          double a0,b0;
+          if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+          }
+          lua_pushnumber(L, a0);
+          lua_pushnumber(L, b0);
+        }
       }
+      return 3;
     }
-    return 3;
+    else // options selection
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Dense",Options.Method);
+    }
   }
   else if(strcmp(convert, "Tri")==0)
   {
@@ -168,7 +201,107 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"DoubleTri\", \"DTri\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
-  if(ConvertResponsefunction(Min, &Mout, type, T, SingularValue))
+  // test if options are valid and set standard values
+  if(strcmp(convert, "Tri")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Tri\n",Options.Method);
+    }
+  }
+  else if(strcmp(convert, "And")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to And\n",Options.Method);
+    }
+  }
+  else if((strcmp(convert, "ListOfPoles")==0)||(strcmp(convert, "LP")==0))
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to ListOfPoles\n",Options.Method);
+    }
+  }
+  else if((strcmp(convert, "NaturalImpurityOrbital")==0)||(strcmp(convert, "Nat")==0))
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) Options.T = sqrt(DBL_MIN);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to NaturalImpurityOrbital\n",Options.Method);
+    }
+  }
+  else if((strcmp(convert, "DoubleTri")==0)||(strcmp(convert, "DTri")==0))
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) Options.T = sqrt(DBL_MIN);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to DoubleTri\n",Options.Method);
+    }
+  }
+  else if(strcmp(convert, "Userdata")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport SingularValue\n",Options.Method);
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Userdata\n",Options.Method);
+    }
+  }
+  else if(strcmp(convert, "Table")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport SingularValue\n",Options.Method);
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Table\n",Options.Method);
+    }
+  }
+  
+  if(ConvertResponsefunction(Min, &Mout, type, Options.Method, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance, Options.deflate, Options.relativeDistance, Options.relativeWeigth))
   {
     char typein=Min->type;
     FreeResponsefunction(Min);
@@ -304,7 +437,7 @@ static int LuaReducePolesResponseFunction(lua_State *L)
     if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
     Nredcon = (int)lua_tointeger(L, 3);
   }
-  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(M->Block==true)
   {
     if(len==2)
@@ -352,7 +485,7 @@ static int LuaMergePolesInIntervalResponseFunction(lua_State *L)
   Emax=(double)luaL_checknumber(L, 3);
   
   
-  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(MRed.Block==true)
   {
     MergeBlockListOfPolesInInterval((BlockListOfPoles *)MRed.data, Emin,  Emax);
@@ -383,7 +516,7 @@ static int LuaRemovePolesInIntervalResponseFunction(lua_State *L)
   Emin=(double)luaL_checknumber(L, 2);
   if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in RemovePolesInInterval: 3rd argument should be the Emax.\n");
   Emax=(double)luaL_checknumber(L, 3);
-  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(MRed.Block==true)
   {
     RemoveBlockListOfPolesInInterval((BlockListOfPoles *)MRed.data, Emin,  Emax);
@@ -414,7 +547,7 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
   M = luaL_checkResponsefunction(L,1);
   mesh = luaL_checkarray_double(L, 2, &NE);
   MRed = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  ConvertResponsefunction(M, MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(MRed->Block==true)
   {
     BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed->data, mesh, NE);

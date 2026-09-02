@@ -831,7 +831,7 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
     AndersonMatrixType *G0AndData,*GAndData;
     if(!((G0->type=='a')||(G0->type=='A')))
     {
-      ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+      ConvertResponsefunction(G0, &G0And, 'A', "Default", 0, 0, 0, 0, false, false, false);
       G0AndData = (AndersonMatrixType*)G0And.data;
     }
     else
@@ -840,7 +840,7 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
     }
     if(!((G->type=='a')||(G->type=='A')))
     {
-      ConvertResponsefunction(G, &GAnd, 'A', 0, 0);
+      ConvertResponsefunction(G, &GAnd, 'A', "Default", 0, 0, 0, 0, false, false, false);
       GAndData = (AndersonMatrixType*)GAnd.data;
     }
     else
@@ -868,7 +868,7 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
     BlockAndersonMatrixType *G0AndData,*GAndData;
     if(!((G0->type=='a')||(G0->type=='A')))
     {
-      ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+      ConvertResponsefunction(G0, &G0And, 'A', "Default", 0, 0, 0, 0, false, false, false);
       G0AndData = (BlockAndersonMatrixType*)G0And.data;
     }
     else
@@ -877,7 +877,7 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
     }
     if(!((G->type=='a')||(G->type=='A')))
     {
-      ConvertResponsefunction(G, &GAnd, 'A', 0, 0);
+      ConvertResponsefunction(G, &GAnd, 'A', "Default", 0, 0, 0, 0, false, false, false);
       GAndData = (BlockAndersonMatrixType*)GAnd.data;
     }
     else
@@ -1622,8 +1622,8 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {
   ResponsefunctionType GBLP;
-  ConvertResponsefunction(GA, Gsum, 'l', 0, 0);
-  ConvertResponsefunction(GB, &GBLP, 'l', 0, 0);
+  ConvertResponsefunction(GA, Gsum, 'l', "Default", 0, 0, 0, 0, false, false, false);
+  ConvertResponsefunction(GB, &GBLP, 'l', "Default", 0, 0, 0, 0, false, false, false);
   
   if(GA->Block)
   {
@@ -1642,8 +1642,8 @@ int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionTy
 {
   int retval=0;
   ResponsefunctionType GBLP;
-  ConvertResponsefunction(GA, Gdif, 'l', 0, 0);
-  ConvertResponsefunction(GB, &GBLP, 'l', 0, 0);
+  ConvertResponsefunction(GA, Gdif, 'l', "Default", 0, 0, 0, 0, false, false, false);
+  ConvertResponsefunction(GB, &GBLP, 'l', "Default", 0, 0, 0, 0, false, false, false);
   
   if(GA->Block)
   {
@@ -1672,7 +1672,7 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
    ListOfPoles        *SigmaLPData;
    if(!((G0->type=='a')||(G0->type=='A')))
    {
-     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     ConvertResponsefunction(G0, &G0And, 'A', "Default", 0, 0, 0, 0, false, false, false);
      G0AndData = (AndersonMatrixType*)G0And.data;
    }
    else
@@ -1681,7 +1681,7 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
    }
    if(!((Sigma->type=='l')||(Sigma->type=='L')))
    {
-     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
      SigmaLPData = (ListOfPoles*)SigmaLP.data;
    }
    else
@@ -1710,7 +1710,7 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
    BlockListOfPoles        *SigmaLPData;
    if(!((G0->type=='a')||(G0->type=='A')))
    {
-     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     ConvertResponsefunction(G0, &G0And, 'A', "Default", 0, 0, 0, 0, false, false, false);
      G0AndData = (BlockAndersonMatrixType*)G0And.data;
    }
    else
@@ -1719,7 +1719,7 @@ int CalculateGBath(ResponsefunctionType  * const G0, ResponsefunctionType  * con
    }
    if(!((Sigma->type=='l')||(Sigma->type=='L')))
    {
-     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
      SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
    }
    else
@@ -1754,7 +1754,7 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
    ListOfPoles        *SigmaLPData;
    if(!((G0->type=='a')||(G0->type=='A')))
    {
-     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     ConvertResponsefunction(G0, &G0And, 'A', "Default", 0, 0, 0, 0, false, false, false);
      G0AndData = (AndersonMatrixType*)G0And.data;
    }
    else
@@ -1763,7 +1763,7 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
    }
    if(!((Sigma->type=='l')||(Sigma->type=='L')))
    {
-     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
      SigmaLPData = (ListOfPoles*)SigmaLP.data;
    }
    else
@@ -1792,7 +1792,7 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
    BlockListOfPoles        *SigmaLPData;
    if(!((G0->type=='a')||(G0->type=='A')))
    {
-     ConvertResponsefunction(G0, &G0And, 'A', 0, 0);
+     ConvertResponsefunction(G0, &G0And, 'A', "Default", 0, 0, 0, 0, false, false, false);
      G0AndData = (BlockAndersonMatrixType*)G0And.data;
    }
    else
@@ -1801,7 +1801,7 @@ int CalculateGBathOnGrid(ResponsefunctionType  * const G0, ResponsefunctionType 
    }
    if(!((Sigma->type=='l')||(Sigma->type=='L')))
    {
-     ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+     ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
      SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
    }
    else
@@ -1841,9 +1841,9 @@ int   CalculateGBathFromGandSigmaDirectSubtract(ResponsefunctionType  * const G,
   ResponseFunctionEffectiveHamiltonian(G, &Heff, &A0, &B0);
   FreeCompactMatrix(&A0);
   FreeCompactMatrix(&B0);
-  ConvertResponsefunction(&Heff, &HeffLP,  'L', 0, 0); // capital L as C has controle of pointer
+  ConvertResponsefunction(&Heff, &HeffLP,  'L', "Default", 0, 0, 0, 0, false, false, false); // capital L as C has controle of pointer
   FreeResponsefunction(&Heff);
-  ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0); // capital L as C has controle of pointer
+  ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false); // capital L as C has controle of pointer
   if(HeffLP.Block==true)
   {
     if(SigmaLP.Block==true)
@@ -2041,7 +2041,7 @@ int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionT
     ListOfPoles          *SigmaLPData, *G0LPData;
     if(!((G0->type=='l')||(G0->type=='L')))
     {
-      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      ConvertResponsefunction(G0, &G0LP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       G0LPData = (ListOfPoles*)G0LP.data;
     }
     else
@@ -2050,7 +2050,7 @@ int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionT
     }
     if(!((Sigma->type=='l')||(Sigma->type=='L')))
     {
-      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       SigmaLPData = (ListOfPoles*)SigmaLP.data;
     }
     else
@@ -2081,7 +2081,7 @@ int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionT
     BlockListOfPoles     *SigmaLPData, *G0LPData;
     if(!((G0->type=='l')||(G0->type=='L')))
     {
-      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      ConvertResponsefunction(G0, &G0LP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       G0LPData = (BlockListOfPoles*)G0LP.data;
     }
     else
@@ -2090,7 +2090,7 @@ int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionT
     }
     if(!((Sigma->type=='l')||(Sigma->type=='L')))
     {
-      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
     }
     else
@@ -2125,7 +2125,7 @@ int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, Responsefun
     ListOfPoles        *SigmaLPData, *G0LPData;
     if(!((G0->type=='l')||(G0->type=='L')))
     {
-      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      ConvertResponsefunction(G0, &G0LP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       G0LPData = (ListOfPoles*)G0LP.data;
     }
     else
@@ -2134,7 +2134,7 @@ int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, Responsefun
     }
     if(!((Sigma->type=='l')||(Sigma->type=='L')))
     {
-      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       SigmaLPData = (ListOfPoles*)SigmaLP.data;
     }
     else
@@ -2165,7 +2165,7 @@ int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, Responsefun
     BlockListOfPoles     *SigmaLPData, *G0LPData;
     if(!((G0->type=='l')||(G0->type=='L')))
     {
-      ConvertResponsefunction(G0, &G0LP, 'L', 0, 0);
+      ConvertResponsefunction(G0, &G0LP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       G0LPData = (BlockListOfPoles*)G0LP.data;
     }
     else
@@ -2174,7 +2174,7 @@ int CalculateGfromG0andSigmaOnGrid(ResponsefunctionType  * const G0, Responsefun
     }
     if(!((Sigma->type=='l')||(Sigma->type=='L')))
     {
-      ConvertResponsefunction(Sigma, &SigmaLP, 'L', 0, 0);
+      ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false);
       SigmaLPData = (BlockListOfPoles*)SigmaLP.data;
     }
     else
@@ -4153,11 +4153,10 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 /*
  *
  */
-int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth)
 {
   if(Min->Block==true)
-  { /*  pass the failure on, so that ChangeType raises a lua error rather than handing
-     *  back a response function whose data was never allocated */
+  {
     return ConvertBlockMatrix(Min,Mout,type,T,SingularValue);
   }
   Mout->NSuggestedGridPoints = 0;
@@ -4382,8 +4381,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         break;
         default:
         {
-          //TODO: conversions from DoubleTriDiagonalMatrixType to other types
-          printf("Error in ConvertResponsefunction conversion from DoubleTri to %c is not implemented\n",type);
+          printf("Error in ConvertResponsefunction unrecognized type to convert to: %c\n",type);
         }
         break;
       }
@@ -4414,7 +4412,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
  */
 int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout)
 {
-  return ConvertResponsefunction(Min,Mout,Min->type,0,0);
+  return ConvertResponsefunction(Min,Mout,Min->type, "Default", 0, 0, 0, 0, false, false, false);
 }
 
 /*  set elements smaller than epsilon in absolute value to zero

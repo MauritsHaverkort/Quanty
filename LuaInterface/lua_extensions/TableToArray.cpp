@@ -508,7 +508,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 't', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((TriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -639,7 +639,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
     if (buffRes->Block==false) luaL_error(L, "Encountered a single valued response function where I expected a Block response function");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 't', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -971,7 +971,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'a', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'a', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((AndersonMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1100,7 +1100,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'a', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'a', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockAndersonMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1401,7 +1401,7 @@ DoubleTriDiagonalMatrixType * luaL_checkDoubleTriDiagonalMatrixType(lua_State *L
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'd', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'd', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((DoubleTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1572,7 +1572,7 @@ BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lu
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'd', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'd', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockDoubleTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1786,7 +1786,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'n', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'n', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BADoubleTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1946,7 +1946,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'n', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'n', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockNaturalImpurityOrbitalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -2221,7 +2221,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'l', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'l', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((ListOfPoles*)(buffResTri.data));
     return buff;
   }
@@ -2363,7 +2363,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 'l', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'l', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockListOfPoles*)(buffResTri.data));
     return buff;
   }
