@@ -1393,6 +1393,94 @@ and require the two results to agree **element by element** to machine precision
 not just their spectra. Nothing in `TestScripts/Responsefunction/` tests that
 today, and it is the property the merge exists to protect.
 
+### Decided: how `d → a` is built in block form
+
+Settled with Maurits. The construction is fixed; only the merge tolerance is still open,
+and he is working on that separately.
+
+**One Anderson block per merged pole.** For a merged pole at energy `e_k` with weight
+`W_k`:
+
+```
+A_{k+1} = e_k · I          (BlockSize × BlockSize)
+B_k     = sqrt(W_k)        (full, dense, no columns dropped)
+```
+
+which is exact, since `Σ_k sqrt(W_k)·(w − e_k·I)⁻¹·sqrt(W_k)^† = Σ_k W_k/(w − e_k) = Δ(w)`.
+Plus `A0 = a0`, `B0 = b0`, `A1 = val.a[0] + con.a[0]`, and the `b0 == 0` dimension-zero
+early return the non-block version has.
+
+**Why not the minimal-dimension form.** Maurits: the dimension of the matrix
+representing a response function is an efficiency question, not a correctness one, while
+breaking symmetry is not acceptable at all. Shifting every bath level of a `t2g` irep by
+the same 100 meV is a poor but usable approximation; shifting one of the three by 1 meV
+lifts the degeneracy and changes magnetic susceptibilities. So dimension loses.
+
+**`A = e·I` makes the degeneracy structural rather than numerical.** All `BlockSize`
+states of a block share *one stored number*, so nothing downstream can split them —
+not roundoff, not a later shift, not a chop. The rejected alternative, packing states of
+different energies onto one block's diagonal, gives every state its own independent
+number and hence its own opportunity to drift. That is the real argument for this form,
+beyond dimension bookkeeping.
+
+**Why `sqrt(W)` is canonical although it is computed from an arbitrary eigenbasis.**
+`CompactMatrixSqrt`
+([BasicMath_CompactMatrixVector.cpp:3453](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp#L3453))
+eigendecomposes `W`, takes the square root of the eigenvalues (clamping negatives to zero
+and printing if one is beyond `1000·ε·Σ|λ|`) and reassembles `U·sqrt(Λ)·U^†`. Any
+`f(W) = U f(Λ) U^†` depends only on the **spectral projectors**, so the arbitrary basis
+inside a degenerate eigenvalue group of `W` cancels exactly.
+
+That is the line, and it is worth stating because a plausible-looking construction
+crosses it: **functions of `W` are basis-independent, individual eigenvectors of `W` are
+not.** An earlier proposal here was to rank-reveal `W` and keep its `r = rank(W)`
+eigenvectors as amplitudes. Maurits' counterexample kills it —
+`v = {(1,1,0,0,0),(1,0,1,0,0),(0,1,1,0,0)}` gives
+`W = {{2,1,1,0,0},{1,2,1,0,0},{1,1,2,0,0},0,0}` with eigenvalues `4, 1, 1, 0, 0`, and the
+two `λ = 1` eigenvectors are an arbitrary orthonormal pair. That reintroduces exactly the
+arbitrariness the merge removed. `sqrt(W) = (1/3){{4,1,1},{1,4,1},{1,1,4}}` on that
+3-space is symmetric and unique.
+
+**And there is no way to be cleverer.** If `A A^† = A' A'^† = W` with both
+`BlockSize × r` of rank `r`, then `A' = A·U` for a unitary `U(r)`. So a factorization
+into exactly `rank(W)` vectors is only ever defined up to `U(r)`: **minimal dimension
+and canonicality are in genuine conflict**, and any future attempt to compact must fix a
+gauge. The canonical objects are `W` and `sqrt(W)`, both `BlockSize × BlockSize`. Do not
+try to drop columns either — dropping *exactly zero* columns of `sqrt(W)` is canonical,
+but it only compacts when `null(W)` happens to be spanned by basis vectors, and with
+crystal field plus spin-orbit there is no pre-determined eigenbasis and the `sqrt(W)` are
+dense. Zero couplings are kept.
+
+**Dimension, and where compression actually belongs.** The bath comes out
+`N1 · BlockSize` states for `N1` merged poles. Compression is a separate and existing
+concern: Maurits compresses by **placing poles on a grid**, which merges them onto shared
+energies *before* this conversion, so each grid point becomes one block. So the dimension
+is controlled by the grid, not by `d → a`, and the two compose cleanly — gridding is just
+another way of producing merged poles with a shared energy, which is the form this
+construction wants.
+
+**The pipeline**, all existing primitives except the last step:
+
+```
+BlockTriDiagonalMatrixToBlockListOfPoles(&M.val, &Lval)   /* poles of the val hybridization, a0 = val.a[0] */
+BlockTriDiagonalMatrixToBlockListOfPoles(&M.con, &Lcon)
+AddBlockListOfPoles(&Lval, Lcon)                          /* Lval.a0 becomes A1; poles concatenate */
+OrderBlockListOfPoles(&Lval)
+BlockListOfPolesMergeDegeneratePoles(&Lval, tol)
+/* then one Anderson block per pole, as above */
+```
+
+`BlockTriDiagonalMatrixToBlockListOfPoles` builds the chain's minor with
+`BlockTriDiagonalMatrixToCompactMatrix` (dimension `N·BlockSize`, `a[0]` excluded as the
+convention requires), couples through `b[0]`, and copies `a[0]` into the list's `a0`; its
+weights are rank 1. `AddBlockListOfPoles` adds the two `a0` blocks, which is exactly the
+§1 rule that the shared site is the sum. **Caveat:** that function also merges
+internally, on its last line, with the hard-coded
+`BlockSize · N · DBL_EPSILON · BandWidth` — the tolerance flagged in
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) as reaching tens of µeV for a
+d shell on a 60 eV band. So the poles arrive already merged, too aggressively, before the
+caller can choose. That is the piece Maurits is working on.
+
 ### Build registration
 
 The build is a unity build (`.cpp` files are `#include`d), so new files are invisible until
