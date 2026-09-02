@@ -208,8 +208,9 @@ end
 -- form, against 5e-13 for the one step routes. Hence 1e-10 here rather than the 1e-11
 -- used above; the headroom is deliberate and the measured numbers are in the printout.
 function CheckFromOther(name, ty, nb, mu, kBT)
+	print("Name",name, "ty",ty)
 	local GA = MakeBlockAnderson(nb, mu)
-	local GS = ResponseFunction.ChangeType(GA, ty, {{"EffectivekBT", kBT}})
+	local GS = ResponseFunction.ChangeType(GA, ty)
 	local GD = ResponseFunction.ChangeType(GS, "DoubleTri", {{"EffectivekBT", kBT}})
 	local t = ResponseFunction.ToTable(GD)
 	local nv, nc = #(t.val[1]) - 1, #(t.con[1]) - 1
