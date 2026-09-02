@@ -206,7 +206,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     if(strcmp(Options.Method, "Default")==0)
     {
-      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
       if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
       if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
@@ -220,7 +220,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     if(strcmp(Options.Method, "Default")==0)
     {
-      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
       if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
       if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
@@ -234,7 +234,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     if(strcmp(Options.Method, "Default")==0)
     {
-      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
       if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
       if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
@@ -248,10 +248,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     if(strcmp(Options.Method, "Default")==0)
     {
-      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
       if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
-      if(Options.T!=ValueNotSet) Options.T = sqrt(DBL_MIN);
+      if(Options.T==ValueNotSet) Options.T = sqrt(DBL_MIN);
     }
     else
     {
@@ -262,10 +262,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     if(strcmp(Options.Method, "Default")==0)
     {
-      if(Options.SingularValue!=ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
       if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
-      if(Options.T!=ValueNotSet) Options.T = sqrt(DBL_MIN);
+      if(Options.T==ValueNotSet) Options.T = sqrt(DBL_MIN);
     }
     else
     {
