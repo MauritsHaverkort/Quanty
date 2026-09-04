@@ -1122,7 +1122,7 @@ uint32_t BlockListOfPolesToDensityMatrix(BlockListOfPoles const * const A, Compa
 uint32_t BlockAndersonMatrixToSpectra(double Energy, const BlockAndersonMatrixType * const A, SpectraType *G, double Emin, double Emax, uint32_t N)
 {
   BlockListOfPoles ALP;
-  BlockAndersonMatrixToBlockListOfPoles(A, &ALP);
+  BlockAndersonMatrixToBlockListOfPoles(A, &ALP, 1000*DBL_EPSILON, false);
   BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
   FreeBlockListOfPoles(&ALP);
   return 0;
@@ -1187,7 +1187,7 @@ uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A,
 
 
 
-uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G)
+uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G, double const MinimalPoleDistance, bool relativeMinimumPoleDistance)
 {
   if(A->N==0)
   {
@@ -1257,15 +1257,7 @@ uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A
   //
   G->mu=A->mu;
   // merge degenerate poles
-  if(A->QComplex)
-  {
-    BandWidth = fabs( G->V[(G->N-1) * (1 + Sqr(G->BlockSize) )].Re ) + fabs( G->V[0].Re ) + DBL_EPSILON;
-  }
-  else
-  {
-    BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
-  }
-  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
+  BlockListOfPolesMergeDegeneratePoles(G, MinimalPoleDistance, relativeMinimumPoleDistance);
   return 0;
 }
 /*  On entry A holds a Green's function as a BlockAndersonMatrix,
@@ -1428,7 +1420,7 @@ uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixTy
 uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue)
 {
   BlockListOfPoles G;
-  BlockAndersonMatrixToBlockListOfPoles(A, &G);
+  BlockAndersonMatrixToBlockListOfPoles(A, &G, 1000*DBL_EPSILON, false);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   BlockListOfPolesToBlockTridiagonalMatrix(G, B, A->N+1, SingularValue);
@@ -1490,14 +1482,14 @@ uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixTy
   if (Delta.N != 0)
   {
     tol = MergeTolerance;
-    if (tol <= 0)
+    if (tol < 0)
     { /*  the poles are ordered, so the first and the last give the band width */
       stride = 1 + BS2;
       if (Delta.QComplex) BandWidth = fabs(Delta.V[0].Re)   + fabs(Delta.V[(Delta.N-1)*stride].Re);
       else                BandWidth = fabs(Delta.VRe[0])    + fabs(Delta.VRe[(Delta.N-1)*stride]);
       tol = 8 * DBL_EPSILON * (BandWidth + DBL_EPSILON);
     }
-    if (BlockListOfPolesMergeDegeneratePoles(&Delta, tol))
+    if (BlockListOfPolesMergeDegeneratePoles(&Delta, tol, false))
     {
       printf("BlockListOfPolesMergeDegeneratePoles failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
       fflush(stdout);
@@ -1590,7 +1582,7 @@ uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixTy
 uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)
 {
   BlockListOfPoles G;
-  BlockAndersonMatrixToBlockListOfPoles(A, &G);
+  BlockAndersonMatrixToBlockListOfPoles(A, &G, 1000*DBL_EPSILON, false);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   
@@ -1714,7 +1706,8 @@ uint32_t BlockTriDiagonalMatrixToSpectraWithBroadening(const double Energy, Bloc
 uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
 {
   BlockListOfPoles ALP;
-  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP);
+  //TODO: allow user to set limits when poles are merged
+  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP, 1000*DBL_EPSILON,false);
   BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
   FreeBlockListOfPoles(&ALP);
   return 0;
@@ -2128,7 +2121,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G)
+uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const MinimalPoleDistance, bool RelativeDistance)
 {
   if(A->N==0)
   {
@@ -2206,7 +2199,7 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   {
     BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
   }
-  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
+  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth, false);
   return 0;
 }
 
@@ -2753,7 +2746,8 @@ uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMa
 uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT)
 {
   BlockListOfPoles ABlock;
-  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock))
+  //TODO: allow user to set limits when poles are merged
+  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock, 1000*DBL_EPSILON,false))
   {
     printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
     return 1;
@@ -2994,8 +2988,9 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurit
 {
   uint32_t i;
   BlockListOfPoles Bval;
-  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval);
+  //TODO: allow user to set limits when poles are merged
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B, 1000*DBL_EPSILON,false);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval, 1000*DBL_EPSILON,false);
   AddBlockListOfPoles(B, Bval);
   FreeBlockListOfPoles(&Bval);
   if((B->QComplex==0)&&(A->a0.QComplex==0))

@@ -2383,7 +2383,8 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
     buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-    BlockTriDiagonalMatrixToBlockListOfPoles(temp, buff);
+    //TODO: allow user to set limits when poles are merged
+    BlockTriDiagonalMatrixToBlockListOfPoles(temp, buff, 1000*DBL_EPSILON,false);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -2394,7 +2395,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-    BlockAndersonMatrixToBlockListOfPoles(temp, buff);
+    BlockAndersonMatrixToBlockListOfPoles(temp, buff, 1000*DBL_EPSILON, false);
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;

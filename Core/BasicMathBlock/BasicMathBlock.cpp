@@ -120,10 +120,23 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 
 /*
  * change the type of a Block response function from M->type to type
+ * SingularValue is used in TriDiagonal Matrices to determine when to deflate the matrix dimension
+ * MinimalPoleWeigth is used in ListOfPoles or Anderson Matrices to set weight to zero (can be set to be relative)
+ * MinimalPoleDistance is used in ListOfPoles or Anderson Matrices to determine if two poles are merged (can be set to be relative)
+ * KbT is used in NaturalImpurity representaiton and DoubleTriDiagonal representation to seperate val and con bath
  */
-int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
+int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth)
 {
-  if(Min->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+  if(Min->Block!=true)
+  {
+    printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+    Mout->type=type;
+    Mout->data=NULL;
+    Mout->Block=true;
+    Mout->NSuggestedGridPoints=0;
+    Mout->SuggestedGrid=NULL;
+    return 1;
+  }
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
   Mout->Block = true;
@@ -201,7 +214,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           }
           else
           {
-            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
+            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, MinimalPoleDistance, relativeDistance);
           }
         }
         break;
@@ -257,7 +270,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           }
           else
           {
-            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
+            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, MinimalPoleDistance, relativeDistance);
           }
         }
         break;
@@ -478,7 +491,7 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 't': // original tri-diagonal
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", 0, 0, 0, 0, false, false, false);
       BlockResponseFunctionRotate(&Gp, U, GRot);
       FreeResponsefunction(&Gp);
       return 0;
@@ -487,7 +500,7 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'a': // original anderson matrix
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", 0, 0, 0, 0, false, false, false);
       BlockResponseFunctionRotate(&Gp, U, GRot);
       FreeResponsefunction(&Gp);
       return 0;
@@ -496,7 +509,7 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'n': // original natural impurity orbitals
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", 0, 0, 0, 0, false, false, false);
       BlockResponseFunctionRotate(&Gp, U, GRot);
       FreeResponsefunction(&Gp);
       return 0;

@@ -508,11 +508,21 @@ uint32_t ComplexBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double
   }
   return 0;
 }
-uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
+uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon, bool relativeMinimumPoleDistance)
 {
-  //TODO: do not shift spectral weight through the chemical potential
-  if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, epsilon);
-  return ComplexBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+  if(relativeMinimumPoleDistance==true)
+  {
+    //TODO: implement relative pole mergeing windows
+    // A pole at energy w_i-mu is merged with all poles at energy (wi-mu) / epsilon to (wi-mu) * epsilon
+    printf("BlockListOfPolesMergeDegeneratePoles with relativeMinimumPoleDistance==true not implemented");
+    return 1;
+  }
+  else
+  {
+    //TODO: do not shift spectral weight through the chemical potential
+    if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+    return ComplexBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+  }
 }
 
 

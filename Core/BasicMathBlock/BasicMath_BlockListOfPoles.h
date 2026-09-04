@@ -11,7 +11,7 @@ uint32_t MakeComplexBlockListOfPolesReal(BlockListOfPoles *A);
 uint32_t ChopBlockListOfPoles(BlockListOfPoles *A, double const epsilon);
 uint32_t ChopBlockListOfPolesReduceDimension(BlockListOfPoles *A, double const epsilon);
 uint32_t BlockListOfPolesRemoveZeroWeightPoles(BlockListOfPoles * const A);
-uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon);
+uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon, bool relativeMinimalPoleDistance);
 uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const B);
 uint32_t AddBlockListOfPolesOnMeshOfAReal(BlockListOfPoles * const A, BlockListOfPoles const * const B);
 uint32_t AddBlockListOfPolesOnMeshOfAComplex(BlockListOfPoles * const A, BlockListOfPoles const * const B);

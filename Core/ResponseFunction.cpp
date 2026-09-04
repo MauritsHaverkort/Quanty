@@ -755,7 +755,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       }
       case 't':
       {
-        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G))
+        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G, DBL_MIN+MAX(0,kbT/1000) ,false))
         {
           printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -764,7 +764,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       break;
       case 'a':
       {
-        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G))
+        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G, DBL_MIN+MAX(0,kbT/1000)  ,false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -2224,12 +2224,12 @@ int ResponseFunctionAddSelfEnergyViaAndLP(const ResponsefunctionType *const G0, 
       {
         case 'a':
         {
-          BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Sigma->data, SigmaData);
+          BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Sigma->data, SigmaData, 1000*DBL_EPSILON,false);
         }
         break;
         case 't':
         {
-          BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Sigma->data, SigmaData);
+          BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Sigma->data, SigmaData, 1000*DBL_EPSILON,false);
         }
         break;
         case 'n':
@@ -2617,7 +2617,7 @@ int ResponseFunctionAddSelfEnergyBlockAndLPAnd(const BlockAndersonMatrixType *co
     // SigmaInv to BlockListOfPoles
     HermitianCompactMatrixToBlockListOfPoles(&SigmaInv, &G0iWithSigma, G0->BlockSize);
     // Merge poles with energy differences smaller than Epsilon
-    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon);
+    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon, false);
     // rotate BlockListOpPoles by G0.B[i]
     if(G0->QComplex==0)
     {

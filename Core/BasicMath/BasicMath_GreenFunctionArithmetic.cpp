@@ -1570,7 +1570,11 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
       case 'a':
       {
         BlockListOfPoles Gt;
-        BlockAndersonMatrixToBlockListOfPoles(((BlockAndersonMatrixType *)(Gin->data)), &Gt);
+        if(BlockAndersonMatrixToBlockListOfPoles(((BlockAndersonMatrixType *)(Gin->data)), &Gt, 1000*DBL_EPSILON, false))
+        {
+          printf("BlockAndersonMatrixToBlockListOfPoles falied in ResponseFunctionFromEffectiveHamiltonian\n");
+          return 1;
+        }
         Gout->type = 'A';
         Gout->Block = true;
         Gout->NSuggestedGridPoints=0;
@@ -1952,7 +1956,7 @@ int   CalculateGBathFromGandSigmaEigensystem(ResponsefunctionType  * const G, Re
         }
       }
     }
-    BlockListOfPolesMergeDegeneratePoles(GBathLP, Epsilon);
+    BlockListOfPolesMergeDegeneratePoles(GBathLP, Epsilon, false);
     MakeBlockListOfPolesPhysical(GBathLP);
   }
   else
@@ -2570,7 +2574,7 @@ uint32_t BlockGBathAndListAndRepresentation(BlockAndersonMatrixType const * cons
     // SigmaInv to BlockListOfPoles
     HermitianCompactMatrixToBlockListOfPoles(&SigmaInv, &G0iWithSigma, G0->BlockSize);
     // Merge poles with energy differences smaller than Epsilon
-    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon);
+    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon, false);
     // rotate BlockListOpPoles by G0.B[i]
     if(G0->QComplex==0)
     {
@@ -3173,7 +3177,7 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
         bSigma.aRe[Sqr(G0->BlockSize) + j + j * G0->BlockSize] += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
       }
       // transform to list of poles
-      if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+      if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole, 1000*DBL_EPSILON, false))
       {
         printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
         return 1;
@@ -3216,7 +3220,7 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
           bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Re += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
         }
         // transform to list of poles
-        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole, 1000*DBL_EPSILON, false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
           return 1;
@@ -3254,7 +3258,7 @@ int BlockGListListListRepresentation(BlockListOfPoles * G0, BlockListOfPoles * S
           bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Im += G0->V[i*(Sqr(G0->BlockSize)+1)].Im;
         }
         // transform to list of poles
-        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole, 1000*DBL_EPSILON, false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
           return 1;
@@ -3339,7 +3343,7 @@ int BlockGListListListRepresentationOnGrid(BlockListOfPoles * G0, BlockListOfPol
         bSigma.aRe[Sqr(G0->BlockSize) + j + j * G0->BlockSize] += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
       }
       // transform to list of poles
-      if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+      if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole, 1000*DBL_EPSILON, false))
       {
         printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
         return 1;
@@ -3381,7 +3385,7 @@ int BlockGListListListRepresentationOnGrid(BlockListOfPoles * G0, BlockListOfPol
           bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Re += G0->VRe[i*(Sqr(G0->BlockSize)+1)];
         }
         // transform to list of poles
-        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole,DBL_MIN,false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
           return 1;
@@ -3419,7 +3423,7 @@ int BlockGListListListRepresentationOnGrid(BlockListOfPoles * G0, BlockListOfPol
           bSigma.a[Sqr(G0->BlockSize) + j + j * G0->BlockSize].Im += G0->V[i*(Sqr(G0->BlockSize)+1)].Im;
         }
         // transform to list of poles
-        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole))
+        if (BlockAndersonMatrixToBlockListOfPoles(&bSigma, &bSigmaPole, 1000*DBL_EPSILON, false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in GListListListRepresentation\n");
           return 1;
@@ -4157,7 +4161,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
 {
   if(Min->Block==true)
   {
-    return ConvertBlockMatrix(Min,Mout,type,T,SingularValue);
+    return ConvertBlockMatrix(Min,Mout,type,Method, T,SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth);
   }
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;

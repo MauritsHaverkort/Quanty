@@ -27,7 +27,7 @@ uint32_t BlockAndersonMatrixToSpectra(const double Energy, const BlockAndersonMa
 uint32_t BlockAndersonMatrixToSpectraWithBroadening(const double Energy, const BlockAndersonMatrixType *const A, SpectraType *G, double Emin, double Emax, uint32_t N, double const Gamma);
 uint32_t BlockAndersonMatrixEigenValues(const BlockAndersonMatrixType * const A, double * val);
 uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A, double * val, CompactMatrixType * fun);
-uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * AAnd, BlockListOfPoles * const B);
+uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G, double const MinimalPoleDistance, bool relativeMinimumPoleDistance);
 uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints);
 uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue);
 uint32_t BlockAndersonMatrixInverseToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const Delta);
@@ -39,7 +39,7 @@ uint32_t BlockTriDiagonalMatrixToSpectraWithBroadening(const double Energy, Bloc
 uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val);
 uint32_t BlockTriDiagonalMatrixEigenSystem(const BlockTriDiagonalMatrixType * const A, double * val, CompactMatrixType * fun);
 uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMatrixType * const A, double * val, CompactMatrixType * fun, const uint32_t * const BlockSize);
-uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G);
+uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const MinPoleDistance, bool const relativeDistance);
 uint32_t BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, const double * const Grid, const uint32_t NGridPoints);
 uint32_t BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B);
