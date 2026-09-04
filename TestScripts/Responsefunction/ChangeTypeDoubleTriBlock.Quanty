@@ -208,7 +208,6 @@ end
 -- form, against 5e-13 for the one step routes. Hence 1e-10 here rather than the 1e-11
 -- used above; the headroom is deliberate and the measured numbers are in the printout.
 function CheckFromOther(name, ty, nb, mu, kBT)
-	print("Name",name, "ty",ty)
 	local GA = MakeBlockAnderson(nb, mu)
 	local GS = ResponseFunction.ChangeType(GA, ty)
 	local GD = ResponseFunction.ChangeType(GS, "DoubleTri", {{"EffectivekBT", kBT}})
@@ -351,6 +350,54 @@ end
 CheckRotationG("non degenerate bath",
 	{{{0.0,0.0},{0.0,0.0}}, {{1.7,0.2},{0.2,1.3}}, {{-2.0,0.4},{0.4,-1.6}}, {{0.5,-0.3},{-0.3,0.9}}},
 	{{{1.4,0.0},{0.0,1.4}}, {{0.5,0.1},{0.2,0.45}}, {{0.35,-0.2},{0.1,0.4}}}, 0.05)
+
+-- ---------------------------------------------------------------------------
+-- MinimalPoleDistance
+-- ---------------------------------------------------------------------------
+-- Poles that are degenerate by symmetry come out of a diagonalization a few ulp apart,
+-- and how many depends on the arithmetic path -- that is what the bath rotation above
+-- measures. They therefore have to be merged, and the threshold is MinimalPoleDistance.
+-- Left unset it reaches BlockListOfPolesMergeDegeneratePoles negative, which asks for the
+-- standard value 10 * DBL_EPSILON * (BandWidth + DBL_EPSILON): large enough to catch
+-- roundoff on the band, some seven orders below the micro eV splittings a magnetic field
+-- produces.
+--
+-- A bath of two blocks, each a multiple of the identity, so three distinct pole energies
+-- each doubly degenerate.
+MPDa = {{{0,0},{0,0}}, {{1,0},{0,1}}, {{-2,0},{0,-2}}, {{2,0},{0,2}}}
+MPDb = {{{1,0},{0,1}}, {{0.5,0},{0,0.5}}, {{0.4,0},{0,0.4}}}
+MPD  = ResponseFunction.New({MPDa, MPDb, mu = 0, type = "And", name = "deg"})
+
+npoles = #(ResponseFunction.ToTable(ResponseFunction.ChangeType(MPD, "LP"))[1]) - 1
+print(string.format("  %-30s poles %d", "degenerate bath, default", npoles))
+if npoles ~= 3 then
+	error("a degenerate bath must give 3 merged poles and not " .. npoles, 1)
+end
+
+-- an explicit value has to be used rather than replaced by the standard one. Zero merges
+-- nothing at all: the test inside the merge is a strict <, so even two bit identical poles
+-- stay apart.
+npoles = #(ResponseFunction.ToTable(
+             ResponseFunction.ChangeType(MPD, "LP", {{"MinimalPoleDistance", 0}}))[1]) - 1
+print(string.format("  %-30s poles %d", "the same, MinimalPoleDistance 0", npoles))
+if npoles ~= 6 then
+	error("MinimalPoleDistance 0 must merge nothing, giving 6 poles and not " .. npoles, 1)
+end
+
+-- and a value wide enough to swallow the whole band leaves one pole
+npoles = #(ResponseFunction.ToTable(
+             ResponseFunction.ChangeType(MPD, "LP", {{"MinimalPoleDistance", 10.0}}))[1]) - 1
+print(string.format("  %-30s poles %d", "the same, MinimalPoleDistance 10", npoles))
+if npoles ~= 1 then
+	error("MinimalPoleDistance 10 must merge the whole band into 1 pole and not " .. npoles, 1)
+end
+
+-- relativeDistance is not implemented anywhere yet and has to be refused at the door,
+-- rather than failing somewhere inside a conversion
+if pcall(function() return ResponseFunction.ChangeType(MPD, "LP", {{"relativeDistance", true}}) end) then
+	error("relativeDistance is not implemented and must raise an error", 1)
+end
+print("  relativeDistance is refused")
 
 -- ---------------------------------------------------------------------------
 -- What is not implemented has to fail loudly

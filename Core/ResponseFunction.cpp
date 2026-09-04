@@ -773,7 +773,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       break;
       case 'n':
       {
-        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G))
+        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G, -1, false))
         {
           printf("BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -1276,7 +1276,7 @@ int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G
         break;
         case 'a':
         {
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon, -1, false);
         }
         break;
         case 'n':
@@ -1307,7 +1307,7 @@ int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G
         break;
         case 'a':
         {
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Sigma->data, SigmaData, Epsilon);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Sigma->data, SigmaData, Epsilon, -1, false);
         }
         break;
         case 'n':
@@ -1701,7 +1701,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         break;
         case 'a':
         {
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon, -1, false);
         }
         break;
         case 'n':
@@ -2234,7 +2234,7 @@ int ResponseFunctionAddSelfEnergyViaAndLP(const ResponsefunctionType *const G0, 
         break;
         case 'n':
         {
-          BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, SigmaData);
+          BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, SigmaData, -1, false);
         }
         break;
         default:

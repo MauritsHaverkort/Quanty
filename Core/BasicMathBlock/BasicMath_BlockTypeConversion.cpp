@@ -881,7 +881,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
  *
  *  B is not allocated on entry.
  */
-uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, double const SingularValue, double const MergeTolerance)
+uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, double const SingularValue, double const MinimalPoleDistance)
 {
   BlockAndersonMatrixType AAnd;
   /*  the +1 mirrors the l -> a cell of ConvertBlockMatrix, which carries a TODO saying
@@ -892,7 +892,7 @@ uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *
     fflush(stdout);
     return 1;
   }
-  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kbT, SingularValue, MergeTolerance))
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kbT, SingularValue, MinimalPoleDistance))
   {
     printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
     fflush(stdout);
@@ -1207,7 +1207,6 @@ uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A
     return 0;
   }
   uint32_t i,j;
-  double BandWidth;
   CompactMatrixType Afull, vec;
   if(BlockAndersonMatrixToCompactMatrix(A,&Afull))
   {
@@ -1417,10 +1416,10 @@ uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixTy
   printf("Not implemented BlockAndersonMatrixToBlockListOfPoles\n");
   return 1;
 }
-uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue)
+uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles G;
-  BlockAndersonMatrixToBlockListOfPoles(A, &G, 1000*DBL_EPSILON, false);
+  BlockAndersonMatrixToBlockListOfPoles(A, &G, MinimalPoleDistance, relativeDistance);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   BlockListOfPolesToBlockTridiagonalMatrix(G, B, A->N+1, SingularValue);
@@ -1450,7 +1449,7 @@ uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType con
  *      and the split cannot undo the symmetry the merge just restored;
  *   4. a block Lanczos on each half.
  *
- *  MergeTolerance has to stay far below any physical splitting: micro eV Zeeman
+ *  MinimalPoleDistance has to stay far below any physical splitting: micro eV Zeeman
  *  splittings on a band of tens of eV are the case this type exists for. The error it
  *  is meant to hide is the O(eps * |A_k|) of the individual BlockSize by BlockSize
  *  diagonalizations, which does not grow with the number of poles, so the default is a
@@ -1463,10 +1462,9 @@ uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType con
  *  A chain can come out empty, with mu below or above the whole bath, and both can with
  *  no bath at all. B is not allocated on entry.
  */
-uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT, double const SingularValue, double const MergeTolerance)
+uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT, double const SingularValue, double const MinimalPoleDistance)
 {
-  uint32_t BS, BS2, NBath, i, NBlockMax, stride;
-  double tol, BandWidth;
+  uint32_t BS, BS2, NBath, i, NBlockMax;
   BlockListOfPoles Delta, Dval, Dcon;
 
   BS    = A->BlockSize;
@@ -1481,15 +1479,9 @@ uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixTy
   }
   if (Delta.N != 0)
   {
-    tol = MergeTolerance;
-    if (tol < 0)
-    { /*  the poles are ordered, so the first and the last give the band width */
-      stride = 1 + BS2;
-      if (Delta.QComplex) BandWidth = fabs(Delta.V[0].Re)   + fabs(Delta.V[(Delta.N-1)*stride].Re);
-      else                BandWidth = fabs(Delta.VRe[0])    + fabs(Delta.VRe[(Delta.N-1)*stride]);
-      tol = 8 * DBL_EPSILON * (BandWidth + DBL_EPSILON);
-    }
-    if (BlockListOfPolesMergeDegeneratePoles(&Delta, tol, false))
+    /*  a negative MinimalPoleDistance asks BlockListOfPolesMergeDegeneratePoles for its
+     *  standard value, which is the only place that decides it */
+    if (BlockListOfPolesMergeDegeneratePoles(&Delta, MinimalPoleDistance, false))
     {
       printf("BlockListOfPolesMergeDegeneratePoles failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
       fflush(stdout);
@@ -1579,10 +1571,10 @@ uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixTy
   }
   return 0;
 }
-uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)
+uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles G;
-  BlockAndersonMatrixToBlockListOfPoles(A, &G, 1000*DBL_EPSILON, false);
+  BlockAndersonMatrixToBlockListOfPoles(A, &G, MinimalPoleDistance, relativeDistance);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   
@@ -1706,8 +1698,8 @@ uint32_t BlockTriDiagonalMatrixToSpectraWithBroadening(const double Energy, Bloc
 uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
 {
   BlockListOfPoles ALP;
-  //TODO: allow user to set limits when poles are merged
-  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP, 1000*DBL_EPSILON,false);
+  /*  a negative MinimalPoleDistance asks for the standard value */
+  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP, -1, false);
   BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
   FreeBlockListOfPoles(&ALP);
   return 0;
@@ -2141,7 +2133,6 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
     return 0;
   }
   uint32_t i,j;
-  double BandWidth;
   CompactMatrixType Afull, vec;
   if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
   {
@@ -2190,17 +2181,10 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   }
   //
   G->mu=A->mu;
-  // merge degenerate poles
-  if(A->QComplex)
-  {
-    BandWidth = fabs( G->V[(G->N-1) * (1 + Sqr(G->BlockSize) )].Re ) + fabs( G->V[0].Re ) + DBL_EPSILON;
-  }
-  else
-  {
-    BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
-  }
-  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth, false);
-  return 0;
+  /*  merge degenerate poles. A negative MinimalPoleDistance asks
+   *  BlockListOfPolesMergeDegeneratePoles for its standard value; this used to compute a
+   *  band width here and ignore both of its own parameters */
+  return BlockListOfPolesMergeDegeneratePoles(G, MinimalPoleDistance, RelativeDistance);
 }
 
 uint32_t BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, const double * const Grid, const uint32_t NGridPoints)
@@ -2723,7 +2707,7 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
  *  diagonalizes every bath block again on its way to the hybridization poles, so a
  *  mixed hopping or a permuted bath changes nothing downstream.
  */
-uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, double const SingularValue, double const MergeTolerance)
+uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, double const SingularValue, double const MinimalPoleDistance)
 {
   BlockAndersonMatrixType AAnd;
   if (BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri, &AAnd))
@@ -2732,7 +2716,7 @@ uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMa
     fflush(stdout);
     return 1;
   }
-  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MergeTolerance))
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MinimalPoleDistance))
   {
     printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
     fflush(stdout);
@@ -2743,11 +2727,10 @@ uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMa
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT)
+uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles ABlock;
-  //TODO: allow user to set limits when poles are merged
-  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock, 1000*DBL_EPSILON,false))
+  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock, MinimalPoleDistance, relativeDistance))
   {
     printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
     return 1;
@@ -2976,7 +2959,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpu
 {
   //TODO: algorithm can be optimized
   BlockListOfPoles ALP;
-  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
+  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP, -1, false);
   //TODO: the plus one should not be here
   BlockListOfPolesToBlockAndersonMatrix(ALP, B, ALP.N+1, 1000*DBL_EPSILON);
   FreeBlockListOfPoles(&ALP);
@@ -2984,13 +2967,12 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpu
 }
 
 
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const * A, BlockListOfPoles * const B)
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const * A, BlockListOfPoles * const B, double const MinimalPoleDistance, bool const relativeDistance)
 {
   uint32_t i;
   BlockListOfPoles Bval;
-  //TODO: allow user to set limits when poles are merged
-  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B, 1000*DBL_EPSILON,false);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval, 1000*DBL_EPSILON,false);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B, MinimalPoleDistance, relativeDistance);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval, MinimalPoleDistance, relativeDistance);
   AddBlockListOfPoles(B, Bval);
   FreeBlockListOfPoles(&Bval);
   if((B->QComplex==0)&&(A->a0.QComplex==0))
@@ -3047,7 +3029,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNa
  *
  *  B is not allocated on entry.
  */
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue, double const MergeTolerance)
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue, double const MinimalPoleDistance)
 {
   BlockAndersonMatrixType AAnd;
   if (BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(A, &AAnd))
@@ -3056,7 +3038,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNa
     fflush(stdout);
     return 1;
   }
-  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MergeTolerance))
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MinimalPoleDistance))
   {
     printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
     fflush(stdout);
@@ -3072,7 +3054,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalI
 {
   //TODO: algorithm can be optimized use that one needs to tridiagonalize an already banded matrix
   BlockListOfPoles ALP;
-  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
+  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP, -1, false);
   //TODO: the plus one should not be here
   BlockListOfPolesToBlockTridiagonalMatrix(ALP, B, ALP.N+1, SingularValue);
   FreeBlockListOfPoles(&ALP);

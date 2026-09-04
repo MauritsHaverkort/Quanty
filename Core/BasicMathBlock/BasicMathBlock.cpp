@@ -183,8 +183,9 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'd':
         {
           Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
-          if(BlockListOfPolesToBlockDoubleTriDiagonalMatrix((BlockListOfPoles*)(Min->data), (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, 0))
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockListOfPolesToBlockDoubleTriDiagonalMatrix((BlockListOfPoles*)(Min->data), (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, MinimalPoleDistance))
           {
             printf("BlockListOfPolesToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
             free(Mout->data);
@@ -233,14 +234,15 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
+          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T, MinimalPoleDistance, relativeDistance);
         }
         break;
         case 'd':
         {
           Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
-          if(BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,0))
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,MinimalPoleDistance))
           {
             printf("BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
             free(Mout->data);
@@ -277,7 +279,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, SingularValue);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, SingularValue, MinimalPoleDistance, relativeDistance);
         }
         break;
         case 'a':
@@ -289,14 +291,15 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
+          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T, MinimalPoleDistance, relativeDistance);
         }
         break;
         case 'd':
         {
           Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
-          if(BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix((BlockAndersonMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,0))
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix((BlockAndersonMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,MinimalPoleDistance))
           {
             printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
             free(Mout->data);
@@ -327,7 +330,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           }
           else
           {
-            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, MinimalPoleDistance, relativeDistance);
           }
         }
         break;
@@ -353,8 +356,9 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'd':
         {
           Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-          /* MergeTolerance 0 asks for the default, a few DBL_EPSILON times the band width */
-          if(BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, 0))
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, MinimalPoleDistance))
           {
             printf("BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix failed in ConvertBlockMatrix\n");
             free(Mout->data);

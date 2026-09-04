@@ -508,8 +508,27 @@ uint32_t ComplexBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double
   }
   return 0;
 }
+/*  Merge poles that lie closer together than epsilon, adding their weight matrices.
+ *
+ *  A negative epsilon asks for the standard value, 10 * DBL_EPSILON * (BandWidth + DBL_EPSILON)
+ *  with BandWidth taken from the outermost two poles. That is the one place in the code
+ *  where this default is decided; every caller only forwards what it was handed, and an
+ *  unset MinimalPoleDistance arrives here negative all the way from ChangeType.
+ *
+ *  Why the default has to be of this size. Two poles that are degenerate by symmetry come
+ *  out of a diagonalization a few ulp apart, and how many depends on the arithmetic path:
+ *  rotate the bath and the same physical level moves by roundoff. Unmerged, the two rank
+ *  one weights stay separate and the arbitrary eigenbasis inside the degenerate group
+ *  survives into whatever is built next, which lifts the degeneracy. Scaling with the band
+ *  width covers that and nothing else -- on a band of tens of eV the threshold is around
+ *  1e-13 eV, some seven orders below the micro eV splittings a magnetic field produces.
+ *
+ *  Note epsilon == 0 does not mean "merge only identical poles": the test below is a
+ *  strict <, so a zero epsilon merges nothing at all, not even two bit-identical poles.
+ */
 uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon, bool relativeMinimumPoleDistance)
 {
+  double eps = epsilon, BandWidth;
   if(relativeMinimumPoleDistance==true)
   {
     //TODO: implement relative pole mergeing windows
@@ -517,12 +536,18 @@ uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const 
     printf("BlockListOfPolesMergeDegeneratePoles with relativeMinimumPoleDistance==true not implemented");
     return 1;
   }
-  else
-  {
-    //TODO: do not shift spectral weight through the chemical potential
-    if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, epsilon);
-    return ComplexBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+  if(eps<0)
+  { /*  the outermost poles give the band width. Ordering is what the merge does first
+     *  anyway, so doing it here costs nothing */
+    if(A->N==0) return 0;
+    OrderBlockListOfPoles(A);
+    if(A->QComplex) BandWidth = fabs(A->V[0].Re)  + fabs(A->V[(A->N-1)*(1+Sqr(A->BlockSize))].Re);
+    else            BandWidth = fabs(A->VRe[0])   + fabs(A->VRe[(A->N-1)*(1+Sqr(A->BlockSize))]);
+    eps = 10 * DBL_EPSILON * (BandWidth + DBL_EPSILON);
   }
+  //TODO: do not shift spectral weight through the chemical potential
+  if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, eps);
+  return ComplexBlockListOfPolesMergeDegeneratePoles(A, eps);
 }
 
 

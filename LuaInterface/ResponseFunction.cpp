@@ -69,6 +69,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     len=len-1;
   }
   if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
+  /*  A relative pole distance is not implemented in BlockListOfPolesMergeDegeneratePoles
+   *  yet, so refuse it here rather than let a conversion fail somewhere deep inside. */
+  if(Options.relativeDistance==true) return luaL_error(L, "Error in ChangeType: relativeDistance is not implemented\n");
+  if(Options.relativeWeigth==true) return luaL_error(L, "Error in ChangeType: relativeWeigth is not implemented\n");
   Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
   // select the type and do the conversion
@@ -208,7 +212,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {
       if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth for conversion to Tri\n",Options.Method);
-      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance for conversion to Tri\n",Options.Method);
+
       if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT for conversion to Tri\n",Options.Method);
     }
     else
@@ -222,7 +226,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {
       if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth for conversion to And\n",Options.Method);
-      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance for conversion to And\n",Options.Method);
+
       if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT for conversion to And\n",Options.Method);
     }
     else
@@ -236,7 +240,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {
       if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth for conversion to ListOfPoles\n",Options.Method);
-      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance for conversion to ListOfPoles\n",Options.Method);
+
       if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT for conversion to ListOfPoles\n",Options.Method);
     }
     else
@@ -250,7 +254,6 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {
       if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
-      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
       if(Options.T==ValueNotSet) Options.T = sqrt(DBL_MIN);
     }
     else
@@ -264,7 +267,6 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {
       if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
       if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
-      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
       if(Options.T==ValueNotSet) Options.T = sqrt(DBL_MIN);
     }
     else

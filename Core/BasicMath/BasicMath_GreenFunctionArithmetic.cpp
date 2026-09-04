@@ -1607,7 +1607,7 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
       case 'n':
       {
         BlockListOfPoles Gt;
-        BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles( ((BlockNaturalImpurityOrbitalMatrixType *)(Gin->data)), &Gt);
+        BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles( ((BlockNaturalImpurityOrbitalMatrixType *)(Gin->data)), &Gt, -1, false);
         Gout->type = 'A';
         Gout->Block = true;
         Gout->NSuggestedGridPoints=0;

@@ -912,7 +912,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
-    BlockAndersonMatrixToBlockTridiagonalMatrix(temp, buff, 100*DBL_EPSILON);
+    BlockAndersonMatrixToBlockTridiagonalMatrix(temp, buff, 100*DBL_EPSILON, -1, false);
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;
@@ -1966,7 +1966,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff, 1000 * DBL_MIN);
+    BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff, 1000 * DBL_MIN, -1, false);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -1977,7 +1977,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000*DBL_MIN);
+    BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000*DBL_MIN, -1, false);
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;
@@ -2406,7 +2406,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
     buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-    BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(temp, buff);
+    BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(temp, buff, -1, false);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
     free(temp);
     return buff;
