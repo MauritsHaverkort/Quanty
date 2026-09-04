@@ -1646,8 +1646,8 @@ int ResponseFunctionSubtract(ResponsefunctionType * const GA, ResponsefunctionTy
 {
   int retval=0;
   ResponsefunctionType GBLP;
-  ConvertResponsefunction(GA, Gdif, 'l', "Default", 0, 0, 0, 0, false, false, false);
-  ConvertResponsefunction(GB, &GBLP, 'l', "Default", 0, 0, 0, 0, false, false, false);
+  ConvertResponsefunction(GA, Gdif,  'l', "Default", 0, 0, 0, 1000*DBL_EPSILON, false, false, false);
+  ConvertResponsefunction(GB, &GBLP, 'l', "Default", 0, 0, 0, 1000*DBL_EPSILON, false, false, false);
   
   if(GA->Block)
   {
