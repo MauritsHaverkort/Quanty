@@ -2747,11 +2747,55 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
  *  BlockDoubleTriDiagonalMatrixType to __
  *  ========================================================================= */
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockTriDiagonalMatrixType * const H, uint32_t NTriDiag)
+/*  A block double tri-diagonal matrix to a block tri-diagonal one, through the Anderson
+ *  form, which is what the four inbound cells of this row do in the other direction.
+ *
+ *  The two forms split G differently and the only thing they agree on is G itself, so
+ *  something in between has to hold G plainly. The Anderson form does: the two chains
+ *  here are the two halves of the hybridization and sit in the denominator, while a
+ *  chain of the tri-diagonal form is the whole of G continued-fraction expanded from the
+ *  observed block. Going d -> a puts the hybridization back into one bath, and
+ *  BlockAndersonMatrixToBlockTridiagonalMatrix then takes the poles of G and runs a block
+ *  Lanczos from the observed block.
+ *
+ *  Both parameters are needed and neither is decided here. SingularValue is what
+ *  BlockListOfPolesToBlockTridiagonalMatrix deflates on, so it belongs to the second
+ *  step; MinimalPoleDistance is the merge tolerance of the first, and it is forwarded to
+ *  the second as well, which merges the poles of G on its way.
+ *
+ *  Cost and dimension. The first step is O(N*BlockSize) small diagonalizations, the
+ *  second one dense O((N*BlockSize)^3) on the whole Anderson matrix. That matrix is the
+ *  larger of the two, since d -> a stores a rank one weight as a full BlockSize by
+ *  BlockSize sqrt(W) and so comes out a factor BlockSize wider than the d it came from --
+ *  it is the intermediate that sets the cost, not the answer. The chain that comes back
+ *  is not the interleaved band reduction the scalar type uses, and is not expected to
+ *  have the scalar version's dimension 1 + val.N + con.N; it is as long as the block
+ *  Lanczos needs before the Krylov space of the observed block is exhausted.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const * M, BlockTriDiagonalMatrixType * const H, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  if(BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(M, &AAnd, MinimalPoleDistance, relativeDistance))
+  {
+    printf("BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix failed in BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockAndersonMatrixToBlockTridiagonalMatrix(&AAnd, H, SingularValue, MinimalPoleDistance, relativeDistance))
+  {
+    printf("BlockAndersonMatrixToBlockTridiagonalMatrix failed in BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  /*  the name is the one thing the route loses: the intermediate pole list is created
+   *  with a name of its own */
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  return 0;
 }
 
 /*  The bath of a block double tri-diagonal matrix is its two chains side by side, and one

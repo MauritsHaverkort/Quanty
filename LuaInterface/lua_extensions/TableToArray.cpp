@@ -934,7 +934,9 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     lua_pop(L, 1);
     temp = luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
     buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
-    BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(*temp, buff, temp->val.N+temp->con.N+1);
+    /*  as the And branch above: deflate at 100*DBL_EPSILON and ask
+     *  BlockListOfPolesMergeDegeneratePoles for its standard tolerance with -1 */
+    BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(temp, buff, 100*DBL_EPSILON, -1, false);
     FreeBlockDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;

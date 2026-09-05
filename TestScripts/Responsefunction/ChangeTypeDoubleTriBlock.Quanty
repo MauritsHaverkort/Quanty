@@ -614,6 +614,100 @@ CheckRotationExactAnd("two degenerate blocks, to And",
 	{{{1.0,0.0},{0.0,1.0}}, {{0.5,0.0},{0.0,0.5}}, {{0.4,0.0},{0.0,0.4}}}, 0.05)
 
 -- ---------------------------------------------------------------------------
+-- block DoubleTri to block Tri, through the Anderson form
+-- ---------------------------------------------------------------------------
+-- The two forms split G differently and the only thing they agree on is G, so something
+-- in between has to hold G plainly. The Anderson form does: the two chains here are the
+-- two halves of the hybridization and sit in the denominator, while a chain of the
+-- tri-diagonal form is the whole of G, continued-fraction expanded from the observed
+-- block. So d -> a puts the hybridization back into one bath and a -> t takes the poles
+-- of G and runs a block Lanczos from the observed block. This is not the interleaved
+-- band reduction the scalar type uses, and the chain that comes back is not the scalar
+-- version's 1 + val.N + con.N.
+--
+-- What survives the route exactly is the head: a[0] is the observed offset and the first
+-- hopping carries the whole spectral weight of G, b[0]^* b[0]^T = B0^* B0^T. And since
+-- b0 is a multiple of the identity in every matrix built in this file, the observed block
+-- is not rotated on the way and a[1] comes back as val.a[0] + con.a[0]; with a general b0
+-- it would be that block whitened by b0 instead, so do not read that assertion as more
+-- than it is.
+function CheckToTri(name, GD, SingularValue)
+	local opt = (SingularValue ~= nil) and {{"SingularValue", SingularValue}} or {}
+	local GT = ResponseFunction.ChangeType(GD, "Tri", opt)
+	local td, tt = ResponseFunction.ToTable(GD), ResponseFunction.ToTable(GT)
+	local nv, nc = #(td.val[1]) - 1, #(td.con[1]) - 1
+	local states = 0
+	for k = 1, #(tt.BlockSize) do states = states + tt.BlockSize[k] end
+	for i = 1, 2 do
+		for j = 1, 2 do
+			-- a0 is carried along untouched, through the pole list and into the chain
+			if not Same(tt[1][1][i][j], td[1][1][i][j]) then
+				error("ChangeType block DoubleTri to Tri: a0 is not copied for " .. name, 1)
+			end
+			if math.abs(Complex.Re(tt[1][2][i][j]) - Complex.Re(td.val[1][1][i][j])
+			                                       - Complex.Re(td.con[1][1][i][j])) > 1E-11 then
+				error("ChangeType block DoubleTri to Tri: a[1] is not val.a[0]+con.a[0] for " .. name, 1)
+			end
+		end
+	end
+	-- the first hopping carries the whole spectral weight of G. Note the conjugate sides:
+	-- both are heads, so both are b^* ( ) b^T
+	local Wt = AconjBT(tt[2][1], tt[2][1])
+	local Wd = AconjBT(td[1][2], td[1][2])
+	local scale = 1.0 + math.abs(Wd[1][1][1]) + math.abs(Wd[2][2][1])
+	for i = 1, 2 do
+		for j = 1, 2 do
+			for c = 1, 2 do
+				if math.abs(Wt[i][j][c] - Wd[i][j][c]) > 1E-12 * scale then
+					error("ChangeType block DoubleTri to Tri: the first hopping does not carry the whole weight for " .. name, 1)
+				end
+			end
+		end
+	end
+	local e = math.max(MaxRelDiff(GD, GT, 0.3), MaxRelDiff(GD, GT, 0.02))
+	print(string.format("  %-30s val.N=%3d con.N=%3d  chain N=%3d %4d states   max relative error %9.2e",
+	      name, nv, nc, #(tt[1]) - 1, states, e))
+	if e > 1E-11 then
+		error("ChangeType block DoubleTri to Tri does not reproduce the original function for " .. name, 1)
+	end
+	return GT, states
+end
+
+print("block DoubleTri to block Tri, through the Anderson form")
+for i, s in ipairs({{20, 0.0, 0.025}, {20, -1.3, 0.1}, {6, 0.0, 0.05}, {1, 0.0, 0.3}}) do
+	CheckToTri(string.format("nb %d mu %.1f", s[1], s[2]),
+	           ResponseFunction.ChangeType(MakeBlockAnderson(s[1], s[2]), "DoubleTri", {{"EffectivekBT", s[3]}}))
+end
+CheckToTri("valence chain empty",    ResponseFunction.ChangeType(MakeBlockAnderson(20, -6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckToTri("conduction chain empty", ResponseFunction.ChangeType(MakeBlockAnderson(20,  6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckToTri("no bath at all",         ResponseFunction.ChangeType(MakeBlockAnderson( 0,  0.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+
+-- SingularValue is what the block Lanczos of the second step deflates on, and on this
+-- route it decides the dimension of the answer. d -> a keeps sqrt(W) whole, so a pole
+-- whose weight has rank one arrives as BlockSize states of which BlockSize-1 are
+-- decoupled, and BlockListOfPolesToBlockTridiagonalMatrix expands each pole the same way
+-- again. Deflation is what takes them back out. At the standard 1000*DBL_EPSILON nothing
+-- deflates and the chain comes out a factor BlockSize^2 wider than the Anderson matrix
+-- the double tri-diagonal one was built from; a threshold above the size of those
+-- couplings collapses it to the original dimension at the same accuracy.
+--
+-- Where that threshold sits is a property of the problem and not a constant: for the six
+-- block bath below it is between 1e-8 and 1e-7, for the twenty block one no value tried
+-- deflates cleanly and 1e-4 loses four digits of G. So this asserts only that the option
+-- is honoured and that deflating does not cost accuracy, not a number.
+print("SingularValue decides the dimension on this route")
+GDsv = ResponseFunction.ChangeType(MakeBlockAnderson(6, 0.0), "DoubleTri", {{"EffectivekBT", 0.05}})
+GTtight, nTight = CheckToTri("six block bath, standard", GDsv)
+GTloose, nLoose = CheckToTri("the same, SingularValue 1e-6", GDsv, 1E-6)
+if nLoose >= nTight then
+	error("a looser SingularValue has to deflate the decoupled directions away", 1)
+end
+if MaxRelDiff(GTtight, GTloose, 0.02) > 1E-11 then
+	error("deflating the decoupled directions away must not change G", 1)
+end
+print(string.format("  %-30s %d states against %d, same G", "deflation is free here", nLoose, nTight))
+
+-- ---------------------------------------------------------------------------
 -- A complex bath, which is what tells the two conventions apart
 -- ---------------------------------------------------------------------------
 -- A block matrix couples its head as b0^* ( ) b0^T and every level below it as
@@ -661,6 +755,8 @@ for i, s in ipairs({{20, 0.0, 0.025}, {20, -1.3, 0.1}, {6, 0.0, 0.05}, {1, 0.0, 
 	if e2 > 1E-10 then
 		error("a complex block And does not survive the round trip through DoubleTri for " .. name, 1)
 	end
+	-- and out to the tri-diagonal form, which crosses the same boundary twice more
+	CheckToTri(name, GD)
 end
 
 -- ---------------------------------------------------------------------------
@@ -670,11 +766,11 @@ end
 -- passes that on, and ChangeType turns it into a lua error. Without the middle step a
 -- caller got a response function whose data had never been allocated.
 GD = Check("a matrix to try them on", 6, 0.0, 0.05)
-for i, ty in ipairs({"LP", "Tri", "Nat"}) do
+for i, ty in ipairs({"LP", "Nat"}) do
 	if pcall(function() return ResponseFunction.ChangeType(GD, ty) end) then
 		error("ChangeType from a block DoubleTri to " .. ty .. " is not implemented and must fail", 1)
 	end
 end
-print("  the block DoubleTri to LP, Tri and Nat cells all raise an error")
+print("  the block DoubleTri to LP and Nat cells both raise an error")
 
 print("--------------------------------------------------------")

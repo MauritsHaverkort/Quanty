@@ -28,12 +28,17 @@ and takes `M` by pointer; the two call sites are `ConvertBlockMatrix` and
 `luaL_checkBlockAndersonMatrixType`, which passes `-1.0, false` for the standard
 default.
 
-**The next open cells are `d → l`, `d → t` and `d → n`, and they are the next
-piece of work.** No algorithm is decided for any of them, and Maurits has said
-they are **not** all to be routed through `a` — each is its own question, as the
-non-block row was: there, `d → a`, `d → t` and `d → l` each used a different
-reading of the same matrix and none was a template for the next (see the table
-below). Decide each one with him before writing it.
+**`d → t` is written too, through `a`** — Maurits chose that route: `d → a → t`,
+with `SingularValue` for the deflation of the second step and
+`MinimalPoleDistance` for the merge of the first. Same signature shape as
+`BlockAndersonMatrixToBlockTridiagonalMatrix`, and the `NTriDiag` argument the
+stub carried is gone, since `a → t` has no maximum chain length to give it to.
+
+**The next open cells are `d → l` and `d → n`.** No algorithm is decided for
+either, and they are **not** automatically to be routed through `a` — each is its
+own question, as the non-block row was: there, `d → a`, `d → t` and `d → l` each
+used a different reading of the same matrix and none was a template for the next
+(see the table below). Decide each one with Maurits before writing it.
 
 Read §1 for what `d` means and how it differs from `n`, and
 [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) for what the accuracy
@@ -61,10 +66,10 @@ in `.gitignore`.
 | from `t` | ✓ | — | ✓ | ✓ | ✓ |
 | from `a` | ✓ | ✓ | — | ✓ | ✓ |
 | from `n` | ✓ | ✓ | ✓ | — | ✓ |
-| from `d` | **open** | **open** | ✓ | **open** | ✓ copy |
+| from `d` | **open** | ✓ | ✓ | **open** | ✓ copy |
 
-Everything inbound works and is tested; `d → a` is the first outbound cell and
-works, the other three still raise a lua error.
+Everything inbound works and is tested; `d → a` and `d → t` work, and `d → l`
+and `d → n` still raise a lua error.
 `Chop` works both ways with and without deflation, the six index metamethods work,
 and both lua readers convert on all four type branches.
 
@@ -1591,6 +1596,47 @@ function did. Second, the move of `a0` to the end of the grown list is a self co
 `B.N == 0`, which an empty `con` chain produces, so both are `memmove` now.
 `__add.Quanty` has the regression test, real list plus complex list at three lengths;
 it aborts with SIGABRT on the old code.
+
+### Done: `d → t` through `a`, and what `SingularValue` does there
+
+Maurits' choice, not a derivation: `d → a → t`. The two forms split `G` differently and
+agree only on `G`, so something in between has to hold `G` plainly, and the Anderson form
+does — the two chains of a `d` are the two halves of the hybridization and sit in the
+denominator, while a chain of the `t` form is the whole of `G` expanded from the observed
+block. `BlockAndersonMatrixToBlockTridiagonalMatrix` then takes the poles of `G` and runs
+a block Lanczos from that block. This is **not** the interleaved `dsbtrd` band reduction
+the scalar `d → t` uses, and the chain is not the scalar version's `1 + val.N + con.N`.
+
+What survives exactly is the head: `a[0]` is carried through untouched, and the first
+hopping carries the whole spectral weight, `b[0]^* b[0]^T = B0^* B0^T`. `a[1]` comes back
+as `val.a[0] + con.a[0]` only because every `b0` in the tests is a multiple of the
+identity, so the observed block is not rotated on the way; with a general `b0` it is that
+block whitened by `b0`, and the test says so.
+
+**`SingularValue` decides the dimension on this route, and the standard value leaves it
+at its worst.** Two separate places expand a pole into `BlockSize` states coupled through
+`sqrt(W)`: `d → a` by construction (§8), and `BlockListOfPolesToBlockTridiagonalMatrix`,
+whose `alpha` array carries `BlockSize` copies of each pole energy with the
+`BlockSize × BlockSize` `sqrt(W)` as the starting block — the same construction, reached
+independently. For a rank-1 weight `BlockSize − 1` of those states are decoupled, and
+deflation is the only thing that takes them back out. Measured, `BlockSize = 2`:
+
+| source `a` | `d → a` | `d → a → t`, `1000·ε` | the same, `SingularValue 1e-6` |
+|---|---|---|---|
+| 7 blocks, 14 states | 13 blocks, 26 | 26 blocks, **54 states** | 7 blocks, **16 states**, same `G` |
+| 21 blocks, 42 states | 43 blocks, 86 | 83 blocks, **168 states** | no clean threshold found |
+
+So at the `ChangeType` default the answer is a factor `BlockSize²` wider than the Anderson
+matrix it came from, and one loose enough threshold gives the original dimension back at
+the same accuracy — `2.48e-13` against `2.45e-13`. But where that threshold sits is a
+property of the problem, not a constant: for the six-block bath it is between `1e-8` and
+`1e-7`; for the twenty-block one nothing tried deflates cleanly, and `1e-4` makes the
+chain *longer* in blocks while losing four digits of `G`. The test asserts only that the
+option is honoured and that deflating costs no accuracy, never a number.
+
+That is the thing to attack if this route is to be cheap: deflation on this path should
+key on the **rank of `W`**, which is known exactly at the point `sqrt(W)` is formed, and
+not on a singular value threshold discovered later by the Lanczos.
 
 ### Build registration
 
