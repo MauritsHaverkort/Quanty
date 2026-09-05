@@ -11,7 +11,7 @@ Scope decided: **the single-valued (non-block) type first.** The block type
 
 ---
 
-## 0. Status as of `65f4f9a4` (2026-08-30)
+## 0. Status as of `bd2eb8d9` (2026-09-05)
 
 **Regenerated from the source, not from memory.** The lists below were produced by
 scanning the tree; redo the scans rather than trusting this section after a few
@@ -19,15 +19,55 @@ more commits.
 
 ### Starting a new session from here
 
-Read this section, then §1 for what `d` means and how it differs from `n`, then
+**The next piece of work is `BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix`,
+the `d → a` cell of the block row.** Its algorithm is settled with Maurits and
+written up in §8 under **"Decided: how `d → a` is built in block form"** — read
+that first, then §1 for what `d` means and how it differs from `n`, then
 [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) for what the accuracy
-numbers do and do not say. The next piece of work is **the block conversions**,
-§8 and the list at the end of this section. Everything non-block that is left is
-listed under "still open, non-block" below and is independent of it.
+numbers do and do not say.
 
-The two test files are `TestScripts/Responsefunction/ChangeTypeDoubleTri.Quanty`
-(into `d`) and `ChangeTypeFromDoubleTri.Quanty` (out of `d`). Both are registered
-in `All.Quanty` **and** in `.gitlab-ci.yml`; a new test needs both.
+In one line: one Anderson block per merged pole, `A_{k+1} = e_k·I` and
+`B_k = sqrt(W_k)` kept whole and dense. Dimension is an efficiency question,
+symmetry is not negotiable, and `A = e·I` is what makes a degeneracy structural
+rather than numerical. §8 carries the reasoning, the pipeline, and the proof that
+no minimal-dimension form can be canonical.
+
+Three test files, all registered in `All.Quanty` **and** in `.gitlab-ci.yml` — a
+new test needs both:
+
+| file | covers |
+|---|---|
+| `ChangeTypeDoubleTri.Quanty` | into `d`, non-block |
+| `ChangeTypeFromDoubleTri.Quanty` | out of `d`, non-block |
+| `ChangeTypeDoubleTriBlock.Quanty` | the block row, both directions |
+
+**Build out of the source tree** — `g++ … -o <somewhere else>/Quanty` — and run
+from the repo root as CI does, `./Quanty "TestScripts/Responsefunction/X.Quanty"`.
+Nothing depends on where the binary lands, and a stray `Quanty` in the root is not
+in `.gitignore`.
+
+### The state of the block row
+
+| | `→ l` | `→ t` | `→ a` | `→ n` | `→ d` |
+|---|---|---|---|---|---|
+| from `l` | — | ✓ | ✓ | ✓ | ✓ |
+| from `t` | ✓ | — | ✓ | ✓ | ✓ |
+| from `a` | ✓ | ✓ | — | ✓ | ✓ |
+| from `n` | ✓ | ✓ | ✓ | — | ✓ |
+| from `d` | **open** | **open** | **next** | **open** | ✓ copy |
+
+Everything inbound works and is tested; every outbound cell raises a lua error.
+`Chop` works both ways with and without deflation, the six index metamethods work,
+and both lua readers convert on all four type branches.
+
+`MinimalPoleDistance` is now an option on `ChangeType`, threaded through
+`ConvertResponsefunction`/`ConvertBlockMatrix` to every conversion that merges.
+Unset arrives negative, and **`BlockListOfPolesMergeDegeneratePoles` is the single
+place that turns that into the standard value** `10·DBL_EPSILON·(BandWidth + DBL_EPSILON)`.
+Do not add a second default anywhere; forward what you were given.
+`relativeDistance` and `relativeWeigth` are refused at the lua layer — neither is
+implemented. Note `MinimalPoleDistance == 0` merges **nothing**, not even
+bit-identical poles: the test in the merge is a strict `<`.
 
 ### Done: the whole non-block conversion table
 
@@ -446,9 +486,9 @@ Both intermediates were measured before being built on: block `l → a` and `n �
 reproduce `G` to 5e-13, like `t → a`.
 
 **The whole inbound block row is now done: `l`, `t`, `a`, `n` and the copy all reach
-`d`.** Still to do: the `d →` cells, and
-`Chop`/`Part`/`Add`/`ToImpurityHamiltonian`. `ResponsefunctionChop` having no `d`
-case is why `__index.Quanty`'s `Chop` loop skips the two `d` entries.
+`d`.** `Chop` for both `d` types followed, so `__index.Quanty` no longer skips them.
+Still to do: the `d →` cells — `d → a` first, see below — and
+`Part`/`Add`/`ToImpurityHamiltonian`.
 
 **The non-block insights carry over directly**, and are the reason the block row
 should be cheap: a block `d` read as `val_N … val_1, imp, con_1 … con_N` is
