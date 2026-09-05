@@ -19,18 +19,25 @@ more commits.
 
 ### Starting a new session from here
 
-**The next piece of work is `BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix`,
-the `d → a` cell of the block row.** Its algorithm is settled with Maurits and
-written up in §8 under **"Decided: how `d → a` is built in block form"** — read
-that first, then §1 for what `d` means and how it differs from `n`, then
+**`BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix` is written**, as §8
+decided it: one Anderson block per merged pole, `A_{k+1} = e_k·I` and
+`B_k = sqrt(W_k)` kept whole and dense. It reproduces `G` to 2.4e-13, every bath
+block is bit-exactly `e·I`, and a degenerate bath comes back as one block per
+distinct energy. Its signature gained `MinimalPoleDistance` and `relativeDistance`
+and takes `M` by pointer; the two call sites are `ConvertBlockMatrix` and
+`luaL_checkBlockAndersonMatrixType`, which passes `-1.0, false` for the standard
+default.
+
+**The next open cells are `d → l`, `d → t` and `d → n`, and they are the next
+piece of work.** No algorithm is decided for any of them, and Maurits has said
+they are **not** all to be routed through `a` — each is its own question, as the
+non-block row was: there, `d → a`, `d → t` and `d → l` each used a different
+reading of the same matrix and none was a template for the next (see the table
+below). Decide each one with him before writing it.
+
+Read §1 for what `d` means and how it differs from `n`, and
 [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) for what the accuracy
 numbers do and do not say.
-
-In one line: one Anderson block per merged pole, `A_{k+1} = e_k·I` and
-`B_k = sqrt(W_k)` kept whole and dense. Dimension is an efficiency question,
-symmetry is not negotiable, and `A = e·I` is what makes a degeneracy structural
-rather than numerical. §8 carries the reasoning, the pipeline, and the proof that
-no minimal-dimension form can be canonical.
 
 Three test files, all registered in `All.Quanty` **and** in `.gitlab-ci.yml` — a
 new test needs both:
@@ -54,9 +61,10 @@ in `.gitignore`.
 | from `t` | ✓ | — | ✓ | ✓ | ✓ |
 | from `a` | ✓ | ✓ | — | ✓ | ✓ |
 | from `n` | ✓ | ✓ | ✓ | — | ✓ |
-| from `d` | **open** | **open** | **next** | **open** | ✓ copy |
+| from `d` | **open** | **open** | ✓ | **open** | ✓ copy |
 
-Everything inbound works and is tested; every outbound cell raises a lua error.
+Everything inbound works and is tested; `d → a` is the first outbound cell and
+works, the other three still raise a lua error.
 `Chop` works both ways with and without deflation, the six index metamethods work,
 and both lua readers convert on all four type branches.
 
@@ -1514,12 +1522,75 @@ BlockListOfPolesMergeDegeneratePoles(&Lval, tol)
 `BlockTriDiagonalMatrixToCompactMatrix` (dimension `N·BlockSize`, `a[0]` excluded as the
 convention requires), couples through `b[0]`, and copies `a[0]` into the list's `a0`; its
 weights are rank 1. `AddBlockListOfPoles` adds the two `a0` blocks, which is exactly the
-§1 rule that the shared site is the sum. **Caveat:** that function also merges
-internally, on its last line, with the hard-coded
-`BlockSize · N · DBL_EPSILON · BandWidth` — the tolerance flagged in
-[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) as reaching tens of µeV for a
-d shell on a 60 eV band. So the poles arrive already merged, too aggressively, before the
-caller can choose. That is the piece Maurits is working on.
+§1 rule that the shared site is the sum.
+
+**The caveat that used to stand here is out of date, checked against the source.**
+`AddBlockListOfPoles` does not merge — it reallocs, adds the two `a0` blocks and
+concatenates, and ends `A->N+=B.N; return 0;`. The hard-coded
+`BlockSize · N · DBL_EPSILON · BandWidth` it was accused of lived in
+`BlockAndersonMatrixToBlockListOfPoles` and `BlockTriDiagonalMatrixToBlockListOfPoles`,
+and both took `MinimalPoleDistance` as an argument in `371eab0d` / `bd2eb8d9`. So the
+caller's tolerance now reaches every merge on this path and nothing arrives
+pre-merged. The bullet on it in
+[TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) is stale for the same reason.
+
+`OrderBlockListOfPoles` in the pipeline above is redundant and the implementation
+leaves it out: `BlockListOfPolesMergeDegeneratePoles` orders first, both in its
+default-epsilon branch and in the real and complex workers it dispatches to.
+
+### What writing `d → a` added to the above
+
+Four things the decision did not cover, all found against the source.
+
+**Where the conjugates go, and the only test that can see them.** A block matrix couples
+its head as `b0^* ( ) b0^T` and every level below it as `b ( ) b^+` — the struct comments
+in [StructDef.cpp](../../Core/StructDef.cpp) are explicit, and `EvaluateBlockTriDiagonalMatrix`
+implements exactly that, `TransformCompactMatrixInlinecT` for `iblock == 1` and
+`TransformCompactMatrixInlineNC` below. Both forms share the head, so `a0` and `b0` copy
+across untouched. One level down they differ, and the conversion crosses that boundary:
+a chain's pole list comes out in the **head** convention — `HermitianCompactMatrixToBlockListOfPoles`
+computes `vec^* (w−A)^-1 vec^T` and stores `W = x^* x^T` — while an Anderson bath block
+sits **below** and wants `B B^+`. The two read the same Hermitian matrix with the index
+order swapped, and the Hermitian square root is what crosses between them:
+`CompactMatrixSqrt` returns `B = B^+` with `B B^+ = W`, so `sqrt(W)` is already what the
+bath wants. The same `B` in a head slot would give `W^T`.
+
+Note the two pole-list producers disagree on this: `BlockAndersonMatrixInverseToBlockListOfPoles`
+stores `v v^+` (below), `HermitianCompactMatrixToBlockListOfPoles` stores `x^* x^T` (head).
+Each is right for the function it represents, but they are transposes of one another.
+
+**A real test cannot see any of it.** With the conjugate deliberately put on the wrong
+side, every real check in `ChangeTypeDoubleTriBlock.Quanty` still passes to the last
+digit, and the complex ones go from `1e-13` to `5.5`. That was measured, not argued, and
+it is why the complex section exists. It also gives `a → d` its first complex test, which
+crosses the same boundary in the other direction.
+
+**Four `QComplex` flags in, one out.** A `BlockDoubleTriDiagonalMatrixType` carries a flag
+per part and `SetBlockDoubleTriDiagonalMatrixQComplex` sets its own to **2** for a mixed
+one; a `BlockAndersonMatrixType` has a single flag. So the result is complex when any part
+is, and the pole list is promoted with `MakeRealBlockListOfPolesComplex` before the two
+halves are added. `H->QComplex = M->QComplex` would be wrong.
+
+**The dimension, measured.** `BlockTriDiagonalMatrixToCompactMatrix` builds the full
+`N·BlockSize` minor and ignores `BlockSizeList`, so a chain yields exactly `N·BlockSize`
+poles and a deflated slot arrives as a zero-weight pole at energy 0; those merge together
+and cost one bath block carrying nothing. For the `BlockSize = 2` test bath, 20 Anderson
+blocks in come back as 42 — a factor `BlockSize`, which is the rank-1 weight of a
+non-degenerate pole being stored as a full `BlockSize × BlockSize` `sqrt(W)`. That is the
+accepted price of §8; `Chop` is what removes the decoupled orbitals, and it matters for §6,
+where they become real bath sites in an ED calculation.
+
+**Two defects in `AddBlockListOfPoles`, found here and now fixed.** Its
+`else if(B.QComplex)` branch — `A` real, `B` complex, so `A` is made complex first —
+realloced `(A->N+B.N+1)·BlockSize²` `Complex16` where the other two branches use
+`(A->N+B.N+1)·(1+BlockSize²)−1`. That drops one energy slot per pole, so `B`'s poles were
+written past the end of the block: `82 + 82` poles of `BlockSize 2` aborted in malloc,
+while short lists survived on what malloc rounded up. `d → a` never reached it — the
+promotion above happens first — but `G1 + G2` on a real and a complex block response
+function did. Second, the move of `a0` to the end of the grown list is a self copy when
+`B.N == 0`, which an empty `con` chain produces, so both are `memmove` now.
+`__add.Quanty` has the regression test, real list plus complex list at three lengths;
+it aborts with SIGABRT on the old code.
 
 ### Build registration
 

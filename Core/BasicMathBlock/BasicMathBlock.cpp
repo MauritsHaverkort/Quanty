@@ -379,6 +379,20 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
     {
       switch (type|32)
       {
+        case 'a':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockAndersonMatrixType*)Mout->data,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
         case 'd':
         {
           Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));

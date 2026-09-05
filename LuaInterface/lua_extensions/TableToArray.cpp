@@ -1365,7 +1365,9 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     lua_pop(L, 1);
     temp = luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
     buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
-    BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(*temp, buff);
+    /*  a negative MinimalPoleDistance asks BlockListOfPolesMergeDegeneratePoles for the
+     *  standard value, which is the one place that decides it */
+    BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(temp, buff, -1.0, false);
     FreeBlockDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;

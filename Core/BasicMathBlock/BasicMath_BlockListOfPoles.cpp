@@ -571,7 +571,7 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   else if(B.QComplex)
   {
     if(MakeRealBlockListOfPolesComplex(A)){printf("MakeRealBlockListOfPolesComplex failed in AddBlockListOfPoles\n");return 1;}
-    temp= realloc(A->V, (A->N+B.N+1)*A->BlockSize*A->BlockSize*sizeof(Complex16));
+    temp= realloc(A->V, ((A->N+B.N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
   }
   else
   {
@@ -586,7 +586,9 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   {
     A->V=(Complex16*)temp;
     A->a0=&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]);
-    memcpy(&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
+    /*  source and destination are the same block when B.N is zero, so this has to be a
+     *  memmove and not a memcpy */
+    memmove(&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
     A->a0=&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]);
     if(B.QComplex)
     {
@@ -614,7 +616,8 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   {
     A->VRe=(double*)temp;
     A->a0Re=&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]);
-    memcpy(&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0Re, A->BlockSize*A->BlockSize*sizeof(double));
+    /*  and the same here */
+    memmove(&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0Re, A->BlockSize*A->BlockSize*sizeof(double));
     A->a0Re=&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]);
     for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {

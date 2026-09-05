@@ -70,24 +70,35 @@ a factor of five to seven, for 0.53 s against 0.007 s at 1000 poles and O(N²)
 memory against O(N). That is the trade the user should be allowed to make. Plain
 Lanczos without re-orthogonalization is 1e-2 at 1000 poles and is not a candidate.
 
-**Two tolerances sit exactly where the log mesh would go.**
+**Three tolerances sit exactly where the log mesh would go**, one of them now
+settled.
 
-- **the block degenerate-pole merge is far too loose.**
-  `BlockAndersonMatrixToBlockListOfPoles` passes
-  `BlockSize * N * DBL_EPSILON * BandWidth` to
-  `BlockListOfPolesMergeDegeneratePoles`. At `BlockSize = 10`, a 50-block bath
+- **the block degenerate-pole merge — RESOLVED, and the reasoning is worth
+  keeping.** `BlockAndersonMatrixToBlockListOfPoles` used to hard-code
+  `BlockSize * N * DBL_EPSILON * BandWidth`. At `BlockSize = 10`, a 50-block bath
   and a 60 eV band that is `5100 · 2.2e-16 · 60 ≈ 70 µeV`; at `BlockSize = 2`
   with 100 poles it is still ≈ 3 µeV. Magnetic fields give µeV splittings on
-  bands of tens of eV, so this threshold merges away exactly the physics the
+  bands of tens of eV, so that threshold merged away exactly the physics the
   block types exist to resolve. The eigenvalue error it is meant to hide under is
   `O(ε·‖a_k‖)` from *independent* `BlockSize × BlockSize` diagonalizations and
   does **not** grow with the number of poles, so a few·`ε`·bandwidth — about
-  `1e-13 eV` — is both sufficient and nine orders below µeV. Merging is not
-  optional: summing the rank-1 weights over a degenerate group gives `b·P_D·b^†`
-  with `P_D` the spectral projector, which is basis-independent, and that is what
-  makes the result independent of the arbitrary rotation LAPACK picks inside a
-  degenerate subspace. So the threshold has to be tight *and* nonzero, and
-  nothing has measured where it should sit.
+  `1e-13 eV` — is both sufficient and nine orders below µeV.
+
+  It is now an argument, `MinimalPoleDistance`, threaded from `ChangeType`
+  through `ConvertResponsefunction` / `ConvertBlockMatrix` to every conversion
+  that merges, and **`BlockListOfPolesMergeDegeneratePoles` is the single place
+  that turns an unset (negative) value into the standard**
+  `10 · DBL_EPSILON · (BandWidth + DBL_EPSILON)`, with the band width taken from
+  the outermost poles. Every caller only forwards what it was handed; do not add
+  a second default anywhere. Note `MinimalPoleDistance == 0` merges **nothing**,
+  not even two bit-identical poles: the test inside the merge is a strict `<`.
+
+  Merging is not optional: summing the rank-1 weights over a degenerate group
+  gives `b·P_D·b^†` with `P_D` the spectral projector, which is basis-independent,
+  and that is what makes the result independent of the arbitrary rotation LAPACK
+  picks inside a degenerate subspace. So the threshold has to be tight *and*
+  nonzero. Where exactly it should sit is still unmeasured — that part is open,
+  and it is what the harness above is for.
 - `PolesToTriDiagonalCoefficients` merges poles closer than
   `4·DBL_EPSILON·(|E_i|+|E_j|)`. That is a relative tolerance, and a logarithmic
   mesh accumulating near `mu` is precisely where level spacings get small. It is
