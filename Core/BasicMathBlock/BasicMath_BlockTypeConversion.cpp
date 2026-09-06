@@ -1008,13 +1008,19 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
     B->QComplex = A.QComplex;
     InitBlockAndersonMatrix(B);
     B->mu = A.mu;
+    strncpy(B->Name, A.Name, MAXStrLength);
+    B->Name[MAXStrLength-1]='\0';
+    /*  a0Re and a0 are the pointers to the offset block, not the block itself, and A is
+     *  passed by value: &(A.a0Re) is the address of that pointer on the stack, so this
+     *  used to copy BlockSize^2 doubles from an eight byte object and leave G = a0 as
+     *  whatever happened to follow it */
     if(A.QComplex==0)
     {
-      memcpy(B->aRe, &(A.a0Re), Sqr(A.BlockSize)*sizeof(double));
+      memcpy(B->aRe, A.a0Re, Sqr(A.BlockSize)*sizeof(double));
     }
     else
     {
-      memcpy(B->a, &(A.a0), Sqr(A.BlockSize)*sizeof(Complex16));
+      memcpy(B->a, A.a0, Sqr(A.BlockSize)*sizeof(Complex16));
     }
     return 0;
   }
@@ -1030,6 +1036,7 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
   if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
   {
     printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
+    FreeBlockTridiagonalMatrix(&ATri);
     return 1;
   }
   FreeBlockTridiagonalMatrix(&ATri);
