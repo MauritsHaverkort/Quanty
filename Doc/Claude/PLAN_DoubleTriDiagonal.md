@@ -1733,10 +1733,31 @@ both of its `BlockListOfPolesToBlockTridiagonalMatrix` calls. It now takes the v
 three other callers pass `1000·DBL_EPSILON`, so their behaviour is unchanged, and the
 `l → n` cell of `ConvertBlockMatrix` forwards the option it already had in hand — which is
 also `1000·DBL_EPSILON` when unset, so that changes nothing by default either and only
-makes the option live. **Still hard-coded, and worth threading next time someone is in
-there:** `a → n` and `t → n` have no `SingularValue` in their own signatures, so
-`ChangeType(…, "Nat")` on those two sources still ignores the option;
-`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension` likewise.
+makes the option live. **Since threaded everywhere.**
+`BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix`,
+`BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix` and
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension` had no
+`SingularValue` in their signatures and hard-coded `1000·DBL_EPSILON`, so
+`ChangeType(…, "Nat")` on an `a` or a `t` source silently ignored an option it had itself
+defaulted. They take it now and the `ConvertBlockMatrix` cells forward it.
+
+One more of the same kind turned up on the way and is fixed with them:
+**`BlockListOfPolesToBlockAndersonMatrix` took `SingularValue` and ignored it**,
+hard-coding `1000·DBL_EPSILON` over the value `ConvertBlockMatrix`'s `l → a` cell was
+already handing it. That reached `l → a` and, through
+`BlockListOfPolesToBlockDoubleTriDiagonalMatrix`, `l → d`.
+
+All of it is behaviour-preserving at the default — `ChangeType` fills `SingularValue` with
+`1000·DBL_EPSILON` when unset, which is what was hard-coded — and that was measured, not
+argued: 692 coefficients over twenty conversions between the four block sources come out
+bit identical to `f16811b4`. `ChangeType.Quanty` now asserts the option is honoured for all
+six cells that take it, and that leaving it out is bit for bit the same as passing
+`1000·DBL_EPSILON`.
+
+A loose threshold does not simply shorten the chain: at `1e-4` all of these get **longer** —
+24/26 blocks becoming 36/39 — and lose four to five digits of `G`, deflating a direction
+that carries weight and leaving the rest of the chain to make up for it. So the tests check
+that the option changes the answer and that a tight value keeps `G`, never a length.
 
 **An empty branch is legal for `d` and outside the `n` form** (§1), and the route respects
 that on its own. With `mu` below the bath the `d` has `val.N = 0`, but the poles of `G` are
