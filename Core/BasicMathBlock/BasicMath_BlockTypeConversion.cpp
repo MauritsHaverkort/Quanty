@@ -961,7 +961,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
  *  Output
  *    B resutling G on Nat. Imp. Orb. basis
  */
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, double const SingularValue, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   CompactMatrixType Aa0;
   BlockListOfPoles Acon, Aval;
@@ -986,8 +986,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
   TransformCompactMatrixNC(&Aa0, AT, &(B->a0));
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
-  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon+1, 1000*DBL_EPSILON);
-  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal+1, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon+1, SingularValue);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal+1, SingularValue);
   SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
   return 0;
 }
@@ -1019,7 +1019,9 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
     return 0;
   }
   BlockTriDiagonalMatrixType ATri;
-  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, 1000*DBL_EPSILON))
+  /*  this used to hard code 1000*DBL_EPSILON and ignore its own SingularValue, so the
+   *  option reached the function and stopped there */
+  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, SingularValue))
   {
     printf("BlockListOfPolesToBlockTridiagonalMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
     return 1;
@@ -1571,14 +1573,14 @@ uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixTy
   }
   return 0;
 }
-uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT, double const MinimalPoleDistance, bool const relativeDistance)
+uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles G;
   BlockAndersonMatrixToBlockListOfPoles(A, &G, MinimalPoleDistance, relativeDistance);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   
-  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, 1000*DBL_EPSILON, A->N+1, A->N+1);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, SingularValue, A->N+1, A->N+1);
   
   FreeBlockListOfPoles(&G);
   return 0;
@@ -2727,7 +2729,7 @@ uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMa
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT, double const MinimalPoleDistance, bool const relativeDistance)
+uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles ABlock;
   if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock, MinimalPoleDistance, relativeDistance))
@@ -2735,7 +2737,7 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
     printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
     return 1;
   }
-  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, 1000*DBL_EPSILON, ATri.N, ATri.N);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, SingularValue, ATri.N, ATri.N);
   FreeBlockListOfPoles(&ABlock);
   return 0;
 }

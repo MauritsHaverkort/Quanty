@@ -1219,6 +1219,117 @@ MD_nl=nil
 MD_ul=nil
 MD_bl=nil
 
+print("--------------------------------------------------------")
+print("-- SingularValue reaches the block Nat conversions     --")
+print("--------------------------------------------------------")
+-- Every route to the block natural orbital form ends in two block Lanczos runs, in
+-- BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix, and SingularValue is what those
+-- deflate on. It used to be hard coded there at 1000*DBL_EPSILON, so ChangeType supplied
+-- an option that four of its own cells then ignored. It is threaded now, from ChangeType
+-- through ConvertBlockMatrix to all four sources.
+--
+-- The check is that the option is honoured, not that a particular number comes out: a
+-- threshold loose enough to deflate gives a different chain from a tight one, and both
+-- still reproduce G. Note a threshold that deflates a direction it should not makes the
+-- chain longer rather than shorter, and costs accuracy -- 1e-4 below is already past that
+-- point, which is why the two are checked against different tolerances.
+function SVNatMaxRelDiff(G1, G2, gamma)
+	local worst = 0.0
+	for i = 0, 100 do
+		local w = -7.0 + 14.0 * i / 100
+		local t1, t2 = G1(w, gamma), G2(w, gamma)
+		local num, den = 0.0, 0.0
+		for a = 1, #t1 do
+			for b = 1, #t1[a] do
+				local xr, xi = Complex.Re(t1[a][b]), Complex.Im(t1[a][b])
+				local yr, yi = Complex.Re(t2[a][b]), Complex.Im(t2[a][b])
+				num = num + (xr - yr)^2 + (xi - yi)^2
+				den = den + xr * xr + xi * xi
+			end
+		end
+		if (den > 0) then
+			local e = math.sqrt(num / den)
+			if e > worst then worst = e end
+		end
+	end
+	return worst
+end
+
+do
+	local a = {{{0.0, 0.0}, {0.0, 0.0}}, {{1.7, 0.2}, {0.2, 1.3}}}
+	local b = {{{1.4, 0.0}, {0.0, 1.4}}}
+	for i = 1, 20 do
+		local E = -5.0 + 10.0 * (i - 0.5) / 20
+		local o = 0.15 * math.sin(i)
+		a[#a + 1] = {{E, o}, {o, E + 0.3 * math.cos(i)}}
+		local v = 0.5 * math.sqrt(math.max(0.0, 25.0 - E * E)) / math.sqrt(20)
+		b[#b + 1] = {{v, 0.3 * v}, {-0.2 * v, 0.9 * v}}
+	end
+	local GAnd = ResponseFunction.New({a, b, mu = 0, type = "And", name = "svbath"})
+	local sources = {{"And", GAnd},
+	                 {"Tri", ResponseFunction.ChangeType(GAnd, "Tri")},
+	                 {"LP",  ResponseFunction.ChangeType(GAnd, "LP")},
+	                 {"DoubleTri", ResponseFunction.ChangeType(GAnd, "DoubleTri", {{"EffectivekBT", 0.025}})}}
+	for i, s in ipairs(sources) do
+		local name, G = s[1], s[2]
+		local Ntight = ResponseFunction.ChangeType(G, "Nat", {{"EffectivekBT", 0.025}, {"SingularValue", 1E-13}})
+		local Nloose = ResponseFunction.ChangeType(G, "Nat", {{"EffectivekBT", 0.025}, {"SingularValue", 1E-4}})
+		local tt, tl = ResponseFunction.ToTable(Ntight), ResponseFunction.ToTable(Nloose)
+		local et = SVNatMaxRelDiff(G, Ntight, 0.02)
+		local el = SVNatMaxRelDiff(G, Nloose, 0.02)
+		print(string.format("  %-10s -> Nat   1e-13: %3d/%3d err %8.1e    1e-4: %3d/%3d err %8.1e",
+		      name, #(tt.val[1]) - 1, #(tt.con[1]) - 1, et,
+		            #(tl.val[1]) - 1, #(tl.con[1]) - 1, el))
+		if (#(tt.val[1]) == #(tl.val[1])) and (#(tt.con[1]) == #(tl.con[1])) then
+			error("SingularValue does not reach the block " .. name .. " to Nat conversion", 1)
+		end
+		if et > 1E-11 then
+			error("block " .. name .. " to Nat does not reproduce G at a tight SingularValue", 1)
+		end
+		if el > 1E-6 then
+			error("block " .. name .. " to Nat does not reproduce G at a loose SingularValue", 1)
+		end
+	end
+	-- and leaving the option out has to be the same as the value ChangeType fills in for
+	-- it, which is the 1000*DBL_EPSILON that used to be hard coded
+	local Ndefault = ResponseFunction.ChangeType(GAnd, "Nat", {{"EffectivekBT", 0.025}})
+	local Nexplicit = ResponseFunction.ChangeType(GAnd, "Nat", {{"EffectivekBT", 0.025},
+	                                                            {"SingularValue", 1000 * 2.220446049250313E-16}})
+	local td, te = ResponseFunction.ToTable(Ndefault), ResponseFunction.ToTable(Nexplicit)
+	if (#(td.val[1]) ~= #(te.val[1])) or (#(td.con[1]) ~= #(te.con[1])) then
+		error("the standard SingularValue of a conversion to Nat is not 1000*DBL_EPSILON", 1)
+	end
+	if SVNatMaxRelDiff(Ndefault, Nexplicit, 0.02) ~= 0.0 then
+		error("the standard SingularValue of a conversion to Nat is not 1000*DBL_EPSILON", 1)
+	end
+	print("  leaving SingularValue out is 1000*DBL_EPSILON, bit for bit")
+
+	-- BlockListOfPolesToBlockAndersonMatrix had the same defect and the plumbing was
+	-- already there: ConvertBlockMatrix passed SingularValue in and the function hard
+	-- coded 1000*DBL_EPSILON over it. That reaches l -> And and, through it, l -> DoubleTri
+	local GLP = ResponseFunction.ChangeType(GAnd, "LP")
+	for i, ty in ipairs({"And", "DoubleTri"}) do
+		local opt = function(sv)
+			local o = {{"SingularValue", sv}}
+			if ty == "DoubleTri" then o[#o + 1] = {"EffectivekBT", 0.025} end
+			return o
+		end
+		local Gt = ResponseFunction.ChangeType(GLP, ty, opt(1E-13))
+		local Gl = ResponseFunction.ChangeType(GLP, ty, opt(1E-4))
+		local tt, tl = ResponseFunction.ToTable(Gt), ResponseFunction.ToTable(Gl)
+		local nt = (ty == "And") and #(tt[1]) or (#(tt.val[1]) + #(tt.con[1]))
+		local nl = (ty == "And") and #(tl[1]) or (#(tl.val[1]) + #(tl.con[1]))
+		print(string.format("  %-10s -> %-9s 1e-13: %3d   1e-4: %3d   err %8.1e and %8.1e",
+		      "LP", ty, nt, nl, SVNatMaxRelDiff(GLP, Gt, 0.02), SVNatMaxRelDiff(GLP, Gl, 0.02)))
+		if nt == nl then
+			error("SingularValue does not reach the block LP to " .. ty .. " conversion", 1)
+		end
+		if SVNatMaxRelDiff(GLP, Gt, 0.02) > 1E-11 then
+			error("block LP to " .. ty .. " does not reproduce G at a tight SingularValue", 1)
+		end
+	end
+end
+
 collectgarbage()
 collectgarbage()
 collectgarbage()
