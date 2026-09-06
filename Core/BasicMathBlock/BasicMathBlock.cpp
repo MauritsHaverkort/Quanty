@@ -177,7 +177,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
+          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, SingularValue, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
         }
         break;
         case 'd':
@@ -379,6 +379,34 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
     {
       switch (type|32)
       {
+        case 'n':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          /* through the list of poles: kBT for the Fermi split, SingularValue for the
+             deflation of the two block Lanczos runs, MinimalPoleDistance for the merge */
+          if(BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T,SingularValue,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
+        case 'l':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockListOfPoles));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockListOfPoles*)Mout->data,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockListOfPoles failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));

@@ -2181,7 +2181,9 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff);
+    /*  no temperature in a table, so the split is at mu; -1 asks
+     *  BlockListOfPolesMergeDegeneratePoles for its standard tolerance */
+    BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(temp, buff, 1000 * DBL_MIN, 1000 * DBL_EPSILON, -1, false);
     FreeBlockDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -2192,7 +2194,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockListOfPoles(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000 * DBL_MIN, temp->N, temp->N);
+    BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000 * DBL_MIN, 1000 * DBL_EPSILON, temp->N, temp->N);
     FreeBlockListOfPoles(temp);
     free(temp);
     return buff;

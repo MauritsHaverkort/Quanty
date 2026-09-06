@@ -708,6 +708,178 @@ end
 print(string.format("  %-30s %d states against %d, same G", "deflation is free here", nLoose, nTight))
 
 -- ---------------------------------------------------------------------------
+-- block DoubleTri to a block list of poles
+-- ---------------------------------------------------------------------------
+-- The poles of G are the eigenvalues of the whole matrix, not the two chain spectra --
+-- those are the poles of the hybridization and are what d -> a wants. Read the matrix as
+--
+--     val_N ... val_2, val_1, observed, con_1, con_2, ... con_N
+--
+-- and it is an ordinary block tri-diagonal matrix of 1 + val.N + con.N blocks, half
+-- bandwidth 2*BlockSize-1, which BlockTriDiagonalMatrixEigenSystem band-reduces with
+-- dsbtrd / zhbtrd and diagonalizes. The observed block sits in the middle rather than at
+-- an end, which costs nothing: the weights are read from the middle block of the
+-- eigenvectors instead of the first. No Lanczos, so no SingularValue and nothing deflates;
+-- the list keeps 1 + val.N + con.N blocks worth of poles, of which the ones carrying no
+-- weight are for Chop and ReducePoles to remove.
+--
+-- A list of poles stores the weight W and not a coupling: sqrt(W) is what turns a pole
+-- back into a matrix, which is d -> a's business, not this one's.
+function CheckToLP(name, GD)
+	local GL = ResponseFunction.ChangeType(GD, "LP")
+	local td, tl = ResponseFunction.ToTable(GD), ResponseFunction.ToTable(GL)
+	local nv, nc = #(td.val[1]) - 1, #(td.con[1]) - 1
+	local np = #(tl[1]) - 1
+	for i = 1, 2 do
+		for j = 1, 2 do
+			if not Same(tl[1][1][i][j], td[1][1][i][j]) then
+				error("ChangeType block DoubleTri to LP: a0 is not copied for " .. name, 1)
+			end
+		end
+	end
+	-- every weight is hermitian and carries no negative spectral weight, and the sum of
+	-- them is the whole of it, b0^* b0^T -- the observed block sees the identity summed
+	-- over a complete set of eigenvectors
+	local W = {{{0.0, 0.0}, {0.0, 0.0}}, {{0.0, 0.0}, {0.0, 0.0}}}
+	for k = 2, #(tl[1]) do
+		local B = tl[2][k - 1]
+		for i = 1, 2 do
+			for j = 1, 2 do
+				if (math.abs(Complex.Re(B[i][j]) - Complex.Re(B[j][i])) > 1E-13) or
+				   (math.abs(Complex.Im(B[i][j]) + Complex.Im(B[j][i])) > 1E-13) then
+					error("ChangeType block DoubleTri to LP: a weight is not hermitian for " .. name, 1)
+				end
+				W[i][j][1] = W[i][j][1] + Complex.Re(B[i][j])
+				W[i][j][2] = W[i][j][2] + Complex.Im(B[i][j])
+			end
+		end
+		if (Complex.Re(B[1][1]) < -1E-13) or (Complex.Re(B[2][2]) < -1E-13) then
+			error("ChangeType block DoubleTri to LP: a weight has a negative diagonal for " .. name, 1)
+		end
+		-- tl[1][1] is the a0 matrix and the poles start at tl[1][2], so only k > 2
+		-- compares one pole energy with another
+		if (k > 2) and (Complex.Re(tl[1][k]) < Complex.Re(tl[1][k - 1])) then
+			error("ChangeType block DoubleTri to LP: the poles are not ordered for " .. name, 1)
+		end
+	end
+	local Wd = AconjBT(td[1][2], td[1][2])
+	local scale = 1.0 + math.abs(Wd[1][1][1]) + math.abs(Wd[2][2][1])
+	for i = 1, 2 do
+		for j = 1, 2 do
+			for c = 1, 2 do
+				if math.abs(W[i][j][c] - Wd[i][j][c]) > 1E-12 * scale then
+					error("ChangeType block DoubleTri to LP: the poles do not carry the whole weight for " .. name, 1)
+				end
+			end
+		end
+	end
+	local e = math.max(MaxRelDiff(GD, GL, 0.3), MaxRelDiff(GD, GL, 0.02))
+	print(string.format("  %-30s val.N=%3d con.N=%3d  %3d poles   max relative error %9.2e",
+	      name, nv, nc, np, e))
+	if e > 1E-11 then
+		error("ChangeType block DoubleTri to LP does not reproduce the original function for " .. name, 1)
+	end
+	return GL, np
+end
+
+print("block DoubleTri to a block list of poles")
+for i, s in ipairs({{20, 0.0, 0.025}, {20, 0.0, 0.0}, {20, -1.3, 0.1}, {6, 0.0, 0.05}, {1, 0.0, 0.3}}) do
+	CheckToLP(string.format("nb %d mu %.1f kBT %.3f", s[1], s[2], s[3]),
+	          ResponseFunction.ChangeType(MakeBlockAnderson(s[1], s[2]), "DoubleTri", {{"EffectivekBT", s[3]}}))
+end
+CheckToLP("valence chain empty",    ResponseFunction.ChangeType(MakeBlockAnderson(20, -6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+CheckToLP("conduction chain empty", ResponseFunction.ChangeType(MakeBlockAnderson(20,  6.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+-- with no bath at all the matrix is the observed block alone: BlockSize poles, and the
+-- band reduction is asked for a half bandwidth wider than the matrix it is given
+GL0, np0 = CheckToLP("no bath at all", ResponseFunction.ChangeType(MakeBlockAnderson(0, 0.0), "DoubleTri", {{"EffectivekBT", 0.025}}))
+if np0 ~= 2 then
+	error("block DoubleTri to LP: the observed block alone has to give BlockSize poles and not " .. np0, 1)
+end
+
+-- The poles of G of the degenerate bath: three distinct energies, each doubly degenerate,
+-- since the observed level is a pole of G where it is not one of the hybridization. That
+-- is the same 3 the direct route counts above, and going round through the double
+-- tri-diagonal form has to give it back -- the Fermi split puts each level in both chains
+-- and the merge has to put them together again.
+GLdeg, npdeg = CheckToLP("degenerate bath",
+	ResponseFunction.ChangeType(MPD, "DoubleTri", {{"EffectivekBT", 0.05}}))
+if npdeg ~= 3 then
+	error("block DoubleTri to LP: a degenerate bath must give 3 poles and not " .. npdeg, 1)
+end
+-- and the same poles as the direct a -> LP route, energy by energy
+tdirect = ResponseFunction.ToTable(ResponseFunction.ChangeType(MPD, "LP"))
+tround  = ResponseFunction.ToTable(GLdeg)
+for k = 2, 4 do
+	if math.abs(Complex.Re(tdirect[1][k]) - Complex.Re(tround[1][k])) > 1E-11 then
+		error("block DoubleTri to LP: the poles differ from the direct route", 1)
+	end
+end
+print("  the degenerate bath gives the same three poles as the direct route")
+
+-- ---------------------------------------------------------------------------
+-- block DoubleTri to the natural orbital form, through the list of poles
+-- ---------------------------------------------------------------------------
+-- The natural orbital form adds its two chains where the double tri-diagonal form nests
+-- them, so there is no rotation from one to the other -- the two split the same G
+-- differently. What they agree on is G, and the form that holds G plainly is the list of
+-- poles, so that is the route, the same one the scalar version takes. Note it is the poles
+-- of G and not those of the hybridization, which is what d -> a wants: the observed level
+-- is a pole of G and not one of the bath.
+--
+-- Going through the poles also means d -> n splits at mu exactly as l -> n does, both
+-- through CopyBlockListOfPolesVal and CopyBlockListOfPolesCon, so the two agree by
+-- construction. Three parameters reach it: MinimalPoleDistance merges, kBT is the
+-- temperature of that split, SingularValue is what the two block Lanczos runs deflate on.
+function CheckToNat(name, GD, kBT)
+	local GN = ResponseFunction.ChangeType(GD, "Nat", {{"EffectivekBT", kBT}})
+	local td, tn = ResponseFunction.ToTable(GD), ResponseFunction.ToTable(GN)
+	local nv, nc = #(tn.val[1]) - 1, #(tn.con[1]) - 1
+	-- a0 is the offset of the whole function and is carried through untouched
+	for i = 1, 2 do
+		for j = 1, 2 do
+			if not Same(tn[1][1][i][j], td[1][1][i][j]) then
+				error("ChangeType block DoubleTri to Nat: a0 is not copied for " .. name, 1)
+			end
+		end
+	end
+	-- both chains have to exist. The observed orbital of the natural orbital form is a
+	-- linear combination of the two chain heads, so a branch of length zero is not a
+	-- degenerate case of that form but outside it -- unlike the double tri-diagonal form,
+	-- where the two chains are nested and an absent one simply contributes nothing.
+	if (nv == 0) or (nc == 0) then
+		error("ChangeType block DoubleTri to Nat: a chain of length zero is not a natural orbital form for " .. name, 1)
+	end
+	local e = math.max(MaxRelDiff(GD, GN, 0.3), MaxRelDiff(GD, GN, 0.02))
+	print(string.format("  %-30s val.N=%3d con.N=%3d   max relative error %9.2e", name, nv, nc, e))
+	if e > 1E-11 then
+		error("ChangeType block DoubleTri to Nat does not reproduce the original function for " .. name, 1)
+	end
+	return GN
+end
+
+print("block DoubleTri to the natural orbital form")
+for i, s in ipairs({{20, 0.0, 0.025}, {20, -1.3, 0.1}, {6, 0.0, 0.05}, {1, 0.0, 0.3}}) do
+	CheckToNat(string.format("nb %d mu %.1f", s[1], s[2]),
+	           ResponseFunction.ChangeType(MakeBlockAnderson(s[1], s[2]), "DoubleTri", {{"EffectivekBT", s[3]}}), s[3])
+end
+-- mu outside the bath empties a chain of the double tri-diagonal form but must not empty
+-- one here: the poles of G are split by a Fermi function, and the observed level is a pole
+-- of G wherever mu sits, so each side keeps something
+CheckToNat("valence chain empty in d",    ResponseFunction.ChangeType(MakeBlockAnderson(20, -6.0), "DoubleTri", {{"EffectivekBT", 0.025}}), 0.025)
+CheckToNat("conduction chain empty in d", ResponseFunction.ChangeType(MakeBlockAnderson(20,  6.0), "DoubleTri", {{"EffectivekBT", 0.025}}), 0.025)
+CheckToNat("no bath at all",              ResponseFunction.ChangeType(MakeBlockAnderson( 0,  0.0), "DoubleTri", {{"EffectivekBT", 0.025}}), 0.025)
+
+-- and the same answer as taking the two steps by hand, which is the l -> n cell rather
+-- than this one and bounds the chains differently
+GDsplit = ResponseFunction.ChangeType(MakeBlockAnderson(6, 0.0), "DoubleTri", {{"EffectivekBT", 0.05}})
+GNone   = ResponseFunction.ChangeType(GDsplit, "Nat", {{"EffectivekBT", 0.05}})
+GNtwo   = ResponseFunction.ChangeType(ResponseFunction.ChangeType(GDsplit, "LP"), "Nat", {{"EffectivekBT", 0.05}})
+if MaxRelDiff(GNone, GNtwo, 0.02) > 1E-11 then
+	error("d -> n and d -> l -> n by hand do not agree", 1)
+end
+print("  d -> n agrees with taking the two steps by hand")
+
+-- ---------------------------------------------------------------------------
 -- A complex bath, which is what tells the two conventions apart
 -- ---------------------------------------------------------------------------
 -- A block matrix couples its head as b0^* ( ) b0^T and every level below it as
@@ -757,20 +929,35 @@ for i, s in ipairs({{20, 0.0, 0.025}, {20, -1.3, 0.1}, {6, 0.0, 0.05}, {1, 0.0, 
 	end
 	-- and out to the tri-diagonal form, which crosses the same boundary twice more
 	CheckToTri(name, GD)
+	-- and to the list of poles, where the two head conjugates of the reversed valence
+	-- chain live. A real bath cannot see either of them: with the conjugate on the wrong
+	-- side of val.b[0] or con.b[0] every real check above still passes to the last digit
+	-- and this one goes from 1e-13 to O(10).
+	CheckToLP(name, GD)
+	-- and to the natural orbital form, which goes through that list of poles
+	CheckToNat(name, GD, s[3])
 end
 
 -- ---------------------------------------------------------------------------
--- What is not implemented has to fail loudly
+-- The row is complete
 -- ---------------------------------------------------------------------------
--- ConvertBlockMatrix returns 1 for a cell that is not written, ConvertResponsefunction
--- passes that on, and ChangeType turns it into a lua error. Without the middle step a
--- caller got a response function whose data had never been allocated.
+-- Every cell out of the block double tri-diagonal form is written now, each by its own
+-- reading of the same matrix: a by the two chain spectra side by side, t through a, l by
+-- band-reducing the whole matrix, n through l. So all four have to succeed and reproduce
+-- the function they came from, where they used to raise a lua error.
 GD = Check("a matrix to try them on", 6, 0.0, 0.05)
-for i, ty in ipairs({"LP", "Nat"}) do
-	if pcall(function() return ResponseFunction.ChangeType(GD, ty) end) then
-		error("ChangeType from a block DoubleTri to " .. ty .. " is not implemented and must fail", 1)
+for i, ty in ipairs({"LP", "Tri", "And", "Nat"}) do
+	-- only the natural orbital form has a temperature to split at; the other three
+	-- refuse EffectivekBT at the door
+	local opt = (ty == "Nat") and {{"EffectivekBT", 0.05}} or {}
+	local ok, G = pcall(function() return ResponseFunction.ChangeType(GD, ty, opt) end)
+	if not ok then
+		error("ChangeType from a block DoubleTri to " .. ty .. " must work: " .. tostring(G), 1)
+	end
+	if MaxRelDiff(GD, G, 0.02) > 1E-11 then
+		error("ChangeType from a block DoubleTri to " .. ty .. " does not reproduce the function", 1)
 	end
 end
-print("  the block DoubleTri to LP and Nat cells both raise an error")
+print("  the block DoubleTri to LP, Tri, And and Nat cells all work")
 
 print("--------------------------------------------------------")

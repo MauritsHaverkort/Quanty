@@ -907,7 +907,7 @@ uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *
  *  on exit B contains the Green's function in a NaturalImpurityOrbital format.
  *
  */
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, double const SingularValue, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
@@ -944,8 +944,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   {
     memset(Aval.a0Re, 0, Aval.BlockSize*Aval.BlockSize*sizeof(double));
   }
-  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, 1000*DBL_EPSILON);
-  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, SingularValue);
+  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, SingularValue);
   SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
   return 0;
 }
@@ -1578,7 +1578,7 @@ uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMat
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   
-  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, A->N+1, A->N+1);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, 1000*DBL_EPSILON, A->N+1, A->N+1);
   
   FreeBlockListOfPoles(&G);
   return 0;
@@ -2735,7 +2735,7 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
     printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
     return 1;
   }
-  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, ATri.N, ATri.N);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, 1000*DBL_EPSILON, ATri.N, ATri.N);
   FreeBlockListOfPoles(&ABlock);
   return 0;
 }
@@ -2990,18 +2990,353 @@ uint32_t BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(BlockDoubleTriDiagona
   return 0;
 }
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockNaturalImpurityOrbitalMatrixType * const H)
+/*  The natural orbital form adds its two chains where the double tri-diagonal form nests
+ *  them -- see the two struct comments -- so there is no rotation from one to the other:
+ *  the two split the same G differently. What they do agree on is G, and the form that
+ *  holds G plainly is the list of poles, so that is the route. It is the one the scalar
+ *  DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix takes as well.
+ *
+ *  Going through the poles also means d -> n splits at mu exactly as l -> n does, both
+ *  through CopyBlockListOfPolesVal and CopyBlockListOfPolesCon, so the two agree by
+ *  construction rather than by accident.
+ *
+ *  Note this is the poles of G and not the poles of the hybridization, which is what
+ *  d -> a wants: the observed level is a pole of G and not one of the bath. That is the
+ *  whole difference between the two readings of the same matrix.
+ *
+ *  Three parameters, none of them decided here. MinimalPoleDistance is the merge tolerance
+ *  of the first step, kBT the temperature of the Fermi split of the second, and
+ *  SingularValue what the two block Lanczos runs of the second step deflate on. The chain
+ *  lengths are bounded by the number of poles, which is what the scalar version passes
+ *  too; it bounds an allocation rather than truncating anything.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockDoubleTriDiagonalMatrixType const * M, BlockNaturalImpurityOrbitalMatrixType * const H, double const kBT, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
-  return 1;
+  BlockListOfPoles L;
+  if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles(M, &L, MinimalPoleDistance, relativeDistance))
+  {
+    printf("BlockDoubleTriDiagonalMatrixToBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&L, H, kBT, SingularValue, L.N, L.N))
+  {
+    printf("BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix failed in BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(&L);
+    return 1;
+  }
+  FreeBlockListOfPoles(&L);
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  return 0;
 }
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockListOfPoles(BlockDoubleTriDiagonalMatrixType const M, BlockListOfPoles * const H)
+/*  Copy one BlockSize by BlockSize block, applying op on the way: 'N' as it is, 'T'
+ *  transposed, 'C' conjugated, 'D' conjugate transposed. dst may be complex where src is
+ *  real, which is what lets a real chain be written into a complex matrix.
+ *
+ *  Both are views on somebody else's storage and neither is allocated or freed here.
+ */
+static uint32_t BlockCopyWithOp(CompactMatrixType * const dst, CompactMatrixType const * const src, char const op)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
-  return 1;
+  uint32_t i, j, n;
+  double re, im;
+  n = src->Ni;
+  for(i=0;i<n;i++)
+  {
+    for(j=0;j<n;j++)
+    {
+      if(src->QComplex) { re = src->V[i*n+j].Re; im = src->V[i*n+j].Im; }
+      else              { re = src->VRe[i*n+j];  im = 0;                }
+      if((op=='C')||(op=='D')) im = -im;
+      if((op=='T')||(op=='D'))
+      {
+        if(dst->QComplex) { dst->V[j*n+i].Re = re; dst->V[j*n+i].Im = im; }
+        else                dst->VRe[j*n+i]  = re;
+      }
+      else
+      {
+        if(dst->QComplex) { dst->V[i*n+j].Re = re; dst->V[i*n+j].Im = im; }
+        else                dst->VRe[i*n+j]  = re;
+      }
+    }
+  }
+  return 0;
+}
+
+/*  The whole matrix is block tri-diagonal, with the observed block in the middle.
+ *
+ *  The poles of G are the eigenvalues of the whole matrix, with weights what the observed
+ *  block sees of each eigenvector -- not the two chain spectra, which are the poles of the
+ *  hybridization and are what BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix wants.
+ *
+ *  So this needs the whole matrix diagonalized, and it is cheap. Read it as
+ *
+ *      val_N ... val_2, val_1, observed, con_1, con_2, ... con_N
+ *
+ *  and it is an ordinary block tri-diagonal matrix of 1 + val.N + con.N blocks, half
+ *  bandwidth 2*BlockSize-1, which BlockTriDiagonalMatrixEigenSystem reduces with
+ *  dsbtrd / zhbtrd and diagonalizes. Only the observed block sits in the middle rather
+ *  than at an end, which costs nothing here: the weights are read from the middle block
+ *  of the eigenvectors instead of the first. (The Anderson route that d -> t takes is
+ *  needed only when the observed block has to come first, which a Lanczos chain requires
+ *  and an eigenvalue decomposition does not.)
+ *
+ *  Where the conjugates go. A block matrix couples its head as b0^* ( ) b0^T and every
+ *  level below it as b ( ) b^+, see the struct comments, and the two chains of a d enter
+ *  the denominator through their heads. So the block coupling the observed block to val_1
+ *  is conj(val.b[0]) and not val.b[0]: eliminating the chain then gives
+ *  conj(b0) ( ) conj(b0)^+ = b0^* ( ) b0^T, which is what EvaluateBlockTriDiagonalMatrix
+ *  computes. Reversing the valence half exchanges the upper and lower blocks on top of
+ *  that, so the bonds inside it are transposed as well:
+ *
+ *    T.b[j]        j = 1 ... val.N-1     val.b[val.N-j]^+     inner val bonds, reversed
+ *    T.b[val.N]                          val.b[0]^T           val_1 to the observed block
+ *    T.b[val.N+1]                        conj(con.b[0])       observed block to con_1
+ *    T.b[val.N+1+k] k = 1 ... con.N-1    con.b[k]             inner con bonds, as stored
+ *
+ *  Two of those four differ from a plain copy already for a real matrix, and the other two
+ *  only for a complex one.
+ *
+ *  The weights. With the observed block at block index val.N,
+ *
+ *    G(w) = a0 + b0^* [ (w - H)^-1 ]_{observed} b0^T = a0 + sum_k W_k / (w - e_k)
+ *    W_k  = b0^* u_k u_k^+ b0^T   with u_k the part of eigenvector k on that block
+ *
+ *  which is what a BlockListOfPoles holds: the weight itself, B_i = B'_i B'_i^C, and not
+ *  a coupling. sqrt(W) is what turns a pole back into a matrix -- it is what d -> a puts
+ *  in the Anderson bath and what BlockListOfPolesToBlockTridiagonalMatrix forms as its
+ *  starting block -- and has no business here.
+ *
+ *  BlockTriDiagonalMatrixEigenSystem returns fun with fun^* H fun^T diagonal, so the rows
+ *  of fun are the eigenvectors, the same convention CompactMatrixEigensystem uses. The two
+ *  steps below are then the ones HermitianCompactMatrixToBlockListOfPoles takes, so this
+ *  list comes out with the same index convention as every other one; that function is not
+ *  called itself only because it would diagonalize densely and throw the band away.
+ *
+ *  Poles of zero weight are kept, as everywhere in the d row; Chop and ReducePoles remove
+ *  them. The eigenvalues come out ascending, and the merge orders in any case.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockListOfPoles(BlockDoubleTriDiagonalMatrixType const * M, BlockListOfPoles * const H, double const MinimalPoleDistance, bool const relativeDistance)
+{
+  uint32_t BS, BS2, N, Nv, Nc, imp, n, k, i, j, base, stride;
+  char name[] = "block";
+  BlockTriDiagonalMatrixType T;
+  CompactMatrixType fun, vec, funvec, dst, src;
+  double *val;
+
+  BS  = M->BlockSize;
+  BS2 = BS * BS;
+  Nv  = M->val.N;
+  Nc  = M->con.N;
+  N   = 1 + Nv + Nc;               /* blocks of the matrix whose resolvent is G */
+  imp = Nv;                        /* 0 based block index of the observed block */
+  n   = N * BS;
+
+  H->BlockSize = BS;
+  H->QComplex  = (M->a0.QComplex!=0);
+  /*  a matrix of dimension zero: nothing couples to the observed block and G = a0 */
+  if(BlockDoubleTriDiagonalMatrixB0IsZero(M))
+  {
+    H->N = 0;
+    if(InitBlockListOfPoles(H))
+    {
+      printf("InitBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+      fflush(stdout);
+      return 1;
+    }
+    if(H->QComplex) memcpy(H->a0,   M->a0.V,   BS2*sizeof(Complex16));
+    else            memcpy(H->a0Re, M->a0.VRe, BS2*sizeof(double));
+    H->mu = M->mu;
+    strncpy(H->Name, M->Name, MAXStrLength);
+    H->Name[MAXStrLength-1] = '\0';
+    return 0;
+  }
+  if((M->b0.QComplex!=0)||(M->val.QComplex!=0)||(M->con.QComplex!=0)) H->QComplex = 1;
+
+  /*  the valence chain backwards, then the observed block, then the conduction chain */
+  T.N        = N;
+  T.BlockSize= BS;
+  T.QComplex = H->QComplex;
+  if(InitBlockTridiagonalMatrix(&T))
+  {
+    printf("InitBlockTridiagonalMatrix failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    return 1;
+  }
+  T.mu = M->mu;
+  dst.Name = name;  dst.Ni = BS;  dst.Nj = BS;  dst.QComplex = T.QComplex;
+  dst.a0 = 0;  dst.b0 = 1;  dst.mu = 0;  dst.OnLuaStack = false;
+  src = dst;
+  /*  the diagonal, a[1] to a[N]. InitBlockTridiagonalMatrix left everything zero */
+  src.QComplex = M->val.QComplex;
+  for(k=1;k<=Nv;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.a[k*BS2]);        else dst.VRe = &(T.aRe[k*BS2]);
+    if(src.QComplex) src.V = &(M->val.a[(Nv+1-k)*BS2]); else src.VRe = &(M->val.aRe[(Nv+1-k)*BS2]);
+    BlockCopyWithOp(&dst, &src, 'N');
+  }
+  src.QComplex = M->con.QComplex;
+  for(k=1;k<=Nc;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.a[(Nv+1+k)*BS2]); else dst.VRe = &(T.aRe[(Nv+1+k)*BS2]);
+    if(src.QComplex) src.V = &(M->con.a[k*BS2]);   else src.VRe = &(M->con.aRe[k*BS2]);
+    BlockCopyWithOp(&dst, &src, 'N');
+  }
+  /*  the observed block is shared: its energy is the plain sum of the two heads.
+   *  CompactMatrixAdd adds a real block into a complex one and does not reallocate the
+   *  window, T being complex whenever either chain is */
+  if(T.QComplex) dst.V = &(T.a[(Nv+1)*BS2]); else dst.VRe = &(T.aRe[(Nv+1)*BS2]);
+  src.QComplex = M->val.QComplex;
+  if(src.QComplex) src.V = M->val.a; else src.VRe = M->val.aRe;
+  CompactMatrixAdd(&dst, &src);
+  src.QComplex = M->con.QComplex;
+  if(src.QComplex) src.V = M->con.a; else src.VRe = M->con.aRe;
+  CompactMatrixAdd(&dst, &src);
+  /*  and the bonds, with the conjugates of the table above */
+  src.QComplex = M->val.QComplex;
+  for(k=1;k<Nv;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.b[k*BS2]);            else dst.VRe = &(T.bRe[k*BS2]);
+    if(src.QComplex) src.V = &(M->val.b[(Nv-k)*BS2]);  else src.VRe = &(M->val.bRe[(Nv-k)*BS2]);
+    BlockCopyWithOp(&dst, &src, 'D');
+  }
+  if(Nv!=0)
+  {
+    if(T.QComplex) dst.V   = &(T.b[Nv*BS2]);           else dst.VRe = &(T.bRe[Nv*BS2]);
+    if(src.QComplex) src.V = M->val.b;                 else src.VRe = M->val.bRe;
+    BlockCopyWithOp(&dst, &src, 'T');
+  }
+  src.QComplex = M->con.QComplex;
+  if(Nc!=0)
+  {
+    if(T.QComplex) dst.V   = &(T.b[(Nv+1)*BS2]);       else dst.VRe = &(T.bRe[(Nv+1)*BS2]);
+    if(src.QComplex) src.V = M->con.b;                 else src.VRe = M->con.bRe;
+    BlockCopyWithOp(&dst, &src, 'C');
+  }
+  for(k=1;k<Nc;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.b[(Nv+1+k)*BS2]);     else dst.VRe = &(T.bRe[(Nv+1+k)*BS2]);
+    if(src.QComplex) src.V = &(M->con.b[k*BS2]);       else src.VRe = &(M->con.bRe[k*BS2]);
+    BlockCopyWithOp(&dst, &src, 'N');
+  }
+
+  if((val = (double*)malloc(n*sizeof(double)))==NULL)
+  {
+    printf("malloc for val failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeBlockTridiagonalMatrix(&T);
+    return 1;
+  }
+  if(BlockTriDiagonalMatrixEigenSystem(&T, val, &fun))
+  {
+    printf("BlockTriDiagonalMatrixEigenSystem failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeBlockTridiagonalMatrix(&T);
+    free(val);
+    return 1;
+  }
+  FreeBlockTridiagonalMatrix(&T);
+
+  /*  b0 in the columns of the observed block, so that funvec = conj(fun) . vec^T holds
+   *  b0^* u_k for every eigenvector k */
+  vec.Ni = BS;  vec.Nj = n;  vec.QComplex = H->QComplex;
+  if(InitCompactMatrix(&vec))
+  {
+    printf("InitCompactMatrix failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeCompactMatrix(&fun);
+    free(val);
+    return 1;
+  }
+  for(i=0;i<BS;i++)
+  {
+    for(j=0;j<BS;j++)
+    {
+      if(vec.QComplex)
+      {
+        if(M->b0.QComplex) vec.V[i*n + imp*BS + j]    = M->b0.V[i*BS+j];
+        else               vec.V[i*n + imp*BS + j].Re = M->b0.VRe[i*BS+j];
+      }
+      else                 vec.VRe[i*n + imp*BS + j]  = M->b0.VRe[i*BS+j];
+    }
+  }
+  if(CompactMatrixMultiply('*', 'T', &fun, &vec, &funvec))
+  {
+    printf("CompactMatrixMultiply failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeCompactMatrix(&fun);
+    FreeCompactMatrix(&vec);
+    free(val);
+    return 1;
+  }
+  FreeCompactMatrix(&fun);
+  FreeCompactMatrix(&vec);
+
+  H->N = n;
+  if(InitBlockListOfPoles(H))
+  {
+    printf("InitBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeCompactMatrix(&funvec);
+    free(val);
+    return 1;
+  }
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  H->mu = M->mu;
+  stride = 1 + BS2;
+  for(k=0;k<n;k++)
+  {
+    base = k * stride;
+    if(H->QComplex)
+    {
+      H->V[base].Re = val[k];
+      H->V[base].Im = 0;
+      for(i=0;i<BS;i++)
+      {
+        for(j=0;j<BS;j++)
+        {
+          H->V[base+1+i*BS+j].Re =  funvec.V[k*BS+j].Re*funvec.V[k*BS+i].Re + funvec.V[k*BS+j].Im*funvec.V[k*BS+i].Im;
+          H->V[base+1+i*BS+j].Im = -funvec.V[k*BS+j].Re*funvec.V[k*BS+i].Im + funvec.V[k*BS+j].Im*funvec.V[k*BS+i].Re;
+        }
+      }
+    }
+    else
+    {
+      H->VRe[base] = val[k];
+      for(i=0;i<BS;i++)
+      {
+        for(j=0;j<BS;j++)
+        {
+          H->VRe[base+1+i*BS+j] = funvec.VRe[k*BS+j]*funvec.VRe[k*BS+i];
+        }
+      }
+    }
+  }
+  FreeCompactMatrix(&funvec);
+  free(val);
+  /*  a0 is the offset of the whole function and is carried along untouched */
+  if(H->QComplex)
+  {
+    if(M->a0.QComplex) memcpy(H->a0, M->a0.V, BS2*sizeof(Complex16));
+    else for(i=0;i<BS2;i++) { H->a0[i].Re = M->a0.VRe[i]; H->a0[i].Im = 0; }
+  }
+  else
+  {
+    memcpy(H->a0Re, M->a0.VRe, BS2*sizeof(double));
+  }
+  /*  a negative MinimalPoleDistance asks BlockListOfPolesMergeDegeneratePoles for its
+   *  standard value, and that is the one place deciding it. Merging is what restores the
+   *  symmetry of a degenerate multiplet: the weights of a degenerate group add to a
+   *  spectral projector, which does not depend on the basis the eigensolver picked
+   *  inside it, while each weight separately does */
+  return BlockListOfPolesMergeDegeneratePoles(H, MinimalPoleDistance, relativeDistance);
 }
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
 {
@@ -3053,7 +3388,7 @@ uint32_t BlockDoubleTriDiagonalMatrixToSpectra(const double Energy, BlockDoubleT
  /*  A spectrum without broadening is a set of delta functions, which needs the poles. Do not
   *  continue when that conversion is not there: ALP would be left uninitiallized.
   */
- if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles(*A, &ALP))
+ if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles(A, &ALP, -1, false))
  {
    printf("Error in BlockDoubleTriDiagonalMatrixToSpectra: can not create a spectrum without broadening without BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
    return 1;

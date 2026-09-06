@@ -34,11 +34,21 @@ with `SingularValue` for the deflation of the second step and
 `BlockAndersonMatrixToBlockTridiagonalMatrix`, and the `NTriDiag` argument the
 stub carried is gone, since `a → t` has no maximum chain length to give it to.
 
-**The next open cells are `d → l` and `d → n`.** No algorithm is decided for
-either, and they are **not** automatically to be routed through `a` — each is its
-own question, as the non-block row was: there, `d → a`, `d → t` and `d → l` each
-used a different reading of the same matrix and none was a template for the next
-(see the table below). Decide each one with Maurits before writing it.
+**`d → l` is written, and it does not go through `a`** — the whole matrix is
+band-reduced and diagonalized directly, `MinimalPoleDistance` and
+`relativeDistance` only.
+
+**`d → n` is written as `d → l → n`**, the route the scalar version takes, with
+`kBT` for the Fermi split, `SingularValue` for the deflation of the two block
+Lanczos runs and `MinimalPoleDistance` for the merge.
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix` gained `SingularValue` so
+that it could be threaded; it used to hard-code `1000·DBL_EPSILON`, which is what
+its other callers now pass, so nothing changed for them.
+
+**Nothing in the `d` row is open any more.** The next work is §6, the actual
+goal: `DoubleTriDiagonalMatrixToImpurityHamiltonian`, the `d` case of
+`LuaResponseFunctionToOperator` with `Nv`/`Nc`, and `ResponseFunctionToLuaBitMask`
+— none of it written, non-block or block.
 
 Read §1 for what `d` means and how it differs from `n`, and
 [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) for what the accuracy
@@ -66,10 +76,12 @@ in `.gitignore`.
 | from `t` | ✓ | — | ✓ | ✓ | ✓ |
 | from `a` | ✓ | ✓ | — | ✓ | ✓ |
 | from `n` | ✓ | ✓ | ✓ | — | ✓ |
-| from `d` | **open** | ✓ | ✓ | **open** | ✓ copy |
+| from `d` | ✓ | ✓ | ✓ | ✓ | ✓ copy |
 
-Everything inbound works and is tested; `d → a` and `d → t` work, and `d → l`
-and `d → n` still raise a lua error.
+**The block row is complete**, both directions, and every cell is tested against
+the function it came from. Each outbound cell is its own reading of the same
+matrix, which is the point: `a` from the two chain spectra side by side, `t`
+through `a`, `l` by band-reducing the whole matrix, `n` through `l`.
 `Chop` works both ways with and without deflation, the six index metamethods work,
 and both lua readers convert on all four type branches.
 
@@ -1637,6 +1649,104 @@ option is honoured and that deflating costs no accuracy, never a number.
 That is the thing to attack if this route is to be cheap: deflation on this path should
 key on the **rank of `W`**, which is known exactly at the point `sqrt(W)` is formed, and
 not on a singular value threshold discovered later by the Lanczos.
+
+### Done: `d → l`, by band-reducing the whole matrix
+
+Maurits' choice again, and deliberately not through `a`: diagonalize the matrix whose
+resolvent is `G`, merge the degenerate poles, keep `W`.
+
+The poles of `G` are the eigenvalues of the **whole** matrix, with weights what the
+observed block sees of each eigenvector — not the two chain spectra, which are the poles
+of the hybridization and are what `d → a` wants. Read the matrix as
+
+```
+val_N … val_2, val_1, observed, con_1, con_2 … con_N
+```
+
+and it is an ordinary block tri-diagonal matrix of `1 + val.N + con.N` blocks, half
+bandwidth `2·BlockSize−1`, which is exactly what `BlockTriDiagonalMatrixEigenSystem`
+already band-reduces with `dsbtrd`/`zhbtrd`. The observed block sits in the middle rather
+than at an end, which costs nothing: the weights are read from the middle block of the
+eigenvectors instead of the first. This is the block twin of the scalar
+`DoubleTriDiagonalMatrixToListOfPoles`, which does the same with `dstevd` at `kd = 1`.
+
+**The list stores `W`, not `sqrt(W)`.** `B_i = B'_i B'^C_i` is what the struct comment
+defines and what `EvaluateBlockListOfPoles` sums. `sqrt(W)` is what turns a pole back
+into a matrix — `d → a`'s business, and `BlockListOfPolesToBlockTridiagonalMatrix`'s.
+
+**Where the conjugates go, and which of them anything can see.** The two chains enter the
+denominator through their heads, `b0^* ( ) b0^T`, so the block coupling the observed block
+to `val_1` is `conj(val.b[0])` and not `val.b[0]`; eliminating the chain then gives
+`conj(b0) ( ) conj(b0)^+ = b0^* ( ) b0^T`. Reversing the valence half exchanges upper and
+lower on top of that:
+
+| `T.b[j]` | | |
+|---|---|---|
+| `j = 1 … val.N−1` | `val.b[val.N−j]^+` | inner val bonds, reversed |
+| `j = val.N` | `val.b[0]^T` | `val_1` to the observed block |
+| `j = val.N+1` | `conj(con.b[0])` | observed block to `con_1` |
+| `j = val.N+1+k` | `con.b[k]` | inner con bonds, as stored |
+
+Measured by injecting each one wrong in turn: the two head conjugates are caught only by
+the **complex** tests, where `G` goes from `1e-13` to O(10) while every real check still
+passes to the last digit. The reversal `^+` of the inner bonds is caught by **nothing**,
+and provably so: the block Lanczos returns Hermitian `b` blocks — verified, `|B − B^+|`
+is `1e-14` for both a real and a complex bath, while `|B − B^T|` is `0.57` for the complex
+one — so `b^+ = b` for any `d` that came out of a conversion. It is still written `^+`
+because a hand-written `d` need not have Hermitian bonds.
+
+**The eigenvector convention.** `BlockTriDiagonalMatrixEigenSystem` returns `fun` with
+`fun^* H fun^T` diagonal — the rows are the eigenvectors, the same convention
+`CompactMatrixEigensystem` uses. Nothing in the tree consumed it in a way that documented
+this, so it was checked against a dense matrix built by hand: off-diagonal `8e-16`,
+`|diag − val|` `7e-16`.
+
+**Dimension and cost.** One band reduction of a matrix of `(1 + val.N + con.N)·BlockSize`,
+giving that many poles before the merge and no deflation anywhere — 94 poles merging to 82
+for the twenty-block test bath, where `G` has 42. The surplus carry no weight and are for
+`Chop` and `ReducePoles`. Note `BlockTriDiagonalMatrixEigenSystem` finishes with a full
+`n×n×n` back-transform to form every eigenvector component, where only the `BlockSize`
+columns of the observed block are used; that is the obvious thing to improve if this ever
+becomes hot, and it is in shared code.
+
+`T.N == 1`, both chains empty, asks the band reduction for a half bandwidth wider than the
+matrix itself. `dsbtrd` accepts it and gives the right answer, so there is no special case.
+
+### Done: `d → n` through `l`
+
+The natural orbital form **adds** its two chains where the double tri-diagonal form
+**nests** them — §1 — so there is no rotation from one to the other; the two split the
+same `G` differently. What they agree on is `G`, and the form that holds `G` plainly is
+the list of poles. So `d → l → n`, which is what the scalar
+`DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix` does, and it means `d → n` splits at
+`mu` exactly as `l → n` does — both through `CopyBlockListOfPolesVal`/`Con` — so the two
+agree by construction rather than by accident.
+
+The poles here are the poles of `G`, not of the hybridization: the observed level is a pole
+of `G` and not one of the bath. That is the whole difference from `d → a`.
+
+**Three parameters, none decided here.** `MinimalPoleDistance` merges in the first step,
+`kBT` is the temperature of the Fermi split, `SingularValue` is what the two block Lanczos
+runs deflate on. That last one needed threading:
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix` hard-coded `1000·DBL_EPSILON` for
+both of its `BlockListOfPolesToBlockTridiagonalMatrix` calls. It now takes the value; its
+three other callers pass `1000·DBL_EPSILON`, so their behaviour is unchanged, and the
+`l → n` cell of `ConvertBlockMatrix` forwards the option it already had in hand — which is
+also `1000·DBL_EPSILON` when unset, so that changes nothing by default either and only
+makes the option live. **Still hard-coded, and worth threading next time someone is in
+there:** `a → n` and `t → n` have no `SingularValue` in their own signatures, so
+`ChangeType(…, "Nat")` on those two sources still ignores the option;
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension` likewise.
+
+**An empty branch is legal for `d` and outside the `n` form** (§1), and the route respects
+that on its own. With `mu` below the bath the `d` has `val.N = 0`, but the poles of `G` are
+split by a Fermi function and the observed level is a pole of `G` wherever `mu` sits, so
+the valence side keeps something — measured `val.N = 1`, never zero. The test asserts both
+chains are non-empty for exactly that reason.
+
+The chains come out long, since the split is of the poles of `G` and the `±40 kBT` window
+keeps most poles in both halves: 38 and 49 blocks for the twenty-block test bath, from a
+list of 82 poles. `SingularValue` is the lever there, as in `d → t`.
 
 ### Build registration
 
