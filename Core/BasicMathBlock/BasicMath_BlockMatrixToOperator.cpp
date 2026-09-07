@@ -84,20 +84,27 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
     }
     else /* Complex with spin */
     {
+    /*  ifer and jfer count orbitals from the start of the impurity problem, without the
+     *  shift: with spin an orbital becomes two neighbouring fermions and the fermion is
+     *  NFermionShift + 2*orbital + spin. The shift itself is not doubled, the core
+     *  orbitals in front of it not being part of the impurity problem. This used to read
+     *  2*ifer with the shift already inside ifer, which doubled it and pushed the top
+     *  orbitals past NFermion.
+     */
       ia=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N;k++)
       {
-        ifer=NFermionShift+k*A->BlockSize;
+        ifer=k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+k*A->BlockSize;
+          jfer=k*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->a[ia].Re, A->a[ia].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->a[ia].Re, A->a[ia].Im, &QDetNotOrderedFcFaBcBa);
             ia++;
             jfer++;
@@ -108,23 +115,23 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
       ib=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N-1;k++)
       {
-        ifer=NFermionShift+k*A->BlockSize;
+        ifer=k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+(k+1)*A->BlockSize;
+          jfer=(k+1)*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer;
-            oadd[0]=2*ifer;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer;
+            oadd[0]=NFermionShift+2*ifer;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer+1;
-            oadd[0]=2*ifer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer+1;
+            oadd[0]=NFermionShift+2*ifer+1;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             ib++;
             jfer++;
@@ -180,20 +187,27 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
     }
     else /* real with spin */
     {
+    /*  ifer and jfer count orbitals from the start of the impurity problem, without the
+     *  shift: with spin an orbital becomes two neighbouring fermions and the fermion is
+     *  NFermionShift + 2*orbital + spin. The shift itself is not doubled, the core
+     *  orbitals in front of it not being part of the impurity problem. This used to read
+     *  2*ifer with the shift already inside ifer, which doubled it and pushed the top
+     *  orbitals past NFermion.
+     */
       ia=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N;k++)
       {
-        ifer=NFermionShift+k*A->BlockSize;
+        ifer=k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+k*A->BlockSize;
+          jfer=k*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->aRe[ia], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->aRe[ia], &QDetNotOrderedFcFaBcBa);
             ia++;
             jfer++;
@@ -204,23 +218,23 @@ uint32_t BlockTridiagonalMatrixToImpurityHamiltonian(OperatorType *const H, Bloc
       ib=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N-1;k++)
       {
-        ifer=NFermionShift+k*A->BlockSize;
+        ifer=k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+(k+1)*A->BlockSize;
+          jfer=(k+1)*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer;
-            oadd[0]=2*ifer;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer;
+            oadd[0]=NFermionShift+2*ifer;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer+1;
-            oadd[0]=2*ifer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer+1;
+            oadd[0]=NFermionShift+2*ifer+1;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
             ib++;
             jfer++;
@@ -762,20 +776,27 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
     }
     else /* Complex with spin */
     {
+    /*  ifer and jfer count orbitals from the start of the impurity problem, without the
+     *  shift: with spin an orbital becomes two neighbouring fermions and the fermion is
+     *  NFermionShift + 2*orbital + spin. The shift itself is not doubled, the core
+     *  orbitals in front of it not being part of the impurity problem. This used to read
+     *  2*ifer with the shift already inside ifer, which doubled it and pushed the top
+     *  orbitals past NFermion.
+     */
       ia=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N;k++)
       {
-        ifer=NFermionShift+k*A->BlockSize;
+        ifer=k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+k*A->BlockSize;
+          jfer=k*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->a[ia].Re, A->a[ia].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->a[ia].Re, A->a[ia].Im, &QDetNotOrderedFcFaBcBa);
             ia++;
             jfer++;
@@ -786,23 +807,23 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
       ib=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N-1;k++)
       {
-        ifer=NFermionShift;//+(k+1)*A->BlockSize;
+        ifer=0;//+(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+(k+1)*A->BlockSize;
+          jfer=(k+1)*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer;
-            oadd[0]=2*ifer;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer;
+            oadd[0]=NFermionShift+2*ifer;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re, A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer+1;
-            oadd[0]=2*ifer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer+1;
+            oadd[0]=NFermionShift+2*ifer+1;
             ComplexOperatorAddLaderNormalOrder(H, oadd, 2, A->b[ib].Re,-A->b[ib].Im, &QDetNotOrderedFcFaBcBa);
             ib++;
             jfer++;
@@ -858,20 +879,27 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
     }
     else /* real with spin */
     {
+    /*  ifer and jfer count orbitals from the start of the impurity problem, without the
+     *  shift: with spin an orbital becomes two neighbouring fermions and the fermion is
+     *  NFermionShift + 2*orbital + spin. The shift itself is not doubled, the core
+     *  orbitals in front of it not being part of the impurity problem. This used to read
+     *  2*ifer with the shift already inside ifer, which doubled it and pushed the top
+     *  orbitals past NFermion.
+     */
       ia=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N;k++)
       {
-        ifer=NFermionShift+k*A->BlockSize;
+        ifer=k*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+k*A->BlockSize;
+          jfer=k*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->aRe[ia], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->aRe[ia], &QDetNotOrderedFcFaBcBa);
             ia++;
             jfer++;
@@ -882,23 +910,23 @@ uint32_t BlockAndersonMatrixToImpurityHamiltonian(OperatorType *const H, BlockAn
       ib=A->BlockSize*A->BlockSize;
       for(k=0;k<A->N-1;k++)
       {
-        ifer=NFermionShift;//+(k+1)*A->BlockSize;
+        ifer=0;//+(k+1)*A->BlockSize;
         for(i=0;i<A->BlockSize;i++)
         {
-          jfer=NFermionShift+(k+1)*A->BlockSize;
+          jfer=(k+1)*A->BlockSize;
           for(j=0;j<A->BlockSize;j++)
           {
-            oadd[1]=CrAnMask+2*ifer;
-            oadd[0]=2*jfer;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer;
+            oadd[0]=NFermionShift+2*jfer;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*ifer+1;
-            oadd[0]=2*jfer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*ifer+1;
+            oadd[0]=NFermionShift+2*jfer+1;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer;
-            oadd[0]=2*ifer;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer;
+            oadd[0]=NFermionShift+2*ifer;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
-            oadd[1]=CrAnMask+2*jfer+1;
-            oadd[0]=2*ifer+1;
+            oadd[1]=CrAnMask+NFermionShift+2*jfer+1;
+            oadd[0]=NFermionShift+2*ifer+1;
             RealOperatorAddLaderNormalOrder(H, oadd, 2, A->bRe[ib], &QDetNotOrderedFcFaBcBa);
             ib++;
             jfer++;

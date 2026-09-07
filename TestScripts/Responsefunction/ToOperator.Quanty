@@ -1339,6 +1339,64 @@ for i, sp in ipairs({false, true}) do
 	end
 end
 
+print("--------------------------------------------------------")
+print("-- FermionShift together with AddSpin, block types    --")
+print("--------------------------------------------------------")
+-- Orbital n spin s is fermion FermionShift + 2*n + s. The shift is not doubled: the core
+-- orbitals in front of it are not part of the impurity problem, so a shifted operator is
+-- the unshifted one moved up by FermionShift and nothing else. That is what
+-- CreateBitMasks reports and what the single valued family has always done.
+--
+-- The block tri-diagonal and block Anderson builders used to write 2*ifer with the shift
+-- already inside ifer, so the shift came out doubled: with FermionShift 2 and a bath of
+-- two blocks of size two the orbitals landed at 4..9 instead of 2..9, leaving two empty
+-- and pushing the top two past NFermion, where they were lost.
+do
+	local CJ = Complex.New
+	local a = {{{0,0},{0,0}}, {{1,CJ(0.25,0.5)},{CJ(0.25,-0.5),2}}, {{3,CJ(0.5,-0.25)},{CJ(0.5,0.25),4}}}
+	local b = {{{1,0},{0,1}}, {{CJ(0.5,0.25),CJ(0.25,-0.5)},{CJ(-0.125,0.25),CJ(0.5,0.0625)}}}
+	local Gv = ResponseFunction.New({{{{0,0},{0,0}},{{-1,0},{0,-2}},{{-3,0},{0,-4}}},
+	                                 {{{0.5,0},{0,0.5}},{{0.25,0},{0,0.25}}},mu=0,type="Tri"})
+	local Gc = ResponseFunction.New({{{{0,0},{0,0}},{{1,0},{0,2}},{{3,0},{0,4}}},
+	                                 {{{0.5,0},{0,0.5}},{{0.25,0},{0,0.25}}},mu=0,type="Tri"})
+	local cases = {
+		{"Tri", ResponseFunction.New({a,b,mu=0,type="Tri",name="T"})},
+		{"And", ResponseFunction.New({a,b,mu=0,type="And",name="A"})},
+		{"Nat", ResponseFunction.New({{{{0,0},{0,0}},{{1,0},{0,1}}},val=Gv,con=Gc,mu=0,type="Nat",name="N"})},
+		{"DoubleTri", ResponseFunction.New({{{{0,0},{0,0}},{{1,0},{0,1}}},val=Gv,con=Gc,mu=0,kBT=0.05,type="DoubleTri",name="D"})},
+	}
+	for i, c in ipairs(cases) do
+		for j, fs in ipairs({1, 3, 6}) do
+			local Mref = OperatorToMatrix(ResponseFunction.ToOperator(c[2], {{"AddSpin",true}}))
+			local Osh  = ResponseFunction.ToOperator(c[2], {{"AddSpin",true},{"FermionShift",fs}})
+			local Msh  = OperatorToMatrix(Osh)
+			local msk  = ResponseFunction.CreateBitMasks(c[2], {{"AddSpin",true},{"NCore",fs}})
+			if Osh.NF ~= msk.NF then
+				error("ToOperator and CreateBitMasks disagree on NFermion for a block " .. c[1], 1)
+			end
+			if (#Msh - fs) ~= #Mref then
+				error("FermionShift changes the size of the impurity problem for a block " .. c[1], 1)
+			end
+			for p = 1, fs do
+				for q = 1, #Msh do
+					if (Complex.Re(Msh[p][q]) ~= 0) or (Complex.Im(Msh[p][q]) ~= 0) then
+						error("ToOperator wrote into a core orbital for a block " .. c[1], 1)
+					end
+				end
+			end
+			for p = 1, #Mref do
+				for q = 1, #Mref do
+					if (Complex.Re(Msh[p+fs][q+fs]) ~= Complex.Re(Mref[p][q])) or
+					   (Complex.Im(Msh[p+fs][q+fs]) ~= Complex.Im(Mref[p][q])) then
+						error("FermionShift does not simply shift the operator for a block " .. c[1], 1)
+					end
+				end
+			end
+		end
+		print(string.format("  block %-10s shifts by 1, 3 and 6 without losing an orbital", c[1]))
+	end
+end
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")
