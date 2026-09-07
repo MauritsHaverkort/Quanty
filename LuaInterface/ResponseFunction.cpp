@@ -2747,6 +2747,451 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
       }
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      lua_pushstring(L, "DoubleTri");
+      lua_setfield(L,-2,"type");
+      if(M->Block==true)
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          NImpurity = 2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+          if(Deflate==true)
+          {
+            NBathVal  = 0;
+            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
+            {
+              NBathVal+=2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.BlockSizeList[k];
+            }
+            NBathCon  = 0;
+            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
+            {
+              NBathCon+=2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.BlockSizeList[k];
+            }
+          }
+          else
+          {
+            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
+            {
+              NBathVal=0;
+            }
+            else
+            {
+              NBathVal = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N-1) * 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            }
+            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
+            {
+              NBathCon=0;
+            }
+            else
+            {
+              NBathCon = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N-1) * 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            }
+          }
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            BathValUp[k]  ='0';
+            BathConUp[k]  ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+            BathValDn[k]  ='0';
+            BathConDn[k]  ='0';
+
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          BathValUp[NF]  ='\0';
+          BathConUp[NF]  ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          BathValDn[NF]  ='\0';
+          BathConDn[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
+            k++;
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
+            k++;
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          NImpurity = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+          NBathExt  = NImpurity;
+          if(Deflate==true)
+          {
+            NBathVal  = 0;
+            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
+            {
+              NBathVal+=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.BlockSizeList[k];
+            }
+            NBathCon  = 0;
+            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
+            {
+              NBathCon+=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.BlockSizeList[k];
+            }
+          }
+          else
+          {
+            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
+            {
+              NBathVal=0;
+            }
+            else
+            {
+              NBathVal = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N-1) * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+            }
+            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
+            {
+              NBathCon=0;
+            }
+            else
+            {
+              NBathCon = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N-1) * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+            }
+          }
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1';
+            Bath[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1';
+            Bath[k]='1';
+          }
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      else
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          NImpurity = 2;
+          if(((DoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
+          {
+            NBathVal=0;
+          }
+          else
+          {
+            NBathVal = 2*((DoubleTriDiagonalMatrixType*)(M->data))->val.N-2;
+          }
+          if(((BADoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
+          {
+            NBathCon=0;
+          }
+          else
+          {
+            NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-2;
+          }
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core          = (char*)malloc((NF+1)*sizeof(char));
+          Impurity      = (char*)malloc((NF+1)*sizeof(char));
+          Bath          = (char*)malloc((NF+1)*sizeof(char));
+          BathVal       = (char*)malloc((NF+1)*sizeof(char));
+          BathCon       = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp    = (char*)malloc((NF+1)*sizeof(char));
+          BathUp        = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp     = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn    = (char*)malloc((NF+1)*sizeof(char));
+          BathDn        = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn     = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]          ='0';
+            Impurity[k]      ='0';
+            Bath[k]          ='0';
+            BathVal[k]       ='0';
+            BathCon[k]       ='0';
+            ImpurityUp[k]    ='0';
+            BathUp[k]        ='0';
+            BathValUp[k]     ='0';
+            BathConUp[k]     ='0';
+            ImpurityDn[k]    ='0';
+            BathDn[k]        ='0';
+            BathValDn[k]     ='0';
+            BathConDn[k]     ='0';
+          }
+          Core[NF]          ='\0';
+          Impurity[NF]      ='\0';
+          Bath[NF]          ='\0';
+          BathVal[NF]       ='\0';
+          BathCon[NF]       ='\0';
+          ImpurityUp[NF]    ='\0';
+          BathUp[NF]        ='\0';
+          BathValUp[NF]     ='\0';
+          BathConUp[NF]     ='\0';
+          ImpurityDn[NF]    ='\0';
+          BathDn[NF]        ='\0';
+          BathValDn[NF]     ='\0';
+          BathConDn[NF]     ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          NImpurity = 1;
+          if(((DoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
+          {
+            NBathVal=0;
+          }
+          else
+          {
+            NBathVal = ((DoubleTriDiagonalMatrixType*)(M->data))->val.N-1;
+          }
+          if(((DoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
+          {
+            NBathCon=0;
+          }
+          else
+          {
+            NBathCon = ((DoubleTriDiagonalMatrixType*)(M->data))->con.N-1;
+          }
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1';
+            Bath[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1';
+            Bath[k]='1';
+          }
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      break;
+    }
     default:
     {
       return luaL_error(L, "Error in Responsefunction.CreateBitMasks() unrecognized type in response function (%c)\n",M->type);
@@ -3163,6 +3608,239 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
               TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GconBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              lua_settable(L, -3);
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+        }
+        FreeResponsefunctionIncludingOriginalPointer(M);
+        return 3;
+      }
+      else
+      {
+        break;
+      }
+    }
+    case 'D':
+    case 'd':
+    {
+      // returns the operator, and the table of bitmasks, but aditionally, when Nv or Nc are set also
+      // a table containing 2 elements:
+      //    GvalBath
+      //    GconBath
+      //    These contain the tails of the vanlence and conduction chain
+      //
+      if(M->Block==true)
+      {
+        // copy and shorten M->data if Nv and Nc set
+        MNv = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;
+        MNc = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;
+        if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=Options.Nv;
+        if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=Options.Nc;
+        BlockDoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BlockDoubleTriDiagonalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+      }
+      else
+      {
+        // copy and shorten M->data if Nv and Nc set
+        MNv = ((DoubleTriDiagonalMatrixType*)M->data)->val.N;
+        MNc = ((DoubleTriDiagonalMatrixType*)M->data)->con.N;
+        if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=Options.Nv;
+        if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=Options.Nc;
+        DoubleTriDiagonalMatrixToImpurityHamiltonian(O, (DoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
+      }
+      if((MNv>Options.Nv)||(MNc>Options.Nc))
+      {
+        ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
+        // undo changes to M
+        if(M->Block==true)
+        {
+          // expand M->data if Nv and Nc set
+          if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=MNv;
+          if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=MNc;
+        }
+        else
+        {
+          // expand M->data if Nv and Nc set
+          if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+          if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
+        }
+        // push Gv, and, Gc to stack
+        lua_createtable(L,0,2);
+        // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
+        if(Options.AddSpin==true)
+        {
+          if(M->Block==true) // add spin and block true
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=true;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=true;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              lua_settable(L, -3);
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+          else // add spin true and block false
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=true;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GvalBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=true;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GconBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              lua_settable(L, -3);
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+        }
+        else // no spin added
+        {
+          if(M->Block==true) // no spin and block true
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=true;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTail(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=true;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTail(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              lua_settable(L, -3);
+              
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+          else // no spin and block false
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=false;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
+              TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GvalBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=false;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
+              TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GconBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath

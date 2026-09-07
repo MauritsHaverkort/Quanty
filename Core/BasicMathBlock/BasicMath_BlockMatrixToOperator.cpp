@@ -1709,3 +1709,9 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonianPerturpation(Oper
   printf("To DO\n");
   return 0;
 }
+
+uint32_t BlockDoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType *const H, BlockDoubleTriDiagonalMatrixType const *A, bool const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
+{
+  //TODO:
+  return 1;
+}

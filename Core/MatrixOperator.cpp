@@ -418,6 +418,12 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
 }
 
 
+int DoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, DoubleTriDiagonalMatrixType * M, bool AddSpin, uint32_t FermionShift, uint32_t NF)
+{
+  //TODO
+  return 1;
+}
+
 /*  OLD - use TriDiagonalMatrixToImpurityHamiltonian instead
  *
  * Creates an anderson impurity Hamiltonian
