@@ -1913,6 +1913,13 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
     res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
     luaL_setmetatable(L, "Spectra_Type");
     
+    printf("ContractWithPolarization: args=%d NSpectra=%u NE1=%u TensorBasis=%s\n",
+      lua_gettop(L),
+      spec->NSpectra,
+      spec->NE1,
+      (spec->TensorBasis != NULL) ? spec->TensorBasis : "(null)");
+    fflush(stdout);
+
     /* Validate both polarization tables. */
     for (p = 0; p < 2; ++p) {
         int arg = (int)p + 1;
@@ -2096,7 +2103,7 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
             CMUL(ein[1], eout[1])));
 
         /* e^(2)_{z2} = -(ein_x * eout_x + ein_y * eout_y) / sqrt(6) + sqrt(2/3) * ein_z * eout_z */
-        coupledpol[5] = CSUB(
+        coupledpol[5] = CADD(
             CSCALE(-isq6, CADD(
                 CMUL(ein[0], eout[0]),
                 CMUL(ein[1], eout[1]))),
@@ -2124,7 +2131,7 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
             "Error in .ContractWithPolarization: "
             "unknown TensorBasis \"%s\", expected \"Cartesian\" or \"Cubic\"",
             spec->TensorBasis);
-        fflush(stdout);
+  
     }    
 
     #undef CMUL
@@ -2193,10 +2200,42 @@ static int LuaSpectraGetPowderTensorMethod(lua_State *L)
 
 
 
-  
+
   if(GetPowderTensor(res, spec, lvec, lvec_len) != 0)
   {
     return luaL_error(L, "Error while creating powder tensor spectra\n");
+  }
+  return 1;
+}
+
+static int LuaSpectraConjugateMethod(lua_State *L)
+{
+  SpectraTypeArray *spec = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
+  SpectraTypeArray *res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  if(CopySpectraArray(spec, res) != 0)
+  {
+    return luaL_error(L, "Error Spectra.Conjugate failed to copy spectra");
+  }
+  if(ConjugateSpectraArrayTensor(res) != 0)
+  {
+    return luaL_error(L, "Error Spectra.Conjugate failed");
+  }
+  return 1;
+}
+
+static int LuaSpectraTransposeMethod(lua_State *L)
+{
+  SpectraTypeArray *spec = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
+  SpectraTypeArray *res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  luaL_setmetatable(L, "Spectra_Type");
+  if(CopySpectraArray(spec, res) != 0)
+  {
+    return luaL_error(L, "Error Spectra.Transpose failed to copy spectra");
+  }
+  if(TransposeSpectraArrayTensor(res) != 0)
+  {
+    return luaL_error(L, "Error Spectra.Transpose failed");
   }
   return 1;
 }
@@ -2374,6 +2413,18 @@ static int LuaSpectraIndex(lua_State * L)
     printf("GetPowderTensorMethod pushed\n");
     return 1;
   }
+  if (strcmp(str, "Conjugate") == 0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraConjugateMethod, 1);
+    return 1;
+  }
+  if (strcmp(str, "Transpose") == 0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaSpectraTransposeMethod, 1);
+    return 1;
+  }
   return 2;
   return luaL_error(L, "Error operation \".%s()\" not defined on spectra\n",str);
 }
@@ -2383,6 +2434,23 @@ static int LuaSpectraNewIndex(lua_State * L)
 {
   SpectraTypeArray *spec = (SpectraTypeArray*) luaL_checkudata(L, 1, "Spectra_Type");
   const char *str = lua_tostring(L, 2);
+  if(strcmp(str, "NE1")==0)
+  {
+    spec->NE1 = (uint32_t)luaL_checkinteger(L, 3);
+    return 0;
+  }
+  if(strcmp(str, "TensorBasis")==0)
+  {
+    size_t len;
+    const char *strbasis = lua_tolstring(L,3,&len);
+    char *basisCopy;
+    if(strbasis==NULL){return luaL_error(L,"Error, could not set TensorBasis of spectra\n");}
+    basisCopy=(char*)malloc((len+1)*sizeof(char));
+    if(basisCopy==NULL){return luaL_error(L,"Error, could not allocate TensorBasis of spectra\n");}
+    strcpy(basisCopy,strbasis);
+    spec->TensorBasis = basisCopy;
+    return 0;
+  }
   if(strcmp(str, "Name")==0)
   {
     size_t len;

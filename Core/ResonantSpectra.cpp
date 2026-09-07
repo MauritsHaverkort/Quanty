@@ -985,8 +985,10 @@ uint32_t ResonantSpectraDenseTensor(WaveFunctionType * H1psiBasis, WaveFunctionT
             for(n=0;n<NT2;n++)
             {
 
-              // define indexing output, from outest to innermost: Psiright[r],psileft[s],T1[i],T2[j],T1_dag[m],T2_dag[n],omega1[l]
-              t = l + (settings->NE1+1) * (n + NT2 *(m+NT1*(j+NT2*(i+NT1*(s+Npsi*r)))));
+              // OLD: define indexing output, from outest to innermost: Psiright[r],psileft[s],T1[i],T2[j],T1_dag[m],T2_dag[n],omega1[l]
+              // NEW: define indexing output, from outest to innermost: psileft[s],Psiright[r],T1_dag[m],T2_dag[n],T1[i],T2[j],omega1[l]
+
+              t = l + (settings->NE1+1) * (j + NT2 *(i+NT1*(n+NT2*(m+NT1*(r+Npsi*s)))));
               
               //select right and ledt T|psi>
               kRr = i+r*NT1;

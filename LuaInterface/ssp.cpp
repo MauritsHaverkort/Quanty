@@ -1414,6 +1414,16 @@ static int Luaconjugate(lua_State * L)
       {
         return LuaMatrixConjugate(L);
       }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+        if(ConjugateSpectraArrayTensor(res)) return luaL_error(L, "Error: Conjugate on spectra failed\n");
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
+      }
       return luaL_error(L, "Error: complex conjugate an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
@@ -1494,6 +1504,17 @@ static int Luaconjugatetranspose(lua_State * L)
       if (luaL_testudata(L, len, "Matrix_Type") != NULL)
       {
         return LuaMatrixConjugateTranspose(L);
+      }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+        if(ConjugateSpectraArrayTensor(res)) return luaL_error(L, "Error: Conjugate on spectra failed\n");
+        if(TransposeSpectraArrayTensor(res)) return luaL_error(L, "Error: Transpose on spectra failed\n");
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
       }
       return luaL_error(L, "Error: conjugate transpose of an object of unrecognised type\n");
     case LUA_TTABLE:
@@ -1624,6 +1645,16 @@ static int Luatranspose(lua_State * L)
       if (luaL_testudata(L, len, "Matrix_Type") != NULL)
       {
         return LuaMatrixTranspose(L);
+      }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+        if(TransposeSpectraArrayTensor(res)) return luaL_error(L, "Error: Transpose on spectra failed\n");
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
       }
       return luaL_error(L, "Error: transpose of an object of unrecognised type\n");
     case LUA_TTABLE:

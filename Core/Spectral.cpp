@@ -140,6 +140,92 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
   return 0;
 }
 
+uint32_t SetSpectraArrayNE1(SpectraTypeArray * const A, const uint32_t NE1)
+{
+  A->NE1 = NE1;
+  return 0;
+}
+
+uint32_t SetSpectraArrayTensorBasis(SpectraTypeArray * const A, const char * const TensorBasis)
+{
+  size_t len;
+  char *basisCopy;
+
+  if(TensorBasis == NULL)
+  {
+    printf("SetSpectraArrayTensorBasis failed: TensorBasis is NULL\n");
+    return 1;
+  }
+
+  len = strlen(TensorBasis);
+  basisCopy = (char*)malloc((len + 1) * sizeof(char));
+  if(basisCopy == NULL)
+  {
+    printf("SetSpectraArrayTensorBasis failed: allocation failed\n");
+    return 1;
+  }
+
+  strcpy(basisCopy, TensorBasis);
+  A->TensorBasis = basisCopy;
+  return 0;
+}
+
+uint32_t ConjugateSpectraArrayTensor(SpectraTypeArray * const A)
+{
+  uint32_t i, p;
+  
+  for(i = 0; i < A->NSpectra; i++)
+  {
+    for(p = 0; p <= A->Spec[i].N; p++)
+    {
+      A->Spec[i].Im[p] *= -1.0;
+    }
+  }
+  return 0;
+}
+
+uint32_t TransposeSpectraArrayTensor(SpectraTypeArray * const A)
+{
+  uint32_t p, i, j;
+  uint32_t nstate, ndimsq, Ndim;
+  uint32_t idxA, idxB;
+
+  if(A->TensorBasis == NULL)
+  {
+    printf("not a tensor object\n");
+    return 1;
+  }
+  if((A->NE1 == UINT32_MAX) || ((A->NSpectra % (A->NE1 + 1)) != 0))
+  {
+    printf("TransposeSpectraArrayTensor failed: invalid tensor dimensions\n");
+    return 1;
+  }
+
+  nstate = A->NSpectra / (A->NE1 + 1);
+  Ndim = (uint32_t)(sqrt((double)nstate) + 0.5);
+  ndimsq = Ndim * Ndim;
+  if(ndimsq != nstate)
+  {
+    printf("TransposeSpectraArrayTensor failed: tensor state dimension is not square\n");
+    return 1;
+  }
+
+  for(p = 0; p <= A->NE1; p++)
+  {
+    for(i = 0; i < Ndim; i++)
+    {
+      for(j = i + 1; j < Ndim; j++)
+      {
+        idxA = p + (A->NE1 + 1) * (i + Ndim * j);
+        idxB = p + (A->NE1 + 1) * (j + Ndim * i);
+        SwapSpectra(&(A->Spec[idxA]), &(A->Spec[idxB]));
+      }
+    }
+  }
+
+  return 0;
+}
+
 void ChopSpectra(SpectraType * G, const double epsilon)
 {
   int i;
@@ -1922,8 +2008,6 @@ uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * cons
     }
     return 0;
   }
-  printf("RotateSpectra: B->NSpectra=%u, B->NE1=%u, U->Ni=%u, U->Nj=%u\n", B->NSpectra, B->NE1, U->Ni, U->Nj);
-  fflush(stdout);
   ne1 = (B->NE1 != 0) ? B->NE1 : 0;
   A->NE1 = ne1;
 
@@ -2003,10 +2087,6 @@ uint32_t ContractSpectraTensor(SpectraTypeArray * const A,
   uint32_t ne1 = B->NE1;
   double alphaRe, alphaIm;
 
-  
-
-  printf("ContractSpectraTensor: B->NSpectra=%u, B->NE1=%u, lene=%u\n", B->NSpectra, B->NE1, lene);
-  fflush(stdout);
   A->NE1 = ne1;
   A->NSpectra = ne1 + 1;
   A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
@@ -2029,19 +2109,7 @@ uint32_t ContractSpectraTensor(SpectraTypeArray * const A,
       alphaRe = e[i].Re*e[j].Re + e[i].Im*e[j].Im;
       alphaIm = e[i].Re*e[j].Im - e[i].Im*e[j].Re;
 
-
-      printf("ContractSpectraTensor: p=%u, i=%u, j=%u, idxB=%u, alphaRe=%lf, alphaIm=%lf\n", p, i, j, idxB, alphaRe, alphaIm);
-
-      double AReExpected = A->Spec[p].Re[0]+alphaRe*B->Spec[idxB].Re[0]-alphaIm*B->Spec[idxB].Im[0];
-      double AImExpected = A->Spec[p].Im[0]+alphaRe*B->Spec[idxB].Im[0]+alphaIm*B->Spec[idxB].Re[0];
-
-      printf("ContractSpectraTensor: A->Spec[%u] before AddMultipliedSpectra: Re[0]=%lf, Im[0]=%lf\n", p, A->Spec[p].Re[0], A->Spec[p].Im[0]);
       AddMultipliedSpectra(&(A->Spec[p]), B->Spec[idxB], alphaRe, alphaIm);
-
-      double AReAfter = A->Spec[p].Re[0];
-      double AImAfter = A->Spec[p].Im[0];
-      printf("ContractSpectraTensor: A->Spec[%u] after AddMultipliedSpectra: Re[0]=%lf, Im[0]=%lf, AReExpected=%lf, AImExpected=%lf\n", p, AReAfter, AImAfter, AReExpected, AImExpected);
-
     }
   }
 
@@ -2131,10 +2199,7 @@ uint32_t ComputePowderAverage(const SpectraTypeArray * const B,
     j = 0;
     /* Process each angular momentum block */
     for(k = 0; k < lvec_len; k++)
-    {
-      printf("ComputePowderAverage: processing subblock %u with l=%u\n", k, lvec[k]);
-      printf("ComputePowderAverage: starting index j=%u, subblock size=%u\n", j, (lvec[k]*2+1));
-      
+    { 
       /* Compute trace of this block (diagonal average) */
       for(i = 0; i < lvec[k]*2+1; i++)
       {
@@ -2160,8 +2225,6 @@ uint32_t ComputePowderAverage(const SpectraTypeArray * const B,
       j += (lvec[k]*2+1);
     }
   }
-  printf("ComputePowderAverage: completed powder averaging\n");
-  fflush(stdout);
   return 0;
 }
 
