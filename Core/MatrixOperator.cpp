@@ -418,15 +418,104 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
 }
 
 
+/*  One impurity site with a valence and a conduction chain hanging off it, as an operator.
+ *  The single valued twin of BlockDoubleTriDiagonalMatrixToImpurityHamiltonian, and this
+ *  type is real throughout, so none of the conjugates of the block version arise.
+ *
+ *  The orbitals are
+ *
+ *      [ core | impurity | val_1 ... val_Nv | con_1 ... con_Nc ]
+ *
+ *  which is the layout ResponseFunction.CreateBitMasks reports and the one
+ *  DoubleTriDiagonalMatrixToCompactMatrix builds. a[0] of a chain is the impurity energy --
+ *  the two chains share the site, so it is val.a[0] + con.a[0] -- and b[0] is the hopping
+ *  from the impurity into the first site of that chain, with a[1] to a[N] and b[1] to
+ *  b[N-1] the chain itself. A chain therefore contributes N sites, one more per chain than
+ *  the natural orbital form puts in its chains, where a[1] is the natural orbital itself.
+ *
+ *  That is what makes the loop below read b[i-1] for the bond into site i: the site before
+ *  val_i is val_{i-1} for i > 1 and the impurity for i = 1, and the bond between them is
+ *  b[i-1] in both cases.
+ *
+ *  M->a0 and M->b0 are the offset and the scaling of the Green's function,
+ *  G = a0 + b0^2 [1/(w-H)]_00, and are not part of H, as in every other
+ *  …ToImpurityHamiltonian.
+ *
+ *  An empty chain is a normal case for this type rather than an edge case -- a chemical
+ *  potential outside the bath gives one -- and needs no code of its own: the loop over that
+ *  chain does not run and its a[0] still contributes its share of the impurity energy. Note
+ *  this cannot be handed to TriDiagonalMatrixToImpurityHamiltonian when one chain is empty,
+ *  the way the natural orbital form can, because that builds a[1] to a[N] and treats a[0]
+ *  and b[0] as the offset and the scaling: it would drop the impurity site and lose the
+ *  other chain's share of its energy.
+ *
+ *  With AddSpin each orbital becomes two neighbouring fermions and the shift is not
+ *  doubled: orbital n spin s is fermion FermionShift + 2*n + s.
+ */
 int DoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, DoubleTriDiagonalMatrixType * M, bool AddSpin, uint32_t FermionShift, uint32_t NF)
 {
-  /*  O is a lua userdata that the collector will free whether this succeeds or not, so it
-   *  has to be left a valid empty operator before returning -- see the block version. */
-  InitOperator(O);
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToImpurityHamiltonian\n");
-  fflush(stdout);
-  return 1;
+  uint32_t i,s,ns,N,ip,iq;
+  uint16_t oadd[2];
+  N  = 1 + M->val.N + M->con.N;
+  ns = (AddSpin==true) ? 2 : 1;
+  InitNamedOperator(O, "Double Tridiagonal Impurity Hamiltonian");
+  O->NBoson = 0;
+  O->NFermion = FermionShift + ns*N;
+  if(NF!=0)
+  {
+    if(NF<O->NFermion)
+    {
+      printf("ERROR in DoubleTriDiagonalMatrixToImpurityHamiltonian. NF (%d) < NFermion (%d)\n",NF,O->NFermion);
+      return 1;
+    }
+    else
+    {
+      O->NFermion = NF;
+    }
+  }
+  O->NWord = Min(O->NFermion, 1 + (O->NFermion - 1) / 8);
+  InitOperatorFixedLength(O, 2, 8);
+  for(s=0;s<ns;s++)
+  {
+    /*  the impurity site, its energy shared by the two chains */
+    ip = FermionShift + s;
+    oadd[1] = CrAnMask + ip;
+    oadd[0] = ip;
+    RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[0] + M->con.a[0], &QDetNotOrderedFcFaBcBa);
+    /*  the valence chain, site i at orbital i and bonded to orbital i-1 by b[i-1] */
+    for(i=1;i<=M->val.N;i++)
+    {
+      iq = FermionShift + ns*i + s;
+      ip = FermionShift + ns*(i-1) + s;
+      oadd[1] = CrAnMask + iq;
+      oadd[0] = iq;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.a[i], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + ip;
+      oadd[0] = iq;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i-1], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + iq;
+      oadd[0] = ip;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->val.b[i-1], &QDetNotOrderedFcFaBcBa);
+    }
+    /*  and the conduction chain, site i at orbital val.N+i, the impurity being the site
+     *  before con_1 */
+    for(i=1;i<=M->con.N;i++)
+    {
+      iq = FermionShift + ns*(M->val.N+i) + s;
+      if(i==1) ip = FermionShift + s;
+      else     ip = FermionShift + ns*(M->val.N+i-1) + s;
+      oadd[1] = CrAnMask + iq;
+      oadd[0] = iq;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.a[i], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + ip;
+      oadd[0] = iq;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i-1], &QDetNotOrderedFcFaBcBa);
+      oadd[1] = CrAnMask + iq;
+      oadd[0] = ip;
+      RealOperatorAddLaderNormalOrder(O, oadd, 2, M->con.b[i-1], &QDetNotOrderedFcFaBcBa);
+    }
+  }
+  return 0;
 }
 
 /*  OLD - use TriDiagonalMatrixToImpurityHamiltonian instead
