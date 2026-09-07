@@ -11,7 +11,7 @@ Scope decided: **the single-valued (non-block) type first.** The block type
 
 ---
 
-## 0. Status as of `bd2eb8d9` (2026-09-05)
+## 0. Status as of `eb91c974` (2026-09-07)
 
 **Regenerated from the source, not from memory.** The lists below were produced by
 scanning the tree; redo the scans rather than trusting this section after a few
@@ -45,10 +45,15 @@ Lanczos runs and `MinimalPoleDistance` for the merge.
 that it could be threaded; it used to hard-code `1000·DBL_EPSILON`, which is what
 its other callers now pass, so nothing changed for them.
 
-**Nothing in the `d` row is open any more.** The next work is §6, the actual
-goal: `DoubleTriDiagonalMatrixToImpurityHamiltonian`, the `d` case of
-`LuaResponseFunctionToOperator` with `Nv`/`Nc`, and `ResponseFunctionToLuaBitMask`
-— none of it written, non-block or block.
+**The conversion table and §6 are both done.** `ToOperator` works for a `d` in
+both forms, with `Nv`/`Nc` truncating the two chains and the tails coming back as
+`GvalBath`/`GconBath`, and `CreateBitMasks` counts the right orbitals. See §6 and
+the `d` sections of `ToOperator.Quanty` and `CreateBitMasks.Quanty`.
+
+**The next work is the list of broken entry points** in "The rest of the lua
+surface" just below: two of them segfault, four are silent no-ops that return the
+input unchanged, and the rest fail in the middle without raising. That subsection
+carries the order to take them in and which of them share a root cause.
 
 Read §1 for what `d` means and how it differs from `n`, and
 [TODO_ConversionAccuracy.md](TODO_ConversionAccuracy.md) for what the accuracy
@@ -62,6 +67,11 @@ new test needs both:
 | `ChangeTypeDoubleTri.Quanty` | into `d`, non-block |
 | `ChangeTypeFromDoubleTri.Quanty` | out of `d`, non-block |
 | `ChangeTypeDoubleTriBlock.Quanty` | the block row, both directions |
+| `ToOperator.Quanty` | `d` to an impurity Hamiltonian, both forms, and `FermionShift` with `AddSpin` for all four block types |
+| `CreateBitMasks.Quanty` | the orbital count and the masks of a `d`, both forms |
+| `ChangeType.Quanty` | that `SingularValue` reaches the six cells that take it |
+| `LengthZero.Quanty` | a block list of poles with no poles at all, through every conversion |
+| `__add.Quanty` | a real block list of poles plus a complex one |
 
 **Build out of the source tree** — `g++ … -o <somewhere else>/Quanty` — and run
 from the repo root as CI does, `./Quanty "TestScripts/Responsefunction/X.Quanty"`.
@@ -114,11 +124,74 @@ Also done and verified: the struct in both forms, `Evaluate`, the four
 table round trip, §3.0 (the shared site is the **sum** of the two head slots,
 everywhere) and §3.1 on the `a → d` path (a true Fermi function, `kBT` stored).
 
+### The rest of the lua surface, audited at `eb91c974`
+
+Re-derived from the source and **verified by running**, not by reading: every entry of the
+`ResponseFunction` metatable was called on a single-valued and on a block `d`, with a `t`
+and an `n` of the same shape as controls, each probe in its own process so a crash only
+took that probe with it. Controls matter here — several things that look like `d` gaps are
+how every type behaves.
+
+**Works.** `ChangeType` (every cell, both directions), `Evaluate` / `__call`, `ToTable`,
+`ToUserdata`, `ToMatrix`, `ToSpectra`, `ToOperator`, `CreateBitMasks`, `Elements`, `Chop`,
+`__tostring`, reading and writing `mu` / `type` / `name`, `G+G`, `G-G`, `G==G`,
+`CalculateSelfEnergy`, `ReducePoles`, `RemovePolesInInterval`, `MergePolesInInterval`,
+`PlaceOnMesh`, and both free paths (`FreeResponsefunction`, `FreeBlockMatrixFromLua`).
+
+**Broken, worst first.**
+
+| symptom on a `d` | what happens | control | the function without a `d` case |
+|---|---|---|---|
+| `Rotate`, block | **SIGSEGV** | `t`, `n` fine | `BlockResponseFunctionRotate` prints "unrecognized type of G: d" and returns with `GRot->data` never allocated |
+| `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
+| `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
+| `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
+| `G*2`, `G/2` | **silent no-op**, the result is bit identical to `G` and nothing is printed | `t` scales | `ResponsefunctionMul` |
+| `InvertEnergy` | **silent no-op**, returns `G(w)` | `t` inverts | `ResponseFunctionInvertEnergy` |
+| `Transpose` | **silent no-op**, returns `G` | the `a` route transposes | `ResponseFunctionTranspose` |
+| `CalculateRho` | prints "unrecognized type d", no usable result | `a` gives rho | `ResponseFunctionToDensityMatrix` |
+| `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
+| `CalculateGfromG0andSigma` | prints an error but computes the right answer, and returns a **`ListOfPoles`** instead of a `d` | — | `ResponseFunctionAddSelfEnergyDenseViaTri` |
+| `#G` | clean lua error, "undifined type d" | `t` → 2 | `LuaResponseFunctionLen` |
+| `ToTightBinding` | clean lua error | block `t` works | `LuaResponseFunctionToTightBinding` |
+
+**Two of those are one bug.** `CalculateGBathFromGandSigmaDirectSubtract`
+([BasicMath_GreenFunctionArithmetic.cpp:1845](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp#L1845))
+calls `ResponseFunctionEffectiveHamiltonian` and hands the result straight to
+`ConvertResponsefunction` on the next line but one, so the uninitialised type becomes a
+segfault there. Giving `EffectiveHamiltonian` a `d` case fixes the crash, the corrupt
+object and `FromEffectiveHamiltonian` together.
+
+**The silent no-ops are the ones to worry about.** `×`, `÷`, `InvertEnergy` and `Transpose`
+return the input unchanged with no diagnostic of any kind, so a calculation using them is
+quietly wrong rather than stopped. `Transpose` is doubly hidden: a real `d` is its own
+transpose, so only a complex one shows it — which is how it went unnoticed.
+
+**Found by scanning, not reachable from lua in these probes.** `FreeBlockMatrix` has no
+`d` case and leaks; it is the legacy one, its own comment says to use
+`FreeBlockMatrixFromLua`, and it has two callers, `ssp.cpp:3991` and
+`TableToArray.cpp:4537`. `ResponseFunctionAddSelfEnergyOnGridViaG0Tri` and
+`…ViaAndLP`, the `Method` variants of the self-energy calls, also lack `d`.
+
+**Not `d` gaps — do not chase these.** `-G` is refused for every type. Single-valued
+`Rotate` wants a block representation whatever the type. `add`, `sub`, `ReducePoles`,
+`RemovePolesInInterval`, `MergePolesInInterval` and `PlaceOnMesh` return a `ListOfPoles`
+for every type, by design. Single-valued `ToTightBinding` is unimplemented for `a` too.
+`CalculateHybridizationFunction` was **not** exercised: a one-argument call raises for `a`
+as well, so it needs a signature that was not worked out.
+
+**Suggested order.** The two segfaults first, which is one fix plus `Rotate`; then the four
+silent no-ops; then `CalculateRho`, `Eigensystem`, the `CalculateGfromG0andSigma` return
+type and `#G`; then `FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are
+worth least.
+
 ### Still open, non-block
 
-**The original goal, §6.** `DoubleTriDiagonalMatrixToImpurityHamiltonian` and the
-`d` case of `LuaResponseFunctionToOperator` with `Nv`/`Nc`, and
-`ResponseFunctionToLuaBitMask`. None of it is written.
+**§6 is done.** `DoubleTriDiagonalMatrixToImpurityHamiltonian`,
+`BlockDoubleTriDiagonalMatrixToImpurityHamiltonian`, the `d` case of
+`LuaResponseFunctionToOperator` with `Nv`/`Nc`, and the `d` case of
+`ResponseFunctionToLuaBitMask` all work and are tested — see the audit above and
+`ToOperator.Quanty`. What is left of the `d` row is the list of broken entry points there.
 
 **Zero-length chains — DONE.** `InitDoubleTriDiagonalMatrix` refused
 `val.N == 0` or `con.N == 0` and returned 2 without allocating, so
