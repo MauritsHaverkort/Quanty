@@ -1712,6 +1712,14 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToImpurityHamiltonianPerturpation(Oper
 
 uint32_t BlockDoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType *const H, BlockDoubleTriDiagonalMatrixType const *A, bool const Spin, uint32_t const NFermionShift, uint32_t const NFermion)
 {
+  /*  H is a lua userdata that the collector will free whether this succeeds or not, so it
+   *  has to be left a valid empty operator before returning. Without that the collector
+   *  frees uninitialised pointers and the process dies instead of reporting a missing
+   *  conversion; the list of poles case of Responsefunction.ToOperator does the same
+   *  thing before it raises. */
+  InitOperator(H);
   //TODO:
+  printf("TODO: BlockDoubleTriDiagonalMatrixToImpurityHamiltonian\n");
+  fflush(stdout);
   return 1;
 }

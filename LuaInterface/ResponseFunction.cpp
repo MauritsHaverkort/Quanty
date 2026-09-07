@@ -2757,38 +2757,30 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
           NImpurity = 2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
           if(Deflate==true)
           {
             NBathVal  = 0;
-            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
             {
               NBathVal+=2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.BlockSizeList[k];
             }
             NBathCon  = 0;
-            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
             {
               NBathCon+=2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.BlockSizeList[k];
             }
           }
           else
           {
-            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
-            {
-              NBathVal=0;
-            }
-            else
-            {
-              NBathVal = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N-1) * 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
-            }
-            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
-            {
-              NBathCon=0;
-            }
-            else
-            {
-              NBathCon = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N-1) * 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
-            }
+            NBathVal = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N * 2 * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+            NBathCon = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N * 2 * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
           }
           NBath     = NBathVal + NBathCon;
           NF = NCore + NImpurity + NBath;
@@ -2885,39 +2877,30 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
           NImpurity = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
-          NBathExt  = NImpurity;
           if(Deflate==true)
           {
             NBathVal  = 0;
-            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
             {
               NBathVal+=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.BlockSizeList[k];
             }
             NBathCon  = 0;
-            for(k=2;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
             {
               NBathCon+=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.BlockSizeList[k];
             }
           }
           else
           {
-            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
-            {
-              NBathVal=0;
-            }
-            else
-            {
-              NBathVal = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N-1) * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
-            }
-            if(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
-            {
-              NBathCon=0;
-            }
-            else
-            {
-              NBathCon = (((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N-1) * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
-            }
+            NBathVal = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+            NBathCon = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
           }
           NBath     = NBathVal + NBathCon;
           NF = NCore + NImpurity + NBath;
@@ -2993,23 +2976,15 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         if(AddSpin==true)
         {
           NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
           NImpurity = 2;
-          if(((DoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
-          {
-            NBathVal=0;
-          }
-          else
-          {
-            NBathVal = 2*((DoubleTriDiagonalMatrixType*)(M->data))->val.N-2;
-          }
-          if(((BADoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
-          {
-            NBathCon=0;
-          }
-          else
-          {
-            NBathCon = 2*((BADoubleTriDiagonalMatrixType*)(M->data))->con.N-2;
-          }
+          NBathVal = 2 * ((DoubleTriDiagonalMatrixType*)(M->data))->val.N;
+          NBathCon = 2 * ((DoubleTriDiagonalMatrixType*)(M->data))->con.N;
           NBath     = NBathVal + NBathCon;
           NF = NCore + NImpurity + NBath;
           Core          = (char*)malloc((NF+1)*sizeof(char));
@@ -3104,23 +3079,15 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         else // AddSpin == false
         {
           NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
           NImpurity = 1;
-          if(((DoubleTriDiagonalMatrixType*)(M->data))->val.N==0)
-          {
-            NBathVal=0;
-          }
-          else
-          {
-            NBathVal = ((DoubleTriDiagonalMatrixType*)(M->data))->val.N-1;
-          }
-          if(((DoubleTriDiagonalMatrixType*)(M->data))->con.N==0)
-          {
-            NBathCon=0;
-          }
-          else
-          {
-            NBathCon = ((DoubleTriDiagonalMatrixType*)(M->data))->con.N-1;
-          }
+          NBathVal = ((DoubleTriDiagonalMatrixType*)(M->data))->val.N;
+          NBathCon = ((DoubleTriDiagonalMatrixType*)(M->data))->con.N;
           NBath     = NBathVal + NBathCon;
           NF = NCore + NImpurity + NBath;
           Core       = (char*)malloc((NF+1)*sizeof(char));
@@ -3339,8 +3306,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   if(len!=1) return luaL_error(L, "Error in ResponseFunction.ToOperator() It should be called with 1 argument, not with %d\n",len);
   M = luaL_checkResponsefunction(L,1);
   if((Options.TransformImpurity==true)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option TransformImpurity only availalbe for Response Functions in natural impurity orbital form");
-  if((Options.Nc!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option Nc only availalbe for Response Functions in natural impurity orbital form");
-  if((Options.Nv!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option Nv only availalbe for Response Functions in natural impurity orbital form");
+  /*  Nv and Nc truncate the two chains, so they mean something for both types that have
+   *  two: the natural orbital form and the double tri-diagonal one */
+  if((Options.Nc!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')||(M->type=='D')||(M->type=='d')))) return luaL_error(L, "Option Nc only availalbe for Response Functions in natural impurity orbital or double tri-diagonal form");
+  if((Options.Nv!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')||(M->type=='D')||(M->type=='d')))) return luaL_error(L, "Option Nv only availalbe for Response Functions in natural impurity orbital or double tri-diagonal form");
   O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
   luaL_setmetatable(L, "Operator_Type");
   switch(M->type)
@@ -3642,7 +3611,12 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         MNc = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;
         if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=Options.Nv;
         if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=Options.Nc;
-        BlockDoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BlockDoubleTriDiagonalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0);
+        if(BlockDoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BlockDoubleTriDiagonalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0))
+        {
+          if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=MNv;
+          if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=MNc;
+          return luaL_error(L, "Error in Responsefunction.ToOperator() BlockDoubleTriDiagonalMatrixToImpurityHamiltonian is not implemented\n");
+        }
       }
       else
       {
@@ -3651,7 +3625,12 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         MNc = ((DoubleTriDiagonalMatrixType*)M->data)->con.N;
         if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=Options.Nv;
         if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=Options.Nc;
-        DoubleTriDiagonalMatrixToImpurityHamiltonian(O, (DoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0);
+        if(DoubleTriDiagonalMatrixToImpurityHamiltonian(O, (DoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0))
+        {
+          if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+          if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
+          return luaL_error(L, "Error in Responsefunction.ToOperator() DoubleTriDiagonalMatrixToImpurityHamiltonian is not implemented\n");
+        }
       }
       if((MNv>Options.Nv)||(MNc>Options.Nc))
       {

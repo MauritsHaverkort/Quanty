@@ -420,7 +420,12 @@ int BADoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, BADoubleTri
 
 int DoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, DoubleTriDiagonalMatrixType * M, bool AddSpin, uint32_t FermionShift, uint32_t NF)
 {
+  /*  O is a lua userdata that the collector will free whether this succeeds or not, so it
+   *  has to be left a valid empty operator before returning -- see the block version. */
+  InitOperator(O);
   //TODO
+  printf("TODO: DoubleTriDiagonalMatrixToImpurityHamiltonian\n");
+  fflush(stdout);
   return 1;
 }
 
