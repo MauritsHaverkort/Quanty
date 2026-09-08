@@ -259,13 +259,17 @@ and `D` all along — and neither of its two callers can be exercised. `ssp.cpp:
 and whose registration at `ssp.cpp:5578` is commented out; `TableToArray.cpp:4537` sits in
 `FreeSelfEnergyArrayFromLua`, which nothing calls at all.
 
-**Open, in `LuaImpurityGreensFunction`:** the ownership test in front of that call is
-inverted. Lowercase means the data came from a userdata and lua owns it, uppercase that it
-was read from a table and C allocated the structure — `type&32` is set for lowercase — so
-`if(DeltaBath->type&32) { FreeBlockMatrix(DeltaBath); free(DeltaBath); }` frees what lua
-owns and leaves what C allocated. `TableToArray.cpp:4535` has the same test the other way
-round, `if((SasMatrix[i]->type&32)==0)`, which is the right one. Harmless while the function
-is unreachable.
+The ownership test in front of that call was inverted and is flipped. Lowercase means the
+data came from a userdata and lua owns it, uppercase that it was read from a table and
+`luaL_checkResponsefunction` allocated both the structure and the content; `type&32` is set
+for lowercase, so `if(DeltaBath->type&32)` freed what lua owns and left what C had
+allocated. `TableToArray.cpp:4535` had the same test the right way round already.
+
+Still open on that line: it calls `FreeBlockMatrix`, the block-only legacy free, where
+`FreeResponsefunctionIncludingOriginalPointer(DeltaBath)` does the whole job — it makes the
+capital-or-small decision itself and routes a block matrix to `FreeBlockMatrixFromLua` and a
+single-valued one to the scalar frees, so a `DeltaBath` that is not a block matrix would be
+handled too. Left alone as `LuaImpurityGreensFunction` is unfinished.
 
 **Not `d` gaps — do not chase these.** `-G` is refused for every type. Single-valued
 `Rotate` wants a block representation whatever the type. `add`, `sub`, `ReducePoles`,

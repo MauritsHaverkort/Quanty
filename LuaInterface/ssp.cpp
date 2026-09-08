@@ -3986,7 +3986,10 @@ static int LuaImpurityGreensFunction(lua_State * L)
 
 
   }
-  if(DeltaBath->type&32)
+  /*  a capital type came from a lua table, so luaL_checkResponsefunction allocated the
+   *  structure and the content and both are ours to free. A small type came from a
+   *  userdata, where lua owns them. type&32 is set for the small letters. */
+  if((DeltaBath->type&32)==0)
   {
     FreeBlockMatrix(DeltaBath);
     free(DeltaBath);
