@@ -1167,6 +1167,26 @@ for k = 2, 3 do
 end
 print("InvertEnergy of a DoubleTri exchanges the valence and the conduction chain: ok")
 
+-- Inverting the energy of a response function does not rename it. This used to fail for
+-- the single valued Tri, Anderson and DoubleTri, whose Copy left the name at whatever
+-- InitTriDiagonalMatrix and friends had written into it.
+
+for j, mu in ipairs({0, 0.7}) do
+	local GS = ResponseFunction.New({{0.5,-3,-1,1,2},{1,0.5,0.6,0.7},mu=mu,type="ListOfPoles",name="Kept"})
+	local A0m = Matrix.New({{1,0.2},{0.2,2}})
+	local B1m = Matrix.New({{1,0.1},{0.1,2}})
+	local GB = ResponseFunction.New({{A0m,-3,-1,1,2},{B1m,A0m,B1m,A0m},mu=mu,type="ListOfPoles",name="Kept"})
+	for i, ty in ipairs(IETypes) do
+		for k, G in ipairs({IEChangeType(GS, ty), IEChangeType(GB, ty)}) do
+			if (ResponseFunction.InvertEnergy(G).name ~= G.name) then
+				error("InvertEnergy renamed a " .. ty .. " from " .. G.name ..
+				      " to " .. ResponseFunction.InvertEnergy(G).name .. "\n",1)
+			end
+		end
+	end
+end
+print("InvertEnergy keeps the name of the response function: ok")
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

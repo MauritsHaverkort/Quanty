@@ -189,12 +189,24 @@ under the exchange, `acvBA` changes sign, and the `+= 2 mu` silently assumed
 `SetBADoubleTriDiagonalMatrixConValFromChains`, exactly as the block case calls
 `SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType`.
 
+Names survive it now as well. `ListOfPolesCopy` and `BADoubleTriDiagonalMatrixCopy` copy
+the `Name`, and every block copy starts with `*B = A`, which copies the array with the rest
+of the struct; `TriDiagonalMatrixCopy`, `AndersonMatrixCopy` and `DoubleTriDiagonalMatrixCopy`
+did not, so a single-valued `t`, `a` or `d` came back from `InvertEnergy` — and from `Chop`,
+and from a `ChangeType` to its own type, all of which copy — carrying whatever
+`InitTriDiagonalMatrix` and friends had written into it. One `strcpy` each.
+
+Still open, and a bigger surface: the block **conversions** do not carry the name across.
+A block `l → t` gives "Matrix", `l → a` and `l → d` give "Block Anderson Matrix". The copies
+are fine, so this sits in the conversion table itself rather than in one function.
+
 `InvertEnergy.Quanty` gained a hand written `d` in all six of its sections (single-valued
 and matrix, real and complex, `mu = 0` and `mu ≠ 0`), both directions; the identity
 `Ginv(mu+w) = A0 - [G(mu-w) - A0]^+` across all five formats, which is the only place the
 convention is written down; and a check on the stored numbers that the two chains really
 are exchanged — no comparison of two response functions can see that, a `d` and the same
-`d` with its chains swapped being equal as functions.
+`d` with its chains swapped being equal as functions — and a check that the name of the
+response function survives.
 
 **`×` and `÷` — DONE.** `ResponsefunctionMul` has a `d` case on both halves: `a0 *= x`,
 `b0 *= sqrt(x)` and the two chains untouched, which is the whole of it as `b0` appears

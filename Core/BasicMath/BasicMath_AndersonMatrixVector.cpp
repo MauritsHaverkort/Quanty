@@ -241,6 +241,7 @@ uint32_t AndersonMatrixCopy(AndersonMatrixType * const M, AndersonMatrixType A)
   M->N = A.N;
   if (InitAndersonMatrix(M))
     return 1;
+  strcpy(M->Name, A.Name);
   for (i = 0; i < M->N; i++)
   {
     M->a[i] = A.a[i];

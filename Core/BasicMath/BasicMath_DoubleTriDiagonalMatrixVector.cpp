@@ -247,6 +247,7 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
   M->val.N = A.val.N;
   M->con.N = A.con.N;
   InitDoubleTriDiagonalMatrix(M);
+  strcpy(M->Name, A.Name);
   M->mu = A.mu;
   M->kBT = A.kBT;
   M->a0 = A.a0;

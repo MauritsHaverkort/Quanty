@@ -273,6 +273,7 @@ uint32_t TriDiagonalMatrixCopy(TriDiagonalMatrixType * const M, TriDiagonalMatri
     fflush(stdout);
     return 1;
   };
+  strcpy(M->Name, A.Name);
   for (i = 0; i < M->N; i++)
   {
     M->a[i] = A.a[i];
