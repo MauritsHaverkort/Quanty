@@ -2191,7 +2191,7 @@ int CalculateGfromG0andSigma(ResponsefunctionType  * const G0, ResponsefunctionT
     // We find Sigma as a list of poles in SigmaLPData
     // We need to calculate G as a list of poles in GLPData
     GListListListRepresentation(G0LPData, SigmaLPData, (ListOfPoles*)G->data);
-    if(!((G0->type=='a')||(G0->type=='A')))
+    if(!((G0->type=='l')||(G0->type=='L')))
     {
       FreeResponsefunction(&G0LP);
     }
@@ -4960,7 +4960,7 @@ uint32_t FreeResponsefunction(ResponsefunctionType *M)
     }
     default:
     {
-      printf("Error in FreeResponsefunction unrecognized type %c",M->type);
+      printf("Error in FreeResponsefunction unrecognized type %c\n",M->type);
       return 1;
     }
   }

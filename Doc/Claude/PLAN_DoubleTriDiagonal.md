@@ -150,7 +150,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
 | `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
-| `CalculateGfromG0andSigma` | prints an error but computes the right answer, and returns a **`ListOfPoles`** instead of a `d` | — | `ResponseFunctionAddSelfEnergyDenseViaTri` |
 
 **Two of those are one bug.** `CalculateGBathFromGandSigmaDirectSubtract`
 ([BasicMath_GreenFunctionArithmetic.cpp:1845](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp#L1845))
@@ -329,7 +328,26 @@ representation at all, holding no Hamiltonian, and the remaining seven raise.
 which work and which raise, so the day one of them is written the test says so. Note
 `All.Quanty` runs that file twice, at lines 35 and 46 — harmless, everything in it is local.
 
-**Suggested order.** `Eigensystem`, then the `CalculateGfromG0andSigma` return type.
+**`CalculateGfromG0andSigma` — not a `d` gap, withdrawn.** Re-measured: every input format
+comes back as a `ListOfPoles`, `d` included, and the five agree to 1.3e-15, so the return
+type does not follow the input for *any* of them. That is right by the standard used for
+`EffectiveHamiltonian` — return what is cheapest, not what came in — because the method
+genuinely produces a list of poles, `GListListListRepresentation` building one. Nothing is
+printed for a `d` any more either; that half of the note went stale, most likely with the
+`EffectiveHamiltonian` rewrite in the same path.
+
+The probe did turn up a real bug there, now fixed. In the single-valued half of
+`CalculateGfromG0andSigma` the conversion of `G0` is guarded on `l`/`L` and the free of the
+converted copy on `a`/`A`, so a single-valued list of poles as `G0` freed the uninitialised
+structure — it printed "Error in FreeResponsefunction unrecognized type" and survived only
+because the garbage type byte hit the `default` before any pointer was read — while an `a`
+as `G0` leaked. The block half and both halves of `CalculateGfromG0andSigmaOnGrid` had the
+guard right. `CalculateGfromG0AndSigma.Quanty` only ever called the no-grid variant with an
+`a`, so the path was never exercised; it now runs all five formats of `G0` through it and
+compares against the matrix that `GLP` was built from. That message was also missing its
+newline, which is why it merged with whatever printed next.
+
+**Suggested order.** `Eigensystem` is what is left.
 
 ### Still open, non-block
 
