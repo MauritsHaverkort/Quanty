@@ -2,6 +2,7 @@ void FreeCompactMatrix(CompactMatrixType * const M);
 void FreeCompactMatrixIncludingPointer(CompactMatrixType * const M);
 uint32_t InitCompactMatrix(CompactMatrixType * const M);
 uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t Nj);
+uint32_t SetCompactMatrixEmpty(CompactMatrixType * const M);
 uint32_t SetCompactMatrixToZero(CompactMatrixType * const M);
 uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const B);
 uint32_t CompactMatrixCopyToMatrix(MatrixType * const M, CompactMatrixType const A);
@@ -76,6 +77,7 @@ uint32_t CompactMatrixPow(CompactMatrixType const *A, CompactMatrixType * const 
 uint32_t HermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixType * const ExpA);
 uint32_t NonHermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixType * const ExpA);
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA);
+uint32_t CompactMatrixInverseSqrt(CompactMatrixType const *A, CompactMatrixType * const InvSqrtA);
 uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA);
 uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N);
 uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, CompactMatrixType * const Apos, CompactMatrixType * const Aneg, bool *PosDefinite, bool *NegDefinite, double *NegWeight);
@@ -96,6 +98,9 @@ uint32_t BlockAndersonMatrixToCompactMatrix(BlockAndersonMatrixType const * A, C
 uint32_t BlockTriDiagonalMatrixToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixToCompactMatrixWithDeflation(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType const * A, CompactMatrixType * const B, const uint32_t iStart, const uint32_t iEnd);
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B, bool const deflate);
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B);
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B);
 uint32_t CompactMatrixBlockBandTridiagonalizeHermitianNoReorthogonalization(CompactMatrixType const *A, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t NBlockMax, uint32_t BlockSize);
 uint32_t CompactMatrixBlockBandDiagonalizeReal(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize, bool const ReturnT);
 uint32_t CompactMatrixBlockBandDiagonalizeComplex(CompactMatrixType const * const A, CompactMatrixType * vec, BlockTriDiagonalMatrixType *const B, double const SingularValue, uint32_t const NTri, uint32_t const NOrtho, bool const ReOrthogonalize,bool const ReturnT);

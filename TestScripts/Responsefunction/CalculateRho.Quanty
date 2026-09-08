@@ -53,6 +53,7 @@ CheckRho(CalculateRho(G2l), {{0.3}}, "list of poles")
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"Tri")), {{0.3}}, "tridiagonal matrix")
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"And")), {{0.3}}, "Anderson matrix")
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"Nat")), {{0.3}}, "natural impurity orbitals")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"DoubleTri")), {{0.3}}, "double tri-diagonal matrix")
 
 -- options
 CheckRho(CalculateRho(G2l,{{"mu",1.5}}), {{0.45}}, "option mu")
@@ -93,6 +94,7 @@ CheckRho(CalculateRho(G), RhoTB, "block list of poles, using the global function
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"Tri")), RhoTB, "block tridiagonal matrix")
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"And")), RhoTB, "block Anderson matrix")
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"Nat")), RhoTB, "block natural impurity orbitals")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"DoubleTri")), RhoTB, "block double tri-diagonal matrix")
 CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"Table")), RhoTB, "block list of poles as a lua table")
 
 -- the Green's function is normalized, with all states filled rho is the unit matrix
@@ -104,5 +106,46 @@ Nk    = {400,1,1}
 G     = CalculateG(HTB,{{"Nk",Nk},{"Emin",-2.5},{"Emax",2.5},{"NE",2000}})
 RhoTB = Matrix.ToTable(CalculateRho(HTB,{{"Nk",Nk},{"kBT",0.1}}))
 CheckRho(CalculateRho(G,{{"kBT",0.1}}), RhoTB, "metal at finite temperature")
+for i, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
+	CheckRho(CalculateRho(ResponseFunction.ChangeType(G,ty),{{"kBT",0.1}}), RhoTB,
+	         "metal at finite temperature, " .. ty)
+end
+
+
+print("--------------------------------------------------------")
+print("-------- Poles that nearly coincide --------------------")
+print("--------------------------------------------------------")
+
+-- Every representation that is not a list of poles is converted to one first, and that
+-- conversion is handed a distance below which two poles are merged into one. rho does not
+-- need any merging: it is sum_i f(a_i,mu,kbT) W_i, which does not see the arbitrary
+-- eigenbasis inside a group of degenerate poles that merging exists to remove -- a unitary
+-- mixing inside the group redistributes the individual W_i and leaves their sum, and f is
+-- the same for all of them. What merging can do is move weight across mu: the surviving
+-- pole sits at the trace weighted mean of the two, so the occupation is right to second
+-- order in the distance while rho itself is right to first order only, by
+-- |f'|max delta ||W|| = delta ||W|| / (4 kbT). The distance used is therefore
+-- 4 kbT DBL_EPSILON, and zero -- which merges nothing, the test being a strict < -- when
+-- kbT <= 0, where no positive distance leaves a step function unchanged.
+--
+-- Two poles 5e-5 apart, in different orbitals, straddling mu at kBT = 0.1. The list of
+-- poles is exact, needing no conversion. A distance of kbT/1000, which is what the block
+-- Tri and Anderson conversions used to be handed, merges the two and lands 6.25e-5 away.
+
+local NearD = 5E-5
+local NearA0 = Matrix.New({{0,0},{0,0}})
+local NearW1 = Matrix.New({{1,0},{0,0}})
+local NearW2 = Matrix.New({{0,0},{0,1}})
+local NearG = ResponseFunction.New({{NearA0,-NearD/2,NearD/2},{NearW1,NearW2},
+                                    mu=0,type="ListOfPoles",name="near"})
+local NearRef = Matrix.ToTable(CalculateRho(NearG,{{"kBT",0.1}}))
+-- f(-2.5e-5) and f(2.5e-5) at kBT = 0.1, which differ in the fifth digit
+if (math.abs(Complex.Re(NearRef[1][1]) - 0.5000625) > 1E-9) then
+	error("the reference rho of two nearly coinciding poles is not what it should be\n",1)
+end
+for i, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
+	CheckRho(CalculateRho(ResponseFunction.ChangeType(NearG,ty),{{"kBT",0.1}}), NearRef,
+	         "two poles 5e-5 apart across mu, " .. ty)
+end
 
 print("Test for Responsefunction CalculateRho is passed")

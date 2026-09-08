@@ -373,3 +373,43 @@ bindings are listed under the `GaussianRadialFunction`/`SparseMatrix` classes ab
   binding does, so do not infer the convention from an arbitrary neighbouring function.
 - Given the branch is called `develop`, it may be worth diffing this against `master`/tags if the
   goal is understanding recent additions vs. the stable API surface.
+
+## 6. Calling conventions worth knowing
+
+Collected from use; each one has cost an hour at least once.
+
+- **An options argument is a list of `{"name", value}` pairs**, not a table with
+  named keys. `{{"Emin",-4},{"GammaL",0.3}}` is right; `{Emin=-4}` has an empty
+  array part, passes `LuaTestOptionsList` and is then silently ignored.
+- **Broadening in `ToSpectra` is `GammaL`**, not `Gamma`.
+- **Read a number with `Complex.Re(x)`, never `x.Re`.** A method modifies its
+  object in Quanty and a function returns one, so `x.Re` is the wrong spelling,
+  and it fails outright on a plain lua number — which is what an element of a
+  block matrix becomes when its imaginary part is exactly zero. `Complex.Re` and
+  `Complex.Im` take either kind. `Complex.Abs` and `Complex.Conjugate` do not
+  exist; `Complex.New`, `Complex.I` and `Complex.Exp` do. The global `Conjugate`
+  and `Transpose` work on matrices.
+- **Response function tables are 1-based with the offset first.** In a
+  `ListOfPoles` table `a[1]` is the offset `a0` and the poles start at `a[2]`,
+  while `b[1]` is the first weight. A `Tri` or `And` table has `#a = N+1` and
+  `#b = N`, with `a[1]` and `b[1]` being `a0` and `b0`. A `Nat` and a `DoubleTri`
+  have one positional element, the `{a0,b0}` pair, their two chains being the
+  named `val` and `con` — which is what `#G` counts.
+- `Matrix.Sub(M,n)` returns the leading `n × n` **matrix**, not an element, and is
+  1-based. `Spectra.ToTable(sp)` gives `sp[ispectrum][ipoint] = {energy, value}`.
+- **A chopped complex matrix is still a complex matrix** and does not compare
+  equal to a real `Matrix.Zero(n,{{"userdata",false}})`. Compare element by
+  element with `Complex.Re`/`Complex.Im` when the operands may differ in kind;
+  more than one wrong conclusion has come from that comparison.
+- **Test files share one global namespace.** `All.Quanty` runs the response
+  function tests with `dofile`, so a global in one file is visible to the next and
+  a global named like a library function shadows it. Keep everything in a new test
+  `local`.
+- **Piped stdout is block buffered** and the buffer is lost when the process dies,
+  so a crash looks silent and a C `printf` can appear in the middle of a lua
+  `io.write` line. Re-run under `script -q /dev/null` to see the last output.
+- **Running the tests does not normally rewrite the `.svg` files** under
+  `TestScripts/*/OutputPlots/`; they come out byte-identical. A few tests do write
+  them, so check `git status` after a run rather than reflexively reverting: a
+  changed plot is a signal, and the one time it happened it was an uninitialised
+  read.

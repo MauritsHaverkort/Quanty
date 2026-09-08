@@ -382,6 +382,72 @@ end
 
 
 
+print("-- The eigenvalues of the matrix are the poles of G   --")
+
+-- Everything above compares the matrix with one written out by hand, which pins the layout.
+-- This is the physics: the matrix of a response function is the Hamiltonian standing in its
+-- denominator, so its eigenvalues are the poles of G, and that has to hold for every format.
+--
+-- The Nat cases above all use B0v = B0c = sqrt(1/2) I, for which the total spectral weight
+-- of G is the unit matrix. That is the one case in which the bonding and antibonding
+-- rotation of the two head sites, which the block Nat matrix is built from, happens to be
+-- unitary: the block format keeps the weight of G in its head couplings, where the single
+-- valued format normalises them and holds the weight in b0. For any other weight the
+-- rotation is not unitary, the matrix is a Hamiltonian in a basis that is not orthonormal,
+-- and its eigenvalues are not the poles of G -- 2.5e-02 out for the real case below and
+-- 2.6e-01 for the complex one.
+
+local function SortedEigenvalues(M)
+	local v = Eigensystem(M)
+	local s = {}
+	for i = 1, #v do s[i] = Complex.Re(v[i]) end
+	table.sort(s)
+	return s
+end
+local function CheckPoles(tag, G)
+	local a = SortedEigenvalues(ResponseFunction.ToMatrix(G))
+	for i, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
+		local b = SortedEigenvalues(ResponseFunction.ToMatrix(ResponseFunction.ChangeType(G, ty)))
+		-- a Nat carries one redundant level and a DoubleTri two per bath block, all of them
+		-- decoupled and at zero energy, so only the count of the others has to match
+		if ((ty == "Tri") or (ty == "And")) then
+			if (#a ~= #b) then
+				error("the matrix of a " .. ty .. " has dimension " .. #b .. " where the list of poles gives " .. #a .. "\n",1)
+			end
+			for k = 1, #a do
+				if (math.abs(a[k]-b[k]) > 1E-10) then
+					error("eigenvalue " .. k .. " of the matrix of a " .. ty .. " is " .. b[k] ..
+					      " where the pole of G is " .. a[k] .. " (" .. tag .. ")\n",1)
+				end
+			end
+		else
+			-- match every pole of G to an eigenvalue of the matrix
+			for k = 1, #a do
+				local best = 1E30
+				for l = 1, #b do best = math.min(best, math.abs(a[k]-b[l])) end
+				if (best > 1E-10) then
+					error("the pole of G at " .. a[k] .. " is not an eigenvalue of the matrix of a " ..
+					      ty .. ", nearest is " .. best .. " away (" .. tag .. ")\n",1)
+				end
+			end
+		end
+	end
+end
+
+local PA0 = Matrix.New({{0,0},{0,0}})
+CheckPoles("real weights, total weight not the unit matrix",
+  ResponseFunction.New({{PA0,-2,-1,1,2},
+                        {Matrix.New({{0.2,0.05},{0.05,0.3}}), Matrix.New({{0.3,-0.15},{-0.15,0.2}}),
+                         Matrix.New({{0.1,0.02},{0.02,0.2}}), Matrix.New({{0.4,0.1},{0.1,0.3}})},
+                        mu=0,type="ListOfPoles",name="poles real"}))
+CheckPoles("complex hermitian weights",
+  ResponseFunction.New({{PA0,-2,-1,1,2},
+                        {Matrix.New({{0.2,0.05-0.1*I},{0.05+0.1*I,0.3}}), Matrix.New({{0.3,-0.15+0.05*I},{-0.15-0.05*I,0.2}}),
+                         Matrix.New({{0.1,0.02+0.03*I},{0.02-0.03*I,0.2}}), Matrix.New({{0.4,0.1+0.2*I},{0.1-0.2*I,0.3}})},
+                        mu=0,type="ListOfPoles",name="poles complex"}))
+print("the eigenvalues of the matrix are the poles of G for every format: ok")
+
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

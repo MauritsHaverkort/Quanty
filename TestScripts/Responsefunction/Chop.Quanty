@@ -217,6 +217,83 @@ if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFu
 
 
 
+print("-- DoubleTri                                          --")
+
+-- The two chains are ordinary tri-diagonal matrices, so a chopped hopping cuts the
+-- chain there, exactly as for Tri and Nat above. What is extra is the pair a0, b0 of
+-- the matrix itself, and b0 is the interesting one -- see "DoubleTri to zero" below.
+
+acon = {0,  5, 6, 7}
+bcon = {    2, 1E-17, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {    12,   13,   1E-17}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+G = ResponseFunction.New({{3,1},val=Gval,con=Gcon,mu=0,kBT=0.05,type="DoubleTri", name="D"})
+
+acon = {0,  5}
+bcon = {    2}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16}
+bval = {    12,   13}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+G1t = ResponseFunction.New({{3,1},val=Gval,con=Gcon,mu=0,kBT=0.05,type="DoubleTri", name="D"})
+
+acon = {0,  5, 6, 7}
+bcon = {    2, 0, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {    12,   13,   0}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+G2t = ResponseFunction.New({{3,1},val=Gval,con=Gcon,mu=0,kBT=0.05,type="DoubleTri", name="D"})
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
+
+
+print("-- DoubleTri to zero                                  --")
+
+-- b0 is the hopping onto the observed site itself, so once it is chopped away nothing
+-- couples to the matrix: G(w) = a0, and with Deflate there is no matrix left to keep.
+-- Both chains go to length zero, which is a legal DoubleTri. The head energies a[0] of
+-- the two branches are left where they were; with b0 = 0 nothing can observe them.
+
+acon = {0,  5, 6, 7}
+bcon = {    2, 1E-17, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {    12,   13,   1E-17}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+G = ResponseFunction.New({{3,1E-17},val=Gval,con=Gcon,mu=0,kBT=0.05,type="DoubleTri", name="D"})
+
+Gcon = ResponseFunction.New({{0},{},mu=0,type="Tri"})
+Gval = ResponseFunction.New({{0},{},mu=0,type="Tri"})
+G1t = ResponseFunction.New({{3,0},val=Gval,con=Gcon,mu=0,kBT=0.05,type="DoubleTri", name="D"})
+
+acon = {0,  5, 6, 7}
+bcon = {    2, 0, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = {0, -15,  -16,  -17}
+bval = {    12,   13,   0}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+G2t = ResponseFunction.New({{3,0},val=Gval,con=Gcon,mu=0,kBT=0.05,type="DoubleTri", name="D"})
+
+G1 = Chop(G)
+G2 = Chop(G,{{"Deflate",false}})
+
+if((G1==G1t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G1)); print(ResponseFunction.ToTable(G1t)); error("Response function comparison failed\n",1) end
+if((G2==G2t)~=true)    then print(ResponseFunction.ToTable(G)); print(ResponseFunction.ToTable(G2)); print(ResponseFunction.ToTable(G2t)); error("Response function comparison failed\n",1) end
+-- and G really is the constant a0 now, at any energy and any broadening
+for i = 0, 8 do
+	local w = -4.0 + 8.0 * i / 8
+	if((Complex.Re(G1(w,0.3))~=3) or (Complex.Im(G1(w,0.3))~=0)) then error("a chopped DoubleTri is not exactly a0\n",1) end
+	if((Complex.Re(G2(w,0.3))~=3) or (Complex.Im(G2(w,0.3))~=0)) then error("a chopped DoubleTri is not exactly a0\n",1) end
+end
+
+
 print("-- Matrix                                             --")
 
 
@@ -590,6 +667,111 @@ if((G2==G2t)~=true)    then error("Response function comparison failed\n",1) end
 
 
 collectgarbage()
+print("-- DoubleTri                                          --")
+
+-- Evaluating a block response function always gives a complex matrix; Gw.QComplex is
+-- 1 whatever the numbers in it. But LuaPushTable_CompactMatrixType pushes element by
+-- element, and an element whose imaginary part is exactly zero is pushed as a plain lua
+-- number rather than as a Complex. So the table can be mixed, and routinely is: any G
+-- that is block diagonal has plain zeros off the diagonal, and once b0 has been chopped
+-- away G is the real matrix A0 and every element is a plain number.
+--
+-- Hence Complex.Re and Complex.Im, which are functions, return a value, and take either
+-- kind. In Quanty a method modifies its object and a function returns one, so x.Re reads
+-- as "modify x" and is the wrong spelling; use Complex.Re(x).
+
+-- Built by conversion, since that is how a block DoubleTri comes about; the expected
+-- chains are not written out by hand here, so this asserts shapes and values rather
+-- than comparing against a hand built matrix.
+
+MDa = { {{0,0},{0,0}}, {{1.7,0.2},{0.2,1.3}}, {{-2,0},{0,-2}}, {{-1,0},{0,-1}}, {{1,0},{0,1}}, {{2,0},{0,2}} }
+MDb = { {{1,0},{0,1}}, {{0.4,0},{0,0.4}}, {{0.35,0},{0,0.35}}, {{0.3,0},{0,0.3}}, {{0.25,0},{0,0.25}} }
+MD  = ResponseFunction.ChangeType(ResponseFunction.New({MDa,MDb,mu=0,type="And",name="MD"}),
+                                  "DoubleTri", {{"EffectivekBT",0.05}})
+MDt = ResponseFunction.ToTable(MD)
+MDnv, MDnc = #(MDt.val[1])-1, #(MDt.con[1])-1
+
+-- a chop far below every element must leave it alone, deflating or not
+for i, d in ipairs({false,true}) do
+	local t = ResponseFunction.ToTable(Chop(MD,1E-30,{{"Deflate",d}}))
+	if((#(t.val[1])-1~=MDnv) or (#(t.con[1])-1~=MDnc)) then
+		error("Chop of a block DoubleTri below every element changed its dimensions\n",1)
+	end
+	for k = 0, 8 do
+		local w = -6.0 + 12.0*k/8
+		local u, v = MD(w,0.3), Chop(MD,1E-30,{{"Deflate",d}})(w,0.3)
+		for x = 1, 2 do for y = 1, 2 do
+			local ur, ui = Complex.Re(u[x][y]), Complex.Im(u[x][y])
+			local vr, vi = Complex.Re(v[x][y]), Complex.Im(v[x][y])
+			if(math.abs(ur-vr)+math.abs(ui-vi) > 1E-13) then
+				error("Chop of a block DoubleTri below every element changed G\n",1)
+			end
+		end end
+	end
+end
+
+print("-- DoubleTri to zero                                  --")
+
+-- b0 of this one is the identity, so a chop above 1 takes it away. Nothing then couples
+-- to the matrix: G(w) = A0, and with Deflate both chains go to length zero.
+MD1 = Chop(MD,10.0,{{"Deflate",true}})
+MD2 = Chop(MD,10.0,{{"Deflate",false}})
+MDt1, MDt2 = ResponseFunction.ToTable(MD1), ResponseFunction.ToTable(MD2)
+if((#(MDt1.val[1])-1~=0) or (#(MDt1.con[1])-1~=0)) then
+	error("a block DoubleTri whose b0 is chopped away must have no chains left\n",1)
+end
+if((#(MDt2.val[1])-1~=MDnv) or (#(MDt2.con[1])-1~=MDnc)) then
+	error("Chop without Deflate must not change the dimensions of a block DoubleTri\n",1)
+end
+for i, G in ipairs({MD1, MD2}) do
+	for x = 1, 2 do for y = 1, 2 do
+		if(ResponseFunction.ToTable(G)[1][2][x][y]~=0) then
+			error("b0 of a chopped block DoubleTri is not zero\n",1)
+		end
+	end end
+	-- and G is the constant A0, exactly, at any energy
+	for k = 0, 8 do
+		local w = -6.0 + 12.0*k/8
+		local v = G(w,0.3)
+		for x = 1, 2 do for y = 1, 2 do
+			local vr, vi = Complex.Re(v[x][y]), Complex.Im(v[x][y])
+			if((vr~=MDt[1][1][x][y]) or (vi~=0)) then
+				error("a chopped block DoubleTri is not exactly A0\n",1)
+			end
+		end end
+	end
+end
+
+print("-- DoubleTri mixed real and complex                   --")
+
+-- QComplex of a block DoubleTri is 0 if all four of val, con, a0 and b0 are real, 1 if
+-- all four are complex, and 2 for a mixture. A chop demotes each part on its own -- the
+-- imaginary part of a0 goes here while val keeps a real one -- so a mixture is exactly
+-- what comes out, and every consumer has to read the QComplex of the part it touches
+-- rather than the container's. That is what this checks: if anything downstream used the
+-- container flag, G would come back wrong.
+MXv = ResponseFunction.New({ {{{0,0},{0,0}}, {{Complex.New(-1,0.4),0},{0,-1.2}}},
+                             {{{0.6,0},{0,0.5}}}, mu=0, type="Tri"})
+MXc = ResponseFunction.New({ {{{0,0},{0,0}}, {{1.1,0},{0,1.3}}},
+                             {{{0.5,0},{0,0.45}}}, mu=0, type="Tri"})
+MX  = ResponseFunction.New({ {{{0.3,Complex.New(0,1E-17)},{0,0.2}}, {{1,0},{0,1}}},
+                             val=MXv, con=MXc, mu=0, kBT=0.05, type="DoubleTri", name="MX"})
+for i, d in ipairs({false,true}) do
+	local GC = Chop(MX,1E-15,{{"Deflate",d}})
+	for k = 0, 12 do
+		local w = -5.0 + 10.0*k/12
+		local u, v = MX(w,0.3), GC(w,0.3)
+		for x = 1, 2 do for y = 1, 2 do
+			local ur, ui = Complex.Re(u[x][y]), Complex.Im(u[x][y])
+			local vr, vi = Complex.Re(v[x][y]), Complex.Im(v[x][y])
+			if(math.abs(ur-vr)+math.abs(ui-vi) > 1E-14) then
+				error("chopping a block DoubleTri of mixed real and complex parts changed G\n",1)
+			end
+		end end
+	end
+end
+
+
 print("--------------------------------------------------------")
 print("-- End                                                --")
 print("--------------------------------------------------------")

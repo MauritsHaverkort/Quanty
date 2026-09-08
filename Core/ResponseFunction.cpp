@@ -248,6 +248,63 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
         return 0;
       }
       break;
+      case 'd':
+      {
+        double Emin2, Emax2, diag, Rrow, av, ac;
+        ResponsefunctionType R;
+        BlockDoubleTriDiagonalMatrixType *A=(BlockDoubleTriDiagonalMatrixType*)(M->data);
+        /*  the two chains, each as a block tri-diagonal matrix. Unlike the natural impurity
+         *  orbital case above both chains are ordinary baths here, so take the widest range
+         *  of the two rather than the valence minimum and the conduction maximum.
+         */
+        R.type='t';
+        R.Block=true;
+        R.SuggestedGrid=NULL;
+        R.NSuggestedGridPoints=0;
+        R.data = (void*)(&(A->val));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, EminPole, EmaxPole);
+        R.data = (void*)(&(A->con));
+        ResponseFunctionEstimateEminAndEmaxPole(&R, &Emin2, &Emax2);
+        if(*EminPole > Emin2) *EminPole = Emin2;
+        if(*EmaxPole < Emax2) *EmaxPole = Emax2;
+        /*  A block tri-diagonal matrix starts at a[1], so the impurity block that this type
+         *  puts in front of the two chains is not covered above. Add a Gershgorin bound for
+         *  its rows. Summing the magnitudes of the val and the con contribution separately
+         *  only widens the bound, which is safe. Each chain is read by its own QComplex, it
+         *  need not be the one of A for a mixed object.
+         */
+        for(j=0;j<A->BlockSize;j++)
+        {
+          diag = 0;
+          Rrow = 0;
+          for(k=0;k<A->BlockSize;k++)
+          {
+            uint32_t idx = j*A->BlockSize + k;
+            av = A->val.QComplex ? sqrt(Sqr(A->val.a[idx].Re)+Sqr(A->val.a[idx].Im)) : fabs(A->val.aRe[idx]);
+            ac = A->con.QComplex ? sqrt(Sqr(A->con.a[idx].Re)+Sqr(A->con.a[idx].Im)) : fabs(A->con.aRe[idx]);
+            if(k==j)
+            {
+              diag += A->val.QComplex ? A->val.a[idx].Re : A->val.aRe[idx];
+              diag += A->con.QComplex ? A->con.a[idx].Re : A->con.aRe[idx];
+            }
+            else
+            {
+              Rrow += av + ac;
+            }
+            if(A->val.N!=0) Rrow += A->val.QComplex ? sqrt(Sqr(A->val.b[idx].Re)+Sqr(A->val.b[idx].Im)) : fabs(A->val.bRe[idx]);
+            if(A->con.N!=0) Rrow += A->con.QComplex ? sqrt(Sqr(A->con.b[idx].Re)+Sqr(A->con.b[idx].Im)) : fabs(A->con.bRe[idx]);
+          }
+          if(diag - Rrow < *EminPole) *EminPole = diag - Rrow;
+          if(diag + Rrow > *EmaxPole) *EmaxPole = diag + Rrow;
+        }
+        if(*EminPole >= *EmaxPole)
+        {
+          *EminPole -= 1;
+          *EmaxPole += 1;
+        }
+        return 0;
+      }
+      break;
     }
   }
   else
@@ -344,6 +401,43 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
         return 0;
       }
       break;
+      case 'd':
+      {
+        double eimp, Rrow;
+        DoubleTriDiagonalMatrixType *A=(DoubleTriDiagonalMatrixType*)(M->data);
+        /*  Gershgorin bound over the rows of the matrix this type represents: one impurity
+         *  site with energy val.a[0]+con.a[0], coupled to the two chains by val.b[0] and
+         *  con.b[0]. The chains themselves are val.a[1..N] and con.a[1..N]. val.b has
+         *  length val.N, so b[0] only exists when the chain is not empty.
+         */
+        eimp = A->val.a[0] + A->con.a[0];
+        Rrow = 0;
+        if(A->val.N!=0) Rrow += fabs(A->val.b[0]);
+        if(A->con.N!=0) Rrow += fabs(A->con.b[0]);
+        *EminPole = eimp - Rrow;
+        *EmaxPole = eimp + Rrow;
+        for(i=1;i<=A->val.N;i++)
+        {
+          Rrow = fabs(A->val.b[i-1]);
+          if(i<A->val.N) Rrow += fabs(A->val.b[i]);
+          if(*EminPole > A->val.a[i] - Rrow) *EminPole = A->val.a[i] - Rrow;
+          if(*EmaxPole < A->val.a[i] + Rrow) *EmaxPole = A->val.a[i] + Rrow;
+        }
+        for(i=1;i<=A->con.N;i++)
+        {
+          Rrow = fabs(A->con.b[i-1]);
+          if(i<A->con.N) Rrow += fabs(A->con.b[i]);
+          if(*EminPole > A->con.a[i] - Rrow) *EminPole = A->con.a[i] - Rrow;
+          if(*EmaxPole < A->con.a[i] + Rrow) *EmaxPole = A->con.a[i] + Rrow;
+        }
+        if(*EminPole >= *EmaxPole)
+        {
+          *EminPole -= 1;
+          *EmaxPole += 1;
+        }
+        return 0;
+      }
+      break;
     }
   }
   
@@ -383,6 +477,16 @@ uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArr
       strncpy(A->Name, ((BADoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
     }
     break;
+    case 'd':
+    {
+      strncpy(A->Name, ((DoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+    }
+    break;
+    default:
+    {
+      printf("Unrecognized type %c in ResponseFunctionToSpectra\n",M->type);
+      return 1;
+    }
   }
   return NoneBlockResponseFunctionToSpectra(M, A->Spec, GroundStateEnergy, Emin, Emax, GammaG, GammaL, NE);
 }
@@ -442,6 +546,31 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         BlockNaturalImpurityOrbitalMatrixToSpectra(GroundStateEnergy,(BlockNaturalImpurityOrbitalMatrixType*)(M->data), A->Spec, Emin, Emax, NE);
       }
       break;
+      case 'd':
+      {
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockDoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+        if(BlockDoubleTriDiagonalMatrixToSpectra(GroundStateEnergy,(BlockDoubleTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE))
+        {
+          /*  Nothing inside A->Spec was allocated, so hand back an empty array. Leaving the
+           *  half built one would have FreeSpectraTypeArray free spectra that do not exist.
+           */
+          free(A->Spec);
+          free(A->Name);
+          A->Spec=NULL;
+          A->Name=NULL;
+          A->NSpectra=0;
+          return 1;
+        }
+      }
+      break;
+      default:
+      {
+        printf("Unrecognized type %c in BlockResponseFunctionToSpectra\n",M->type);
+        return 1;
+      }
     }
   }
   else // transform to spectra with non-zero Gamma
@@ -484,6 +613,20 @@ uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTy
         BlockNaturalImpurityOrbitalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockNaturalImpurityOrbitalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
       }
       break;
+      case 'd':
+      {
+        A->Name=(char*)malloc(MAXStrLength*sizeof(char));
+        A->NSpectra = Sqr((((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize));
+        A->Spec = (SpectraType*)malloc( A->NSpectra*sizeof(SpectraType));
+        strncpy(A->Name, ((BlockDoubleTriDiagonalMatrixType*)M->data)->Name, MAXStrLength);
+        BlockDoubleTriDiagonalMatrixToSpectraWithBroadening(GroundStateEnergy,(BlockDoubleTriDiagonalMatrixType*)(M->data), A->Spec, Emin, Emax, NE, GammaL);
+      }
+      break;
+      default:
+      {
+        printf("Unrecognized type %c in BlockResponseFunctionToSpectra\n",M->type);
+        return 1;
+      }
     }
   }
   if(GammaG!=0)
@@ -544,6 +687,11 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
         BADoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(BADoubleTriDiagonalMatrixType*)M->data, A);
       }
         break;
+      case 'd':
+      {
+        DoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(DoubleTriDiagonalMatrixType*)M->data, A);
+      }
+        break;
     }
   }
   else // transform to spectra with non-zero Gamma
@@ -570,6 +718,11 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
        BADoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(BADoubleTriDiagonalMatrixType*)M->data, A);
      }
      break;
+     case 'd':
+     {
+       DoubleTriDiagonalMatrixToSpectrum(GroundStateEnergy, *(DoubleTriDiagonalMatrixType*)M->data, A);
+     }
+     break;
    }
  }
  if(GammaG!=0)
@@ -589,6 +742,34 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
  *  Note furthermore that the conversion projects onto the first block, the occupation of the
  *  bath states is not part of rho.
  */
+/*  The distance below which two poles may be merged when all that is asked of the list is a
+ *  density matrix.
+ *
+ *  rho = sum_i f(a_i,mu,kbT) W_i, and a merge puts the surviving pole at the trace weighted
+ *  mean of the two, so the trace of rho -- the occupation -- is right to second order in the
+ *  distance delta, while rho itself is right to first order only: the first order term
+ *  cancels in the trace and not off it. That error is bounded by |f'|max delta ||W||, which
+ *  is delta ||W|| / (4 kbT), so delta = 4 kbT DBL_EPSILON keeps it at the level of the
+ *  arithmetic itself. It scales with kbT, which is the point: a merge is only invisible as
+ *  far as the Fermi function is flat.
+ *
+ *  At kbT <= 0 no positive delta qualifies -- f is a step, and merging two poles that
+ *  straddle mu moves a whole weight matrix from filled to half filled -- so zero is passed,
+ *  which merges nothing at all, the test inside BlockListOfPolesMergeDegeneratePoles being a
+ *  strict <.
+ *
+ *  Merging is never needed for a density matrix. It exists to remove the arbitrary
+ *  eigenbasis inside a group of degenerate poles before something else is built out of the
+ *  list, and rho does not see that basis: a unitary mixing inside the group redistributes
+ *  the individual W_i and leaves their sum, and f is the same for all of them. So the rule
+ *  above is a bound on the harm a merge may do and not a requirement.
+ */
+static double DensityMatrixMinimalPoleDistance(double const kbT)
+{
+  if(kbT<=0) return 0;
+  return 4 * kbT * DBL_EPSILON;
+}
+
 uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactMatrixType *rho, double mu, double kbT)
 {
   if(M->Block)
@@ -602,7 +783,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       }
       case 't':
       {
-        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G))
+        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
         {
           printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -611,7 +792,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       break;
       case 'a':
       {
-        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G))
+        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -620,9 +801,18 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       break;
       case 'n':
       {
-        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G))
+        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
         {
           printf("BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'd':
+      {
+        if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles((BlockDoubleTriDiagonalMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
+        {
+          printf("BlockDoubleTriDiagonalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
         }
       }
@@ -673,6 +863,17 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
         }
       }
       break;
+      case 'd':
+      {
+        /*  no merge distance to pass: the single valued conversions take none, a list of
+         *  poles of a scalar G having no weight matrices whose basis could be arbitrary */
+        if(DoubleTriDiagonalMatrixToListOfPoles(*(DoubleTriDiagonalMatrixType*)(M->data), &L))
+        {
+          printf("DoubleTriDiagonalMatrixToListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
       default:
       {
         printf("Error in ResponseFunctionToDensityMatrix: unrecognized type %c\n",M->type);
@@ -714,6 +915,12 @@ uint32_t ResponseFunctionGetBlockSize(const ResponsefunctionType *const a)
       return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->BlockSize;
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      return ((BlockDoubleTriDiagonalMatrixType*)a->data)->BlockSize;
+      break;
+    }
     default:
     {
       printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
@@ -751,9 +958,15 @@ uint32_t ResponseFunctionGetQComplex(const ResponsefunctionType *const a)
       return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->QComplex;
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      return ((BlockDoubleTriDiagonalMatrixType*)a->data)->QComplex;
+      break;
+    }
     default:
     {
-      printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
+      printf("Error in ResponseFunctionGetQComplex: unrecognized type %c\n",a->type);
       return 0;
     }
   }
@@ -789,9 +1002,15 @@ double ResponseFunctionGetMu(const ResponsefunctionType *const a)
       if(a->Block) return ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->mu;
       return ((BADoubleTriDiagonalMatrixType*)a->data)->mu;
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block) return ((BlockDoubleTriDiagonalMatrixType*)a->data)->mu;
+      return ((DoubleTriDiagonalMatrixType*)a->data)->mu;
+    }
     default:
     {
-      printf("Error in ResponseFunctionGetMu: unrecognized type %c",a->type);
+      printf("Error in ResponseFunctionGetMu: unrecognized type %c\n",a->type);
       return 0;
     }
   }
@@ -801,7 +1020,10 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
 {
   M->Ni = ResponseFunctionGetBlockSize(a);
   M->Nj = M->Ni;
-  M->QComplex = ResponseFunctionGetQComplex(a);
+  /*  A CompactMatrixType is not a compound object and has no mixed state, so the 0/1/2
+   *  QComplex of the response function is narrowed to 0 or 1 here.
+   */
+  M->QComplex = ResponseFunctionGetQComplex(a) ? 1 : 0;
   InitCompactMatrix(M);
   if(a->Block==false)
   {
@@ -831,9 +1053,15 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
         M->VRe[0] = ((BADoubleTriDiagonalMatrixType*)a->data)->a0;
         break;
       }
+      case 'D':
+      case 'd':
+      {
+        M->VRe[0] = ((DoubleTriDiagonalMatrixType*)a->data)->a0;
+        break;
+      }
       default:
       {
-        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
+        printf("Error in ResponseFunctionGetA0: unrecognized type %c\n",a->type);
         return 1;
       }
     }
@@ -905,26 +1133,54 @@ uint32_t ResponseFunctionGetA0(const ResponsefunctionType *const a, CompactMatri
       case 'N':
       case 'n':
       {
-        if(M->QComplex==0)
+        /*  a0 carries its own QComplex, which for a mixed response function (QComplex 2)
+         *  need not be the one of the response function, so read a0 by its own flag and
+         *  write M by M's. a0 complex forces M complex, so nothing is ever dropped.
+         */
+        CompactMatrixType const * const a0 = &(((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0);
+        for(int i=0; i<Sqr(M->Ni);i++)
         {
-          for(int i=0; i<Sqr(M->Ni);i++)
+          double re = a0->QComplex ? a0->V[i].Re : a0->VRe[i];
+          double im = a0->QComplex ? a0->V[i].Im : 0;
+          if(M->QComplex==0)
           {
-            M->VRe[i] = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.VRe[i];
+            M->VRe[i] = re;
+          }
+          else
+          {
+            M->V[i].Re = re;
+            M->V[i].Im = im;
           }
         }
-        else
+        break;
+      }
+      case 'D':
+      case 'd':
+      {
+        /*  a0 carries its own QComplex, which for a mixed response function (QComplex 2)
+         *  need not be the one of the response function, so read a0 by its own flag and
+         *  write M by M's. a0 complex forces M complex, so nothing is ever dropped.
+         */
+        CompactMatrixType const * const a0 = &(((BlockDoubleTriDiagonalMatrixType*)a->data)->a0);
+        for(int i=0; i<Sqr(M->Ni);i++)
         {
-          for(int i=0; i<Sqr(M->Ni);i++)
+          double re = a0->QComplex ? a0->V[i].Re : a0->VRe[i];
+          double im = a0->QComplex ? a0->V[i].Im : 0;
+          if(M->QComplex==0)
           {
-            M->V[i].Re = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.V[i].Re;
-            M->V[i].Im = ((BlockNaturalImpurityOrbitalMatrixType*)a->data)->a0.V[i].Im;
+            M->VRe[i] = re;
+          }
+          else
+          {
+            M->V[i].Re = re;
+            M->V[i].Im = im;
           }
         }
         break;
       }
       default:
       {
-        printf("Error in ResponseFunctionGetBlockSize: unrecognized type %c\n",a->type);
+        printf("Error in ResponseFunctionGetA0: unrecognized type %c\n",a->type);
         return 0;
       }
     }
@@ -1068,7 +1324,7 @@ int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G
         break;
         case 'a':
         {
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon, -1, false);
         }
         break;
         case 'n':
@@ -1099,7 +1355,7 @@ int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G
         break;
         case 'a':
         {
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Sigma->data, SigmaData, Epsilon);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Sigma->data, SigmaData, Epsilon, -1, false);
         }
         break;
         case 'n':
@@ -1493,7 +1749,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         break;
         case 'a':
         {
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)G0->data, G0Data, Epsilon, -1, false);
         }
         break;
         case 'n':
@@ -1618,7 +1874,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         // transform Sigma to tridiagonal type and call the function again.
         // this part can be replaced by filling the matrix with the anderson form without the aditional transformation
         ResponsefunctionType SigmaTri;
-        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', "Default", 0, Epsilon, 0, 0, false, false, false);
         // We already transformed G0ResTri to tridiagonal format so lets reuse this
         ResponsefunctionType G0ResTri;
         G0ResTri.type='t';
@@ -1643,7 +1899,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
         // transform Sigma to tridiagonal type and call the function again.
         // this part can be replaced by filling the matrix with the natural orbital form without the aditional transformation
         ResponsefunctionType SigmaTri;
-        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', "Default", 0, Epsilon, 0, 0, false, false, false);
         // We already transformed G0ResTri to tridiagonal format so lets reuse this
         ResponsefunctionType G0ResTri;
         G0ResTri.type='t';
@@ -1667,7 +1923,7 @@ int ResponseFunctionAddSelfEnergyOnGridViaG0Tri(const ResponsefunctionType *cons
       {
         // transform Sigma to tridiagonal type and call the function again.
         ResponsefunctionType SigmaTri;
-        ConvertResponsefunction(Sigma, &SigmaTri, 't', 0, Epsilon);
+        ConvertResponsefunction(Sigma, &SigmaTri, 't', "Default", 0, Epsilon, 0, 0, false, false, false);
         // We already transformed G0ResTri to tridiagonal format so lets reuse this
         ResponsefunctionType G0ResTri;
         G0ResTri.type='t';
@@ -2016,17 +2272,17 @@ int ResponseFunctionAddSelfEnergyViaAndLP(const ResponsefunctionType *const G0, 
       {
         case 'a':
         {
-          BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Sigma->data, SigmaData);
+          BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Sigma->data, SigmaData, 1000*DBL_EPSILON,false);
         }
         break;
         case 't':
         {
-          BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Sigma->data, SigmaData);
+          BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Sigma->data, SigmaData, 1000*DBL_EPSILON,false);
         }
         break;
         case 'n':
         {
-          BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, SigmaData);
+          BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, SigmaData, -1, false);
         }
         break;
         default:
@@ -2409,7 +2665,7 @@ int ResponseFunctionAddSelfEnergyBlockAndLPAnd(const BlockAndersonMatrixType *co
     // SigmaInv to BlockListOfPoles
     HermitianCompactMatrixToBlockListOfPoles(&SigmaInv, &G0iWithSigma, G0->BlockSize);
     // Merge poles with energy differences smaller than Epsilon
-    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon);
+    BlockListOfPolesMergeDegeneratePoles(&G0iWithSigma, Epsilon, false);
     // rotate BlockListOpPoles by G0.B[i]
     if(G0->QComplex==0)
     {

@@ -2,14 +2,14 @@ uint32_t InitListOfPoles(ListOfPoles * M)
 {
   strcpy(M->Name, "List of Poles");
   M->a = (double*)malloc((M->N) * sizeof(double));
-  if (M->a == NULL)
+  if ((M->a == NULL)&&(M->N !=0))
   {
     printf("malloc for M->a failed in ListOfPoles\n");
     fflush(stdout);
     return 1;
   };
   M->b = (double*)malloc((M->N) * sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N !=0))
   {
     free(M->a);
     printf("malloc for M->b failed in ListOfPoles\n");
@@ -1430,8 +1430,8 @@ int MakeListOfPolesPhysical(ListOfPoles *const A)
       B.b[j] =-A->b[i];
       if(i+1!=A->N)
       {
-        memcpy(&(A->a[i]), &(A->a[i+1]), (A->N-i-1)*sizeof(double));
-        memcpy(&(A->b[i]), &(A->b[i+1]), (A->N-i-1)*sizeof(double));
+        memmove(&(A->a[i]), &(A->a[i+1]), (A->N-i-1)*sizeof(double));
+        memmove(&(A->b[i]), &(A->b[i+1]), (A->N-i-1)*sizeof(double));
       }
       A->N--;
       B.N--;

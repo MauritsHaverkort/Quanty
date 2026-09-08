@@ -40,6 +40,27 @@ end
 
 
 
+-- The same without a grid and with G0 already a list of poles, which is the one route
+-- where no conversion of G0 is needed. That path used to free the uninitialised structure
+-- that would have held the converted G0: the guard in front of the free tested for an
+-- Anderson matrix where the conversion above it tests for a list of poles. It printed
+-- "Error in FreeResponsefunction unrecognized type" and got away with the rest, so what
+-- this checks is only that the route gives the same G as the others -- the existing calls
+-- above and below all pass an EnergyGrid, and that variant had the guard right.
+
+for i, ty in ipairs({"ListOfPoles","Tri","And","Nat","DoubleTri"}) do
+	local Gty = ResponseFunction.CalculateGfromG0andSigma(ResponseFunction.ChangeType(G0,ty),Sigma)
+	if( not( Gty==GLP )) then
+		print("G from a G0 of type " .. ty)
+		print(Gty)
+		print("G constructed from a matrix")
+		print(GLP)
+		error("Calculation of G from G0 and Sigma failed for a G0 of type " .. ty .. "\n",1)
+	end
+end
+print("G from G0 and Sigma is the same for all five formats of G0")
+
+
 print("Non - Block - on Grid")
 
 -- for the test we chose a perfect grid

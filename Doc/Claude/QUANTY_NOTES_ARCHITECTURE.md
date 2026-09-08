@@ -159,15 +159,105 @@ eigenstates.
 
 ### ResponsefunctionType
 
-Deliberately thin — a `type` tag (`l,a,t,n` / `L,A,T,N`), a `Block` flag, and
+Deliberately thin — a `type` tag (`l,a,t,n,d` / `L,A,T,N,D`), a `Block` flag, and
 `void *data`. The tag plus `Block` select which concrete representation `data`
 points at: `TriDiagonalMatrixType`, `AndersonMatrixType`,
 `BlockAndersonMatrixType`, `BlockNaturalImpurityOrbitalMatrixType`, and so on,
-all defined further down `StructDef.cpp`.
+all defined further down `StructDef.cpp`. A capital letter means C allocated the
+payload and owns it; a small letter means it came from a lua userdata and lua
+owns it — `type & 32` is set for the small letters, and
+`FreeResponsefunctionIncludingOriginalPointer` is the routine that gets the
+distinction right.
 
 This is the one place where the codebase uses a tagged-union dispatch instead of
 a concrete struct, which is why response functions have their own conversion
 routines rather than plain arithmetic.
+
+#### How the five representations compose
+
+Every one of them writes `G(w) = A0 + B0^* ( … ) B0^T`, and they differ in what
+stands in the middle. `A0` is a site energy and `B0` a hopping — at every level,
+in all of these types. That is what they mean whenever a response function holds
+an effective Hamiltonian, a self-energy or a hybridisation function rather than
+`G` itself: `G = 1/(w − Heff)` with `Heff = a0 + b0²·g`, so `a0` is the static
+on-site part and `b0²·g` the hybridisation. The ASCII art in each struct comment
+in `StructDef.cpp` is the auxiliary matrix whose resolvent is the Green's
+function, and `a0`/`b0` are its site-0 energy and its first hopping.
+
+The two double-chain types have near-identical members (`mu`, `kBT` resp.
+`Epsilon`, `a0`, `b0`, two `TriDiagonalMatrixType`) and **completely different
+meanings**:
+
+`n` — `BADoubleTriDiagonalMatrixType` / `BlockNaturalImpurityOrbitalMatrixType`,
+**additive**: two independent chains, added as Green's functions,
+
+    G(w) = a0 + b0² [ g_val(w) + g_con(w) ]
+
+`d` — `DoubleTriDiagonalMatrixType` / `BlockDoubleTriDiagonalMatrixType`,
+**nested**: two hybridisations in one denominator,
+
+    G(w) = a0 + b0² / ( w − g_val(w) − g_con(w) )
+
+with `g_val`, `g_con` in both cases an ordinary type-`t` response function,
+evaluated by `EvaluateTriDiagonalMatrix` with no special casing. So `n` adds the
+two Green's functions and `d` adds the two hybridisations. Nothing can be copied
+from one to the other beyond the signature.
+
+For a `d` the impurity site energy is `val.a[0] + con.a[0]`, the plain **sum**,
+and the matrix dimension is `1 + val.N + con.N`:
+
+| site | energy | hopping to previous |
+|---|---|---|
+| 0 (impurity) | `val.a[0] + con.a[0]` | — |
+| 1 … val.N | `val.a[1…val.N]` | `val.b[0]` then `val.b[1…val.N-1]` |
+| val.N+1 … val.N+con.N | `con.a[1…con.N]` | `con.b[0]` then `con.b[1…con.N-1]` |
+
+Splitting that energy in equal halves is a **convention of the constructors, not
+an invariant**: any split summing to the same total is the same object, so a
+consumer must add the two rather than read one. The alternative design — an outer
+`a0` plus two head slots reserved to be zero — is what the block `n` type has, and
+it is measurably fragile: see the TODO entry on reserved-zero slots, where three
+groups of functions disagree about whether a non-zero head slot counts. Any
+consumer that adds `val.a[0] + con.a[0]` on top of an already evaluated
+`val`/`con` counts the impurity twice.
+
+An **empty branch** is legal for a `d` and outside the form for a `n`. In a `d`
+each branch enters through `g_val`/`g_con`, which for `N == 0` is just its offset
+`a[0]`, so `val.N = 0` means "this branch is absent" and describes a well-defined
+matrix of dimension `1 + con.N` — exactly what the Fermi split produces when `mu`
+lies outside the bath. In a `n` the observed orbital is a linear combination of the
+two chain heads, which is only defined if both exist, so both `BADouble…`
+constructors reject a chain of length zero and that reject is not a guard to be
+tidied away.
+
+#### Conjugation: the head is not like the levels below it
+
+A block representation couples its **head** as `b0^* ( ) b0^T` and every level
+**below** as `b ( ) b^+`. `EvaluateBlockTriDiagonalMatrix` shows both:
+`TransformCompactMatrixInlinecT` for the first block, `TransformCompactMatrixInlineNC`
+for the rest. `CompactMatrixSqrt` returns the hermitian `B` with `B B^† = W`, the
+below form. Only a **complex** test can tell a head error from a below error, so
+every test of a block conversion needs a complex case.
+
+The transpose of a response function is the same substitution at every level —
+`A_i → A_i^T`, `B_i → B_i^*` — which covers both conventions:
+`(B^* X B^T)^T = B X^T B^+` and `(B X B^+)^T = B^* X^T B^T`.
+
+#### Two more conventions that are easy to get wrong
+
+- **Rows are eigenvectors.** Wherever a routine returns an eigenvector matrix
+  `vec` next to eigenvalues, `vec^* H vec^T` is the diagonal matrix of the
+  eigenvalues. `CompactMatrixEigensystem` and `Eigensystem` on a response
+  function both follow it.
+- **`ToMatrix` returns the `H` in the denominator and neglects `A0` and `B0`.**
+  For a `t` that is `a[1…N]` with its couplings, `b[0]` being left to `GetB0`;
+  for a `d` it is the impurity with both chains. So the eigenvalues of
+  `ToMatrix(G)` are the poles of `G`, and a format that stores redundant levels
+  returns more of them — one for a `n`, two per bath block for a `d` — the extra
+  ones sitting at zero and decoupled. The block `n` needs care here: it has no
+  `b0` member, so the weight of `G` lives in its head couplings and a basis
+  transformation built from them has to be Löwdin-normalised, which is what
+  `GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType` is for.
 
 ### TightBindingDef
 

@@ -354,3 +354,122 @@ if((GLP==GNat)~=true) then
 	print("GNat-GLP\n",ResponseFunction.ToTable(GNat-GLP))
 	error("Response function comparison failed\n",1)
 end
+
+
+
+
+
+-------------------------------------------------------------
+---- Transpose(G)(w,gamma) == Transpose(G(w,gamma))       ----
+-------------------------------------------------------------
+
+-- Everything above checks that the formats agree with each other before and after the
+-- transpose, which they would also do if every one of them were wrong in the same way.
+-- This is the transpose itself: transposing the response function and then evaluating it
+-- has to give the same as evaluating it and then transposing the matrix. Only a complex G
+-- can tell a transpose from a conjugate, and a real symmetric G is its own transpose,
+-- which is how a format that was handed back untouched went unnoticed.
+--
+-- All of this is local to this section: the file above works with globals and is run from
+-- All.Quanty, which shares one namespace between the response function tests.
+
+local TrTypes = {"ListOfPoles","Tri","And","Nat","DoubleTri"}
+
+-- Nat and DoubleTri split the poles of G at the chemical potential into a valence and a
+-- conduction part, which at a temperature of zero cannot be done for a pole sitting on mu.
+local function TrChangeType(G, ty)
+	if (ty == "ListOfPoles") then return G end
+	if ((ty == "Nat") or (ty == "DoubleTri")) then
+		return ResponseFunction.ChangeType(G, ty, {{"EffectivekBT", 0.05}})
+	end
+	return ResponseFunction.ChangeType(G, ty)
+end
+
+local function CheckTranspose(tag, G, BlockSize)
+	local Gt = ResponseFunction.Transpose(G)
+	if (Gt.type ~= G.type) then
+		error("Transpose of a " .. G.type .. " returned a " .. Gt.type .. "\n",1)
+	end
+	for k = 0, 12 do
+		local w = -8.0 + 16.0 * k / 12
+		local d = Gt(w,0.3) - Transpose(G(w,0.3))
+		for r = 1, BlockSize do
+			for c = 1, BlockSize do
+				if (math.abs(Complex.Re(d[r][c])) + math.abs(Complex.Im(d[r][c])) > 1E-10) then
+					print(d)
+					error("Transpose(G)(w,gamma) is not Transpose(G(w,gamma)) for " .. tag .. "\n",1)
+				end
+			end
+		end
+	end
+	if ((ResponseFunction.Transpose(Gt) == G) ~= true) then
+		error("Transposing " .. tag .. " twice does not give back G\n",1)
+	end
+end
+
+-- A0 is not symmetric and the weights are not either, so G is not its own transpose. For a
+-- physical G they would be hermitian; this is a test of the transpose, not of a model.
+local TrA0 = Matrix.New({{1,0,-5},{0,1,1},{5,1,1}})
+local TrB1 = Matrix.New({{1,-1/2,1/5},{-1/2,1,0},{1/5,0,2}})
+local TrB2 = Matrix.New({{1,0,0},{0,1,1},{0,1,1}})
+local TrB3 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+local TrGLP = ResponseFunction.New({{TrA0,-5,-2,7},{TrB1,TrB2,TrB3},mu=0,type="ListOfPoles",name="Tr real"})
+for i, ty in ipairs(TrTypes) do
+	CheckTranspose("block real " .. ty, TrChangeType(TrGLP, ty), 3)
+end
+print("block real: Transpose(G)(w,gamma) == Transpose(G(w,gamma)) for every format")
+
+local TrA0c = Matrix.New({{1,-I,0},{I,2,0.5+0.5*I},{0,0.5-0.5*I,3}})
+local TrB1c = Matrix.New({{1,0.2+0.1*I,0},{0.2-0.1*I,1,0},{0,0,2}})
+local TrB2c = Matrix.New({{1,0,0.1-0.3*I},{0,1,0},{0.1+0.3*I,0,1}})
+local TrB3c = Matrix.New({{2,-0.1+0.4*I,0},{-0.1-0.4*I,1,0},{0,0,1}})
+local TrGLPc = ResponseFunction.New({{TrA0c,-5,-2,7},{TrB1c,TrB2c,TrB3c},mu=0,type="ListOfPoles",name="Tr cx"})
+for i, ty in ipairs(TrTypes) do
+	CheckTranspose("block complex " .. ty, TrChangeType(TrGLPc, ty), 3)
+end
+print("block complex: Transpose(G)(w,gamma) == Transpose(G(w,gamma)) for every format")
+
+-- A single valued response function is a one by one matrix and its own transpose, whatever
+-- its type and whether or not it is complex.
+local TrGS = ResponseFunction.New({{0.5,-3,-1,1},{1,0.5,0.6},mu=0,type="ListOfPoles",name="Tr single"})
+for i, ty in ipairs(TrTypes) do
+	local G = TrChangeType(TrGS, ty)
+	local Gt = ResponseFunction.Transpose(G)
+	if (Gt.type ~= G.type) then
+		error("Transpose of a single valued " .. G.type .. " returned a " .. Gt.type .. "\n",1)
+	end
+	if ((Gt == G) ~= true) then
+		error("a single valued response function is not its own transpose for " .. ty .. "\n",1)
+	end
+end
+print("single valued: a response function is its own transpose for every format")
+
+-- Everything above works with response functions that came out of a conversion, and those
+-- always have a hermitian head: A0 is hermitian and B0 comes out of CompactMatrixSqrt of a
+-- weight. For a hermitian B0 the conjugate B0^* and the transpose B0^T are the same matrix,
+-- so none of it can tell the two apart -- transposing B0 where it should be conjugated
+-- passes every check above. These are built by hand instead, with an A0 and a B0 that are
+-- neither symmetric nor hermitian, so a transpose, a conjugate and a conjugate transpose
+-- each give something different.
+
+local HA0 = Matrix.New({{1+I,0.3,0},{-0.2,2,0.4*I},{0,0.1,3}})
+local HB0 = Matrix.New({{1,0.4+0.2*I,0},{-0.3*I,1,0.2},{0.1,0,1}})
+local HAv = Matrix.New({{-2,0.1+0.2*I,0},{0.1-0.2*I,-3,0},{0,0,-4}})
+local HAc = Matrix.New({{2,0.3-0.1*I,0},{0.3+0.1*I,3,0},{0,0,4}})
+local HBv = Matrix.New({{0.7,0.1*I,0},{-0.1*I,0.6,0},{0,0,0.5}})
+local HBc = Matrix.New({{0.4,0,0},{0,0.3,0.2*I},{0,-0.2*I,0.2}})
+local HB1 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+local HH  = Matrix.New({{1,0.2*I,0},{-0.2*I,2,0},{0,0,3}})
+
+-- the two chains of a DoubleTri hold half of the onsite energy of the observed block each
+local HGv = ResponseFunction.New({ {HH,HAv,HAv}, {HBv,HB1}, mu=0, type="Tri"})
+local HGc = ResponseFunction.New({ {HH,HAc,HAc}, {HBc,HB1}, mu=0, type="Tri"})
+CheckTranspose("a hand built DoubleTri with a b0 that is not hermitian",
+               ResponseFunction.New({ {HA0,HB0}, val=HGv, con=HGc, mu=0, type="DoubleTri", name="hand d"}), 3)
+CheckTranspose("a hand built Tri with a B0 that is not hermitian",
+               ResponseFunction.New({ {HA0,HAv,HAc}, {HB0,HB1}, mu=0, type="Tri", name="hand t"}), 3)
+CheckTranspose("a hand built And with a B0 that is not hermitian",
+               ResponseFunction.New({ {HA0,HAv,HAc}, {HB0,HB1}, mu=0, type="And", name="hand a"}), 3)
+CheckTranspose("a hand built ListOfPoles with weights that are not hermitian",
+               ResponseFunction.New({ {HA0,-2,3}, {HB0,HB1}, mu=0, type="ListOfPoles", name="hand l"}), 3)
+print("a head that is not hermitian: Transpose(G)(w,gamma) == Transpose(G(w,gamma)) as well")
