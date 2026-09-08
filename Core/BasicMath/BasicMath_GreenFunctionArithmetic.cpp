@@ -1470,117 +1470,125 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
   return 0;
 }
 
-int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
+/*  The inverse of ResponseFunctionEffectiveHamiltonian: given the effective Hamiltonian
+ *  standing in a denominator, return the response function it describes,
+ *
+ *    G(w) = ( w - Heff(w) )^-1
+ *
+ *  so with A0 zero and B0 the identity. A caller that has an A0 and a B0 of its own puts
+ *  them back with G = A0 + B0^* G B0^T.
+ *
+ *  Which type G comes back as is chosen per input type by what is numerically cheapest,
+ *  or most numerically stable. (Future options can influence the method used and type
+ *  returned):
+ *
+ *    t -> t   no numerical work at all, only a shift in the data structure
+ *    l -> a   one square root per pole and nothing more
+ *    a -> a   through l
+ *    n -> a   through l
+ *    d -> a   through l
+ *
+ *  The three that need a transformation take the standard route,
+ *  ConvertResponsefunction or ConvertBlockMatrix, so that they behave exactly as ChangeType
+ *  would and take the same options.
+ *
+ *  t -> t is a shift by one block: a[0] and b[0] of Heff become a[1] and b[1] of G, and G
+ *  keeps a[0] zero and b[0] the identity. b[0] of Heff sits at the top level, where a
+ *  coupling enters as b0^* ( ) b0^T, and lands one level down in G, where it enters as
+ *  b ( ) b^+, so b[1] of G is the conjugate of b[0] of Heff.
+ *
+ *  Gout is not allocated on entry.
+ */
+int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout, double const T, double const SingularValue, double const MinimalPoleWeigth, double const MinimalPoleDistance)
 {
-  if(Gin->Block==false)
-  { // scalar response functions
-    switch (Gin->type|32)
+  ResponsefunctionType Gl;
+  bool converted = false;
+  char type = Gin->type|32;
+  if((type!='t')&&(type!='a')&&(type!='l')&&(type!='n')&&(type!='d'))
+  {
+    printf("Error in ResponseFunctionFromEffectiveHamiltonian: unrecognized type %c\n",Gin->type);
+    fflush(stdout);
+    return 1;
+  }
+  /*  SingularValue and T are a magnitude and a temperature, so a negative one cannot be
+   *  meant: Set standard values
+   */
+  double sv = (SingularValue < 0) ? 1000*DBL_EPSILON : SingularValue;
+  double kt = (T < 0) ? sqrt(DBL_MIN) : T;
+  Gout->Block = Gin->Block;
+  Gout->NSuggestedGridPoints = 0;
+  Gout->SuggestedGrid = NULL;
+  if(type=='t')
+  {
+    Gout->type = 'T';
+    if(Gin->Block==true)
     {
-      case 'a':
+      Gout->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+      if(BlockTriDiagonalMatrixFromEffectiveHamiltonian((BlockTriDiagonalMatrixType*)(Gin->data), (BlockTriDiagonalMatrixType*)(Gout->data)))
       {
-        ListOfPoles Gl;
-        AndersonMatrixToListOfPoles(*((AndersonMatrixType *)(Gin->data)), &Gl);
-        Gout->type = 'A';
-        Gout->Block = false;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
-        AndersonMatrixFromEffectiveHamiltonian( &Gl, ((AndersonMatrixType *)(Gout->data)) );
-        FreeListOfPoles(&Gl);
+        printf("BlockTriDiagonalMatrixFromEffectiveHamiltonian failed in ResponseFunctionFromEffectiveHamiltonian\n");
+        fflush(stdout);
+        free(Gout->data);
+        Gout->data = NULL;
+        return 1;
       }
-      break;
-      case 'l':
-      {
-        Gout->type = 'A';
-        Gout->Block = false;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
-        AndersonMatrixFromEffectiveHamiltonian( ((ListOfPoles*)(Gin->data)), ((AndersonMatrixType *)(Gout->data)) );
-      }
-      break;
-      case 't':
-      {
-        Gout->type = 'T';
-        Gout->Block = false;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
-        TriDiagonalMatrixFromEffectiveHamiltonian(((TriDiagonalMatrixType*)(Gin->data)), ((TriDiagonalMatrixType*)(Gout->data)));
-      }
-      break;
-      case 'n':
-      {
-        ListOfPoles Gl;
-        BADoubleTriDiagonalMatrixToListOfPoles(((BADoubleTriDiagonalMatrixType *)(Gin->data)), &Gl);
-        Gout->type = 'A';
-        Gout->Block = false;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
-        AndersonMatrixFromEffectiveHamiltonian( &Gl, ((AndersonMatrixType *)(Gout->data)) );
-        FreeListOfPoles(&Gl);
-      }
-      break;
     }
-    
+    else
+    {
+      Gout->data = malloc(sizeof(TriDiagonalMatrixType));
+      if(TriDiagonalMatrixFromEffectiveHamiltonian((TriDiagonalMatrixType*)(Gin->data), (TriDiagonalMatrixType*)(Gout->data)))
+      {
+        printf("TriDiagonalMatrixFromEffectiveHamiltonian failed in ResponseFunctionFromEffectiveHamiltonian\n");
+        fflush(stdout);
+        free(Gout->data);
+        Gout->data = NULL;
+        return 1;
+      }
+    }
+    return 0;
+  }
+  /*  everything else starts from a list of poles, whose a0 becomes the impurity block of an
+   *  Anderson matrix and whose poles become one bath block each */
+  if(type!='l')
+  {
+    if(ConvertResponsefunction(Gin, &Gl, 'L', "Default", kt, sv, MinimalPoleWeigth, MinimalPoleDistance, false, false, false))
+    {
+      printf("ConvertResponsefunction to a list of poles failed in ResponseFunctionFromEffectiveHamiltonian\n");
+      fflush(stdout);
+      return 1;
+    }
+    converted = true;
+  }
+  Gout->type = 'A';
+  if(Gin->Block==true)
+  {
+    BlockListOfPoles *Lptr = (BlockListOfPoles*)(converted ? Gl.data : Gin->data);
+    Gout->data = malloc(sizeof(BlockAndersonMatrixType));
+    if(BlockAndersonMatrixFromListOfPolesAsSelfEnergy(Lptr, (BlockAndersonMatrixType*)(Gout->data)))
+    {
+      printf("BlockAndersonMatrixFromListOfPolesAsSelfEnergy failed in ResponseFunctionFromEffectiveHamiltonian\n");
+      fflush(stdout);
+      free(Gout->data);
+      Gout->data = NULL;
+      if(converted) FreeResponsefunction(&Gl);
+      return 1;
+    }
   }
   else
-  { // block response functions
-    switch (Gin->type|32)
+  {
+    ListOfPoles *Lptr = (ListOfPoles*)(converted ? Gl.data : Gin->data);
+    Gout->data = malloc(sizeof(AndersonMatrixType));
+    if(AndersonMatrixFromEffectiveHamiltonian(Lptr, (AndersonMatrixType*)(Gout->data)))
     {
-      case 'a':
-      {
-        BlockListOfPoles Gt;
-        if(BlockAndersonMatrixToBlockListOfPoles(((BlockAndersonMatrixType *)(Gin->data)), &Gt, 1000*DBL_EPSILON, false))
-        {
-          printf("BlockAndersonMatrixToBlockListOfPoles falied in ResponseFunctionFromEffectiveHamiltonian\n");
-          return 1;
-        }
-        Gout->type = 'A';
-        Gout->Block = true;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
-        BlockAndersonMatrixFromListOfPolesAsSelfEnergy(&Gt, ((BlockAndersonMatrixType *)(Gout->data)) );
-        FreeBlockListOfPoles(&Gt);
-      }
-      break;
-      case 'l':
-      {
-        Gout->type = 'A';
-        Gout->Block = true;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
-        BlockAndersonMatrixFromListOfPolesAsSelfEnergy(((BlockListOfPoles*)(Gin->data)), ((BlockAndersonMatrixType *)(Gout->data)) );
-      }
-      break;
-      case 't':
-      {
-        Gout->type = 'T';
-        Gout->Block = true;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
-        BlockTriDiagonalMatrixFromEffectiveHamiltonian(((BlockTriDiagonalMatrixType*)(Gin->data)), ((BlockTriDiagonalMatrixType*)(Gout->data)));
-      }
-      break;
-      case 'n':
-      {
-        BlockListOfPoles Gt;
-        BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles( ((BlockNaturalImpurityOrbitalMatrixType *)(Gin->data)), &Gt, -1, false);
-        Gout->type = 'A';
-        Gout->Block = true;
-        Gout->NSuggestedGridPoints=0;
-        Gout->SuggestedGrid=NULL;
-        Gout->data = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
-        BlockAndersonMatrixFromListOfPolesAsSelfEnergy(&Gt, ((BlockAndersonMatrixType *)(Gout->data)) );
-        FreeBlockListOfPoles(&Gt);
-      }
-      break;
+      printf("AndersonMatrixFromEffectiveHamiltonian failed in ResponseFunctionFromEffectiveHamiltonian\n");
+      fflush(stdout);
+      free(Gout->data);
+      Gout->data = NULL;
+      if(converted) FreeResponsefunction(&Gl);
+      return 1;
     }
   }
+  if(converted) FreeResponsefunction(&Gl);
   return 0;
 }
 
@@ -1850,7 +1858,14 @@ int   CalculateGBathFromGandSigmaDirectSubtract(ResponsefunctionType  * const G,
     }
   }
   FreeResponsefunction(&SigmaLP);
-  ResponseFunctionFromEffectiveHamiltonian(&HeffLP, GBath);
+  if(ResponseFunctionFromEffectiveHamiltonian(&HeffLP, GBath, -DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX))
+  {
+    printf("ResponseFunctionFromEffectiveHamiltonian failed in CalculateGBathFromGandSigmaDirectSubtract\n");
+    fflush(stdout);
+    FreeResponsefunction(&HeffLP);
+    FreeResponsefunction(&SigmaLP);
+    return 1;
+  }
   FreeResponsefunction(&HeffLP);
   return 0;
 }

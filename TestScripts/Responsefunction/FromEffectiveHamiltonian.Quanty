@@ -85,3 +85,122 @@ for i=1,#GList do
 		end
 	end
 end
+
+print("Start DoubleTri, and the defining identity")
+-- FromEffectiveHamiltonian is the inverse of EffectiveHamiltonian: it returns
+-- G = ( w - Heff(w) )^-1, so with A0 zero and B0 the identity. Putting the A0 and B0 that
+-- EffectiveHamiltonian handed back in front of it has to give the original G again, and
+-- that round trip is the check here -- it does not compare one implementation against
+-- another.
+--
+-- The type G comes back as is chosen per input by what is numerically cheapest: t -> t is
+-- a shift by one block and needs no arithmetic, l -> a needs one square root per pole, and
+-- a, n and d get to l first by the standard conversion route and so come back as a.
+do
+	local CC = Complex.New
+
+	local function RoundTripScalar(name, G, a0, b0, Heff, opt)
+		local Gi
+		if opt then Gi = ResponseFunction.FromEffectiveHamiltonian(Heff, opt)
+		else        Gi = ResponseFunction.FromEffectiveHamiltonian(Heff) end
+		local worst = 0.0
+		for k = 0, 30 do
+			local w, g = -9.0 + 18.0*k/30, 0.3
+			local Gw, Iw = G(w,g), Gi(w,g)
+			local d = math.sqrt((a0 + b0*b0*Complex.Re(Iw) - Complex.Re(Gw))^2
+			                  + (      b0*b0*Complex.Im(Iw) - Complex.Im(Gw))^2)
+			if d > worst then worst = d end
+		end
+		if worst > 1E-9 then
+			error(string.format("FromEffectiveHamiltonian: a0 + b0^2 (w-Heff)^-1 is not G for %s, off by %.2e", name, worst), 1)
+		end
+		return Gi
+	end
+
+	local function RoundTripBlock(name, G, A0, B0, Heff, bs, opt)
+		local Gi
+		if opt then Gi = ResponseFunction.FromEffectiveHamiltonian(Heff, opt)
+		else        Gi = ResponseFunction.FromEffectiveHamiltonian(Heff) end
+		local worst = 0.0
+		for k = 0, 30 do
+			local w, g = -9.0 + 18.0*k/30, 0.3
+			local Gw, Iw = G(w,g), Gi(w,g)
+			for i = 1, bs do
+				for j = 1, bs do
+					local re, im = 0.0, 0.0
+					for p = 1, bs do
+						for q = 1, bs do
+							-- B0^* on the left, B0^T on the right
+							local br, bi = Complex.Re(B0[i][p]), -Complex.Im(B0[i][p])
+							local cr, ci = Complex.Re(B0[j][q]),  Complex.Im(B0[j][q])
+							local mr, mi = Complex.Re(Iw[p][q]),  Complex.Im(Iw[p][q])
+							local ar, ai = br*mr - bi*mi, br*mi + bi*mr
+							re = re + ar*cr - ai*ci
+							im = im + ar*ci + ai*cr
+						end
+					end
+					local d = math.sqrt((Complex.Re(A0[i][j]) + re - Complex.Re(Gw[i][j]))^2
+					                  + (Complex.Im(A0[i][j]) + im - Complex.Im(Gw[i][j]))^2)
+					if d > worst then worst = d end
+				end
+			end
+		end
+		if worst > 1E-9 then
+			error(string.format("FromEffectiveHamiltonian: A0 + B0^* (w-Heff)^-1 B0^T is not G for %s, off by %.2e", name, worst), 1)
+		end
+		return Gi
+	end
+
+	-- single valued, every type Heff can be held in
+	local GsL = ResponseFunction.New({{0.5,-5,-2,3},{1,2,1.5},mu=0,type="ListOfPoles",name="l"})
+	local Hs, As0, Bs0 = ResponseFunction.EffectiveHamiltonian(GsL)
+	local a0, b0 = Complex.Re(As0[1][1]), Complex.Re(Bs0[1][1])
+	for i, ty in ipairs({"Tri","And","ListOfPoles","Nat","DoubleTri"}) do
+		local Hc = ResponseFunction.ChangeType(Hs, ty, ((ty=="Nat") or (ty=="DoubleTri")) and {{"EffectivekBT",0.05}} or {})
+		local Gi = RoundTripScalar(ty, GsL, a0, b0, Hc)
+		local want = (ty=="Tri") and "Tri" or "And"
+		if Gi.type ~= want then
+			error("FromEffectiveHamiltonian: " .. ty .. " should give " .. want .. " and gives " .. Gi.type, 1)
+		end
+	end
+	print("  single valued, all five types: the round trip closes")
+
+	-- block, real and complex.  b[0] of Heff sits at the top level and lands one level down
+	-- in G, so t -> t has to conjugate it; only a complex Heff can see that.
+	for j, cx in ipairs({false, true}) do
+		local A0m = cx and Matrix.New({{1,CC(0.2,0.3)},{CC(0.2,-0.3),2}}) or Matrix.New({{1,0.2},{0.2,2}})
+		local B1m = cx and Matrix.New({{1,CC(0.1,0.4)},{CC(0.1,-0.4),2}}) or Matrix.New({{1,0.1},{0.1,2}})
+		local B2m = Matrix.New({{2,0},{0,1}})
+		local Gb = ResponseFunction.New({{A0m,-5,-2,3},{B1m,B2m,B1m},mu=0,type="ListOfPoles",name="b"})
+		local Hb, Ab0, Bb0 = ResponseFunction.EffectiveHamiltonian(Gb)
+		for i, ty in ipairs({"Tri","And","ListOfPoles","Nat","DoubleTri"}) do
+			local Hc = ResponseFunction.ChangeType(Hb, ty, ((ty=="Nat") or (ty=="DoubleTri")) and {{"EffectivekBT",0.05}} or {})
+			local Gi = RoundTripBlock((cx and "complex " or "real ") .. ty, Gb, Ab0, Bb0, Hc, 2)
+			local want = (ty=="Tri") and "Tri" or "And"
+			if Gi.type ~= want then
+				error("FromEffectiveHamiltonian: block " .. ty .. " should give " .. want .. " and gives " .. Gi.type, 1)
+			end
+		end
+		print("  block" .. (cx and ", complex" or ", real") .. ", all five types: the round trip closes")
+	end
+
+	-- the two options that reach anything are accepted, and leaving them out is the standard
+	-- value; the ones that reach nothing, and unknown ones, are refused
+	local Gb = ResponseFunction.New({{Matrix.New({{1,0.2},{0.2,2}}),-5,-2,3},
+	                                 {Matrix.New({{1,0.1},{0.1,2}}),Matrix.New({{2,0},{0,1}}),Matrix.New({{1,0.1},{0.1,2}})},
+	                                 mu=0,type="ListOfPoles",name="b"})
+	local Hb, Ab0, Bb0 = ResponseFunction.EffectiveHamiltonian(Gb)
+	local Ha = ResponseFunction.ChangeType(Hb, "And")
+	local Gd = RoundTripBlock("options unset", Gb, Ab0, Bb0, Ha, 2)
+	local Gs = RoundTripBlock("SingularValue given", Gb, Ab0, Bb0, Ha, 2, {{"SingularValue", 1000*2.220446049250313E-16}})
+	if (Gd == Gs) ~= true then
+		error("FromEffectiveHamiltonian: leaving SingularValue out is not the standard value\n", 1)
+	end
+	RoundTripBlock("MinimalPoleDistance given", Gb, Ab0, Bb0, Ha, 2, {{"MinimalPoleDistance", 1E-8}})
+	for i, n in ipairs({"MinimalPoleWeigth","Temperature","EffectivekBT","Nonsense"}) do
+		if pcall(function() return ResponseFunction.FromEffectiveHamiltonian(Ha, {{n,0.1}}) end) then
+			error("FromEffectiveHamiltonian accepted the option " .. n .. "\n", 1)
+		end
+	end
+	print("  the options behave as they do for EffectiveHamiltonian")
+end

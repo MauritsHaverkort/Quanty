@@ -969,9 +969,40 @@ static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
 static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
 {
  ResponsefunctionType *Gout,*Heff;
+ double ValueNotSet = -DBL_MAX;
+ struct
+ {
+   double SingularValue;
+   double MinimalPoleWeigth;
+   double MinimalPoleDistance;
+   double T;
+ } Options;
+ Options.SingularValue       = ValueNotSet;
+ Options.MinimalPoleWeigth   = ValueNotSet;
+ Options.MinimalPoleDistance = ValueNotSet;
+ Options.T                   = ValueNotSet;
+ /*  the a -> l cell merges on MinimalPoleDistance and the n -> l one deflates on
+  *  SingularValue; T and MinimalPoleWeigth are read by nothing on this route. */
+ LuaOptionsType LuaOptions[]={
+   {"SingularValue","double",&(Options.SingularValue)},
+//   {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+   {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+//   {"Temperature","double",&(Options.T)},
+//   {"EffectivekBT","double",&(Options.T)},
+   {NULL, NULL, NULL}};
+ uint32_t len = (uint32_t) lua_gettop(L);
+ if(LuaTestOptionsList(L, -1))
+ {
+   LuaCheckOptions(L, -1, LuaOptions);
+   len--;
+ }
+ if(len!=1) return luaL_error(L, "ResponseFunction.FromEffectiveHamiltonian called with %d arguments, one argument expected and possibly a second specifying options",len);
  Heff = luaL_checkResponsefunction(L,1);
  Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
- ResponseFunctionFromEffectiveHamiltonian(Heff, Gout);
+ if(ResponseFunctionFromEffectiveHamiltonian(Heff, Gout, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance))
+ {
+   return luaL_error(L, "Error in ResponseFunction.FromEffectiveHamiltonian()\n");
+ }
  // we give the controle of the allocation of the memory of Gout to Lua
  // turn the type to a lower case letter
  Gout->type = Gout->type | 32;
