@@ -914,11 +914,45 @@ static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
 {
   CompactMatrixType *A0,*B0;
   ResponsefunctionType *Gin,*Heff;
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+  } Options;
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T                   = ValueNotSet;
+  /*  only SingularValue and MinimalPoleDistance reach anything: l -> a deflates on the
+   *  first, d -> a and the merge of the bath poles use the second. T and MinimalPoleWeigth
+   *  are read by nothing, so they are not offered. */
+  LuaOptionsType LuaOptions[]={
+    {"SingularValue","double",&(Options.SingularValue)},
+//    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+//    {"Temperature","double",&(Options.T)},
+//    {"EffectivekBT","double",&(Options.T)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=1) return luaL_error(L, "ResponseFunction.EffectiveHamiltonian called with %d arguments, one argument expected and possibly a second specifying options",len);
   Gin = luaL_checkResponsefunction(L,1);
   Heff = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-  ResponseFunctionEffectiveHamiltonian(Gin,Heff,A0,B0);
+  if(ResponseFunctionEffectiveHamiltonian(Gin,Heff,A0,B0,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance))
+  {
+    /*  the function allocates nothing when it fails, and these three userdata have no
+     *  metatable yet, so there is no __gc to free anything: lua just unwinds them */
+    return luaL_error(L, "Error in ResponseFunction.EffectiveHamiltonian()\n");
+  }
   // we give the controle of the allocation of the memory of Heff to Lua
   // turn the type to a lower case letter
   Heff->type = Heff->type | 32;
