@@ -194,6 +194,7 @@ test-jobs-Responsefunction:
           - "CreateBitMasks"
           - "Deflation"
           - "EffectiveHamiltonian"
+          - "Eigensystem"
           - "FromEffectiveHamiltonian"
           - "GetB0"
           - "InvertEnergy"

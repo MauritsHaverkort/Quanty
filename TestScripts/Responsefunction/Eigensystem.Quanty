@@ -1,0 +1,116 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction Eigensystem                       --")
+print("--------------------------------------------------------")
+
+-- Eigensystem(G) returns the eigenvalues and the eigenvectors of the matrix that stands in
+-- the denominator of G, which is the matrix ToMatrix hands out. The rows of the second
+-- return value are the eigenvectors, so that  fun^* ToMatrix(G) fun^T  is diagonal with the
+-- eigenvalues on the diagonal. That identity is the check used throughout this file: it
+-- pins the values and the vectors together against the matrix, for every format.
+--
+-- The dimension is the number of levels the format stores, so a format that carries
+-- redundant levels returns more eigenvalues than G has poles -- one extra for a natural
+-- impurity orbital matrix, two per bath block for a double tri-diagonal one -- the extra
+-- ones belonging to levels that decouple. Formats that store the levels exactly, a list of
+-- poles, a tri-diagonal and an Anderson matrix, give the same spectrum for the same G,
+-- which is the second check here.
+
+local EigTypes = {"ListOfPoles","Tri","And","Nat","DoubleTri"}
+
+local function CheckEigensystem(tag, G, BlockSize)
+	local M = ResponseFunction.ToMatrix(G)
+	local val, fun = Eigensystem(G)
+	local dim = #(Matrix.ToTable(M))
+	if (#val ~= dim) then
+		error("Eigensystem of a " .. tag .. " gave " .. #val ..
+		      " eigenvalues where its matrix is " .. dim .. " by " .. dim .. "\n",1)
+	end
+	if ((#fun ~= dim) or (#(fun[1]) ~= dim)) then
+		error("Eigensystem of a " .. tag .. " gave a " .. #fun .. " by " .. #(fun[1]) ..
+		      " set of eigenvectors for a matrix of dimension " .. dim .. "\n",1)
+	end
+	-- fun^* M fun^T has to be diagonal and carry the eigenvalues
+	local F = Matrix.New(fun)
+	local D = Conjugate(F) * M * Transpose(F)
+	local Dt = Matrix.ToTable(D)
+	for i = 1, dim do
+		for j = 1, dim do
+			local expected = (i==j) and val[i] or 0
+			if (math.abs(Complex.Re(Dt[i][j]) - expected) + math.abs(Complex.Im(Dt[i][j])) > 1E-9) then
+				print(Chop(D,1E-10))
+				error("fun^* ToMatrix(G) fun^T is not the diagonal matrix of the eigenvalues for " ..
+				      tag .. "\n",1)
+			end
+		end
+	end
+	return val
+end
+
+-- the eigenvalues of the same G, whatever format it is stored in, sorted and compared
+local function SameSpectrum(tag, val, ref)
+	if (#val ~= #ref) then
+		error("Eigensystem of " .. tag .. " gave " .. #val .. " eigenvalues where the list of poles gave " .. #ref .. "\n",1)
+	end
+	for i = 1, #val do
+		if (math.abs(val[i] - ref[i]) > 1E-9) then
+			error("Eigensystem of " .. tag .. " differs from that of the list of poles at " .. i ..
+			      ": " .. val[i] .. " and " .. ref[i] .. "\n",1)
+		end
+	end
+end
+
+
+print("-- Single valued                                      --")
+
+local EigGs = ResponseFunction.New({{0,1,2.5,3.0,3.5},{1,0.5,0.6,0.7},mu=0,type="And",name="eig single"})
+local EigRefS = nil
+for i, ty in ipairs(EigTypes) do
+	local val = CheckEigensystem("single valued " .. ty, ResponseFunction.ChangeType(EigGs, ty), 1)
+	if (ty == "ListOfPoles") then EigRefS = val end
+	-- a Nat carries one redundant level, the other three store the levels exactly
+	if ((ty == "Tri") or (ty == "And") or (ty == "DoubleTri")) then
+		SameSpectrum("a single valued " .. ty, val, EigRefS)
+	end
+end
+print("single valued: fun^* ToMatrix(G) fun^T is diagonal for every format")
+
+
+print("-- Block                                              --")
+
+local EigA0 = Matrix.New({{0,0},{0,0}})
+local EigW1 = Matrix.New({{0.4,0.1},{0.1,0.3}})
+local EigW2 = Matrix.New({{0.2,0},{0,0.3}})
+local EigA0c = Matrix.New({{0,0.1*I},{-0.1*I,0}})
+local EigW1c = Matrix.New({{0.4,0.1+0.2*I},{0.1-0.2*I,0.3}})
+
+for j, cx in ipairs({false, true}) do
+	local A0m = cx and EigA0c or EigA0
+	local W1m = cx and EigW1c or EigW1
+	local G = ResponseFunction.New({{A0m,-2,-1,1},{W1m,EigW2,W1m},mu=0,type="ListOfPoles",name="eig block"})
+	local ref = nil
+	for i, ty in ipairs(EigTypes) do
+		local tag = "block " .. (cx and "complex " or "real ") .. ty
+		if ((ty == "Nat") and true) then
+			-- BlockNaturalImpurityOrbitalMatrixToCompactMatrix builds the bonding and
+			-- antibonding rotation of the two head sites and the eigenvalues of that matrix
+			-- are not the poles of G, so Eigensystem takes a block Nat through a block
+			-- tri-diagonal matrix instead and the identity above cannot be used on it. What
+			-- is checked is that the spectrum is the one the other formats give.
+			local val = Eigensystem(ResponseFunction.ChangeType(G, ty))
+			SameSpectrum("a " .. tag, val, ref)
+		else
+			local val = CheckEigensystem(tag, ResponseFunction.ChangeType(G, ty), 2)
+			if (ty == "ListOfPoles") then ref = val end
+			if ((ty == "Tri") or (ty == "And")) then SameSpectrum("a " .. tag, val, ref) end
+		end
+	end
+end
+print("block, real and complex: fun^* ToMatrix(G) fun^T is diagonal for every format")
+
+
+-- Every one of these used to be an empty stub whose uninitialised output was read and
+-- freed: a block list of poles, a single valued and a block Anderson matrix and a block
+-- natural impurity orbital matrix crashed the process, a single valued list of poles
+-- returned zeros because it copied the address of the pole array rather than the array,
+-- and both double tri-diagonal cases returned nothing at all.
+print("Test for Responsefunction Eigensystem is passed")

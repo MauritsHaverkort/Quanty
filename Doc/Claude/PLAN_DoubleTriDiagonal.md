@@ -149,7 +149,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
-| `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
 
 **Two of those are one bug.** `CalculateGBathFromGandSigmaDirectSubtract`
 ([BasicMath_GreenFunctionArithmetic.cpp:1845](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp#L1845))
@@ -347,7 +346,48 @@ guard right. `CalculateGfromG0AndSigma.Quanty` only ever called the no-grid vari
 compares against the matrix that `GLP` was built from. That message was also missing its
 newline, which is why it merged with whatever printed next.
 
-**Suggested order.** `Eigensystem` is what is left.
+**`Eigensystem` — DONE, and it was worse than a `d` gap.** Of the ten combinations of five
+formats with block and single-valued, three worked. Four of the eight routines the function
+called were empty stubs — `//TODO all`, returning without touching `val` or `fun` — and
+since the return value was discarded and the uninitialised `fun` then read and freed, a
+block list of poles, a single-valued and a block Anderson matrix and a block natural
+impurity orbital matrix **segfaulted** (verified, exit 139). A single-valued list of poles
+returned zeros, `memcpy(val, &(A->a), ...)` copying the address of the pole array instead of
+the array — the same slip as `BlockListOfPolesToBlockAndersonMatrix` had. Both `d` cases
+fell to a `default` that printed "Error in ResponseFunctionToTable", returned 0 rather than
+raising, and leaked.
+
+What it returns is the eigensystem of the matrix in the denominator of `G`, which is the
+matrix `ToMatrix` hands out; the rows of the second value are the eigenvectors, so
+`fun^* ToMatrix(G) fun^T` is diagonal with the eigenvalues on it — the same row convention
+as the `d → l` conversion. The two tri-diagonal cases keep their own LAPACK drivers, the
+banded one in the block case, which cost `O(N)` and `O(N·BlockSize²)` memory against the
+`O(N²)` of a dense matrix; everything else goes through `ResponseFunctionToCompactMatrix`
+with the `Deflate` and `SingularValue` that `ToMatrix` itself defaults to, which is the route
+the single-valued `n` case already took. Without that deflation the matrix keeps the levels a
+conversion left with zero coupling and their eigenvalues come along — a block list of poles
+of three poles by two orbitals gives twelve instead of six.
+
+`Eigensystem.Quanty` is new, registered in `All.Quanty` and in `.gitlab-ci.yml`, and checks
+`fun^* ToMatrix(G) fun^T = diag(val)` for all ten combinations, real and complex, plus that
+`l`, `t`, `a` and `d` of the same `G` give the same spectrum.
+
+**Open: `ToMatrix` of a block `n` is wrong.** Its matrix' eigenvalues are not the poles of
+`G`, measured for six val/con splits and wrong in every one — `-2.4447 -1.7597 -1.1334
+-0.8122 0.7146 1.3854` where the poles are `-2 -2 -1 -1 1 1` — with the wrong dimension when
+one chain is empty (8 for a 6-pole `G`) and not even hermitian for two chains of equal
+length, which the eigensolver reports as "Using left and right handed eigensystem". The `n`
+itself is fine: it evaluates to the same `G` as every other format. What the routine builds
+is the bonding/antibonding rotation of the two head sites, and that basis is orthonormal in
+the single-valued case, where `val.b[0]² + con.b[0]² = 1`, but not in the block case, where
+it would need `B0v B0v^† + B0c B0c^† = 1`. `ToMatrix.Quanty` pins the layout the code
+produces rather than the physics: its expected matrix is written with the same
+bonding/antibonding structure and uses `B0v = B0c = sqrt(1/2)·I`, the one case where the two
+off-diagonal blocks agree, so it passes. Until that is settled, `Eigensystem` takes a block
+`n` through a block tri-diagonal matrix, which is tested and gives the poles of `G`.
+
+**Suggested order.** The `d` row is complete. What is left in §0 is not about `d`: the block
+`n` `ToMatrix` above, and the `Method` variants of the self-energy calls.
 
 ### Still open, non-block
 

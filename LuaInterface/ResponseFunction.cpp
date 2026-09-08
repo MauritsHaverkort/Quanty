@@ -571,81 +571,90 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 /*
  *
  */
+/*  Pushes the eigenvalues and the eigenvectors of the matrix that stands in the denominator
+ *  of G, which is the matrix ToMatrix returns: the poles for a list of poles, a[1..N] with
+ *  its couplings for a tri-diagonal matrix, the observed site with both chains for a double
+ *  tri-diagonal one. Its dimension is the number of levels the format stores, so a format
+ *  that carries redundant levels -- a natural impurity orbital matrix one, a double
+ *  tri-diagonal one two per bath block -- returns more eigenvalues than the number of poles
+ *  of G, the extra ones belonging to levels that decouple.
+ *
+ *  A tri-diagonal matrix has its own LAPACK driver, banded in the block case, and keeps it:
+ *  it costs O(N) and O(N BlockSize^2) memory against the O(N^2) of a dense matrix, and bath
+ *  chains of a thousand sites are normal. Everything else goes through the dense matrix,
+ *  which is the route the natural impurity orbital case already took. Four of the routines
+ *  that used to be called here -- for a block list of poles, a block and a single valued
+ *  Anderson matrix and a block natural impurity orbital matrix -- were empty stubs that
+ *  returned without touching val or fun, and the uninitialised fun was then read and freed.
+ */
 static int LuaResponseFunctionEigensystem(lua_State *L)
 {
-  ResponsefunctionType *M;
+  ResponsefunctionType *M, Mt;
   double *val;
-  CompactMatrixType fun;
+  CompactMatrixType Mc, fun;
+  bool converted = false;
   M = luaL_checkResponsefunction(L,-1);
-  
-  switch(M->type)
+  /*  A block natural impurity orbital matrix is taken through a block tri-diagonal one:
+   *  BlockNaturalImpurityOrbitalMatrixToCompactMatrix builds the bonding and antibonding
+   *  rotation of the two head sites, and the eigenvalues of that matrix are not the poles
+   *  of G. The single valued natural impurity orbital matrix does not have that problem. */
+  if((M->Block==true)&&((M->type|32)=='n'))
   {
-    case 'L':
-    case 'l':
+    if(ConvertResponsefunction(M, &Mt, 'T', "Default", 0, 1000*DBL_EPSILON, 0, -1, false, false, false))
     {
-      if(M->Block==true)
-      {
-        val = (double*)malloc(((BlockListOfPoles*)M->data)->N*((BlockListOfPoles*)M->data)->BlockSize*sizeof(double));
-        BlockListOfPolesEigenSystem((BlockListOfPoles*)M->data, val, &fun);
-      }
-      else
-      {
-        val = (double*)malloc(((ListOfPoles*)M->data)->N*sizeof(double));
-        ListOfPolesToEigensystemCompact((ListOfPoles*)(M->data), val, &fun);
-      }
-      break;
+      FreeResponsefunction(M);
+      return luaL_error(L, "Error in Eigensystem: could not convert a natural impurity orbital matrix to a tri-diagonal one\n");
     }
-    case 'A':
-    case 'a':
+    converted = true;
+  }
+  if(((converted?Mt.type:M->type)|32)=='t')
+  {
+    ResponsefunctionType *T = converted ? &Mt : M;
+    if(T->Block==true)
     {
-      if(M->Block==true)
+      val = (double*)malloc(((BlockTriDiagonalMatrixType*)T->data)->N*((BlockTriDiagonalMatrixType*)T->data)->BlockSize*sizeof(double));
+      if(val==NULL || BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)T->data, val, &fun))
       {
-        val = (double*)malloc(((BlockAndersonMatrixType*)M->data)->N*((BlockAndersonMatrixType*)M->data)->BlockSize*sizeof(double));
-        BlockAndersonMatrixEigenSystem((BlockAndersonMatrixType*)M->data, val, &fun);
+        free(val);
+        if(converted) FreeResponsefunction(&Mt);
+        FreeResponsefunction(M);
+        return luaL_error(L, "Error in Eigensystem: BlockTriDiagonalMatrixEigenSystem failed\n");
       }
-      else
-      {
-        val = (double*)malloc(((AndersonMatrixType*)M->data)->N*sizeof(double));
-        AndersonMatrixToEigenSystemCompact((AndersonMatrixType*)M->data, val, &fun);
-      }
-      break;
     }
-    case 'T':
-    case 't':
+    else
     {
-      if(M->Block==true)
+      val = (double*)malloc(((TriDiagonalMatrixType*)T->data)->N*sizeof(double));
+      if(val==NULL || TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)T->data, val, &fun))
       {
-        val = (double*)malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
-        BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun);
+        free(val);
+        FreeResponsefunction(M);
+        return luaL_error(L, "Error in Eigensystem: TriDiagonalMatrixToEigensystemCompact failed\n");
       }
-      else
-      {
-        val = (double*)malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
-        TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)M->data, val, &fun);
-      }
-      break;
-    }
-    case 'N':
-    case 'n':
-    {
-      if(M->Block==true)
-      {
-        val = (double*)malloc((((BlockNaturalImpurityOrbitalMatrixType*)M->data)->val.N+ ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->con.N )*((BlockNaturalImpurityOrbitalMatrixType*)M->data)->BlockSize*sizeof(double));
-        BlockNaturalImpurityOrbitalMatrixEigenSystem((BlockNaturalImpurityOrbitalMatrixType*)M->data, val, &fun);
-      }
-      else
-      {
-        val = (double*)malloc((((BADoubleTriDiagonalMatrixType*)M->data)->val.N+((BADoubleTriDiagonalMatrixType*)M->data)->con.N+1)*sizeof(double));
-        BADoubleTriDiagonalMatrixTypeToEigenSystemCompact((BADoubleTriDiagonalMatrixType*)M->data, val, &fun);
-      }
-      break;
-    }
-    default:
-    {
-      printf("Error in ResponseFunctionToTable: unrecognized type %c\n",M->type);
-      return 0;
     }
   }
+  else
+  {
+    /*  the same Deflate and SingularValue that ToMatrix defaults to, so that the
+     *  eigenvalues are those of the matrix ToMatrix hands out. Without deflation the
+     *  matrix keeps the levels that a conversion left with zero coupling and their
+     *  eigenvalues come along -- a block list of poles of three poles by two orbitals
+     *  gives twelve of them where six are the poles of G. */
+    if(ResponseFunctionToCompactMatrix(M, &Mc, true, DBL_EPSILON))
+    {
+      FreeResponsefunction(M);
+      return luaL_error(L, "Error in Eigensystem: no matrix representation of a response function of type %c\n", M->type);
+    }
+    val = (double*)malloc(Mc.Ni*sizeof(double));
+    if(val==NULL || CompactMatrixEigensystem(&Mc, &fun, val))
+    {
+      free(val);
+      FreeCompactMatrix(&Mc);
+      FreeResponsefunction(M);
+      return luaL_error(L, "Error in Eigensystem: CompactMatrixEigensystem failed\n");
+    }
+    FreeCompactMatrix(&Mc);
+  }
+  if(converted) FreeResponsefunction(&Mt);
   LuaPushArray_double(L, val, fun.Ni);
   LuaPushTable_CompactMatrixType(L, &fun);
   FreeResponsefunction(M);
