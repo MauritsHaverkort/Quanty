@@ -484,7 +484,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
  *  into the rotated function. The 0 of the other three is what they have always passed and
  *  is left alone here.
  */
-int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot, double const T, double const SingularValue, double const MinimalPoleWeigth)
+int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot, double const T, double const SingularValue, double const MinimalPoleWeigth, const double MinimalPoleDistance)
 {
   GRot->type  = G->type;
   GRot->Block = G->Block;
@@ -574,8 +574,8 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 't': // original tri-diagonal
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, 0, false, false, false);
-      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance);
       FreeResponsefunction(&Gp);
       return 0;
     }
@@ -583,8 +583,8 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'a': // original anderson matrix
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, 0, false, false, false);
-      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance);
       FreeResponsefunction(&Gp);
       return 0;
     }
@@ -592,33 +592,22 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'n': // original natural impurity orbitals
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, 0, false, false, false);
-      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance);
       FreeResponsefunction(&Gp);
       return 0;
     }
     break;
     case 'd': // original double tri-diagonal
     {
-      /*  as the three above: a rotation acts on the weights of the poles, so the way to
-       *  every other type is through the list of poles. The result is a list of poles and
-       *  not a d, which is what the other types do too.
-       *
-       *  MinimalPoleDistance is -1 here and not the 0 the others pass. Zero merges nothing
-       *  at all, the test inside the merge being a strict <, and d -> l is the one route in
-       *  this switch whose conversion merges: leaving it at zero would carry the arbitrary
-       *  eigenbasis inside a degenerate group of poles into the rotated function. A
-       *  negative value asks BlockListOfPolesMergeDegeneratePoles for its standard value,
-       *  which is the one place that decides it.
-       */
       ResponsefunctionType Gp;
-      if(ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, -1, false, false, false))
+      if(ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false))
       {
         printf("ConvertBlockMatrix to a list of poles failed in BlockResponseFunctionRotate\n");
         fflush(stdout);
         return 1;
       }
-      if(BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth))
+      if(BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance))
       {
         printf("BlockResponseFunctionRotate failed on the list of poles in BlockResponseFunctionRotate\n");
         fflush(stdout);

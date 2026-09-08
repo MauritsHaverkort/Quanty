@@ -188,23 +188,19 @@ print("a rotation of the wrong shape is refused: ok")
 ---- Options ----
 -----------------
 
--- Rotate takes SingularValue, MinimalPoleWeigth and Temperature, the last also spelled
+-- Rotate takes SingularValue, MinimalPoleWeigth, MinimalPoleDistance and Temperature, the last also spelled
 -- EffectivekBT, and forwards them to the conversion to a list of poles that every rotation
 -- of a non pole type goes through.
---
--- None of them changes an answer today, and that is a statement about the conversions and
--- not about Rotate: the five "to a list of poles" cells of ConvertBlockMatrix read only
--- MinimalPoleDistance and relativeDistance, and MinimalPoleWeigth is read nowhere in the
--- tree at all. They are threaded so the option lives where it belongs. What is asserted
--- here is that they are accepted and that the rotation is still right, which stays true if
--- one of them is ever made live; the printout says whether they move the answer.
 
 local Uopt = {{sqrt(1/2),sqrt(1/2),0},{sqrt(1/2),-sqrt(1/2),0},{0,0,1}}
 local GDopt = ResponseFunction.ChangeType(GLP, "DoubleTri", {{"EffectivekBT", 0.05}})
 local Gbase = ResponseFunction.Rotate(GDopt, Uopt)
 local moved = false
-for i, o in ipairs({ {{"SingularValue",1E-6}}, {{"MinimalPoleWeigth",1E-8}},
-                     {{"Temperature",0.1}}, {{"EffectivekBT",0.1}},
+for i, o in ipairs({ {{"SingularValue",1E-6}},
+									   {{"MinimalPoleWeigth",1E-8}},
+									   {{"MinimalPoleDistance",1E-8}},
+                     {{"Temperature",0.1}},
+									   {{"EffectivekBT",0.1}},
                      {{"SingularValue",1E-6},{"MinimalPoleWeigth",1E-8},{"Temperature",0.1}} }) do
 	local names = {}
 	for k, v in ipairs(o) do names[#names+1] = v[1] end
@@ -223,7 +219,7 @@ end
 if moved then
 	print("Rotate options: accepted, and at least one of them moves the answer")
 else
-	print("Rotate options: accepted, none of them moves the answer yet")
+	print("Rotate options: accepted, none of them chagnes the answer")
 end
 
 -- an option that does not exist has to be refused rather than ignored, and the argument
