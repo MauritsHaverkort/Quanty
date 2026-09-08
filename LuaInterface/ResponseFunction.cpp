@@ -3295,9 +3295,8 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
 {
   TightBindingDef *TB;
   ResponsefunctionType *M;
-  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
-  luaL_setmetatable(L, "TightBinding_Type");
   M = luaL_checkResponsefunction(L,1);
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
   switch(M->type)
   {
     case 'L':
@@ -3363,6 +3362,7 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
     }
   }
   FreeResponsefunctionIncludingOriginalPointer(M);
+  luaL_setmetatable(L, "TightBinding_Type");
   return 1;
 }
 
