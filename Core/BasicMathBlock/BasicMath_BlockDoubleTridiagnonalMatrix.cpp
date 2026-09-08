@@ -15,7 +15,7 @@
  *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
  *
  *   The Green's function representation is
- *   G(w) = a0 + b0 * 1/(w - av0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bv0 - bc0 * 1/(w - ac1 - bc1 (...) bv1) * bc0
+ *   G(w) = a0 + b0 * 1/(w - avc0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bc0 * 1/(w - ac1 - bc1 (...) bc1) * bc0) * b0
  *   G(w) = a0 + b0 * 1/(w - Gval(w) - Gcon(w) ) b0
  *
  */
@@ -49,15 +49,109 @@ uint32_t FreeBlockDoubleTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType *cons
   return 0;
 }
 
-uint32_t BlockDoubleTriDiagonalMatrixChop(BlockDoubleTriDiagonalMatrixType *const A, double const Epsilon)
+/*  QComplex of an object whose parts can each be real or complex: 0 all four real,
+ *  1 all four complex, 2 a mixture. Same convention as SetQComplexOperator and as the
+ *  lua reader of this type.
+ *
+ *  A chop can demote one part and not another -- CompactMatrixChop and
+ *  BlockTridiagonalMatrixChop each call their own ...ToReal when nothing imaginary
+ *  survives -- so after chopping, the container cannot hold a single answer any more.
+ *  2 says "ask each part". Every consumer of this type does: Evaluate, Copy, ToSpectra,
+ *  ToCompactMatrix and the lua pusher all go through EvaluateBlockTriDiagonalMatrix,
+ *  CopyBlockTridiagonalMatrix and the CompactMatrix routines, each of which reads the
+ *  QComplex of the operand it is handed. The only place that reads the container's own
+ *  flag is ResponseFunctionGetA0, which narrows it with a != 0 test and so treats a
+ *  mixture as complex -- conservative and correct.
+ */
+uint32_t SetBlockDoubleTriDiagonalMatrixQComplex(BlockDoubleTriDiagonalMatrixType *const A)
 {
-  //TODO:
+  uint32_t ncomplex = (A->val.QComplex!=0) + (A->con.QComplex!=0) + (A->a0.QComplex!=0) + (A->b0.QComplex!=0);
+  if(ncomplex==0)      A->QComplex = 0;
+  else if(ncomplex==4) A->QComplex = 1;
+  else                 A->QComplex = 2;
   return 0;
 }
 
+/*  true if the chop left nothing of b0 at all */
+bool BlockDoubleTriDiagonalMatrixB0IsZero(BlockDoubleTriDiagonalMatrixType const *const A)
+{
+  uint32_t i;
+  for(i=0;i<A->b0.Ni*A->b0.Nj;i++)
+  {
+    if(A->b0.QComplex)
+    {
+      if((A->b0.V[i].Re!=0)||(A->b0.V[i].Im!=0)) return false;
+    }
+    else
+    {
+      if(A->b0.VRe[i]!=0) return false;
+    }
+  }
+  return true;
+}
+
+/*  set elements with an absolute value smaller than Epsilon to zero, keeping the
+ *  dimensions. The two chains are ordinary block tri-diagonal matrices and a0 and b0 are
+ *  ordinary compact matrices, so all four are chopped by their own routine; each of those
+ *  demotes its own storage to real if nothing imaginary is left, which is why QComplex
+ *  has to be recomputed afterwards and may come out mixed.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixChop(BlockDoubleTriDiagonalMatrixType *const A, double const Epsilon)
+{
+  if(BlockTridiagonalMatrixChop(&(A->val), Epsilon))
+  {
+    printf("BlockTridiagonalMatrixChop failed for val in BlockDoubleTriDiagonalMatrixChop\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockTridiagonalMatrixChop(&(A->con), Epsilon))
+  {
+    printf("BlockTridiagonalMatrixChop failed for con in BlockDoubleTriDiagonalMatrixChop\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(CompactMatrixChop(&(A->a0), Epsilon) || CompactMatrixChop(&(A->b0), Epsilon))
+  {
+    printf("CompactMatrixChop failed in BlockDoubleTriDiagonalMatrixChop\n");
+    fflush(stdout);
+    return 1;
+  }
+  SetBlockDoubleTriDiagonalMatrixQComplex(A);
+  return 0;
+}
+
+/*  as above, and shorten what a chopped hopping has disconnected. The three ways a
+ *  dimension collapses are the ones the scalar type has, see
+ *  DoubleTriDiagonalMatrixChopReduceDimension: a chain cut at a small b, a branch
+ *  disconnected by a small b[0], and a b0 chopped away entirely, which leaves G(w) = a0
+ *  with no matrix behind it and so no chains either.
+ */
 uint32_t BlockDoubleTriDiagonalMatrixChopReduceDimension(BlockDoubleTriDiagonalMatrixType *const A, double const Epsilon)
 {
-  //TODO:
+  if(BlockTridiagonalMatrixChopReduceDimension(&(A->val), Epsilon))
+  {
+    printf("BlockTridiagonalMatrixChopReduceDimension failed for val in BlockDoubleTriDiagonalMatrixChopReduceDimension\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockTridiagonalMatrixChopReduceDimension(&(A->con), Epsilon))
+  {
+    printf("BlockTridiagonalMatrixChopReduceDimension failed for con in BlockDoubleTriDiagonalMatrixChopReduceDimension\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(CompactMatrixChop(&(A->a0), Epsilon) || CompactMatrixChop(&(A->b0), Epsilon))
+  {
+    printf("CompactMatrixChop failed in BlockDoubleTriDiagonalMatrixChopReduceDimension\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockDoubleTriDiagonalMatrixB0IsZero(A))
+  {
+    A->val.N = 0;
+    A->con.N = 0;
+  }
+  SetBlockDoubleTriDiagonalMatrixQComplex(A);
   return 0;
 }
 

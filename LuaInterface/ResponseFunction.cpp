@@ -20,7 +20,7 @@
  *   change between representation as table or usertype (table capital, user data small)
  *   parameters on lua stack (responsefunction, typedef)
  *   typedef being a string of the form:
- *   Tri, And, ListOfPoles, NaturalImpurityOrbital, Userdata, Table, Dense
+ *   Tri, And, ListOfPoles, NaturalImpurityOrbital, DoubleTri, Userdata, Table, Dense
  *
  *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
  *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
@@ -31,14 +31,37 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   ResponsefunctionType *Min, Mout;
   char const * convert;
   char type;
-  double T=sqrt(DBL_MIN);
-  double SingularValue=1000*DBL_EPSILON;
-  bool deflate=false;
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    char * Method;
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+    bool deflate;
+    bool relativeDistance;
+    bool relativeWeigth;
+  } Options;
+  // Standard values
+  Options.Method = (char*)"Default";
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T = ValueNotSet;
+  Options.deflate=false;
+  Options.relativeDistance=false;
+  Options.relativeWeigth=false;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaChangeTypeResponseFunctionOptions[]={
-    {"SingularValue","double",&(SingularValue)},
-    {"EffectivekBT","double",&(T)},
-    {"Deflate","bool",&deflate},
+    {"Method","char*",&(Options.Method)},
+    {"SingularValue","double",&(Options.SingularValue)},
+    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+    {"EffectivekBT","double",&(Options.T)},
+    {"Deflate","bool",&(Options.deflate)},
+    {"relativeDistance","bool",&(Options.relativeDistance)},
+    {"relativeWeigth","bool",&(Options.relativeWeigth)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L,-1)==1)
   {
@@ -46,65 +69,109 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     len=len-1;
   }
   if(len!=2) return luaL_error(L, "Error in ChangeType expected 2 arguments and possible a third arguments specifing options, not %d\n",len);
+  /*  A relative pole distance is not implemented in BlockListOfPolesMergeDegeneratePoles
+   *  yet, so refuse it here rather than let a conversion fail somewhere deep inside. */
+  if(Options.relativeDistance==true) return luaL_error(L, "Error in ChangeType: relativeDistance is not implemented\n");
+  if(Options.relativeWeigth==true) return luaL_error(L, "Error in ChangeType: relativeWeigth is not implemented\n");
   Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
+  // select the type and do the conversion
   if(strcmp(convert, "Dense")==0)
   {
-    // Dense versions of response functions return 3 matrices, The response function, A0 and B0
-    // check if we push table or userdata type
-    if(Min->type<94)
-    { // upercase push table on stack
-      CompactMatrixType MCompactOut,A0,B0;
-      ResponseFunctionToCompactMatrix(Min, &MCompactOut, deflate, SingularValue);
-      LuaPushTable_CompactMatrixType(L, &MCompactOut);
-      FreeCompactMatrix(&MCompactOut);
-      if(Min->Block==true)
-      {
-        BlockResponseFunctionGetA0(Min, &A0);
-        LuaPushTable_CompactMatrixType(L, &A0);
-        FreeCompactMatrix(&A0);
-        BlockResponseFunctionGetB0(Min, &B0);
-        LuaPushTable_CompactMatrixType(L, &B0);
-        FreeCompactMatrix(&B0);
-        FreeResponsefunction(Min);
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      // set standard values for options
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;
+      // Dense versions of response functions return 3 matrices, The response function, A0 and B0
+      // check if we push table or userdata type
+      if(Min->type<94)
+      { // upercase push table on stack
+        CompactMatrixType MCompactOut,A0,B0;
+        if(ResponseFunctionToCompactMatrix(Min, &MCompactOut, Options.deflate, Options.SingularValue))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
+        }
+        LuaPushTable_CompactMatrixType(L, &MCompactOut);
+        FreeCompactMatrix(&MCompactOut);
+        if(Min->Block==true)
+        {
+          if(BlockResponseFunctionGetA0(Min, &A0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+          }
+          LuaPushTable_CompactMatrixType(L, &A0);
+          FreeCompactMatrix(&A0);
+          if(BlockResponseFunctionGetB0(Min, &B0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+          }
+          LuaPushTable_CompactMatrixType(L, &B0);
+          FreeCompactMatrix(&B0);
+          FreeResponsefunction(Min);
+        }
+        else
+        {
+          double a0,b0;
+          if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+          }
+          lua_pushnumber(L, a0);
+          lua_pushnumber(L, b0);
+        }
       }
       else
-      {
-        double a0,b0;
-        ResponseFunctionGetA0(Min, &a0);
-        ResponseFunctionGetB0(Min, &b0);
-        lua_pushnumber(L, a0);
-        lua_pushnumber(L, b0);
-      }
-    }
-    else
-    { // lowercase push userdata on stack
-      CompactMatrixType *MCompactOut,*A0,*B0;
-      MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-      luaL_setmetatable(L, "Matrix_Type");
-      ResponseFunctionToCompactMatrix(Min, MCompactOut, deflate, SingularValue);
-      MCompactOut->OnLuaStack=true;
-      if(Min->Block==true)
-      {
-        A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+      { // lowercase push userdata on stack
+        CompactMatrixType *MCompactOut,*A0,*B0;
+        MCompactOut = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
         luaL_setmetatable(L, "Matrix_Type");
-        BlockResponseFunctionGetA0(Min, A0);
-        A0->OnLuaStack=true;
-        B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-        luaL_setmetatable(L, "Matrix_Type");
-        BlockResponseFunctionGetB0(Min, B0);
-        B0->OnLuaStack=true;
+        /*  Set the fresh user data to an empty matrix before it is filled. If the call below
+         *  fails we leave through a lua error and the garbage collector will still run
+         *  FreeCompactMatrix on this user data, which frees Name and V. With both NULL that is
+         *  a no-op, on the uninitiallized struct it would free two arbitrary pointers.
+         */
+        SetCompactMatrixEmpty(MCompactOut);
+        if(ResponseFunctionToCompactMatrix(Min, MCompactOut, Options.deflate, Options.SingularValue))
+        {
+          return luaL_error(L, "Error in ChangeType(\"Dense\"): can not convert a response function of type %c to a dense matrix\n",Min->type);
+        }
+        MCompactOut->OnLuaStack=true;
+        if(Min->Block==true)
+        {
+          A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+          luaL_setmetatable(L, "Matrix_Type");
+          SetCompactMatrixEmpty(A0);
+          if(BlockResponseFunctionGetA0(Min, A0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read A0 of a response function of type %c\n",Min->type);
+          }
+          A0->OnLuaStack=true;
+          B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+          luaL_setmetatable(L, "Matrix_Type");
+          SetCompactMatrixEmpty(B0);
+          if(BlockResponseFunctionGetB0(Min, B0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read B0 of a response function of type %c\n",Min->type);
+          }
+          B0->OnLuaStack=true;
+        }
+        else
+        {
+          double a0,b0;
+          if(ResponseFunctionGetA0(Min, &a0) || ResponseFunctionGetB0(Min, &b0))
+          {
+            return luaL_error(L, "Error in ChangeType(\"Dense\"): can not read a0 and b0 of a response function of type %c\n",Min->type);
+          }
+          lua_pushnumber(L, a0);
+          lua_pushnumber(L, b0);
+        }
       }
-      else
-      {
-        double a0,b0;
-        ResponseFunctionGetA0(Min, &a0);
-        ResponseFunctionGetB0(Min, &b0);
-        lua_pushnumber(L, a0);
-        lua_pushnumber(L, b0);
-      }
+      return 3;
     }
-    return 3;
+    else // options selection
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Dense",Options.Method);
+    }
   }
   else if(strcmp(convert, "Tri")==0)
   {
@@ -122,6 +189,10 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   {
     type='N'|(32&Min->type);
   }
+  else if((strcmp(convert, "DoubleTri")==0)||(strcmp(convert, "DTri")==0))
+  {
+    type='D'|(32&Min->type);
+  }
   else if(strcmp(convert, "Userdata")==0)
   {
     type=(32)|Min->type; // to lower case
@@ -132,9 +203,112 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"Userdata\", \"Table\" and not %s\n",convert);
+    return luaL_error(L, "Error in ChangeType, second argument needs to be a string containgin either: \"And\", \"Tri\", \"ListOfPoles\", \"NaturalImpurityOrbital\", \"Nat\", \"DoubleTri\", \"DTri\", \"Userdata\", \"Table\" and not %s\n",convert);
   }
-  ConvertResponsefunction(Min, &Mout, type, T, SingularValue);
+  // test if options are valid and set standard values
+  if(strcmp(convert, "Tri")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth for conversion to Tri\n",Options.Method);
+
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT for conversion to Tri\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Tri\n",Options.Method);
+    }
+  }
+  else if(strcmp(convert, "And")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth for conversion to And\n",Options.Method);
+
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT for conversion to And\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to And\n",Options.Method);
+    }
+  }
+  else if((strcmp(convert, "ListOfPoles")==0)||(strcmp(convert, "LP")==0))
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth for conversion to ListOfPoles\n",Options.Method);
+
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT for conversion to ListOfPoles\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to ListOfPoles\n",Options.Method);
+    }
+  }
+  else if((strcmp(convert, "NaturalImpurityOrbital")==0)||(strcmp(convert, "Nat")==0))
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.T==ValueNotSet) Options.T = sqrt(DBL_MIN);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to NaturalImpurityOrbital\n",Options.Method);
+    }
+  }
+  else if((strcmp(convert, "DoubleTri")==0)||(strcmp(convert, "DTri")==0))
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue==ValueNotSet) Options.SingularValue=1000*DBL_EPSILON;;
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.T==ValueNotSet) Options.T = sqrt(DBL_MIN);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to DoubleTri\n",Options.Method);
+    }
+  }
+  else if(strcmp(convert, "Userdata")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport SingularValue\n",Options.Method);
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Userdata\n",Options.Method);
+    }
+  }
+  else if(strcmp(convert, "Table")==0)
+  {
+    if(strcmp(Options.Method, "Default")==0)
+    {
+      if(Options.SingularValue!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport SingularValue\n",Options.Method);
+      if(Options.MinimalPoleWeigth!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleWeigth\n",Options.Method);
+      if(Options.MinimalPoleDistance!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport MinimalPoleDistance\n",Options.Method);
+      if(Options.T!=ValueNotSet) return luaL_error(L, "Error in ChangeType Method \" %s \" Does not suport EffectivekBT\n",Options.Method);
+    }
+    else
+    {
+      return luaL_error(L, "Error in ChangeType Method \" %s \" not implemented for transformation to Table\n",Options.Method);
+    }
+  }
+  
+  if(ConvertResponsefunction(Min, &Mout, type, Options.Method, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance, Options.deflate, Options.relativeDistance, Options.relativeWeigth))
+  {
+    char typein=Min->type;
+    FreeResponsefunction(Min);
+    return luaL_error(L, "Error in ChangeType, the conversion of a response function of type %c to type %c is not implemented\n",typein,type);
+  }
   LuaPush_ResponseFunction(L, &Mout);
   FreeResponsefunction(&Mout);
   FreeResponsefunction(Min);
@@ -224,6 +398,19 @@ static int LuaResponseFunctionToTable(lua_State *L)
       }
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      if(M->Block==true)
+      {
+        LuaPushTable_BlockDoubleTriDiagonal(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_DoubleTriDiagonal(L, M->data);
+      }
+      break;
+    }
     default:
     {
       printf("Error in ResponseFunctionToTable: unrecognized type %c\n",M->type);
@@ -252,7 +439,7 @@ static int LuaReducePolesResponseFunction(lua_State *L)
     if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
     Nredcon = (int)lua_tointeger(L, 3);
   }
-  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(M->Block==true)
   {
     if(len==2)
@@ -300,7 +487,7 @@ static int LuaMergePolesInIntervalResponseFunction(lua_State *L)
   Emax=(double)luaL_checknumber(L, 3);
   
   
-  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(MRed.Block==true)
   {
     MergeBlockListOfPolesInInterval((BlockListOfPoles *)MRed.data, Emin,  Emax);
@@ -331,7 +518,7 @@ static int LuaRemovePolesInIntervalResponseFunction(lua_State *L)
   Emin=(double)luaL_checknumber(L, 2);
   if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in RemovePolesInInterval: 3rd argument should be the Emax.\n");
   Emax=(double)luaL_checknumber(L, 3);
-  ConvertResponsefunction(M, &MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(MRed.Block==true)
   {
     RemoveBlockListOfPolesInInterval((BlockListOfPoles *)MRed.data, Emin,  Emax);
@@ -362,7 +549,7 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
   M = luaL_checkResponsefunction(L,1);
   mesh = luaL_checkarray_double(L, 2, &NE);
   MRed = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
-  ConvertResponsefunction(M, MRed, 'l', 0, 0);
+  ConvertResponsefunction(M, MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(MRed->Block==true)
   {
     BlockListOfPolesPlaceOnMesh((BlockListOfPoles*)MRed->data, mesh, NE);
@@ -384,80 +571,72 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
 /*
  *
  */
+/*  Pushes the eigenvalues and the eigenvectors of the matrix that stands in the denominator
+ *  of G, which is the matrix ToMatrix returns: the poles for a list of poles, a[1..N] with
+ *  its couplings for a tri-diagonal matrix, the observed site with both chains for a double
+ *  tri-diagonal one. Its dimension is the number of levels the format stores, so a format
+ *  that carries redundant levels -- a natural impurity orbital matrix one, a double
+ *  tri-diagonal one two per bath block -- returns more eigenvalues than the number of poles
+ *  of G, the extra ones belonging to levels that decouple.
+ *
+ *  A tri-diagonal matrix has its own LAPACK driver, banded in the block case, and keeps it:
+ *  it costs O(N) and O(N BlockSize^2) memory against the O(N^2) of a dense matrix, and bath
+ *  chains of a thousand sites are normal. Everything else goes through the dense matrix,
+ *  which is the route the natural impurity orbital case already took. Four of the routines
+ *  that used to be called here -- for a block list of poles, a block and a single valued
+ *  Anderson matrix and a block natural impurity orbital matrix -- were empty stubs that
+ *  returned without touching val or fun, and the uninitialised fun was then read and freed.
+ */
 static int LuaResponseFunctionEigensystem(lua_State *L)
 {
   ResponsefunctionType *M;
   double *val;
-  CompactMatrixType fun;
+  CompactMatrixType Mc, fun;
   M = luaL_checkResponsefunction(L,-1);
-  
-  switch(M->type)
+  if((M->type|32)=='t')
   {
-    case 'L':
-    case 'l':
+    if(M->Block==true)
     {
-      if(M->Block==true)
+      val = (double*)malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
+      if(val==NULL || BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun))
       {
-        val = (double*)malloc(((BlockListOfPoles*)M->data)->N*((BlockListOfPoles*)M->data)->BlockSize*sizeof(double));
-        BlockListOfPolesEigenSystem((BlockListOfPoles*)M->data, val, &fun);
+        free(val);
+        FreeResponsefunction(M);
+        return luaL_error(L, "Error in Eigensystem: BlockTriDiagonalMatrixEigenSystem failed\n");
       }
-      else
-      {
-        val = (double*)malloc(((ListOfPoles*)M->data)->N*sizeof(double));
-        ListOfPolesToEigensystemCompact((ListOfPoles*)(M->data), val, &fun);
-      }
-      break;
     }
-    case 'A':
-    case 'a':
+    else
     {
-      if(M->Block==true)
+      val = (double*)malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
+      if(val==NULL || TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)M->data, val, &fun))
       {
-        val = (double*)malloc(((BlockAndersonMatrixType*)M->data)->N*((BlockAndersonMatrixType*)M->data)->BlockSize*sizeof(double));
-        BlockAndersonMatrixEigenSystem((BlockAndersonMatrixType*)M->data, val, &fun);
+        free(val);
+        FreeResponsefunction(M);
+        return luaL_error(L, "Error in Eigensystem: TriDiagonalMatrixToEigensystemCompact failed\n");
       }
-      else
-      {
-        val = (double*)malloc(((AndersonMatrixType*)M->data)->N*sizeof(double));
-        AndersonMatrixToEigenSystemCompact((AndersonMatrixType*)M->data, val, &fun);
-      }
-      break;
     }
-    case 'T':
-    case 't':
+  }
+  else
+  {
+    /*  the same Deflate and SingularValue that ToMatrix defaults to, so that the
+     *  eigenvalues are those of the matrix ToMatrix hands out. Without deflation the
+     *  matrix keeps the levels that a conversion left with zero coupling and their
+     *  eigenvalues come along -- a block list of poles of three poles by two orbitals
+     *  gives twelve of them where six are the poles of G. */
+    if(ResponseFunctionToCompactMatrix(M, &Mc, true, DBL_EPSILON))
     {
-      if(M->Block==true)
-      {
-        val = (double*)malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
-        BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun);
-      }
-      else
-      {
-        val = (double*)malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
-        TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)M->data, val, &fun);
-      }
-      break;
+      FreeResponsefunction(M);
+      return luaL_error(L, "Error in Eigensystem: no matrix representation of a response function of type %c\n", M->type);
     }
-    case 'N':
-    case 'n':
+    val = (double*)malloc(Mc.Ni*sizeof(double));
+    if(val==NULL || CompactMatrixEigensystem(&Mc, &fun, val))
     {
-      if(M->Block==true)
-      {
-        val = (double*)malloc((((BlockNaturalImpurityOrbitalMatrixType*)M->data)->val.N+ ((BlockNaturalImpurityOrbitalMatrixType*)M->data)->con.N )*((BlockNaturalImpurityOrbitalMatrixType*)M->data)->BlockSize*sizeof(double));
-        BlockNaturalImpurityOrbitalMatrixEigenSystem((BlockNaturalImpurityOrbitalMatrixType*)M->data, val, &fun);
-      }
-      else
-      {
-        val = (double*)malloc((((BADoubleTriDiagonalMatrixType*)M->data)->val.N+((BADoubleTriDiagonalMatrixType*)M->data)->con.N+1)*sizeof(double));
-        BADoubleTriDiagonalMatrixTypeToEigenSystemCompact((BADoubleTriDiagonalMatrixType*)M->data, val, &fun);
-      }
-      break;
+      free(val);
+      FreeCompactMatrix(&Mc);
+      FreeResponsefunction(M);
+      return luaL_error(L, "Error in Eigensystem: CompactMatrixEigensystem failed\n");
     }
-    default:
-    {
-      printf("Error in ResponseFunctionToTable: unrecognized type %c\n",M->type);
-      return 0;
-    }
+    FreeCompactMatrix(&Mc);
   }
   LuaPushArray_double(L, val, fun.Ni);
   LuaPushTable_CompactMatrixType(L, &fun);
@@ -688,14 +867,20 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
 
 
 
-/*  G(mu+w) -> -G(mu-w)^*
- *
+/*  G(mu+w) -> -G(mu-w)^*, applied to the pole part of G only: with G = A0 + P(w), where
+ *  A0 is the constant term and P vanishes at infinity, the result is A0 - P(2 mu - w)^+.
+ *  The constant stays where it is, so the line above holds as it stands for A0 = 0.
  */
 static int LuaResponseFunctionInvertEnergy(lua_State *L)
 {
   ResponsefunctionType *Gin,Gout;
   Gin = luaL_checkResponsefunction(L,1);
-  ResponseFunctionInvertEnergy(Gin,&Gout);
+  if(ResponseFunctionInvertEnergy(Gin,&Gout))
+  {
+    FreeResponsefunction(Gin);
+    FreeResponsefunction(&Gout);
+    return luaL_error(L, "Error inverting the energy of a response function\n");
+  }
   LuaPush_ResponseFunction(L, &Gout);
   FreeResponsefunction(Gin);
   FreeResponsefunction(&Gout);
@@ -711,7 +896,12 @@ static int LuaResponseFunctionTranspose(lua_State *L)
 {
   ResponsefunctionType *Gin,Gout;
   Gin = luaL_checkResponsefunction(L,1);
-  ResponseFunctionTranspose(Gin,&Gout);
+  if(ResponseFunctionTranspose(Gin,&Gout))
+  {
+    FreeResponsefunction(Gin);
+    FreeResponsefunction(&Gout);
+    return luaL_error(L, "Error transposing a response function\n");
+  }
   LuaPush_ResponseFunction(L, &Gout);
   FreeResponsefunction(Gin);
   FreeResponsefunction(&Gout);
@@ -727,11 +917,43 @@ static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
 {
   CompactMatrixType *A0,*B0;
   ResponsefunctionType *Gin,*Heff;
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+  } Options;
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T                   = ValueNotSet;
+  /*  only SingularValue and MinimalPoleDistance reach anything: l -> a deflates on the
+   *  first, d -> a and the merge of the bath poles use the second. T and MinimalPoleWeigth
+   *  are read by nothing, so they are not offered. */
+  LuaOptionsType LuaOptions[]={
+    {"SingularValue","double",&(Options.SingularValue)},
+//    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+//    {"Temperature","double",&(Options.T)},
+//    {"EffectivekBT","double",&(Options.T)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=1) return luaL_error(L, "ResponseFunction.EffectiveHamiltonian called with %d arguments, one argument expected and possibly a second specifying options",len);
   Gin = luaL_checkResponsefunction(L,1);
   Heff = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   A0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-  ResponseFunctionEffectiveHamiltonian(Gin,Heff,A0,B0);
+  if(ResponseFunctionEffectiveHamiltonian(Gin,Heff,A0,B0,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance))
+  {
+    return luaL_error(L, "Error in ResponseFunction.EffectiveHamiltonian()\n");
+  }
   // we give the controle of the allocation of the memory of Heff to Lua
   // turn the type to a lower case letter
   Heff->type = Heff->type | 32;
@@ -750,9 +972,40 @@ static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
 static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
 {
  ResponsefunctionType *Gout,*Heff;
+ double ValueNotSet = -DBL_MAX;
+ struct
+ {
+   double SingularValue;
+   double MinimalPoleWeigth;
+   double MinimalPoleDistance;
+   double T;
+ } Options;
+ Options.SingularValue       = ValueNotSet;
+ Options.MinimalPoleWeigth   = ValueNotSet;
+ Options.MinimalPoleDistance = ValueNotSet;
+ Options.T                   = ValueNotSet;
+ /*  the a -> l cell merges on MinimalPoleDistance and the n -> l one deflates on
+  *  SingularValue; T and MinimalPoleWeigth are read by nothing on this route. */
+ LuaOptionsType LuaOptions[]={
+   {"SingularValue","double",&(Options.SingularValue)},
+//   {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+   {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+//   {"Temperature","double",&(Options.T)},
+//   {"EffectivekBT","double",&(Options.T)},
+   {NULL, NULL, NULL}};
+ uint32_t len = (uint32_t) lua_gettop(L);
+ if(LuaTestOptionsList(L, -1))
+ {
+   LuaCheckOptions(L, -1, LuaOptions);
+   len--;
+ }
+ if(len!=1) return luaL_error(L, "ResponseFunction.FromEffectiveHamiltonian called with %d arguments, one argument expected and possibly a second specifying options",len);
  Heff = luaL_checkResponsefunction(L,1);
  Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
- ResponseFunctionFromEffectiveHamiltonian(Heff, Gout);
+ if(ResponseFunctionFromEffectiveHamiltonian(Heff, Gout, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance))
+ {
+   return luaL_error(L, "Error in ResponseFunction.FromEffectiveHamiltonian()\n");
+ }
  // we give the controle of the allocation of the memory of Gout to Lua
  // turn the type to a lower case letter
  Gout->type = Gout->type | 32;
@@ -846,7 +1099,11 @@ static int LuaResponseFunctionMul(lua_State * L)
   { // lower case, data on lua stack, need to copy the data
     ResponsefunctionCopy(M, &xM);
   }
-  ResponsefunctionMul(&xM,x);
+  if(ResponsefunctionMul(&xM,x))
+  {
+    FreeResponsefunction(M);
+    return luaL_error(L, "Error scaling a response function by a number\n");
+  }
   LuaPush_ResponseFunction(L, &xM);
   FreeResponsefunction(M);
   return 1;
@@ -877,7 +1134,11 @@ static int LuaResponseFunctionDiv(lua_State * L)
   { // lower case, data on lua stack, need to copy the data
     ResponsefunctionCopy(M, &xM);
   }
-  ResponsefunctionMul(&xM,x);
+  if(ResponsefunctionMul(&xM,x))
+  {
+    FreeResponsefunction(M);
+    return luaL_error(L, "Error scaling a response function by a number\n");
+  }
   LuaPush_ResponseFunction(L, &xM);
   FreeResponsefunction(M);
   return 1;
@@ -2228,7 +2489,9 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         luaL_setmetatable(L, "Matrix_Type");
         T->OnLuaStack=true;
         lua_setfield(L,-2,"T");
-        GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType((BlockNaturalImpurityOrbitalMatrixType*)(M->data), T);
+        /*  the normalised T: the operator is built from TMT, which is the Hamiltonian in
+         *  the orthonormal basis this transformation leads to */
+        GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType((BlockNaturalImpurityOrbitalMatrixType*)(M->data), T);
         if(AddSpin==true)
         {
           CompactMatrixType Tspin;
@@ -2560,9 +2823,421 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
       }
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      lua_pushstring(L, "DoubleTri");
+      lua_setfield(L,-2,"type");
+      if(M->Block==true)
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
+          NImpurity = 2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+          if(Deflate==true)
+          {
+            NBathVal  = 0;
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
+            {
+              NBathVal+=2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.BlockSizeList[k];
+            }
+            NBathCon  = 0;
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
+            {
+              NBathCon+=2*((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.BlockSizeList[k];
+            }
+          }
+          else
+          {
+            NBathVal = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N * 2 * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+            NBathCon = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N * 2 * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+          }
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
+          BathUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp  = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
+          BathDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn  = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn  = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+            ImpurityUp[k] ='0';
+            BathUp[k]     ='0';
+            BathValUp[k]  ='0';
+            BathConUp[k]  ='0';
+            ImpurityDn[k] ='0';
+            BathDn[k]     ='0';
+            BathValDn[k]  ='0';
+            BathConDn[k]  ='0';
+
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          ImpurityUp[NF] ='\0';
+          BathUp[NF]     ='\0';
+          BathValUp[NF]  ='\0';
+          BathConUp[NF]  ='\0';
+          ImpurityDn[NF] ='\0';
+          BathDn[NF]     ='\0';
+          BathValDn[NF]  ='\0';
+          BathConDn[NF]  ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
+            k++;
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0'; Bath[k]='1'; BathDn[k]='1';
+            k++;
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1'; Bath[k]='1'; BathUp[k]='1';
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
+          NImpurity = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+          if(Deflate==true)
+          {
+            NBathVal  = 0;
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;k++)
+            {
+              NBathVal+=((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.BlockSizeList[k];
+            }
+            NBathCon  = 0;
+            for(k=1;k<=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;k++)
+            {
+              NBathCon+=((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.BlockSizeList[k];
+            }
+          }
+          else
+          {
+            NBathVal = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+            NBathCon = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N * ((BlockDoubleTriDiagonalMatrixType*)(M->data))->BlockSize;
+          }
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1';
+            Bath[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1';
+            Bath[k]='1';
+          }
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      else
+      {
+        if(AddSpin==true)
+        {
+          NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
+          NImpurity = 2;
+          NBathVal = 2 * ((DoubleTriDiagonalMatrixType*)(M->data))->val.N;
+          NBathCon = 2 * ((DoubleTriDiagonalMatrixType*)(M->data))->con.N;
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core          = (char*)malloc((NF+1)*sizeof(char));
+          Impurity      = (char*)malloc((NF+1)*sizeof(char));
+          Bath          = (char*)malloc((NF+1)*sizeof(char));
+          BathVal       = (char*)malloc((NF+1)*sizeof(char));
+          BathCon       = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityUp    = (char*)malloc((NF+1)*sizeof(char));
+          BathUp        = (char*)malloc((NF+1)*sizeof(char));
+          BathValUp     = (char*)malloc((NF+1)*sizeof(char));
+          BathConUp     = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityDn    = (char*)malloc((NF+1)*sizeof(char));
+          BathDn        = (char*)malloc((NF+1)*sizeof(char));
+          BathValDn     = (char*)malloc((NF+1)*sizeof(char));
+          BathConDn     = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]          ='0';
+            Impurity[k]      ='0';
+            Bath[k]          ='0';
+            BathVal[k]       ='0';
+            BathCon[k]       ='0';
+            ImpurityUp[k]    ='0';
+            BathUp[k]        ='0';
+            BathValUp[k]     ='0';
+            BathConUp[k]     ='0';
+            ImpurityDn[k]    ='0';
+            BathDn[k]        ='0';
+            BathValDn[k]     ='0';
+            BathConDn[k]     ='0';
+          }
+          Core[NF]          ='\0';
+          Impurity[NF]      ='\0';
+          Bath[NF]          ='\0';
+          BathVal[NF]       ='\0';
+          BathCon[NF]       ='\0';
+          ImpurityUp[NF]    ='\0';
+          BathUp[NF]        ='\0';
+          BathValUp[NF]     ='\0';
+          BathConUp[NF]     ='\0';
+          ImpurityDn[NF]    ='\0';
+          BathDn[NF]        ='\0';
+          BathValDn[NF]     ='\0';
+          BathConDn[NF]     ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1'; ImpurityDn[k]='1'; ImpurityUp[k]='0';
+            k++;
+            Impurity[k]='1'; ImpurityDn[k]='0'; ImpurityUp[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1'; BathValDn[k]='1'; BathValUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            BathVal[k]='1'; BathValDn[k]='0'; BathValUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1'; BathConDn[k]='1'; BathConUp[k]='0'; Bath[k]='1'; BathDn[k]='1'; BathUp[k]='0';
+            k++;
+            BathCon[k]='1'; BathConDn[k]='0'; BathConUp[k]='1'; Bath[k]='1'; BathDn[k]='0'; BathUp[k]='1';
+          }
+          lua_pushstring(L, ImpurityUp);
+          lua_setfield(L,-2,"ImpurityUp");
+          free(ImpurityUp);
+          lua_pushstring(L, ImpurityDn);
+          lua_setfield(L,-2,"ImpurityDn");
+          free(ImpurityDn);
+          lua_pushstring(L, BathUp);
+          lua_setfield(L,-2,"BathUp");
+          free(BathUp);
+          lua_pushstring(L, BathDn);
+          lua_setfield(L,-2,"BathDn");
+          free(BathDn);
+          lua_pushstring(L, BathConUp);
+          lua_setfield(L,-2,"BathConUp");
+          free(BathConUp);
+          lua_pushstring(L, BathConDn);
+          lua_setfield(L,-2,"BathConDn");
+          free(BathConDn);
+          lua_pushstring(L, BathValUp);
+          lua_setfield(L,-2,"BathValUp");
+          free(BathValUp);
+          lua_pushstring(L, BathValDn);
+          lua_setfield(L,-2,"BathValDn");
+          free(BathValDn);
+        }
+        else // AddSpin == false
+        {
+          NCore     = FermionShift;
+          /*  a[0] of a chain is the impurity energy and a[1] to a[N] are all bath, so a
+           *  chain contributes N bath blocks and the deflation sums run from 1. The
+           *  natural orbital form this was copied from counts one block less per chain,
+           *  a[1] being the natural orbital there and counted with the impurity, and its
+           *  sums start at 2.  A chain of length zero needs no special case: N * BlockSize
+           *  is then zero, and con.N == 0 is a common case for this type. */
+          NImpurity = 1;
+          NBathVal = ((DoubleTriDiagonalMatrixType*)(M->data))->val.N;
+          NBathCon = ((DoubleTriDiagonalMatrixType*)(M->data))->con.N;
+          NBath     = NBathVal + NBathCon;
+          NF = NCore + NImpurity + NBath;
+          Core       = (char*)malloc((NF+1)*sizeof(char));
+          Impurity   = (char*)malloc((NF+1)*sizeof(char));
+          Bath       = (char*)malloc((NF+1)*sizeof(char));
+          BathVal    = (char*)malloc((NF+1)*sizeof(char));
+          BathCon    = (char*)malloc((NF+1)*sizeof(char));
+          for(k=0;k<NF;k++)
+          {
+            Core[k]       ='0';
+            Impurity[k]   ='0';
+            Bath[k]       ='0';
+            BathVal[k]    ='0';
+            BathCon[k]    ='0';
+          }
+          Core[NF]       ='\0';
+          Impurity[NF]   ='\0';
+          Bath[NF]       ='\0';
+          BathVal[NF]    ='\0';
+          BathCon[NF]    ='\0';
+          for(k=0;k<NCore;k++)
+          {
+            Core[k]='1';
+          }
+          for(k=NCore;k<NCore+NImpurity;k++)
+          {
+            Impurity[k]='1';
+          }
+          for(k=NCore+NImpurity;k<NCore+NImpurity+NBathVal;k++)
+          {
+            BathVal[k]='1';
+            Bath[k]='1';
+          }
+          for(k=NCore+NImpurity+NBathVal;k<NCore+NImpurity+NBathVal+NBathCon;k++)
+          {
+            BathCon[k]='1';
+            Bath[k]='1';
+          }
+        }
+        lua_pushinteger(L, NCore);
+        lua_setfield(L,-2,"NCore");
+        lua_pushstring(L, Core);
+        lua_setfield(L,-2,"Core");
+        free(Core);
+        lua_pushinteger(L, NImpurity);
+        lua_setfield(L,-2,"NImpurity");
+        lua_pushstring(L, Impurity);
+        lua_setfield(L,-2,"Impurity");
+        free(Impurity);
+        lua_pushinteger(L, NBath);
+        lua_setfield(L,-2,"NBath");
+        lua_pushstring(L, Bath);
+        lua_setfield(L,-2,"Bath");
+        free(Bath);
+        lua_pushinteger(L, NBathVal);
+        lua_setfield(L,-2,"NBathVal");
+        lua_pushstring(L, BathVal);
+        lua_setfield(L,-2,"BathVal");
+        free(BathVal);
+        lua_pushinteger(L, NBathCon);
+        lua_setfield(L,-2,"NBathCon");
+        lua_pushstring(L, BathCon);
+        lua_setfield(L,-2,"BathCon");
+        free(BathCon);
+        lua_pushinteger(L, NF);
+        lua_setfield(L,-2,"NF");
+        lua_pushinteger(L, NB);
+        lua_setfield(L,-2,"NB");
+      }
+      break;
+    }
     default:
     {
-      return luaL_error(L, "Error in Responsefunction.CreateBitMasks() unrecognized type in response function (%s)\n",M->type);
+      return luaL_error(L, "Error in Responsefunction.CreateBitMasks() unrecognized type in response function (%c)\n",M->type);
     }
   }
   return 0;
@@ -2599,9 +3274,8 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
 {
   TightBindingDef *TB;
   ResponsefunctionType *M;
-  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
-  luaL_setmetatable(L, "TightBinding_Type");
   M = luaL_checkResponsefunction(L,1);
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
   switch(M->type)
   {
     case 'L':
@@ -2653,13 +3327,21 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       }
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      //TODO: (Block)DoubleTriDiagonalMatrixType to TB
+      return luaL_error(L, "Error in Responsefunction.ToTightBinding() Not yet implemented for this case\n");
+      break;
+    }
     default:
     {
-      return luaL_error(L, "Error in Responsefunction.ToTightbinding() unrecognized type for conversion (%s)\n",M->type);
+      return luaL_error(L, "Error in Responsefunction.ToTightbinding() unrecognized type for conversion (%c)\n",M->type);
       return 0;
     }
   }
   FreeResponsefunctionIncludingOriginalPointer(M);
+  luaL_setmetatable(L, "TightBinding_Type");
   return 1;
 }
 
@@ -2707,8 +3389,10 @@ static int LuaResponseFunctionToOperator(lua_State * L)
   if(len!=1) return luaL_error(L, "Error in ResponseFunction.ToOperator() It should be called with 1 argument, not with %d\n",len);
   M = luaL_checkResponsefunction(L,1);
   if((Options.TransformImpurity==true)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option TransformImpurity only availalbe for Response Functions in natural impurity orbital form");
-  if((Options.Nc!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option Nc only availalbe for Response Functions in natural impurity orbital form");
-  if((Options.Nv!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')))) return luaL_error(L, "Option Nv only availalbe for Response Functions in natural impurity orbital form");
+  /*  Nv and Nc truncate the two chains, so they mean something for both types that have
+   *  two: the natural orbital form and the double tri-diagonal one */
+  if((Options.Nc!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')||(M->type=='D')||(M->type=='d')))) return luaL_error(L, "Option Nc only availalbe for Response Functions in natural impurity orbital or double tri-diagonal form");
+  if((Options.Nv!=UINT32_MAX)&&(!((M->type=='N')||(M->type=='n')||(M->type=='D')||(M->type=='d')))) return luaL_error(L, "Option Nv only availalbe for Response Functions in natural impurity orbital or double tri-diagonal form");
   O = (OperatorType*) lua_newuserdata(L, sizeof(OperatorType));
   luaL_setmetatable(L, "Operator_Type");
   switch(M->type)
@@ -2994,9 +3678,252 @@ static int LuaResponseFunctionToOperator(lua_State * L)
         break;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      // returns the operator, and the table of bitmasks, but aditionally, when Nv or Nc are set also
+      // a table containing 2 elements:
+      //    GvalBath
+      //    GconBath
+      //    These contain the tails of the vanlence and conduction chain
+      //
+      if(M->Block==true)
+      {
+        // copy and shorten M->data if Nv and Nc set
+        MNv = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N;
+        MNc = ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N;
+        if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=Options.Nv;
+        if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=Options.Nc;
+        if(BlockDoubleTriDiagonalMatrixToImpurityHamiltonian(O, (BlockDoubleTriDiagonalMatrixType*)(M->data), Options.AddSpin, Options.FermionShift, 0))
+        {
+          if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=MNv;
+          if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=MNc;
+          return luaL_error(L, "Error in Responsefunction.ToOperator() BlockDoubleTriDiagonalMatrixToImpurityHamiltonian is not implemented\n");
+        }
+      }
+      else
+      {
+        // copy and shorten M->data if Nv and Nc set
+        MNv = ((DoubleTriDiagonalMatrixType*)M->data)->val.N;
+        MNc = ((DoubleTriDiagonalMatrixType*)M->data)->con.N;
+        if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=Options.Nv;
+        if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=Options.Nc;
+        if(DoubleTriDiagonalMatrixToImpurityHamiltonian(O, (DoubleTriDiagonalMatrixType*)M->data, Options.AddSpin, Options.FermionShift, 0))
+        {
+          if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+          if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
+          return luaL_error(L, "Error in Responsefunction.ToOperator() DoubleTriDiagonalMatrixToImpurityHamiltonian is not implemented\n");
+        }
+      }
+      if((MNv>Options.Nv)||(MNc>Options.Nc))
+      {
+        ResponseFunctionToLuaBitMask(L, M, Options.AddSpin, Options.FermionShift,false);
+        // undo changes to M
+        if(M->Block==true)
+        {
+          // expand M->data if Nv and Nc set
+          if(MNv>Options.Nv) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->val.N=MNv;
+          if(MNc>Options.Nc) ((BlockDoubleTriDiagonalMatrixType*)(M->data))->con.N=MNc;
+        }
+        else
+        {
+          // expand M->data if Nv and Nc set
+          if(MNv>Options.Nv) ((DoubleTriDiagonalMatrixType*)M->data)->val.N=MNv;
+          if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
+        }
+        // push Gv, and, Gc to stack
+        lua_createtable(L,0,2);
+        // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
+        if(Options.AddSpin==true)
+        {
+          if(M->Block==true) // add spin and block true
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=true;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=true;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              lua_settable(L, -3);
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+          else // add spin true and block false
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=true;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GvalBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=true;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GconBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              lua_settable(L, -3);
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+        }
+        else // no spin added
+        {
+          if(M->Block==true) // no spin and block true
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=true;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTail(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=true;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+              BlockTriDiagonalMatrixGetTail(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              lua_settable(L, -3);
+              
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+          else // no spin and block false
+          {
+            if(MNv>Options.Nv)
+            {
+              ResponsefunctionType *GvalBath;
+              lua_pushstring(L, "GvalBath");
+              GvalBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GvalBath->type = 't';
+              GvalBath->Block=false;
+              GvalBath->NSuggestedGridPoints=0;
+              GvalBath->SuggestedGrid=NULL;
+              GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
+              TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GvalBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              lua_settable(L, -3);
+            }
+            else // push nil for G valence Bath
+            {
+              lua_pushstring(L, "GvalBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+            if(MNc>Options.Nc)
+            {
+              ResponsefunctionType *GconBath;
+              lua_pushstring(L, "GconBath");
+              GconBath = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+              luaL_setmetatable(L, "ResponseFunction_Type");
+              GconBath->type = 't';
+              GconBath->Block=false;
+              GconBath->NSuggestedGridPoints=0;
+              GconBath->SuggestedGrid=NULL;
+              GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
+              TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GconBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              lua_settable(L, -3);
+            }
+            else // push nil for G conduction Bath
+            {
+              lua_pushstring(L, "GconBath");
+              lua_pushnil(L);
+              lua_settable(L, -3);
+            }
+          }
+        }
+        FreeResponsefunctionIncludingOriginalPointer(M);
+        return 3;
+      }
+      else
+      {
+        break;
+      }
+    }
     default:
     {
-      return luaL_error(L, "Error in Responsefunction.ToOperator() unrecognized type for conversion (%s)\n",M->type);
+      return luaL_error(L, "Error in Responsefunction.ToOperator() unrecognized type for conversion (%c)\n",M->type);
       return 0;
     }
   }
@@ -3042,9 +3969,18 @@ static int LuaResponseFunctionCalculateRho(lua_State *L)
   {
     LuaCheckOptions(L, 2, LuaCalculateRhoOptions);
   }
+  /*  the density matrix first and the userdata to hold it after: a failed
+   *  ResponseFunctionToDensityMatrix leaves nothing behind for the garbage collector to
+   *  free, and the matrix does not reach lua at all */
+  CompactMatrixType r;
+  if(ResponseFunctionToDensityMatrix(A, &r, Options.mu, Options.kbT))
+  {
+    FreeResponsefunctionIncludingOriginalPointer(A);
+    return luaL_error(L, "Error in CalculateRho: could not calculate the density matrix\n");
+  }
   rho = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   luaL_setmetatable(L, "Matrix_Type");
-  ResponseFunctionToDensityMatrix(A, rho, Options.mu, Options.kbT);
+  *rho = r;
   rho->OnLuaStack=true;
   FreeResponsefunctionIncludingOriginalPointer(A);
   return 1;
@@ -3109,7 +4045,17 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
   }
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
   luaL_setmetatable(L, "Spectra_Type");
-  ResponseFunctionToSpectra(A,Spec, Options.EnergyShift, Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE);
+  /*  Set the fresh user data to an empty array before it is filled. If the call below fails we
+   *  leave through a lua error and the garbage collector still runs FreeSpectraTypeArray on
+   *  this user data.
+   */
+  Spec->NSpectra=0;
+  Spec->Spec=NULL;
+  Spec->Name=NULL;
+  if(ResponseFunctionToSpectra(A,Spec, Options.EnergyShift, Options.Emin,Options.Emax,Options.GammaG,Options.GammaL,Options.NE))
+  {
+    return luaL_error(L, "Error in ToSpectra: can not create a spectrum for a response function of type %c\n",A->type);
+  }
   return 1;
 }
 
@@ -3121,9 +4067,32 @@ static int LuaResponseFunctionRotate(lua_State * L)
 {
   ResponsefunctionType *G, GRot;
   CompactMatrixType *U;
-  
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+  } Options;
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T                   = ValueNotSet;
+  LuaOptionsType LuaOptions[]={
+//    {"SingularValue","double",&(Options.SingularValue)},
+//    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+//    {"Temperature","double",&(Options.T)},
+//    {"EffectivekBT","double",&(Options.T)},
+    {NULL, NULL, NULL}};
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) luaL_error(L, "ResponseFunction.Rotate called with %d arguments, two arguments expected",len);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=2) return luaL_error(L, "ResponseFunction.Rotate called with %d arguments, two arguments expected and possibly a third specifying options",len);
   G = luaL_checkResponsefunction(L,1);
   U=luaL_checkCompactMatrix(L, 2);
   if(G->Block==false)
@@ -3131,7 +4100,7 @@ static int LuaResponseFunctionRotate(lua_State * L)
     return luaL_error(L, "Error in ResponseFunction.Rotate(). Rotate rotates the elements in the matrix or Block representation of the response function. Can not rotate singel valued functions\n", len);
   }
   if(ResponseFunctionGetBlockSize(G)!=U->Nj) return luaL_error(L, "Error in ResponseFunction.Rotate(). Number of columns in roation matrix (Nj = %d) should be equal to the blocksize of the response function (%d)\n", U->Nj, ResponseFunctionGetBlockSize(G));
-  if(BlockResponseFunctionRotate(G,U,&GRot)!=0) return luaL_error(L, "Error in ResponseFunction.Rotate()\n", len);
+  if(BlockResponseFunctionRotate(G,U,&GRot,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance)!=0) return luaL_error(L, "Error in ResponseFunction.Rotate()\n", len);
   LuaPush_ResponseFunction(L, &GRot);
   FreeResponsefunction(G);
   FreeResponsefunction(&GRot);
@@ -3223,14 +4192,19 @@ static int LuaResponseFunctionLen(lua_State *L)
     }
     case 'N':
     case 'n':
+    case 'D':
+    case 'd':
     {
+      /*  a natural impurity orbital and a double tri-diagonal matrix have one positional
+       *  element in their table form, the { a0, b0 } pair, the two chains being the named
+       *  val and con. The other three have two, a list of a and a list of b. */
       lua_pushinteger(L, 1);
       return 1;
       break;
     }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
       return 0;
     }
   }
@@ -3297,9 +4271,23 @@ static int LuaResponseFunctionIndexMu(lua_State *L)
         return 1;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        lua_pushnumber(L, ((BlockDoubleTriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+      else
+      {
+        lua_pushnumber(L, ((DoubleTriDiagonalMatrixType*)(a->data))->mu);
+        return 1;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }
@@ -3336,9 +4324,16 @@ static int LuaResponseFunctionIndexType(lua_State *L)
       return 1;
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      lua_pushstring(L, "DoubleTri");
+      return 1;
+      break;
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
       return 0;
     }
   }
@@ -3405,9 +4400,23 @@ static int LuaResponseFunctionIndexName(lua_State *L)
         return 1;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        lua_pushstring(L, ((BlockDoubleTriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+      else
+      {
+        lua_pushstring(L, ((DoubleTriDiagonalMatrixType*)(a->data))->Name);
+        return 1;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }
@@ -3574,9 +4583,23 @@ static int LuaResponseFunctionNewIndexMu(lua_State *L)
         return 0;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        ((BlockDoubleTriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+      else
+      {
+        ((DoubleTriDiagonalMatrixType*)(a->data))->mu = mu;
+        return 0;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }
@@ -3650,9 +4673,25 @@ static int LuaResponseFunctionNewIndexName(lua_State *L)
         return 0;
       }
     }
+    case 'D':
+    case 'd':
+    {
+      if(a->Block==true)
+      {
+        strncpy(((BlockDoubleTriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((BlockDoubleTriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+      else
+      {
+        strncpy(((DoubleTriDiagonalMatrixType*)(a->data))->Name, name, MAXStrLength);
+        ((DoubleTriDiagonalMatrixType*)(a->data))->Name[MAXStrLength-1]='\0';
+        return 0;
+      }
+    }
     default:
     {
-      return luaL_error(L, "ResponseFunction of undifined type %s\n", a->type);
+      return luaL_error(L, "ResponseFunction of undifined type %c\n", a->type);
     }
   }
 }

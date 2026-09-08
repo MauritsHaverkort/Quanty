@@ -1,3 +1,179 @@
+/****************************************************************************/
+/********************         Matrix conversions         ********************/
+/********************         Poles To ...               ********************/
+/****************************************************************************/
+
+/*  Recurrence coefficients of the discrete measure  sum_i Wpole[i] delta(x-Epole[i])
+ *
+ *  A list of poles, the bath of an Anderson matrix and one branch of a double
+ *  tri-diagonal matrix are all this same measure, and turning any of them into
+ *  a chain is the same calculation:
+ *
+ *    sum_i Wpole[i] / (z - Epole[i]) = W / ( z - a[0] - b[0]^2/( z - a[1] - ... ) )
+ *
+ *  with W = sum_i Wpole[i] the total weight. A caller holding a
+ *  TriDiagonalMatrixType H writes sqrt(W) as the hopping into the chain and
+ *  passes &H->a[1] and &H->b[1], or &H->a[2] and &H->b[2] when the head of H is
+ *  a site of its own.
+ *
+ *  Epole and Wpole are NPoles energies and NPoles weights, in any order; poles
+ *  without weight are ignored, weights are not allowed to be negative. a and b
+ *  are supplied by the caller and must hold NMax and NMax-1 elements. On return
+ *  *N is the number of chain sites written, which is at most NMax and at most
+ *  the number of distinct poles that carry weight, and *W the total weight.
+ *
+ *  The method is that of Rutishauser, Kahan, Pal and Walker; see Gragg and
+ *  Harrod, Numer. Math. 44 (1984) 317. One pole is absorbed at a time by a
+ *  sequence of plane rotations, which costs O(NPoles*NMax) operations and
+ *  O(NPoles) memory and needs no re-orthogonalization.
+ *
+ *  The obvious alternative, Lanczos on the diagonal matrix of the poles with
+ *  sqrt(Wpole) as the starting vector, is not usable for a long chain. It loses
+ *  orthogonality completely, a relative error of 1e-2 on G for 1000 poles,
+ *  unless every Lanczos vector is kept and re-orthogonalized against all
+ *  previous ones. That costs O(NPoles*NMax^2) operations and O(NPoles*NMax)
+ *  memory: 1.5 seconds and 8 Mb for 1000 poles and 100 seconds and 128 Mb for
+ *  4000, where this routine needs 7 and 120 milliseconds at the same accuracy
+ *  of 1e-14.
+ *
+ *  Poles at the same energy are merged first. That is not cosmetic: the method
+ *  is not robust against a measure whose support is smaller than the number of
+ *  poles handed to it, and degenerate bath levels are common.
+ */
+uint32_t PolesToTriDiagonalCoefficients(uint32_t const NPoles, double const *const Epole, double const *const Wpole,
+                                        uint32_t const NMax, double *const a, double *const b,
+                                        uint32_t *const N, double *const W)
+{
+  uint32_t i, j, NKept, NChain;
+  double *EW;                   /* the poles as (energy,weight) pairs, so that they can be sorted */
+  double *alpha, *betasqr;      /* the running Jacobi matrix; betasqr[0] ends up as the total weight */
+  double p, gamma, sigma, sigmaold, t, tnew, rho, tmp, Elam, bmin;
+  *N = 0;
+  *W = 0;
+  if ((NPoles == 0) || (NMax == 0))
+  {
+    return 0;
+  }
+  if ((EW = (double*)malloc(2 * NPoles * sizeof(double))) == NULL)
+  {
+    printf("malloc for EW failed in PolesToTriDiagonalCoefficients\n");
+    fflush(stdout);
+    return 1;
+  }
+  NKept = 0;
+  for (i = 0; i < NPoles; i++)
+  {
+    if (Wpole[i] > 0)
+    {
+      EW[2 * NKept    ] = Epole[i];
+      EW[2 * NKept + 1] = Wpole[i];
+      NKept++;
+    }
+  }
+  if (NKept == 0)
+  {
+    free(EW);
+    return 0;
+  }
+  qsort((void *)EW, NKept, 2 * sizeof(double), (compfn) OrderListOfPolesCompare);
+  /* merge poles that sit at the same energy, comparing against the first of a
+   * run rather than the previous pole so that a long run can not drift */
+  j = 0;
+  for (i = 1; i < NKept; i++)
+  {
+    if ((EW[2 * i] - EW[2 * j]) <= 4 * DBL_EPSILON * (Abs(EW[2 * i]) + Abs(EW[2 * j])))
+    {
+      EW[2 * j + 1] += EW[2 * i + 1];
+    }
+    else
+    {
+      j++;
+      EW[2 * j    ] = EW[2 * i    ];
+      EW[2 * j + 1] = EW[2 * i + 1];
+    }
+  }
+  NKept = j + 1;
+  NChain = Min(NMax, NKept);
+  if ((alpha = (double*)malloc(NChain * sizeof(double))) == NULL)
+  {
+    printf("malloc for alpha failed in PolesToTriDiagonalCoefficients\n");
+    fflush(stdout);
+    free(EW);
+    return 1;
+  }
+  if ((betasqr = (double*)malloc(NChain * sizeof(double))) == NULL)
+  {
+    printf("malloc for betasqr failed in PolesToTriDiagonalCoefficients\n");
+    fflush(stdout);
+    free(EW);
+    free(alpha);
+    return 1;
+  }
+  for (j = 0; j < NChain; j++)
+  {
+    alpha[j] = EW[2 * j];
+    betasqr[j] = 0;
+  }
+  betasqr[0] = EW[1];
+  for (i = 1; i < NKept; i++)
+  {
+    Elam = EW[2 * i];
+    p = EW[2 * i + 1];
+    gamma = 1;
+    sigma = 0;
+    t = 0;
+    for (j = 0; (j < NChain) && (j <= i); j++)
+    {
+      rho = betasqr[j] + p;
+      tmp = gamma * rho;
+      sigmaold = sigma;
+      if (rho <= 0)
+      {
+        gamma = 1;
+        sigma = 0;
+      }
+      else
+      {
+        gamma = betasqr[j] / rho;
+        sigma = p / rho;
+      }
+      tnew = sigma * (alpha[j] - Elam) - gamma * t;
+      alpha[j] -= tnew - t;
+      t = tnew;
+      if (sigma <= 0)
+      {
+        p = sigmaold * betasqr[j];
+      }
+      else
+      {
+        p = t * t / sigma;
+      }
+      betasqr[j] = tmp;
+    }
+  }
+  *W = betasqr[0];
+  /*  the chain ends where the hopping vanishes: what comes after it is
+   *  decoupled from the head and does not contribute to the Green's function */
+  bmin = sqrt(*W) * 100 * DBL_EPSILON;
+  a[0] = alpha[0];
+  *N = 1;
+  for (j = 1; j < NChain; j++)
+  {
+    b[j - 1] = sqrt(Abs(betasqr[j]));
+    if (b[j - 1] <= bmin)
+    {
+      b[j - 1] = 0;
+      break;
+    }
+    a[j] = alpha[j];
+    (*N)++;
+  }
+  free(EW);
+  free(alpha);
+  free(betasqr);
+  return 0;
+}
+
 
 
 /****************************************************************************/
@@ -18,7 +194,8 @@ uint32_t AndersonMatrixToMatrix(AndersonMatrixType const M, MatrixType * const M
   };
   Mfull->mu = M.mu;
   Mfull->a0 = M.a[0];
-  Mfull->b0 = M.b[0];
+  /* an Anderson matrix of dimension zero has no b[0]; nothing couples to it, so b0 = 0 */
+  Mfull->b0 = (M.N == 0) ? 0 : M.b[0];
   strcpy(Mfull->Name, M.Name);
   for (i = 0; i < M.N; i++)
   {
@@ -45,7 +222,8 @@ uint32_t AndersonMatrixToCompactMatrix(AndersonMatrixType * const M, CompactMatr
   };
   Mfull->mu = M->mu;
   Mfull->a0 = M->a[0];
-  Mfull->b0 = M->b[0];
+  /* an Anderson matrix of dimension zero has no b[0]; nothing couples to it, so b0 = 0 */
+  Mfull->b0 = (M->N == 0) ? 0 : M->b[0];
   strcpy(Mfull->Name, M->Name);
   for (i = 0; i < M->N; i++)
   {
@@ -243,14 +421,78 @@ uint32_t AndersonMatrixToTriDiagonalMatrixPlusT(AndersonMatrixType const M, Matr
   return 0;
 }
 
+/*  M = T.H.T^T with T orthogonal and H tri-diagonal; T itself is not returned.
+ *
+ *  The bath of an Anderson matrix is diagonal by construction: site 0 is the
+ *  impurity with energy a[1], coupled to the bath levels a[2...N] by the
+ *  hoppings b[1...N-1]. The chain is therefore the Jacobi matrix of the bath as
+ *  seen from the impurity and no eigenvalue decomposition is needed. H->a[1] is
+ *  the impurity, H->b[1] the hopping into the chain, and H->a[2...] / H->b[2...]
+ *  the chain itself.
+ *
+ *  NTriDiag is an upper bound on the dimension of H. The chain is shorter when
+ *  the bath has fewer distinct levels than that, or when a hopping vanishes.
+ */
 uint32_t AndersonMatrixToTriDiagonalMatrix(AndersonMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
 {
-  MatrixType T;
-  if (AndersonMatrixToTriDiagonalMatrixPlusT(M, &T, H, NTriDiag))
+  uint32_t i, NAlloc, NBath, NChain;
+  double *Ebath, *Wbath, Whyb;
+  NAlloc = Min(NTriDiag, M.N);
+  H->N = NAlloc;
+  if (InitTriDiagonalMatrix(H))
   {
-    printf("AndersonMatrixToTriDiagonalMatrixPlusT failed in AndersonMatrixToTriDiagonalMatrix\n");
-  };
-  FreeMatrix(&T);
+    printf("InitTriDiagonalMatrix failed in AndersonMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->mu = M.mu;
+  H->a[0] = M.a[0];
+  if (NAlloc == 0)
+  {
+    return 0;
+  }
+  H->b[0] = M.b[0];
+  H->a[1] = M.a[1];
+  H->N = 1;
+  NBath = M.N - 1;
+  if ((NBath == 0) || (NAlloc == 1))
+  {
+    return 0;
+  }
+  if ((Ebath = (double*)malloc(NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for Ebath failed in AndersonMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if ((Wbath = (double*)malloc(NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for Wbath failed in AndersonMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(Ebath);
+    return 1;
+  }
+  for (i = 0; i < NBath; i++)
+  {
+    Ebath[i] = M.a[i + 2];
+    Wbath[i] = Sqr(M.b[i + 1]);
+  }
+  if (PolesToTriDiagonalCoefficients(NBath, Ebath, Wbath, NAlloc - 1, &(H->a[2]), &(H->b[2]), &NChain, &Whyb))
+  {
+    printf("PolesToTriDiagonalCoefficients failed in AndersonMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(Ebath);
+    free(Wbath);
+    return 1;
+  }
+  free(Ebath);
+  free(Wbath);
+  if (NChain != 0)
+  {
+    H->b[1] = sqrt(Whyb);
+    H->N = 1 + NChain;
+  }
   return 0;
 }
 
@@ -260,6 +502,18 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal(AndersonMatrixType
   return 1;
 }
 
+/*  Kept for its history and to be reimplemented; not called by anything.
+ *
+ *  This is the version that returned the transformation matrix T. It follows the
+ *  same convention for the shared impurity site as everything else, half of the
+ *  energy in each head slot, but it still differs from
+ *  AndersonMatrixToDoubleTriDiagonalMatrix below: it splits with a linear ramp
+ *  over [mu-epsilon,mu+epsilon] rather than with a Fermi function, it invents a
+ *  bath site with zero coupling when a branch would be empty, and it
+ *  tri-diagonalizes with re-orthogonalized Lanczos, which costs the O(N^2)
+ *  memory that PolesToTriDiagonalCoefficients exists to avoid. Use the routine
+ *  below until this one is rewritten on top of it.
+ */
 /*
 *  M=T.H.T^{\dag}
 *  input M defined, H and T not initiallized
@@ -311,8 +565,10 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M
   MV.b[0] = 1;
   MC.a[0] = 0;
   MC.b[0] = 1;
-  MV.a[1] = M.a[1];
-  MC.a[1] = M.a[1];
+  /*  the impurity site is shared by the two chains and its energy is the sum of
+   *  the two head slots, so each chain is built with half of it */
+  MV.a[1] = 0.5 * M.a[1];
+  MC.a[1] = 0.5 * M.a[1];
   for (i = 2; i <= M.N; i++)
   {
     if (fabs(M.b[i - 1]) > 100 * DBL_MIN)
@@ -412,15 +668,143 @@ uint32_t AndersonMatrixToDoubleTriDiagonalMatrixPlusT(AndersonMatrixType const M
   return 0;
 }
 
-uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H, double const Ef, double const epsilon)
+
+/*  Split the bath of an Anderson matrix at the chemical potential and put the
+ *  two halves in the two chains of a double tri-diagonal matrix,
+ *
+ *    G(w) = a0 + b0^2 / ( w - Gval(w) - Gcon(w) )
+ *
+ *  The bath level a[i+1] couples to the impurity with b[i] and therefore
+ *  carries a weight b[i]^2 in the hybridization. The Fermi function divides
+ *  that weight over the two chains, f to the valence and 1-f to the conduction
+ *  chain, so the two chains together reproduce the original function exactly.
+ *  FermiFunction returns exactly 1 below mu-40 kBT and exactly 0 above
+ *  mu+40 kBT, so a level outside that window ends up in one chain only and the
+ *  levels inside it are the only ones that appear twice. The chains are as long
+ *  as they need to be to be exact; nothing is truncated here.
+ *
+ *  The impurity energy a[1] is shared by the two chains: val.a[0] + con.a[0] is
+ *  what enters the denominator, and each chain is given half of it. How it is
+ *  split between the two is a gauge with no canonical value, so equal halves is
+ *  a convention and not an invariant.
+ *
+ *  A chain can come out empty, with mu below or above the whole bath. That is
+ *  val.N = 0 with val.b[0] = 0, and the impurity keeps its half of a[1].
+ */
+uint32_t AndersonMatrixToDoubleTriDiagonalMatrix(AndersonMatrixType const M, DoubleTriDiagonalMatrixType * const H, double const mu, double const kBT)
 {
-  MatrixType T;
-  if (AndersonMatrixToDoubleTriDiagonalMatrixPlusT(M, &T, H, Ef, epsilon))
+  uint32_t i, NBath, NVal, NCon;
+  double *Ebath, *Wval, *Wcon, Wvaltot, Wcontot, x, f, g;
+  if (M.N == 0)
   {
-    printf("AndersonMatrixToDoubleTriDiagonalMatrixPlusT failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    H->val.N = 0;
+    H->con.N = 0;
+    if (InitDoubleTriDiagonalMatrix(H))
+    {
+      printf("InitDoubleTriDiagonalMatrix failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    strncpy(H->Name, M.Name, MAXStrLength);
+    H->mu = mu;
+    H->kBT = kBT;
+    H->a0 = M.a[0];
+    H->b0 = 0;
+    H->val.a[0] = 0;
+    H->con.a[0] = 0;
+    H->val.N = 0;
+    H->con.N = 0;
+    return 0;
+  }
+  NBath = M.N - 1;
+  /*  each chain can hold at most one site per bath level, so both are allocated
+   *  for NBath sites here and their length set to what the Lanczos returns */
+  H->val.N = NBath;
+  H->con.N = NBath;
+  if (InitDoubleTriDiagonalMatrix(H))
+  {
+    printf("InitDoubleTriDiagonalMatrix failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
     return 1;
-  };
-  FreeMatrix(&T);
+  }
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->mu = mu;
+  H->kBT = kBT;
+  H->a0 = M.a[0];
+  H->b0 = M.b[0];
+  H->val.a[0] = 0.5 * M.a[1];
+  H->con.a[0] = 0.5 * M.a[1];
+  H->val.N = 0;
+  H->con.N = 0;
+  if (NBath == 0)
+  {
+    return 0;
+  }
+  if ((Ebath = (double*)malloc(NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for Ebath failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if ((Wval = (double*)malloc(NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for Wval failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(Ebath);
+    return 1;
+  }
+  if ((Wcon = (double*)malloc(NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for Wcon failed in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(Ebath);
+    free(Wval);
+    return 1;
+  }
+  for (i = 0; i < NBath; i++)
+  {
+    Ebath[i] = M.a[i + 2];
+    x = M.a[i + 2] - mu;
+    f = FermiFunction(M.a[i + 2], mu, kBT);
+    /*  1-f loses its relative accuracy where f is close to one, so the
+     *  conduction weight is formed from the Fermi function of -x instead,
+     *  except where FermiFunction itself returns an exact value */
+    if ((x == 0) || (kBT <= 0) || (Abs(x) >= 40 * kBT))
+    {
+      g = 1.0 - f;
+    }
+    else
+    {
+      g = 1.0 / (1.0 + exp(-x / kBT));
+    }
+    Wval[i] = Sqr(M.b[i + 1]) * f;
+    Wcon[i] = Sqr(M.b[i + 1]) * g;
+  }
+  if (PolesToTriDiagonalCoefficients(NBath, Ebath, Wval, NBath, &(H->val.a[1]), &(H->val.b[1]), &NVal, &Wvaltot))
+  {
+    printf("PolesToTriDiagonalCoefficients failed for val in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(Ebath);
+    free(Wval);
+    free(Wcon);
+    return 1;
+  }
+  if (PolesToTriDiagonalCoefficients(NBath, Ebath, Wcon, NBath, &(H->con.a[1]), &(H->con.b[1]), &NCon, &Wcontot))
+  {
+    printf("PolesToTriDiagonalCoefficients failed for con in AndersonMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(Ebath);
+    free(Wval);
+    free(Wcon);
+    return 1;
+  }
+  free(Ebath);
+  free(Wval);
+  free(Wcon);
+  H->val.b[0] = sqrt(Wvaltot);
+  H->val.N = NVal;
+  H->con.b[0] = sqrt(Wcontot);
+  H->con.N = NCon;
   return 0;
 }
 
@@ -1485,6 +1869,10 @@ uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrix(TriDiagonalMatrixType 
   return TriDiagonalMatrixToDoubleTriDiagonalMatrix(SecTri, &(A->Dt), Ef, epsilon);
 }
 
+/*  Kept for its history and to be reimplemented; not called by anything outside
+ *  Test/. It routes through AndersonMatrixToDoubleTriDiagonalMatrixPlusT and so
+ *  inherits every difference listed there.
+ */
 uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T, DoubleTriDiagonalMatrixType * const A, double Ef,  double epsilon)
 {
   AndersonMatrixType An;
@@ -1512,7 +1900,6 @@ uint32_t TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType c
   FreeMatrix(&Ttwo);
   return 0;
 }
-
 
 uint32_t TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT(TriDiagonalMatrixType const M, MatrixType * const T,  SecondDoubleTriDiagonalMatrixType * const A, double Ef, double epsilon)
 {
@@ -1668,100 +2055,486 @@ uint32_t ConvertTriDiagonalMatrixToBlockTriDiagonalMatrixNoCopy(TriDiagonalMatri
 /********************         DoubleTriDiagonalMatrix To ... ********************/
 /********************************************************************************/
 
-uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t NTriDiag)
+/*  A double tri-diagonal matrix is a band matrix of half bandwidth 2
+ *
+ *  Tri-diagonalizing G from the impurity has its first step for free: the format
+ *  already gives a[1] = val.a[0]+con.a[0] and b[1] = sqrt(val.b[0]^2+con.b[0]^2).
+ *  What is left is the minor, two chains that do not touch, seen from
+ *  (val.b[0] val_1 + con.b[0] con_1)/b[1] -- the Jacobi matrix of a sum of two
+ *  measures.
+ *
+ *  Read the matrix as val_N ... val_1, impurity, con_1 ... con_N and it is
+ *  tri-diagonal, but that puts the impurity in the middle and Lanczos has to
+ *  start at it. Interleave the two chains behind the impurity instead,
+ *
+ *      impurity, val_1, con_1, val_2, con_2, val_3, con_3, ...
+ *          1       2      3      4      5      6      7
+ *
+ *  and every coupling sits at distance 1 or 2: impurity to val_1 and to con_1,
+ *  then val_k to val_k+1 and con_k to con_k+1. So the whole matrix is a symmetric
+ *  band matrix of half bandwidth 2, block tri-diagonal with 2x2 blocks, and the
+ *  starting vector is e_1 with no rotation needed. Chains of unequal length are
+ *  no different: once the shorter one runs out the rest of the longer one is
+ *  consecutive, at distance 1.
+ *
+ *  dsbtrd then reduces it with Givens rotations, annihilating only in planes 2
+ *  and beyond, so it leaves e_1 alone and what comes out is the Lanczos chain
+ *  from the impurity -- computed by orthogonal similarity rather than by the
+ *  three term recurrence. That is the point: the recurrence loses orthogonality
+ *  and needs every vector kept and re-orthogonalized, O(N^2) of memory, while a
+ *  band reduction is backward stable by construction, T = Q^T (A+E) Q with
+ *  |E| = O(eps |A|), and needs 4N doubles. It also costs O(N^2 kd) rather than
+ *  the two eigenvalue problems a route through the Anderson form would need.
+ *
+ *  The signs of the off diagonals are a gauge -- flipping a basis vector flips
+ *  the two hoppings that touch it, and taking them in turn makes all of them
+ *  positive -- so the result is made positive.
+ */
+uint32_t DoubleTriDiagonalMatrixToTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H)
 {
-  uint32_t i, j;
-  double tempRe;
-  MatrixType T;
-  T.QComplex = 0;
-  T.Ni = NTriDiag;
-  T.Nj = M.val.N + M.con.N + 1;
-  InitMatrix(&T);
-  H->N = NTriDiag;
+  if(M.b0==0)
+  {
+    H->N=0;
+    InitTriDiagonalMatrix(H);
+    strncpy(H->Name, M.Name, MAXStrLength);
+    H->mu   = M.mu;
+    H->a[0] = M.a0;
+    return 0;
+  }
+  char const *VECT = "N";
+  char const *UPLO = "U";
+  const uint32_t KD = 2;
+  const uint32_t LDAB = 3;
+  uint32_t N, k, m, p, q;
+  double *AB, *WORK;
+  int INFO = 0;
+  N = 1 + M.val.N + M.con.N;
+  H->N = N;
   if (InitTriDiagonalMatrix(H))
   {
-    FreeMatrix(&T);
     printf("InitTriDiagonalMatrix failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
     return 1;
   }
-  strcpy(T.Name, "TriDiagonalizer of ");
-  strncat(T.Name, M.Name, Max(0, MAXStrLength - 20));
-  strcpy(H->Name, "TriDiagonal form of ");
-  strncat(H->Name, M.Name, Max(0, MAXStrLength - 22));
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->mu   = M.mu;
   H->a[0] = M.a0;
   H->b[0] = M.b0;
-  for (i = 0; i < M.val.N + M.con.N + 1; i++)
+  H->a[1] = M.val.a[0] + M.con.a[0];   /* the impurity site is shared, its energy is the sum */
+  if (N == 1)
   {
-    T.VRe[0][i] = 0;
+    return 0;                          /* both chains empty, only the impurity is left */
   }
-  T.VRe[0][0] = 1;
-  for (i = 1; i < NTriDiag; i++)
+  if ((M.val.N == 0) || (M.con.N == 0))
   {
-    RealDoubleTriDiagonalMatrixVector(M, T.VRe[i - 1], T.VRe[i]);
-    for (j = 0; j < i - 1; j++)
+    /*  one chain empty: the minor is a single chain and already tri-diagonal,
+     *  so the answer is the impurity in front of it */
+    TriDiagonalMatrixType const * const C = (M.val.N == 0) ? &(M.con) : &(M.val);
+    H->b[1] = fabs(C->b[0]);
+    for (k = 1; k <= C->N; k++)
     {
-      RealVectorDotVector(T.VRe[j], T.VRe[i], T.Nj, &tempRe);
-      RealVectorAdd(T.VRe[i], T.VRe[j], T.Nj, -tempRe);
+      H->a[1 + k] = C->a[k];
     }
-    RealVectorDotVector(T.VRe[i - 1], T.VRe[i], T.Nj, &(H->a[i]));
-    RealVectorAdd(T.VRe[i], T.VRe[i - 1], T.Nj, -H->a[i]);
-    RealVectorDotVector(T.VRe[i], T.VRe[i], T.Nj, &(H->b[i]));
-    H->b[i] = sqrt(H->b[i]);
-    if (H->b[i] > 100 * DBL_MIN)
+    for (k = 1; k < C->N; k++)
     {
-      RealVectorMultiply(T.VRe[i], T.Nj, 1.0 / H->b[i]);
-      for (j = 0; j < i; j++)
-      {
-        RealVectorDotVector(T.VRe[j], T.VRe[i], T.Nj, &tempRe);
-        RealVectorAdd(T.VRe[i], T.VRe[j], T.Nj, -tempRe);
-      }
-      RealVectorDotVector(T.VRe[i], T.VRe[i], T.Nj, &tempRe);
-      tempRe = sqrt(tempRe);
-      H->b[i] *= tempRe;
-      if (tempRe > 100 * DBL_MIN)
-      {
-        RealVectorMultiply(T.VRe[i], T.Nj, 1.0 / tempRe);
-      }
-      else
-      {
-        RealVectorMultiply(T.VRe[i], T.Nj, 0);
-      }
+      H->b[1 + k] = fabs(C->b[k]);
     }
-    else
-    {
-      RealVectorMultiply(T.VRe[i], T.Nj, 0);
-    }
+    return 0;
   }
-  RealVectorDoubleTriDiagonalMatrixVector(M, T.VRe[NTriDiag - 1], &(H->a[NTriDiag]));
-  FreeMatrix(&T);
+  if ((AB = (double*)calloc(LDAB * N, sizeof(double))) == NULL)
+  {
+    printf("calloc for AB failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if ((WORK = (double*)malloc(N * sizeof(double))) == NULL)
+  {
+    printf("malloc for WORK failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
+    fflush(stdout);
+    free(AB);
+    return 1;
+  }
+  /*  band storage, UPLO='U': the element A(i,j) with i<=j of the fortran matrix
+   *  lives at AB(KD+1+i-j,j), which is AB[(KD+i-j) + (j-1)*LDAB] here. Site
+   *  numbers are 1 based, val_k at 2k and con_k at 2k+1 while both chains last,
+   *  and consecutive afterwards */
+  m = Min(M.val.N, M.con.N);
+  #define DoubleTriPosVal(k) (((k) <= m) ? (2 * (k)) : (m + (k) + 1))
+  #define DoubleTriPosCon(k) (((k) <= m) ? (2 * (k) + 1) : (m + (k) + 1))
+  #define DoubleTriBandSet(i,j,v) AB[(KD + (i) - (j)) + ((j) - 1) * LDAB] = (v)
+  DoubleTriBandSet(1, 1, M.val.a[0] + M.con.a[0]);
+  for (k = 1; k <= M.val.N; k++)
+  {
+    p = DoubleTriPosVal(k);
+    DoubleTriBandSet(p, p, M.val.a[k]);
+  }
+  for (k = 1; k <= M.con.N; k++)
+  {
+    p = DoubleTriPosCon(k);
+    DoubleTriBandSet(p, p, M.con.a[k]);
+  }
+  DoubleTriBandSet(1, DoubleTriPosVal(1), M.val.b[0]);
+  DoubleTriBandSet(1, DoubleTriPosCon(1), M.con.b[0]);
+  for (k = 1; k < M.val.N; k++)
+  {
+    p = DoubleTriPosVal(k);
+    q = DoubleTriPosVal(k + 1);
+    DoubleTriBandSet(p, q, M.val.b[k]);
+  }
+  for (k = 1; k < M.con.N; k++)
+  {
+    p = DoubleTriPosCon(k);
+    q = DoubleTriPosCon(k + 1);
+    DoubleTriBandSet(p, q, M.con.b[k]);
+  }
+  #undef DoubleTriPosVal
+  #undef DoubleTriPosCon
+  #undef DoubleTriBandSet
+  dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(H->a[1]), &(H->b[1]), NULL, &N, WORK, &INFO);
+  free(AB);
+  free(WORK);
+  if (INFO != 0)
+  {
+    printf("dsbtrd failed in DoubleTriDiagonalMatrixToTriDiagonalMatrix with INFO %i\n", INFO);
+    fflush(stdout);
+    return 1;
+  }
+  for (k = 1; k < N; k++)
+  {
+    H->b[k] = fabs(H->b[k]);
+  }
   return 0;
 }
 
-uint32_t DoubleTriDiagonalMatrixToAndersonMatrixMatrix(DoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
+/*  The bath of a double tri-diagonal matrix is its two chains, side by side
+ *
+ *  Read the matrix in the order val_N ... val_1, impurity, con_1 ... con_N and it
+ *  is one ordinary tri-diagonal chain with the impurity in the middle. Deleting
+ *  the impurity, which is what the Anderson form asks for, therefore leaves two
+ *  chains that do not touch: the valence chain and the conduction chain. The
+ *  bath is the two spectra side by side, and the impurity reaches eigenvector k
+ *  of a chain only through that chain's head, so the hopping is b[0]*c_k with
+ *  c_k the first component of that eigenvector.
+ *
+ *  The same thing falls out of the algebra. EvaluateTriDiagonalMatrix returns
+ *  a[0] + b[0]^2 g, with g the continued fraction over a[1...N], so
+ *
+ *    w - Gval - Gcon = w - (val.a[0]+con.a[0]) - [ val.b[0]^2 g_val + con.b[0]^2 g_con ]
+ *
+ *  which is the Anderson denominator with the impurity at val.a[0]+con.a[0] and
+ *  a hybridization whose poles are the two chain spectra.
+ *
+ *  So this costs two tri-diagonal eigenvalue problems of size val.N and con.N.
+ *  Going through a list of poles instead would need one of size 1+val.N+con.N to
+ *  build G's poles, a tri-diagonalization to get back to a chain and a second
+ *  eigenvalue problem on its minor, which is about four times the work for
+ *  chains of equal length and forms G's poles only to undo them again.
+ *
+ *  The dimension is preserved, 1+val.N+con.N: this is a rotation of the bath
+ *  into its eigenbasis and nothing else. Eigenvectors whose head component
+ *  vanishes are kept, with a hopping of zero; Chop removes them.
+ */
+uint32_t DoubleTriDiagonalMatrixToAndersonMatrix(DoubleTriDiagonalMatrixType const M, AndersonMatrixType * const H)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToAndersonMatrixMatrix\n");
-  return 1;
+  CompactMatrixType T;
+  uint32_t k, NBath;
+  double *EB;                   /* the bath as (energy,hopping) pairs, so that it can be sorted */
+  NBath = M.val.N + M.con.N;
+  H->N = 1 + NBath;
+  if(M.b0==0)
+  {
+    H->N=0;
+  }
+  if (InitAndersonMatrix(H))
+  {
+    printf("InitAndersonMatrix failed in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->mu   = M.mu;
+  H->a[0] = M.a0;
+  if(H->N==0)
+  {
+    return 0;
+  }
+  H->b[0] = M.b0;
+  H->a[1] = M.val.a[0] + M.con.a[0];   /* the impurity site is shared, its energy is the sum */
+  if (NBath == 0)
+  {
+    return 0;
+  }
+  if (M.val.N != 0)
+  {
+    if (TriDiagonalMatrixToEigensystemCompact(&(M.val), &(H->a[2]), &T))
+    {
+      printf("TriDiagonalMatrixToEigensystemCompact failed for val in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    /*  T.VRe[k*N+j] is component j of eigenvector k. The sign of a hopping is a
+     *  gauge on the bath orbital, so only the absolute value is kept */
+    for (k = 0; k < M.val.N; k++)
+    {
+      H->b[1 + k] = fabs(M.val.b[0] * T.VRe[k * M.val.N]);
+    }
+    FreeCompactMatrix(&T);       /* freed before the second one, so the peak is the larger chain, not the sum */
+  }
+  if (M.con.N != 0)
+  {
+    if (TriDiagonalMatrixToEigensystemCompact(&(M.con), &(H->a[2 + M.val.N]), &T))
+    {
+      printf("TriDiagonalMatrixToEigensystemCompact failed for con in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    for (k = 0; k < M.con.N; k++)
+    {
+      H->b[1 + M.val.N + k] = fabs(M.con.b[0] * T.VRe[k * M.con.N]);
+    }
+    FreeCompactMatrix(&T);
+  }
+  /*  each half leaves LAPACK in ascending order, but the two halves interleave
+   *  wherever the Fermi window put a level in both chains, so order the bath */
+  if ((EB = (double*)malloc(2 * NBath * sizeof(double))) == NULL)
+  {
+    printf("malloc for EB failed in DoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  for (k = 0; k < NBath; k++)
+  {
+    EB[2 * k    ] = H->a[2 + k];
+    EB[2 * k + 1] = H->b[1 + k];
+  }
+  qsort((void *)EB, NBath, 2 * sizeof(double), (compfn) OrderListOfPolesCompare);
+  for (k = 0; k < NBath; k++)
+  {
+    H->a[2 + k] = EB[2 * k    ];
+    H->b[1 + k] = EB[2 * k + 1];
+  }
+  free(EB);
+  return 0;
 }
 
-uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H)
+/*  The natural impurity orbital form adds its two chains where the double
+ *  tri-diagonal form nests them (see the struct comments), so there is no
+ *  rotation from one to the other -- the two split the same G differently. What
+ *  they agree on are the poles of G, so that is the route, and it is the same one
+ *  BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix takes the other way.
+ *
+ *  Going through the poles also means d -> n splits at mu exactly as l -> n does,
+ *  with ListOfPolesCopyVal and ListOfPolesCopyCon, so the two agree by
+ *  construction.
+ */
+uint32_t DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType const M, BADoubleTriDiagonalMatrixType * const H, double const mu, double const kBT)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
-  return 1;
+  ListOfPoles LP;
+  if (DoubleTriDiagonalMatrixToListOfPoles(M, &LP))
+  {
+    printf("DoubleTriDiagonalMatrixToListOfPoles failed in DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (ListOfPolesToBADoubleTridiagonalMatrix(LP, H, LP.N, LP.N, mu, kBT))
+  {
+    printf("ListOfPolesToBADoubleTridiagonalMatrix failed in DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeListOfPoles(&LP);
+    return 1;
+  }
+  FreeListOfPoles(&LP);
+  strncpy(H->Name, M.Name, MAXStrLength);
+  return 0;
 }
 
+/*  The whole matrix is tri-diagonal, with the impurity in the middle
+ *
+ *  The poles of G are the eigenvalues of the whole matrix, with weights the
+ *  square of what the impurity sees of each eigenvector -- not the two chain
+ *  spectra, which are the poles of the hybridization and are what
+ *  DoubleTriDiagonalMatrixToAndersonMatrix wants.
+ *
+ *  So this needs the whole matrix diagonalized, and it is cheap: read it as
+ *
+ *      val_N ... val_2, val_1, impurity, con_1, con_2, ... con_N
+ *
+ *  and it is an ordinary tri-diagonal matrix, half bandwidth 1. Only the observed
+ *  site sits in the middle rather than at an end, which costs nothing here --
+ *  the weights are read from the middle row of the eigenvectors instead of the
+ *  first. One tri-diagonal eigenvalue problem of size 1+val.N+con.N and no more.
+ *
+ *  (The interleaved ordering that DoubleTriDiagonalMatrixToTriDiagonalMatrix uses
+ *  is only needed when the observed site has to come first, which a Lanczos chain
+ *  requires and an eigenvalue decomposition does not.)
+ *
+ *  Poles of zero weight are kept, as everywhere else in the d row; ReducePoles
+ *  and Chop remove them. dstevd returns the eigenvalues ascending, so the list
+ *  comes out ordered.
+ */
 uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const M, ListOfPoles * const H)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToListOfPoles\n");
-  return 1;
+  if(M.b0==0)
+  {
+    H->N=0;
+    InitListOfPoles(H);
+    H->a0 = M.a0;
+    H->mu = M.mu;
+    strncpy(H->Name, M.Name, MAXStrLength);
+    return 0;
+  }
+  TriDiagonalMatrixType T;
+  CompactMatrixType U;
+  uint32_t N, k, imp;
+  N = 1 + M.val.N + M.con.N;
+  imp = M.val.N;                 /* 0 based index of the impurity, site M.val.N+1 */
+  T.N = N;
+  if (InitTriDiagonalMatrix(&T))
+  {
+    printf("InitTriDiagonalMatrix failed in DoubleTriDiagonalMatrixToListOfPoles\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(T.Name, M.Name, MAXStrLength);
+  /*  the valence chain backwards, then the impurity, then the conduction chain.
+   *  b[i] is the bond between site i and site i+1 */
+  for (k = 1; k <= M.val.N; k++)
+  {
+    T.a[M.val.N + 1 - k] = M.val.a[k];
+  }
+  T.a[M.val.N + 1] = M.val.a[0] + M.con.a[0];
+  for (k = 1; k <= M.con.N; k++)
+  {
+    T.a[M.val.N + 1 + k] = M.con.a[k];
+  }
+  for (k = 1; k < M.val.N; k++)
+  {
+    T.b[M.val.N - k] = M.val.b[k];
+  }
+  if (M.val.N != 0) T.b[M.val.N    ] = M.val.b[0];
+  if (M.con.N != 0) T.b[M.val.N + 1] = M.con.b[0];
+  for (k = 1; k < M.con.N; k++)
+  {
+    T.b[M.val.N + 1 + k] = M.con.b[k];
+  }
+  H->N = N;
+  if (InitListOfPoles(H))
+  {
+    printf("InitListOfPoles failed in DoubleTriDiagonalMatrixToListOfPoles\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&T);
+    return 1;
+  }
+  if (TriDiagonalMatrixToEigensystemCompact(&T, H->a, &U))
+  {
+    printf("TriDiagonalMatrixToEigensystemCompact failed in DoubleTriDiagonalMatrixToListOfPoles\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&T);
+    return 1;
+  }
+  FreeTriDiagonalMatrix(&T);
+  /*  U.VRe[k*N+j] is component j of eigenvector k */
+  for (k = 0; k < N; k++)
+  {
+    H->b[k] = Sqr(M.b0 * U.VRe[k * N + imp]);
+  }
+  FreeCompactMatrix(&U);
+  H->a0 = M.a0;
+  H->mu = M.mu;
+  strncpy(H->Name, M.Name, MAXStrLength);
+  return 0;
 }
+/*  Create the matrix whose resolvent is the Green's function represented by M: one impurity
+ *  site with a valence and a conduction chain attached to it.
+ *
+ *  The dimension is 1 + val.N + con.N. The two chains are the matrices that
+ *  TriDiagonalMatrixToCompactMatrix returns for val and con, the impurity site energy is
+ *  val.a[0] + con.a[0] (both chains share this site, see StructDef.cpp) and the hopping from
+ *  the impurity into the first site of a chain is val.b[0] resp. con.b[0]. Those four numbers
+ *  are the a0 and b0 that TriDiagonalMatrixToCompactMatrix leaves in Mval and Mcon.
+ *
+ *          ( Aval0+Acon0 | Bval0^* | 0     | Bcon0^* | 0     )
+ *      B = ( Bval0^T     |        Mval     | 0       | 0     )
+ *          ( 0           |                 | 0       | 0     )
+ *          ( Bcon0^T     | 0       | 0     |      Mcon       )
+ *          ( 0           | 0       | 0     |                 )
+ *
+ *  H.a0 and H.b0 are the a0 and b0 of M itself, so that
+ *    G(w) = H.a0 + H.b0^2 * [ 1/(w - H) ]_{0,0}
+ *
+ *  H not allocated on entry.
+ */
 uint32_t DoubleTriDiagonalMatrixToCompactMatrix(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
 {
-  //TODO
-  printf("TODO: DoubleTriDiagonalMatrixToCompactMatrix\n");
-  return 1;
+  uint32_t i,j,offset;
+  CompactMatrixType Mval, Mcon;
+  if (TriDiagonalMatrixToCompactMatrix(&(M.val), &Mval))
+  {
+    printf("TriDiagonalMatrixToCompactMatrix failed for val in DoubleTriDiagonalMatrixToCompactMatrix\n");
+    return 1;
+  }
+  if (TriDiagonalMatrixToCompactMatrix(&(M.con), &Mcon))
+  {
+    printf("TriDiagonalMatrixToCompactMatrix failed for con in DoubleTriDiagonalMatrixToCompactMatrix\n");
+    FreeCompactMatrix(&Mval);
+    return 1;
+  }
+  H->QComplex = 0;
+  H->Ni = 1 + Mval.Ni + Mcon.Ni;
+  H->Nj = H->Ni;
+  if (InitCompactMatrix(H))
+  {
+    printf("InitCompactMatrix failed in DoubleTriDiagonalMatrixToCompactMatrix\n");
+    FreeCompactMatrix(&Mval);
+    FreeCompactMatrix(&Mcon);
+    return 1;
+  }
+  strncpy(H->Name, M.Name, MAXStrLength);
+  H->Name[MAXStrLength-1]='\0';
+  H->a0 = M.a0;
+  H->b0 = M.b0;
+  H->mu = M.mu;
+  /* the impurity site, shared by the two chains */
+  H->VRe[0] = Mval.a0 + Mcon.a0;
+  /* the valence chain and its hopping to the impurity */
+  if (Mval.Ni != 0)
+  {
+    H->VRe[0*H->Nj + 1] = Mval.b0;
+    H->VRe[1*H->Nj + 0] = Mval.b0;
+    for (i = 0; i < Mval.Ni; i++)
+    {
+      for (j = 0; j < Mval.Nj; j++)
+      {
+        H->VRe[(1+i)*H->Nj + 1+j] = Mval.VRe[i*Mval.Nj + j];
+      }
+    }
+  }
+  /* the conduction chain and its hopping to the impurity */
+  if (Mcon.Ni != 0)
+  {
+    offset = 1 + Mval.Ni;
+    H->VRe[0*H->Nj + offset] = Mcon.b0;
+    H->VRe[offset*H->Nj + 0] = Mcon.b0;
+    for (i = 0; i < Mcon.Ni; i++)
+    {
+      for (j = 0; j < Mcon.Nj; j++)
+      {
+        H->VRe[(offset+i)*H->Nj + offset+j] = Mcon.VRe[i*Mcon.Nj + j];
+      }
+    }
+  }
+  FreeCompactMatrix(&Mval);
+  FreeCompactMatrix(&Mcon);
+  return 0;
+}
+
+/*  A non block matrix has no BlockSizeList and thus nothing to deflate. Present so that the
+ *  block and the non block branch of ResponseFunctionToCompactMatrix can be written the same
+ *  way.
+ */
+uint32_t DoubleTriDiagonalMatrixToCompactMatrixWithDeflation(DoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
+{
+  return DoubleTriDiagonalMatrixToCompactMatrix(M, H);
 }
 
 /********************************************************************************/
@@ -1871,11 +2644,30 @@ uint32_t BADoubleTriDiagonalMatrixToTriDiagonalMatrix(BADoubleTriDiagonalMatrixT
   return 0;
 }
 
-uint32_t BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType * const H)
+/*  The natural impurity orbital form adds its two chains, the double tri-diagonal
+ *  form nests them, so there is no rotation from one to the other. The route is
+ *  through the Anderson form, whose bath is one tri-diagonal eigenvalue problem
+ *  away (see BADoubleTriDiagonalMatrixToAndersonMatrix) and is already the list
+ *  of levels and hoppings that the split at mu needs.
+ */
+uint32_t BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType * const H, double const mu, double const kBT)
 {
-  //TODO:
-  printf("TODO BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
-  return 1;
+  AndersonMatrixType An;
+  if (BADoubleTriDiagonalMatrixToAndersonMatrix(M, &An))
+  {
+    printf("BADoubleTriDiagonalMatrixToAndersonMatrix failed in BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (AndersonMatrixToDoubleTriDiagonalMatrix(An, H, mu, kBT))
+  {
+    printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeAndersonMatrix(&An);
+    return 1;
+  }
+  FreeAndersonMatrix(&An);
+  return 0;
 }
 
 uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType * const M, ListOfPoles * const H)
@@ -1890,13 +2682,141 @@ uint32_t BADoubleTriDiagonalMatrixToListOfPoles(BADoubleTriDiagonalMatrixType * 
   return 0;
 }
 
+/*  The bath of an n object, seen from the observed orbital, is tri-diagonal
+ *
+ *  In the B/A basis the matrix holds the observed orbital B, the extra natural
+ *  orbital A, and the two chains from their second site onwards. B couples to A
+ *  and to both chain heads, and so does A:
+ *
+ *      av_N ... av2 - B - ac2 ... ac_N            av2 - A - ac2
+ *                     |                                 |
+ *                     A                                 B
+ *
+ *  Drop B, which is what the Anderson form asks for, and what is left is a
+ *  single chain read from one end to the other,
+ *
+ *      av_N - ... - av3 - av2 - A - ac2 - ac3 - ... - ac_N
+ *
+ *  because A is left with exactly two neighbours, the head of each chain. So the
+ *  bath of the Anderson form is one tri-diagonal eigenvalue problem, and the
+ *  hoppings are what B sees of each eigenvector: bvB0 on av2, acvBA on A and
+ *  bcB0 on ac2.
+ *
+ *  This used to go through the dense matrix, which costs a full symmetric
+ *  eigenvalue problem and 2*N^2 of workspace; the route through the poles of G
+ *  costs three tri-diagonal eigenvalue problems and a tri-diagonalization.
+ *
+ *  val.a[0] and con.a[0] are dropped, as they are by the dense matrix and by
+ *  BADoubleTriDiagonalMatrixToListOfPoles: an additive constant on G has no home
+ *  in an auxiliary matrix. Only Evaluate honours them.
+ */
 uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType * const M, AndersonMatrixType * const H)
 {
-  CompactMatrixType Mc,T;
-  BADoubleTriDiagonalMatrixTypeToCompactMatrix(M, &Mc);
-  CompactMatrixToAndersonMatrix(&Mc, &T, H);
-  FreeCompactMatrix(&T);
-  FreeCompactMatrix(&Mc);
+  TriDiagonalMatrixType Mminor;
+  CompactMatrixType Tminor;
+  uint32_t k, p, nv, nc, n;
+  double *Eminor, V;
+  /*  a chain of length zero on one side leaves an ordinary tri-diagonal matrix,
+   *  the same three cases BADoubleTriDiagonalMatrixTypeToCompactMatrix has */
+  if ((M->val.N == 0) && (M->con.N == 0))
+  {
+    H->N = 0;
+    if (InitAndersonMatrix(H)) return 1;
+    H->a[0] = M->a0;
+    H->mu = M->mu;
+    strncpy(H->Name, M->Name, MAXStrLength);
+    return 0;
+  }
+  if ((M->val.N == 0) || (M->con.N == 0))
+  {
+    if (TriDiagonalMatrixToAndersonMatrix((M->val.N == 0) ? M->con : M->val, H))
+    {
+      printf("TriDiagonalMatrixToAndersonMatrix failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    H->a[0] = M->a0;
+    H->b[0] *= M->b0;
+    H->mu = M->mu;
+    strncpy(H->Name, M->Name, MAXStrLength);
+    return 0;
+  }
+  /*  a chain of length one contributes nothing beyond the rotation that made B
+   *  and A, so it has no site of its own here and its hopping is not read */
+  nv = (M->val.N > 1) ? M->val.N - 1 : 0;
+  nc = (M->con.N > 1) ? M->con.N - 1 : 0;
+  n = 1 + nv + nc;
+  Mminor.N = n;
+  if (InitTriDiagonalMatrix(&Mminor))
+  {
+    printf("InitTriDiagonalMatrix failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  Mminor.a[0] = 0;
+  Mminor.b[0] = 1;
+  /*  the valence chain backwards, then A, then the conduction chain forwards */
+  for (p = 0; p < nv; p++)
+  {
+    Mminor.a[1 + p] = M->val.a[M->val.N - p];
+  }
+  Mminor.a[1 + nv] = M->acvA;
+  for (p = 0; p < nc; p++)
+  {
+    Mminor.a[2 + nv + p] = M->con.a[2 + p];
+  }
+  for (p = 0; p + 1 < nv; p++)
+  {
+    Mminor.b[1 + p] = M->val.b[M->val.N - 1 - p];
+  }
+  if (nv > 0) Mminor.b[nv] = M->bvA0;
+  if (nc > 0) Mminor.b[1 + nv] = M->bcA0;
+  for (p = 0; p + 1 < nc; p++)
+  {
+    Mminor.b[2 + nv + p] = M->con.b[2 + p];
+  }
+  if ((Eminor = (double*)malloc(n * sizeof(double))) == NULL)
+  {
+    printf("malloc for Eminor failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&Mminor);
+    return 1;
+  }
+  if (TriDiagonalMatrixToEigensystemCompact(&Mminor, Eminor, &Tminor))
+  {
+    printf("TriDiagonalMatrixToEigensystemCompact failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    FreeTriDiagonalMatrix(&Mminor);
+    free(Eminor);
+    return 1;
+  }
+  FreeTriDiagonalMatrix(&Mminor);
+  H->N = 1 + n;
+  if (InitAndersonMatrix(H))
+  {
+    printf("InitAndersonMatrix failed in BADoubleTriDiagonalMatrixToAndersonMatrix\n");
+    fflush(stdout);
+    FreeCompactMatrix(&Tminor);
+    free(Eminor);
+    return 1;
+  }
+  H->a[0] = M->a0;
+  H->b[0] = M->b0;
+  H->a[1] = M->acvB;
+  H->mu = M->mu;
+  strncpy(H->Name, M->Name, MAXStrLength);
+  /*  Tminor.VRe[k*n+j] is component j of eigenvector k. The sign of a hopping is
+   *  a gauge on the bath orbital, so only the absolute value is kept */
+  for (k = 0; k < n; k++)
+  {
+    H->a[2 + k] = Eminor[k];
+    V = M->acvBA * Tminor.VRe[k * n + nv];
+    if (nv > 0) V += M->bvB0 * Tminor.VRe[k * n + nv - 1];
+    if (nc > 0) V += M->bcB0 * Tminor.VRe[k * n + nv + 1];
+    H->b[1 + k] = fabs(V);
+  }
+  FreeCompactMatrix(&Tminor);
+  free(Eminor);
   return 0;
 }
 
@@ -1908,20 +2828,23 @@ uint32_t BADoubleTriDiagonalMatrixToAndersonMatrix(BADoubleTriDiagonalMatrixType
 
 uint32_t SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix(SecondDoubleTriDiagonalMatrixType const M, TriDiagonalMatrixType * const H, uint32_t const NTriDiag)
 {
-  uint32_t i;
+  uint32_t i, Ncopy;
   TriDiagonalMatrixType Hlow;
+  Hlow.N = 0;
   if (NTriDiag > 1)
-    if (DoubleTriDiagonalMatrixToTriDiagonalMatrix(M.Dt, &Hlow, NTriDiag - 1))
+    if (DoubleTriDiagonalMatrixToTriDiagonalMatrix(M.Dt, &Hlow))
     {
       printf("DoubleTriDiagonalMatrixToTriDiagonalMatrix failed in SecondDoubleTriDiagonalMatrixToTriDiagonalMatrix\n");
       return 1;
     };
+  /*  the inner conversion returns the whole chain now, so take what fits */
+  Ncopy = Min(NTriDiag - 1, Hlow.N);
   H->N = NTriDiag;
   InitTriDiagonalMatrix(H);
   H->a[0] = M.a0;
   H->b[0] = M.b0;
   H->a[1] = Hlow.a[0];
-  for (i = 0; i < NTriDiag - 1; i++)
+  for (i = 0; i < Ncopy; i++)
   {
     H->b[i + 1] = Hlow.b[i];
     H->a[i + 2] = Hlow.a[i + 1];
@@ -3286,12 +4209,25 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   const char jobz  = 'V';
   const char trans = 'T'; // Difference between C and Fortran Matrix_C . Vector_C = Matrix_{Fortran}^T . Vector_{Fortran}
   const char uplo  = 'U';
-  const uint32_t lwork = 1 + 6 * M->Ni + 2 * Sqr(M->Ni);
-  const uint32_t  lcwork = 2 * M->Ni + Sqr(M->Ni);
-  double work[lwork];
+  /*  dsyev and zheev are QR iterations and want a workspace of O(N): (NB+2)*N
+   *  doubles and (NB+1)*N Complex16 for the block size NB the library picks,
+   *  plus 3N-2 doubles of rwork for zheev. What used to stand here was
+   *  1+6N+2N^2 doubles and 2N+N^2 Complex16, which is what dsyevd and zheevd,
+   *  the divide and conquer solvers, want -- and they were stack arrays. That is
+   *  30 Mb at N=1000 and 3 Gb at N=10000, so this function died with SIGSEGV
+   *  above about N=500.
+   *
+   *  NB is 32 in Accelerate; 128 is taken here as an upper bound over libraries.
+   *  Being generous costs nothing, LAPACK uses no more than the blocked size, so
+   *  this runs at exactly the speed the oversized workspace did.
+   */
+  const uint32_t NBmax = 128;
+  uint32_t lwork, lrwork;
+  double *work=NULL, *rwork=NULL;
+  double pRe, pIm, vRe, vIm;
+  Complex16 *cwork=NULL;
   Complex16  alpha;
   Complex16  beta;
-  Complex16  cwork[lcwork];
   alpha.Re=1; alpha.Im=0;
   beta.Re=0;  beta.Im=0;
   if (M->Ni != M->Nj)
@@ -3311,7 +4247,17 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   if (T->QComplex == 0)
   {
     H->a[1] = M->VRe[0];
+    lwork = (NBmax + 2) * i + 1;                  /* the documented minimum is 3N-1 */
+    work = (double*)malloc(lwork * sizeof(double));
+    if (work == NULL)
+    {
+      printf("malloc of work failed in CompactMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
     dsyev(&jobz, &uplo, &i, &(T->VRe[1+M->Ni]), &M->Ni, &(H->a[2]), work, &lwork, &info);
+    if (info != 0) printf("dsyev failed in CompactMatrixToAndersonMatrix with info value %i\n", info);
+    free(work);
     T->VRe[0]=1;
     dgemv(&trans, &i, &i, &(alpha.Re), &(T->VRe[1+M->Ni]), &M->Ni, &(M->VRe[1]), &j, &(beta.Re), &(H->b[1]), &j);
     for(i=1;i<M->Ni;i++)
@@ -3331,18 +4277,69 @@ uint32_t CompactMatrixToAndersonMatrix(CompactMatrixType * const M, CompactMatri
   else
   {
     H->a[1] = M->V[0].Re;
-    zheev(&jobz, &uplo, &i, &(T->V[1+M->Ni]),   &M->Ni, &(H->a[2]), cwork, &lcwork, work, &info);
+    /*  zheev keeps its real workspace apart from its complex one, and wants
+     *  only 3N-2 of it */
+    lrwork = 3 * i + 1;
+    rwork = (double*)malloc(lrwork * sizeof(double));
+    if (rwork == NULL)
+    {
+      printf("malloc of rwork failed in CompactMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    /*  the documented minimum is 2N-1, and zgemv below writes i elements into
+     *  cwork, so (NBmax+1)*i+1 covers both */
+    lwork = (NBmax + 1) * i + 1;
+    cwork = (Complex16*)malloc(lwork * sizeof(Complex16));
+    if (cwork == NULL)
+    {
+      printf("malloc of cwork failed in CompactMatrixToAndersonMatrix\n");
+      fflush(stdout);
+      free(rwork);
+      return 1;
+    }
+    zheev(&jobz, &uplo, &i, &(T->V[1+M->Ni]),   &M->Ni, &(H->a[2]), cwork, &lwork, rwork, &info);
+    if (info != 0) printf("zheev failed in CompactMatrixToAndersonMatrix with info value %i\n", info);
+    free(rwork);
     T->V[0].Re=1;
     T->V[0].Im=0;
-    zgemv(&trans, &i, &i, &alpha, &(T->V[1+M->Ni]), &M->Ni, &(M->V[1]), &j, &beta, cwork, &j);
+    /*  the impurity couples to the bath through the column below it, M[r][0].
+     *  For a real symmetric matrix that is the same as the row M[0][r] the real
+     *  branch reads, but for a Hermitian one it is its complex conjugate, and
+     *  the conjugate is the wrong one here: a row major C array read column
+     *  major by fortran is conj(M), so zheev returns the eigenvectors of conj(M)
+     *  and the coupling U^dagger w comes out as a plain, unconjugated sum over
+     *  them. Hence the column, with M->Ni as the stride, and not the row.
+     */
+    zgemv(&trans, &i, &i, &alpha, &(T->V[1+M->Ni]), &M->Ni, &(M->V[M->Ni]), &M->Ni, &beta, cwork, &j);
+    /*  cwork[i-1] is the coupling of the impurity to eigenvector i-1, which sits
+     *  in row i of T. An AndersonMatrixType keeps its hoppings real, and it may:
+     *  the phase of a coupling is a gauge on the bath orbital it points at, so
+     *  rotating that orbital by the conjugate phase makes the hopping real and
+     *  positive and leaves the matrix Hermitian. This is the complex version of
+     *  the sign flip the real branch does just above.
+     */
     for(i=1;i<M->Ni;i++)
     {
       T->V[i].Re=0;
       T->V[i*M->Ni].Re=0;
       T->V[i].Im=0;
       T->V[i*M->Ni].Im=0;
+      H->b[i] = sqrt(Sqr(cwork[i-1].Re) + Sqr(cwork[i-1].Im));
+      if(H->b[i]>0)
+      {
+        pRe =  cwork[i-1].Re / H->b[i];
+        pIm = -cwork[i-1].Im / H->b[i];
+        for(j=1;j<M->Ni;j++)
+        {
+          vRe = T->V[i*T->Nj+j].Re;
+          vIm = T->V[i*T->Nj+j].Im;
+          T->V[i*T->Nj+j].Re = vRe*pRe - vIm*pIm;
+          T->V[i*T->Nj+j].Im = vRe*pIm + vIm*pRe;
+        }
+      }
     }
-    
+    free(cwork);
   }
   return 0;
 }
@@ -4149,38 +5146,51 @@ uint32_t ListOfPolesToTridiagonalMatrixNonOrthogonal(const ListOfPoles A, TriDia
   return 0;
 }
 
-/*
+/*  g(w) = a0 + sum_i b[i]/(w - a[i]) becomes
+ *  a0 + b[0]^2/(w - a[1] - b[1]^2/(w - a[2] - ...)), with b[0]^2 the total
+ *  weight of the poles.
  *
+ *  NTriDiag is an upper bound on the dimension. The chain is shorter when the
+ *  poles are fewer or degenerate, or when a hopping vanishes.
  */
 uint32_t ListOfPolesToTridiagonalMatrix(const ListOfPoles A, TriDiagonalMatrixType * const M, uint32_t NTriDiag)
 {
-  uint32_t i;
-  AndersonMatrixType AM;
-  AM.N = A.N + 1;
-  if (InitAndersonMatrix(&AM))
+  uint32_t i, NChain;
+  double *Wpole, Wtot;
+  M->N = Min(NTriDiag, A.N);
+  if (InitTriDiagonalMatrix(M))
   {
-    printf("InitAndersonMatrix failed in ListOfPolesToTridiagonalMatrix\n;");
+    printf("InitTriDiagonalMatrix failed in ListOfPolesToTridiagonalMatrix\n");
     fflush(stdout);
     return 1;
-  };
-  snprintf(AM.Name, MAXStrLength, "%s",A.Name);
-  AM.a[0] = 0;
-  AM.a[1] = A.a0;
-  AM.b[0] = 1;
+  }
+  snprintf(M->Name, MAXStrLength, "%s", A.Name);
+  M->mu = A.mu;
+  M->a[0] = A.a0;
+  if (M->N == 0)
+  {
+    return 0;
+  }
+  if ((Wpole = (double*)malloc(A.N * sizeof(double))) == NULL)
+  {
+    printf("malloc for Wpole failed in ListOfPolesToTridiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
   for (i = 0; i < A.N; i++)
   {
-    AM.b[i + 1] = sqrt(fabs(A.b[i]));
-    AM.a[i + 2] = A.a[i];
+    Wpole[i] = Abs(A.b[i]);
   }
-  AndersonMatrixToTriDiagonalMatrix(AM, M, NTriDiag + 1);
-  for (i = 0; i < M->N - 1; i++)
+  if (PolesToTriDiagonalCoefficients(A.N, A.a, Wpole, M->N, &(M->a[1]), &(M->b[1]), &NChain, &Wtot))
   {
-    M->a[i] = M->a[i + 1];
-    M->b[i] = M->b[i + 1];
+    printf("PolesToTriDiagonalCoefficients failed in ListOfPolesToTridiagonalMatrix\n");
+    fflush(stdout);
+    free(Wpole);
+    return 1;
   }
-  M->a[M->N - 1] = M->a[M->N];
-  M->N--;
-  FreeAndersonMatrix(&AM);
+  free(Wpole);
+  M->b[0] = sqrt(Wtot);
+  M->N = NChain;
   return 0;
 }
 
@@ -4203,6 +5213,36 @@ uint32_t ListOfPolesToAndersonMatrix(const ListOfPoles A, AndersonMatrixType * c
 uint32_t ListOfPolesToBADoubleTridiagonalMatrix(const ListOfPoles A, BADoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double Epsilon)
 {
   ListOfPoles LPcon, LPval;
+  if (A.N == 0)
+  { /*  No poles, so G(w) = a0, a constant with no matrix behind it. The two chains
+     *  are kept at one site each: the observed orbital of a BADoubleTriDiagonalMatrix
+     *  is a linear combination of the first site of the val and the con chain, which
+     *  is only defined if both exist. Their energies and couplings are zero and
+     *  b0 = 0, so nothing of the matrix is observable. This is the same padding the
+     *  two branches below do when exactly one of the chains comes out empty.
+     *  SetBADoubleTriDiagonalMatrixConVal is deliberately not called: it divides by
+     *  b0, and the cached acv/bv/bc it would fill are already zero here. */
+    M->val.N = 1;
+    M->con.N = 1;
+    if (InitBADoubleTriDiagonalMatrix(M))
+    {
+      printf("InitBADoubleTriDiagonalMatrix failed in ListOfPolesToBADoubleTridiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    M->val.a[0] = 0;
+    M->val.a[1] = 0;
+    M->val.b[0] = 0;
+    M->con.a[0] = 0;
+    M->con.a[1] = 0;
+    M->con.b[0] = 0;
+    M->a0 = A.a0;
+    M->b0 = 0;
+    M->mu = mu;
+    M->Epsilon = Epsilon;
+    snprintf(M->Name, MAXStrLength, "%s", A.Name);
+    return 0;
+  }
   ListOfPolesCopyCon(&LPcon, A, mu, Epsilon);
   ListOfPolesCopyVal(&LPval, A, mu, Epsilon);
   ReduceListOfPolesNumber(&LPcon, NTriDiagcon);
@@ -4277,11 +5317,31 @@ uint32_t ListOfPolesToBADoubleTridiagonalMatrixOccupation(const ListOfPoles A, B
   return 0;
 }
 
-uint32_t ListOfPolesToDoubleTridiagonalMatrix(const ListOfPoles A, DoubleTriDiagonalMatrixType * const M, uint32_t NTriDiagval, uint32_t NTriDiagcon, double mu, double kBT)
+/*  A list of poles is the function itself, a0 + sum_i b[i]/(w-a[i]), while the
+ *  double tri-diagonal form puts its two chains in the denominator. The poles
+ *  can therefore not simply be split at mu and tri-diagonalized -- that is what
+ *  the natural impurity orbital form does, and it works there only because that
+ *  form adds its two chains instead of nesting them. The poles first have to
+ *  become the chain whose spectrum they are, which is the Anderson form.
+ */
+uint32_t ListOfPolesToDoubleTridiagonalMatrix(const ListOfPoles A, DoubleTriDiagonalMatrixType * const M, double const mu, double const kBT)
 {
-  //TODO:
-  printf("TODO: ListOfPolesToDoubleTridiagonalMatrix\n");
-  return 1;
+  AndersonMatrixType An;
+  if (ListOfPolesToAndersonMatrix(A, &An))
+  {
+    printf("ListOfPolesToAndersonMatrix failed in ListOfPolesToDoubleTridiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (AndersonMatrixToDoubleTriDiagonalMatrix(An, M, mu, kBT))
+  {
+    printf("AndersonMatrixToDoubleTriDiagonalMatrix failed in ListOfPolesToDoubleTridiagonalMatrix\n");
+    fflush(stdout);
+    FreeAndersonMatrix(&An);
+    return 1;
+  }
+  FreeAndersonMatrix(&An);
+  return 0;
 }
 
 /****************************************************************************/

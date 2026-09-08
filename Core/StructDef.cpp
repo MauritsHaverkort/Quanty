@@ -527,7 +527,7 @@ ListOfPoles;
  *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
  *
  *   The Green's function representation is
- *   G(w) = a0 + b0 * 1/(w - av0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bv0 - bc0 * 1/(w - ac1 - bc1 (...) bv1) * bc0
+ *   G(w) = a0 + b0 * 1/(w - avc0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bc0 * 1/(w - ac1 - bc1 (...) bc1) * bc0) * b0
  *   G(w) = a0 + b0 * 1/(w - Gval(w) - Gcon(w) ) b0
  *
  */
@@ -553,7 +553,7 @@ DoubleTriDiagonalMatrixType;
  *     ( 0              | 0              | 0              | 0           | 0           | A[6][5]=bc1 | A[6][6]=ac2 | A[6][7]=bc2 )
  *     ( 0              | 0              | 0              | 0           | 0           | 0           | A[7][6]=bc2 | A[7][7]=ac3 )
  *
- *   avc0 = (a0val + a0con)/2
+ *   avc0 = a0val + a0con
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
@@ -853,7 +853,7 @@ BlockNaturalImpurityOrbitalMatrixType;
  *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
  *
  *   The Green's function representation is
- *   G(w) = a0 + b0 * 1/(w - av0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bv0 - bc0 * 1/(w - ac1 - bc1 (...) bv1) * bc0
+ *   G(w) = a0 + b0 * 1/(w - avc0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bc0 * 1/(w - ac1 - bc1 (...) bc1) * bc0) * b0
  *   G(w) = a0 + b0 * 1/(w - Gval(w) - Gcon(w) ) b0
  *
  */

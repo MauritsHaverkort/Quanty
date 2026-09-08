@@ -52,12 +52,8 @@ setmetatable(Gval, ResponseFunctionMeta)
 a0=0
 b0=1
 GE_D = {{a0,b0},val=Gval,con=Gcon,mu=0,type="DoubleTri", name="E"}
-setmetatable(GD_N, ResponseFunctionMeta)
+setmetatable(GE_D, ResponseFunctionMeta)
 GE_dNew = ResponseFunction.New(GE_D)
-
-print(type(GE_D))
-
-print(type(GE_dNew))
 
 --- to userdata
 
@@ -67,12 +63,10 @@ GC_a = ResponseFunction.ToUserdata(GC_A)
 GD_n = ResponseFunction.ToUserdata(GD_N)
 GE_d = ResponseFunction.ToUserdata(GE_D)
 
-
-print(type(GE_d))
-
 ToUserdataList={GA_l,   GB_t,   GC_a,   GD_n,   GE_d}
 NewList       ={GA_lNew,GB_tNew,GC_aNew,GD_nNew,GE_dNew}
 
+-- test via equality of response function type
 for i=1,#ToUserdataList do
 	if(not(ToUserdataList[i]==NewList[i])) then
 		print(i)
@@ -82,12 +76,12 @@ for i=1,#ToUserdataList do
 	end
 end
 
-
-
-
-
-
-
+-- test via evaluate
+if(not( (GE_d(0.1,0.3)==GE_dNew(0.1,0.3)) and (GE_D(0.1,0.3)==GE_d(0.1,0.3)) ) ) then
+	print(GE_d(0.1,0.3))
+	print(GE_dNew(0.1,0.3))
+	print(GE_D(0.1,0.3))
+end
 
 print("--------------------------------------------------------")
 print("--              Type conversion matrix                --")
@@ -168,7 +162,6 @@ MD_n = ResponseFunction.ToUserdata(MD_N)
 ME_d = ResponseFunction.ToUserdata(ME_D)
 
 
-
 ToUserdataList={MA_l,   MB_t,   MC_a,   MD_n,   ME_d}
 NewList       ={MA_lNew,MB_tNew,MC_aNew,MD_nNew,ME_dNew}
 
@@ -179,4 +172,11 @@ for i=1,#ToUserdataList do
 		print(NewList[i])
 		error("New failed compared to ToUserdata\n",1)
 	end
+end
+
+-- test via evaluate
+if(not( (ME_d(0.1,0.3)==ME_dNew(0.1,0.3)) and (ME_D(0.1,0.3)==ME_d(0.1,0.3)) ) ) then
+	print(GE_d(0.1,0.3))
+	print(GE_dNew(0.1,0.3))
+	print(GE_D(0.1,0.3))
 end

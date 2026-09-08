@@ -397,6 +397,126 @@ for i=1,#GList do
 end
 
 
+print("--------------------------------------------------------")
+print("-------- Double tri-diagonal, block --------------------")
+print("--------------------------------------------------------")
+-- For a double tri-diagonal matrix the orbitals are
+--
+--     [ core | impurity | val_1 ... val_Nv | con_1 ... con_Nc ]
+--
+-- one impurity block and then the two baths, so the count is BlockSize*(1+val.N+con.N),
+-- doubled when spin is added. a[0] of each chain is the impurity energy -- the two share
+-- the site, val.a[0]+con.a[0] -- and a[1] to a[N] are all bath.
+--
+-- That is one block per chain more than the natural orbital form, where a[1] is the
+-- natural orbital itself and is counted with the impurity, and this code was copied from
+-- there. Nval or Ncon equal to zero is a normal case for this type, not an edge case: it
+-- is what a chemical potential outside the bath gives.
+function DTriBitMaskCount(str)
+	local n = 0
+	for i = 1, #str do if str:sub(i, i) == "1" then n = n + 1 end end
+	return n
+end
+
+function CheckDTriBitMask(name, GD, BlockSize, AddSpin, NCore)
+	local t = ResponseFunction.ToTable(GD)
+	local nv, nc = #(t.val[1]) - 1, #(t.con[1]) - 1
+	local m = ResponseFunction.CreateBitMasks(GD, {{"AddSpin", AddSpin}, {"NCore", NCore}})
+	local f = AddSpin and 2 or 1
+	local wantImp = f * BlockSize
+	local wantVal = f * BlockSize * nv
+	local wantCon = f * BlockSize * nc
+	local wantNF  = NCore + wantImp + wantVal + wantCon
+	print(string.format("  %-24s val.N=%2d con.N=%2d   NF=%3d  NImpurity=%2d NBathVal=%3d NBathCon=%3d",
+	      name, nv, nc, m.NF, m.NImpurity, m.NBathVal, m.NBathCon))
+	if m.NF ~= wantNF then
+		error("CreateBitMasks on a block DoubleTri: NF is " .. m.NF .. " and not " .. wantNF .. " for " .. name, 1)
+	end
+	if (m.NImpurity ~= wantImp) or (m.NBathVal ~= wantVal) or (m.NBathCon ~= wantCon) then
+		error("CreateBitMasks on a block DoubleTri: the blocks do not count up for " .. name, 1)
+	end
+	if m.NBath ~= (wantVal + wantCon) then
+		error("CreateBitMasks on a block DoubleTri: NBath is not NBathVal+NBathCon for " .. name, 1)
+	end
+	-- each mask is NF long and holds as many bits as its count says
+	for i, p in ipairs({{m.Core, NCore, "Core"}, {m.Impurity, wantImp, "Impurity"},
+	                    {m.BathVal, wantVal, "BathVal"}, {m.BathCon, wantCon, "BathCon"},
+	                    {m.Bath, wantVal + wantCon, "Bath"}}) do
+		if #(p[1]) ~= m.NF then
+			error("CreateBitMasks on a block DoubleTri: the " .. p[3] .. " mask is not NF long for " .. name, 1)
+		end
+		if DTriBitMaskCount(p[1]) ~= p[2] then
+			error("CreateBitMasks on a block DoubleTri: the " .. p[3] .. " mask has the wrong number of bits for " .. name, 1)
+		end
+	end
+	-- and core, impurity, valence bath and conduction bath partition the orbitals: every
+	-- one of them is in exactly one group
+	for i = 1, m.NF do
+		local n = (m.Core:sub(i,i) == "1" and 1 or 0) + (m.Impurity:sub(i,i) == "1" and 1 or 0)
+		        + (m.BathVal:sub(i,i) == "1" and 1 or 0) + (m.BathCon:sub(i,i) == "1" and 1 or 0)
+		if n ~= 1 then
+			error("CreateBitMasks on a block DoubleTri: orbital " .. i .. " is in " .. n .. " groups for " .. name, 1)
+		end
+	end
+end
+
+do
+	local function MakeBath(nb, mu)
+		local a = {{{0.0, 0.0}, {0.0, 0.0}}, {{1.7, 0.2}, {0.2, 1.3}}}
+		local b = {{{1.4, 0.0}, {0.0, 1.4}}}
+		for i = 1, nb do
+			local E = -5.0 + 10.0 * (i - 0.5) / nb
+			local o = 0.15 * math.sin(i)
+			a[#a + 1] = {{E, o}, {o, E + 0.3 * math.cos(i)}}
+			local v = 0.5 * math.sqrt(math.max(0.0, 25.0 - E * E)) / math.sqrt(nb)
+			b[#b + 1] = {{v, 0.3 * v}, {-0.2 * v, 0.9 * v}}
+		end
+		return ResponseFunction.ChangeType(ResponseFunction.New({a, b, mu = mu, type = "And", name = "bm"}),
+		                                   "DoubleTri", {{"EffectivekBT", 0.025}})
+	end
+	print("spin added, four core orbitals")
+	CheckDTriBitMask("twenty bath blocks", MakeBath(20,  0.0), 2, true, 4)
+	CheckDTriBitMask("six bath blocks",    MakeBath( 6,  0.0), 2, true, 4)
+	CheckDTriBitMask("one bath block",     MakeBath( 1,  0.0), 2, true, 4)
+	-- both chains empty: the impurity alone, and nothing else
+	CheckDTriBitMask("no bath at all",     MakeBath( 0,  0.0), 2, true, 4)
+	print("no spin, no core")
+	CheckDTriBitMask("six bath blocks",    MakeBath( 6,  0.0), 2, false, 0)
+	-- mu outside the bath empties one chain, which is a normal case here
+	CheckDTriBitMask("valence chain empty",    MakeBath(20, -6.0), 2, false, 0)
+	CheckDTriBitMask("conduction chain empty", MakeBath(20,  6.0), 2, false, 0)
+end
+
+print("--------------------------------------------------------")
+print("-------- Double tri-diagonal, single valued ------------")
+print("--------------------------------------------------------")
+-- the same thing without blocks, which is BlockSize 1: one impurity orbital and then the
+-- two chains. The count of the conduction bath used to be read through the layout of the
+-- natural orbital type, which has seven doubles more before its two chains, so it came out
+-- of memory past the end of con.
+do
+	local function MakeScalarD(nb, mu)
+		local a, b = {0.3, 1.7}, {1.4}
+		for i = 1, nb do
+			local E = -5.0 + 10.0 * (i - 0.5) / nb
+			a[#a + 1] = E
+			b[#b + 1] = 0.5 * math.sqrt(math.max(0.0, 25.0 - E * E)) / math.sqrt(nb)
+		end
+		return ResponseFunction.ChangeType(ResponseFunction.New({a, b, mu = mu, type = "And", name = "s"}),
+		                                   "DoubleTri", {{"EffectivekBT", 0.025}})
+	end
+	print("spin added, two core orbitals")
+	CheckDTriBitMask("ten bath levels",        MakeScalarD(10,  0.0), 1, true, 2)
+	CheckDTriBitMask("three bath levels",      MakeScalarD( 3,  0.0), 1, true, 2)
+	CheckDTriBitMask("valence chain empty",    MakeScalarD(10, -6.0), 1, true, 2)
+	CheckDTriBitMask("conduction chain empty", MakeScalarD(10,  6.0), 1, true, 2)
+	CheckDTriBitMask("no bath at all",         MakeScalarD( 0,  0.0), 1, true, 2)
+	print("no spin, no core")
+	CheckDTriBitMask("ten bath levels",        MakeScalarD(10,  0.0), 1, false, 0)
+	CheckDTriBitMask("conduction chain empty", MakeScalarD(10,  6.0), 1, false, 0)
+	CheckDTriBitMask("no bath at all",         MakeScalarD( 0,  0.0), 1, false, 0)
+end
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

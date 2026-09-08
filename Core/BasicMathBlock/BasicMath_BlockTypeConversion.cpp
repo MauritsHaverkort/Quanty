@@ -304,9 +304,24 @@ uint32_t EvaluateBlockTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, 
 
 uint32_t EvaluateBlockDoubleTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
-  // TODO:
-  printf("TODO: EvaluateBlockDoubleTriDiagonalMatrix\n");
-  return 1;
+  Complex16 z = {omega,Gamma/2};
+  CompactMatrixType val,con, det;
+  EvaluateBlockTriDiagonalMatrix(&(A->val), &val, omega, Gamma);
+  EvaluateBlockTriDiagonalMatrix(&(A->con), &con, omega, Gamma);
+  det.Ni=val.Ni;
+  det.Nj=val.Nj;
+  det.QComplex=1;
+  InitCompactIdentityMatrix(&det);
+  CompactMatrixScaleComplex(&det, z);
+  CompactMatrixSub(&det, &val);
+  CompactMatrixSub(&det, &con);
+  CompactMatrixInverse(&det);
+  CompactMatrixMultiply3('*', 'N', 'T', &(A->b0), &det, &(A->b0), Gw);
+  CompactMatrixAdd(Gw,&(A->a0));
+  FreeCompactMatrix(&val);
+  FreeCompactMatrix(&con);
+  FreeCompactMatrix(&det);
+  return 0;
 }
 uint32_t EvaluateBlockDoubleTriDiagonalMatrix(void const * A, CompactMatrixType * Gw, const double omega, const double Gamma)
 {
@@ -365,9 +380,14 @@ uint32_t EvaluateBlockResponsefunctionType(ResponsefunctionType const *A, Compac
     {
       return EvaluateBlockNaturalImpurityOrbital(A->data, Gw, omega, Gamma);
     }
+    case 'd':
+    case 'D':
+    {
+      return EvaluateBlockDoubleTriDiagonalMatrix(A->data, Gw, omega, Gamma);
+    }
     default:
     {
-      printf("Error in LuaPush_ResponseFunction: Type of Response function should be either T/t,A/a,L/l, or N/n and not %c\n",A->type);
+      printf("Error in EvaluateBlockResponsefunctionType: Type of Response function should be either T/t,A/a,L/l, N/n, or D/d and not %c\n",A->type);
       return 0;
     }
   }
@@ -684,6 +704,27 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
   int k,i,ialpha,iN;
   char name[]="temp";
   CompactMatrixType betaisqr,betai,beta,T;
+  if(A.N==0)
+  { /*  No poles, so there is no chain and nothing to tri-diagonalize: what is left is
+     *  the offset a0. The block Lanczos below must not be handed a starting space of
+     *  dimension zero -- CompactMatrixBlockBandDiagonalize would allocate for no
+     *  blocks and then report one. */
+    B->N=0;
+    B->BlockSize=A.BlockSize;
+    B->QComplex=A.QComplex;
+    if(InitBlockTridiagonalMatrix(B))
+    {
+      printf("InitBlockTridiagonalMatrix failed in BlockListOfPolesToBlockTridiagonalMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    B->mu=A.mu;
+    strncpy(B->Name, A.Name, MAXStrLength);
+    B->Name[MAXStrLength-1]='\0';
+    if(A.QComplex) memcpy(B->a,   A.a0,   Sqr(A.BlockSize)*sizeof(Complex16));
+    else           memcpy(B->aRe, A.a0Re, Sqr(A.BlockSize)*sizeof(double));
+    return 0;
+  }
   
   betaisqr.QComplex=A.QComplex;
   betaisqr.Ni=A.BlockSize;
@@ -824,18 +865,49 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(BlockListOfPole
   return 0;
 }
 
-uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+/*  A block list of poles to the block double tri-diagonal form, through the Anderson
+ *  form, as the scalar type does.
+ *
+ *  The detour is not avoidable: a list of poles holds the poles of G, while the two
+ *  chains of the double tri-diagonal form are the two halves of the hybridization and
+ *  sit in the denominator. Getting from one to the other means inverting, which is
+ *  exactly what the Anderson form is: BlockListOfPolesToBlockAndersonMatrix
+ *  tri-diagonalizes the poles and then reads the bath off the chain.
+ *
+ *  Note this is not the route to the natural orbital form. That one splits the poles of
+ *  G directly and adds the two resulting Green's functions, so it never needs the
+ *  inversion -- see BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix, which looks
+ *  deceptively similar and is a different calculation.
+ *
+ *  B is not allocated on entry.
+ */
+uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *A, BlockDoubleTriDiagonalMatrixType * const B, double const kbT, double const SingularValue, double const MinimalPoleDistance)
 {
-  // TODO:
-  printf("TODO ");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  /*  the +1 mirrors the l -> a cell of ConvertBlockMatrix, which carries a TODO saying
+   *  it should not be needed */
+  if (BlockListOfPolesToBlockAndersonMatrix(*A, &AAnd, A->N + 1, SingularValue))
+  {
+    printf("BlockListOfPolesToBlockAndersonMatrix failed in BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kbT, SingularValue, MinimalPoleDistance))
+  {
+    printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockListOfPolesToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  return 0;
 }
 
 /*  on entry A contains the Green's function in a BlockListOfPoles format.
  *  on exit B contains the Green's function in a NaturalImpurityOrbital format.
  *
  */
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, double const SingularValue, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
@@ -872,8 +944,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   {
     memset(Aval.a0Re, 0, Aval.BlockSize*Aval.BlockSize*sizeof(double));
   }
-  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, 1000*DBL_EPSILON);
-  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, SingularValue);
+  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, SingularValue);
   SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
   return 0;
 }
@@ -889,7 +961,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
  *  Output
  *    B resutling G on Nat. Imp. Orb. basis
  */
-uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, CompactMatrixType const *AT, double const kbT, double const SingularValue, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
   CompactMatrixType Aa0;
   BlockListOfPoles Acon, Aval;
@@ -914,8 +986,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
   TransformCompactMatrixNC(&Aa0, AT, &(B->a0));
   CopyBlockListOfPolesCon(*A, &Acon, A->mu, kbT);
   CopyBlockListOfPolesVal(*A, &Aval, A->mu, kbT);
-  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon+1, 1000*DBL_EPSILON);
-  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal+1, 1000*DBL_EPSILON);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Acon, &(B->con), AT, NBlockMaxCon+1, SingularValue);
+  BlockListOfPolesToBlockTridiagonalMatrixReduceDimension(Aval, &(B->val), AT, NBlockMaxVal+1, SingularValue);
   SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
   return 0;
 }
@@ -936,18 +1008,26 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
     B->QComplex = A.QComplex;
     InitBlockAndersonMatrix(B);
     B->mu = A.mu;
+    strncpy(B->Name, A.Name, MAXStrLength);
+    B->Name[MAXStrLength-1]='\0';
+    /*  a0Re and a0 are the pointers to the offset block, not the block itself, and A is
+     *  passed by value: &(A.a0Re) is the address of that pointer on the stack, so this
+     *  used to copy BlockSize^2 doubles from an eight byte object and leave G = a0 as
+     *  whatever happened to follow it */
     if(A.QComplex==0)
     {
-      memcpy(B->aRe, &(A.a0Re), Sqr(A.BlockSize)*sizeof(double));
+      memcpy(B->aRe, A.a0Re, Sqr(A.BlockSize)*sizeof(double));
     }
     else
     {
-      memcpy(B->a, &(A.a0), Sqr(A.BlockSize)*sizeof(Complex16));
+      memcpy(B->a, A.a0, Sqr(A.BlockSize)*sizeof(Complex16));
     }
     return 0;
   }
   BlockTriDiagonalMatrixType ATri;
-  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, 1000*DBL_EPSILON))
+  /*  this used to hard code 1000*DBL_EPSILON and ignore its own SingularValue, so the
+   *  option reached the function and stopped there */
+  if(BlockListOfPolesToBlockTridiagonalMatrix(A, &ATri, NBlockMax, SingularValue))
   {
     printf("BlockListOfPolesToBlockTridiagonalMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
     return 1;
@@ -956,6 +1036,7 @@ uint32_t BlockListOfPolesToBlockAndersonMatrix(BlockListOfPoles const A, BlockAn
   if(BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri,B))
   {
     printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockListOfPolesToBlockAndersonMatrix\n");
+    FreeBlockTridiagonalMatrix(&ATri);
     return 1;
   }
   FreeBlockTridiagonalMatrix(&ATri);
@@ -1050,7 +1131,7 @@ uint32_t BlockListOfPolesToDensityMatrix(BlockListOfPoles const * const A, Compa
 uint32_t BlockAndersonMatrixToSpectra(double Energy, const BlockAndersonMatrixType * const A, SpectraType *G, double Emin, double Emax, uint32_t N)
 {
   BlockListOfPoles ALP;
-  BlockAndersonMatrixToBlockListOfPoles(A, &ALP);
+  BlockAndersonMatrixToBlockListOfPoles(A, &ALP, 1000*DBL_EPSILON, false);
   BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
   FreeBlockListOfPoles(&ALP);
   return 0;
@@ -1115,7 +1196,7 @@ uint32_t BlockAndersonMatrixEigenSystem(const BlockAndersonMatrixType * const A,
 
 
 
-uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G)
+uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const G, double const MinimalPoleDistance, bool relativeMinimumPoleDistance)
 {
   if(A->N==0)
   {
@@ -1135,7 +1216,6 @@ uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A
     return 0;
   }
   uint32_t i,j;
-  double BandWidth;
   CompactMatrixType Afull, vec;
   if(BlockAndersonMatrixToCompactMatrix(A,&Afull))
   {
@@ -1185,47 +1265,329 @@ uint32_t BlockAndersonMatrixToBlockListOfPoles(BlockAndersonMatrixType const * A
   //
   G->mu=A->mu;
   // merge degenerate poles
-  if(A->QComplex)
-  {
-    BandWidth = fabs( G->V[(G->N-1) * (1 + Sqr(G->BlockSize) )].Re ) + fabs( G->V[0].Re ) + DBL_EPSILON;
-  }
-  else
-  {
-    BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
-  }
-  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
+  BlockListOfPolesMergeDegeneratePoles(G, MinimalPoleDistance, relativeMinimumPoleDistance);
   return 0;
 }
+/*  On entry A holds a Green's function as a BlockAndersonMatrix,
+ *
+ *    G(w)     = A0 + B0^* . ( w - A1 - Delta(w) )^-1 . B0^T
+ *    Delta(w) = sum_k B_k . ( w - A_{k+1} )^-1 . B_k^+          k = 1 ... A->N-1
+ *
+ *  On exit Delta holds everything that sits in that denominator, A1 + Delta(w), as a
+ *  block list of poles: a0 = A1, and one pole per bath state.
+ *
+ *  This is the block twin of AndersonMatrixInverseToListOfPoles, which for the scalar
+ *  type sets a0 = a[1] and lists the bath as b_i^2 at a_{i+2}. Here a bath block is a
+ *  matrix rather than a number, so each is diagonalized on its own,
+ *  A_{k+1} = U_k L_k U_k^+, and contributes BlockSize poles at its eigenvalues:
+ *
+ *    Delta(w) = sum_{k,m} v_{k,m} v_{k,m}^+ / ( w - l_{k,m} ),   v_{k,m} = (B_k U_k)[:,m]
+ *
+ *  Every weight is therefore a rank one Hermitian matrix, and that is the point rather
+ *  than a shortcoming. Summing the rank one weights over a degenerate group of levels
+ *  gives B_k P B_k^+ with P the spectral projector of that group, which does not depend
+ *  on the arbitrary basis LAPACK picks inside it, while each term separately does. So a
+ *  caller that needs the symmetry of a degenerate multiplet back merges the degenerate
+ *  poles, which adds their weight matrices -- spectral weight being the only thing that
+ *  may be added. See BlockListOfPolesMergeDegeneratePoles.
+ *
+ *  The bath blocks are uncoupled, so they are diagonalized one at a time, BlockSize by
+ *  BlockSize: O(NBath * BlockSize^3), and the full matrix is never assembled. Do not
+ *  confuse this with BlockAndersonMatrixToBlockListOfPoles, which builds the whole
+ *  matrix dense, diagonalizes it at O((N*BlockSize)^3) and returns the poles of G. The
+ *  poles of G are the right source for the natural orbital form, which adds two Green's
+ *  functions; the poles of the hybridization are the right source for the double
+ *  tri-diagonal form, whose two chains sit in the denominator.
+ *
+ *  The poles come out ordered by energy, which is what merging degenerate ones expects.
+ *
+ *  Delta is not allocated on entry.
+ */
+uint32_t BlockAndersonMatrixInverseToBlockListOfPoles(BlockAndersonMatrixType const * A, BlockListOfPoles * const Delta)
+{
+  uint32_t k, m, i, j, BS, BS2, NBath, ipole, base;
+  char name[] = "bath block";
+  CompactMatrixType Abath, Bk, fun, Vk;
+  double *val;
+
+  BS    = A->BlockSize;
+  BS2   = BS * BS;
+  NBath = (A->N == 0) ? 0 : A->N - 1;
+
+  Delta->N         = NBath * BS;
+  Delta->BlockSize = BS;
+  Delta->QComplex  = A->QComplex;
+  if (InitBlockListOfPoles(Delta))
+  {
+    printf("InitBlockListOfPoles failed in BlockAndersonMatrixInverseToBlockListOfPoles\n");
+    fflush(stdout);
+    return 1;
+  }
+  strncpy(Delta->Name, A->Name, MAXStrLength);
+  Delta->Name[MAXStrLength-1] = '\0';
+  Delta->mu = A->mu;
+
+  /*  a0 is the impurity block A1. A matrix of dimension zero does not have one, and
+   *  InitBlockListOfPoles has already left a0 at zero for that case */
+  if (A->N != 0)
+  {
+    if (A->QComplex) memcpy(Delta->a0,   &(A->a[BS2]),   BS2 * sizeof(Complex16));
+    else             memcpy(Delta->a0Re, &(A->aRe[BS2]), BS2 * sizeof(double));
+  }
+  if (NBath == 0) return 0;
+
+  if ((val = (double*)malloc(BS * sizeof(double))) == NULL)
+  {
+    printf("malloc for val failed in BlockAndersonMatrixInverseToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(Delta);
+    return 1;
+  }
+  /*  Abath and Bk are views on A's own storage and are never freed */
+  Abath.Name = name;  Abath.Ni = BS;  Abath.Nj = BS;  Abath.QComplex = A->QComplex;
+  Abath.a0 = 0;  Abath.b0 = 1;  Abath.mu = 0;  Abath.OnLuaStack = false;
+  Bk = Abath;
+
+  ipole = 0;
+  for (k = 0; k < NBath; k++)
+  {
+    /*  the bath block A_{k+1} is A->a[k+2], the hopping B_k into it is A->b[k+1] */
+    if (A->QComplex)
+    {
+      Abath.V = &(A->a[(k+2)*BS2]);
+      Bk.V    = &(A->b[(k+1)*BS2]);
+    }
+    else
+    {
+      Abath.VRe = &(A->aRe[(k+2)*BS2]);
+      Bk.VRe    = &(A->bRe[(k+1)*BS2]);
+    }
+    /*  CompactMatrixEigensystem returns fun with fun^* . A . fun^T diagonal, so the
+     *  eigenvectors are the rows of fun and U_k is fun^T */
+    if (CompactMatrixEigensystem(&Abath, &fun, val))
+    {
+      printf("CompactMatrixEigensystem failed for bath block %u in BlockAndersonMatrixInverseToBlockListOfPoles\n", k);
+      fflush(stdout);
+      free(val);
+      FreeBlockListOfPoles(Delta);
+      return 1;
+    }
+    if (CompactMatrixMultiply('N', 'T', &Bk, &fun, &Vk))
+    {
+      printf("CompactMatrixMultiply failed for bath block %u in BlockAndersonMatrixInverseToBlockListOfPoles\n", k);
+      fflush(stdout);
+      FreeCompactMatrix(&fun);
+      free(val);
+      FreeBlockListOfPoles(Delta);
+      return 1;
+    }
+    /*  column m of Vk is v_{k,m}, and the pole at l_{k,m} carries v_{k,m} v_{k,m}^+ */
+    for (m = 0; m < BS; m++)
+    {
+      base = ipole * (1 + BS2);
+      if (A->QComplex)
+      {
+        Delta->V[base].Re = val[m];
+        Delta->V[base].Im = 0;
+        for (i = 0; i < BS; i++)
+        {
+          for (j = 0; j < BS; j++)
+          {
+            Delta->V[base + 1 + i*BS + j].Re =  Vk.V[i*BS+m].Re * Vk.V[j*BS+m].Re + Vk.V[i*BS+m].Im * Vk.V[j*BS+m].Im;
+            Delta->V[base + 1 + i*BS + j].Im = -Vk.V[i*BS+m].Re * Vk.V[j*BS+m].Im + Vk.V[i*BS+m].Im * Vk.V[j*BS+m].Re;
+          }
+        }
+      }
+      else
+      {
+        Delta->VRe[base] = val[m];
+        for (i = 0; i < BS; i++)
+        {
+          for (j = 0; j < BS; j++)
+          {
+            Delta->VRe[base + 1 + i*BS + j] = Vk.VRe[i*BS+m] * Vk.VRe[j*BS+m];
+          }
+        }
+      }
+      ipole++;
+    }
+    FreeCompactMatrix(&fun);
+    FreeCompactMatrix(&Vk);
+  }
+  free(val);
+  OrderBlockListOfPoles(Delta);
+  return 0;
+}
+
 uint32_t BlockAndersonMatrixToBlockListOfPolesVariableGrid(BlockAndersonMatrixType const AAnd, BlockListOfPoles * const B, const double * const Grid, const uint32_t NGridPoints)
 {
   //TODO: all
   printf("Not implemented BlockAndersonMatrixToBlockListOfPoles\n");
   return 1;
 }
-uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue)
+uint32_t BlockAndersonMatrixToBlockTridiagonalMatrix(BlockAndersonMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles G;
-  BlockAndersonMatrixToBlockListOfPoles(A, &G);
+  BlockAndersonMatrixToBlockListOfPoles(A, &G, MinimalPoleDistance, relativeDistance);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   BlockListOfPolesToBlockTridiagonalMatrix(G, B, A->N+1, SingularValue);
   FreeBlockListOfPoles(&G);
   return 0;
 }
-uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT)
+/*  Split the bath of a block Anderson matrix at the chemical potential and put the two
+ *  halves in the two chains of a block double tri-diagonal matrix,
+ *
+ *    G(w) = A0 + B0^* . ( w - Gval(w) - Gcon(w) )^-1 . B0^T
+ *
+ *  The chains are the two halves of the hybridization as seen from the observed block,
+ *  so they sit in the denominator; that is what makes this different from the natural
+ *  orbital form, which adds two Green's functions and is therefore built from the poles
+ *  of G. Here the source is the pole list of the hybridization,
+ *  BlockAndersonMatrixInverseToBlockListOfPoles.
+ *
+ *  Four steps, and the order matters:
+ *
+ *   1. the bath as poles, one rank one weight per bath state;
+ *   2. merge the degenerate ones. This restores the symmetry of a degenerate multiplet:
+ *      the rank one weights of a degenerate group add to B P B^+ with P the spectral
+ *      projector, which does not depend on the basis the eigensolver picked inside the
+ *      group, while each weight separately does;
+ *   3. the Fermi split, f to the valence chain and 1-f to the conduction chain. It comes
+ *      after the merge so that degenerate partners get an identical f by construction
+ *      and the split cannot undo the symmetry the merge just restored;
+ *   4. a block Lanczos on each half.
+ *
+ *  MinimalPoleDistance has to stay far below any physical splitting: micro eV Zeeman
+ *  splittings on a band of tens of eV are the case this type exists for. The error it
+ *  is meant to hide is the O(eps * |A_k|) of the individual BlockSize by BlockSize
+ *  diagonalizations, which does not grow with the number of poles, so the default is a
+ *  few eps times the band width. Pass a value <= 0 to get that default.
+ *
+ *  The impurity block is shared by the two branches: val.a[0] + con.a[0] is what enters
+ *  the denominator and each is given half of it. How it is split is a gauge with no
+ *  canonical value, so equal halves is a convention and not an invariant.
+ *
+ *  A chain can come out empty, with mu below or above the whole bath, and both can with
+ *  no bath at all. B is not allocated on entry.
+ */
+uint32_t BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(BlockAndersonMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kbT, double const SingularValue, double const MinimalPoleDistance)
 {
-  //TODO;
-  printf("TODO: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix");
-  return 1;
+  uint32_t BS, BS2, NBath, i, NBlockMax;
+  BlockListOfPoles Delta, Dval, Dcon;
+
+  BS    = A->BlockSize;
+  BS2   = BS * BS;
+  NBath = (A->N == 0) ? 0 : A->N - 1;
+
+  if (BlockAndersonMatrixInverseToBlockListOfPoles(A, &Delta))
+  {
+    printf("BlockAndersonMatrixInverseToBlockListOfPoles failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (Delta.N != 0)
+  {
+    /*  a negative MinimalPoleDistance asks BlockListOfPolesMergeDegeneratePoles for its
+     *  standard value, which is the only place that decides it */
+    if (BlockListOfPolesMergeDegeneratePoles(&Delta, MinimalPoleDistance, false))
+    {
+      printf("BlockListOfPolesMergeDegeneratePoles failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+      fflush(stdout);
+      FreeBlockListOfPoles(&Delta);
+      return 1;
+    }
+  }
+  /*  CopyBlockListOfPoles* copies a0 along and scales only the weights */
+  if (CopyBlockListOfPolesVal(Delta, &Dval, A->mu, kbT) || CopyBlockListOfPolesCon(Delta, &Dcon, A->mu, kbT))
+  {
+    printf("CopyBlockListOfPolesVal/Con failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(&Delta);
+    return 1;
+  }
+  FreeBlockListOfPoles(&Delta);
+  /*  half of the impurity block into each head. BlockListOfPolesToBlockTridiagonalMatrix
+   *  writes a pole list's a0 into a[0] of the chain, so this needs no special casing */
+  for (i = 0; i < BS2; i++)
+  {
+    if (A->QComplex)
+    {
+      Dval.a0[i].Re *= 0.5;  Dval.a0[i].Im *= 0.5;
+      Dcon.a0[i].Re *= 0.5;  Dcon.a0[i].Im *= 0.5;
+    }
+    else
+    {
+      Dval.a0Re[i] *= 0.5;
+      Dcon.a0Re[i] *= 0.5;
+    }
+  }
+  /*  a level outside the +-40 kbT window has an exactly zero weight in one of the two
+   *  halves; dropping those is exact, and it is what makes an absent branch a pole list
+   *  with no poles */
+  BlockListOfPolesRemoveZeroWeightPoles(&Dval);
+  BlockListOfPolesRemoveZeroWeightPoles(&Dcon);
+  /*  a chain spans at most the whole bath, NBath*BlockSize states. Blocks shrink where
+   *  the block Lanczos deflates, so in the limit that is NBath*BlockSize blocks of
+   *  dimension one; the routine stops of its own accord once the Krylov space is
+   *  exhausted, so this bounds an allocation and does not truncate anything. */
+  NBlockMax = NBath * BS;
+  if (BlockListOfPolesToBlockTridiagonalMatrix(Dval, &(B->val), NBlockMax, SingularValue))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrix failed for val in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(&Dval);
+    FreeBlockListOfPoles(&Dcon);
+    return 1;
+  }
+  if (BlockListOfPolesToBlockTridiagonalMatrix(Dcon, &(B->con), NBlockMax, SingularValue))
+  {
+    printf("BlockListOfPolesToBlockTridiagonalMatrix failed for con in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockTridiagonalMatrix(&(B->val));
+    FreeBlockListOfPoles(&Dval);
+    FreeBlockListOfPoles(&Dcon);
+    return 1;
+  }
+  FreeBlockListOfPoles(&Dval);
+  FreeBlockListOfPoles(&Dcon);
+
+  B->BlockSize = BS;
+  B->QComplex  = A->QComplex;
+  B->mu        = A->mu;
+  B->kBT       = kbT;
+  strncpy(B->Name, A->Name, MAXStrLength);
+  B->Name[MAXStrLength-1] = '\0';
+  /*  a0 and b0 of the matrix itself. A matrix of dimension zero has an a[0] but no
+   *  b[0]; b0 then stays zero, which is what says nothing couples to it. */
+  B->a0.QComplex = A->QComplex;  B->a0.Ni = BS;  B->a0.Nj = BS;
+  B->b0.QComplex = A->QComplex;  B->b0.Ni = BS;  B->b0.Nj = BS;
+  if (InitCompactMatrix(&(B->a0)) || InitCompactMatrix(&(B->b0)))
+  {
+    printf("InitCompactMatrix failed in BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (A->QComplex)
+  {
+    memcpy(B->a0.V, A->a, BS2 * sizeof(Complex16));
+    if (A->N != 0) memcpy(B->b0.V, A->b, BS2 * sizeof(Complex16));
+  }
+  else
+  {
+    memcpy(B->a0.VRe, A->aRe, BS2 * sizeof(double));
+    if (A->N != 0) memcpy(B->b0.VRe, A->bRe, BS2 * sizeof(double));
+  }
+  return 0;
 }
-uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT)
+uint32_t BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(BlockAndersonMatrixType const * A, BlockNaturalImpurityOrbitalMatrixType * const B, const double kbT, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles G;
-  BlockAndersonMatrixToBlockListOfPoles(A, &G);
+  BlockAndersonMatrixToBlockListOfPoles(A, &G, MinimalPoleDistance, relativeDistance);
   //TODO: here there should not be a +1 for the dimension
   //TODO: test what is wrong here
   
-  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, A->N+1, A->N+1);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&G, B, kbT, SingularValue, A->N+1, A->N+1);
   
   FreeBlockListOfPoles(&G);
   return 0;
@@ -1345,7 +1707,8 @@ uint32_t BlockTriDiagonalMatrixToSpectraWithBroadening(const double Energy, Bloc
 uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
 {
   BlockListOfPoles ALP;
-  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP);
+  /*  a negative MinimalPoleDistance asks for the standard value */
+  BlockTriDiagonalMatrixToBlockListOfPoles(A, &ALP, -1, false);
   BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
   FreeBlockListOfPoles(&ALP);
   return 0;
@@ -1759,7 +2122,7 @@ uint32_t BlockTriDiagonalMatrixEigenSystemWithDeflation(const BlockTriDiagonalMa
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G)
+uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, double const MinimalPoleDistance, bool RelativeDistance)
 {
   if(A->N==0)
   {
@@ -1779,7 +2142,6 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
     return 0;
   }
   uint32_t i,j;
-  double BandWidth;
   CompactMatrixType Afull, vec;
   if(BlockTriDiagonalMatrixToCompactMatrix(A,&Afull))
   {
@@ -1828,17 +2190,10 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPoles(BlockTriDiagonalMatrixType con
   }
   //
   G->mu=A->mu;
-  // merge degenerate poles
-  if(A->QComplex)
-  {
-    BandWidth = fabs( G->V[(G->N-1) * (1 + Sqr(G->BlockSize) )].Re ) + fabs( G->V[0].Re ) + DBL_EPSILON;
-  }
-  else
-  {
-    BandWidth = fabs( G->VRe[(G->N-1) * (1 + Sqr(G->BlockSize) )] ) + fabs( G->VRe[0] ) + DBL_EPSILON;
-  }
-  BlockListOfPolesMergeDegeneratePoles(G, G->BlockSize*G->N*DBL_EPSILON * BandWidth);
-  return 0;
+  /*  merge degenerate poles. A negative MinimalPoleDistance asks
+   *  BlockListOfPolesMergeDegeneratePoles for its standard value; this used to compute a
+   *  band width here and ignore both of its own parameters */
+  return BlockListOfPolesMergeDegeneratePoles(G, MinimalPoleDistance, RelativeDistance);
 }
 
 uint32_t BlockTriDiagonalMatrixToBlockListOfPolesVariableGrid(BlockTriDiagonalMatrixType const * A, BlockListOfPoles * const G, const double * const Grid, const uint32_t NGridPoints)
@@ -2182,6 +2537,10 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   B->N = ATri.N;
   B->BlockSize = ATri.BlockSize;
   InitBlockAndersonMatrix(B);
+  /*  the N == 0 and N == 1 branches above carry mu across; this one used to drop it,
+   *  which puts the chemical potential at zero for anything converted through here --
+   *  and a Fermi split further downstream then happens in the wrong place */
+  B->mu = ATri.mu;
   if(ATri.QComplex)
   {
     /* copy A0 and B0 */
@@ -2339,22 +2698,53 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
   return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT)
+/*  A block tri-diagonal matrix to the block double tri-diagonal form, through the
+ *  Anderson form -- the same route the scalar type takes.
+ *
+ *  Both steps need the bath diagonalized: BlockTriDiagonalMatrixToBlockAndersonMatrix
+ *  diagonalizes the chain from the second block onwards and transforms the coupling,
+ *  and there is no cheaper exact way to get the poles of a chain's hybridization. So
+ *  composing costs one dense O((N*BlockSize)^3) diagonalization, which is what a
+ *  direct route would cost too, plus the block-local ones of the second step.
+ *
+ *  BlockTriDiagonalMatrixToBlockAndersonMatrix carries a comment saying it does not
+ *  work as intended, about two things: the hoppings come out mixed between the
+ *  orbitals of a block, and the bath blocks are reordered because the eigenvalues are
+ *  sorted. Both are statements about the shape of the Anderson form and not about G,
+ *  which it reproduces to 5e-13 on a 120 point grid for 20 bath blocks of size 2.
+ *  Neither matters here: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix
+ *  diagonalizes every bath block again on its way to the hybridization poles, so a
+ *  mixed hopping or a permuted bath changes nothing downstream.
+ */
+uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, double const SingularValue, double const MinimalPoleDistance)
 {
-  //TODO:
-  printf("TODO: BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  if (BlockTriDiagonalMatrixToBlockAndersonMatrix(ATri, &AAnd))
+  {
+    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MinimalPoleDistance))
+  {
+    printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  return 0;
 }
 
-uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT)
+uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatrixType const ATri, BlockNaturalImpurityOrbitalMatrixType * const B, const double kBT, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
   BlockListOfPoles ABlock;
-  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock))
+  if(BlockTriDiagonalMatrixToBlockListOfPoles(&ATri, &ABlock, MinimalPoleDistance, relativeDistance))
   {
     printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
     return 1;
   }
-  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, ATri.N, ATri.N);
+  BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&ABlock, B, kBT, SingularValue, ATri.N, ATri.N);
   FreeBlockListOfPoles(&ABlock);
   return 0;
 }
@@ -2366,32 +2756,596 @@ uint32_t BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockTriDiagonalMatr
  *  BlockDoubleTriDiagonalMatrixType to __
  *  ========================================================================= */
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockTriDiagonalMatrixType * const H, uint32_t NTriDiag)
+/*  A block double tri-diagonal matrix to a block tri-diagonal one, through the Anderson
+ *  form, which is what the four inbound cells of this row do in the other direction.
+ *
+ *  The two forms split G differently and the only thing they agree on is G itself, so
+ *  something in between has to hold G plainly. The Anderson form does: the two chains
+ *  here are the two halves of the hybridization and sit in the denominator, while a
+ *  chain of the tri-diagonal form is the whole of G continued-fraction expanded from the
+ *  observed block. Going d -> a puts the hybridization back into one bath, and
+ *  BlockAndersonMatrixToBlockTridiagonalMatrix then takes the poles of G and runs a block
+ *  Lanczos from the observed block.
+ *
+ *  Both parameters are needed and neither is decided here. SingularValue is what
+ *  BlockListOfPolesToBlockTridiagonalMatrix deflates on, so it belongs to the second
+ *  step; MinimalPoleDistance is the merge tolerance of the first, and it is forwarded to
+ *  the second as well, which merges the poles of G on its way.
+ *
+ *  Cost and dimension. The first step is O(N*BlockSize) small diagonalizations, the
+ *  second one dense O((N*BlockSize)^3) on the whole Anderson matrix. That matrix is the
+ *  larger of the two, since d -> a stores a rank one weight as a full BlockSize by
+ *  BlockSize sqrt(W) and so comes out a factor BlockSize wider than the d it came from --
+ *  it is the intermediate that sets the cost, not the answer. The chain that comes back
+ *  is not the interleaved band reduction the scalar type uses, and is not expected to
+ *  have the scalar version's dimension 1 + val.N + con.N; it is as long as the block
+ *  Lanczos needs before the Krylov space of the observed block is exhausted.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(BlockDoubleTriDiagonalMatrixType const * M, BlockTriDiagonalMatrixType * const H, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  if(BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(M, &AAnd, MinimalPoleDistance, relativeDistance))
+  {
+    printf("BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix failed in BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockAndersonMatrixToBlockTridiagonalMatrix(&AAnd, H, SingularValue, MinimalPoleDistance, relativeDistance))
+  {
+    printf("BlockAndersonMatrixToBlockTridiagonalMatrix failed in BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  /*  the name is the one thing the route loses: the intermediate pole list is created
+   *  with a name of its own */
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  return 0;
 }
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockAndersonMatrixType * const H)
+/*  The bath of a block double tri-diagonal matrix is its two chains side by side, and one
+ *  Anderson block is made per merged pole.
+ *
+ *  The two chains sit in the same denominator,
+ *
+ *    G(w) = A0 + B0^* . ( w - Gval(w) - Gcon(w) )^-1 . B0^T
+ *
+ *  and each of them is an ordinary block tri-diagonal response function, so
+ *  Gval(w) = val.a[0] + sum_k W_k / (w - e_k) over the poles of its own minor. Adding the
+ *  two pole lists gives everything that stands in that denominator: a0 = val.a[0] +
+ *  con.a[0], which is the observed block the two branches share, and one pole per bath
+ *  state. That is the Anderson denominator, w - A1 - sum_k B_k (w - A_{k+1})^-1 B_k^+, with
+ *
+ *    A_{k+1} = e_k * I         (BlockSize by BlockSize)
+ *    B_k     = sqrt(W_k)       (full, dense, no columns dropped)
+ *
+ *  since sum_k sqrt(W_k) (w - e_k I)^-1 sqrt(W_k)^+ = sum_k W_k / (w - e_k), exactly.
+ *
+ *  Why this form and not a smaller one. The dimension of the matrix representing a response
+ *  function is an efficiency question; breaking a symmetry is not acceptable at all.
+ *  Shifting every bath level of a t2g irep by the same 100 meV is a poor but usable
+ *  approximation, shifting one of the three by 1 meV changes magnetic susceptibilities. So
+ *  dimension loses. A_{k+1} = e_k * I is what makes a degeneracy structural rather than
+ *  numerical: all BlockSize states of a block share one stored number, so nothing
+ *  downstream can split them -- not roundoff, not a later shift, not a chop. Packing states
+ *  of different energies onto one diagonal would give every state its own number and its
+ *  own opportunity to drift.
+ *
+ *  sqrt(W) is canonical although CompactMatrixSqrt computes it from an arbitrary
+ *  eigenbasis: any f(W) = U f(L) U^+ depends only on the spectral projectors of W, so the
+ *  arbitrary basis inside a degenerate group cancels exactly. Individual eigenvectors of W
+ *  are not canonical, and a factorization into exactly rank(W) columns is defined only up
+ *  to a unitary U(rank) -- minimal dimension and canonicality are in genuine conflict.
+ *  Zero couplings are therefore kept and the bath comes out N1 * BlockSize states for N1
+ *  merged poles; BlockDoubleTriDiagonalMatrixChop removes what carries nothing. Compression
+ *  belongs earlier, in placing the poles on a grid, which merges them onto shared energies
+ *  before this conversion and makes each grid point one block.
+ *
+ *  Where the conjugates go. A block matrix couples its head as b0^* ( ) b0^T and every
+ *  level below it as b ( ) b^+, see the struct comments; both forms here have that same
+ *  head, so a0 and b0 are copied as they are. One level down the two differ, and the pole
+ *  list of a chain comes out in the head convention -- HermitianCompactMatrixToBlockListOfPoles
+ *  computes b0^* (w-A)^-1 b0^T and stores W = x^* x^T -- while a bath block of the Anderson
+ *  form sits below and wants B B^+. The two read the same Hermitian matrix with the index
+ *  order swapped, and the Hermitian square root is what crosses between them:
+ *  CompactMatrixSqrt returns B = B^+ with B B^+ = W, so sqrt(W) is already the object the
+ *  bath wants. Note that the same B in a head slot would give W^T instead.
+ *
+ *  A block double tri-diagonal matrix carries four independent QComplex flags, one per
+ *  part, and its own may be 2 for a mixed one, while an Anderson matrix has a single flag.
+ *  So the result is complex when any part is, and the pole list is made complex before the
+ *  two halves are added -- which also keeps AddBlockListOfPoles off its mixed branch.
+ *
+ *  MinimalPoleDistance is forwarded and never decided here: a negative value reaches
+ *  BlockListOfPolesMergeDegeneratePoles, the one place that turns it into the standard
+ *  10 * DBL_EPSILON * (BandWidth + DBL_EPSILON). Merging is not optional. The rank one
+ *  weights of a degenerate group add to a spectral projector, which does not depend on the
+ *  basis the eigensolver picked inside the group, while each weight separately does.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(BlockDoubleTriDiagonalMatrixType const * M, BlockAndersonMatrixType * const H, double const MinimalPoleDistance, bool const relativeDistance)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
-  return 1;
+  uint32_t BS, BS2, k, i, stride;
+  bool QZero;
+  double e;
+  char name[] = "block";
+  BlockListOfPoles L, Lcon;
+  CompactMatrixType W, SqrtW, view;
+
+  BS    = M->BlockSize;
+  BS2   = BS * BS;
+  /*  a matrix of dimension zero: nothing couples to the observed block and G = a0. The
+   *  scalar type has the same early return on b0 == 0 */
+  QZero = BlockDoubleTriDiagonalMatrixB0IsZero(M);
+  H->BlockSize = BS;
+  H->QComplex  = (M->a0.QComplex!=0);
+  if(QZero==false)
+  {
+    if((M->b0.QComplex!=0)||(M->val.QComplex!=0)||(M->con.QComplex!=0)) H->QComplex = 1;
+    if(BlockTriDiagonalMatrixToBlockListOfPoles(&(M->val), &L, MinimalPoleDistance, relativeDistance))
+    {
+      printf("BlockTriDiagonalMatrixToBlockListOfPoles failed for val in BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+      fflush(stdout);
+      return 1;
+    }
+    if(BlockTriDiagonalMatrixToBlockListOfPoles(&(M->con), &Lcon, MinimalPoleDistance, relativeDistance))
+    {
+      printf("BlockTriDiagonalMatrixToBlockListOfPoles failed for con in BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+      fflush(stdout);
+      FreeBlockListOfPoles(&L);
+      return 1;
+    }
+    /*  everything the Anderson matrix stores has to be of one type, and a0 or b0 alone
+     *  being complex is enough to make it so -- the chains may still be real */
+    if((H->QComplex!=0)&&(L.QComplex==0))
+    {
+      if(MakeRealBlockListOfPolesComplex(&L))
+      {
+        printf("MakeRealBlockListOfPolesComplex failed in BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+        fflush(stdout);
+        FreeBlockListOfPoles(&L);
+        FreeBlockListOfPoles(&Lcon);
+        return 1;
+      }
+    }
+    /*  the two a0 blocks add, which is the observed block val.a[0] + con.a[0], and the
+     *  poles concatenate */
+    if(AddBlockListOfPoles(&L, Lcon))
+    {
+      printf("AddBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+      fflush(stdout);
+      FreeBlockListOfPoles(&L);
+      FreeBlockListOfPoles(&Lcon);
+      return 1;
+    }
+    FreeBlockListOfPoles(&Lcon);
+    /*  a level that the Fermi split left in both chains arrives twice and has to be put
+     *  back together here. BlockListOfPolesMergeDegeneratePoles orders the list itself */
+    if(BlockListOfPolesMergeDegeneratePoles(&L, MinimalPoleDistance, relativeDistance))
+    {
+      printf("BlockListOfPolesMergeDegeneratePoles failed in BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+      fflush(stdout);
+      FreeBlockListOfPoles(&L);
+      return 1;
+    }
+  }
+  H->N = (QZero==true) ? 0 : 1 + L.N;
+  if(InitBlockAndersonMatrix(H))
+  {
+    printf("InitBlockAndersonMatrix failed in BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix\n");
+    fflush(stdout);
+    if(QZero==false) FreeBlockListOfPoles(&L);
+    return 1;
+  }
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  H->mu = M->mu;
+  /*  view is a window on H's own storage, so what is added lands in H. H is complex
+   *  whenever a0 or b0 is, which is what keeps CompactMatrixAdd from reallocating the
+   *  window instead of writing through it */
+  view.Name = name;  view.Ni = BS;  view.Nj = BS;  view.QComplex = H->QComplex;
+  view.a0 = 0;  view.b0 = 1;  view.mu = 0;  view.OnLuaStack = false;
+  if(H->QComplex) view.V = H->a;  else view.VRe = H->aRe;
+  CompactMatrixAdd(&view, &(M->a0));            /* InitBlockAndersonMatrix left a[0] zero */
+  if(H->N==0)
+  {
+    return 0;
+  }
+  if(H->QComplex) view.V = H->b;  else view.VRe = H->bRe;
+  SetCompactMatrixToZero(&view);                /* and b[0] the identity */
+  CompactMatrixAdd(&view, &(M->b0));
+  /*  W is a window on the pole list, one weight at a time, and is never freed */
+  W.Name = name;  W.Ni = BS;  W.Nj = BS;  W.QComplex = L.QComplex;
+  W.a0 = 0;  W.b0 = 1;  W.mu = 0;  W.OnLuaStack = false;
+  /*  A1 is the observed block shared by the two branches */
+  if(H->QComplex) view.V = &(H->a[BS2]);  else view.VRe = &(H->aRe[BS2]);
+  if(L.QComplex)  W.V    = L.a0;          else W.VRe    = L.a0Re;
+  CompactMatrixAdd(&view, &W);
+  /*  one bath block per merged pole */
+  stride = 1 + BS2;
+  for(k=0;k<L.N;k++)
+  {
+    if(L.QComplex)
+    {
+      e     = L.V[k*stride].Re;
+      W.V   = &(L.V[k*stride+1]);
+    }
+    else
+    {
+      e     = L.VRe[k*stride];
+      W.VRe = &(L.VRe[k*stride+1]);
+    }
+    /*  a weight that is not quite positive is reported by CompactMatrixSqrt and clamped;
+     *  that is a warning about the input and not a reason to fail the conversion */
+    CompactMatrixSqrt(&W, &SqrtW);
+    if(H->QComplex)
+    {
+      for(i=0;i<BS;i++) H->a[(k+2)*BS2 + i*BS + i].Re = e;
+      memcpy(&(H->b[(k+1)*BS2]), SqrtW.V, BS2*sizeof(Complex16));
+    }
+    else
+    {
+      for(i=0;i<BS;i++) H->aRe[(k+2)*BS2 + i*BS + i] = e;
+      memcpy(&(H->bRe[(k+1)*BS2]), SqrtW.VRe, BS2*sizeof(double));
+    }
+    FreeCompactMatrix(&SqrtW);
+  }
+  FreeBlockListOfPoles(&L);
+  return 0;
 }
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockDoubleTriDiagonalMatrixType const M, BlockNaturalImpurityOrbitalMatrixType * const H)
+/*  The natural orbital form adds its two chains where the double tri-diagonal form nests
+ *  them -- see the two struct comments -- so there is no rotation from one to the other:
+ *  the two split the same G differently. What they do agree on is G, and the form that
+ *  holds G plainly is the list of poles, so that is the route. It is the one the scalar
+ *  DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix takes as well.
+ *
+ *  Going through the poles also means d -> n splits at mu exactly as l -> n does, both
+ *  through CopyBlockListOfPolesVal and CopyBlockListOfPolesCon, so the two agree by
+ *  construction rather than by accident.
+ *
+ *  Note this is the poles of G and not the poles of the hybridization, which is what
+ *  d -> a wants: the observed level is a pole of G and not one of the bath. That is the
+ *  whole difference between the two readings of the same matrix.
+ *
+ *  Three parameters, none of them decided here. MinimalPoleDistance is the merge tolerance
+ *  of the first step, kBT the temperature of the Fermi split of the second, and
+ *  SingularValue what the two block Lanczos runs of the second step deflate on. The chain
+ *  lengths are bounded by the number of poles, which is what the scalar version passes
+ *  too; it bounds an allocation rather than truncating anything.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(BlockDoubleTriDiagonalMatrixType const * M, BlockNaturalImpurityOrbitalMatrixType * const H, double const kBT, double const SingularValue, double const MinimalPoleDistance, bool const relativeDistance)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
-  return 1;
+  BlockListOfPoles L;
+  if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles(M, &L, MinimalPoleDistance, relativeDistance))
+  {
+    printf("BlockDoubleTriDiagonalMatrixToBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(&L, H, kBT, SingularValue, L.N, L.N))
+  {
+    printf("BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix failed in BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix\n");
+    fflush(stdout);
+    FreeBlockListOfPoles(&L);
+    return 1;
+  }
+  FreeBlockListOfPoles(&L);
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  return 0;
 }
 
-uint32_t BlockDoubleTriDiagonalMatrixToBlockListOfPoles(BlockDoubleTriDiagonalMatrixType const M, BlockListOfPoles * const H)
+/*  Copy one BlockSize by BlockSize block, applying op on the way: 'N' as it is, 'T'
+ *  transposed, 'C' conjugated, 'D' conjugate transposed. dst may be complex where src is
+ *  real, which is what lets a real chain be written into a complex matrix.
+ *
+ *  Both are views on somebody else's storage and neither is allocated or freed here.
+ */
+static uint32_t BlockCopyWithOp(CompactMatrixType * const dst, CompactMatrixType const * const src, char const op)
 {
-  //TODO
-  printf("TODO: BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
-  return 1;
+  uint32_t i, j, n;
+  double re, im;
+  n = src->Ni;
+  for(i=0;i<n;i++)
+  {
+    for(j=0;j<n;j++)
+    {
+      if(src->QComplex) { re = src->V[i*n+j].Re; im = src->V[i*n+j].Im; }
+      else              { re = src->VRe[i*n+j];  im = 0;                }
+      if((op=='C')||(op=='D')) im = -im;
+      if((op=='T')||(op=='D'))
+      {
+        if(dst->QComplex) { dst->V[j*n+i].Re = re; dst->V[j*n+i].Im = im; }
+        else                dst->VRe[j*n+i]  = re;
+      }
+      else
+      {
+        if(dst->QComplex) { dst->V[i*n+j].Re = re; dst->V[i*n+j].Im = im; }
+        else                dst->VRe[i*n+j]  = re;
+      }
+    }
+  }
+  return 0;
+}
+
+/*  The whole matrix is block tri-diagonal, with the observed block in the middle.
+ *
+ *  The poles of G are the eigenvalues of the whole matrix, with weights what the observed
+ *  block sees of each eigenvector -- not the two chain spectra, which are the poles of the
+ *  hybridization and are what BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix wants.
+ *
+ *  So this needs the whole matrix diagonalized, and it is cheap. Read it as
+ *
+ *      val_N ... val_2, val_1, observed, con_1, con_2, ... con_N
+ *
+ *  and it is an ordinary block tri-diagonal matrix of 1 + val.N + con.N blocks, half
+ *  bandwidth 2*BlockSize-1, which BlockTriDiagonalMatrixEigenSystem reduces with
+ *  dsbtrd / zhbtrd and diagonalizes. Only the observed block sits in the middle rather
+ *  than at an end, which costs nothing here: the weights are read from the middle block
+ *  of the eigenvectors instead of the first. (The Anderson route that d -> t takes is
+ *  needed only when the observed block has to come first, which a Lanczos chain requires
+ *  and an eigenvalue decomposition does not.)
+ *
+ *  Where the conjugates go. A block matrix couples its head as b0^* ( ) b0^T and every
+ *  level below it as b ( ) b^+, see the struct comments, and the two chains of a d enter
+ *  the denominator through their heads. So the block coupling the observed block to val_1
+ *  is conj(val.b[0]) and not val.b[0]: eliminating the chain then gives
+ *  conj(b0) ( ) conj(b0)^+ = b0^* ( ) b0^T, which is what EvaluateBlockTriDiagonalMatrix
+ *  computes. Reversing the valence half exchanges the upper and lower blocks on top of
+ *  that, so the bonds inside it are transposed as well:
+ *
+ *    T.b[j]        j = 1 ... val.N-1     val.b[val.N-j]^+     inner val bonds, reversed
+ *    T.b[val.N]                          val.b[0]^T           val_1 to the observed block
+ *    T.b[val.N+1]                        conj(con.b[0])       observed block to con_1
+ *    T.b[val.N+1+k] k = 1 ... con.N-1    con.b[k]             inner con bonds, as stored
+ *
+ *  Two of those four differ from a plain copy already for a real matrix, and the other two
+ *  only for a complex one.
+ *
+ *  The weights. With the observed block at block index val.N,
+ *
+ *    G(w) = a0 + b0^* [ (w - H)^-1 ]_{observed} b0^T = a0 + sum_k W_k / (w - e_k)
+ *    W_k  = b0^* u_k u_k^+ b0^T   with u_k the part of eigenvector k on that block
+ *
+ *  which is what a BlockListOfPoles holds: the weight itself, B_i = B'_i B'_i^C, and not
+ *  a coupling. sqrt(W) is what turns a pole back into a matrix -- it is what d -> a puts
+ *  in the Anderson bath and what BlockListOfPolesToBlockTridiagonalMatrix forms as its
+ *  starting block -- and has no business here.
+ *
+ *  BlockTriDiagonalMatrixEigenSystem returns fun with fun^* H fun^T diagonal, so the rows
+ *  of fun are the eigenvectors, the same convention CompactMatrixEigensystem uses. The two
+ *  steps below are then the ones HermitianCompactMatrixToBlockListOfPoles takes, so this
+ *  list comes out with the same index convention as every other one; that function is not
+ *  called itself only because it would diagonalize densely and throw the band away.
+ *
+ *  Poles of zero weight are kept, as everywhere in the d row; Chop and ReducePoles remove
+ *  them. The eigenvalues come out ascending, and the merge orders in any case.
+ *
+ *  H is not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToBlockListOfPoles(BlockDoubleTriDiagonalMatrixType const * M, BlockListOfPoles * const H, double const MinimalPoleDistance, bool const relativeDistance)
+{
+  uint32_t BS, BS2, N, Nv, Nc, imp, n, k, i, j, base, stride;
+  char name[] = "block";
+  BlockTriDiagonalMatrixType T;
+  CompactMatrixType fun, vec, funvec, dst, src;
+  double *val;
+
+  BS  = M->BlockSize;
+  BS2 = BS * BS;
+  Nv  = M->val.N;
+  Nc  = M->con.N;
+  N   = 1 + Nv + Nc;               /* blocks of the matrix whose resolvent is G */
+  imp = Nv;                        /* 0 based block index of the observed block */
+  n   = N * BS;
+
+  H->BlockSize = BS;
+  H->QComplex  = (M->a0.QComplex!=0);
+  /*  a matrix of dimension zero: nothing couples to the observed block and G = a0 */
+  if(BlockDoubleTriDiagonalMatrixB0IsZero(M))
+  {
+    H->N = 0;
+    if(InitBlockListOfPoles(H))
+    {
+      printf("InitBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+      fflush(stdout);
+      return 1;
+    }
+    if(H->QComplex) memcpy(H->a0,   M->a0.V,   BS2*sizeof(Complex16));
+    else            memcpy(H->a0Re, M->a0.VRe, BS2*sizeof(double));
+    H->mu = M->mu;
+    strncpy(H->Name, M->Name, MAXStrLength);
+    H->Name[MAXStrLength-1] = '\0';
+    return 0;
+  }
+  if((M->b0.QComplex!=0)||(M->val.QComplex!=0)||(M->con.QComplex!=0)) H->QComplex = 1;
+
+  /*  the valence chain backwards, then the observed block, then the conduction chain */
+  T.N        = N;
+  T.BlockSize= BS;
+  T.QComplex = H->QComplex;
+  if(InitBlockTridiagonalMatrix(&T))
+  {
+    printf("InitBlockTridiagonalMatrix failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    return 1;
+  }
+  T.mu = M->mu;
+  dst.Name = name;  dst.Ni = BS;  dst.Nj = BS;  dst.QComplex = T.QComplex;
+  dst.a0 = 0;  dst.b0 = 1;  dst.mu = 0;  dst.OnLuaStack = false;
+  src = dst;
+  /*  the diagonal, a[1] to a[N]. InitBlockTridiagonalMatrix left everything zero */
+  src.QComplex = M->val.QComplex;
+  for(k=1;k<=Nv;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.a[k*BS2]);        else dst.VRe = &(T.aRe[k*BS2]);
+    if(src.QComplex) src.V = &(M->val.a[(Nv+1-k)*BS2]); else src.VRe = &(M->val.aRe[(Nv+1-k)*BS2]);
+    BlockCopyWithOp(&dst, &src, 'N');
+  }
+  src.QComplex = M->con.QComplex;
+  for(k=1;k<=Nc;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.a[(Nv+1+k)*BS2]); else dst.VRe = &(T.aRe[(Nv+1+k)*BS2]);
+    if(src.QComplex) src.V = &(M->con.a[k*BS2]);   else src.VRe = &(M->con.aRe[k*BS2]);
+    BlockCopyWithOp(&dst, &src, 'N');
+  }
+  /*  the observed block is shared: its energy is the plain sum of the two heads.
+   *  CompactMatrixAdd adds a real block into a complex one and does not reallocate the
+   *  window, T being complex whenever either chain is */
+  if(T.QComplex) dst.V = &(T.a[(Nv+1)*BS2]); else dst.VRe = &(T.aRe[(Nv+1)*BS2]);
+  src.QComplex = M->val.QComplex;
+  if(src.QComplex) src.V = M->val.a; else src.VRe = M->val.aRe;
+  CompactMatrixAdd(&dst, &src);
+  src.QComplex = M->con.QComplex;
+  if(src.QComplex) src.V = M->con.a; else src.VRe = M->con.aRe;
+  CompactMatrixAdd(&dst, &src);
+  /*  and the bonds, with the conjugates of the table above */
+  src.QComplex = M->val.QComplex;
+  for(k=1;k<Nv;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.b[k*BS2]);            else dst.VRe = &(T.bRe[k*BS2]);
+    if(src.QComplex) src.V = &(M->val.b[(Nv-k)*BS2]);  else src.VRe = &(M->val.bRe[(Nv-k)*BS2]);
+    BlockCopyWithOp(&dst, &src, 'D');
+  }
+  if(Nv!=0)
+  {
+    if(T.QComplex) dst.V   = &(T.b[Nv*BS2]);           else dst.VRe = &(T.bRe[Nv*BS2]);
+    if(src.QComplex) src.V = M->val.b;                 else src.VRe = M->val.bRe;
+    BlockCopyWithOp(&dst, &src, 'T');
+  }
+  src.QComplex = M->con.QComplex;
+  if(Nc!=0)
+  {
+    if(T.QComplex) dst.V   = &(T.b[(Nv+1)*BS2]);       else dst.VRe = &(T.bRe[(Nv+1)*BS2]);
+    if(src.QComplex) src.V = M->con.b;                 else src.VRe = M->con.bRe;
+    BlockCopyWithOp(&dst, &src, 'C');
+  }
+  for(k=1;k<Nc;k++)
+  {
+    if(T.QComplex) dst.V   = &(T.b[(Nv+1+k)*BS2]);     else dst.VRe = &(T.bRe[(Nv+1+k)*BS2]);
+    if(src.QComplex) src.V = &(M->con.b[k*BS2]);       else src.VRe = &(M->con.bRe[k*BS2]);
+    BlockCopyWithOp(&dst, &src, 'N');
+  }
+
+  if((val = (double*)malloc(n*sizeof(double)))==NULL)
+  {
+    printf("malloc for val failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeBlockTridiagonalMatrix(&T);
+    return 1;
+  }
+  if(BlockTriDiagonalMatrixEigenSystem(&T, val, &fun))
+  {
+    printf("BlockTriDiagonalMatrixEigenSystem failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeBlockTridiagonalMatrix(&T);
+    free(val);
+    return 1;
+  }
+  FreeBlockTridiagonalMatrix(&T);
+
+  /*  b0 in the columns of the observed block, so that funvec = conj(fun) . vec^T holds
+   *  b0^* u_k for every eigenvector k */
+  vec.Ni = BS;  vec.Nj = n;  vec.QComplex = H->QComplex;
+  if(InitCompactMatrix(&vec))
+  {
+    printf("InitCompactMatrix failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeCompactMatrix(&fun);
+    free(val);
+    return 1;
+  }
+  for(i=0;i<BS;i++)
+  {
+    for(j=0;j<BS;j++)
+    {
+      if(vec.QComplex)
+      {
+        if(M->b0.QComplex) vec.V[i*n + imp*BS + j]    = M->b0.V[i*BS+j];
+        else               vec.V[i*n + imp*BS + j].Re = M->b0.VRe[i*BS+j];
+      }
+      else                 vec.VRe[i*n + imp*BS + j]  = M->b0.VRe[i*BS+j];
+    }
+  }
+  if(CompactMatrixMultiply('*', 'T', &fun, &vec, &funvec))
+  {
+    printf("CompactMatrixMultiply failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeCompactMatrix(&fun);
+    FreeCompactMatrix(&vec);
+    free(val);
+    return 1;
+  }
+  FreeCompactMatrix(&fun);
+  FreeCompactMatrix(&vec);
+
+  H->N = n;
+  if(InitBlockListOfPoles(H))
+  {
+    printf("InitBlockListOfPoles failed in BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+    fflush(stdout);
+    FreeCompactMatrix(&funvec);
+    free(val);
+    return 1;
+  }
+  strncpy(H->Name, M->Name, MAXStrLength);
+  H->Name[MAXStrLength-1] = '\0';
+  H->mu = M->mu;
+  stride = 1 + BS2;
+  for(k=0;k<n;k++)
+  {
+    base = k * stride;
+    if(H->QComplex)
+    {
+      H->V[base].Re = val[k];
+      H->V[base].Im = 0;
+      for(i=0;i<BS;i++)
+      {
+        for(j=0;j<BS;j++)
+        {
+          H->V[base+1+i*BS+j].Re =  funvec.V[k*BS+j].Re*funvec.V[k*BS+i].Re + funvec.V[k*BS+j].Im*funvec.V[k*BS+i].Im;
+          H->V[base+1+i*BS+j].Im = -funvec.V[k*BS+j].Re*funvec.V[k*BS+i].Im + funvec.V[k*BS+j].Im*funvec.V[k*BS+i].Re;
+        }
+      }
+    }
+    else
+    {
+      H->VRe[base] = val[k];
+      for(i=0;i<BS;i++)
+      {
+        for(j=0;j<BS;j++)
+        {
+          H->VRe[base+1+i*BS+j] = funvec.VRe[k*BS+j]*funvec.VRe[k*BS+i];
+        }
+      }
+    }
+  }
+  FreeCompactMatrix(&funvec);
+  free(val);
+  /*  a0 is the offset of the whole function and is carried along untouched */
+  if(H->QComplex)
+  {
+    if(M->a0.QComplex) memcpy(H->a0, M->a0.V, BS2*sizeof(Complex16));
+    else for(i=0;i<BS2;i++) { H->a0[i].Re = M->a0.VRe[i]; H->a0[i].Im = 0; }
+  }
+  else
+  {
+    memcpy(H->a0Re, M->a0.VRe, BS2*sizeof(double));
+  }
+  /*  a negative MinimalPoleDistance asks BlockListOfPolesMergeDegeneratePoles for its
+   *  standard value, and that is the one place deciding it. Merging is what restores the
+   *  symmetry of a degenerate multiplet: the weights of a degenerate group add to a
+   *  spectral projector, which does not depend on the basis the eigensolver picked
+   *  inside it, while each weight separately does */
+  return BlockListOfPolesMergeDegeneratePoles(H, MinimalPoleDistance, relativeDistance);
 }
 uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const M, CompactMatrixType * const H)
 {
@@ -2400,6 +3354,58 @@ uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatri
   return 1;
 }
 
+
+uint32_t BlockDoubleTriDiagonalMatrixToSpectraWithBroadening(const double Energy, BlockDoubleTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N, double const Gamma)
+{
+  int iw,i;
+  double omega;
+  CompactMatrixType Gw;
+  G[0].N=N;
+  G[0].Emin=Emin;
+  G[0].Emax=Emax;
+  G[0].EminPole=Emin;
+  G[0].EmaxPole=Emax;
+  G[0].dE=(Emax-Emin)/((double)N);
+  G[0].Gamma=Gamma;
+  G[0].ResonantEnergy=NAN;
+  strcpy(G[0].Name, A->Name);
+  for(i=0;i<A->BlockSize*A->BlockSize;i++)
+  {
+    SpectrumAllocate(G[0], &(G[i]));
+  }
+  for(iw=0;iw<=N;iw++)
+  {
+    omega = Emin + iw * G[0].dE + Energy;
+    /*  Evaluate allocates Gw on every call, so it has to be freed inside the loop and not
+     *  once at the end.
+     */
+    EvaluateBlockDoubleTriDiagonalMatrix(A, &Gw, omega, Gamma);
+    // add Gw to G, Gw is always complex as Evaluate inverts w + i Gamma/2 - ...
+    for(i=0;i<A->BlockSize*A->BlockSize;i++)
+    {
+      G[i].Re[iw]=Gw.V[i].Re;
+      G[i].Im[iw]=Gw.V[i].Im;
+    }
+    FreeCompactMatrix(&Gw);
+  }
+  return 0;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToSpectra(const double Energy, BlockDoubleTriDiagonalMatrixType const * A, SpectraType *const G, double const Emin, double const Emax, uint32_t const N)
+{
+ BlockListOfPoles ALP;
+ /*  A spectrum without broadening is a set of delta functions, which needs the poles. Do not
+  *  continue when that conversion is not there: ALP would be left uninitiallized.
+  */
+ if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles(A, &ALP, -1, false))
+ {
+   printf("Error in BlockDoubleTriDiagonalMatrixToSpectra: can not create a spectrum without broadening without BlockDoubleTriDiagonalMatrixToBlockListOfPoles\n");
+   return 1;
+ }
+ BlockListOfPolesToSpectra(Energy, &ALP, G, Emin, Emax, N);
+ FreeBlockListOfPoles(&ALP);
+ return 0;
+}
 
 
 
@@ -2526,7 +3532,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpu
 {
   //TODO: algorithm can be optimized
   BlockListOfPoles ALP;
-  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
+  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP, -1, false);
   //TODO: the plus one should not be here
   BlockListOfPolesToBlockAndersonMatrix(ALP, B, ALP.N+1, 1000*DBL_EPSILON);
   FreeBlockListOfPoles(&ALP);
@@ -2534,12 +3540,12 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(BlockNaturalImpu
 }
 
 
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const * A, BlockListOfPoles * const B)
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(BlockNaturalImpurityOrbitalMatrixType const * A, BlockListOfPoles * const B, double const MinimalPoleDistance, bool const relativeDistance)
 {
   uint32_t i;
   BlockListOfPoles Bval;
-  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B);
-  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->con), B, MinimalPoleDistance, relativeDistance);
+  BlockTriDiagonalMatrixToBlockListOfPoles(&(A->val), &Bval, MinimalPoleDistance, relativeDistance);
   AddBlockListOfPoles(B, Bval);
   FreeBlockListOfPoles(&Bval);
   if((B->QComplex==0)&&(A->a0.QComplex==0))
@@ -2580,11 +3586,40 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNa
   return 1;
 }
 
-uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue)
+/*  A block natural impurity orbital matrix to the block double tri-diagonal form,
+ *  through the Anderson form.
+ *
+ *  These two types are not a change of basis on each other. The natural orbital form
+ *  adds two Green's functions, G = A0 + B0^* (gval + gcon) B0^T, while the double
+ *  tri-diagonal form nests its two chains in one denominator. The only thing they agree
+ *  on is G, so the route is through a form that holds G plainly, and the Anderson form
+ *  is the one that then hands over a bath to split.
+ *
+ *  BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix goes by way of the poles of
+ *  G, so this composition diagonalizes twice. Its own comment says the algorithm can
+ *  be optimized; it reproduces G to 5e-13, which is what matters here, and a direct
+ *  route would still have to invert somewhere.
+ *
+ *  B is not allocated on entry.
+ */
+uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue, double const MinimalPoleDistance)
 {
-  //TODO:
-  printf("TODO: BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
-  return 1;
+  BlockAndersonMatrixType AAnd;
+  if (BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix(A, &AAnd))
+  {
+    printf("BlockNaturalImpurityOrbitalMatrixToBlockAndersonMatrix failed in BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(&AAnd, B, kBT, SingularValue, MinimalPoleDistance))
+  {
+    printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix\n");
+    fflush(stdout);
+    FreeBlockAndersonMatrix(&AAnd);
+    return 1;
+  }
+  FreeBlockAndersonMatrix(&AAnd);
+  return 0;
 }
 
 
@@ -2592,7 +3627,7 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalI
 {
   //TODO: algorithm can be optimized use that one needs to tridiagonalize an already banded matrix
   BlockListOfPoles ALP;
-  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP);
+  BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(A,&ALP, -1, false);
   //TODO: the plus one should not be here
   BlockListOfPolesToBlockTridiagonalMatrix(ALP, B, ALP.N+1, SingularValue);
   FreeBlockListOfPoles(&ALP);

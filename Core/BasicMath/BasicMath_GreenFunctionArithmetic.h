@@ -47,7 +47,7 @@ Complex16 EvaluateAndersonMatrix(void const * A, const double omega, const doubl
 Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const * A, const double omega, const double Gamma);
 Complex16 EvaluateBADoubleTriDiagonalMatrix(void const * A, const double omega, const double Gamma);
 Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const double omega, const double Gamma);
-int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue);
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth);
 int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout);
 uint32_t FreeResponsefunction(ResponsefunctionType *M);
 uint32_t FreeResponsefunctionIncludingOriginalPointer(ResponsefunctionType *M);

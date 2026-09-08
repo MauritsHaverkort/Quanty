@@ -282,6 +282,38 @@ if((G2==G3)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+print("-- Length                                             --")
+
+-- #G is the number of positional elements of the table form of G: a list of a and a list
+-- of b for a ListOfPoles, a Tri and an Anderson matrix, and for a Nat and a DoubleTri the
+-- single { a0, b0 } pair, their two chains being the named val and con. It is checked here
+-- against a literal and against the table itself, which is the thing it describes.
+
+local LenExpected = { ListOfPoles = 2, Tri = 2, And = 2, Nat = 1, DoubleTri = 1 }
+local LenTypes = {"ListOfPoles","Tri","And","Nat","DoubleTri"}
+
+local LenGs = ResponseFunction.New({{0,-2,-1,1,2},{0.1,0.2,0.15,0.05},
+                                    mu=0,type="ListOfPoles",name="len single"})
+local LenA0 = Matrix.New({{0,0},{0,0}})
+local LenW1 = Matrix.New({{0.4,0.1},{0.1,0.3}})
+local LenW2 = Matrix.New({{0.2,0},{0,0.3}})
+local LenGb = ResponseFunction.New({{LenA0,-2,-1,1},{LenW1,LenW2,LenW1},
+                                    mu=0,type="ListOfPoles",name="len block"})
+for j, G0 in ipairs({LenGs, LenGb}) do
+	for i, ty in ipairs(LenTypes) do
+		local G = ResponseFunction.ChangeType(G0, ty)
+		if (#G ~= LenExpected[ty]) then
+			error("#G of a " .. ty .. " is " .. #G .. " and not " .. LenExpected[ty] .. "\n",1)
+		end
+		if (#G ~= #(ResponseFunction.ToTable(G))) then
+			error("#G of a " .. ty .. " is " .. #G .. " where its table has " ..
+			      #(ResponseFunction.ToTable(G)) .. " positional elements\n",1)
+		end
+	end
+end
+print("#G counts the positional elements of the table form for every type: ok")
+
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

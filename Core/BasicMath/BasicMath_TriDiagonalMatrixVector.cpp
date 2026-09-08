@@ -30,7 +30,7 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   };
   M->b = (double*)malloc(M->N * sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc for M->b failed in InitTriDiagonalMatrix\n");
@@ -45,17 +45,15 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 
 /*  Init tri-diagonal matrix and set diagonal (a) equal to one
  *  M.N must be set
+ *
+ *  N = 0 is allowed and means there is no chain: a[0], the additive offset, is
+ *  the only element, and there is no site energy to set to one and no hopping.
+ *  Same as InitTriDiagonalMatrix, which also allocates a[0] and no b for N = 0.
  */
 uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 {
   uint32_t i;
   strcpy(M->Name, "I_Matrix");
-  if (M->N == 0)
-  {
-    printf("Initialized a TriDiagonalMatrix with size zero.\n");
-    fflush(stdout);
-    return 2;
-  };
   M->a = (double*)malloc((M->N + 1) * sizeof(double));
   if (M->a == NULL)
   {
@@ -64,7 +62,7 @@ uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   };
   M->b = (double*)calloc((M->N), sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc for M->b failed in InitTriDiagonalMatrix\n");
@@ -76,7 +74,7 @@ uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     M->a[i] = 1;
   }
   M->a[0] = 0;
-  M->b[0] = 1;
+  if(M->N!=0) M->b[0] = 1;
   M->mu = 0;
   return 0;
 }
@@ -275,6 +273,7 @@ uint32_t TriDiagonalMatrixCopy(TriDiagonalMatrixType * const M, TriDiagonalMatri
     fflush(stdout);
     return 1;
   };
+  strcpy(M->Name, A.Name);
   for (i = 0; i < M->N; i++)
   {
     M->a[i] = A.a[i];

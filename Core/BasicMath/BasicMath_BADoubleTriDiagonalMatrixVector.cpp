@@ -90,19 +90,37 @@ uint32_t InitBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M)
   return 0;
 }
 
-/*
- *
+/*  A BADoubleTriDiagonalMatrix observes a linear combination of the first site of the
+ *  val and of the con chain, so both of those sites have to exist. A chain of length
+ *  zero is given one site of zero energy and zero coupling, which contributes nothing
+ *  to G and leaves the combination defined. a[0], the additive offset, is untouched.
  */
-void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M)
+void AddSiteToEmptyTriDiagonalChain(TriDiagonalMatrixType * const M)
 {
-  M->b0 = sqrt(Sqr(M->con.b[0]) + Sqr(M->val.b[0]));
-  M->con.b[0] /= M->b0;
-  M->val.b[0] /= M->b0;
+  if (M->N != 0) return;
+  M->a = (double*)realloc(M->a, 2 * sizeof(double));
+  M->b = (double*)realloc(M->b, sizeof(double));
+  M->a[1] = 0;
+  M->b[0] = 0;
+  M->N = 1;
+}
+
+/*  Derive the cached acvB, acvA, acvBA, bvB0, bvA0, bcB0 and bcA0 from the two chains.
+ *
+ *  val.b[0] and con.b[0] are taken as already normalized and b0 is not touched, so a
+ *  caller that got b0 from somewhere else -- the lua reader gets it from the {a0,b0}
+ *  pair of the table -- keeps it. SetBADoubleTriDiagonalMatrixConVal below is the
+ *  caller that derives b0 from the two head hoppings instead.
+ */
+void SetBADoubleTriDiagonalMatrixConValFromChains(BADoubleTriDiagonalMatrixType * const M)
+{
+  AddSiteToEmptyTriDiagonalChain(&(M->val));
+  AddSiteToEmptyTriDiagonalChain(&(M->con));
   M->acvB = Sqr(M->val.b[0]) * M->val.a[1] + Sqr(M->con.b[0]) * M->con.a[1];
   M->acvA = Sqr(M->val.b[0]) * M->con.a[1] + Sqr(M->con.b[0]) * M->val.a[1];
   M->acvBA = M->val.b[0] * M->con.b[0] * (M->val.a[1] - M->con.a[1]);
   if(M->val.N==1)
-  {
+  { /* there is no val.b[1]: the chain is one site long */
     M->bvB0 = 0;
     M->bvA0 = 0;
   }
@@ -112,7 +130,7 @@ void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M)
     M->bvA0 = M->con.b[0] * M->val.b[1];
   }
   if(M->con.N==1)
-  {
+  { /* there is no con.b[1] */
     M->bcB0 = 0;
     M->bcA0 = 0;
   }
@@ -121,6 +139,26 @@ void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M)
     M->bcB0 =  M->con.b[0] * M->con.b[1];
     M->bcA0 = -M->val.b[0] * M->con.b[1];
   }
+}
+
+/*  Take b0 out of the two head hoppings, so that val.b[0]^2 + con.b[0]^2 = 1, and then
+ *  derive the cached values. A caller that already knows b0 wants
+ *  SetBADoubleTriDiagonalMatrixConValFromChains instead, which leaves b0 alone.
+ */
+void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M)
+{
+  /*  the two head hoppings are read here, so an absent chain has to be given its
+   *  zero-coupling site before rather than inside …FromChains */
+  AddSiteToEmptyTriDiagonalChain(&(M->val));
+  AddSiteToEmptyTriDiagonalChain(&(M->con));
+  M->b0 = sqrt(Sqr(M->con.b[0]) + Sqr(M->val.b[0]));
+  if (M->b0 != 0)
+  { /*  b0 == 0 is a matrix nothing couples to; the two head hoppings are then already
+     *  zero and dividing by b0 would make them NaN */
+    M->con.b[0] /= M->b0;
+    M->val.b[0] /= M->b0;
+  }
+  SetBADoubleTriDiagonalMatrixConValFromChains(M);
 }
 
 /*

@@ -1,4 +1,9 @@
-
+-- Everything in this file is local to it. It is run from All.Quanty after the other
+-- response function tests, which share one global namespace, and a global U of a different
+-- shape defined by an earlier test used to reach line 35 of this one.
+local A0, B1, B2, B3, B4, GLP, GTri, GAnd, GNat, U
+local GLPR, GTriR, GAndR, GNatR
+local C, A0c, B1c, B2c, B3c, GLPc, Ur, Uc, Ucns, CheckRotate
 
 --------------
 ---- Real ----
@@ -83,3 +88,141 @@ if ((Chop(GNatR(0,0.1) - Rotate(GLP(0,0.1),U),1E-14) == Matrix.Zero(2,{{"userdat
 	print(Chop(GNatR(0,0.1) - Rotate(GLP(0,0.1),U)))
 	error("Rotate failed\n",1)
 end
+
+-----------------
+---- Complex ----
+-----------------
+
+-- Rotating a response function and then evaluating it has to give the same as evaluating
+-- it and then rotating the matrix, which is the check used throughout this file. Nothing
+-- below tested a complex function or a complex rotation before, and both work: a rotation
+-- acts on the weights of the poles, and every type reaches those the same way.
+--
+-- A0 is hermitian, as it has to be to represent a Hamiltonian, and so is every weight.
+
+C = Complex.New
+
+A0c = Matrix.New({{1,C(0,-1),0},{C(0,1),2,C(0.5,0.5)},{0,C(0.5,-0.5),3}})
+B1c = Matrix.New({{1,C(0.2,0.1),0},{C(0.2,-0.1),1,0},{0,0,2}})
+B2c = Matrix.New({{1,0,C(0.1,-0.3)},{0,1,0},{C(0.1,0.3),0,1}})
+B3c = Matrix.New({{2,C(-0.1,0.4),0},{C(-0.1,-0.4),1,0},{0,0,1}})
+
+GLPc = ResponseFunction.New( { {A0c,-5,-2,7}, {B1c,B2c,B3c}, mu=0, type="ListOfPoles", name="G cx LP"} )
+
+-- a unitary rotation with complex entries, a real one, and a rotation that is neither
+-- square nor unitary
+Ur   = {{sqrt(1/2),sqrt(1/2),0},{sqrt(1/2),-sqrt(1/2),0},{0,0,1}}
+Uc   = {{C(sqrt(1/2),0),C(0,sqrt(1/2)),0},{C(0,sqrt(1/2)),C(sqrt(1/2),0),0},{0,0,1}}
+Ucns = {{C(sqrt(1/2),0),C(0,sqrt(1/2)),C(-1,0.5)},{C(0,sqrt(1/2)),C(sqrt(1/2),0),C(1,0)}}
+
+function CheckRotate(name, G, Gref, U, dim, tol)
+	local GR = ResponseFunction.Rotate(G, U)
+	local d  = Chop(GR(0,0.1) - Rotate(Gref(0,0.1), U), tol)
+	if (d == Matrix.Zero(dim,{{"userdata",false}})) ~= true then
+		print("Error in " .. name)
+		print(d)
+		error("Rotate failed for " .. name .. "\n",1)
+	end
+end
+
+-- a complex function, rotated four ways, in every type that can hold it
+for i, u in ipairs({{"real U",Ur,3},{"complex U",Uc,3},{"complex non square U",Ucns,2}}) do
+	for j, ty in ipairs({"ListOfPoles","Tri","And","Nat"}) do
+		local G = (ty == "ListOfPoles") and GLPc or ResponseFunction.ChangeType(GLPc, ty)
+		CheckRotate("complex G, " .. u[1] .. ", type " .. ty, G, GLPc, u[2], u[3], 1E-13)
+	end
+end
+print("Rotate of a complex response function: ok")
+
+-- a real function with a complex rotation, which is where the result has to be promoted
+-- from real to complex
+for i, u in ipairs({{"complex U",Uc,3},{"complex non square U",Ucns,2}}) do
+	for j, ty in ipairs({"ListOfPoles","Tri","And","Nat"}) do
+		local G = (ty == "ListOfPoles") and GLP or ResponseFunction.ChangeType(GLP, ty)
+		CheckRotate("real G, " .. u[1] .. ", type " .. ty, G, GLP, u[2], u[3], 1E-13)
+	end
+end
+print("Rotate of a real response function by a complex rotation: ok")
+
+-------------------
+---- DoubleTri ----
+-------------------
+
+-- The double tri-diagonal form reaches the weights the same way the tri-diagonal, Anderson
+-- and natural orbital forms do, by converting to a list of poles first, so the result of a
+-- rotation is a list of poles and not a double tri-diagonal matrix -- as it is for those
+-- three as well.
+--
+-- Its conversion is the one in that group that merges degenerate poles, so it is handed
+-- MinimalPoleDistance -1 rather than the 0 the others pass: zero merges nothing at all,
+-- the test inside the merge being a strict <, and an unmerged degenerate group carries the
+-- arbitrary eigenbasis the eigensolver picked into the rotated function.
+--
+-- Before this the d case was missing altogether: BlockResponseFunctionRotate printed
+-- "unrecognized type of G" and then returned success, so lua was handed a response
+-- function whose data had never been allocated and the first use of it took the process
+-- down.
+
+for i, u in ipairs({{"real U",Ur,3},{"complex U",Uc,3},{"complex non square U",Ucns,2}}) do
+	for j, src in ipairs({{"real G",GLP},{"complex G",GLPc}}) do
+		local GD = ResponseFunction.ChangeType(src[2], "DoubleTri", {{"EffectivekBT", 0.05}})
+		CheckRotate("DoubleTri, " .. src[1] .. ", " .. u[1], GD, GD, u[2], u[3], 1E-11)
+		if ResponseFunction.Rotate(GD, u[2]).type ~= "ListOfPoles" then
+			error("Rotate of a DoubleTri should give a list of poles\n",1)
+		end
+	end
+end
+print("Rotate of a block DoubleTri: ok")
+
+-- and a type that cannot be rotated has to say so rather than return something unusable
+if pcall(function() return ResponseFunction.Rotate(GLP, {{1,0,0},{0,1,0}}) end) then
+	-- a 2x3 rotation is legal, so this one must succeed; the check is that a wrong shape
+	-- is refused
+end
+if pcall(function() return ResponseFunction.Rotate(GLP, {{1,0},{0,1}}) end) then
+	error("a rotation whose column count does not match the block size must be refused\n",1)
+end
+print("a rotation of the wrong shape is refused: ok")
+
+-----------------
+---- Options ----
+-----------------
+
+-- Rotate takes MinimalPoleDistance and forwards it to the conversion to a list of poles that every rotation
+-- of a non pole type goes through.
+
+local Uopt = {{sqrt(1/2),sqrt(1/2),0},{sqrt(1/2),-sqrt(1/2),0},{0,0,1}}
+local GDopt = ResponseFunction.ChangeType(GLP, "DoubleTri", {{"EffectivekBT", 0.05}})
+local Gbase = ResponseFunction.Rotate(GDopt, Uopt)
+local moved = false
+for i, o in ipairs({ {{"MinimalPoleDistance",1E-8 }},
+									   {{"MinimalPoleDistance",1E-13}} }) do
+	local names = {}
+	for k, v in ipairs(o) do names[#names+1] = v[1] end
+	local tag = table.concat(names, "+")
+	local GR = ResponseFunction.Rotate(GDopt, Uopt, o)
+	-- whatever the options do, the rotation has to stay a rotation
+	local d = Chop(GR(0,0.1) - Rotate(GDopt(0,0.1), Uopt), 1E-11)
+	if (d == Matrix.Zero(3,{{"userdata",false}})) ~= true then
+		print(d)
+		error("Rotate with option " .. tag .. " no longer rotates\n",1)
+	end
+	if (Chop(GR(0,0.1) - Gbase(0,0.1), 1E-14) == Matrix.Zero(3,{{"userdata",false}})) ~= true then
+		moved = true
+	end
+end
+if moved then
+	print("Rotate options: accepted, and at least one of them moves the answer")
+else
+	print("Rotate options: accepted, none of them changes the answer")
+end
+
+-- an option that does not exist has to be refused rather than ignored, and the argument
+-- count is still checked with the options list present
+if pcall(function() return ResponseFunction.Rotate(GDopt, Uopt, {{"Nonsense",1}}) end) then
+	error("Rotate accepted an option that does not exist\n",1)
+end
+if pcall(function() return ResponseFunction.Rotate(GDopt) end) then
+	error("Rotate accepted a single argument\n",1)
+end
+print("Rotate refuses an unknown option and a wrong argument count: ok")

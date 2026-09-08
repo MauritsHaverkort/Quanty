@@ -424,6 +424,44 @@ uint32_t GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalIm
   return 0;
 }
 
+/*  The same T as above, made unitary.
+ *
+ *  The two block rows of T are the observed orbital, bv0|v1> + bc0|c1>, and the combination
+ *  orthogonal to it, bc0|v1> - bv0|c1>. Neither is normalised and the two are not in general
+ *  orthogonal to each other: their Gram matrix is
+ *
+ *    T T^+ = ( S  C )     S = bv0 bv0^+ + bc0 bc0^+ ,   C = bv0 bc0^+ - bc0 bv0^+
+ *            ( C^+ S )
+ *
+ *  where S is the total spectral weight of G -- the block format keeps that weight in its
+ *  head couplings, where the single valued format normalises them and holds the weight in
+ *  b0 -- and C vanishes only for head couplings that commute. So T is unitary only for a G
+ *  of unit weight whose two heads commute, and the Loewdin factor (T T^+)^{-1/2} in front
+ *  of it makes it unitary for any G.
+ *
+ *  BlockResponseFunctionGetB0 returns S^{1/2}, which is the part of that factor belonging to
+ *  the observed orbital, so G = A0 + B0^* ( w - H )^-1 B0^T holds for the H that follows
+ *  from this T. A matrix or an operator built from the unnormalised T is a Hamiltonian in a
+ *  basis that is not orthonormal, and its eigenvalues are then not the poles of G.
+ *
+ *  A direction of the observed block that carries no spectral weight at all leaves the Gram
+ *  matrix singular; CompactMatrixInverseSqrt leaves that direction at zero.
+ */
+uint32_t GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalImpurityOrbitalMatrixType *B, CompactMatrixType *T)
+{
+  CompactMatrixType Gram,InvSqrtGram,Tnorm;
+  if(GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B, T)) return 1;
+  CompactMatrixMultiply('N', 'C', T, T, &Gram);
+  SquareCompactMatrixMakeHermitian(&Gram);
+  CompactMatrixInverseSqrt(&Gram, &InvSqrtGram);
+  FreeCompactMatrix(&Gram);
+  CompactMatrixMultiply('N', 'N', &InvSqrtGram, T, &Tnorm);
+  FreeCompactMatrix(&InvSqrtGram);
+  FreeCompactMatrix(T);
+  *T = Tnorm;
+  return 0;
+}
+
 uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNaturalImpurityOrbitalMatrixType *B)
 {
  CompactMatrixType M,T;
@@ -621,6 +659,25 @@ uint32_t SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(BlockNatural
   
   
   
+ /*  the head blocks of T once more, normalised, so that T is unitary and TMT is a
+  *  Hamiltonian in an orthonormal basis. The weight taken out is B0 = S^{1/2}, which
+  *  BlockResponseFunctionGetB0 returns. */
+ {
+   CompactMatrixType Tn;
+   uint32_t iT,jT;
+   if(GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B, &Tn)==0)
+   {
+     for(iT=0;iT<2*B->BlockSize;iT++)
+     {
+       for(jT=0;jT<2*B->BlockSize;jT++)
+       {
+         if(T.QComplex) T.V[iT*T.Nj+jT]   = Tn.V[iT*Tn.Nj+jT];
+         else           T.VRe[iT*T.Nj+jT] = Tn.VRe[iT*Tn.Nj+jT];
+       }
+     }
+     FreeCompactMatrix(&Tn);
+   }
+ }
  CompactMatrixMultiply3('N', 'N', 'C', &T, &M, &T, &(B->TMT));
  FreeCompactMatrix(&T);
  FreeCompactMatrix(&M);
