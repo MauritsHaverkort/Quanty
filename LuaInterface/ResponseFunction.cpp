@@ -875,14 +875,26 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
 
 
 
-/*  G(mu+w) -> -G(mu-w)^*
+/*  G(mu+w) -> -G(mu-w)^*, applied to the pole part of G only: with G = A0 + P(w), where
+ *  A0 is the constant term and P vanishes at infinity, the result is A0 - P(2 mu - w)^+.
+ *  The constant stays where it is, so the line above holds as it stands for A0 = 0.
  *
+ *  On the data that is a -> 2 mu - a for every pole energy or chain diagonal, with the
+ *  weights and the couplings left alone; for a chain, flipping the sign of all the b is a
+ *  similarity transformation with diag(1,-1,1,-1,...) which leaves G alone. The formats
+ *  that keep a valence and a conduction chain exchange the two, as what was below mu is
+ *  above it now.
  */
 static int LuaResponseFunctionInvertEnergy(lua_State *L)
 {
   ResponsefunctionType *Gin,Gout;
   Gin = luaL_checkResponsefunction(L,1);
-  ResponseFunctionInvertEnergy(Gin,&Gout);
+  if(ResponseFunctionInvertEnergy(Gin,&Gout))
+  {
+    FreeResponsefunction(Gin);
+    FreeResponsefunction(&Gout);
+    return luaL_error(L, "Error inverting the energy of a response function\n");
+  }
   LuaPush_ResponseFunction(L, &Gout);
   FreeResponsefunction(Gin);
   FreeResponsefunction(&Gout);

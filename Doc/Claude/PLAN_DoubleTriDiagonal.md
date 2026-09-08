@@ -149,7 +149,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
-| `InvertEnergy` | **silent no-op**, returns `G(w)` | `t` inverts | `ResponseFunctionInvertEnergy` |
 | `Transpose` | **silent no-op**, returns `G` | the `a` route transposes | `ResponseFunctionTranspose` |
 | `CalculateRho` | prints "unrecognized type d", no usable result | `a` gives rho | `ResponseFunctionToDensityMatrix` |
 | `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
@@ -164,10 +163,38 @@ calls `ResponseFunctionEffectiveHamiltonian` and hands the result straight to
 segfault there. Giving `EffectiveHamiltonian` a `d` case fixes the crash, the corrupt
 object and `FromEffectiveHamiltonian` together.
 
-**The silent no-ops are the ones to worry about.** `InvertEnergy` and `Transpose` return
-the input unchanged with no diagnostic of any kind, so a calculation using them is quietly
-wrong rather than stopped. `Transpose` is doubly hidden: a real `d` is its own transpose, so
-only a complex one shows it — which is how it went unnoticed.
+**The silent no-op left is `Transpose`.** It returns the input unchanged with no
+diagnostic of any kind, so a calculation using it is quietly wrong rather than stopped, and
+it is doubly hidden: a real `d` is its own transpose, so only a complex one shows it — which
+is how it went unnoticed.
+
+**`InvertEnergy` — DONE.** The map the function implements is `A0 - P(2 mu - w)^+` for
+`G = A0 + P(w)`: the pole part is inverted and the constant term stays, so the `G(mu+w) ->
+-G(mu-w)^*` of its header holds as it stands only for `A0 = 0`. For a `d` the two chains
+stand in the *denominator*, so unlike the chains of a `n` — added, their heads a constant of
+`G` that the map leaves alone — their heads follow: `val.a[0] + con.a[0]` is the onsite
+energy of the observed site, half in each, and it maps to `2 mu` minus itself, which is
+`mu - a[0]` for each of the two. Below the head `a[i] -> 2 mu - a[i]`, `a0` and `b0` do not
+move, and the two chains are exchanged. Two static helpers,
+`DoubleTriDiagonalMatrixChainInvertEnergy` and its block twin, do one chain each so that
+`val`, `con`, real and complex are not four copies of the same loop. Both `default`
+branches return 1 now and `LuaResponseFunctionInvertEnergy` raises on it.
+
+Two repairs came with it, both in the single-valued `n` case. Its `val ↔ con` exchange
+swapped the `a` and `b` pointers but not `N`, which corrupts the structure whenever the two
+chains differ in length; it swaps the whole structs now. And it recomputed the seven cached
+numbers of the observed head combination by hand — `acvB` and `acvA` are each invariant
+under the exchange, `acvBA` changes sign, and the `+= 2 mu` silently assumed
+`val.b[0]² + con.b[0]² == 1` — where it now calls
+`SetBADoubleTriDiagonalMatrixConValFromChains`, exactly as the block case calls
+`SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType`.
+
+`InvertEnergy.Quanty` gained a hand written `d` in all six of its sections (single-valued
+and matrix, real and complex, `mu = 0` and `mu ≠ 0`), both directions; the identity
+`Ginv(mu+w) = A0 - [G(mu-w) - A0]^+` across all five formats, which is the only place the
+convention is written down; and a check on the stored numbers that the two chains really
+are exchanged — no comparison of two response functions can see that, a `d` and the same
+`d` with its chains swapped being equal as functions.
 
 **`×` and `÷` — DONE.** `ResponsefunctionMul` has a `d` case on both halves: `a0 *= x`,
 `b0 *= sqrt(x)` and the two chains untouched, which is the whole of it as `b0` appears
@@ -195,7 +222,7 @@ for every type, by design. Single-valued `ToTightBinding` is unimplemented for `
 `CalculateHybridizationFunction` was **not** exercised: a one-argument call raises for `a`
 as well, so it needs a signature that was not worked out.
 
-**Suggested order.** `InvertEnergy` and `Transpose` next; then `CalculateRho`,
+**Suggested order.** `Transpose` next; then `CalculateRho`,
 `Eigensystem`, the `CalculateGfromG0andSigma` return type and `#G`; then `FreeBlockMatrix`,
 the `Method` variants and `ToTightBinding`, which are worth least.
 

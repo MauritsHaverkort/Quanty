@@ -902,8 +902,79 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
   return 0;
 }
 
-/*  G(mu+w) -> -G(mu-w)^*
+/*  One chain of a double tri-diagonal matrix under the energy inversion
+ *  G(mu+w) -> -G(mu-w)^*.
  *
+ *  The chain stands in the denominator of G = a0 + b0^* ( w - Gval - Gcon )^-1 b0^T, so
+ *  its head has to follow, where the head of a chain of a natural impurity orbital matrix
+ *  does not: those two chains are added and their heads are a constant of G, which this
+ *  map leaves alone. a[0] of the val and of the con chain together hold the onsite energy
+ *  of the observed site, half of it in each, and that energy maps to 2 mu - a[0]val
+ *  - a[0]con, so mu - a[0] for each of the two keeps the half and half split.
+ *
+ *  Below the head a[i] -> 2 mu - a[i]. The b[i] do not follow: flipping the sign of all of
+ *  them is a similarity transformation with diag(1,-1,1,-1,...) which leaves the head
+ *  element of the resolvent, and with it G, alone.
+ */
+static void DoubleTriDiagonalMatrixChainInvertEnergy(TriDiagonalMatrixType * const T, double const Mu)
+{
+  T->a[0] = Mu - T->a[0];
+  for(int i=1;i<=T->N;i++)
+  {
+    T->a[i] = 2 * Mu - T->a[i];
+  }
+  return;
+}
+static void BlockDoubleTriDiagonalMatrixChainInvertEnergy(BlockTriDiagonalMatrixType * const T, double const Mu)
+{
+  if(T->QComplex==true)
+  {
+    for(int i=0;i<(T->N+1)*Sqr(T->BlockSize);i++)
+    {
+      T->a[i].Re*=-1;
+      T->a[i].Im*=-1;
+    }
+    for(int j=0;j<T->BlockSizeList[0];j++)
+    {
+      T->a[j*(1+T->BlockSize)].Re+=Mu;
+    }
+    for(int i=1;i<=T->N;i++)
+    {
+      for(int j=0;j<T->BlockSizeList[i];j++)
+      {
+        T->a[i*Sqr(T->BlockSize)+j*(1+T->BlockSize)].Re+=2*Mu;
+      }
+    }
+  }
+  else
+  {
+    for(int i=0;i<(T->N+1)*Sqr(T->BlockSize);i++)
+    {
+      T->aRe[i]*=-1;
+    }
+    for(int j=0;j<T->BlockSizeList[0];j++)
+    {
+      T->aRe[j*(1+T->BlockSize)]+=Mu;
+    }
+    for(int i=1;i<=T->N;i++)
+    {
+      for(int j=0;j<T->BlockSizeList[i];j++)
+      {
+        T->aRe[i*Sqr(T->BlockSize)+j*(1+T->BlockSize)]+=2*Mu;
+      }
+    }
+  }
+  return;
+}
+/*  G(mu+w) -> -G(mu-w)^*, applied to the pole part of G only: with G = A0 + P(w), where
+ *  A0 is the constant term and P vanishes at infinity, the result is A0 - P(2 mu - w)^+.
+ *  The constant stays where it is, so the line above holds as it stands for A0 = 0.
+ *
+ *  On the data that is a -> 2 mu - a for every pole energy or chain diagonal, with the
+ *  weights and the couplings left alone; for a chain, flipping the sign of all the b is a
+ *  similarity transformation with diag(1,-1,1,-1,...) which leaves G alone. The formats
+ *  that keep a valence and a conduction chain exchange the two, as what was below mu is
+ *  above it now.
  */
 int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
 {
@@ -1075,6 +1146,27 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
         SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data)));
       }
       break;
+      case 'd':
+      {
+        BlockDoubleTriDiagonalMatrixType *D = (BlockDoubleTriDiagonalMatrixType*)(Gout->data);
+        BlockTriDiagonalMatrixType temp;
+        BlockDoubleTriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu);
+        BlockDoubleTriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu);
+        /*  a0 is the constant of G, which this map leaves where it is, and b0 enters
+         *  twice with a conjugate between the two, so neither of them follows. The
+         *  states that were below mu are above it now, so the two chains change place. */
+        temp   = D->con;
+        D->con = D->val;
+        D->val = temp;
+      }
+      break;
+      default:
+      {
+        printf("Error in ResponseFunctionInvertEnergy unrecognized type: %c\n",Gout->type);
+        fflush(stdout);
+        return 1;
+      }
+      break;
     }
   }
   else
@@ -1119,32 +1211,48 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
       break;
       case 'n':
       {
-        double temp, *tp;
-        TwoMu = 2 * ((BADoubleTriDiagonalMatrixType*)(Gout->data))->mu;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB*=-1;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA*=-1;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvBA*=-1;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB+=TwoMu;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA+=TwoMu;
-        temp = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvA;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->acvB = temp;
-        for(i=1;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.N;i++)
+        BADoubleTriDiagonalMatrixType *B = (BADoubleTriDiagonalMatrixType*)(Gout->data);
+        TriDiagonalMatrixType temp;
+        TwoMu = 2 * B->mu;
+        /*  a[0] of the two chains is a constant of G, which this map leaves where it is,
+         *  the two chains being added and not inverted. */
+        for(i=1;i<=B->val.N;i++)
         {
-          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a[i]*=-1;
-          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a[i]+=TwoMu;
+          B->val.a[i]*=-1;
+          B->val.a[i]+=TwoMu;
         }
-        for(i=1;i<=((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.N;i++)
+        for(i=1;i<=B->con.N;i++)
         {
-          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a[i]*=-1;
-          ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a[i]+=TwoMu;
+          B->con.a[i]*=-1;
+          B->con.a[i]+=TwoMu;
         }
-        tp =((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.a = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.a = tp;
-        tp =((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.b;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->val.b = ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.b;
-        ((BADoubleTriDiagonalMatrixType*)(Gout->data))->con.b = tp;
+        /*  the states that were below mu are above it now, so the two chains change
+         *  place, whole: their lengths need not be equal. The seven cached numbers that
+         *  describe the observed combination of the two head sites follow from the
+         *  chains and are derived again, which is what the block case does as well. */
+        temp   = B->con;
+        B->con = B->val;
+        B->val = temp;
+        SetBADoubleTriDiagonalMatrixConValFromChains(B);
+      }
+      break;
+      case 'd':
+      {
+        DoubleTriDiagonalMatrixType *D = (DoubleTriDiagonalMatrixType*)(Gout->data);
+        TriDiagonalMatrixType temp;
+        DoubleTriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu);
+        DoubleTriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu);
+        /*  a0 is the constant of G and b0 enters squared, so neither of them follows */
+        temp   = D->con;
+        D->con = D->val;
+        D->val = temp;
+      }
+      break;
+      default:
+      {
+        printf("Error in ResponseFunctionInvertEnergy unrecognized type: %c\n",Gout->type);
+        fflush(stdout);
+        return 1;
       }
       break;
     }

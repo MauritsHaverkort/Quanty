@@ -67,6 +67,44 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+print("-- DoubleTri                                          --")
+
+-- The two chains of a DoubleTri sit in the denominator of
+-- G = a0 + b0^2 / ( w - Gval(w) - Gcon(w) ), so unlike the chains of a Nat -- which are
+-- added and whose head is a constant of G -- their head follows the inversion. a[0] of
+-- the two chains together hold the onsite energy of the observed site, half of it in
+-- each, so each of the two maps to mu - a[0] and the two together to 2 mu - a[0]val
+-- - a[0]con. Below the head a[i] -> 2 mu - a[i], and the two chains change place as what
+-- was below mu is above it now. a0 and b0 do not follow: a0 is the constant of G, which
+-- this map leaves where it is, and b0 enters squared.
+
+acon = { 0.5,  5, 6, 7}
+bcon = {      2, 3, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = { 0.5,-15,-16,-17}
+bval = {      12, 13, 14}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+a0=3
+b0=1
+G = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=0,type="DoubleTri", name="E"})
+
+acon = { 0-0.5, 2*0+15, 2*0+16, 2*0+17}
+bcon = {           12,       13,       14}
+Gcon = ResponseFunction.New({acon,bcon,mu=0,type="Tri"})
+aval = { 0-0.5, 2*0-5, 2*0-6, 2*0-7}
+bval = {           2,       3,       4}
+Gval = ResponseFunction.New({aval,bval,mu=0,type="Tri"})
+a0=3
+b0=1
+Gmin = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=0,type="DoubleTri", name="E"})
+
+Gminp = ResponseFunction.InvertEnergy(G)
+Gp = ResponseFunction.InvertEnergy(Gmin)
+
+if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
+if((Gmin==Gminp)~=true) then error("Response function InvertEnergy failed\n",1) end
+
+
 print("-- LP                                                 --")
 
 a = {0,  1,   2,   3}
@@ -149,6 +187,44 @@ if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
 if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
+
+
+print("-- DoubleTri                                          --")
+
+-- The two chains of a DoubleTri sit in the denominator of
+-- G = a0 + b0^2 / ( w - Gval(w) - Gcon(w) ), so unlike the chains of a Nat -- which are
+-- added and whose head is a constant of G -- their head follows the inversion. a[0] of
+-- the two chains together hold the onsite energy of the observed site, half of it in
+-- each, so each of the two maps to mu - a[0] and the two together to 2 mu - a[0]val
+-- - a[0]con. Below the head a[i] -> 2 mu - a[i], and the two chains change place as what
+-- was below mu is above it now. a0 and b0 do not follow: a0 is the constant of G, which
+-- this map leaves where it is, and b0 enters squared.
+
+acon = { 0.5,  5, 6, 7}
+bcon = {      2, 3, 4}
+Gcon = ResponseFunction.New({acon,bcon,mu=2,type="Tri"})
+aval = { 0.5,-15,-16,-17}
+bval = {      12, 13, 14}
+Gval = ResponseFunction.New({aval,bval,mu=2,type="Tri"})
+a0=3
+b0=1
+G = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=2,type="DoubleTri", name="E"})
+
+acon = { 2-0.5, 2*2+15, 2*2+16, 2*2+17}
+bcon = {           12,       13,       14}
+Gcon = ResponseFunction.New({acon,bcon,mu=2,type="Tri"})
+aval = { 2-0.5, 2*2-5, 2*2-6, 2*2-7}
+bval = {           2,       3,       4}
+Gval = ResponseFunction.New({aval,bval,mu=2,type="Tri"})
+a0=3
+b0=1
+Gmin = ResponseFunction.New({{a0,b0},val=Gval,con=Gcon,mu=2,type="DoubleTri", name="E"})
+
+Gminp = ResponseFunction.InvertEnergy(G)
+Gp = ResponseFunction.InvertEnergy(Gmin)
+
+if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
+if((Gmin==Gminp)~=true) then error("Response function InvertEnergy failed\n",1) end
 
 
 print("-- LP                                                 --")
@@ -302,6 +378,38 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+
+
+print("-- DoubleTri                                          --")
+
+-- as for the single valued case above: the head of the two chains holds half of the
+-- onsite energy of the observed block each and follows the inversion, the chains below
+-- it map to 2 mu - A[i], the two chains change place, and A0 and B0 stay as they are.
+
+DI  = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+DH  = Matrix.New({{1,0.2,0},{0.2,2,0.1},{0,0.1,3}})
+DV1 = Matrix.New({{-2,0.1,0},{0.1,-3,0},{0,0,-4}})
+DV2 = Matrix.New({{-5,0,0},{0,-6,0.2},{0,0.2,-7}})
+DC1 = Matrix.New({{2,0.1,0},{0.1,3,0},{0,0,4}})
+DC2 = Matrix.New({{5,0,0},{0,6,0.1},{0,0.1,7}})
+DBv = Matrix.New({{0.7,0,0},{0,0.6,0},{0,0,0.5}})
+DBc = Matrix.New({{0.4,0,0},{0,0.3,0},{0,0,0.2}})
+DB1 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+DA0 = Matrix.New({{0.5,0,0},{0,0.4,0},{0,0,0.3}})
+
+Gv = ResponseFunction.New({ {DH,DV1,DV2}, {DBv,DB1}, mu=0, type="Tri"})
+Gc = ResponseFunction.New({ {DH,DC1,DC2}, {DBc,DB1}, mu=0, type="Tri"})
+G  = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=0, type="DoubleTri", name="E"})
+
+Gv = ResponseFunction.New({ {0*DI-DH,2*0*DI-DC1,2*0*DI-DC2}, {DBc,DB1}, mu=0, type="Tri"})
+Gc = ResponseFunction.New({ {0*DI-DH,2*0*DI-DV1,2*0*DI-DV2}, {DBv,DB1}, mu=0, type="Tri"})
+Gmin = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=0, type="DoubleTri", name="E"})
+
+Gminp = ResponseFunction.InvertEnergy(G)
+Gp = ResponseFunction.InvertEnergy(Gmin)
+
+if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
+if((Gmin==Gminp)~=true) then error("Response function InvertEnergy failed\n",1) end
 
 
 print("-- LP                                                 --")
@@ -471,6 +579,38 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+
+
+print("-- DoubleTri                                          --")
+
+-- as for the single valued case above: the head of the two chains holds half of the
+-- onsite energy of the observed block each and follows the inversion, the chains below
+-- it map to 2 mu - A[i], the two chains change place, and A0 and B0 stay as they are.
+
+DI  = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+DH  = Matrix.New({{1,0.2,0},{0.2,2,0.1},{0,0.1,3}})
+DV1 = Matrix.New({{-2,0.1,0},{0.1,-3,0},{0,0,-4}})
+DV2 = Matrix.New({{-5,0,0},{0,-6,0.2},{0,0.2,-7}})
+DC1 = Matrix.New({{2,0.1,0},{0.1,3,0},{0,0,4}})
+DC2 = Matrix.New({{5,0,0},{0,6,0.1},{0,0.1,7}})
+DBv = Matrix.New({{0.7,0,0},{0,0.6,0},{0,0,0.5}})
+DBc = Matrix.New({{0.4,0,0},{0,0.3,0},{0,0,0.2}})
+DB1 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+DA0 = Matrix.New({{0.5,0,0},{0,0.4,0},{0,0,0.3}})
+
+Gv = ResponseFunction.New({ {DH,DV1,DV2}, {DBv,DB1}, mu=1, type="Tri"})
+Gc = ResponseFunction.New({ {DH,DC1,DC2}, {DBc,DB1}, mu=1, type="Tri"})
+G  = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=1, type="DoubleTri", name="E"})
+
+Gv = ResponseFunction.New({ {1*DI-DH,2*1*DI-DC1,2*1*DI-DC2}, {DBc,DB1}, mu=1, type="Tri"})
+Gc = ResponseFunction.New({ {1*DI-DH,2*1*DI-DV1,2*1*DI-DV2}, {DBv,DB1}, mu=1, type="Tri"})
+Gmin = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=1, type="DoubleTri", name="E"})
+
+Gminp = ResponseFunction.InvertEnergy(G)
+Gp = ResponseFunction.InvertEnergy(Gmin)
+
+if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
+if((Gmin==Gminp)~=true) then error("Response function InvertEnergy failed\n",1) end
 
 
 print("-- LP                                                 --")
@@ -642,6 +782,38 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+print("-- DoubleTri                                          --")
+
+-- as for the single valued case above: the head of the two chains holds half of the
+-- onsite energy of the observed block each and follows the inversion, the chains below
+-- it map to 2 mu - A[i], the two chains change place, and A0 and B0 stay as they are.
+
+DI  = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+DH  = Matrix.New({{1,(0.2+0.1*I),0},{(0.2-0.1*I),2,0.1},{0,0.1,3}})
+DV1 = Matrix.New({{-2,(0.1+0.3*I),0},{(0.1-0.3*I),-3,0},{0,0,-4}})
+DV2 = Matrix.New({{-5,0,0},{0,-6,0.2},{0,0.2,-7}})
+DC1 = Matrix.New({{2,(0.1+0.3*I),0},{(0.1-0.3*I),3,0},{0,0,4}})
+DC2 = Matrix.New({{5,0,0},{0,6,0.1},{0,0.1,7}})
+DBv = Matrix.New({{0.7,0,0},{0,0.6,0},{0,0,0.5}})
+DBc = Matrix.New({{0.4,0,0},{0,0.3,0},{0,0,0.2}})
+DB1 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+DA0 = Matrix.New({{0.5,0,0},{0,0.4,0},{0,0,0.3}})
+
+Gv = ResponseFunction.New({ {DH,DV1,DV2}, {DBv,DB1}, mu=0, type="Tri"})
+Gc = ResponseFunction.New({ {DH,DC1,DC2}, {DBc,DB1}, mu=0, type="Tri"})
+G  = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=0, type="DoubleTri", name="E"})
+
+Gv = ResponseFunction.New({ {0*DI-DH,2*0*DI-DC1,2*0*DI-DC2}, {DBc,DB1}, mu=0, type="Tri"})
+Gc = ResponseFunction.New({ {0*DI-DH,2*0*DI-DV1,2*0*DI-DV2}, {DBv,DB1}, mu=0, type="Tri"})
+Gmin = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=0, type="DoubleTri", name="E"})
+
+Gminp = ResponseFunction.InvertEnergy(G)
+Gp = ResponseFunction.InvertEnergy(Gmin)
+
+if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
+if((Gmin==Gminp)~=true) then error("Response function InvertEnergy failed\n",1) end
+
+
 print("-- LP                                                 --")
 
 
@@ -811,6 +983,38 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+print("-- DoubleTri                                          --")
+
+-- as for the single valued case above: the head of the two chains holds half of the
+-- onsite energy of the observed block each and follows the inversion, the chains below
+-- it map to 2 mu - A[i], the two chains change place, and A0 and B0 stay as they are.
+
+DI  = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+DH  = Matrix.New({{1,(0.2+0.1*I),0},{(0.2-0.1*I),2,0.1},{0,0.1,3}})
+DV1 = Matrix.New({{-2,(0.1+0.3*I),0},{(0.1-0.3*I),-3,0},{0,0,-4}})
+DV2 = Matrix.New({{-5,0,0},{0,-6,0.2},{0,0.2,-7}})
+DC1 = Matrix.New({{2,(0.1+0.3*I),0},{(0.1-0.3*I),3,0},{0,0,4}})
+DC2 = Matrix.New({{5,0,0},{0,6,0.1},{0,0.1,7}})
+DBv = Matrix.New({{0.7,0,0},{0,0.6,0},{0,0,0.5}})
+DBc = Matrix.New({{0.4,0,0},{0,0.3,0},{0,0,0.2}})
+DB1 = Matrix.New({{1,0,0},{0,2,0},{0,0,3}})
+DA0 = Matrix.New({{0.5,0,0},{0,0.4,0},{0,0,0.3}})
+
+Gv = ResponseFunction.New({ {DH,DV1,DV2}, {DBv,DB1}, mu=1, type="Tri"})
+Gc = ResponseFunction.New({ {DH,DC1,DC2}, {DBc,DB1}, mu=1, type="Tri"})
+G  = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=1, type="DoubleTri", name="E"})
+
+Gv = ResponseFunction.New({ {1*DI-DH,2*1*DI-DC1,2*1*DI-DC2}, {DBc,DB1}, mu=1, type="Tri"})
+Gc = ResponseFunction.New({ {1*DI-DH,2*1*DI-DV1,2*1*DI-DV2}, {DBv,DB1}, mu=1, type="Tri"})
+Gmin = ResponseFunction.New({ {DA0,DI}, val=Gv, con=Gc, mu=1, type="DoubleTri", name="E"})
+
+Gminp = ResponseFunction.InvertEnergy(G)
+Gp = ResponseFunction.InvertEnergy(Gmin)
+
+if((G==Gp)~=true) then error("Response function InvertEnergy failed\n",1) end
+if((Gmin==Gminp)~=true) then error("Response function InvertEnergy failed\n",1) end
+
+
 print("-- LP                                                 --")
 
 
@@ -844,6 +1048,124 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 
+
+print("--------------------------------------------------------")
+print("-- Ginv(mu+w) = A0 - [ G(mu-w) - A0 ]^dag             --")
+print("--------------------------------------------------------")
+
+-- Everything above compares stored numbers against hand written ones. This is the same
+-- statement at the level of values, and the one place where the convention is written
+-- down: the poles of G are mapped by P(w) -> -P(2 mu - w)^dag while the constant term A0
+-- is left where it is, so the header of the C function, G(mu+w) -> -G(mu-w)^*, holds as
+-- it stands only for A0 = 0. dag is the conjugate transpose, which for a real symmetric
+-- G and for a single valued one is the plain conjugate.
+--
+-- Nothing pinned this before, which is how a format that was returned untouched, and
+-- reported as a success, stayed unnoticed.
+
+local function DagOf(M)
+	return Conjugate(Transpose(M))
+end
+local function CheckInvertEnergy(tag, G, A0, mu, BlockSize)
+	local Gi = ResponseFunction.InvertEnergy(G)
+	if (Gi.type ~= G.type) then
+		error("InvertEnergy of a " .. G.type .. " returned a " .. Gi.type .. "\n",1)
+	end
+	for k = 0, 12 do
+		local w = -6.0 + 12.0 * k / 12
+		if (BlockSize == 1) then
+			local d = Gi(mu+w,0.3) - (A0 - Conjugate(G(mu-w,0.3) - A0))
+			if (abs(d) > 1E-11) then
+				print(tag .. " at w = " .. w .. " is off by " .. abs(d))
+				error("InvertEnergy is not the map it should be for " .. tag .. "\n",1)
+			end
+		else
+			-- element by element: a chopped complex matrix is still a complex matrix and
+			-- does not compare equal to a real Matrix.Zero
+			local d = Gi(mu+w,0.3) - (A0 - DagOf(G(mu-w,0.3) - A0))
+			for r = 1, BlockSize do
+				for c = 1, BlockSize do
+					if (math.abs(Complex.Re(d[r][c])) + math.abs(Complex.Im(d[r][c])) > 1E-11) then
+						print(d)
+						error("InvertEnergy is not the map it should be for " .. tag .. "\n",1)
+					end
+				end
+			end
+		end
+	end
+	-- and applying it twice has to give back what went in
+	if ((ResponseFunction.InvertEnergy(Gi) == G) ~= true) then
+		error("InvertEnergy applied twice is not the identity for " .. tag .. "\n",1)
+	end
+end
+
+local IETypes = {"ListOfPoles","Tri","And","Nat","DoubleTri"}
+local function IEChangeType(G, ty)
+	if (ty == "ListOfPoles") then return G end
+	if ((ty == "Nat") or (ty == "DoubleTri")) then
+		return ResponseFunction.ChangeType(G, ty, {{"EffectivekBT", 0.02}})
+	end
+	return ResponseFunction.ChangeType(G, ty)
+end
+
+for j, mu in ipairs({0, 0.7}) do
+	local GS = ResponseFunction.New({{0.5,-3,-1,1,2},{1,0.5,0.6,0.7},mu=mu,type="ListOfPoles",name="S"})
+	for i, ty in ipairs(IETypes) do
+		CheckInvertEnergy("single valued " .. ty .. ", mu = " .. mu, IEChangeType(GS, ty), 0.5, mu, 1)
+	end
+end
+print("single valued: InvertEnergy is A0 - [ G(mu-w) - A0 ]^* for every format")
+
+local CIE = Complex.New
+for j, cx in ipairs({false, true}) do
+	local A0m, B1m
+	if cx then
+		A0m = Matrix.New({{1,CIE(0.2,0.3)},{CIE(0.2,-0.3),2}})
+		B1m = Matrix.New({{1,CIE(0.1,0.4)},{CIE(0.1,-0.4),2}})
+	else
+		A0m = Matrix.New({{1,0.2},{0.2,2}})
+		B1m = Matrix.New({{1,0.1},{0.1,2}})
+	end
+	local B2m = Matrix.New({{2,0},{0,1}})
+	for k, mu in ipairs({0, 0.7}) do
+		local GB = ResponseFunction.New({{A0m,-3,-1,1,2},{B1m,B2m,B1m,B2m},mu=mu,type="ListOfPoles",name="B"})
+		for i, ty in ipairs(IETypes) do
+			CheckInvertEnergy("block " .. (cx and "complex " or "real ") .. ty .. ", mu = " .. mu,
+			                  IEChangeType(GB, ty), A0m, mu, 2)
+		end
+	end
+end
+print("block, real and complex: InvertEnergy is A0 - [ G(mu-w) - A0 ]^dag for every format")
+
+-- The two chains of a DoubleTri are added in the denominator, so exchanging them changes
+-- no value and no comparison of two response functions sees it -- a d and the same d with
+-- its chains exchanged compare equal. It still has to happen: mu is the border between the
+-- two by definition, and ToOperator builds a separate valence and a conduction bath out of
+-- them. So this is checked on the stored numbers, on a G whose bath lies entirely above mu
+-- and whose valence chain is therefore empty.
+
+local Gempty = ResponseFunction.ChangeType(
+                 ResponseFunction.New({{0.5,0.7,1,2},{1,0.5,0.6},mu=0,type="And",name="E"}),
+                 "DoubleTri", {{"EffectivekBT", 0.02}})
+local te  = ResponseFunction.ToTable(Gempty)
+local tei = ResponseFunction.ToTable(ResponseFunction.InvertEnergy(Gempty))
+if ((#(te.val[1]) ~= 1) or (#(te.con[1]) ~= 3)) then
+	error("the test needs a DoubleTri with an empty valence chain and did not get one\n",1)
+end
+if ((#(tei.val[1]) ~= 3) or (#(tei.con[1]) ~= 1)) then
+	error("InvertEnergy of a DoubleTri did not exchange its two chains\n",1)
+end
+-- and the numbers of the new valence chain are those of the old conduction one, the head
+-- mapping to mu - a[0] and the rest to 2 mu - a[i]  (mu = 0 here)
+if (math.abs(tei.val[1][1] - (0 - te.con[1][1])) > 1E-11) then
+	error("the head of a chain of a DoubleTri does not follow the energy inversion\n",1)
+end
+for k = 2, 3 do
+	if (math.abs(tei.val[1][k] - (0 - te.con[1][k])) > 1E-11) then
+		error("a chain of a DoubleTri does not follow the energy inversion\n",1)
+	end
+end
+print("InvertEnergy of a DoubleTri exchanges the valence and the conduction chain: ok")
 
 collectgarbage()
 print("--------------------------------------------------------")
