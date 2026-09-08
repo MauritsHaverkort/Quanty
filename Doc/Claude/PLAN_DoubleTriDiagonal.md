@@ -149,7 +149,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
-| `G*2`, `G/2` | **silent no-op**, the result is bit identical to `G` and nothing is printed | `t` scales | `ResponsefunctionMul` |
 | `InvertEnergy` | **silent no-op**, returns `G(w)` | `t` inverts | `ResponseFunctionInvertEnergy` |
 | `Transpose` | **silent no-op**, returns `G` | the `a` route transposes | `ResponseFunctionTranspose` |
 | `CalculateRho` | prints "unrecognized type d", no usable result | `a` gives rho | `ResponseFunctionToDensityMatrix` |
@@ -165,10 +164,19 @@ calls `ResponseFunctionEffectiveHamiltonian` and hands the result straight to
 segfault there. Giving `EffectiveHamiltonian` a `d` case fixes the crash, the corrupt
 object and `FromEffectiveHamiltonian` together.
 
-**The silent no-ops are the ones to worry about.** `×`, `÷`, `InvertEnergy` and `Transpose`
-return the input unchanged with no diagnostic of any kind, so a calculation using them is
-quietly wrong rather than stopped. `Transpose` is doubly hidden: a real `d` is its own
-transpose, so only a complex one shows it — which is how it went unnoticed.
+**The silent no-ops are the ones to worry about.** `InvertEnergy` and `Transpose` return
+the input unchanged with no diagnostic of any kind, so a calculation using them is quietly
+wrong rather than stopped. `Transpose` is doubly hidden: a real `d` is its own transpose, so
+only a complex one shows it — which is how it went unnoticed.
+
+**`×` and `÷` — DONE.** `ResponsefunctionMul` has a `d` case on both halves: `a0 *= x`,
+`b0 *= sqrt(x)` and the two chains untouched, which is the whole of it as `b0` appears
+twice in `G = a0 + b0^* ( w - Gval - Gcon )^-1 b0^T`. Its `default` returns 1 now and both
+lua wrappers raise on that, so a format nobody handled can no longer come back unscaled.
+The identity `x G(w,γ) == (G*x)(w,γ)` is checked for all five formats, single-valued and
+block, real and complex, in `__mul.Quanty` and `__div.Quanty`; before that nothing in the
+tree compared the values of a scaled response function with the scaled values of the
+original, which is why the no-op survived.
 
 **Found by scanning, not reachable from lua in these probes.** `FreeBlockMatrix` has no
 `d` case and leaks; it is the legacy one, its own comment says to use
@@ -183,10 +191,9 @@ for every type, by design. Single-valued `ToTightBinding` is unimplemented for `
 `CalculateHybridizationFunction` was **not** exercised: a one-argument call raises for `a`
 as well, so it needs a signature that was not worked out.
 
-**Suggested order.** The two segfaults first, which is one fix plus `Rotate`; then the four
-silent no-ops; then `CalculateRho`, `Eigensystem`, the `CalculateGfromG0andSigma` return
-type and `#G`; then `FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are
-worth least.
+**Suggested order.** `InvertEnergy` and `Transpose` next; then `CalculateRho`,
+`Eigensystem`, the `CalculateGfromG0andSigma` return type and `#G`; then `FreeBlockMatrix`,
+the `Method` variants and `ToTightBinding`, which are worth least.
 
 ### Still open, non-block
 

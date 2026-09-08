@@ -1096,7 +1096,11 @@ static int LuaResponseFunctionMul(lua_State * L)
   { // lower case, data on lua stack, need to copy the data
     ResponsefunctionCopy(M, &xM);
   }
-  ResponsefunctionMul(&xM,x);
+  if(ResponsefunctionMul(&xM,x))
+  {
+    FreeResponsefunction(M);
+    return luaL_error(L, "Error scaling a response function by a number\n");
+  }
   LuaPush_ResponseFunction(L, &xM);
   FreeResponsefunction(M);
   return 1;
@@ -1127,7 +1131,11 @@ static int LuaResponseFunctionDiv(lua_State * L)
   { // lower case, data on lua stack, need to copy the data
     ResponsefunctionCopy(M, &xM);
   }
-  ResponsefunctionMul(&xM,x);
+  if(ResponsefunctionMul(&xM,x))
+  {
+    FreeResponsefunction(M);
+    return luaL_error(L, "Error scaling a response function by a number\n");
+  }
   LuaPush_ResponseFunction(L, &xM);
   FreeResponsefunction(M);
   return 1;

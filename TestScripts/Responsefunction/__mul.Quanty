@@ -193,6 +193,91 @@ if((MD_N2m==MD_N2)~=true) then error("Response function comparison failed\n",1) 
 MD_N2m = MD_N*2
 if((MD_N2m==MD_N2)~=true) then error("Response function comparison failed\n",1) end
 
+
+print("--------------------------------------------------------")
+print("-------- x G(w,gamma) == (G*x)(w,gamma) --------------")
+print("--------------------------------------------------------")
+
+-- Scaling a response function by a number acts on its data and not on its values:
+-- G = A0 + B0^* ( w - H )^-1 B0^T, so A0 takes the factor and B0 the square root of it,
+-- B0 appearing twice, while H is left alone. Every format stores those in its own way and
+-- has to end at the same function, which is what the loops below check. The comparisons
+-- earlier in this file compare the stored numbers of a hand written G with those of a hand
+-- written x*G, which cannot be done for the double tri-diagonal form as that form has
+-- no table constructor and is only reachable through ChangeType.
+--
+-- The type of the result is checked as well, as scaling a response function leaves its
+-- format alone.
+
+local ScaleTypes = {"ListOfPoles","Tri","And","Nat","DoubleTri"}
+
+-- The magnitude of a complex number, and of a real one, as G is single valued here.
+local function CAbs(z)
+	return math.abs(Complex.Re(z)) + math.abs(Complex.Im(z))
+end
+
+local function CheckScale(tag, G, x, BlockSize)
+	local Gx = G * x
+	if (Gx.type ~= G.type) then
+		error("Scaling a " .. G.type .. " response function returned a " .. Gx.type .. "\n",1)
+	end
+	for k = 0, 12 do
+		local w = -9.0 + 18.0 * k / 12
+		if (BlockSize == 1) then
+			if (CAbs(Gx(w,0.3) - x * G(w,0.3)) > 1E-11) then
+				print(tag .. " at w = " .. w .. " is off by " .. CAbs(Gx(w,0.3) - x * G(w,0.3)))
+				error("x G(w,gamma) is not (G*x)(w,gamma) for " .. tag .. "\n",1)
+			end
+		else
+			local d = Chop(Gx(w,0.3) - x * G(w,0.3), 1E-11)
+			if ((d == Matrix.Zero(BlockSize,{{"userdata",false}})) ~= true) then
+				print(d)
+				error("x G(w,gamma) is not (G*x)(w,gamma) for " .. tag .. "\n",1)
+			end
+		end
+	end
+end
+
+-- Nat and DoubleTri split the poles of G at the chemical potential into a valence and a
+-- conduction part, which at a temperature of zero cannot be done for a pole sitting on mu,
+-- so both are handed a temperature.
+local function ScaleChangeType(G, ty)
+	if (ty == "ListOfPoles") then return G end
+	if ((ty == "Nat") or (ty == "DoubleTri")) then
+		return ResponseFunction.ChangeType(G, ty, {{"EffectivekBT", 0.05}})
+	end
+	return ResponseFunction.ChangeType(G, ty)
+end
+
+local GscaleS = ResponseFunction.New({{0.5,-5,-2,3},{1,2,1.5},mu=0,type="ListOfPoles",name="scale single"})
+for i, ty in ipairs(ScaleTypes) do
+	local G = ScaleChangeType(GscaleS, ty)
+	CheckScale("single valued " .. ty, G, 2  , 1)
+	CheckScale("single valued " .. ty, G, 0.5, 1)
+end
+print("single valued: x G(w,gamma) == (G*x)(w,gamma) for every format")
+
+local Cscale = Complex.New
+for j, cx in ipairs({false, true}) do
+	-- A0 and every weight are hermitian, as they have to be for G to be a response function
+	local A0m, B1m
+	if cx then
+		A0m = Matrix.New({{1,Cscale(0.2,0.3)},{Cscale(0.2,-0.3),2}})
+		B1m = Matrix.New({{1,Cscale(0.1,0.4)},{Cscale(0.1,-0.4),2}})
+	else
+		A0m = Matrix.New({{1,0.2},{0.2,2}})
+		B1m = Matrix.New({{1,0.1},{0.1,2}})
+	end
+	local Gscaleb = ResponseFunction.New({{A0m,-5,-2,3},{B1m,Matrix.New({{2,0},{0,1}}),B1m},
+	                                      mu=0,type="ListOfPoles",name="scale block"})
+	for i, ty in ipairs(ScaleTypes) do
+		local G = ScaleChangeType(Gscaleb, ty)
+		CheckScale("block " .. (cx and "complex " or "real ") .. ty, G, 2  , 2)
+		CheckScale("block " .. (cx and "complex " or "real ") .. ty, G, 0.5, 2)
+	end
+end
+print("block, real and complex: x G(w,gamma) == (G*x)(w,gamma) for every format")
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

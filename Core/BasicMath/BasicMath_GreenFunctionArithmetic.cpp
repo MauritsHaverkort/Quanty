@@ -4674,9 +4674,28 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
           }
         }      }
         break;
+      case 'd':
+      {
+        /*  G = a0 + b0^* ( w - Gval - Gcon )^-1 b0^T, so a0 takes x and b0 the square root
+         *  of it, b0 appearing twice. The two chains stand inside the denominator and are
+         *  left alone. a0 and b0 carry a QComplex each, which for a mixed matrix need not
+         *  be the QComplex of the matrix itself. */
+        double xSqrt = sqrt(x);
+        BlockDoubleTriDiagonalMatrixType *D = (BlockDoubleTriDiagonalMatrixType*)(M->data);
+        for(int i=0;i<Sqr(D->BlockSize);i++)
+        {
+          if(D->a0.QComplex) { D->a0.V[i].Re*=x;     D->a0.V[i].Im*=x;     }
+          else                 D->a0.VRe[i]*=x;
+          if(D->b0.QComplex) { D->b0.V[i].Re*=xSqrt; D->b0.V[i].Im*=xSqrt; }
+          else                 D->b0.VRe[i]*=xSqrt;
+        }
+      }
+        break;
       default:
       {
-        printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
+        printf("Error in ResponsefunctionMul unrecognized type: %c\n",M->type);
+        fflush(stdout);
+        return 1;
       }
         break;
     }
@@ -4712,9 +4731,18 @@ int ResponsefunctionMul(ResponsefunctionType *M, double x)
         ((BADoubleTriDiagonalMatrixType*)(M->data))->a0 *= x;
       }
         break;
+      case 'd':
+      {
+        /*  as the block case: a0 takes x, b0 the square root of it, the two chains nothing */
+        ((DoubleTriDiagonalMatrixType*)(M->data))->b0 *=sqrt(x);
+        ((DoubleTriDiagonalMatrixType*)(M->data))->a0 *= x;
+      }
+        break;
       default:
       {
-        printf("Error in ResponsefunctionChop unrecognized type to chop: %c\n",M->type);
+        printf("Error in ResponsefunctionMul unrecognized type: %c\n",M->type);
+        fflush(stdout);
+        return 1;
       }
         break;
     }
