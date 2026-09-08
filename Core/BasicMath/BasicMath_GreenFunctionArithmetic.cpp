@@ -1948,9 +1948,9 @@ int   CalculateGBathFromGandSigmaDirectSubtract(ResponsefunctionType  * const G,
   }
   FreeCompactMatrix(&A0);
   FreeCompactMatrix(&B0);
-  ConvertResponsefunction(&Heff, &HeffLP,  'L', "Default", 0, 0, 0, 0, false, false, false); // capital L as C has controle of pointer
+  ConvertResponsefunction(&Heff, &HeffLP,  'L', "Default", -DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX, false, false, false); // capital L as C has controle of pointer
   FreeResponsefunction(&Heff);
-  ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", 0, 0, 0, 0, false, false, false); // capital L as C has controle of pointer
+  ConvertResponsefunction(Sigma, &SigmaLP, 'L', "Default", -DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX, false, false, false); // capital L as C has controle of pointer
   if(HeffLP.Block==true)
   {
     if(SigmaLP.Block==true)
