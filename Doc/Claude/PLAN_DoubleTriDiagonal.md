@@ -246,11 +246,26 @@ and `con` tri-diagonal where a `n` takes lists of poles. Both files also check t
 before that nothing in the tree compared the values of a scaled response function with the
 scaled values of the original, which is why the no-op survived.
 
-**Found by scanning, not reachable from lua in these probes.** `FreeBlockMatrix` has no
-`d` case and leaks; it is the legacy one, its own comment says to use
-`FreeBlockMatrixFromLua`, and it has two callers, `ssp.cpp:3991` and
-`TableToArray.cpp:4537`. `ResponseFunctionAddSelfEnergyOnGridViaG0Tri` and
-`…ViaAndLP`, the `Method` variants of the self-energy calls, also lack `d`.
+**Found by scanning, not reachable from lua in these probes.**
+`ResponseFunctionAddSelfEnergyOnGridViaG0Tri` and `…ViaAndLP`, the `Method` variants of the
+self-energy calls, lack `d`.
+
+**`FreeBlockMatrix` — DONE, by inspection only.** It has a `d` case now, freeing through
+`FreeBlockDoubleTriDiagonalMatrix` and then the structure, in the shape of the four cases
+around it; its `default` message also got the newline it was missing. No test reaches it: it
+is the legacy free — its own comment points at `FreeBlockMatrixFromLua`, which has had `d`
+and `D` all along — and neither of its two callers can be exercised. `ssp.cpp:3991` sits in
+`LuaImpurityGreensFunction`, whose two "calculate Greens function" branches are still empty
+and whose registration at `ssp.cpp:5578` is commented out; `TableToArray.cpp:4537` sits in
+`FreeSelfEnergyArrayFromLua`, which nothing calls at all.
+
+**Open, in `LuaImpurityGreensFunction`:** the ownership test in front of that call is
+inverted. Lowercase means the data came from a userdata and lua owns it, uppercase that it
+was read from a table and C allocated the structure — `type&32` is set for lowercase — so
+`if(DeltaBath->type&32) { FreeBlockMatrix(DeltaBath); free(DeltaBath); }` frees what lua
+owns and leaves what C allocated. `TableToArray.cpp:4535` has the same test the other way
+round, `if((SasMatrix[i]->type&32)==0)`, which is the right one. Harmless while the function
+is unreachable.
 
 **Not `d` gaps — do not chase these.** `-G` is refused for every type. Single-valued
 `Rotate` wants a block representation whatever the type. `add`, `sub`, `ReducePoles`,

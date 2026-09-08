@@ -42,9 +42,15 @@ uint32_t FreeBlockMatrix(ResponsefunctionType *M)
       free((BlockNaturalImpurityOrbitalMatrixType *)(M->data));
       return 0;
     }
+    case 'd':
+    {
+      FreeBlockDoubleTriDiagonalMatrix((BlockDoubleTriDiagonalMatrixType *)M->data);
+      free((BlockDoubleTriDiagonalMatrixType *)(M->data));
+      return 0;
+    }
     default:
     {
-      printf("Error in FreeBlockMatrix unrecognized type %c",M->type);
+      printf("Error in FreeBlockMatrix unrecognized type %c\n",M->type);
       return 1;
     }
   }
