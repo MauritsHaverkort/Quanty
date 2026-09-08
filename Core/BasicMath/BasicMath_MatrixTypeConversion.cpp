@@ -2453,9 +2453,11 @@ uint32_t DoubleTriDiagonalMatrixToListOfPoles(DoubleTriDiagonalMatrixType const 
  *  the impurity into the first site of a chain is val.b[0] resp. con.b[0]. Those four numbers
  *  are the a0 and b0 that TriDiagonalMatrixToCompactMatrix leaves in Mval and Mcon.
  *
- *          ( aval0+acon0 | bval0 | 0     | bcon0 | 0     )
- *      H = ( bval0       |       Mval    | 0     | 0     )
- *          ( bcon0       | 0     | 0     |     Mcon      )
+ *          ( Aval0+Acon0 | Bval0^* | 0     | Bcon0^* | 0     )
+ *      B = ( Bval0^T     |        Mval     | 0       | 0     )
+ *          ( 0           |                 | 0       | 0     )
+ *          ( Bcon0^T     | 0       | 0     |      Mcon       )
+ *          ( 0           | 0       | 0     |                 )
  *
  *  H.a0 and H.b0 are the a0 and b0 of M itself, so that
  *    G(w) = H.a0 + H.b0^2 * [ 1/(w - H) ]_{0,0}

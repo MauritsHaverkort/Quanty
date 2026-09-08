@@ -29,7 +29,7 @@ void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
   strcpy(M->Name, "free");
 }
 
-/*  Init Tri diagonal matrix
+/*  Init Double Tri diagonal matrix
  *  M.val.N M.con.N must be set
  *
  *  A chain of length zero is allowed and means that branch is absent: the

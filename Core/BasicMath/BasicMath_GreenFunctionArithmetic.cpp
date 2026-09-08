@@ -969,12 +969,6 @@ static void BlockDoubleTriDiagonalMatrixChainInvertEnergy(BlockTriDiagonalMatrix
 /*  G(mu+w) -> -G(mu-w)^*, applied to the pole part of G only: with G = A0 + P(w), where
  *  A0 is the constant term and P vanishes at infinity, the result is A0 - P(2 mu - w)^+.
  *  The constant stays where it is, so the line above holds as it stands for A0 = 0.
- *
- *  On the data that is a -> 2 mu - a for every pole energy or chain diagonal, with the
- *  weights and the couplings left alone; for a chain, flipping the sign of all the b is a
- *  similarity transformation with diag(1,-1,1,-1,...) which leaves G alone. The formats
- *  that keep a valence and a conduction chain exchange the two, as what was below mu is
- *  above it now.
  */
 int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
 {
@@ -1152,9 +1146,6 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
         BlockTriDiagonalMatrixType temp;
         BlockDoubleTriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu);
         BlockDoubleTriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu);
-        /*  a0 is the constant of G, which this map leaves where it is, and b0 enters
-         *  twice with a conjugate between the two, so neither of them follows. The
-         *  states that were below mu are above it now, so the two chains change place. */
         temp   = D->con;
         D->con = D->val;
         D->val = temp;
@@ -1214,8 +1205,6 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
         BADoubleTriDiagonalMatrixType *B = (BADoubleTriDiagonalMatrixType*)(Gout->data);
         TriDiagonalMatrixType temp;
         TwoMu = 2 * B->mu;
-        /*  a[0] of the two chains is a constant of G, which this map leaves where it is,
-         *  the two chains being added and not inverted. */
         for(i=1;i<=B->val.N;i++)
         {
           B->val.a[i]*=-1;

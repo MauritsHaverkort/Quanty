@@ -90,9 +90,6 @@ uint32_t InitBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M)
   return 0;
 }
 
-/*
- *
- */
 /*  A BADoubleTriDiagonalMatrix observes a linear combination of the first site of the
  *  val and of the con chain, so both of those sites have to exist. A chain of length
  *  zero is given one site of zero energy and zero coupling, which contributes nothing

@@ -92,9 +92,6 @@ uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t 
   return 0;
 }
 
-/* sets all values of M to zero
- *
- */
 /*  Set M to an empty matrix that owns no data. FreeCompactMatrix on such a matrix only calls
  *  free(NULL), so it is safe to leave it to the lua garbage collector. Use it on a freshly
  *  allocated CompactMatrixType before filling it in, when the filling in can fail.
@@ -4184,10 +4181,6 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
   }
   else if((32|A->type)=='d')
   {
-    /*  a0 of the DoubleTriDiagonal type is a matrix of its own, copy it. The shared impurity
-     *  site (val.a[0] + con.a[0]) is part of the denominator and not of a0, so unlike the
-     *  NaturalImpurityOrbital case above nothing is added here.
-     */
     CompactMatrixCopy(((BlockDoubleTriDiagonalMatrixType*)A->data)->a0, A0);
     A0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
   }
@@ -4206,8 +4199,7 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
 uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
 {
   if(A->Block==true) return 1;
-  /*  a chain or a bath of length zero has no b[0]: nothing couples to the matrix,
-   *  so b0 = 0 */
+  /*  if N==0 return b0 = 0 else return the value */
   if((32|A->type)=='t')
   {
     *b0 = (((TriDiagonalMatrixType*)(A->data))->N == 0) ? 0 : ((TriDiagonalMatrixType*)(A->data))->b[0];
@@ -4359,12 +4351,6 @@ uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrix
   }
   else if((32|A->type)=='d')
   {
-    /*  b0 of the DoubleTriDiagonal type is a matrix of its own, copy it. Do not select the
-     *  union member from the QComplex of the enclosing struct: the two need not agree. The
-     *  lua reader takes b0 from a user supplied matrix, which can be real while val, con or
-     *  a0 make the struct complex. Reading b0.V in that case both misreads the numbers and
-     *  runs off the end of the allocation. See the TODO on the preallocation convention.
-     */
     CompactMatrixCopy(((BlockDoubleTriDiagonalMatrixType*)A->data)->b0, B0);
     B0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
   }
@@ -5225,10 +5211,7 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
 }
 
 /*  Create the matrix whose resolvent is the Green's function represented by A: one impurity
- *  block with a valence and a conduction chain attached to it. The two public entry points
- *  BlockDoubleTriDiagonalMatrixToCompactMatrix and ...WithDeflation both come here, the only
- *  difference being which of the two chain converters is used and hence how many orbitals
- *  each chain block contributes.
+ *  block with a valence and a conduction chain attached to it.
  *
  *  The dimension is BlockSize + dim(Mval) + dim(Mcon), with Mval and Mcon the matrices that
  *  BlockTriDiagonalMatrixToCompactMatrix[WithDeflation] returns for val and con. The impurity
@@ -5236,7 +5219,9 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
  *
  *          ( Aval0+Acon0 | Bval0^* | 0     | Bcon0^* | 0     )
  *      B = ( Bval0^T     |        Mval     | 0       | 0     )
+ *          ( 0           |                 | 0       | 0     )
  *          ( Bcon0^T     | 0       | 0     |      Mcon       )
+ *          ( 0           | 0       | 0     |                 )
  *
  *  The head coupling plays the role of b0 of its chain, which enters the Green's function as
  *  b0^* . G . b0^T and not as b0 . G . b0^+ the way the couplings inside a chain do (see
