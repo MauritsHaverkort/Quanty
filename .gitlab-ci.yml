@@ -203,6 +203,7 @@ test-jobs-Responsefunction:
           - "Pole_Reduction"
           - "ReducePoles"
           - "RemovePolesInInterval"
+          - "Rotate"
           - "ToMatrix"
           - "ToOperator"
           - "ToSpectra"

@@ -3975,9 +3975,42 @@ static int LuaResponseFunctionRotate(lua_State * L)
 {
   ResponsefunctionType *G, GRot;
   CompactMatrixType *U;
-  
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double T;
+  } Options;
+  /*  Unset has to reproduce what this function passed before it took options, which is a
+   *  literal zero for all three. The names follow ChangeType, with Temperature accepted as
+   *  well as EffectivekBT since that is what a rotation would be asked for.
+   *
+   *  Only some of these reach anything yet: a rotation goes through a conversion to a list
+   *  of poles, and none of the five such cells of ConvertBlockMatrix reads T,
+   *  SingularValue or MinimalPoleWeigth -- they take MinimalPoleDistance and
+   *  relativeDistance and nothing else, and MinimalPoleWeigth is read nowhere in the tree.
+   *  So these are forwarded and correct but change no answer today; see the comment on
+   *  BlockResponseFunctionRotate. */
+  Options.SingularValue     = ValueNotSet;
+  Options.MinimalPoleWeigth = ValueNotSet;
+  Options.T                 = ValueNotSet;
+  LuaOptionsType LuaOptions[]={
+    {"SingularValue","double",&(Options.SingularValue)},
+    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+    {"Temperature","double",&(Options.T)},
+    {"EffectivekBT","double",&(Options.T)},
+    {NULL, NULL, NULL}};
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len!=2) luaL_error(L, "ResponseFunction.Rotate called with %d arguments, two arguments expected",len);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=2) return luaL_error(L, "ResponseFunction.Rotate called with %d arguments, two arguments expected and possibly a third specifying options",len);
+  if(Options.SingularValue    ==ValueNotSet) Options.SingularValue     = 0;
+  if(Options.MinimalPoleWeigth==ValueNotSet) Options.MinimalPoleWeigth = 0;
+  if(Options.T                ==ValueNotSet) Options.T                 = 0;
   G = luaL_checkResponsefunction(L,1);
   U=luaL_checkCompactMatrix(L, 2);
   if(G->Block==false)
@@ -3985,7 +4018,7 @@ static int LuaResponseFunctionRotate(lua_State * L)
     return luaL_error(L, "Error in ResponseFunction.Rotate(). Rotate rotates the elements in the matrix or Block representation of the response function. Can not rotate singel valued functions\n", len);
   }
   if(ResponseFunctionGetBlockSize(G)!=U->Nj) return luaL_error(L, "Error in ResponseFunction.Rotate(). Number of columns in roation matrix (Nj = %d) should be equal to the blocksize of the response function (%d)\n", U->Nj, ResponseFunctionGetBlockSize(G));
-  if(BlockResponseFunctionRotate(G,U,&GRot)!=0) return luaL_error(L, "Error in ResponseFunction.Rotate()\n", len);
+  if(BlockResponseFunctionRotate(G,U,&GRot,Options.T,Options.SingularValue,Options.MinimalPoleWeigth)!=0) return luaL_error(L, "Error in ResponseFunction.Rotate()\n", len);
   LuaPush_ResponseFunction(L, &GRot);
   FreeResponsefunction(G);
   FreeResponsefunction(&GRot);

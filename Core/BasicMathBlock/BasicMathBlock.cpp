@@ -462,7 +462,29 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
   return 0;
 }
 
-int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot)
+/*  Rotate the block representation of a response function, GRot = U^* G U^T.
+ *
+ *  A rotation acts on the weights of the poles, so every type other than the list of poles
+ *  gets there by converting to a list of poles first, which is why the result of a rotation
+ *  is a list of poles whatever went in.
+ *
+ *  T, SingularValue and MinimalPoleWeigth are forwarded to that conversion. Note that none
+ *  of the five "to a list of poles" cells of ConvertBlockMatrix reads any of the three
+ *  today -- they take MinimalPoleDistance and relativeDistance and nothing else, and
+ *  MinimalPoleWeigth is unread anywhere in the tree -- so passing them changes no answer
+ *  yet. They are threaded so that the option exists where it belongs and becomes live the
+ *  moment a conversion uses it, and so that a rotation that one day gives its own type back
+ *  has them to hand.
+ *
+ *  The merge tolerance is the parameter that does reach the conversion, and it is not the
+ *  same for all types: t, a and n pass 0, which merges nothing at all since the test inside
+ *  the merge is a strict <, while d passes -1 to ask BlockListOfPolesMergeDegeneratePoles
+ *  for its standard value. d -> l is the only one of the four whose conversion merges, and
+ *  leaving it at zero would carry the arbitrary eigenbasis of a degenerate group of poles
+ *  into the rotated function. The 0 of the other three is what they have always passed and
+ *  is left alone here.
+ */
+int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot, double const T, double const SingularValue, double const MinimalPoleWeigth)
 {
   GRot->type  = G->type;
   GRot->Block = G->Block;
@@ -552,8 +574,8 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 't': // original tri-diagonal
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', "Default", 0, 0, 0, 0, false, false, false);
-      BlockResponseFunctionRotate(&Gp, U, GRot);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, 0, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth);
       FreeResponsefunction(&Gp);
       return 0;
     }
@@ -561,8 +583,8 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'a': // original anderson matrix
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', "Default", 0, 0, 0, 0, false, false, false);
-      BlockResponseFunctionRotate(&Gp, U, GRot);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, 0, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth);
       FreeResponsefunction(&Gp);
       return 0;
     }
@@ -570,15 +592,51 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'n': // original natural impurity orbitals
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', "Default", 0, 0, 0, 0, false, false, false);
-      BlockResponseFunctionRotate(&Gp, U, GRot);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, 0, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth);
+      FreeResponsefunction(&Gp);
+      return 0;
+    }
+    break;
+    case 'd': // original double tri-diagonal
+    {
+      /*  as the three above: a rotation acts on the weights of the poles, so the way to
+       *  every other type is through the list of poles. The result is a list of poles and
+       *  not a d, which is what the other types do too.
+       *
+       *  MinimalPoleDistance is -1 here and not the 0 the others pass. Zero merges nothing
+       *  at all, the test inside the merge being a strict <, and d -> l is the one route in
+       *  this switch whose conversion merges: leaving it at zero would carry the arbitrary
+       *  eigenbasis inside a degenerate group of poles into the rotated function. A
+       *  negative value asks BlockListOfPolesMergeDegeneratePoles for its standard value,
+       *  which is the one place that decides it.
+       */
+      ResponsefunctionType Gp;
+      if(ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, -1, false, false, false))
+      {
+        printf("ConvertBlockMatrix to a list of poles failed in BlockResponseFunctionRotate\n");
+        fflush(stdout);
+        return 1;
+      }
+      if(BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth))
+      {
+        printf("BlockResponseFunctionRotate failed on the list of poles in BlockResponseFunctionRotate\n");
+        fflush(stdout);
+        FreeResponsefunction(&Gp);
+        return 1;
+      }
       FreeResponsefunction(&Gp);
       return 0;
     }
     break;
     default:
     {
-      printf("Error in BlockResponseFunctionRotate unrecognized type of G: %c",G->type);
+      /*  return 1 rather than falling through to the return 0 below: the caller has to be
+       *  told, or it hands lua a response function whose data was never allocated and the
+       *  first use of it takes the process down */
+      printf("Error in BlockResponseFunctionRotate unrecognized type of G: %c\n",G->type);
+      fflush(stdout);
+      return 1;
     }
     break;
   }

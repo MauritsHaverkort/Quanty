@@ -247,10 +247,13 @@ end
 --
 -- (c,s) = (0.6,0.8) is a reflection that is exactly orthogonal in double arithmetic,
 -- c*c + s*s - 1 == 0, so nothing below is limited by the precision of U itself.
-c, s = 0.6, 0.8
-U = {{c, s}, {s, -c}}          -- symmetric, so U^T = U and U*U = 1
+-- local, so that this does not reach the other tests through the shared global namespace
+local c, s = 0.6, 0.8
+local U = {{c, s}, {s, -c}}    -- symmetric, so U^T = U and U*U = 1
 
-function Rotate(M)             -- U^T . M . U
+-- U^T . M . U, named so as not to shadow the library's Rotate: this file is run from
+-- All.Quanty alongside Rotate.Quanty, which needs the real one
+local function ConjugateByU(M)
 	local T = {}
 	for i = 1, 2 do
 		T[i] = {}
@@ -262,7 +265,7 @@ function Rotate(M)             -- U^T . M . U
 	return T
 end
 
-function RightMul(M)           -- M . U
+local function RightMul(M)     -- M . U
 	local T = {}
 	for i = 1, 2 do
 		T[i] = {}
@@ -271,9 +274,9 @@ function RightMul(M)           -- M . U
 	return T
 end
 
-function RotateBath(a, b)
+local function RotateBath(a, b)
 	local ar, br = {a[1], a[2]}, {b[1]}
-	for k = 3, #a do ar[k] = Rotate(a[k]) end
+	for k = 3, #a do ar[k] = ConjugateByU(a[k]) end
 	for k = 2, #b do br[k] = RightMul(b[k]) end
 	return ar, br
 end

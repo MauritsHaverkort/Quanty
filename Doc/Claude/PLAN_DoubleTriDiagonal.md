@@ -138,11 +138,14 @@ how every type behaves.
 `CalculateSelfEnergy`, `ReducePoles`, `RemovePolesInInterval`, `MergePolesInInterval`,
 `PlaceOnMesh`, and both free paths (`FreeResponsefunction`, `FreeBlockMatrixFromLua`).
 
-**Broken, worst first.**
+**Broken, worst first.** `Rotate` is **done** — the `d` case goes through the list of poles
+like the other three, the `default` returns 1 instead of falling through to `return 0`
+(which is what turned a missing case into a segfault), and `Rotate.Quanty` now covers
+complex functions, complex rotations and the `d` type. It was registered in neither
+`All.Quanty` nor the CI matrix, so it had never run; it is in both now.
 
 | symptom on a `d` | what happens | control | the function without a `d` case |
 |---|---|---|---|
-| `Rotate`, block | **SIGSEGV** | `t`, `n` fine | `BlockResponseFunctionRotate` prints "unrecognized type of G: d" and returns with `GRot->data` never allocated |
 | `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
