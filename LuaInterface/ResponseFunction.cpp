@@ -3340,6 +3340,13 @@ static int LuaResponseFunctionToTightBinding(lua_State * L)
       }
       break;
     }
+    case 'D':
+    case 'd':
+    {
+      //TODO: (Block)DoubleTriDiagonalMatrixType to TB
+      return luaL_error(L, "Error in Responsefunction.ToTightBinding() Not yet implemented for this case\n");
+      break;
+    }
     default:
     {
       return luaL_error(L, "Error in Responsefunction.ToTightbinding() unrecognized type for conversion (%c)\n",M->type);

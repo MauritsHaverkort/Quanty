@@ -4,6 +4,50 @@ print("--------------------------------------------------------")
 
 
 
+-- Of the ten combinations of the five formats with block and single valued, two are
+-- implemented: a block tri-diagonal and a block Anderson matrix. A list of poles has no
+-- tight binding representation at all -- there is no Hamiltonian in it, only its poles --
+-- and the rest raise "Not yet implemented". This pins which is which, so that the day one
+-- of them is written the test says so.
+
+local TBTypes = {"ListOfPoles","Tri","And","Nat","DoubleTri"}
+local TBWorks = { block = { Tri = true, And = true } }
+
+local TBGs = ResponseFunction.New({{0,-2,-1,1,2},{0.1,0.2,0.15,0.05},
+                                   mu=0,type="ListOfPoles",name="tb single"})
+local TBA0 = Matrix.New({{0,0},{0,0}})
+local TBW1 = Matrix.New({{0.4,0.1},{0.1,0.3}})
+local TBGb = ResponseFunction.New({{TBA0,-2,-1,1},{TBW1,TBW1,TBW1},
+                                   mu=0,type="ListOfPoles",name="tb block"})
+for j, G0 in ipairs({TBGs, TBGb}) do
+	local where = (j==1) and "single valued" or "block"
+	for i, ty in ipairs(TBTypes) do
+		local G = ResponseFunction.ChangeType(G0, ty)
+		local ok, res = pcall(function() return ResponseFunction.ToTightBinding(G) end)
+		local expected = (TBWorks[where] ~= nil) and (TBWorks[where][ty] == true)
+		if (ok ~= expected) then
+			print(res)
+			if expected then
+				error("ToTightBinding of a " .. where .. " " .. ty .. " should work and raised\n",1)
+			else
+				error("ToTightBinding of a " .. where .. " " .. ty .. " should raise and did not\n",1)
+			end
+		end
+		if ok then
+			-- what comes back is a tight binding, and asking it for its number of atoms works
+			if (#(res.Atoms) < 1) then
+				error("ToTightBinding of a " .. where .. " " .. ty .. " gave a tight binding without atoms\n",1)
+			end
+		end
+	end
+end
+print("ToTightBinding: the two implemented cases work and the other eight raise")
+
+-- the paths that raise leave an unused TightBinding userdata behind for the collector
+collectgarbage()
+print("collecting after the conversions that raised: ok")
+
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

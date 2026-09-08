@@ -151,7 +151,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
 | `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
 | `CalculateGfromG0andSigma` | prints an error but computes the right answer, and returns a **`ListOfPoles`** instead of a `d` | — | `ResponseFunctionAddSelfEnergyDenseViaTri` |
-| `ToTightBinding` | clean lua error | block `t` works | `LuaResponseFunctionToTightBinding` |
 
 **Two of those are one bug.** `CalculateGBathFromGandSigmaDirectSubtract`
 ([BasicMath_GreenFunctionArithmetic.cpp:1845](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp#L1845))
@@ -319,8 +318,18 @@ a `n` and now for a `d`, the single `{ a0, b0 }` pair, their two chains being th
 now checks all five, block and single-valued, against a literal and against
 `#ResponseFunction.ToTable(G)`, the thing the number describes.
 
-**Suggested order.** `Eigensystem`, then the `CalculateGfromG0andSigma` return type; then
-`FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are worth least.
+**`ToTightBinding` — a stub, as intended.** `LuaResponseFunctionToTightBinding` has a
+`d` case saying "Not yet implemented for this case", which is what the other unwritten
+combinations say; before, `d` fell to the `default` and was reported as an unrecognized type,
+which it is not. Of the ten combinations of five formats with block and single-valued, two
+are implemented — block `t` and block `a`. A list of poles has no tight binding
+representation at all, holding no Hamiltonian, and the remaining seven raise.
+
+`ToTightbinding.Quanty` was empty, a header and a footer. It now walks all ten and checks
+which work and which raise, so the day one of them is written the test says so. Note
+`All.Quanty` runs that file twice, at lines 35 and 46 — harmless, everything in it is local.
+
+**Suggested order.** `Eigensystem`, then the `CalculateGfromG0andSigma` return type.
 
 ### Still open, non-block
 
