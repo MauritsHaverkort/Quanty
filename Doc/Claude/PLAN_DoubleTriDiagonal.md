@@ -149,7 +149,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
-| `CalculateRho` | prints "unrecognized type d", no usable result | `a` gives rho | `ResponseFunctionToDensityMatrix` |
 | `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
 | `CalculateGfromG0andSigma` | prints an error but computes the right answer, and returns a **`ListOfPoles`** instead of a `d` | — | `ResponseFunctionAddSelfEnergyDenseViaTri` |
 | `#G` | clean lua error, "undifined type d" | `t` → 2 | `LuaResponseFunctionLen` |
@@ -261,9 +260,42 @@ for every type, by design. Single-valued `ToTightBinding` is unimplemented for `
 `CalculateHybridizationFunction` was **not** exercised: a one-argument call raises for `a`
 as well, so it needs a signature that was not worked out.
 
-**Suggested order.** `CalculateRho`, `Eigensystem`, the `CalculateGfromG0andSigma` return
-type and `#G`; then `FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are
-worth least.
+**`CalculateRho` — DONE.** `ResponseFunctionToDensityMatrix` has a `d` case in both halves,
+block through `BlockDoubleTriDiagonalMatrixToBlockListOfPoles` and single-valued through
+`DoubleTriDiagonalMatrixToListOfPoles`, which takes no merge distance — a scalar list of
+poles has no weight matrices whose basis could be arbitrary.
+
+The merge distance handed to the conversions was different in every case: `kbT/1000` for
+block `t` and `a`, the negative sentinel for block `n`, nothing at all single-valued. One
+static `DensityMatrixMinimalPoleDistance(kbT)` decides it for all of them now, returning
+`4 kbT DBL_EPSILON` for `kbT > 0` and `0` — which merges nothing, the test inside
+`BlockListOfPolesMergeDegeneratePoles` being a strict `<` — for `kbT <= 0`.
+
+Why that value. `rho = Σ_i f(a_i,mu,kbT) W_i` needs no merging at all: merging exists to
+remove the arbitrary eigenbasis inside a group of degenerate poles before something else is
+built out of the list, and `rho` cannot see that basis — a unitary mixing inside the group
+redistributes the individual `W_i` and leaves their sum, and `f` is the same for all of
+them. What merging *can* do is move weight across `mu`. The surviving pole sits at the trace
+weighted mean of the two, so the trace of `rho` is right to second order in the distance `δ`
+while `rho` itself is right to first order only, the first order term cancelling in the
+trace and not off it, with an error bounded by `|f'|max δ ‖W‖ = δ ‖W‖ / (4 kbT)`. Setting
+that to `DBL_EPSILON ‖W‖` gives `δ = 4 kbT DBL_EPSILON`. At `kbT ≤ 0` no positive `δ`
+qualifies, `f` being a step. No lua option is exposed: there is nothing a caller could
+usefully choose here.
+
+The old `kbT/1000` was not harmless. Two poles `5e-5` apart in different orbitals straddling
+`mu` at `kBT = 0.1` — well inside `kbT/1000 = 1e-4` — came out `6.25e-5` away from the exact
+answer for block `t` and `a`, which is the first order bound above to the digit. That case is
+now in `CalculateRho.Quanty`, against the list of poles, which needs no conversion and is
+exact; it fails if the distance goes back to `kbT/1000`. `d` was added to every existing
+comparison there as well, single-valued and block, and to the metal at finite temperature.
+
+`LuaResponseFunctionCalculateRho` discarded the return value and pushed the userdata before
+filling it, so a failed conversion handed lua an uninitialised matrix. It computes first and
+allocates after, and raises on a nonzero return.
+
+**Suggested order.** `Eigensystem`, the `CalculateGfromG0andSigma` return type and `#G`;
+then `FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are worth least.
 
 ### Still open, non-block
 

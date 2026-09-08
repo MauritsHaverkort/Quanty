@@ -3974,9 +3974,18 @@ static int LuaResponseFunctionCalculateRho(lua_State *L)
   {
     LuaCheckOptions(L, 2, LuaCalculateRhoOptions);
   }
+  /*  the density matrix first and the userdata to hold it after: a failed
+   *  ResponseFunctionToDensityMatrix leaves nothing behind for the garbage collector to
+   *  free, and the matrix does not reach lua at all */
+  CompactMatrixType r;
+  if(ResponseFunctionToDensityMatrix(A, &r, Options.mu, Options.kbT))
+  {
+    FreeResponsefunctionIncludingOriginalPointer(A);
+    return luaL_error(L, "Error in CalculateRho: could not calculate the density matrix\n");
+  }
   rho = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   luaL_setmetatable(L, "Matrix_Type");
-  ResponseFunctionToDensityMatrix(A, rho, Options.mu, Options.kbT);
+  *rho = r;
   rho->OnLuaStack=true;
   FreeResponsefunctionIncludingOriginalPointer(A);
   return 1;

@@ -742,6 +742,34 @@ uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, Spect
  *  Note furthermore that the conversion projects onto the first block, the occupation of the
  *  bath states is not part of rho.
  */
+/*  The distance below which two poles may be merged when all that is asked of the list is a
+ *  density matrix.
+ *
+ *  rho = sum_i f(a_i,mu,kbT) W_i, and a merge puts the surviving pole at the trace weighted
+ *  mean of the two, so the trace of rho -- the occupation -- is right to second order in the
+ *  distance delta, while rho itself is right to first order only: the first order term
+ *  cancels in the trace and not off it. That error is bounded by |f'|max delta ||W||, which
+ *  is delta ||W|| / (4 kbT), so delta = 4 kbT DBL_EPSILON keeps it at the level of the
+ *  arithmetic itself. It scales with kbT, which is the point: a merge is only invisible as
+ *  far as the Fermi function is flat.
+ *
+ *  At kbT <= 0 no positive delta qualifies -- f is a step, and merging two poles that
+ *  straddle mu moves a whole weight matrix from filled to half filled -- so zero is passed,
+ *  which merges nothing at all, the test inside BlockListOfPolesMergeDegeneratePoles being a
+ *  strict <.
+ *
+ *  Merging is never needed for a density matrix. It exists to remove the arbitrary
+ *  eigenbasis inside a group of degenerate poles before something else is built out of the
+ *  list, and rho does not see that basis: a unitary mixing inside the group redistributes
+ *  the individual W_i and leaves their sum, and f is the same for all of them. So the rule
+ *  above is a bound on the harm a merge may do and not a requirement.
+ */
+static double DensityMatrixMinimalPoleDistance(double const kbT)
+{
+  if(kbT<=0) return 0;
+  return 4 * kbT * DBL_EPSILON;
+}
+
 uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactMatrixType *rho, double mu, double kbT)
 {
   if(M->Block)
@@ -755,7 +783,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       }
       case 't':
       {
-        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G, DBL_MIN+MAX(0,kbT/1000) ,false))
+        if(BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
         {
           printf("BlockTriDiagonalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -764,7 +792,7 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       break;
       case 'a':
       {
-        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G, DBL_MIN+MAX(0,kbT/1000)  ,false))
+        if(BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
         {
           printf("BlockAndersonMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
@@ -773,9 +801,18 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
       break;
       case 'n':
       {
-        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G, -1, false))
+        if(BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
         {
           printf("BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'd':
+      {
+        if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles((BlockDoubleTriDiagonalMatrixType*)(M->data), &G, DensityMatrixMinimalPoleDistance(kbT), false))
+        {
+          printf("BlockDoubleTriDiagonalMatrixToBlockListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
         }
       }
@@ -822,6 +859,17 @@ uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactM
         if(BADoubleTriDiagonalMatrixToListOfPoles((BADoubleTriDiagonalMatrixType*)(M->data), &L))
         {
           printf("BADoubleTriDiagonalMatrixToListOfPoles failed in ResponseFunctionToDensityMatrix\n");
+          return 1;
+        }
+      }
+      break;
+      case 'd':
+      {
+        /*  no merge distance to pass: the single valued conversions take none, a list of
+         *  poles of a scalar G having no weight matrices whose basis could be arbitrary */
+        if(DoubleTriDiagonalMatrixToListOfPoles(*(DoubleTriDiagonalMatrixType*)(M->data), &L))
+        {
+          printf("DoubleTriDiagonalMatrixToListOfPoles failed in ResponseFunctionToDensityMatrix\n");
           return 1;
         }
       }
