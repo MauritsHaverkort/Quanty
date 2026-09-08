@@ -3494,6 +3494,62 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
   return retval;
 }
 
+/*  A^{-1/2} for a hermitian positive semi definite A.
+ *
+ *  A direction with an eigenvalue of zero has no inverse. It is left at zero, the same
+ *  treatment CompactMatrixSqrt above gives it, so what comes back is the inverse on the
+ *  space A actually spans and zero on its null space. A physical caller reaches that case
+ *  when A is a spectral weight and some direction carries none of it.
+ *
+ *  The threshold is relative to the trace of |A|, as a zero eigenvalue of a matrix built
+ *  from a product does not come out as exactly zero.
+ */
+uint32_t CompactMatrixInverseSqrt(CompactMatrixType const *A, CompactMatrixType * const InvSqrtA)
+{
+  int i,j,retval=0;
+  double val[A->Ni],sumval=0;
+  CompactMatrixType fun;
+  CompactMatrixEigensystem(A, &fun, val);
+  for(j=0;j<A->Ni;j++)
+  {
+    sumval+=Abs(val[j]);
+  }
+  for(i=0;i<fun.Ni;i++)
+  {
+    if(val[i]<=1000*DBL_EPSILON*sumval)
+    {
+      if(val[i]<-1000*DBL_EPSILON*sumval)
+      {
+        printf("Negative value in CompactMatrixInverseSqrt, eigen value is %22.15E at pos %i (trace |val| = %22.15E)\n",val[i],i,sumval);
+        retval++;
+      }
+      val[i]=0;
+      if(A->QComplex==0)
+      {
+        for(j=0;j<A->Nj;j++)
+        {
+          fun.VRe[j+i*A->Nj]=0;
+        }
+      }
+      else
+      {
+        for(j=0;j<A->Nj;j++)
+        {
+          fun.V[j+i*A->Nj].Re=0;
+          fun.V[j+i*A->Nj].Im=0;
+        }
+      }
+    }
+    else
+    {
+      val[i]=1.0/sqrt(val[i]);
+    }
+  }
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(val, &fun, InvSqrtA);
+  FreeCompactMatrix(&fun);
+  return retval;
+}
+
 uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
 {
   //TODO: all
@@ -4510,6 +4566,16 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
       {
         memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(Complex16));
       }
+      /*  TMT reaches as far as the second site of each chain, so the onsite energies of the
+       *  val chain from there on have to follow. Their couplings are filled by the two
+       *  loops after this switch, which run whichever branch was taken. */
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->V[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        }
+      }
     }
     else
     {
@@ -4631,6 +4697,16 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
       for(i=0;i<3*A->BlockSize;i++)
       {
         memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
+      }
+      /*  TMT reaches as far as the second site of each chain, so the onsite energies of the
+       *  val chain from there on have to follow. Their couplings are filled by the two
+       *  loops after this switch, which run whichever branch was taken. */
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        }
       }
     }
     else

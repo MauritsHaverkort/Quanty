@@ -77,6 +77,7 @@ uint32_t CompactMatrixPow(CompactMatrixType const *A, CompactMatrixType * const 
 uint32_t HermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixType * const ExpA);
 uint32_t NonHermitianCompactMatrixExp(CompactMatrixType const *A, CompactMatrixType * const ExpA);
 uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA);
+uint32_t CompactMatrixInverseSqrt(CompactMatrixType const *A, CompactMatrixType * const InvSqrtA);
 uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA);
 uint32_t CompactMatrixToSpectra(CompactMatrixType const *A, SpectraType * const G, uint32_t const BlockSize, double Emin, double Emax, uint32_t N);
 uint32_t HermitianCompactMatrixToPosAndNeg(CompactMatrixType const * const A, CompactMatrixType * const Apos, CompactMatrixType * const Aneg, bool *PosDefinite, bool *NegDefinite, double *NegWeight);

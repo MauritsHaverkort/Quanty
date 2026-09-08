@@ -372,19 +372,60 @@ of three poles by two orbitals gives twelve instead of six.
 `fun^* ToMatrix(G) fun^T = diag(val)` for all ten combinations, real and complex, plus that
 `l`, `t`, `a` and `d` of the same `G` give the same spectrum.
 
-**Open: `ToMatrix` of a block `n` is wrong.** Its matrix' eigenvalues are not the poles of
-`G`, measured for six val/con splits and wrong in every one — `-2.4447 -1.7597 -1.1334
--0.8122 0.7146 1.3854` where the poles are `-2 -2 -1 -1 1 1` — with the wrong dimension when
-one chain is empty (8 for a 6-pole `G`) and not even hermitian for two chains of equal
-length, which the eigensolver reports as "Using left and right handed eigensystem". The `n`
-itself is fine: it evaluates to the same `G` as every other format. What the routine builds
-is the bonding/antibonding rotation of the two head sites, and that basis is orthonormal in
-the single-valued case, where `val.b[0]² + con.b[0]² = 1`, but not in the block case, where
-it would need `B0v B0v^† + B0c B0c^† = 1`. `ToMatrix.Quanty` pins the layout the code
-produces rather than the physics: its expected matrix is written with the same
-bonding/antibonding structure and uses `B0v = B0c = sqrt(1/2)·I`, the one case where the two
-off-diagonal blocks agree, so it passes. Until that is settled, `Eigensystem` takes a block
-`n` through a block tri-diagonal matrix, which is tested and gives the poles of `G`.
+**`ToMatrix` of a block `n` — repaired.** Its matrix' eigenvalues were not the poles of
+`G`: 2.5e-02 out for a real `G` and 2.6e-01 for a complex one, measured against the list of
+poles, and wrong for every valence/conduction split. The `n` itself was never at fault — it
+evaluates to the same `G` as every other format.
+
+The cause. `SetTMTFromValandCon…` builds `TMT = T M T^+`, where `M` is the Hamiltonian of
+the first two sites of each chain and `T` rotates the two head sites into the observed
+orbital `bv0|v1> + bc0|c1>` and the combination orthogonal to it. Built by hand for
+BlockSize 2, `T M T^+ − ToMatrix` came out exactly zero and the eigenvalues of `M` came out
+exactly the poles of `G`, which leaves `T` as the only suspect — and `T T^+` is not the unit
+matrix. Its Gram matrix is
+
+    T T^+ = ( S  C )      S = bv0 bv0^+ + bc0 bc0^+ ,   C = bv0 bc0^+ - bc0 bv0^+
+            ( C^+ S )
+
+with `S` the **total spectral weight of `G`**, measured equal to `Σ_i W_i`. The block format
+keeps that weight in its head couplings; the single-valued format normalises them and holds
+the weight in `b0`, which is why the scalar `n` was right all along. So `T` is unitary only
+for a `G` of unit weight with commuting heads, and `T M T^+` is otherwise a Hamiltonian in a
+basis that is not orthonormal.
+
+The repair, three functions and no change to the struct.
+`GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType` is new: it takes the raw
+`T` and multiplies it by the Löwdin factor `(T T^+)^{-1/2}`, which is unconditional where a
+block-diagonal `S^{-1/2}` would assume `C = 0` (that shortcut left a residual 6e-04).
+`SetTMTFromValandCon…` uses it for the head blocks, so `TMT`, and with it `ToMatrix` and the
+operator `ToOperator` builds from the same field, are right for any `G`. `ToOperator` also
+hands `T` back to the caller under the key `"T"`, and that is the normalised one now, being
+the basis the operator was built in. `GetTFromValandCon…` stays raw and
+`BlockResponseFunctionGetB0` keeps deriving `S^{1/2}` from it, which is exactly the factor
+the normalisation takes out. `CompactMatrixInverseSqrt` is new next to `CompactMatrixSqrt`,
+in its shape, leaving a direction of zero eigenvalue at zero — that is a direction of the
+observed block carrying no spectral weight.
+
+One further defect fell out of the same measurements: the `con.N==1` branch of
+`BlockNaturalImpurityOrbitalMatrixToCompactMatrix` copied the head from `TMT` and never
+wrote the onsite energies of the valence chain beyond its second site, so a `G` whose poles
+all lie below `mu` came out wrong even after the normalisation. Its `val.N==1` mirror had
+the loop; it does now too, in both the real and the complex branch.
+
+Two things I reported earlier and got wrong: the matrix is not of the wrong dimension when a
+chain is empty — the extra levels are the format's own zero-coupling padding site, and its
+eigenvalues come out at zero — and it is not non-hermitian; `|M − M^+|` measures 1.2e-32,
+and my "not hermitian" reading came from comparing a chopped complex matrix with a real
+`Matrix.Zero`, which never compares equal.
+
+Measured after the repair: the eigenvalues of `ToMatrix` of a block `n` are the poles of `G`
+to 1.3e-15 real and 1.6e-15 complex, for all six valence/conduction splits. `ToMatrix.Quanty`
+checks that identity for every format, on a `G` whose total weight is not the unit matrix, in
+addition to the hand-written matrices it already pinned — which all use
+`B0v = B0c = sqrt(1/2)·I`, the one weight for which the old rotation was unitary, and which
+is why they passed throughout. With `Eigensystem` no longer needing to route a block `n`
+through a block tri-diagonal matrix, that detour is gone and all ten combinations agree with
+`Eigensystem(ToMatrix(G))`.
 
 **Suggested order.** The `d` row is complete. What is left in §0 is not about `d`: the block
 `n` `ToMatrix` above, and the `Method` variants of the self-energy calls.

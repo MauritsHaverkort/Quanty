@@ -90,19 +90,9 @@ for j, cx in ipairs({false, true}) do
 	local ref = nil
 	for i, ty in ipairs(EigTypes) do
 		local tag = "block " .. (cx and "complex " or "real ") .. ty
-		if ((ty == "Nat") and true) then
-			-- BlockNaturalImpurityOrbitalMatrixToCompactMatrix builds the bonding and
-			-- antibonding rotation of the two head sites and the eigenvalues of that matrix
-			-- are not the poles of G, so Eigensystem takes a block Nat through a block
-			-- tri-diagonal matrix instead and the identity above cannot be used on it. What
-			-- is checked is that the spectrum is the one the other formats give.
-			local val = Eigensystem(ResponseFunction.ChangeType(G, ty))
-			SameSpectrum("a " .. tag, val, ref)
-		else
-			local val = CheckEigensystem(tag, ResponseFunction.ChangeType(G, ty), 2)
-			if (ty == "ListOfPoles") then ref = val end
-			if ((ty == "Tri") or (ty == "And")) then SameSpectrum("a " .. tag, val, ref) end
-		end
+		local val = CheckEigensystem(tag, ResponseFunction.ChangeType(G, ty), 2)
+		if (ty == "ListOfPoles") then ref = val end
+		if ((ty == "Tri") or (ty == "And")) then SameSpectrum("a " .. tag, val, ref) end
 	end
 end
 print("block, real and complex: fun^* ToMatrix(G) fun^T is diagonal for every format")

@@ -589,42 +589,26 @@ static int LuaPlaceOnMeshResponseFunction(lua_State *L)
  */
 static int LuaResponseFunctionEigensystem(lua_State *L)
 {
-  ResponsefunctionType *M, Mt;
+  ResponsefunctionType *M;
   double *val;
   CompactMatrixType Mc, fun;
-  bool converted = false;
   M = luaL_checkResponsefunction(L,-1);
-  /*  A block natural impurity orbital matrix is taken through a block tri-diagonal one:
-   *  BlockNaturalImpurityOrbitalMatrixToCompactMatrix builds the bonding and antibonding
-   *  rotation of the two head sites, and the eigenvalues of that matrix are not the poles
-   *  of G. The single valued natural impurity orbital matrix does not have that problem. */
-  if((M->Block==true)&&((M->type|32)=='n'))
+  if((M->type|32)=='t')
   {
-    if(ConvertResponsefunction(M, &Mt, 'T', "Default", 0, 1000*DBL_EPSILON, 0, -1, false, false, false))
+    if(M->Block==true)
     {
-      FreeResponsefunction(M);
-      return luaL_error(L, "Error in Eigensystem: could not convert a natural impurity orbital matrix to a tri-diagonal one\n");
-    }
-    converted = true;
-  }
-  if(((converted?Mt.type:M->type)|32)=='t')
-  {
-    ResponsefunctionType *T = converted ? &Mt : M;
-    if(T->Block==true)
-    {
-      val = (double*)malloc(((BlockTriDiagonalMatrixType*)T->data)->N*((BlockTriDiagonalMatrixType*)T->data)->BlockSize*sizeof(double));
-      if(val==NULL || BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)T->data, val, &fun))
+      val = (double*)malloc(((BlockTriDiagonalMatrixType*)M->data)->N*((BlockTriDiagonalMatrixType*)M->data)->BlockSize*sizeof(double));
+      if(val==NULL || BlockTriDiagonalMatrixEigenSystem((BlockTriDiagonalMatrixType*)M->data, val, &fun))
       {
         free(val);
-        if(converted) FreeResponsefunction(&Mt);
         FreeResponsefunction(M);
         return luaL_error(L, "Error in Eigensystem: BlockTriDiagonalMatrixEigenSystem failed\n");
       }
     }
     else
     {
-      val = (double*)malloc(((TriDiagonalMatrixType*)T->data)->N*sizeof(double));
-      if(val==NULL || TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)T->data, val, &fun))
+      val = (double*)malloc(((TriDiagonalMatrixType*)M->data)->N*sizeof(double));
+      if(val==NULL || TriDiagonalMatrixToEigensystemCompact((TriDiagonalMatrixType*)M->data, val, &fun))
       {
         free(val);
         FreeResponsefunction(M);
@@ -654,7 +638,6 @@ static int LuaResponseFunctionEigensystem(lua_State *L)
     }
     FreeCompactMatrix(&Mc);
   }
-  if(converted) FreeResponsefunction(&Mt);
   LuaPushArray_double(L, val, fun.Ni);
   LuaPushTable_CompactMatrixType(L, &fun);
   FreeResponsefunction(M);
@@ -2512,7 +2495,9 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         luaL_setmetatable(L, "Matrix_Type");
         T->OnLuaStack=true;
         lua_setfield(L,-2,"T");
-        GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType((BlockNaturalImpurityOrbitalMatrixType*)(M->data), T);
+        /*  the normalised T: the operator is built from TMT, which is the Hamiltonian in
+         *  the orthonormal basis this transformation leads to */
+        GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType((BlockNaturalImpurityOrbitalMatrixType*)(M->data), T);
         if(AddSpin==true)
         {
           CompactMatrixType Tspin;
