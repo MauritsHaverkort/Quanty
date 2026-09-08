@@ -1298,18 +1298,6 @@ int ResponseFunctionTranspose(ResponsefunctionType * const Gin, Responsefunction
   return 0;
 }
 
-/* Given a response function we return
- *  case 1 anderson
- *  G = A0 + B0^* 1/(w - A1 - sum_i B_i 1/(A_{i+1} B_i^+) B0^T
- *  Heff = A1 - sum_i B_i 1/(A_{i+1} B_i^+)
- *
- *  case 2 tridiagonal
- *
- *  case 3 list of poles
- *
- *  case 4 natural impurity orbitals
- *
- */
 /*  Split a response function into the effective Hamiltonian standing in its denominator and
  *  the offset and scaling in front of it,
  *
@@ -1319,7 +1307,7 @@ int ResponseFunctionTranspose(ResponsefunctionType * const Gin, Responsefunction
  *  1 by 1 for a single valued G.
  *
  *  Which type Heff comes back as is chosen per input type by what is numerically cheapest,
- *  not for the sake of one uniform answer:
+ *  or most numerically stable. (Future options can influence the method used and type returned):
  *
  *    t -> t   no numerical work at all, only a shift in the data structure
  *    a -> l   one diagonalization per bath block and nothing more
@@ -1329,27 +1317,7 @@ int ResponseFunctionTranspose(ResponsefunctionType * const Gin, Responsefunction
  *
  *  The three that need a transformation take the standard route, ConvertResponsefunction or
  *  ConvertBlockMatrix, so that they behave exactly as ChangeType would and take the same
- *  options. This used to call the type-to-type converters directly with a constant of its
- *  own at each site -- 100*DBL_EPSILON where the standard cell uses the SingularValue
- *  option, NBlockMax of 1+N where the standard cell passes N, and a degeneracy tolerance of
- *  DBL_MIN, which being positive is not even the negative sentinel and grouped nothing.
- *
- *  A0 and B0 are properties of G itself, which a type conversion preserves, so they are
- *  read once from Gin before anything is converted, through the accessors that already
- *  handle all five types. Doing it per case is what let the natural orbital branch read them
- *  through a BlockAndersonMatrixType cast of a BlockNaturalImpurityOrbitalMatrixType: the
- *  two are Name,N,BlockSize,QComplex and Name,BlockSize,QComplex,mu, so BlockSize came out
- *  of QComplex and A0 came back 0 by 0 for a real matrix and 1 by 1 for a complex one.
- *
- *  Of the four options only SingularValue and MinimalPoleDistance reach anything: the l -> a
- *  cell deflates on SingularValue, d -> a merges on MinimalPoleDistance, and so does the
- *  a -> l step here. T and MinimalPoleWeigth are forwarded but read by nothing, and are not
- *  offered at the lua layer.
- *
- *  Gout, A0 and B0 are not allocated on entry. An unrecognized type returns 1 with all
- *  three left alone, rather than the silent fall through that left Gout with no type at all
- *  and, in the block half, A0 and B0 never initialised -- which is what took
- *  CalculateGBathFromGandSigmaDirectSubtract down two lines later.
+ *  options.
  */
 int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout, CompactMatrixType * const A0, CompactMatrixType * const B0, double const T, double const SingularValue, double const MinimalPoleWeigth, double const MinimalPoleDistance)
 {
@@ -1392,11 +1360,8 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
     }
   }
   /*  SingularValue and T are magnitudes and a temperature, so a negative one cannot be
-   *  meant: it is the unset marker and the standard value is the one ChangeType fills in.
-   *  This matters -- the l -> a cell deflates on SingularValue, and handing it -DBL_MAX
-   *  gives a wrong answer rather than no answer. MinimalPoleDistance is the opposite:
-   *  negative is its sentinel, the merge decides what it means, so it goes through
-   *  untouched. MinimalPoleWeigth has no standard value because nothing reads it. */
+   *  meant: Set standard values
+   */
   double sv = (SingularValue < 0) ? 1000*DBL_EPSILON : SingularValue;
   double kt = (T < 0) ? sqrt(DBL_MIN) : T;
   Gout->Block = Gin->Block;

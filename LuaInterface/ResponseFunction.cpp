@@ -949,8 +949,6 @@ static int LuaResponseFunctionEffectiveHamiltonian(lua_State *L)
   B0 = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   if(ResponseFunctionEffectiveHamiltonian(Gin,Heff,A0,B0,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance))
   {
-    /*  the function allocates nothing when it fails, and these three userdata have no
-     *  metatable yet, so there is no __gc to free anything: lua just unwinds them */
     return luaL_error(L, "Error in ResponseFunction.EffectiveHamiltonian()\n");
   }
   // we give the controle of the allocation of the memory of Heff to Lua
