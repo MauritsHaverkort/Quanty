@@ -214,7 +214,7 @@ end
 if moved then
 	print("Rotate options: accepted, and at least one of them moves the answer")
 else
-	print("Rotate options: accepted, none of them chagnes the answer")
+	print("Rotate options: accepted, none of them changes the answer")
 end
 
 -- an option that does not exist has to be refused rather than ignored, and the argument
