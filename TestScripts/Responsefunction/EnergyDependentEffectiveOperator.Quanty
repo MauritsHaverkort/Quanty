@@ -1,0 +1,75 @@
+A0 = {{0,0},{0,0}}
+B0 = {{1,0},{0,1}}
+A0val = {{-4,0},{0,-2}}
+A1val = {{-3,0},{0,-3}}
+A2val = {{-13,1},{1,-13}}
+B0val = {{1.1,1.2},{1.2,1.1}}
+B1val = {{0.8,0},{0,0.9}}
+
+A0con = {{1,0},{0,1}}
+A1con = {{3,0},{0,4}}
+A2con = {{13,1},{1,13}}
+B0con = {{0.5,0},{0,0.5}}
+B1con = {{0.7,0},{0,0.6}}
+
+G1 = ResponseFunction.New({{A0,B0},val={{A0val,A1val,A2val},{B0val,B1val},mu=0,type="Tri"}, con={{A0con,A1con,A2con},{B0con,B1con},mu=0,type="Tri"}, mu=0,type="DoubleTri", name="G1"})
+
+val, fun = Eigensystem(G1)
+
+print(G1)
+print(val)
+Opp, BitMask = ResponseFunction.ToOperator(G1)
+print(OperatorToMatrix(Opp))
+valOpp, funOpp = Eigensystem(OperatorToMatrix(Opp))
+print(valOpp)
+print(funOpp)
+
+
+Opp11, BitMask11, Tail11 = ResponseFunction.ToOperator(G1,{{"Nval",1},{"Ncon",1}})
+Opp11.Chop()
+print(OperatorToMatrix(Opp11))
+valOpp11, funOpp11 = Eigensystem(OperatorToMatrix(Opp11))
+print(valOpp11)
+
+function Heff(omega)
+	Mat =  { { -3      ,  0      ,  1.1    ,  1.2    ,  0.5    ,  0      } ,
+		       {  0      , -1      ,  1.2    ,  1.1    ,  0      ,  0.5    } ,
+	         {  1.1    ,  1.2    , -3+0.64*(13+omega)/((12+omega)*(14+omega))     ,  0.72/((12+omega)*(14+omega))      ,  0      ,  0      } ,
+	         {  1.2    ,  1.1    ,  0.72/((12+omega)*(14+omega))      , -3+0.81*(13+omega)/((12+omega)*(14+omega))      ,  0      ,  0      } ,
+	         {  0.5    ,  0      ,  0      ,  0      ,  3-0.49*(13-omega)/((12-omega)*(14-omega))     ,0.42/((12-omega)*(14-omega))      } ,
+	         {  0      ,  0.5    ,  0      ,  0      ,  0.42/((12-omega)*(14-omega))      ,  4-0.36*(13-omega)/((12-omega)*(14-omega))      } }
+	return Mat
+end
+
+valeff, funeff = Eigensystem(Heff(-14.065564919865))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(-12.084693702667))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(-4.9502905612828 ))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(-2.9461506503171))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(-2.1719060304448))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(0.11924885358518))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(2.995927958632))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(4.013713062358))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(12.04952686708))
+print("val eff",valeff)
+valeff, funeff = Eigensystem(Heff(14.040189122922))
+print("val eff",valeff)
+
+
+print("5 electron system")
+
+Restrictions={10,0,{"1111111111",5,5}}
+fun = Eigensystem(Opp,Restrictions,252)
+print(BraketDiagonal(fun,Opp,fun))
+
+
+Restrictions11={6,0,{"111111",3,3}}
+fun11 = Eigensystem(Opp11,Restrictions11,20)
+print(BraketDiagonal(fun11,Opp11,fun11))
