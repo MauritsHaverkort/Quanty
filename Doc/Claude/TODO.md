@@ -417,11 +417,145 @@ deciding when someone picks it up: the overload is **not declared in
 [BasicMath_ListOfPoles.h](../../Core/BasicMath/BasicMath_ListOfPoles.h)** (only
 the three-argument one is) and resolves only through the unity build; and it
 splits with `ListOfPolesCopyVal/Con` at `Epsilon = DBL_MIN`, i.e. the linear
-ramp degenerated to a step, which the Fermi-function decision recorded in
-[PLAN_DoubleTriDiagonal.md](PLAN_DoubleTriDiagonal.md) §3.1 and §11 replaces.
+ramp degenerated to a step, which the Fermi-function decision below replaces.
 
 **Meanwhile:** call `G.ReducePoles{N}` with a single number, or convert to a
 block response function first.
+
+## The dormant single-valued DoubleTriDiagonal helpers
+
+**Status:** open, cheap, and nothing calls them. The `d` type is complete and
+tested through `ChangeType`, `ToOperator`, `ToMatrix`, `Eigensystem`, `Rotate`,
+`InvertEnergy`, `Transpose`, `CalculateRho`, `EffectiveHamiltonian`,
+`FromEffectiveHamiltonian`, `×`, `÷` and `CalculateGfromG0andSigma`. What is
+listed here is the remainder of the family that no code path reaches, kept
+because the defects are real and will bite whoever wires them up.
+
+- `DoubleTriDiagonalMatrixInverseOld`
+  ([BasicMath_DoubleTriDiagonalMatrixVector.cpp:137](../../Core/BasicMath/BasicMath_DoubleTriDiagonalMatrixVector.cpp#L137))
+  builds the conduction block from `M.val` — `MI->VRe[0][i] = M.val.b[0]` and
+  `M.val.a[i - M.val.N]` where `con` is meant. A copy-paste slip. It also uses
+  `MatrixType`, which should be `CompactMatrixType`.
+- `DoubleTriDiagonalMatrixAdd` (same file) loops `i < M->val.N - 1`, so
+  `val.a[val.N-1]` and `val.b[val.N-1]` are never added, and with `val.N == 0`
+  the `uint32_t` underflows into a runaway loop. It also ignores `a0`/`b0`.
+- `DoubleTriDiagonalMatrixScalarMultiply` scales every `a` and `b` and then
+  *resets* `a0 = 0`, `b0 = 1` — scaling the matrix rather than the Green's
+  function, and discarding the offset. Which of the two is intended needs
+  deciding before it is used; `ResponsefunctionMul` does not call it and scales
+  `a0` and `b0` itself, which is the Green's-function reading.
+
+`AndersonMatrixToDoubleTriDiagonalMatrixNonOrthogonal` is a `/* To DO */` stub
+returning 1 with no callers; leave it.
+
+A deflated block `d` can be built only through a conversion that deflates, not
+from a hand-written table: the lua reader derives `BlockSize` from the matrices
+and takes no per-block size list. So `…ChopReduceDimension` and the `WithDeflation`
+matrix routine are exercised, but only along that one route.
+
+## Reserved-zero slots in the block natural impurity orbital type
+
+**Status:** open, latent, in live lua-exposed code.
+
+`BlockNaturalImpurityOrbitalMatrixType` has an outer `CompactMatrixType a0` and
+no `b0`; the scaling lives in `val.b[0]` / `con.b[0]`. Its convention is additive,
+`G(w) = a0 + G.val(w) + G.con(w)`, so the total constant offset is
+`a0 + val.a[0] + con.a[0]`. The head slots are *intended* to be zero, nothing
+enforces that except the constructors, and the code does not agree on what a
+non-zero one means:
+
+| path | `val.a[0]` non-zero → |
+|---|---|
+| `EvaluateBlockNaturalImpurityOrbital` | **honoured** — delegates to `EvaluateBlockTriDiagonalMatrix`, which adds its own `a[0]` |
+| `…MatrixToSpectra` | **honoured** — `Gval[i] + Gcon[i] + A->a0` |
+| `…MatrixToBlockListOfPoles` | **honoured** — and hence `…ToBlockAndersonMatrix` / `…ToBlockTridiagonalMatrix`, which route through it |
+| `BlockResponseFunctionGetA0` | **honoured** — returns `a0 + val.a[0] + con.a[0]`, carrying a `//TODO: test if this is correct` |
+| `…MatrixChop` | touched — loops all `N+1` a-blocks, block 0 included |
+| `…MatrixToCompactMatrix`, `…WithDeflation`, `…ToImpurityHamiltonian` | **dropped** — built from `TMT` and the chain blocks from index 2 on |
+| `GetTFromValandCon…`, `SetTMTFromValandCon…` | **dropped** — read only `b[0]` and `a[1]`, `a[2]`, … |
+| `ResponsefunctionMul` (block `n`) | **wrong** — scales `a0` by `x` and `val.b[0]`/`con.b[0]` by `√x`, but not `val.a[0]`/`con.a[0]`, so `x·G ≠ Mul(G,x)` |
+| `ResponseFunctionInvertEnergy` (block `n`) | skips block 0, i.e. treats it as an offset |
+
+The "dropped" rows are not wrong in themselves — an additive constant on `G` has
+no home in a matrix or a Hamiltonian. The problem is that `Evaluate` and
+`ToMatrix` can disagree about the same object.
+
+Two places do enforce zero, so an `n` built from lua or from a list of poles is
+fine and one built through the C API is not:
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix` `memset`s both head blocks
+after folding their offset into `B->a0`, and
+`luaL_checkBlockNatrualImpurityOrbitalMatrixType` does the full normalisation,
+transforming both head blocks with the table's `B0`, adding them into `a0`,
+zeroing them and folding `B0` into the two head couplings.
+
+Worth doing, in this order:
+
+1. Fix block-`n` `ResponsefunctionMul` to scale `val.a[0]` / `con.a[0]` by `x` as
+   well. It is the one operation that is outright wrong rather than merely
+   inconsistent. `__mul.Quanty` has the identity that catches it,
+   `x G(w,γ) == (G*x)(w,γ)`, but only exercises it on an `n` whose head slots are
+   zero.
+2. Resolve the `BlockResponseFunctionGetA0` TODO — it *is* correct, in that it
+   agrees with `Evaluate` and `ToSpectra`. Delete the TODO and say so.
+3. State the reserved-zero invariant in the struct comment, since two
+   constructors already depend on it.
+
+The `d` type deliberately avoids this design: its shared impurity energy is the
+sum `val.a[0] + con.a[0]` with every slot live. See the architecture notes.
+
+## The Epsilon split parameter and the three `…PlusT` variants
+
+**Status:** convention settled, sweep unfinished.
+
+`Epsilon` became `kBT` in `DoubleTriDiagonalMatrixType` and
+`BlockDoubleTriDiagonalMatrixType` and the convention is a true Fermi function
+with the temperature stored on the object. The other five structs still carry
+`Epsilon`, and `AndersonMatrixToDoubleTriDiagonalMatrixPlusT` still splits with
+the old linear ramp over `[mu-ε, mu+ε]`.
+
+`AndersonMatrixToDoubleTriDiagonalMatrixPlusT`,
+`TriDiagonalMatrixToDoubleTriDiagonalMatrixPlusT` and
+`TriDiagonalMatrixToSecondDoubleTriDiagonalMatrixPlusT` hold the original
+implementation and are kept to be rewritten rather than replaced. Nothing outside
+`Test/` calls them and `Test/` is not in the build. They no longer agree with the
+routine `ChangeType` uses: they write the whole impurity energy into both chains
+instead of half in each, split with the ramp, invent a zero-coupling bath site for
+an empty branch, and tri-diagonalize with re-orthogonalized Lanczos, which costs
+the O(N²) memory that `PolesToTriDiagonalCoefficients` exists to avoid. A comment
+on each says so, so that a caller who binds to one by accident finds out.
+
+Rewriting them on top of `PolesToTriDiagonalCoefficients` means deciding how `T`
+is produced: the recurrence gives it in O(NPoles·N) but only to 3e-8
+orthogonality, so machine precision still costs one Gram–Schmidt sweep and the
+O(NPoles·N) basis. `T` is not exposed by any `ChangeType` on the lua level, so
+that is a project of its own.
+
+## Two leftovers from the DoubleTriDiagonal work
+
+**The wiki page for `ResponseFunction`** does not mention the `DoubleTri` type or
+that `Nv`/`Nc` in `ToOperator` now apply to it as well as to `Nat`. Both are
+user-facing. See [WIKI_EDITING_WORKFLOW.md](WIKI_EDITING_WORKFLOW.md).
+
+**The `Blok…` family is dead code awaiting retirement.**
+`BlokTriDiagonalMatrixType` and `BlokDoubleTriDiagonalMatrixType` are the
+predecessors of the `Block…` types, spelling and all, and they hold `MatrixType`
+where the `Block…` family holds a flat array with a `BlockSize`. Seventeen
+functions each live in `BasicMath_BlokTriDiagonalMatrixVector.cpp` and
+`BasicMath_BlokDoubleTriDiagonalMatrixVector.cpp`, three more mentions sit in
+`BasicMath_MatrixTypeConversion.cpp`, and nothing outside those files calls any
+of them. Removing them is a separate decision from anything about `d`; the
+codebase convention is to rename rather than delete, so they may want a `…Old`
+suffix and a comment instead.
+
+## The self-energy `Method` variants are deliberately partial
+
+**Status:** by design, not a defect — recorded so it is not re-opened.
+
+`ResponseFunctionAddSelfEnergyOnGridViaG0Tri` and `…ViaAndLP`, reached through the
+`Method` option of `CalculateGfromG0andSigma`, support a varying subset of the
+type and option combinations. These functions exist to compare algorithms rather
+than for production use, and completing the matrix would be neither possible nor
+useful.
 
 ## Accuracy of the response function conversions — its own file
 
