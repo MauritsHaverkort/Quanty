@@ -1475,9 +1475,6 @@ int ResponseFunctionEffectiveHamiltonian(ResponsefunctionType * const Gin, Respo
  *
  *    G(w) = ( w - Heff(w) )^-1
  *
- *  so with A0 zero and B0 the identity. A caller that has an A0 and a B0 of its own puts
- *  them back with G = A0 + B0^* G B0^T.
- *
  *  Which type G comes back as is chosen per input type by what is numerically cheapest,
  *  or most numerically stable. (Future options can influence the method used and type
  *  returned):
