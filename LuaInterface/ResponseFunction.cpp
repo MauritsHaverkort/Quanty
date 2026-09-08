@@ -3988,11 +3988,11 @@ static int LuaResponseFunctionRotate(lua_State * L)
   Options.MinimalPoleDistance = ValueNotSet;
   Options.T                   = ValueNotSet;
   LuaOptionsType LuaOptions[]={
-    {"SingularValue","double",&(Options.SingularValue)},
-    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
+//    {"SingularValue","double",&(Options.SingularValue)},
+//    {"MinimalPoleWeigth","double",&(Options.MinimalPoleWeigth)},
     {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
-    {"Temperature","double",&(Options.T)},
-    {"EffectivekBT","double",&(Options.T)},
+//    {"Temperature","double",&(Options.T)},
+//    {"EffectivekBT","double",&(Options.T)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t)lua_gettop(L);
   if(LuaTestOptionsList(L, -1))

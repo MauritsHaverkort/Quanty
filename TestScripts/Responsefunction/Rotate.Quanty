@@ -188,20 +188,15 @@ print("a rotation of the wrong shape is refused: ok")
 ---- Options ----
 -----------------
 
--- Rotate takes SingularValue, MinimalPoleWeigth, MinimalPoleDistance and Temperature, the last also spelled
--- EffectivekBT, and forwards them to the conversion to a list of poles that every rotation
+-- Rotate takes MinimalPoleDistance and forwards it to the conversion to a list of poles that every rotation
 -- of a non pole type goes through.
 
 local Uopt = {{sqrt(1/2),sqrt(1/2),0},{sqrt(1/2),-sqrt(1/2),0},{0,0,1}}
 local GDopt = ResponseFunction.ChangeType(GLP, "DoubleTri", {{"EffectivekBT", 0.05}})
 local Gbase = ResponseFunction.Rotate(GDopt, Uopt)
 local moved = false
-for i, o in ipairs({ {{"SingularValue",1E-6}},
-									   {{"MinimalPoleWeigth",1E-8}},
-									   {{"MinimalPoleDistance",1E-8}},
-                     {{"Temperature",0.1}},
-									   {{"EffectivekBT",0.1}},
-                     {{"SingularValue",1E-6},{"MinimalPoleWeigth",1E-8},{"Temperature",0.1}} }) do
+for i, o in ipairs({ {{"MinimalPoleDistance",1E-8 }},
+									   {{"MinimalPoleDistance",1E-13}} }) do
 	local names = {}
 	for k, v in ipairs(o) do names[#names+1] = v[1] end
 	local tag = table.concat(names, "+")

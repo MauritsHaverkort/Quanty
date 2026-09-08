@@ -464,25 +464,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
 
 /*  Rotate the block representation of a response function, GRot = U^* G U^T.
  *
- *  A rotation acts on the weights of the poles, so every type other than the list of poles
- *  gets there by converting to a list of poles first, which is why the result of a rotation
- *  is a list of poles whatever went in.
- *
- *  T, SingularValue and MinimalPoleWeigth are forwarded to that conversion. Note that none
- *  of the five "to a list of poles" cells of ConvertBlockMatrix reads any of the three
- *  today -- they take MinimalPoleDistance and relativeDistance and nothing else, and
- *  MinimalPoleWeigth is unread anywhere in the tree -- so passing them changes no answer
- *  yet. They are threaded so that the option exists where it belongs and becomes live the
- *  moment a conversion uses it, and so that a rotation that one day gives its own type back
- *  has them to hand.
- *
- *  The merge tolerance is the parameter that does reach the conversion, and it is not the
- *  same for all types: t, a and n pass 0, which merges nothing at all since the test inside
- *  the merge is a strict <, while d passes -1 to ask BlockListOfPolesMergeDegeneratePoles
- *  for its standard value. d -> l is the only one of the four whose conversion merges, and
- *  leaving it at zero would carry the arbitrary eigenbasis of a degenerate group of poles
- *  into the rotated function. The 0 of the other three is what they have always passed and
- *  is left alone here.
+ *  Currently all response functions are transformed to a (Block) list of poles format. This takes the option MinimalPoleDistance.
  */
 int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot, double const T, double const SingularValue, double const MinimalPoleWeigth, const double MinimalPoleDistance)
 {
