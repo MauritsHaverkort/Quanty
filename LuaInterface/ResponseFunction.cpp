@@ -910,7 +910,12 @@ static int LuaResponseFunctionTranspose(lua_State *L)
 {
   ResponsefunctionType *Gin,Gout;
   Gin = luaL_checkResponsefunction(L,1);
-  ResponseFunctionTranspose(Gin,&Gout);
+  if(ResponseFunctionTranspose(Gin,&Gout))
+  {
+    FreeResponsefunction(Gin);
+    FreeResponsefunction(&Gout);
+    return luaL_error(L, "Error transposing a response function\n");
+  }
   LuaPush_ResponseFunction(L, &Gout);
   FreeResponsefunction(Gin);
   FreeResponsefunction(&Gout);

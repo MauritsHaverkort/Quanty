@@ -1374,6 +1374,26 @@ void BlockNaturalImpurityOrbitalMatrixTypeTranspose(BlockNaturalImpurityOrbitalM
   CompactMatrixTranspose(&(G->TMT));
   return;
 }
+/*  G(w) -> G(w)^T
+ *
+ *   G   = A0   + B0^* ( w - Gval(w)   - Gcon(w)   )^-1 B0^T
+ *   G^T = A0^T + B0   ( w - Gval(w)^T - Gcon(w)^T )^-1 B0^+
+ *
+ *  the same A_i -> A_i^T and B_i -> B_i^* as everywhere else. B0 stands in the head
+ *  convention, so with B0 -> B0^* the head reads B0 ( ) B0^+, and the two chains are added
+ *  in the denominator, where each of them transposes as the tri-diagonal response function
+ *  it is. a0 and b0 carry a QComplex of their own, which for a mixed matrix need not be the
+ *  QComplex of the matrix itself; CompactMatrixConjugate reads it and does nothing to a
+ *  real matrix.
+ */
+void BlockDoubleTriDiagonalMatrixTypeTranspose(BlockDoubleTriDiagonalMatrixType * const G)
+{
+  BlockTriDiagonalMatrixTypeTranspose(&(G->val));
+  BlockTriDiagonalMatrixTypeTranspose(&(G->con));
+  CompactMatrixTranspose(&(G->a0));
+  CompactMatrixConjugate(&(G->b0));
+  return;
+}
 
 
 int ResponseFunctionTranspose(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
@@ -1400,6 +1420,18 @@ int ResponseFunctionTranspose(ResponsefunctionType * const Gin, Responsefunction
     case 'n':
     {
       BlockNaturalImpurityOrbitalMatrixTypeTranspose(((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data)));
+    }
+    break;
+    case 'd':
+    {
+      BlockDoubleTriDiagonalMatrixTypeTranspose(((BlockDoubleTriDiagonalMatrixType*)(Gout->data)));
+    }
+    break;
+    default:
+    {
+      printf("Error in ResponseFunctionTranspose unrecognized type: %c\n",Gout->type);
+      fflush(stdout);
+      return 1;
     }
     break;
   }

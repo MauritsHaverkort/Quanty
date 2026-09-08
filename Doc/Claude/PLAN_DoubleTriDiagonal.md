@@ -149,7 +149,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `CalculateGbathfromGandSigma` | **SIGSEGV** | `t`, `n` → `And` | `ResponseFunctionEffectiveHamiltonian`, see below |
 | `EffectiveHamiltonian` | returns an object whose **type is uninitialised**; any use of it fails and it leaks when collected | `t` → `Tri` | `ResponseFunctionEffectiveHamiltonian` |
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
-| `Transpose` | **silent no-op**, returns `G` | the `a` route transposes | `ResponseFunctionTranspose` |
 | `CalculateRho` | prints "unrecognized type d", no usable result | `a` gives rho | `ResponseFunctionToDensityMatrix` |
 | `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
 | `CalculateGfromG0andSigma` | prints an error but computes the right answer, and returns a **`ListOfPoles`** instead of a `d` | — | `ResponseFunctionAddSelfEnergyDenseViaTri` |
@@ -163,10 +162,38 @@ calls `ResponseFunctionEffectiveHamiltonian` and hands the result straight to
 segfault there. Giving `EffectiveHamiltonian` a `d` case fixes the crash, the corrupt
 object and `FromEffectiveHamiltonian` together.
 
-**The silent no-op left is `Transpose`.** It returns the input unchanged with no
-diagnostic of any kind, so a calculation using it is quietly wrong rather than stopped, and
-it is doubly hidden: a real `d` is its own transpose, so only a complex one shows it — which
-is how it went unnoticed.
+**`Transpose` — DONE.** `BlockDoubleTriDiagonalMatrixTypeTranspose` follows the
+`A_i → A_i^T`, `B_i → B_i^*` of every other transpose in the family:
+
+    G   = A0   + B0^* ( w - Gval(w)   - Gcon(w)   )^-1 B0^T
+    G^T = A0^T + B0   ( w - Gval(w)^T - Gcon(w)^T )^-1 B0^+
+
+The two chains are added inside the denominator, so each transposes as the tri-diagonal
+response function it is — `BlockTriDiagonalMatrixTypeTranspose` on both — `a0` transposes
+and `b0`, standing in the head convention, conjugates. Four lines, the same shape as
+`BlockNaturalImpurityOrbitalMatrixTypeTranspose`. No `QComplex` branch is needed: `a0` and
+`b0` are `CompactMatrixType`s carrying their own flag, and `CompactMatrixConjugate` reads it
+and leaves a real matrix alone. The single-valued half needs nothing — the function returns
+early on `Block==false`, a 1×1 matrix being its own transpose. `ResponseFunctionTranspose`
+has a `default` returning 1 now and `LuaResponseFunctionTranspose` raises on it.
+
+That single rule covers both conjugation conventions, which is the thing that usually goes
+wrong here: for the head, `(B^* X B^T)^T = B X^T B^+` and putting `B' = B^*` into the format
+gives `B'^* X' B'^T = B X' B^+`; for a level below, `(B X B^+)^T = B^* X^T B^T` and the same
+substitution gives `B'X'B'^+ = B^* X' B^T`. Verified against `EvaluateBlockTriDiagonalMatrix`,
+which uses `TransformCompactMatrixInlinecT` (`b^* ( ) b^T`) for `iblock==1` and
+`TransformCompactMatrixInlineNC` (`b ( ) b^+`) below.
+
+`Transpose.Quanty` asserted only that the four formats agree with each other before and
+after the transpose — which they would also do if all of them were wrong in the same way —
+and otherwise drew plots. It now also checks `Transpose(G)(w,γ) == Transpose(G(w,γ))` for
+all five formats, real and complex, that transposing twice returns `G`, and that a single
+valued `G` of every format is its own transpose. **The head needs a hand built `G`**: every
+response function that comes out of a conversion has a hermitian head, `A0` hermitian and
+`B0` from `CompactMatrixSqrt` of a weight, and for a hermitian `B0` the conjugate and the
+transpose are the same matrix — a build that transposes `b0` where it should conjugate it
+passes every converted case. So the file ends with a `d`, a `t`, an `a` and an `l` built by
+hand whose `A0` and `B0` are neither symmetric nor hermitian.
 
 **`InvertEnergy` — DONE.** The map the function implements is `A0 - P(2 mu - w)^+` for
 `G = A0 + P(w)`: the pole part is inverted and the constant term stays, so the `G(mu+w) ->
@@ -234,9 +261,9 @@ for every type, by design. Single-valued `ToTightBinding` is unimplemented for `
 `CalculateHybridizationFunction` was **not** exercised: a one-argument call raises for `a`
 as well, so it needs a signature that was not worked out.
 
-**Suggested order.** `Transpose` next; then `CalculateRho`,
-`Eigensystem`, the `CalculateGfromG0andSigma` return type and `#G`; then `FreeBlockMatrix`,
-the `Method` variants and `ToTightBinding`, which are worth least.
+**Suggested order.** `CalculateRho`, `Eigensystem`, the `CalculateGfromG0andSigma` return
+type and `#G`; then `FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are
+worth least.
 
 ### Still open, non-block
 
