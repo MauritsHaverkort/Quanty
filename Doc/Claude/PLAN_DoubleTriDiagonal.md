@@ -151,7 +151,6 @@ complex functions, complex rotations and the `d` type. It was registered in neit
 | `FromEffectiveHamiltonian` | the same | `t` → `Tri` | `ResponseFunctionFromEffectiveHamiltonian` |
 | `Eigensystem` | prints an error, returns nil | `t` fine | `LuaResponseFunctionEigensystem` |
 | `CalculateGfromG0andSigma` | prints an error but computes the right answer, and returns a **`ListOfPoles`** instead of a `d` | — | `ResponseFunctionAddSelfEnergyDenseViaTri` |
-| `#G` | clean lua error, "undifined type d" | `t` → 2 | `LuaResponseFunctionLen` |
 | `ToTightBinding` | clean lua error | block `t` works | `LuaResponseFunctionToTightBinding` |
 
 **Two of those are one bug.** `CalculateGBathFromGandSigmaDirectSubtract`
@@ -294,8 +293,15 @@ comparison there as well, single-valued and block, and to the metal at finite te
 filling it, so a failed conversion handed lua an uninitialised matrix. It computes first and
 allocates after, and raises on a nonzero return.
 
-**Suggested order.** `Eigensystem`, the `CalculateGfromG0andSigma` return type and `#G`;
-then `FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are worth least.
+**`#G` — DONE.** `LuaResponseFunctionLen` returns the number of positional elements of the
+table form of `G`: two for a `l`, a `t` and an `a`, a list of `a` and a list of `b`; one for
+a `n` and now for a `d`, the single `{ a0, b0 }` pair, their two chains being the named
+`val` and `con`. `d` shares the `n` case. Nothing tested `#G` for any type; `ToTable.Quanty`
+now checks all five, block and single-valued, against a literal and against
+`#ResponseFunction.ToTable(G)`, the thing the number describes.
+
+**Suggested order.** `Eigensystem`, then the `CalculateGfromG0andSigma` return type; then
+`FreeBlockMatrix`, the `Method` variants and `ToTightBinding`, which are worth least.
 
 ### Still open, non-block
 

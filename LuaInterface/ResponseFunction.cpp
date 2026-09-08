@@ -4197,7 +4197,12 @@ static int LuaResponseFunctionLen(lua_State *L)
     }
     case 'N':
     case 'n':
+    case 'D':
+    case 'd':
     {
+      /*  a natural impurity orbital and a double tri-diagonal matrix have one positional
+       *  element in their table form, the { a0, b0 } pair, the two chains being the named
+       *  val and con. The other three have two, a list of a and a list of b. */
       lua_pushinteger(L, 1);
       return 1;
       break;
