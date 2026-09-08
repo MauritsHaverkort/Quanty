@@ -173,10 +173,14 @@ only a complex one shows it — which is how it went unnoticed.
 `b0 *= sqrt(x)` and the two chains untouched, which is the whole of it as `b0` appears
 twice in `G = a0 + b0^* ( w - Gval - Gcon )^-1 b0^T`. Its `default` returns 1 now and both
 lua wrappers raise on that, so a format nobody handled can no longer come back unscaled.
-The identity `x G(w,γ) == (G*x)(w,γ)` is checked for all five formats, single-valued and
-block, real and complex, in `__mul.Quanty` and `__div.Quanty`; before that nothing in the
-tree compared the values of a scaled response function with the scaled values of the
-original, which is why the no-op survived.
+`__mul.Quanty` and `__div.Quanty` compare a hand written `d` with a hand written `2 d`,
+single-valued and block — the table constructor for a `d` is
+`{ {a0, b0}, val=Gval, con=Gcon, mu=0, type="DoubleTri" }`, documented at
+[TableToArray.cpp:470](../../LuaInterface/lua_extensions/TableToArray.cpp#L470), with `val`
+and `con` tri-diagonal where a `n` takes lists of poles. Both files also check the identity
+`x G(w,γ) == (G*x)(w,γ)` for all five formats, single-valued and block, real and complex;
+before that nothing in the tree compared the values of a scaled response function with the
+scaled values of the original, which is why the no-op survived.
 
 **Found by scanning, not reachable from lua in these probes.** `FreeBlockMatrix` has no
 `d` case and leaks; it is the legacy one, its own comment says to use
