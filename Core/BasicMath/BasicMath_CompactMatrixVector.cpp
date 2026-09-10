@@ -2148,8 +2148,12 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
           A->V[j-NSingular*A->Nj].Re=A->V[j].Re;
           A->V[j-NSingular*A->Nj].Im=A->V[j].Im;
         }
-        /* for all vectors after vector i subtract projection on vector i */
-        for(ii=i+1+NSingular;ii<A->Ni;ii++)
+        /*  For all vectors after vector i subtract the projection on vector i.
+         *  Vector i is read at its original position ipos and the vectors not
+         *  yet treated sit at their original positions too, so the loop starts
+         *  at i+1.  Starting at i+1+NSingular skipped NSingular of them and
+         *  left them not orthogonal to vector i. */
+        for(ii=i+1;ii<A->Ni;ii++)
         {
           iipos = ii*A->Nj;
           dotRe=0;
@@ -2195,7 +2199,10 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
       {
         norm+=Sqr(A->VRe[j]);
       }
-      if(norm<SingularValue)
+      /*  Compare the norm, not its square, so that SingularValue means the
+       *  same here as it does in the complex branch above and in
+       *  CompactMatrixSVDOrthogonalizeRow. */
+      if(sqrt(norm)<=SingularValue)
       {
         norm=0;
         NSingular++;
