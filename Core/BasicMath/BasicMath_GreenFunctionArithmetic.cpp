@@ -4276,8 +4276,6 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
   Mout->Block = false;
-  /*  every implemented cell below allocates Mout->data. A cell that is not
-   *  implemented only prints, so data staying NULL is what marks the failure */
   Mout->data = NULL;
   Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
   if(Mout->NSuggestedGridPoints==0)
