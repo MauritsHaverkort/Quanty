@@ -147,21 +147,16 @@ function Model(NP, NBath, iH, iT, A0on)
   return M
 end
 
--- Epsilon is the singular value below which the block Lanczos deflates a
--- direction.  Its standard value, sqrt(DBL_EPSILON)/100 = 1.5e-10, is below
--- what the orthonormalization can resolve: that goes through the Gram matrix
--- psi^dag psi, whose smallest eigenvalue is the square of the singular value,
--- so anything under sqrt(DBL_EPSILON) = 1.5e-8 is numerical noise.  A
--- direction between the two scales is kept and normalized from that noise,
--- and 1/s of order 1e8 then puts a 1e-8 error into the answer.  These models
--- are small enough that the Krylov space runs out, and the residual at
--- exhaustion is exactly such a direction: zero in exact arithmetic, 1e-8
--- numerically.  So deflate at 1e-6 -- three decades below any real amplitude
--- in these models, two above the resolution limit.  Without it the
--- comparisons below scatter between 1e-14 and 1e-8 depending on the machine.
+-- These models are small enough that the Krylov space of the block Lanczos
+-- runs out, and the residual block at exhaustion is zero in exact arithmetic
+-- and rounding error numerically.  Deflating it is the job of SingularValue,
+-- which is left at its standard value here; Epsilon, which says which
+-- determinants of a wave function we keep, is left standard as well.  Until
+-- the orthonormalization used SingularValue rather than Epsilon these
+-- comparisons needed Epsilon = 1e-6 to pass, and scattered between 1e-14 and
+-- 1e-8 depending on the machine without it.
 function Options(M, extra)
   local o = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
-              {"Epsilon", 1e-6},
               {"Emin", -12}, {"Emax", 18}, {"NE", 500}, {"Gamma", 0.25} }
   for _, v in ipairs(extra) do o[#o + 1] = v end
   return o
@@ -298,7 +293,7 @@ Sm = ResponseFunction.New({ lst, Wm, mu = 0, type = "ListOfPoles", name = "S" })
 Vm = { NewOperator("An", NF, 0), NewOperator("An", NF, 1), NewOperator("An", NF, 2) }
 Tm = { NewOperator("Cr", NF, 0), NewOperator("Cr", NF, 1) }
 psim = NewWavefunction(NF, 0, { {"1000", 0.5}, {"0100", 0.6}, {"0010", 0.62449979983984} })
-optm = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0}, {"Epsilon", 1e-6},
+optm = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
          {"Emin", -10}, {"Emax", 14}, {"NE", 400}, {"Gamma", 0.25}, {"NTriFull", 40} }
 sAuto = CreateSpectra(HPm, Tm, psim, {{Sm, Vm}}, optm)
 gfine = {}
@@ -338,7 +333,7 @@ Vr = { NewOperator("An", NF, 0) }
 Tr = { NewOperator("Cr", NF, 0), NewOperator("Cr", NF, 1) }
 psir = NewWavefunction(NF, 0, { {"10000", 0.5}, {"01000", 0.6}, {"00100", 0.62449979983984} })
 Restrr = {NF, 0, {"00011", 0, 1}}
-optr = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0}, {"Epsilon", 1e-6},
+optr = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
          {"Emin", -8}, {"Emax", 12}, {"NE", 500}, {"Gamma", 0.25} }
 optrr = {} ; for i, v in ipairs(optr) do optrr[i] = v end
 optrr[#optrr + 1] = {"Restrictions", Restrr}

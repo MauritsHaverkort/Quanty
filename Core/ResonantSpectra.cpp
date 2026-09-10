@@ -1102,11 +1102,11 @@ uint32_t ResonantSpectraPartialDense(const OperatorType OppH1, const OperatorTyp
   InitBlockTridiagonalMatrix(&H1T1psi);
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, settings->SingularValue, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, settings->SingularValue, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   // 3.  Calculate eigen-states of Krylov basis (|m>) and eigen values Em
   H1T1psival= (double*)malloc(H1T1psi.N*H1T1psi.BlockSize*sizeof(double));
@@ -1250,11 +1250,11 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   InitBlockTridiagonalMatrix(&SpecTri1);
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &SpecTri1, PsiBasis, BlockSize);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, settings->SingularValue, &SpecTri1, PsiBasis, BlockSize);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSize);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, settings->SingularValue, &SpecTri1, PsiBasis, BlockSize);
   }
   
   /*Compute eigenvalues and eigenvectors, then S^-1 = QAQ^T where

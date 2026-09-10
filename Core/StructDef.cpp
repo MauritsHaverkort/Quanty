@@ -245,6 +245,11 @@ typedef struct ConvergenceSettingsType
   uint32_t NTri2;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
   double   zero;            /* smallest number different from one in convergence tests */
   double   epsilon;         /* smallest absolute prefactor of a determinant in wave-functions considered different from 0 */
+  double   SingularValue;   /* smallest singular value of a list of wave-functions considered different from 0 when orthonormalizing.
+                               Independent of epsilon: epsilon says which determinants we keep, SingularValue which
+                               directions of a list we can still resolve.  The orthonormalization goes through the overlap
+                               matrix, which squares the condition number, so the routines raise this to
+                               3*sqrt(DBL_EPSILON)*SingularValueMax whenever that is larger. */
   double   EffT;            /* effective temperature in mean-field convergence loops*/
   uint32_t NBitsKey;        /* number of bits in key */
   DeterminantRestrictionType restrictions;  /* restrictions on possible determinatns */
@@ -281,6 +286,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     100 /*NTri2*/,
     100*sqrt(DBL_EPSILON) /*zero, i.e. smallest variance to determine convergence */,
     sqrt(DBL_EPSILON)/100 /*epsilon i.e. smallest prefactor of function to keep */,
+    sqrt(DBL_EPSILON)     /*SingularValue i.e. smallest singular value of a list of functions to keep */,
     0.00008621738         /* 1K, EffT */,
     16                    /*bits in key*/,
     {0, 0, 0, 0, NULL, NULL, NULL} /*restrictions*/,

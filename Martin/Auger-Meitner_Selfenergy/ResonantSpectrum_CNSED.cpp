@@ -198,7 +198,7 @@ uint32_t ResonantSpectrumCNSED(const OperatorType OppH1, const OperatorType OppH
         M.mu=0;
         vector<uint32_t> BlockSize = vector<uint32_t>(M.N);
         WaveFunctionType** KrylBasCont = (WaveFunctionType**) malloc(M.N * sizeof(WaveFunctionType*)); //TODO: free
-        LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon,&M, KrylBasCont, &(BlockSize[0]));
+        LanczosBlockTriDiagonalizeKrylov(OppH1, UEb, settings->epsilon, settings->SingularValue,&M, KrylBasCont, &(BlockSize[0]));
         M.N--;
         BlockSize.pop_back();
         //PrintWaveFunctionReadable(KrylBasCont[0][0]);

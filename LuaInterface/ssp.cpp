@@ -1849,6 +1849,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
@@ -2623,11 +2624,11 @@ static int LuaCreateSpectra(lua_State *L)
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-          LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
+          LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, psiBasis, BlockSizeN);
         }
         else
         {
-          LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
       else
@@ -2636,11 +2637,11 @@ static int LuaCreateSpectra(lua_State *L)
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-          LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
+          LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, psiBasis, BlockSizeN);
         }
         else
         {
-          LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
       /* determine Eminpole and Emaxpole */
@@ -2907,6 +2908,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"Restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"E0","double",&(Options.E0)},
     {"E0_1","double",&(Options.E01)},
     {"E0_2","double",&(Options.E02)},
@@ -3219,6 +3221,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
@@ -3766,6 +3769,7 @@ static int LuaEigensystem(lua_State * L)
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"zero","double",&(Options.Settings.zero)},
     {"Zero","double",&(Options.Settings.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
@@ -4065,6 +4069,7 @@ static int LuaImpurityGreensFunction(lua_State * L)
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Tensor","bool",&(Options.Tensor)},
@@ -4478,7 +4483,11 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(psilist[i].QComplex) B.QComplex=1;
     }
     InitBlockTridiagonalMatrix(&B);
-    if(LanczosBlockTriDiagonalize(*O, psilist, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
+    /*  BlockBandDiagonalize has one option, SingularValue, and used it both as the
+     *  threshold of the orthonormalization and as the accuracy at which the wave
+     *  functions are truncated.  Keep that, so nothing changes for existing
+     *  scripts, but pass it in both places explicitly now that they are separate. */
+    if(LanczosBlockTriDiagonalize(*O, psilist, Options.SingularValue, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
     LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
     FreeBlockTridiagonalMatrix(&B);
     return 1;
