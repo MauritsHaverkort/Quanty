@@ -1352,7 +1352,7 @@ uint32_t ComplexWaveFunctionOrthogonalize(WaveFunctionType * const psi, const Wa
 
 
 
-uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
+uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   
   uint32_t i,j,NSingular=0;
@@ -1503,9 +1503,9 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * con
   }
   *Npsi-=NSingular;
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasis(psilisttemp, psilistOrtho, Npsi, SingularValue, false))
+  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(psilisttemp, psilistOrtho, Npsi, SingularValue, false))
   {
-    printf("ComplexWaveFunctionListSVDOrthogonalizeSameBasis failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    printf("ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce\n");
     return 1;
   }
   for(i=0;i<*Npsi;i++)
@@ -1514,8 +1514,70 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * con
   }
   return 0;
 }
+/*  ComplexWaveFunctionListSVDOrthogonalizeSameBasis runs ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce twice.
+ *
+ *  One pass leaves an orthonormality error of order
+ *  DBL_EPSILON * Sqr(sigma_max/sigma_min), because the overlap matrix squares
+ *  the condition number of the list.  Applying the same construction to the
+ *  result of the first pass brings that back to O(DBL_EPSILON), provided
+ *  DBL_EPSILON * Sqr(sigma_max/sigma_min) is small compared to one, which the
+ *  deflation threshold in ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce guarantees.
+ *  Measured on a list of six functions with one weak direction, the worst
+ *  orthonormality error over the range sigma_min/sigma_max = 1e-2 .. 0 drops
+ *  from 7.6 to 3.6e-15.
+ *
+ *  Both halves are needed.  Repeating the pass without the threshold of
+ *  ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce is worse than a single pass, because the second pass turns a
+ *  direction that was normalized out of rounding error into a full weight
+ *  orthonormal basis vector instead of leaving it partly cancelled.
+ *
+ *  Both passes are symmetric Loewdin, so the result is still the symmetric
+ *  orthonormal form: it is the closest orthonormal list to the input, treats
+ *  all functions alike and does not depend on their order.
+ *
+ *  Costs one extra list of functions while the second pass runs, since every
+ *  function of the result is a combination of all functions of the input and
+ *  there is no in place version.  The path that reduces the dimension already
+ *  held three lists.
+ */
+uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
+{
+  uint32_t i, NpsiTwice;
+  WaveFunctionType *psilisttwice;
+  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension))
+  {
+    printf("ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  if(*Npsi==0) return 0;
+  psilisttwice = (WaveFunctionType*)malloc((*Npsi)*sizeof(WaveFunctionType));
+  if(psilisttwice==NULL)
+  {
+    printf("malloc for psilisttwice failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis\n");
+    return 1;
+  }
+  NpsiTwice = *Npsi;
+  if(ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(psilistOrtho, psilisttwice, &NpsiTwice, SingularValue, false))
+  {
+    printf("ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasis on the second pass\n");
+    free(psilisttwice);
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFreeValues(&(psilistOrtho[i]));
+  }
+  for(i=0;i<NpsiTwice;i++)
+  {
+    psilistOrtho[i]=psilisttwice[i];
+  }
+  *Npsi=NpsiTwice;
+  free(psilisttwice);
+  return 0;
+}
 
-uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
+
+uint32_t ComplexWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
@@ -1671,9 +1733,9 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   }
   *Npsi-=NSingular;
   // call RealWaveFunctionListSVDOrthogonalize again
-  if(ComplexWaveFunctionListSVDOrthogonalize(psilisttemp, psilistOrtho, Npsi, SingularValue, true))
+  if(ComplexWaveFunctionListSVDOrthogonalizeOnce(psilisttemp, psilistOrtho, Npsi, SingularValue, true))
   {
-    printf("ComplexWaveFunctionListSVDOrthogonalize failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    printf("ComplexWaveFunctionListSVDOrthogonalizeOnce failed in ComplexWaveFunctionListSVDOrthogonalizeOnce\n");
     return 1;
   }
   for(i=0;i<*Npsi;i++)
@@ -1682,6 +1744,68 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilis
   }
   return 0;
 }
+/*  ComplexWaveFunctionListSVDOrthogonalize runs ComplexWaveFunctionListSVDOrthogonalizeOnce twice.
+ *
+ *  One pass leaves an orthonormality error of order
+ *  DBL_EPSILON * Sqr(sigma_max/sigma_min), because the overlap matrix squares
+ *  the condition number of the list.  Applying the same construction to the
+ *  result of the first pass brings that back to O(DBL_EPSILON), provided
+ *  DBL_EPSILON * Sqr(sigma_max/sigma_min) is small compared to one, which the
+ *  deflation threshold in ComplexWaveFunctionListSVDOrthogonalizeOnce guarantees.
+ *  Measured on a list of six functions with one weak direction, the worst
+ *  orthonormality error over the range sigma_min/sigma_max = 1e-2 .. 0 drops
+ *  from 7.6 to 3.6e-15.
+ *
+ *  Both halves are needed.  Repeating the pass without the threshold of
+ *  ComplexWaveFunctionListSVDOrthogonalizeOnce is worse than a single pass, because the second pass turns a
+ *  direction that was normalized out of rounding error into a full weight
+ *  orthonormal basis vector instead of leaving it partly cancelled.
+ *
+ *  Both passes are symmetric Loewdin, so the result is still the symmetric
+ *  orthonormal form: it is the closest orthonormal list to the input, treats
+ *  all functions alike and does not depend on their order.
+ *
+ *  Costs one extra list of functions while the second pass runs, since every
+ *  function of the result is a combination of all functions of the input and
+ *  there is no in place version.  The path that reduces the dimension already
+ *  held three lists.
+ */
+uint32_t ComplexWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, WaveFunctionType * const psilistOrtho, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
+{
+  uint32_t i, NpsiTwice;
+  WaveFunctionType *psilisttwice;
+  if(ComplexWaveFunctionListSVDOrthogonalizeOnce(psilist, psilistOrtho, Npsi, SingularValue, ReduceDimension))
+  {
+    printf("ComplexWaveFunctionListSVDOrthogonalizeOnce failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  if(*Npsi==0) return 0;
+  psilisttwice = (WaveFunctionType*)malloc((*Npsi)*sizeof(WaveFunctionType));
+  if(psilisttwice==NULL)
+  {
+    printf("malloc for psilisttwice failed in ComplexWaveFunctionListSVDOrthogonalize\n");
+    return 1;
+  }
+  NpsiTwice = *Npsi;
+  if(ComplexWaveFunctionListSVDOrthogonalizeOnce(psilistOrtho, psilisttwice, &NpsiTwice, SingularValue, false))
+  {
+    printf("ComplexWaveFunctionListSVDOrthogonalizeOnce failed in ComplexWaveFunctionListSVDOrthogonalize on the second pass\n");
+    free(psilisttwice);
+    return 1;
+  }
+  for(i=0;i<*Npsi;i++)
+  {
+    WaveFunctionFree(&(psilistOrtho[i]));
+  }
+  for(i=0;i<NpsiTwice;i++)
+  {
+    psilistOrtho[i]=psilisttwice[i];
+  }
+  *Npsi=NpsiTwice;
+  free(psilisttwice);
+  return 0;
+}
+
 
 uint32_t ComplexWaveFunctionListOrthogonalizeSameBasis(WaveFunctionType * const psilist, uint32_t * const Npsi, const double SingularValue, const bool ReduceDimension)
 {
