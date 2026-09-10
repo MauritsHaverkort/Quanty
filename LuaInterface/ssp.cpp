@@ -4330,10 +4330,17 @@ static int LuaOrthonormalize(lua_State *L)
  *         Second argument is a list of atoms with positions, shells and orbitals used as the starting block
  *     In all cases:
  *         Posible third argument specifies options
- *         - SingularValue:   double:  values equal or smaller than SignularValue are removed from basis (standard 10^-6)
+ *         - SingularValue:   double:  singular values equal or smaller than SingularValue are removed from the
+ *                                     basis, which reduces the size of the blocks (standard 10^-6)
+ *         - Epsilon:         double:  smallest absolute prefactor of a determinant kept in a wave-function
+ *                                     (standard sqrt(DBL_EPSILON)/100 = 1.5*10^-10).  Case 2 only, the other
+ *                                     two cases work on dense matrices and have no determinants to truncate.
+ *                                     Independent of SingularValue: Epsilon says which determinants we keep,
+ *                                     SingularValue which directions of a block we can still resolve.
  *         - NTri:            integer: Maximum number of blocks included (standard infinity)
  *         - NOrtho:          integer: Maximum number of reorthogonalizations (standard infinity)
  *         - ReOrthogonalize: boolean: Use aditional Gramm-Schmidt orthogonalization after the Lowdin orthogonalization (standard true)
+ *         NOrtho and ReOrthogonalize are used by case 1 and case 3 only.
  */
 static int LuaBlockBandDiagonalize(lua_State *L)
 {
@@ -4342,6 +4349,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   struct
   {
     double SingularValue;
+    double epsilon;
     uint32_t NTri;
     uint32_t NOrtho;
     bool ReOrthogonalize;
@@ -4349,12 +4357,15 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   } Options;
   LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
     {"SingularValue",   "double",    &(Options.SingularValue)},
+    {"epsilon",         "double",    &(Options.epsilon)},
+    {"Epsilon",         "double",    &(Options.epsilon)},
     {"NTri",            "uint32_t", &(Options.NTri)},
     {"NOrtho",          "uint32_t", &(Options.NOrtho)},
     {"ReOrthogonalize", "bool",     &(Options.ReOrthogonalize)},
     {"ReturnT",         "bool",     &(Options.ReturnT)},
     {NULL, NULL, NULL}};
   Options.SingularValue=1E-6;
+  Options.epsilon=sqrt(DBL_EPSILON)/100;
   Options.NTri  =200;
   Options.NOrtho=UINT32_MAX;
   Options.ReOrthogonalize=true;
@@ -4483,11 +4494,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(psilist[i].QComplex) B.QComplex=1;
     }
     InitBlockTridiagonalMatrix(&B);
-    /*  BlockBandDiagonalize has one option, SingularValue, and used it both as the
-     *  threshold of the orthonormalization and as the accuracy at which the wave
-     *  functions are truncated.  Keep that, so nothing changes for existing
-     *  scripts, but pass it in both places explicitly now that they are separate. */
-    if(LanczosBlockTriDiagonalize(*O, psilist, Options.SingularValue, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
+    if(LanczosBlockTriDiagonalize(*O, psilist, Options.epsilon, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
     LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
     FreeBlockTridiagonalMatrix(&B);
     return 1;
