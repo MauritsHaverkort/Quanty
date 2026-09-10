@@ -1025,6 +1025,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
+  double SingularValueMax, Zero;
   CompactMatrixType S,SvS;
   WaveFunctionType *psilisttemp;
   int    info;
@@ -1073,11 +1074,32 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasis(WaveFunctionType * const 
   }
   free(iwork);
   free(work);
-  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  // Determine the number of singular values that are zero (NSingular).
+  // A singular value is taken to be zero when it is not larger than Zero,
+  // which is the largest of two numbers.  The first is SingularValue, the
+  // absolute threshold set by the caller.  The second is the resolution limit
+  // of this method: the overlap matrix S = - psi^* . psi^T is formed
+  // explicitly, so a singular value s appears in S as s^2 and the eigen
+  // solver can not tell s^2 from the rounding error of S, which is of order
+  // DBL_EPSILON * Sqr(SingularValueMax).  Anything below
+  // sqrt(DBL_EPSILON) * SingularValueMax is therefore noise, and keeping such
+  // a direction puts 1/s of order 1/sqrt(DBL_EPSILON) into the answer.
+  // The factor 3 keeps DBL_EPSILON * Sqr(SingularValueMax/SingularValueMin)
+  // below 1/9 for every direction that is kept, which is the condition under
+  // which repeating the orthonormalization restores orthonormality to
+  // O(DBL_EPSILON).  A purely relative threshold would not do: it can never
+  // reject a list whose vectors are all rounding error, since for one vector
+  // s/SingularValueMax is 1 by construction.  Hence the Max of the two.
+  SingularValueMax=0;
   for(i=0;i<*Npsi;i++)
   {
     val[i] = sqrt(Max(0,-val[i]));
-    if(val[i]<=sqrt(SingularValue))
+    if(val[i]>SingularValueMax) SingularValueMax=val[i];
+  }
+  Zero = Max(SingularValue, 3*sqrt(DBL_EPSILON)*SingularValueMax);
+  for(i=0;i<*Npsi;i++)
+  {
+    if(val[i]<=Zero)
     {
       val[i]=0;
       NSingular++;
@@ -1165,6 +1187,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
+  double SingularValueMax, Zero;
   CompactMatrixType S,SvS;
   WaveFunctionType *psilisttemp;
   int    info;
@@ -1213,11 +1236,32 @@ uint32_t RealWaveFunctionListSVDOrthogonalize(WaveFunctionType * const psilist, 
   }
   free(iwork);
   free(work);
-  // determine the number of singular values (sqrt(-val)<SingularValue) (NSingular)
+  // Determine the number of singular values that are zero (NSingular).
+  // A singular value is taken to be zero when it is not larger than Zero,
+  // which is the largest of two numbers.  The first is SingularValue, the
+  // absolute threshold set by the caller.  The second is the resolution limit
+  // of this method: the overlap matrix S = - psi^* . psi^T is formed
+  // explicitly, so a singular value s appears in S as s^2 and the eigen
+  // solver can not tell s^2 from the rounding error of S, which is of order
+  // DBL_EPSILON * Sqr(SingularValueMax).  Anything below
+  // sqrt(DBL_EPSILON) * SingularValueMax is therefore noise, and keeping such
+  // a direction puts 1/s of order 1/sqrt(DBL_EPSILON) into the answer.
+  // The factor 3 keeps DBL_EPSILON * Sqr(SingularValueMax/SingularValueMin)
+  // below 1/9 for every direction that is kept, which is the condition under
+  // which repeating the orthonormalization restores orthonormality to
+  // O(DBL_EPSILON).  A purely relative threshold would not do: it can never
+  // reject a list whose vectors are all rounding error, since for one vector
+  // s/SingularValueMax is 1 by construction.  Hence the Max of the two.
+  SingularValueMax=0;
   for(i=0;i<*Npsi;i++)
   {
     val[i] = sqrt(Max(0,-val[i]));
-    if(val[i]<=sqrt(SingularValue))
+    if(val[i]>SingularValueMax) SingularValueMax=val[i];
+  }
+  Zero = Max(SingularValue, 3*sqrt(DBL_EPSILON)*SingularValueMax);
+  for(i=0;i<*Npsi;i++)
+  {
+    if(val[i]<=Zero)
     {
       val[i]=0;
       NSingular++;
