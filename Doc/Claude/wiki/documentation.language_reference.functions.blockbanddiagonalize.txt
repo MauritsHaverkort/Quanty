@@ -1,0 +1,50 @@
+====== BlockBandDiagonalize ======
+###
+The function //BlockBandDiagonalize()// can be used to reduce the number of basis (spin-)orbitals by making linear combinations of (spin-)orbitals, according to the tight-binding structure (hopping matrix elements) within the (spin-)orbitals. As a simple example to make the idea clear, consider the following 3-by-3 matrix:
+$$ M = \begin{pmatrix} 0 & 1 & 1 \\  1 & 1 & 0 \\ 1 & 0 & 1 \end{pmatrix} $$
+Now, assuming that $M$ corresponds to a tight-binding Hamiltonian defined on some basis, we can linearly combine the second and third basis orbitals, such that we get a single orbital which mix with the first orbital via the matrix M. Consider the following unitary rotation matrix:
+$$ U = \begin{pmatrix} 1 & 0 & 0 \\  0 & \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}} \\ 0 & \frac{1}{\sqrt{2}} & -\frac{1}{\sqrt{2}} \end{pmatrix} $$
+Now, transforming the matrix $ M $ using the unitary matrix $ U $ results in:
+$$ M' = U M U^{T} = \begin{pmatrix} 0 & \frac{1}{\sqrt{2}} & 0 \\   \frac{1}{\sqrt{2}} & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix} $$
+In the new representation, the first basis orbital only mixes with the second 
+The basis orbital and not with the third one.
+The function //BlockBandDiagonalize()// can accept 3 types of objects as an arguments: [[documentation:language_reference:objects:tightbinding:start|Tight-binding object]], [[documentation:language_reference:objects:operator:start|Operator]], or [[documentation:language_reference:objects:matrix:start|Matrix]]. 
+###
+
+====== Input ======
+Case 1:
+  * //matrix//: hermitian matrix
+  * //blockSize//: size of the block (as number) or list of vectors representing the starting states
+
+Case 2:
+  * //operator//: hermitian operator
+  * //wave function //: single wave function of list of wave functions
+
+Case 3:
+  * //tightbindingObject//: tight binding object
+  * //startingBlock //: list of atoms with positions, shells and orbitals used as starting block
+
+
+//(Optional) Third argument (in all cases)//
+
+   *NTri : (//integer//) maximum number of blocks included (//default: $\infty$//)
+
+   *SingularValue : (//real//) smallest singular value of a block that is considered different from zero. A direction whose singular value is smaller is removed, which reduces the size of the blocks (//default: $10^{-6}$//)
+
+   *Epsilon : (//real//) smallest absolute prefactor of a determinant that is kept in a wave-function. Case 2 only; case 1 and case 3 work on dense matrices and have no determinants to truncate (//default: $1.49 \cdot 10^{-10}$//)
+
+   *NOrtho : (//integer//) maximum number of reorthogonalizations. Case 1 and case 3 only (//default: $\infty$//)
+
+  *ReOrthogonalize: (//boolean//) use additional Gran-Schmidt orthogonalization after the Löwdin orthogonalization. Case 1 and case 3 only (//default: true//)
+
+###
+//SingularValue// and //Epsilon// answer different questions and are set independently. //Epsilon// controls the wave-functions of case 2: a determinant whose prefactor is smaller than //Epsilon// is dropped. //SingularValue// controls the blocks in all three cases: a direction whose singular value is smaller is removed from the basis, so the blocks get smaller as the recursion proceeds.
+###
+
+====== Output ======
+case1:
+   *//ResponseFunction//:Response Function in tri representation.
+   *//matrix//: Transformation Matrix to transform the input matrix into the Block band diagonalized one. 
+
+===== Table of contents =====
+{{indexmenu>.#1}}
