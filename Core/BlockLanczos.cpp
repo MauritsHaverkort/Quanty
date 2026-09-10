@@ -631,6 +631,14 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
 
 uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -648,7 +656,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -781,7 +789,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -873,6 +881,14 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
 }
 uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -890,7 +906,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1023,7 +1039,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1115,6 +1131,14 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
 }
 uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -1132,7 +1156,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1265,7 +1289,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1357,6 +1381,14 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
 }
 uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -1374,7 +1406,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1507,7 +1539,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1646,6 +1678,14 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCR(const OperatorType H, WaveFuncti
 
 uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -1663,7 +1703,7 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1796,7 +1836,7 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1888,6 +1928,14 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
 }
 uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -1905,7 +1953,7 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2038,7 +2086,7 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2130,6 +2178,14 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
 }
 uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2147,7 +2203,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2280,7 +2336,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2372,6 +2428,14 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
 }
 uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2389,7 +2453,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2524,7 +2588,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2661,6 +2725,14 @@ uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * c
 
 uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2679,7 +2751,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -2829,7 +2901,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2898,6 +2970,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
 }
 uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -2916,7 +2996,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3066,7 +3146,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3135,6 +3215,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
 }
 uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -3153,7 +3241,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3303,7 +3391,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3372,6 +3460,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
 }
 uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -3389,7 +3485,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3537,7 +3633,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3648,6 +3744,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCR(const OperatorType H, Wave
 
 uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -3666,7 +3770,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3815,7 +3919,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3884,6 +3988,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
 }
 uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -3902,7 +4014,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -4052,7 +4164,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -4121,6 +4233,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
 }
 uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -4139,7 +4259,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -4289,7 +4409,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -4358,6 +4478,14 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
 }
 uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
+  /*  The deflation threshold of the orthonormalization is fixed for the whole
+   *  call.  epsilon below is doubled whenever an allocation fails, in order to
+   *  truncate the wave functions harder and fit in memory.  That is a statement
+   *  about the determinants we keep, not about which singular values we are able
+   *  to resolve, and it must not move the threshold: a run would otherwise
+   *  deflate differently because the machine was short of memory.
+   */
+  double const SingularValue = epsilon;
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
   WaveFunctionType *v[4];
@@ -4375,7 +4503,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -4523,7 +4651,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
