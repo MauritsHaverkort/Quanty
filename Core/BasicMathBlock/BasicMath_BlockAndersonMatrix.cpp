@@ -222,6 +222,35 @@ uint32_t BlockAndersonMatrixChopReduceDimension(BlockAndersonMatrixType *const A
   return 0;
 }
 
+
+void ShiftBlockAndersonMatrix(BlockAndersonMatrixType *const A, double const delta)
+{
+  uint32_t i,k;
+  if(A->QComplex)
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=k*A->BlockSize*A->BlockSize;i<(k+1)*A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        A->a[i].Re+=delta;
+      }
+    }
+  }
+  else
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=k*A->BlockSize*A->BlockSize;i<(k+1)*A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        A->aRe[i]+=delta;
+      }
+    }
+  }
+  //A->mu+=delta;
+}
+
+
+
 /*
  *  B <- A
  *  B not initialized on entry
@@ -452,7 +481,6 @@ int BlockAndersonMatrixFromListOfPolesAsSelfEnergy(BlockListOfPoles const * cons
       memcpy(&(G->b[(i+1)*Sqr(Sigma->BlockSize)]), SqrtS.V, Sqr(Sigma->BlockSize)*sizeof(Complex16));
       FreeCompactMatrix(&SqrtS);
     }
-    
   }
   return 0;
 }

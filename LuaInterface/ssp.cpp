@@ -1805,32 +1805,28 @@ static int LuaCreateSpectra(lua_State *L)
   struct
   {
     OperatorType **V;
-    SpectraTypeArray **SonGrid;
-    ResponsefunctionType **SasMatrix;
+    ResponsefunctionType **S;
     uint32_t NSigma;
   } Sigma;
+  Sigma.NSigma=0;
   struct
   {
     double E0;
+    int order;
     uint32_t Npsi;
     uint32_t NT;
     ConvergenceSettingsType Settings;
-    DeterminantRestrictionType FilledEmptySpinOrbitals;
     CompactVectorType GridPoints;
-    char *GridType; // "PoleEnergy", "bin"
     char *stream;
     bool Tensor;
     bool Sigma;
     bool KrylovBasis;
     bool DenseMethod;
-    bool HybridizationExpansion;
   } Options;
-  Options.HybridizationExpansion=false;
   Options.GridPoints.QComplex=0;
   Options.GridPoints.Ni=0;
   Options.GridPoints.VRe=NULL;
-  Options.GridType=NULL;
-  Options.FilledEmptySpinOrbitals.N=0;
+  Options.order=-1;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=false;
@@ -1849,7 +1845,6 @@ static int LuaCreateSpectra(lua_State *L)
   char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"Tensor","bool",&(Options.Tensor)},
-    {"Sigma","bool",&(Options.Sigma)},
     {"KrylovBasis","bool",&(Options.KrylovBasis)},
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
@@ -1864,9 +1859,6 @@ static int LuaCreateSpectra(lua_State *L)
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
     {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
     
-    {"HybridizationExpansion","bool",&(Options.HybridizationExpansion)},
-    {"FilledEmptySpinOrbitals", "DeterminantRestrictionType", &(Options.FilledEmptySpinOrbitals)},
-    {"GridType","char*",&(Options.GridType)},
     {"GridPoints","Vector",&(Options.GridPoints)},
     
     
@@ -1913,51 +1905,57 @@ static int LuaCreateSpectra(lua_State *L)
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
   }
+  /* test if combination of options are valid */
+  if((Options.order!=-1)&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra order can only be set when a self energ is given\n");
+  }
+  if((Options.GridPoints.Ni!=0)&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra GridPoints can only be set when a self energ is given\n");
+  }
+  if(Options.GridPoints.QComplex!=0)
+  {
+    return luaL_error(L, "Error in CreateSpectra GridPoints need to be real and not complex\n");
+  }
   /* read self energy */
   if(Options.Sigma==true)
   {
     /* read self energy */
-    /* the self energy can be */
-    // 1 a single object of spectra type
-    // 2 a single object of ResponseFunction type
-    // 3 A list of length 2 containing an operator or a list of operators and a self energy in format 1 or 2
-    // 4 a list of objects of form 1, 2 or 3
-    Sigma.NSigma=0;
+    /* the self energy must be given as a list of lists containing a (Block) response function and a list of operators of dimension NBlock*/
     if(lua_type(L,4)!=LUA_TTABLE)
     {
-      Sigma.NSigma=1;
-    }
-    else if (lua_objlen(L,4)==2)
-    {
-      // we still can have one or two self energies
-      lua_rawgeti(L,4,1);
-      if(luaL_checkudata(L, -1, "Operator_Type")!=NULL)Sigma.NSigma=1;
-      else if (lua_istable(L,-1))
-      {
-        lua_rawgeti(L,-1,(int)lua_objlen(L, -1));
-        if(luaL_checkudata(L, -1, "Operator_Type")!=NULL)Sigma.NSigma=1;
-        lua_pop(L,1);
-      }
-      lua_pop(L,1);
-    }
-    if(Sigma.NSigma==1)
-    {
-      Sigma.V= (OperatorType**)malloc(Sigma.NSigma*sizeof(OperatorType*));
-      Sigma.SonGrid= (SpectraTypeArray**)malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
-      LuaReadSingleSelfenergy(L, 4, Sigma.V[0], Sigma.SonGrid[0], Sigma.SasMatrix[0]);
+      return luaL_error(L, "Error CreateSpectra input parameter 4 should represent a self energy in the form of a list of response functions and operators\n");
     }
     else
     {
       Sigma.NSigma=(uint32_t)lua_objlen(L, 4);
+      Sigma.S= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       Sigma.V= (OperatorType**)malloc(Sigma.NSigma*sizeof(OperatorType*));
-      Sigma.SonGrid= (SpectraTypeArray**)malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       for(i=0;i<Sigma.NSigma;i++)
       {
         lua_rawgeti(L,4,i+1);
-        LuaReadSingleSelfenergy(L, -1, Sigma.V[i], Sigma.SonGrid[i], Sigma.SasMatrix[i]);
-        lua_pop(L, 1);
+        if((lua_type(L,-1)!=LUA_TTABLE)||(lua_objlen(L, -1)!=2))
+        {
+          return luaL_error(L, "Error CreateSpectra input parameter 4 at position %d should represent a self energy self energies are given as a list of a response function type and a list of operators\n",i);
+        }
+        lua_rawgeti(L,-1,1);
+        Sigma.S[i] = luaL_checkResponsefunction(L, -1);
+        lua_pop(L, 1); // remove Sigma(w) from stack
+        lua_rawgeti(L,-1,2);
+        if((lua_type(L,-1)!=LUA_TTABLE)||(lua_objlen(L, -1)!=ResponseFunctionGetBlockSize(Sigma.S[i])))
+        {
+          return luaL_error(L, "Error CreateSpectra input parameter 4 at position %d should represent a self energy. Self energies are given as a list of a response function type and a list of operators that should have the same dimension as the BlockSize (%d) of the response function. (currently %d)\n",i,ResponseFunctionGetBlockSize(Sigma.S[i]),lua_objlen(L, -1));
+        }
+        Sigma.V[i] = (OperatorType*)malloc(Sigma.NSigma*sizeof(OperatorType));
+        for(j=0;j<lua_objlen(L, -1);j++)
+        {
+          lua_rawgeti(L,-1,i+1);
+          Sigma.V[i][j] = *( (OperatorType *) luaL_checkudata(L, -1, "Operator_Type"));
+          lua_pop(L,1);
+        }
+        lua_pop(L,1); // remove table with V from stack
+        lua_pop(L, 1); // remove table with {Sigma,V} from stack
       }
     }
   }
@@ -2059,8 +2057,8 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
   }
-  /* calculate Tpsi for all functions and transition operators 
-     Tpsi is a single vector, the functions are stored at Tpsi[iT*Options.Npsi+ipsi] */
+  /* calculate Tpsi for all functions and transition operators
+   Tpsi is a single vector, the functions are stored at Tpsi[iT*Options.Npsi+ipsi] */
   /* different function calls with and without restrictions */
   Tpsi= (WaveFunctionType*)malloc((Options.NT*Options.Npsi)*sizeof(WaveFunctionType));
   if(Options.Settings.restrictions.N==0)
@@ -2103,54 +2101,80 @@ static int LuaCreateSpectra(lua_State *L)
       WaveFunctionFree(&psiDenseBasis);
       break;
     }
-		if (i > 0)
+    if (i > 0)
     {
-			if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
-			{
-				luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-			}
+      if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+      {
+        luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+      }
     }
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
-	if (psiDenseBasis.N == 0)
-	{
-		Options.DenseMethod = false;
-		WaveFunctionFree(&psiDenseBasis);
-	}
-	else
-	{
-		len = 0;
-		if ((Options.DenseMethod == true) || (psiDenseBasis.N <= Options.Settings.DenseBorder))
-		{
-			while (len != psiDenseBasis.N)
-			{
-				len = psiDenseBasis.N;
-				if ((Options.Settings.restrictions.N == 0) ? (OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)) : (OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
-				{
-					luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-				}
+  if (psiDenseBasis.N == 0)
+  {
+    Options.DenseMethod = false;
+    WaveFunctionFree(&psiDenseBasis);
+  }
+  else
+  {
+    len = 0;
+    if ((Options.DenseMethod == true) || (psiDenseBasis.N <= Options.Settings.DenseBorder))
+    {
+      while (len != psiDenseBasis.N)
+      {
+        len = psiDenseBasis.N;
+        if ((Options.Settings.restrictions.N == 0) ? (OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)) : (OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
+        {
+          luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+        }
         WaveFunctionAddMultipliedUnionBasis(&OpsiDenseBasis, psiDenseBasis, 0);
-				if ((Options.DenseMethod == false) && (OpsiDenseBasis.N > Options.Settings.DenseBorder))
-				{
-					WaveFunctionFree(&OpsiDenseBasis);
-					WaveFunctionFree(&psiDenseBasis);
-					break;
-				}
-				WaveFunctionNormalize(&OpsiDenseBasis);
-				if (WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
-				{
-					luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-				}
-				WaveFunctionFree(&OpsiDenseBasis);
-				if ((Options.DenseMethod == false) && (psiDenseBasis.N > Options.Settings.DenseBorder))
-				{
-					WaveFunctionFree(&psiDenseBasis);
-					break;
-				}
-				if (len == psiDenseBasis.N) Options.DenseMethod = true;
-			}
-		}
-	}
+        if ((Options.DenseMethod == false) && (OpsiDenseBasis.N > Options.Settings.DenseBorder))
+        {
+          WaveFunctionFree(&OpsiDenseBasis);
+          WaveFunctionFree(&psiDenseBasis);
+          break;
+        }
+        WaveFunctionNormalize(&OpsiDenseBasis);
+        if (WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
+        {
+          luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+        }
+        WaveFunctionFree(&OpsiDenseBasis);
+        if ((Options.DenseMethod == false) && (psiDenseBasis.N > Options.Settings.DenseBorder))
+        {
+          WaveFunctionFree(&psiDenseBasis);
+          break;
+        }
+        if (len == psiDenseBasis.N) Options.DenseMethod = true;
+      }
+    }
+  }
+  /* Filter out cases when Sigma == true that are not yet implemented */
+  if(Options.Sigma==true)
+  {
+    if(Options.DenseMethod==true)
+    {
+      if(Options.Tensor==false)
+      {
+        return luaL_error(L, "Dense methods with Tensor false and self energy not yet implemented\n");
+      }
+      else
+      {
+        return luaL_error(L, "Dense methods with Tensor true and self energy not yet implemented\n");
+      }
+    }
+    else
+    {
+      if(Options.Tensor==false)
+      {
+        return luaL_error(L, "Sparse methods with Tensor false and self energy not yet implemented\n");
+      }
+      else
+      {
+        // Implementation started, needs to be finished
+      }
+    }
+  }
   /* If DenseMethod is true calculate spectra using dense methods */
   if(Options.DenseMethod==true)
   {
@@ -2594,7 +2618,7 @@ static int LuaCreateSpectra(lua_State *L)
       GTri.mu=0;//psiEn[0];
       if(Options.Settings.restrictions.N==0)
       {
-        if(Options.KrylovBasis==true)
+        if((Options.KrylovBasis==true)||(Options.Sigma==true))
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
@@ -2602,12 +2626,12 @@ static int LuaCreateSpectra(lua_State *L)
         }
         else
         {
-        	LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
       else
       {
-        if(Options.KrylovBasis==true)
+        if((Options.KrylovBasis==true)||(Options.Sigma==true))
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
@@ -2650,9 +2674,66 @@ static int LuaCreateSpectra(lua_State *L)
       if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
       if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
       if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-      
-      //TODO: different transformation to spectralform when self energy is present
-      
+      /* calcualte self energy and add it to the spectrum then push the sepctrum and a repsonse funciton object to the stack */
+      if(Options.Sigma==true)
+      {
+        BlockListOfPoles *SigmaLP;
+        BlockAndersonMatrixType GAnd;
+        WaveFunctionType * PsiBasisinP;
+        ResponsefunctionType Temp;
+        uint32_t NPisBasis=0;
+        for (i=0;i<GTri.N;i++)
+        {
+          NPisBasis+=BlockSizeN[i];
+        }
+        PsiBasisinP = (WaveFunctionType * )malloc(NPisBasis*sizeof(WaveFunctionType));
+        k=0;
+        for (i=0;i<GTri.N;i++)
+        {
+          for(j=0;j<BlockSizeN[i];j++)
+          {
+            PsiBasisinP[k] = psiBasis[i][j];
+          }
+        }
+        SigmaLP = (BlockListOfPoles*)malloc(Sigma.NSigma*sizeof(BlockListOfPoles));
+        for(i=0;i<Sigma.NSigma;i++)
+        {
+          ConvertResponsefunction(Sigma.S[i], &Temp, 'L', "defeault", -1, -1, -1, -1, false, false, false);
+          SigmaLP[i]=*((BlockListOfPoles*)Temp.data);
+        }
+        
+        
+        CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPisBasis, GTri.BlockSize, Sigma.V, SigmaLP, Sigma.NSigma, Options.order, Options.GridPoints.VRe, Options.GridPoints.Ni, &GAnd);
+        
+        
+        
+        
+        /* Transform the spectrum with self energy from Anderson form to a spectra type array and push to stack */
+        lua_pushinteger(L, 0); // placeholder to get the correct number of elements on the stack
+        /* the code that now creashas as GAnd is not created but should be here in the future
+        Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        luaL_setmetatable(L, "Spectra_Type");
+        Spec->Name=(char*)malloc(sizeof(char));
+        Spec->Name[0]='\0';
+        Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+        Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
+        BlockAndersonMatrixToSpectraWithBroadening(psiEn[0], &GAnd, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+        for(i=0;i<Spec->NSpectra;i++)
+        {
+          Spec->Spec[i].EminPole=Eminpole;
+          Spec->Spec[i].EmaxPole=Emaxpole;
+        }
+        */
+        
+        /* Push the BlockAnderson response function representation of the spectrum to the stack */
+        lua_pushinteger(L, 0); // placeholder to get the correct number of elements on the stack
+        /* the code that now creashas as GAnd is not created but should be here in the future
+        ShiftBlockAndersonMatrix(&GAnd, -psiEn[0]);
+        LuaPushTable_BlockAndersonMatrixType(L, &GTri);
+        */
+        // We need to free several objects, including the krylov basis when Options.KrylovBasis==false
+        
+      }
       /* transform tridiagonal form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
@@ -2687,14 +2768,27 @@ static int LuaCreateSpectra(lua_State *L)
       }
       /* free tridiagonal representation in memory */
       FreeBlockTridiagonalMatrix(&GTri);
-      
-      if(Options.KrylovBasis==true)
+      if(Options.Sigma==true)
       {
-        return 3;
+        if(Options.KrylovBasis==true)
+        {
+          return 5;
+        }
+        else
+        {
+          return 4;
+        }
       }
       else
       {
-        return 2;
+        if(Options.KrylovBasis==true)
+        {
+          return 3;
+        }
+        else
+        {
+          return 2;
+        }
       }
     }
   }

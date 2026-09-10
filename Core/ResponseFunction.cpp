@@ -2973,3 +2973,27 @@ int ResponseFunctionAddSelfEnergyOnGridBlockAndLPAnd(const BlockAndersonMatrixTy
   }
   return 0;
 }
+
+/*
+ *  Given a one particle basis | phi_{\tau} > with \tau in [0,Ntau] ( Ntau = H->NFermion = PsiBasis[i].NFermion )
+ *  Given an operator H and basis PsiBasis[i] with i in [0,NPsiBasis)
+ *  Given a self energy defined by the operator
+ *    SigmaOpp = sum_{i=0}^{NSigma-1} SigmaOpp[i]
+ *    SigmaOpp[i] = sum_{j,k} SigmaOpp[i]_{jk}
+ *    SigmaOpp[i]_{jk} = V[i]_j^{\dag} Sigma[i]_{j,k}(omega) V[i]_k
+ *      with j,k in [0,Sigma[i].BlockSize)
+ *  calculate
+ *  G_{lm} = ...
+ *    with l,m in [0,BlockSize)
+ *
+ *  Implementation
+ *
+ *  HMat_{i,j} = <PsiBasis[i] | H | PsiBasis[j]>
+ *  SMat_{i,j} = <PsiBasis[i] | PsiBasis[j]>
+ *
+ */
+int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize,  OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t order, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, BlockAndersonMatrixType * G)
+{
+  
+  return 0;
+}

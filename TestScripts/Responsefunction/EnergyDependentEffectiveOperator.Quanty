@@ -28,6 +28,10 @@ print(funOpp)
 Opp11, BitMask11, Tail11 = ResponseFunction.ToOperator(G1,{{"Nval",1},{"Ncon",1}})
 Opp11.Chop()
 print(OperatorToMatrix(Opp11))
+print(BitMask11)
+print(Tail11)
+
+
 valOpp11, funOpp11 = Eigensystem(OperatorToMatrix(Opp11))
 print(valOpp11)
 
