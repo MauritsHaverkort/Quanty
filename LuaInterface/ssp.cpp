@@ -1812,7 +1812,7 @@ static int LuaCreateSpectra(lua_State *L)
   struct
   {
     double E0;
-    int order;
+    int NTriFull;
     uint32_t Npsi;
     uint32_t NT;
     ConvergenceSettingsType Settings;
@@ -1826,7 +1826,7 @@ static int LuaCreateSpectra(lua_State *L)
   Options.GridPoints.QComplex=0;
   Options.GridPoints.Ni=0;
   Options.GridPoints.VRe=NULL;
-  Options.order=-1;
+  Options.NTriFull=-1;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=false;
@@ -1860,7 +1860,7 @@ static int LuaCreateSpectra(lua_State *L)
     {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
     
     {"GridPoints","Vector",&(Options.GridPoints)},
-    {"order","int",&(Options.order)},
+    {"NTriFull","int",&(Options.NTriFull)},
     
     
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
@@ -1907,9 +1907,9 @@ static int LuaCreateSpectra(lua_State *L)
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
   }
   /* test if combination of options are valid */
-  if((Options.order!=-1)&&(Options.Sigma==false))
+  if((Options.NTriFull!=-1)&&(Options.Sigma==false))
   {
-    return luaL_error(L, "Error in CreateSpectra order can only be set when a self energ is given\n");
+    return luaL_error(L, "Error in CreateSpectra NTriFull can only be set when a self energy is given\n");
   }
   if((Options.GridPoints.Ni!=0)&&(Options.Sigma==false))
   {
@@ -2679,7 +2679,7 @@ static int LuaCreateSpectra(lua_State *L)
       if(Options.Sigma==true)
       {
         BlockListOfPoles *SigmaLP;
-        BlockAndersonMatrixType GAnd;
+        BlockTriDiagonalMatrixType GTriSigma;
         WaveFunctionType *PsiBasisinP;
         ResponsefunctionType Temp;
         CompactMatrixType B0;
@@ -2745,13 +2745,14 @@ static int LuaCreateSpectra(lua_State *L)
             FreeResponsefunction(&Temp);
           }
         }
-        /* the standard number of blocks is the number of orbitals of the system */
-        if(Options.order==-1) Options.order=(int)GTri.BlockSize;
-        if(Options.order<1)
+        /* H alone has a discrete spectrum, the self energy turns it into a
+           continuum, so the result needs many more poles than H did */
+        if(Options.NTriFull==-1) Options.NTriFull=(int)(Options.Settings.NTri*Sigma.NSigma);
+        if(Options.NTriFull<1)
         {
-          return luaL_error(L, "Error in CreateSpectra, order should be at least 1 (it is %d)\n",Options.order);
+          return luaL_error(L, "Error in CreateSpectra, NTriFull should be at least 1 (it is %d)\n",Options.NTriFull);
         }
-        if(CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, (uint32_t)Options.order, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GAnd))
+        if(CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
         {
           return luaL_error(L, "CalculateGforHwithSigmaAsOperator failed in CreateSpectra\n");
         }
@@ -2762,17 +2763,17 @@ static int LuaCreateSpectra(lua_State *L)
         Spec->Name[0]='\0';
         Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
         Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
-        BlockAndersonMatrixToSpectraWithBroadening(psiEn[0], &GAnd, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+        BlockTriDiagonalMatrixToSpectraWithBroadening(psiEn[0], &GTriSigma, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
         for(i=0;i<Spec->NSpectra;i++)
         {
           Spec->Spec[i].EminPole=Eminpole;
           Spec->Spec[i].EmaxPole=Emaxpole;
         }
-        /* Push the BlockAnderson response function representation of the spectrum to the stack */
-        ShiftBlockAndersonMatrix(&GAnd, -psiEn[0]);
-        LuaPushTable_BlockAndersonMatrixType(L, &GAnd);
+        /* Push the block tridiagonal representation of the spectrum to the stack */
+        ShiftBlockTridiagonalMatrix(&GTriSigma, -psiEn[0]);
+        LuaPushTable_BlockTriDiagonalMatrixType(L, &GTriSigma);
         /* free what was allocated here. The Krylov basis itself is freed further down */
-        FreeBlockAndersonMatrix(&GAnd);
+        FreeBlockTridiagonalMatrix(&GTriSigma);
         FreeCompactMatrix(&B0);
         free(PsiBasisinP);
         for(i=0;i<Sigma.NSigma;i++) FreeBlockListOfPoles(&(SigmaLP[i]));

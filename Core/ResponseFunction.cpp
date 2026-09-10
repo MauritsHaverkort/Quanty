@@ -3376,12 +3376,13 @@ int HermitianCompactMatrixToRectangularRoot(CompactMatrixType const *const R, Co
  *     caller supplies a grid, the poles are binned on the grid conserving the
  *     zeroth and first moment of each bin, which caps the bath at Ng * North.
  *
- *  F  Block Lanczos on the arrowhead from the BlockSize seed vectors, order
- *     blocks, full re-orthogonalization, the arrowhead structure used in the
- *     matrix vector product.  This keeps 2*order moments of the BlockSize x
- *     BlockSize matrix spectral function exact.
+ *  F  Block Lanczos on the arrowhead from the BlockSize seed vectors,
+ *     NTriFull blocks, full re-orthogonalization, the arrowhead structure used
+ *     in the matrix vector product so the arrowhead is never formed.
  *
- *  G  Chain to star and the result padded up to the block size of B0.
+ *  G  The chain padded up to the block size of B0, with the deflation of the
+ *     seed block in BlockSizeList and b[0] carrying it back to the full set of
+ *     transition operators.
  *
  *  --------------------------------------------------------------------------
  *  Arguments
@@ -3396,7 +3397,12 @@ int HermitianCompactMatrixToRectangularRoot(CompactMatrixType const *const R, Co
  *  V                    V[i][j] with j < Sigma[i].BlockSize, the channels
  *  Sigma, NSigma        the self energies.  NSigma == 0 is legal and gives the
  *                       plain resolvent of H
- *  order                number of blocks of the returned Anderson matrix
+ *  NTriFull             number of blocks of the returned block tridiagonal
+ *                       matrix.  2*NTriFull moments of the BlockSize x
+ *                       BlockSize matrix spectral function come out exact.
+ *                       H alone has a discrete spectrum, the self energy turns
+ *                       it into a continuum, so this wants to be of the order
+ *                       of the NTri that produced PsiBasis, not of BlockSize
  *  SuggestedGrid        grid to bin the poles of Sigma on, NULL for automatic.
  *                       Binning is exact in the zeroth and first moment of a
  *                       bin and errs at O(dg^2) in the second, so a spacing of
@@ -3407,15 +3413,17 @@ int HermitianCompactMatrixToRectangularRoot(CompactMatrixType const *const R, Co
  *                       operators (b[0] of the block tridiagonal matrix that
  *                       produced PsiBasis).  Its number of rows sets the block
  *                       size of G.  NULL means the identity
- *  G                    the result, not initialized on entry
+ *  G                    the result, not initialized on entry.  Shaped like the
+ *                       block tridiagonal matrix that a block Lanczos on H
+ *                       alone produces, so a caller can treat both the same
  *
  *  returns 0 on success, 1 on failure
  */
-int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize,  OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t order, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockAndersonMatrixType * G)
+int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize,  OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NTriFull, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockTriDiagonalMatrixType * G)
 {
   uint32_t i, j, jp, k, n, np, p, q, a;
   uint32_t Npsi = NPsiBasis, m = BlockSize, NFull, North = 0;
-  uint32_t Dtot, Nbath = 0, NbathMax = 0, orderUse, Ng = 0;
+  uint32_t Dtot, Nbath = 0, NbathMax = 0, NTriUse, Ng = 0;
   uint32_t QComplexOut;
   int ierr = 0;
   double *Sval = NULL, *Grid = NULL, *Ebath = NULL;
@@ -3426,7 +3434,6 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
   CompactMatrixType *Zlist = NULL, *Rgrid = NULL;
   uint32_t *Dlist = NULL;
   BlockTriDiagonalMatrixType chain;
-  BlockAndersonMatrixType GSmall;
   OperatorType Heff, *Hptr;
   bool QHeffAllocated = false;
 
@@ -3437,7 +3444,6 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
   CompactMatrixSetUnallocated(&Ablk);  CompactMatrixSetUnallocated(&Bblk);
   CompactMatrixSetUnallocated(&Lblk);
   chain.a = NULL;
-  GSmall.a = NULL;
 
   /* ---------------------------------------------------------------------- */
   /*  A   input                                                             */
@@ -3452,9 +3458,9 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
     printf("CalculateGforHwithSigmaAsOperator called with NPsiBasis=%u and BlockSize=%u, needs 0 < BlockSize <= NPsiBasis\n", Npsi, m);
     return 1;
   }
-  if (order == 0)
+  if (NTriFull == 0)
   {
-    printf("CalculateGforHwithSigmaAsOperator called with order=0, needs at least one block\n");
+    printf("CalculateGforHwithSigmaAsOperator called with NTriFull=0, needs at least one block\n");
     return 1;
   }
   if (B0 == NULL)
@@ -3508,7 +3514,7 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
   /*      both cheaper and more consistent than adding it to the outer matrix  */
   /*      alone, which would leave the intermediate spectrum unshifted.        */
   /* ---------------------------------------------------------------------- */
-  VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: NPsiBasis=%u BlockSize=%u NSigma=%u order=%u\n", Npsi, m, NSigma, order);
+  VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: NPsiBasis=%u BlockSize=%u NSigma=%u NTriFull=%u\n", Npsi, m, NSigma, NTriFull);
   Hptr = (OperatorType*)H;
   for (i = 0; i < NSigma; i++)
   {
@@ -3921,7 +3927,13 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
       }
       else
       {
-        Ng = Max(2, 8 * order);
+        /*  No grid was asked for, so take the finest one that is affordable:
+         *  eight bins per block of the answer, never more bins than poles, and
+         *  never more than the accumulators are allowed to cost.  With NTriFull
+         *  of the order of NTri it is the memory limit that decides, which is
+         *  the right answer -- binning error falls as the square of the
+         *  spacing, so every bin that fits is worth having.                    */
+        Ng = Max(2, 8 * NTriFull);
         if (Ng > NbathMax) Ng = Max(2, NbathMax);
         if ((double)Ng * (double)North * (double)North > SigmaAsOperatorMaxGridMemory)
         {
@@ -4037,18 +4049,18 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
   /*      formed.                                                             */
   /* ---------------------------------------------------------------------- */
   Dtot = North + Nbath;
-  orderUse = order;
-  if ((double)orderUse * (double)m > (double)Dtot) orderUse = (Dtot + m - 1) / m;
-  if (orderUse == 0) orderUse = 1;
-  if (orderUse != order)
+  NTriUse = NTriFull;
+  if ((double)NTriUse * (double)m > (double)Dtot) NTriUse = (Dtot + m - 1) / m;
+  if (NTriUse == 0) NTriUse = 1;
+  if (NTriUse != NTriFull)
   {
-    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: order reduced from %u to %u, the space has only %u dimensions\n", order, orderUse, Dtot);
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: NTriFull reduced from %u to %u, the space has only %u dimensions\n", NTriFull, NTriUse, Dtot);
   }
   {
     CompactMatrixType Qoall, Qball, Yo, Yb, Qok, Qbk, Qoj, Qbj, Qonext, Qbnext;
     uint32_t l, t;
-    Qoall.Ni = orderUse * m; Qoall.Nj = North;        Qoall.QComplex = 1;
-    Qball.Ni = orderUse * m; Qball.Nj = Max(Nbath, 1); Qball.QComplex = 1;
+    Qoall.Ni = NTriUse * m; Qoall.Nj = North;        Qoall.QComplex = 1;
+    Qball.Ni = NTriUse * m; Qball.Nj = Max(Nbath, 1); Qball.QComplex = 1;
     Yo.Ni = m; Yo.Nj = North;         Yo.QComplex = 1;
     Yb.Ni = m; Yb.Nj = Max(Nbath, 1); Yb.QComplex = 1;
     Ablk.Ni = m; Ablk.Nj = m; Ablk.QComplex = 1;
@@ -4058,13 +4070,13 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
         InitCompactMatrix(&Yb) || InitCompactMatrix(&Ablk) || InitCompactMatrix(&Bblk) || InitCompactMatrix(&Lblk))
     {
       printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for the block Lanczos\n");
-      printf("  %u vectors of length %u do not fit in memory, use a smaller order.\n", orderUse * m, Dtot);
+      printf("  %u vectors of length %u do not fit in memory, use a smaller NTriFull.\n", NTriUse * m, Dtot);
       FreeCompactMatrix(&Qoall); FreeCompactMatrix(&Qball); FreeCompactMatrix(&Yo); FreeCompactMatrix(&Yb);
       ierr = 1; goto cleanup;
     }
     Qball.Nj = Nbath;
     Yb.Nj = Nbath;
-    chain.N = orderUse;
+    chain.N = NTriUse;
     chain.BlockSize = m;
     chain.QComplex = 1;
     if (InitBlockTridiagonalMatrix(&chain))
@@ -4083,7 +4095,7 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
     Qbk = CompactMatrixRowBlockView(&Qball, 0, m);
     RowBlockPairOrthonormalizeWithTransform(&Qok, &Qbk, &Lblk, SigmaAsOperatorEpsLanczos);
     memcpy(chain.b, Lblk.V, Sqr(m) * sizeof(Complex16));
-    for (k = 0; k < orderUse; k++)
+    for (k = 0; k < NTriUse; k++)
     {
       Qok = CompactMatrixRowBlockView(&Qoall, k * m, m);
       Qbk = CompactMatrixRowBlockView(&Qball, k * m, m);
@@ -4107,7 +4119,7 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
       if (Nbath) CompactMatrixAddMultiply('*', 'T', &Qbk, &Yb, &Ablk, 1, 0, 1, 0);
       SquareCompactMatrixMakeHermitian(&Ablk);
       memcpy(&(chain.a[(size_t)(k + 1) * Sqr(m)]), Ablk.V, Sqr(m) * sizeof(Complex16));
-      if (k + 1 == orderUse) break;
+      if (k + 1 == NTriUse) break;
       /*  the residual                                                        */
       CompactMatrixAddMultiply('T', 'N', &Ablk, &Qok, &Yo, -1, 0, 1, 0);
       if (Nbath) CompactMatrixAddMultiply('T', 'N', &Ablk, &Qbk, &Yb, -1, 0, 1, 0);
@@ -4164,30 +4176,40 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
   }
 
   /* ---------------------------------------------------------------------- */
-  /*  G   chain to star and pad back up to the full block size               */
+  /*  G   the chain padded back up to the full block size                    */
+  /*                                                                          */
+  /*      The block Lanczos produced the chain already, so it is handed back  */
+  /*      as it is.  Turning it into an Anderson matrix here would diagonalize */
+  /*      the ((N-1)*BlockSize)^2 tail for nothing: the caller can ask for     */
+  /*      that conversion when it wants it, and the route to a spectrum        */
+  /*      evaluates the continued fraction directly and never needs it.        */
+  /*                                                                          */
+  /*      The result is shaped exactly like the block tridiagonal matrix that  */
+  /*      the block Lanczos on H alone produces: block size of the full set of */
+  /*      transition operators, the deflation of the seed block recorded in    */
+  /*      BlockSizeList, and b[0] carrying the deflated block back to the full */
+  /*      set.  B0 has that rank deficiency in it, so its columns beyond       */
+  /*      BlockSize are zero and the padded part of the chain never shows.     */
   /* ---------------------------------------------------------------------- */
-  if (BlockTriDiagonalMatrixToBlockAndersonMatrix(chain, &GSmall))
-  {
-    printf("BlockTriDiagonalMatrixToBlockAndersonMatrix failed in CalculateGforHwithSigmaAsOperator\n");
-    ierr = 1; goto cleanup;
-  }
-  G->N = GSmall.N;
+  G->N = chain.N;
   G->BlockSize = NFull;
   G->QComplex = 1;
-  if (InitBlockAndersonMatrix(G))
+  if (InitBlockTridiagonalMatrix(G))
   {
-    printf("InitBlockAndersonMatrix failed in CalculateGforHwithSigmaAsOperator\n");
+    printf("InitBlockTridiagonalMatrix failed in CalculateGforHwithSigmaAsOperator\n");
     ierr = 1; goto cleanup;
   }
   G->mu = 0;
   strcpy(G->Name, "G with self energy");
-  for (k = 0; k <= G->N; k++)
+  G->BlockSizeList[0] = NFull;
+  for (k = 1; k <= G->N; k++) G->BlockSizeList[k] = m;
+  for (k = 1; k <= G->N; k++)
   {
     for (p = 0; p < m; p++)
     {
       for (q = 0; q < m; q++)
       {
-        G->a[(size_t)k * Sqr(NFull) + p * NFull + q] = GSmall.a[(size_t)k * Sqr(m) + p * m + q];
+        G->a[(size_t)k * Sqr(NFull) + p * NFull + q] = chain.a[(size_t)k * Sqr(m) + p * m + q];
       }
     }
   }
@@ -4197,21 +4219,13 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
     {
       for (q = 0; q < m; q++)
       {
-        G->b[(size_t)k * Sqr(NFull) + p * NFull + q] = GSmall.b[(size_t)k * Sqr(m) + p * m + q];
+        G->b[(size_t)k * Sqr(NFull) + p * NFull + q] = chain.b[(size_t)k * Sqr(m) + p * m + q];
       }
     }
   }
-  /*  b[0] carries the deflated seed block back to the full set of transition
-   *  operators.  B0 has the rank deficiency of the seeds in it, so its columns
-   *  beyond BlockSize are zero and the padded part of the chain never shows.   */
-  for (p = 0; p < NFull; p++)
-  {
-    for (q = 0; q < NFull; q++)
-    {
-      G->b[p * NFull + q].Re = 0;
-      G->b[p * NFull + q].Im = 0;
-    }
-  }
+  /*  InitBlockTridiagonalMatrix leaves b[0] as the identity, it is overwritten
+   *  here and not added to                                                    */
+  for (k = 0; k < Sqr(NFull); k++) { G->b[k].Re = 0; G->b[k].Im = 0; }
   for (p = 0; p < NFull; p++)
   {
     for (q = 0; q < m; q++)
@@ -4233,8 +4247,8 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
           b0pk.Re = B0->VRe[p * m + k];
           b0pk.Im = 0;
         }
-        G->b[p * NFull + q].Re += b0pk.Re * GSmall.b[k * m + q].Re - b0pk.Im * GSmall.b[k * m + q].Im;
-        G->b[p * NFull + q].Im += b0pk.Re * GSmall.b[k * m + q].Im + b0pk.Im * GSmall.b[k * m + q].Re;
+        G->b[p * NFull + q].Re += b0pk.Re * chain.b[k * m + q].Re - b0pk.Im * chain.b[k * m + q].Im;
+        G->b[p * NFull + q].Im += b0pk.Re * chain.b[k * m + q].Im + b0pk.Im * chain.b[k * m + q].Re;
       }
     }
   }
@@ -4250,7 +4264,7 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
     }
     else
     {
-      ComplexBlockAndersonMatrixToReal(G);
+      ComplexBlockTridiagonalMatrixToReal(G);
     }
   }
 
@@ -4267,7 +4281,6 @@ cleanup:
   FreeCompactMatrix(&Bblk);
   FreeCompactMatrix(&Lblk);
   if (chain.a != NULL) FreeBlockTridiagonalMatrix(&chain);
-  if (GSmall.a != NULL) FreeBlockAndersonMatrix(&GSmall);
   if (Rgrid != NULL)
   {
     for (k = 0; k < Ng; k++) FreeCompactMatrix(&(Rgrid[k]));

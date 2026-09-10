@@ -163,18 +163,18 @@ for j = 1, 3 do Zero[j] = {} for k = 1, 3 do Zero[j][k] = 0 end end
 SZero = ResponseFunction.New({ {Zero, 2.5}, {Zero}, mu = 0, type = "ListOfPoles", name = "Sigma" })
 
 T1 = { NewOperator("Cr", M.NF, 0) }
-sSig, GAnd, sNo = CreateSpectra(M.HP, T1, M.psi, {{SZero, M.V}}, Options(M, {{"order", 40}}))
+sSig, GAnd, sNo = CreateSpectra(M.HP, T1, M.psi, {{SZero, M.V}}, Options(M, {{"NTriFull", 40}}))
 Check("Sigma with no weight, one operator", sNo, sSig)
 
 T2 = { NewOperator("Cr", M.NF, 0), NewOperator("Cr", M.NF, 1) }
-sSig, GAnd, sNo = CreateSpectra(M.HP, T2, M.psi, {{SZero, M.V}}, Options(M, {{"order", 40}}))
+sSig, GAnd, sNo = CreateSpectra(M.HP, T2, M.psi, {{SZero, M.V}}, Options(M, {{"NTriFull", 40}}))
 Check("Sigma with no weight, two operators", sNo, sSig)
 
 -- three transition operators of which only two are independent: the seed block
 -- of the block Lanczos deflates and b[0] is rank deficient
 T3 = { NewOperator("Cr", M.NF, 0), NewOperator("Cr", M.NF, 1),
        NewOperator("Cr", M.NF, 0) + NewOperator("Cr", M.NF, 1) }
-sSig, GAnd, sNo = CreateSpectra(M.HP, T3, M.psi, {{SZero, M.V}}, Options(M, {{"order", 40}}))
+sSig, GAnd, sNo = CreateSpectra(M.HP, T3, M.psi, {{SZero, M.V}}, Options(M, {{"NTriFull", 40}}))
 Check("Sigma with no weight, rank deficient seed", sNo, sSig)
 
 -- ---------------------------------------------------------------------------
@@ -191,11 +191,11 @@ function CompareWithExplicitBath(name, NP, NBath, iH, iT, A0on, NT, extra)
   return M, T, sref
 end
 
-CompareWithExplicitBath("real, one pole",              3, 1, 0, 0, false, 3, {{"order", 60}})
-CompareWithExplicitBath("real, three poles",           3, 3, 0, 0, false, 3, {{"order", 60}})
-CompareWithExplicitBath("real, three poles, static",   3, 3, 0, 0, true,  3, {{"order", 60}})
-CompareWithExplicitBath("complex, three poles, static",4, 3, I, I, true,  3, {{"order", 60}})
-CompareWithExplicitBath("rank deficient seed, static", 3, 3, 0, 0, true,  4, {{"order", 60}})
+CompareWithExplicitBath("real, one pole",              3, 1, 0, 0, false, 3, {{"NTriFull", 60}})
+CompareWithExplicitBath("real, three poles",           3, 3, 0, 0, false, 3, {{"NTriFull", 60}})
+CompareWithExplicitBath("real, three poles, static",   3, 3, 0, 0, true,  3, {{"NTriFull", 60}})
+CompareWithExplicitBath("complex, three poles, static",4, 3, I, I, true,  3, {{"NTriFull", 60}})
+CompareWithExplicitBath("rank deficient seed, static", 3, 3, 0, 0, true,  4, {{"NTriFull", 60}})
 
 -- ---------------------------------------------------------------------------
 -- 3  two self energies at once, each on its own pair of channels
@@ -228,7 +228,7 @@ V2a = { MT.V[1], MT.V[2] }
 V2b = { MT.V[3], MT.V[4] }
 T = { NewOperator("Cr", MT.NF, 0), NewOperator("Cr", MT.NF, 1), NewOperator("Cr", MT.NF, 2) }
 sref = CreateSpectra(Hfull2, T, MT.psi, Options(MT, {{"Restrictions", MT.Restrictions}}))
-ssig = CreateSpectra(MT.HP, T, MT.psi, {{S2a, V2a}, {S2b, V2b}}, Options(MT, {{"order", 60}}))
+ssig = CreateSpectra(MT.HP, T, MT.psi, {{S2a, V2a}, {S2b, V2b}}, Options(MT, {{"NTriFull", 60}}))
 Check("two self energies, complex, static", sref, ssig)
 
 -- ---------------------------------------------------------------------------
@@ -237,12 +237,12 @@ Check("two self energies, complex, static", sref, ssig)
 -- ---------------------------------------------------------------------------
 M = Model(4, 3, I, I, true)
 T = { NewOperator("Cr", M.NF, 0), NewOperator("Cr", M.NF, 1), NewOperator("Cr", M.NF, 2) }
-sExact = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, {{"order", 60}}))
+sExact = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, {{"NTriFull", 60}}))
 dprev = nil
 for _, ng in ipairs({50, 200, 800}) do
   local g = {}
   for i = 1, ng do g[i] = -14 + 34 * (i - 1) / (ng - 1) end
-  local sg = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, {{"order", 60}, {"GridPoints", g}}))
+  local sg = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, {{"NTriFull", 60}, {"GridPoints", g}}))
   local d, s = Deviation(sExact, sg)
   print(string.format("%-42s largest value %10.6f   deviation %.3e",
         string.format("binned on %d grid points", ng), s, d))
@@ -286,7 +286,7 @@ Vm = { NewOperator("An", NF, 0), NewOperator("An", NF, 1), NewOperator("An", NF,
 Tm = { NewOperator("Cr", NF, 0), NewOperator("Cr", NF, 1) }
 psim = NewWavefunction(NF, 0, { {"1000", 0.5}, {"0100", 0.6}, {"0010", 0.62449979983984} })
 optm = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
-         {"Emin", -10}, {"Emax", 14}, {"NE", 400}, {"Gamma", 0.25}, {"order", 40} }
+         {"Emin", -10}, {"Emax", 14}, {"NE", 400}, {"Gamma", 0.25}, {"NTriFull", 40} }
 sAuto = CreateSpectra(HPm, Tm, psim, {{Sm, Vm}}, optm)
 gfine = {}
 for i = 1, 4000 do gfine[i] = -8 + 16 * (i - 1) / 3999 end
@@ -330,7 +330,7 @@ optr = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
 optrr = {} ; for i, v in ipairs(optr) do optrr[i] = v end
 optrr[#optrr + 1] = {"Restrictions", Restrr}
 optrs = {} ; for i, v in ipairs(optr) do optrs[i] = v end
-optrs[#optrs + 1] = {"order", 40}
+optrs[#optrs + 1] = {"NTriFull", 40}
 sExactr = CreateSpectra(Hfullr, Tr, psir, optrr)
 sSigr   = CreateSpectra(HPr, Tr, psir, {{Sr, Vr}}, optrs)
 sNor    = CreateSpectra(HPr, Tr, psir, optr)
