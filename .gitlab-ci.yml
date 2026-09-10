@@ -278,6 +278,7 @@ test-jobs:
           - "CreateFluorescenceYield"
           - "CreateResonantSpectra"
           - "CreateSpectra"
+          - "CreateSpectraWithSelfEnergy"
           - "CreateClusterHamiltonian"
           - "CreateAtomicIndicesDict"
           - "CreateAtomicIndicesList"
