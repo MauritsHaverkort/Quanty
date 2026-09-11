@@ -1645,14 +1645,24 @@ end
 print()
 
 
+-- The three sections below compare ten eigenvalues of a nearly degenerate spectrum
+-- against a reference to 1E-5.  Zero is the convergence criterion: the search stops
+-- once every state has a variance below totESqr*Zero/Npsi.  A small variance does not
+-- imply a small energy error for a near degenerate multiplet, and at the standard
+-- Zero = 1.49012E-6 the energies came out only 6 to 76 times inside that tolerance,
+-- scattering with the random starting block, so the comparisons failed every so often.
+-- At Zero = 1E-8 the margin is 4000 times or better, for about 8 seconds more over the
+-- three sections.  1E-10 would be another three decades but costs a factor of twenty in
+-- time.  The options under test here are NKrylovStart, NKrylovMax and NKrylovStep, not
+-- Zero, so tightening it does not weaken what these sections check.
 print("\nTest NKrylovStart ...")
 
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
                                                         {"NKrylovStart", 150}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
-                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1E-8}, {"ExpandBasis", true}})
 fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
                                                         {"NKrylovStart", 150}, {"NKrylovMax", 500}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
-                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1E-8}, {"ExpandBasis", true}})
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
 
 print("      Energy           Energy-E0        Variance        Energy-Exact")
@@ -1675,10 +1685,10 @@ print("\nTest NKrylovMax ...")
 
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
                                                         {"NKrylovStart", 80}, {"NKrylovMax", 80}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
-                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1E-8}, {"ExpandBasis", true}})
 fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
                                                         {"NKrylovStart", 80}, {"NKrylovMax", 80}, {"NKrylovStep", 10}, {"NKrylovMin", 50}, 
-                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1E-8}, {"ExpandBasis", true}})
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
 
 print("      Energy           Energy-E0        Variance        Energy-Exact")
@@ -1700,10 +1710,10 @@ print("\nTest NKrylovStep ...")
 
 fun1  = Eigensystem(Hamiltonian1,StartRestrictions,10, {{"DenseBorder", 1}, 
                                                         {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 5}, {"NKrylovMin", 50}, 
-                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1E-8}, {"ExpandBasis", true}})
 fun1s  = Eigensystem(Hamiltonian1,StartRestrictions,1, {{"DenseBorder", 1}, 
                                                         {"NKrylovStart", 100}, {"NKrylovMax", 500}, {"NKrylovStep", 5}, {"NKrylovMin", 50}, 
-                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1.49012E-6}, {"ExpandBasis", true}})
+                                                        {"NBitsKey", 16}, {"Epsilon", 1.49012E-8}, {"Zero", 1E-8}, {"ExpandBasis", true}})
 valgrd = Braket(fun1s,Hamiltonian1,fun1s)
 
 print("      Energy           Energy-E0        Variance        Energy-Exact")
