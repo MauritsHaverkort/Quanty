@@ -546,6 +546,8 @@ uint32_t ResonantSpectraDense(WaveFunctionType * H1psiBasis, WaveFunctionType * 
     //   The dimensions of C are Ni = H1psiBasis.N by Nj = Npsi*NT1
     /* Calculate 1/(E_0 + wres - EVal[i] + iGammaRes), split into real and imaginary */
     wRes = settings->Emin1 + (settings->Emax1-settings->Emin1)*l/((double)settings->NE1);
+
+
     o=0;
     if(A.QComplex==0)
     {
@@ -1244,9 +1246,6 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   double EVal[Npsi*NT1*settings->NTri1], EValInvRe[Npsi*NT1*settings->NTri1], EValInvIm[Npsi*NT1*settings->NTri1], tempDoubleRe,tempDoubleIm,wRes,*Eval2,Emin2pole,Emax2pole;
   int i,ipsi,iT1,p,m,n,j,o,r,s;
   
-  //debug STDOUT 
-  printf("Starting ResonantSpectraTensor\n");
-  setvbuf(stdout, NULL, _IOLBF, 0);
 
   /* calcualte ground state energy */
   // TODO: add this warning to the dense version as well
@@ -1324,7 +1323,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   }
 
  
-
+  
   //2. Use T|i>==Tpsi to transform H1 to Block tridiagonal form in Krylov basis */
   //   Using the version which gives back the Krylov basis vectors */
   SpecTri1.N = settings->NTri1;
@@ -1338,6 +1337,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   }
   InitBlockTridiagonalMatrix(&SpecTri1);
   SpecTri1.mu=0;//psiEn[0];
+
 
   BlockSizeN= (uint32_t*)malloc(settings->NTri1*sizeof(uint32_t));
   PsiBasis= (WaveFunctionType**)malloc(settings->NTri1*sizeof(WaveFunctionType*));
@@ -1354,9 +1354,8 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
 
 
 
-  /*3. Compute the Block tridiagonal eigenvalues and eigenfunctions of H1 in the Krylov basis
-   then S^-1 = QAQ^T where Q are the eigenvectors and A is a matrix with the eigenvalue inverses
-   on the diagonal.
+  /*3. Compute the Block tridiagonal eigenvalues and eigenfunctions of H1 in the Krylov basis.
+  The standard eygensistem function computes SpecTri1 = Efun^T * D(Eval) * Efun, where D is the diagonal matrix of eigenvalues.
    */
   /* Eval has length (settings->NTri1)*(Npsi*NT1), with inner loop over (Npsi*NT1)*/
   //if(BlockTriDiagonalMatrixEigenSystemWithDeflation(&SpecTri1, EVal, &EFun, &SpecTri1.BlockSize))
@@ -1401,6 +1400,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   /* allocate memory for the output */
   *Spec = (SpectraType*)malloc((Sqr(Npsi * NT1 * NT2)*(settings->NE1+1)) * sizeof(SpectraType));
 
+  /* CompactMatrixConjugateTranspose is in-place: do this once to avoid alternating EFun orientation per p */
+  CompactMatrixConjugateTranspose(&EFun);
+
   //Todo: do we have add the lines with the settings
 
   for(p = 0; p <= settings->NE1; p++)
@@ -1420,9 +1422,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       Gdiag[i].Re =  (wRes - EVal[i])       / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
       Gdiag[i].Im = -(settings->Gamma1/2.0) / ((wRes - EVal[i])*(wRes - EVal[i])+(settings->Gamma1/2.0)*(settings->Gamma1/2.0));
     }
-
-    //TODO:write together in one function. Here you perform the loop for each function...
-    CompactMatrixConjugateTranspose(&EFun);
+    /*Now we rotate the propagator into the basis of Krylov states */
     TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Gdiag, &EFun, &UtranGUcon);
 
 
@@ -1434,7 +1434,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
       GTpsi[j] = sum_{m}^{NTri1}sum_{n}^{Blocksize[m]} alpha^{j}_{m,n} |PsiBasis[m][n]>
     
     where
-      alpha^{i,j}_{m,n} = sum_{i}^{Npsi*NT1} sum_{r}^{Npsi*NT1*NTri1} Efun_{r,n+m*Npsi*NT1} * G[r] * Efun^{*}_{r,i} * B0_{j,i}.
+      alpha^{j}_{m,n} = sum_{i}^{Npsi*NT1} sum_{r}^{Npsi*NT1*NTri1} Efun_{r,n+m*Npsi*NT1} * Gdiag[r] * Efun^{*}_{r,i} * B0_{j,i}.
 
     with possible variations of Efun_{r,n+m*Npsi*NT1} * G[r] * Efun^{*}_{r,i}.
     
@@ -1465,7 +1465,11 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
           double alphaIm = 0;
           for (i=0;i< NT1 * Npsi;i++)
           {  
-            idx = i+(n + m * (Npsi * NT1))*(settings->NTri1 * (Npsi * NT1));
+            //idx = i+(n + m * (Npsi * NT1))*(settings->NTri1 * (Npsi * NT1));
+            
+            //UtranGUcon is a Compact version of 
+            idx = i+(NT1*Npsi*(0+settings->NTri1*(n+(NT1*Npsi*m))));
+            
             if(SpecTri1.QComplex)
             {
               alphaRe += SpecTri1.b[j*(NT1*Npsi)+i].Re *  UtranGUcon.V[idx].Re - SpecTri1.b[j*(NT1*Npsi)+i].Im *  UtranGUcon.V[idx].Im;
@@ -1520,8 +1524,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
         }
         o++;
       }//close loop over s (T2 operators)
+    WaveFunctionFree(&(GTpsi[j]));
     } //close loop over j T|i>
-
+    
 
     /* calcualte spectra*/
     WaveFunctionType TGTpsiSameBasis[NT2*NT1*Npsi];
@@ -1561,7 +1566,7 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     GTri2.mu=0;//psiEn[0];
 
   
-    if(settings->restrictions.N==0)
+    if(settings->restrictions2.N==0)
     {
       LanczosBlockTriDiagonalize(OppH2, TGTpsiSameBasis, settings->epsilon, &GTri2, Max(settings->Gamma2,settings->epsilon));
     }
@@ -1619,22 +1624,42 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     /* push a table to L containing the spectra in Block Tridiagonal form */
     ShiftBlockTridiagonalMatrix(&GTri2,energy2);
 
-    //9. Save in *Spec with the desired indexing.
-    for(i=0;i<Sqr(Npsi * NT1 * NT2);i++)
+
+    for(r=0;r<Npsi;r++)
     {
-    
-      Specwp.Spec[i].EminPole=Emin2pole;
-      Specwp.Spec[i].EmaxPole=Emax2pole;
-    
-      //ChopSpectra(&Specwp.Spec[i], settings->epsilon);
-      Specwp.Spec[i].ResonantEnergy = settings->Emin1 + ((double)(p % (settings->NE1+1))/(settings->NE1)) * (settings->Emax1-settings->Emin1);
-      sprintf(Specwp.Spec[i].Name, "Spectrum wres %i/%i Psi %i/%i T1 %i/%i T2 %i/%i",(int)(p % (settings->NE1+1)),settings->NE1,(int)(i/Npsi*NT1*NT2),Npsi,(int)(i/(NT1*NT2) % Npsi),NT1,(int)((i/NT2) % (NT1*Npsi)),NT2);  
-      SpectrumAllocate(Specwp.Spec[i], &(*Spec)[p + i*(settings->NE1+1)]);
-      
-      //copying to avoid changing after freeing Specwp.Spec[i]
-      CopySpectra(Specwp.Spec[i],  &(*Spec)[p + i*(settings->NE1+1)]);      
-      SpectrumFree(&Specwp.Spec[i]);
-    }
+      for(s=0;s<Npsi;s++)
+      {
+        for(i=0;i<NT1;i++)
+        {
+          for(j=0;j<NT2;j++)
+          {
+            for(m=0;m<NT1;m++)
+            {
+              for(n=0;n<NT2;n++)
+              {
+
+              // the expercted index from the Block Algorithm
+              uint32_t idxOld = j + NT2*(i+NT1*(s+Npsi*(n+NT2*(m+NT1*r))));
+              // put in the same indexing as the Dense method
+              uint32_t idxNew = j + NT2*(i+NT1*(n+NT2*(m+NT1*(r+Npsi*s))));
+
+              Specwp.Spec[idxOld].EminPole=Emin2pole;
+              Specwp.Spec[idxOld].EmaxPole=Emax2pole;
+            
+              //ChopSpectra(&Specwp.Spec[i], settings->epsilon);
+              Specwp.Spec[idxOld].ResonantEnergy = settings->Emin1 + ((double)(p % (settings->NE1+1))/(settings->NE1)) * (settings->Emax1-settings->Emin1);
+              //sprintf(Specwp.Spec[idxOld].Name, "Spectrum wres %i/%i Psi %i/%i T1 %i/%i T2 %i/%i",p,settings->NE1,s,Npsi,r,Npsi,i,NT1,j,NT2);  
+              SpectrumAllocate(Specwp.Spec[idxOld], &(*Spec)[p + idxNew*(settings->NE1+1)]);
+              
+              //copying to avoid changing after freeing Specwp.Spec[i]
+              CopySpectra(Specwp.Spec[idxOld],  &(*Spec)[p + idxNew*(settings->NE1+1)]);
+              SpectrumFree(&Specwp.Spec[idxOld]);
+              }
+            }
+          }
+        }
+      }
+    }    
     free(Specwp.Name);
     Specwp.NSpectra=0;
   }
