@@ -867,9 +867,10 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
 
 
 
-/*  G(mu+w) -> -G(mu-w)^*, applied to the pole part of G only: with G = A0 + P(w), where
- *  A0 is the constant term and P vanishes at infinity, the result is A0 - P(2 mu - w)^+.
- *  The constant stays where it is, so the line above holds as it stands for A0 = 0.
+/*  G(mu+w) -> -G(mu-w)^*, where ^* is the plain element by element conjugate. On the stored
+ *  numbers that is A0 -> -A0^T for the constant term, e_n -> 2 mu - e_n for the poles and
+ *  w_n -> w_n^T for the residues. Why it is ^* and not ^+, and why the whole of G and not
+ *  only its pole part follows, stands in the header of ResponseFunctionInvertEnergy.
  */
 static int LuaResponseFunctionInvertEnergy(lua_State *L)
 {
