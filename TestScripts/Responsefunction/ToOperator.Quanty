@@ -1438,12 +1438,6 @@ NCList = {{1,2},{0,1,2}}
 AddSpin = {false,true}
 
 
-a = "01" and "00"
-
-print(a)
-os.exit()
-
-
 for i=1,2 do
 	for iG=1, #GList[i] do
 	  for iNv=1, #NVList[i] do
@@ -1537,7 +1531,6 @@ print("-- Nv, Nc, and addSpin, for (Block) Nat               --")
 print("-- Starting from many-body state                      --")
 print("--------------------------------------------------------")
 
-
 for i=1,1 do
 	for iG=1, #GList[i] do
 		for iNv=1, #NVList[i] do
@@ -1546,25 +1539,29 @@ for i=1,1 do
 					print("Start ",i, iG, iNv, iNc, iS)
 					Opp, Bitmask, Tail = ResponseFunction.ToOperator(GList[i][iG],{{"Nv",NVList[i][iNv]},{"Nc",NCList[i][iNc]},{"AddSpin",AddSpin[iS]}})
 				  
-					print(Bitmask)
-					os.exit()
+					BitmaskPsi0 = BitMaskOr(Bitmask.Impurity,Bitmask.BathVal)
 					
 					-- create the vacuum state
-					psi0 = NewWavefunction(Opp.NF,0,{{Bitmask.Core,1}})
+					Psi0 = NewWavefunction(Opp.NF,0,{{BitmaskPsi0,1}})
 					-- create the creation operators on the impurity
 					OppCr = {}
+					OppAn = {}
 					NF, impIndex = BitMaskToIndex(Bitmask.Impurity)
 					for iCr=1, #impIndex do
-						OppCr[iCr] = NewOperator(NF,0,{{impIndex[iCr],1}})
+						OppCr[iCr] = NewOperator(NF,0,{{ impIndex[iCr],1}})
+						OppAn[iCr] = NewOperator(NF,0,{{-impIndex[iCr],1}})
 					end
+					
 					-- rotate the impurity if geometry equal NAT
 					if i==1 then
-					U = Matrix.Flatten({{Bitmask.T,0},{0,Matrix.Identity(Opp.NF-Bitmask.T.Ni)}})
-					Opp = Chop(Rotate(Opp,U))
-					for iCr=1, #impIndex do
-						OppCr[iCr] = Chop(Rotate(OppCr[iCr],U))
-					end
-				end
+					  U = Matrix.Flatten({{Bitmask.T,0},{0,Matrix.Identity(Opp.NF-Bitmask.T.Ni)}})
+					  Opp = Chop(Rotate(Opp,U))
+					  for iCr=1, #impIndex do
+						  OppCr[iCr] = Chop(Rotate(OppCr[iCr],U))
+						  OppAn[iCr] = Chop(Rotate(OppAn[iCr],U))
+					  end
+					
+				  end
 					if(Tail.GvalBathIndex==nil) then
 						print("Val nil",i,iG,iNv,iNc,iS)
 						error("Test failed")
@@ -1574,13 +1571,18 @@ for i=1,1 do
 					else
 						Vval={}
 						for iVval=1,#Tail.GvalBathIndex do
-							Vval[iVval] = NewOperator(NF,0,{{-Tail.GvalBathIndex[iVval],1}})
+							Vval[iVval] = NewOperator(NF,0,{{ Tail.GvalBathIndex[iVval],1}})
 						end
 						Vcon={}
 						for iVcon=1,#Tail.GconBathIndex do
 							Vcon[iVcon] = NewOperator(NF,0,{{-Tail.GconBathIndex[iVcon],1}})
 						end
-						Spec, G = CreateSpectra(Opp,OppCr,psi0,{{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+						Tail.GvalBath = ResponseFunction.InvertEnergy(Tail.GvalBath)
+						Specp, Gp = CreateSpectra(Opp,OppCr,Psi0,{{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+						Specm, Gm = CreateSpectra(Opp,OppAn,Psi0,{{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+						
+						G = Gp + ResponseFunction.InvertEnergy(Gm)
+						
 						local failed=false
 						if iG==1 then
 							for omega=-3,3,0.1 do
@@ -1614,9 +1616,12 @@ for i=1,1 do
 				
 							print(OppCr)
 							print(Opp)
-							print(psi0)
+							print(Psi0)
 							print(Vval)
 							print(Vcon)
+							
+							print(Tail.GvalBath)
+							print(Tail.GconBath)
 						
 							error("Test failed")
 						end
