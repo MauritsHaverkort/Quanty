@@ -248,7 +248,7 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 print("-- Matrix                                             --")
 
--- The map is -G(mu-w)^*, so once G is matrix valued the hand written result of the energy
+-- The map is -G(mu-w)^T, so once G is matrix valued the hand written result of the energy
 -- inversion is the transpose of the pole reflection alone: every A follows
 -- A_i -> A_i^T and every B follows B_i -> B_i^*, and the residues of a ListOfPoles follow
 -- the A. Transpose and Conjugate below are the plain matrix ones and say that in place,
@@ -1058,20 +1058,32 @@ if((Gmin==Gminp)~=true) then error("Response function ToTable failed\n",1) end
 
 
 print("--------------------------------------------------------")
-print("-- Ginv(mu+w) = -G(mu-w)^*                            --")
+print("-- Ginv(mu+w) = -G(mu-w)^T                            --")
 print("--------------------------------------------------------")
 
 -- Everything above compares stored numbers against hand written ones. This is the same
 -- statement at the level of values, and the one place where the convention is written
--- down. The whole of G follows the map, the constant term A0 -> -A0^T included, so the
--- header of the C function holds as it stands and there is no A0 left over to correct for:
+-- down. Throughout, ^* is the element by element complex conjugate, ^T the transpose and
+-- ^+ the two combined. The whole of G follows the map, the constant term A0 -> -A0^T
+-- included, so the header of the C function holds as it stands and there is no A0 left
+-- over to correct for:
 --
---     Ginv(mu+w) = -G(mu-w)^*
+--     Ginv(mu+w) = -G(mu-w)^T
 --
--- with ^* the plain element by element conjugate. On the stored numbers that is
--- A0 -> -A0^T, e_n -> 2 mu - e_n and w_n -> w_n^T.
+-- the transpose alone, and mu - w the plain reflection of the argument: nothing is
+-- conjugated, neither the matrix nor w. On the stored numbers that is A0 -> -A0^T,
+-- e_n -> 2 mu - e_n and w_n -> w_n^T, which is what everything above compares against.
 --
--- It is ^* and not ^+ that makes this the map one wants. A response function is
+-- What is checked below is not that line but
+--
+--     Ginv(mu+w, Gamma) = -[ G(mu-w, Gamma) ]^*
+--
+-- because Quanty evaluates with +i Gamma on both sides and has no negative Gamma to offer;
+-- the conjugate then takes care of the sign of Gamma as well as of the matrix. The two
+-- agree because w_n^* = w_n^T for a Hermitian residue, so this form is a corollary and not
+-- the definition.
+--
+-- It is ^T and not ^+ that makes this the map one wants. A response function is
 -- G_ij(w) = <0| A_i ( w - H + E0 )^-1 A_j^+ |0>, so its residues are Hermitian, and the
 -- other side of the Lehmann sum -- which is what reflecting the energy axis asks for -- is
 -- <0| A_j^+ ... A_i |0>: the index order swaps together with the reflection. Written with
@@ -1128,7 +1140,7 @@ for j, mu in ipairs({0, 0.7}) do
 		CheckInvertEnergy("single valued " .. ty .. ", mu = " .. mu, IEChangeType(GS, ty), mu, 1)
 	end
 end
-print("single valued: InvertEnergy is -G(mu-w)^* for every format")
+print("single valued: InvertEnergy is -G(mu-w)^T for every format")
 
 local CIE = Complex.New
 for j, cx in ipairs({false, true}) do
@@ -1149,7 +1161,7 @@ for j, cx in ipairs({false, true}) do
 		end
 	end
 end
-print("block, real and complex: InvertEnergy is -G(mu-w)^* for every format")
+print("block, real and complex: InvertEnergy is -G(mu-w)^T for every format")
 
 -- The two chains of a DoubleTri are added in the denominator, so exchanging them changes
 -- no value and no comparison of two response functions sees it -- a d and the same d with

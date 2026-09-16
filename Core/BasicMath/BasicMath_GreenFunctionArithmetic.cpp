@@ -909,8 +909,8 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
  *  and it is the transposing pair that is the energy inversion. These two also leave the
  *  constant term of G alone, where the new ones map it to -A0^T.
  *
- *  One chain of a double tri-diagonal matrix under the energy inversion
- *  G(mu+w) -> -G(mu-w)^*.
+ *  One chain of a double tri-diagonal matrix under the energy inversion as it was defined
+ *  then, G(mu+w) -> -G(mu-w)^+, with ^+ the conjugate transpose.
  *
  *  The chain stands in the denominator of G = a0 + b0^* ( w - Gval - Gcon )^-1 b0^T, so
  *  its head has to follow, where the head of a chain of a natural impurity orbital matrix
@@ -1054,17 +1054,31 @@ static void TriDiagonalMatrixChainInvertEnergy(TriDiagonalMatrixType * const T, 
   for(uint32_t i=1;i<=T->N;i++) T->a[i] = 2 * Mu - T->a[i];
   return;
 }
-/*  The energy inversion,  G(mu+w) -> -G(mu-w)^*,  where ^* is the plain element by element
- *  conjugate. On the stored numbers it reads
+/*  The energy inversion. Throughout, ^* is the element by element complex conjugate, ^T the
+ *  transpose and ^+ the two combined. On the stored numbers the map reads
  *
  *      A0  -> -A0^T            the constant term, the value of G at infinity
  *      e_n -> 2 mu - e_n       the poles are reflected about mu
  *      w_n -> w_n^T            the residues
  *
  *  and in the continued fraction formats the same statement is A_i -> 2 mu - A_i^T for the
- *  blocks of a chain and B_i -> B_i^* for the blocks that couple them.
+ *  blocks of a chain and B_i -> B_i^* for the blocks that couple them. As a function of a
+ *  complex w that is
  *
- *  It is ^* and not ^+ that makes this the map one wants. A response function is
+ *      Ginv(mu + w) = -G(mu - w)^T
+ *
+ *  the transpose alone, and mu - w the plain reflection of the argument: nothing is
+ *  conjugated, neither the matrix nor w. Evaluated the way Quanty evaluates, at a real
+ *  frequency with +i Gamma added on both sides, the same statement reads
+ *
+ *      Ginv(mu + w, Gamma) = -[ G(mu - w, Gamma) ]^*
+ *
+ *  where the conjugate takes care of the sign of Gamma as well as of the matrix. That
+ *  second form is a corollary and not the definition: it needs w_n^* = w_n^T, which holds
+ *  because the residues are Hermitian. It is the form the test checks, since Quanty has no
+ *  negative Gamma to offer.
+ *
+ *  It is ^T and not ^+ that makes this the map one wants. A response function is
  *  G_ij(w) = <0| A_i ( w - H + E0 )^-1 A_j^+ |0>, so its residues are w_n = v v^+ with
  *  v_i = <0|A_i|n> and are Hermitian. The other side of the Lehmann sum, which is what
  *  reflecting the energy axis asks for, is <0| A_j^+ ... A_i |0>: the index order swaps

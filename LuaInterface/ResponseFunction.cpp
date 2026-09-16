@@ -867,10 +867,11 @@ static int LuaCalculateGfromG0andSigma(lua_State *L)
 
 
 
-/*  G(mu+w) -> -G(mu-w)^*, where ^* is the plain element by element conjugate. On the stored
- *  numbers that is A0 -> -A0^T for the constant term, e_n -> 2 mu - e_n for the poles and
- *  w_n -> w_n^T for the residues. Why it is ^* and not ^+, and why the whole of G and not
- *  only its pole part follows, stands in the header of ResponseFunctionInvertEnergy.
+/*  G(mu+w) -> -G(mu-w)^T, the transpose alone and mu - w the plain reflection of the
+ *  argument, nothing conjugated. On the stored numbers that is A0 -> -A0^T for the constant
+ *  term, e_n -> 2 mu - e_n for the poles and w_n -> w_n^T for the residues. Why it is ^T
+ *  and not ^+, and why the whole of G and not only its pole part follows, stands in the
+ *  header of ResponseFunctionInvertEnergy.
  */
 static int LuaResponseFunctionInvertEnergy(lua_State *L)
 {
