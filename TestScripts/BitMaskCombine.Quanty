@@ -1,0 +1,26 @@
+-- and, or and xor of two bitmasks
+BitMask = BitMaskAnd("11000011","10100101")
+if((BitMask=="10000001")~=true) then error("wrong BitMask returned by BitMaskAnd\n", 1) end
+BitMask = BitMaskOr("11000011","10100101")
+if((BitMask=="11100111")~=true) then error("wrong BitMask returned by BitMaskOr\n", 1) end
+BitMask = BitMaskXor("11000011","10100101")
+if((BitMask=="01100110")~=true) then error("wrong BitMask returned by BitMaskXor\n", 1) end
+
+-- characters that are not 0 or 1 are ignored, also if they differ between the two bitmasks
+BitMask = BitMaskAnd("  1100 0011  ","10100101")
+if((BitMask=="10000001")~=true) then error("wrong BitMask returned by BitMaskAnd\n", 1) end
+BitMask = BitMaskOr("1100 0011","1010,0101")
+if((BitMask=="11100111")~=true) then error("wrong BitMask returned by BitMaskOr\n", 1) end
+
+-- the empty bitmask
+BitMask = BitMaskAnd("","")
+if((BitMask=="")~=true) then error("wrong BitMask returned by BitMaskAnd\n", 1) end
+
+-- bitmasks of a different length should give an error
+if(pcall(BitMaskAnd,"110","1010")~=false) then error("BitMaskAnd did not error on bitmasks of different length\n", 1) end
+if(pcall(BitMaskOr,"1100","101")~=false) then error("BitMaskOr did not error on bitmasks of different length\n", 1) end
+if(pcall(BitMaskXor,"","1")~=false) then error("BitMaskXor did not error on bitmasks of different length\n", 1) end
+
+-- a wrong number of arguments should give an error
+if(pcall(BitMaskAnd,"110")~=false) then error("BitMaskAnd did not error on a single argument\n", 1) end
+if(pcall(BitMaskAnd,"110","110","110")~=false) then error("BitMaskAnd did not error on three arguments\n", 1) end
