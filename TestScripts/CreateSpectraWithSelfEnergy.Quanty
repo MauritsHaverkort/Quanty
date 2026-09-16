@@ -18,6 +18,8 @@ print("--------------------------------------------------------")
 print("-- CreateSpectra with a self energy                   --")
 print("--------------------------------------------------------")
 
+goto And
+
 Verbosity(0)
 
 threshold = 1e-9
@@ -351,6 +353,87 @@ if dSig > 0.25 * dNo then
         dSig .. " against " .. dNo .. " without it", 1)
 end
 
+collectgarbage()
+collectgarbage()
+collectgarbage()
+
+
+-- ---------------------------------------------------------------------------
+-- 7  Anderson impurity model
+-- ---------------------------------------------------------------------------
+::And::
+
+-- set A0 of Gval and Gcon to 0
+-- add ImpurityExtended to bitmask
+-- add IndexVal and IndexCon to Tail
+
+
+M0 = {{0,0},{0,0}}
+M1 = {{1,0},{0,1}}
+Dim=6
+Nv=2
+Nc=2
+a = {M0}
+b = {}
+for i=1,Dim do
+	a[i+1]=M0
+	b[i]=M1
+end
+G1 = ResponseFunction.New({a,b,mu=0,type="Tri", name="G1"})
+print(G1)
+
+Hloc1 = NewOperator(2,0,{{0,-0,1,-1,1}})
+print(Hloc1)
+
+
+G = ResponseFunction.ChangeType(G1,"Nat")
+
+print(G)
+
+O, BitMask, Tail = ResponseFunction.ToOperator(G,{{"Nv",Nv},{"Nc",Nc}})
+O.Chop()
+print(O)
+print(BitMask)
+print(Tail)
+
+Tail.IndexVal = {4,5}
+Tail.IndexCon = {6,7}
+
+Hloc1.NF = O.NF
+H = 0*Hloc1 + O
+
+StartRestrictions = {2*(Nv+Nc),0,{BitMask.BathVal,2*(Nv-1),2*(Nv-1)},{BitMask.BathExt,2,2},{BitMask.BathCon,0,0},{BitMask.Impurity,0,0}}
+
+print(StartRestrictions)
+
+psi = Eigensystem(H,StartRestrictions,1)
+print(psi)
+rho = DensityMatrix(psi)
+print(rho)
+
+OpCr={NewOperator(2*(Nv+Nc),0,{{ 0,1}}), NewOperator(2*(Nv+Nc),0,{{ 1,1}})}
+OpAn={NewOperator(2*(Nv+Nc),0,{{-0,1}}), NewOperator(2*(Nv+Nc),0,{{-1,1}})}
+
+Vval={}
+Vcon={}
+for i=1,2 do
+	Vval[i] = NewOperator(2*(Nv+Nc),0,{{-Tail.IndexVal[i], 1}})
+	Vcon[i] = NewOperator(2*(Nv+Nc),0,{{ Tail.IndexVal[i], 1}})
+end
+
+Sp0, Gp0 = CreateSpectra(H, OpCr, psi,{{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+Sm0, Gm0 = CreateSpectra(H, OpAn, psi,{{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+
+
+Sp, Gp = CreateSpectra(H, OpCr, psi, {{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+Sm, Gm = CreateSpectra(H, OpAn, psi, {{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+
+Gp.Chop()
+print(Gp)
+
+
+collectgarbage()
+collectgarbage()
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

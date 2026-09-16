@@ -179,6 +179,19 @@ uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double 
   return 0;
 }
 
+void BlockTriDiagonalMatrixSetA0to0(BlockTriDiagonalMatrixType * A)
+{
+  if(A->QComplex==0)
+  {
+    memset(A->aRe, 0, A->BlockSize*A->BlockSize*sizeof(double));
+  }
+  else
+  {
+    memset(A->a, 0, A->BlockSize*A->BlockSize*sizeof(Complex16));
+  }
+}
+
+
 
 uint32_t BlockTridiagonalMatrixChopReduceDimension(BlockTriDiagonalMatrixType *const A, double const Epsilon)
 {

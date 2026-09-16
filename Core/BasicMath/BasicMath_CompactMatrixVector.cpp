@@ -5854,7 +5854,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool p
         break;
       }
     }
-    if (printWarnings && numOfRowsInner[i] == 0) printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+    if (printWarnings && numOfRowsInner[i] == 0) VerbosityPrintf(0x10000,"\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
     numOfAllRows += numOfRowsInner[i];
   }
   for (int j = 0; j < numOfColsOuter; ++j)
@@ -5868,7 +5868,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool p
         break;
       }
     }
-    if (printWarnings && numOfColsInner[j] == 0) printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+    if (printWarnings && numOfColsInner[j] == 0) VerbosityPrintf(0x10000,"\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
     numOfAllCols += numOfColsInner[j];
   }
   for (int i = 0; i < numOfRowsOuter; ++i)
@@ -5955,7 +5955,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs, bool
         break;
       }
     }
-    if (printWarnings && numOfRowsInner[i] == 0) printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+    if (printWarnings && numOfRowsInner[i] == 0) VerbosityPrintf(0x10000,"\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
     numOfAllRows += numOfRowsInner[i];
   }
   for (int j = 0; j < numOfColsOuter; ++j)
@@ -5969,7 +5969,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs, bool
         break;
       }
     }
-    if (printWarnings && numOfColsInner[j] == 0) printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+    if (printWarnings && numOfColsInner[j] == 0) VerbosityPrintf(0x10000,"\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
     numOfAllCols += numOfColsInner[j];
   }
   for (int i = 0; i < numOfRowsOuter; ++i)

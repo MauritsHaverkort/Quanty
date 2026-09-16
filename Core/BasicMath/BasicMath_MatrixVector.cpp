@@ -1912,7 +1912,7 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs, bool printWarnings)
 			}
 		}
 		if (printWarnings && numOfRowsInner[i] == 0)
-			printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+      VerbosityPrintf(0x10000,"\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
 		numOfAllRows += numOfRowsInner[i];
 	}
 	for (int j = 0; j < numOfColsOuter; ++j)
@@ -1927,7 +1927,7 @@ MatrixType MatrixFlatten(vector<vector<MatrixType> > allMs, bool printWarnings)
 			}
 		}
 		if (printWarnings && numOfColsInner[j] == 0)
-			printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+      VerbosityPrintf(0x10000,"\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
 		numOfAllCols += numOfColsInner[j];
 	}
 	for (int i = 0; i < numOfRowsOuter; ++i)

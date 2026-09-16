@@ -1221,7 +1221,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
 {
   int i,j,k;
   uint32_t NF,NB=0;
-  uint32_t NCore, NImpurity, NBath, NBathVal, NBathCon, NBathExt;
+  uint32_t NCore, NImpurity, NBath, NBathVal, NBathCon, NBathExt, NImpurityExt;
   CompactMatrixType *T;
   char *Core,*Impurity,*ImpurityUp,*ImpurityDn,*Bath,*BathUp,*BathDn, *ImpurityExt, *ImpurityExtUp, *ImpurityExtDn;
   char *BathVal,*BathValUp,*BathValDn,*BathCon,*BathConDn,*BathConUp,*BathExt,*BathExtUp,*BathExtDn;
@@ -2190,10 +2190,12 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
             NBathExt=0;
             NBathVal=0;
             NBathCon=0;
+            NImpurityExt=0;
           }
           else
           {
             NImpurity = 2*((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NImpurityExt = 2*NImpurity;
             NBathExt  = NImpurity;
             if(Deflate==true)
             {
@@ -2236,19 +2238,19 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathVal    = (char*)malloc((NF+1)*sizeof(char));
           BathCon    = (char*)malloc((NF+1)*sizeof(char));
           BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExt= (char*)malloc((NF+1)*sizeof(char));
           ImpurityUp = (char*)malloc((NF+1)*sizeof(char));
           BathUp     = (char*)malloc((NF+1)*sizeof(char));
           BathValUp  = (char*)malloc((NF+1)*sizeof(char));
           BathConUp  = (char*)malloc((NF+1)*sizeof(char));
           BathExtUp  = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtUp = (char*)malloc((NF+1)*sizeof(char));
           ImpurityDn = (char*)malloc((NF+1)*sizeof(char));
           BathDn     = (char*)malloc((NF+1)*sizeof(char));
           BathValDn  = (char*)malloc((NF+1)*sizeof(char));
           BathConDn  = (char*)malloc((NF+1)*sizeof(char));
           BathExtDn  = (char*)malloc((NF+1)*sizeof(char));
-          ImpurityExt   = (char*)malloc((NF+1)*sizeof(char));
-          ImpurityExtUp   = (char*)malloc((NF+1)*sizeof(char));
-          ImpurityExtDn   = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExtDn = (char*)malloc((NF+1)*sizeof(char));
           for(k=0;k<NF;k++)
           {
             Core[k]       ='0';
@@ -2365,10 +2367,12 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
             NBathExt=0;
             NBathVal=0;
             NBathCon=0;
+            NImpurityExt=0;
           }
           else
           {
             NImpurity = ((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->BlockSize;
+            NImpurityExt=2*NImpurity;
             NBathExt  = NImpurity;
             if(Deflate==true)
             {
@@ -2411,6 +2415,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathVal    = (char*)malloc((NF+1)*sizeof(char));
           BathCon    = (char*)malloc((NF+1)*sizeof(char));
           BathExt    = (char*)malloc((NF+1)*sizeof(char));
+          ImpurityExt= (char*)malloc((NF+1)*sizeof(char));
           for(k=0;k<NF;k++)
           {
             Core[k]       ='0';
@@ -2419,6 +2424,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
             BathVal[k]    ='0';
             BathCon[k]    ='0';
             BathExt[k]    ='0';
+            ImpurityExt[k]='0';
           }
           Core[NF]       ='\0';
           Impurity[NF]   ='\0';
@@ -2426,6 +2432,7 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           BathVal[NF]    ='\0';
           BathCon[NF]    ='\0';
           BathExt[NF]    ='\0';
+          ImpurityExt[NF]='\0';
           for(k=0;k<NCore;k++)
           {
             Core[k]='1';
@@ -2433,11 +2440,13 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
           for(k=NCore;k<NCore+NImpurity;k++)
           {
             Impurity[k]='1';
+            ImpurityExt[k]='1';
           }
           for(k=NCore+NImpurity;k<NCore+NImpurity+NBathExt;k++)
           {
             BathExt[k]='1';
             Bath[k]='1';
+            ImpurityExt[k]='1';
           }
           for(k=NCore+NImpurity+NBathExt;k<NCore+NImpurity+NBathExt+NBathVal;k++)
           {
@@ -2480,6 +2489,11 @@ static int ResponseFunctionToLuaBitMask(lua_State *L, ResponsefunctionType *M, b
         lua_pushstring(L, BathExt);
         lua_setfield(L,-2,"BathExt");
         free(BathExt);
+        lua_pushinteger(L, NImpurityExt);
+        lua_setfield(L,-2,"NImpurityExt");
+        lua_pushstring(L, ImpurityExt);
+        lua_setfield(L,-2,"ImpurityExt");
+        free(ImpurityExt);
         lua_pushinteger(L, NF);
         lua_setfield(L,-2,"NF");
         lua_pushinteger(L, NB);
@@ -3440,6 +3454,11 @@ static int LuaResponseFunctionToOperator(lua_State * L)
       //    GconBath
       //    These contain the tails of the vanlence and conduction chain
       //
+      if((Options.Nv==0)||(Options.Nc==0))
+      {
+        //TODO: make error go out gracious without crashing
+        return luaL_error(L, "Error in ResponseFunction.ToOperator()\nFor Natural impurity orbital geometry the 1-st valence and conduction bath side are part of the impurity, setting Nv=0 or Nc=0 therefor is not an option\n");
+      }
       if(M->Block==true)
       {
         // copy and shorten M->data if Nv and Nc set
@@ -3489,7 +3508,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           if(MNc>Options.Nc) ((BADoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
         }
         // push Gv, and, Gc to stack
-        lua_createtable(L,0,2);
+        lua_createtable(L,0,4);
         // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
         if(Options.AddSpin==true)
         {
@@ -3507,12 +3526,35 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GvalBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              if(Options.Nv==1)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize)*(Options.Nv));
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3527,12 +3569,46 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GconBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==1)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                if(Min(Options.Nv,MNv)==1)
+                {
+                  for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                  {
+                    lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Options.Nc));
+                    lua_rawseti(L, -2, i+1);
+                  }
+                }
+                else
+                {
+                  for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                  {
+                    lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Max(1,Min(Options.Nv,MNv))-1+(Options.Nc)));
+                    lua_rawseti(L, -2, i+1);
+                  }
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3550,12 +3626,35 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GvalBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GvalBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              if(Options.Nv==1)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize)*(Options.Nv));
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3570,12 +3669,46 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GconBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GconBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==1)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                if(Min(Options.Nv,MNv)==1)
+                {
+                  for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                  {
+                    lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Options.Nc));
+                    lua_rawseti(L, -2, i+1);
+                  }
+                }
+                else
+                {
+                  for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                  {
+                    lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Max(1,Min(Options.Nv,MNv))-1+(Options.Nc)));
+                    lua_rawseti(L, -2, i+1);
+                  }
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3596,12 +3729,35 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTail(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GvalBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              if(Options.Nv==1)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize)*(Options.Nv));
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3616,13 +3772,46 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTail(&(((BlockNaturalImpurityOrbitalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GconBath->data));
               lua_settable(L, -3);
-              
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==1)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                if(Min(Options.Nv,MNv)==1)
+                {
+                  for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                  {
+                    lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Options.Nc));
+                    lua_rawseti(L, -2, i+1);
+                  }
+                }
+                else
+                {
+                  for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                  {
+                    lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Max(1,Min(Options.Nv,MNv))-1+(Options.Nc)));
+                    lua_rawseti(L, -2, i+1);
+                  }
+                }
+              }
+              lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3640,12 +3829,28 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
               TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GvalBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              ((TriDiagonalMatrixType*)(GvalBath->data))->a[0]=0;
               lua_settable(L, -3);
-            }
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,1,0);
+              if(Options.Nv==1)
+              {
+                lua_pushnumber(L, 0);
+                lua_rawseti(L, -2, 1);
+              }
+              else
+              {
+                lua_pushnumber(L, (Options.Nv));
+                lua_rawseti(L, -2, 1);
+              }
+              lua_settable(L, -3);            }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3660,12 +3865,36 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
               TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GconBath->data), ((BADoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              ((TriDiagonalMatrixType*)(GconBath->data))->a[0]=0;
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,1,0);
+              if(Options.Nc==1)
+              {
+                lua_pushnumber(L, 1);
+                lua_rawseti(L, -2, 1);
+              }
+              else
+              {
+                if(Min(Options.Nv,MNv)==1)
+                {
+                  lua_pushnumber(L, Options.Nc);
+                }
+                else
+                {
+                  lua_pushnumber(L, Max(1,Min(Options.Nv,MNv))-1+(Options.Nc));
+                }
+                lua_rawseti(L, -2, 1);
+              }
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3732,7 +3961,7 @@ static int LuaResponseFunctionToOperator(lua_State * L)
           if(MNc>Options.Nc) ((DoubleTriDiagonalMatrixType*)M->data)->con.N=MNc;
         }
         // push Gv, and, Gc to stack
-        lua_createtable(L,0,2);
+        lua_createtable(L,0,4);
         // nested if then else statements to select cases for AddSpin, Block and Nv,Nc set
         if(Options.AddSpin==true)
         {
@@ -3750,12 +3979,24 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GvalBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+              {
+                lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize)*(Options.Nv));
+                lua_rawseti(L, -2, i+1);
+              }
               lua_settable(L, -3);
             }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3770,12 +4011,35 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTailAndAddSpin(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GconBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==0)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Min(MNv,Options.Nv)+Options.Nc));
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3793,12 +4057,24 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GvalBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GvalBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+              {
+                lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize)*(Options.Nv));
+                lua_rawseti(L, -2, i+1);
+              }
               lua_settable(L, -3);
             }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3813,12 +4089,35 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               TriDiagonalMatrixPartAddSpin((BlockTriDiagonalMatrixType*)(GconBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GconBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==0)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Min(MNv,Options.Nv)+Options.Nc));
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3839,12 +4138,24 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTail(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->val), (BlockTriDiagonalMatrixType*)(GvalBath->data), MNv-Options.Nv);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GvalBath->data));
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize);i++)
+              {
+                lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize)*(Options.Nv));
+                lua_rawseti(L, -2, i+1);
+              }
               lua_settable(L, -3);
             }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3859,13 +4170,35 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(BlockTriDiagonalMatrixType));
               BlockTriDiagonalMatrixGetTail(&(((BlockDoubleTriDiagonalMatrixType*)(M->data))->con), (BlockTriDiagonalMatrixType*)(GconBath->data), MNc-Options.Nc);
+              BlockTriDiagonalMatrixSetA0to0((BlockTriDiagonalMatrixType*)(GconBath->data));
               lua_settable(L, -3);
-              
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==0)
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i);
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              else
+              {
+                for(int i=0;i<(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize);i++)
+                {
+                  lua_pushnumber(L, i+(((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize)*(Min(MNv,Options.Nv)+Options.Nc));
+                  lua_rawseti(L, -2, i+1);
+                }
+              }
+              lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
@@ -3883,12 +4216,20 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GvalBath->SuggestedGrid=NULL;
               GvalBath->data = malloc(sizeof(TriDiagonalMatrixType));
               TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GvalBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->val, Options.Nv+1, MNv);
+              ((TriDiagonalMatrixType*)(GvalBath->data))->a[0]=0;
               lua_settable(L, -3);
-            }
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GvalBath->data))->BlockSize,0);
+              lua_pushnumber(L, Options.Nv);
+              lua_rawseti(L, -2, 1);
+              lua_settable(L, -3);            }
             else // push nil for G valence Bath
             {
               lua_pushstring(L, "GvalBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GvalBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
             if(MNc>Options.Nc)
@@ -3903,12 +4244,28 @@ static int LuaResponseFunctionToOperator(lua_State * L)
               GconBath->SuggestedGrid=NULL;
               GconBath->data = malloc(sizeof(TriDiagonalMatrixType));
               TriDiagonalMatrixPart((TriDiagonalMatrixType*)(GconBath->data), ((DoubleTriDiagonalMatrixType*)(M->data))->con, Options.Nc+1, MNc);
+              ((TriDiagonalMatrixType*)(GconBath->data))->a[0]=0;
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,((BlockTriDiagonalMatrixType*)(GconBath->data))->BlockSize,0);
+              if(Options.Nc==0)
+              {
+                lua_pushnumber(L, Options.Nc);
+              }
+              else
+              {
+                lua_pushnumber(L, Min(Options.Nv,MNv)+Options.Nc);
+              }
+              lua_rawseti(L, -2, 1);
               lua_settable(L, -3);
             }
             else // push nil for G conduction Bath
             {
               lua_pushstring(L, "GconBath");
               lua_pushnil(L);
+              lua_settable(L, -3);
+              lua_pushstring(L, "GconBathIndex");
+              lua_createtable(L,0,0);
               lua_settable(L, -3);
             }
           }
