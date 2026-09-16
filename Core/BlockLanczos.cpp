@@ -629,7 +629,7 @@ uint32_t BlockWaveFunctionOrthonormalizeSameBasis(WaveFunctionType *const v, uin
 
 
 
-uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -648,7 +648,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -781,7 +781,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -871,7 +871,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRC(const OperatorType H, WaveFuncti
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -890,7 +890,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1023,7 +1023,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1113,7 +1113,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMC(const OperatorType H, WaveFuncti
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -1132,7 +1132,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1265,7 +1265,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1355,7 +1355,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCC(const OperatorType H, WaveFuncti
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -1374,7 +1374,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1507,7 +1507,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1599,7 +1599,7 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedRR(const OperatorType H, WaveFuncti
 }
 
 
-uint32_t LanczosBlockTriDiagonalizeRestrictedMR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestrictedMR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   // make psi complex, call MC
   uint32_t i;
@@ -1618,9 +1618,9 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedMR(const OperatorType H, WaveFuncti
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeRestrictedMC(H,psi,Restrictions,epsilon,M,Gamma);
+  return LanczosBlockTriDiagonalizeRestrictedMC(H,psi,Restrictions,epsilon,SingularValue,M,Gamma);
 }
-uint32_t LanczosBlockTriDiagonalizeRestrictedCR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestrictedCR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   // make psi complex, and call CC
   uint32_t i;
@@ -1639,12 +1639,12 @@ uint32_t LanczosBlockTriDiagonalizeRestrictedCR(const OperatorType H, WaveFuncti
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeRestrictedCC(H,psi,Restrictions,epsilon,M,Gamma);
+  return LanczosBlockTriDiagonalizeRestrictedCC(H,psi,Restrictions,epsilon,SingularValue,M,Gamma);
 }
 
 
 
-uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -1663,7 +1663,7 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -1796,7 +1796,7 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -1886,7 +1886,7 @@ uint32_t LanczosBlockTriDiagonalizeRC(const OperatorType H, WaveFunctionType * c
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -1905,7 +1905,7 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2038,7 +2038,7 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2128,7 +2128,7 @@ uint32_t LanczosBlockTriDiagonalizeMC(const OperatorType H, WaveFunctionType * c
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -2147,7 +2147,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
-  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2280,7 +2280,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2370,7 +2370,7 @@ uint32_t LanczosBlockTriDiagonalizeCC(const OperatorType H, WaveFunctionType * c
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -2389,7 +2389,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   Mab.Ni=M->BlockSize;
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
-  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalizeSameBasis(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   NSingular=M->BlockSize-Npsi;
   if(NSingular!=0)
   {
@@ -2524,7 +2524,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2614,7 +2614,7 @@ uint32_t LanczosBlockTriDiagonalizeRR(const OperatorType H, WaveFunctionType * c
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   // make psi complex, call MC
   uint32_t i;
@@ -2633,9 +2633,9 @@ uint32_t LanczosBlockTriDiagonalizeMR(const OperatorType H, WaveFunctionType * c
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeMC(H,psi,epsilon,M,Gamma);
+  return LanczosBlockTriDiagonalizeMC(H,psi,epsilon,SingularValue,M,Gamma);
 }
-uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   // make psi complex, and call CC
   uint32_t i;
@@ -2654,12 +2654,12 @@ uint32_t LanczosBlockTriDiagonalizeCR(const OperatorType H, WaveFunctionType * c
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeCC(H,psi,epsilon,M,Gamma);
+  return LanczosBlockTriDiagonalizeCC(H,psi,epsilon,SingularValue,M,Gamma);
 }
 
 
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -2679,7 +2679,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -2829,7 +2829,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -2896,7 +2896,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRC(const OperatorType H, Wave
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -2916,7 +2916,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3066,7 +3066,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3133,7 +3133,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMC(const OperatorType H, Wave
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -3153,7 +3153,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3303,7 +3303,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3370,7 +3370,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCC(const OperatorType H, Wave
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -3389,7 +3389,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3537,7 +3537,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3603,7 +3603,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedRR(const OperatorType H, Wave
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, call MC
   uint32_t i;
@@ -3622,9 +3622,9 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedMR(const OperatorType H, Wave
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeKrylovRestrictedMC(H,psi,Restrictions,epsilon,M,psiBasis,BlockSize);
+  return LanczosBlockTriDiagonalizeKrylovRestrictedMC(H,psi,Restrictions,epsilon,SingularValue,M,psiBasis,BlockSize);
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCR(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, and call CC
   uint32_t i;
@@ -3643,10 +3643,10 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestrictedCR(const OperatorType H, Wave
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeKrylovRestrictedCC(H,psi,Restrictions,epsilon,M,psiBasis,BlockSize);
+  return LanczosBlockTriDiagonalizeKrylovRestrictedCC(H,psi,Restrictions,epsilon,SingularValue,M,psiBasis,BlockSize);
 }
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -3666,7 +3666,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -3815,7 +3815,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -3882,7 +3882,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -3902,7 +3902,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -4052,7 +4052,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -4119,7 +4119,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -4139,7 +4139,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=1;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  ComplexWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -4289,7 +4289,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      ComplexWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -4356,7 +4356,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCC(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,j,k,vi,vip,vim;
   CompactMatrixType Mab;
@@ -4375,7 +4375,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   Mab.Nj=M->BlockSize;
   Mab.QComplex=0;
   v[1] = (WaveFunctionType*)malloc(Npsi*sizeof(WaveFunctionType));
-  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, epsilon, true); // v[1] = orthonormal[v0]
+  RealWaveFunctionListSVDOrthogonalize(v[0], v[1], &Npsi, SingularValue, true); // v[1] = orthonormal[v0]
   BlockSize[0]=Npsi;
   psiBasis[0]=v[1];
   if(BlockSize[0]==0)
@@ -4523,7 +4523,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
       }
       // Lowdin orthonormalize v[vip] into v[3], free v[vip] and set v[vip] equal to v[3]
       NSingular=Npsi;
-      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, epsilon, true);
+      RealWaveFunctionListSVDOrthogonalizeSameBasis(v[vip], v[3], &Npsi, SingularValue, true);
       NSingular-=Npsi;
       if(NSingular!=0)
       {
@@ -4589,7 +4589,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRR(const OperatorType H, WaveFunctionTy
   free(v[3]);
   return 0;
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, call MC
   uint32_t i;
@@ -4608,9 +4608,9 @@ uint32_t LanczosBlockTriDiagonalizeKrylovMR(const OperatorType H, WaveFunctionTy
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeKrylovMC(H,psi,epsilon,M,psiBasis,BlockSize);
+  return LanczosBlockTriDiagonalizeKrylovMC(H,psi,epsilon,SingularValue,M,psiBasis,BlockSize);
 }
-uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   // make psi complex, and call CC
   uint32_t i;
@@ -4629,11 +4629,11 @@ uint32_t LanczosBlockTriDiagonalizeKrylovCR(const OperatorType H, WaveFunctionTy
       return 1;
     }
   }
-  return LanczosBlockTriDiagonalizeKrylovCC(H,psi,epsilon,M,psiBasis,BlockSize);
+  return LanczosBlockTriDiagonalizeKrylovCC(H,psi,epsilon,SingularValue,M,psiBasis,BlockSize);
 }
 
 
-uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalizeRestricted\n");
@@ -4662,35 +4662,35 @@ uint32_t LanczosBlockTriDiagonalizeRestricted(const OperatorType H, WaveFunction
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeRestrictedRC(H, psi, Restrictions, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRestrictedRC(H, psi, Restrictions, epsilon, SingularValue, M, Gamma);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeRestrictedCC(H, psi, Restrictions, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRestrictedCC(H, psi, Restrictions, epsilon, SingularValue, M, Gamma);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeRestrictedMC(H, psi, Restrictions, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRestrictedMC(H, psi, Restrictions, epsilon, SingularValue, M, Gamma);
     }
   }
   else
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeRestrictedRR(H, psi, Restrictions, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRestrictedRR(H, psi, Restrictions, epsilon, SingularValue, M, Gamma);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeRestrictedCR(H, psi, Restrictions, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRestrictedCR(H, psi, Restrictions, epsilon, SingularValue, M, Gamma);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeRestrictedMR(H, psi, Restrictions, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRestrictedMR(H, psi, Restrictions, epsilon, SingularValue, M, Gamma);
     }
   }
 }
 
-uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, const double Gamma)
+uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, const double Gamma)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize\n");
@@ -4698,7 +4698,7 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
   if(H.Res.N!=0)
   {
     BlockWaveFunctionRestrict(psi, M->BlockSize, H.Res);
-    return LanczosBlockTriDiagonalizeRestricted(H, psi, H.Res, epsilon, M, Gamma);
+    return LanczosBlockTriDiagonalizeRestricted(H, psi, H.Res, epsilon, SingularValue, M, Gamma);
   }
   // all psi complex ?
   for(i=0;i<M->BlockSize;i++)
@@ -4725,35 +4725,35 @@ uint32_t LanczosBlockTriDiagonalize(const OperatorType H, WaveFunctionType * con
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeRC(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRC(H, psi, epsilon, SingularValue, M, Gamma);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeCC(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeCC(H, psi, epsilon, SingularValue, M, Gamma);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeMC(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeMC(H, psi, epsilon, SingularValue, M, Gamma);
     }
   }
   else
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeRR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeRR(H, psi, epsilon, SingularValue, M, Gamma);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeCR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeCR(H, psi, epsilon, SingularValue, M, Gamma);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeMR(H, psi, epsilon, M, Gamma);
+      return LanczosBlockTriDiagonalizeMR(H, psi, epsilon, SingularValue, M, Gamma);
     }
   }
 }
 
-uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize Krylov Restricted \n");
@@ -4782,30 +4782,30 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFu
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeKrylovRestrictedRC(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRestrictedRC(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeKrylovRestrictedCC(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRestrictedCC(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeKrylovRestrictedMC(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRestrictedMC(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
   }
   else
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeKrylovRestrictedRR(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRestrictedRR(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeKrylovRestrictedCR(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRestrictedCR(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeKrylovRestrictedMR(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRestrictedMR(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
   }
 }
@@ -4814,7 +4814,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylovRestricted(const OperatorType H, WaveFu
  *  The number of functions to allocate is M->BlockSize-Nsingular[i] = BlockSize[i]
  *  The wave functions psi are freed (or used in psiBasis) on succesfull exit
  */
-uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
+uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType * const psi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize)
 {
   uint32_t i,psiComplex=0;
   VerbosityPrintf(0x0001,"Start of LanczosBlockTriDiagonalize Krylov\n");
@@ -4822,7 +4822,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
   if(H.Res.N!=0)
   {
     BlockWaveFunctionRestrict(psi, M->BlockSize, H.Res);
-    return LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, H.Res, epsilon, M, psiBasis, BlockSize);
+    return LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, H.Res, epsilon, SingularValue, M, psiBasis, BlockSize);
   }
   // all psi complex ?
   for(i=0;i<M->BlockSize;i++)
@@ -4849,30 +4849,30 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeKrylovRC(H, psi, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRC(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeKrylovCC(H, psi, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovCC(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeKrylovMC(H, psi, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovMC(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
   }
   else
   {
     if (H.QComplex == 0)
     {
-      return LanczosBlockTriDiagonalizeKrylovRR(H, psi, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovRR(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else if (H.QComplex == 1)
     {
-      return LanczosBlockTriDiagonalizeKrylovCR(H, psi, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovCR(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
     else
     {
-      return LanczosBlockTriDiagonalizeKrylovMR(H, psi, epsilon, M, psiBasis, BlockSize);
+      return LanczosBlockTriDiagonalizeKrylovMR(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize);
     }
   }
 }
@@ -4892,7 +4892,7 @@ uint32_t LanczosBlockTriDiagonalizeKrylov(const OperatorType H, WaveFunctionType
  *   The Basis is stored in psiBasis[i][j] with i the Block number going from 0 to M->N-1 and j the element in the Block going from 0 to BlockSize[i]
  *   The vectors of wave-functions are alligned such that one can address all ellements as psiBasis[0][k] with k from 0 to NpsiBasis-1
  */
-uint32_t LanczosBlockTriDiagonalizeDysonHABandHBRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, OperatorType const *V, OperatorType const *HBplus, uint32_t const NV, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize, CompactMatrixType * const MDense, CompactMatrixType ** HAB, CompactMatrixType * HB)
+uint32_t LanczosBlockTriDiagonalizeDysonHABandHBRestricted(const OperatorType H, WaveFunctionType * const psi, DeterminantRestrictionType Restrictions, double epsilon, double SingularValue, OperatorType const *V, OperatorType const *HBplus, uint32_t const NV, BlockTriDiagonalMatrixType * const M, WaveFunctionType ** psiBasis, uint32_t *BlockSize, CompactMatrixType * const MDense, CompactMatrixType ** HAB, CompactMatrixType * HB)
 {
   uint32_t i,j,k,NpsiBasis;
   MatrixType Stemp, Htemp, HtempEigenFun, StempRoot, VMat;
@@ -4900,7 +4900,7 @@ uint32_t LanczosBlockTriDiagonalizeDysonHABandHBRestricted(const OperatorType H,
   // Block-Tridiagonalize H starting from psi[l] creating M->N Blocks of size M->BlockSize
   if(Restrictions.N==0)
   {
-    if(LanczosBlockTriDiagonalizeKrylov(H, psi, epsilon, M, psiBasis, BlockSize))
+    if(LanczosBlockTriDiagonalizeKrylov(H, psi, epsilon, SingularValue, M, psiBasis, BlockSize))
     {
       printf("LanczosBlockTriDiagonalizeKrylov failed in LanczosBlockTriDiagonalizeDysonHABandHBRestricted");
       return 1;
@@ -4908,7 +4908,7 @@ uint32_t LanczosBlockTriDiagonalizeDysonHABandHBRestricted(const OperatorType H,
   }
   else
   {
-    if(LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, Restrictions, epsilon, M, psiBasis, BlockSize))
+    if(LanczosBlockTriDiagonalizeKrylovRestricted(H, psi, Restrictions, epsilon, SingularValue, M, psiBasis, BlockSize))
     {
       printf("LanczosBlockTriDiagonalizeKrylovRestricted failed in LanczosBlockTriDiagonalizeDysonHABandHBRestricted");
       return 1;

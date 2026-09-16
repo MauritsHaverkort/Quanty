@@ -902,8 +902,15 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
   return 0;
 }
 
-/*  One chain of a double tri-diagonal matrix under the energy inversion
- *  G(mu+w) -> -G(mu-w)^*.
+/*  Superseded by TriDiagonalMatrixChainInvertEnergy and by
+ *  BlockTriDiagonalMatrixChainInvertEnergy, which do the same and transpose as they go:
+ *  A_i -> 2 mu - A_i^T rather than 2 mu - A_i, and B_i -> B_i^*. For a single valued chain
+ *  and for a real symmetric one the two agree; for a complex matrix valued one they do not,
+ *  and it is the transposing pair that is the energy inversion. These two also leave the
+ *  constant term of G alone, where the new ones map it to -A0^T.
+ *
+ *  One chain of a double tri-diagonal matrix under the energy inversion as it was defined
+ *  then, G(mu+w) -> -G(mu-w)^+, with ^+ the conjugate transpose.
  *
  *  The chain stands in the denominator of G = a0 + b0^* ( w - Gval - Gcon )^-1 b0^T, so
  *  its head has to follow, where the head of a chain of a natural impurity orbital matrix
@@ -916,7 +923,7 @@ int CalculateSelfenergy(ResponsefunctionType  * const G0, ResponsefunctionType  
  *  them is a similarity transformation with diag(1,-1,1,-1,...) which leaves the head
  *  element of the resolvent, and with it G, alone.
  */
-static void DoubleTriDiagonalMatrixChainInvertEnergy(TriDiagonalMatrixType * const T, double const Mu)
+static void DoubleTriDiagonalMatrixChainInvertEnergyOld(TriDiagonalMatrixType * const T, double const Mu)
 {
   T->a[0] = Mu - T->a[0];
   for(int i=1;i<=T->N;i++)
@@ -925,7 +932,7 @@ static void DoubleTriDiagonalMatrixChainInvertEnergy(TriDiagonalMatrixType * con
   }
   return;
 }
-static void BlockDoubleTriDiagonalMatrixChainInvertEnergy(BlockTriDiagonalMatrixType * const T, double const Mu)
+static void BlockDoubleTriDiagonalMatrixChainInvertEnergyOld(BlockTriDiagonalMatrixType * const T, double const Mu)
 {
   if(T->QComplex==true)
   {
@@ -966,186 +973,227 @@ static void BlockDoubleTriDiagonalMatrixChainInvertEnergy(BlockTriDiagonalMatrix
   }
   return;
 }
-/*  G(mu+w) -> -G(mu-w)^*, applied to the pole part of G only: with G = A0 + P(w), where
- *  A0 is the constant term and P vanishes at infinity, the result is A0 - P(2 mu - w)^+.
- *  The constant stays where it is, so the line above holds as it stands for A0 = 0.
+/*  One square block of a chain, seen as a CompactMatrixType so that the matrix routines can
+ *  be used on it. V points into the flat array of blocks and has to be taken from aRe or
+ *  from a according to QComplex, which is the callers job: the two are a union and index
+ *  with a different stride.
+ */
+/*  A -> Shift 1 - A^T, the energy inversion of one block. The shift sits on the diagonal,
+ *  so it does not matter that it is added after the transpose, and NShift is the number of
+ *  rows that carry it: a block that was deflated keeps its storage but only part of it is
+ *  in use. With NShift = 0 this is A -> -A^T, which is what the constant term of a response
+ *  function follows.
+ */
+static void CompactMatrixInvertEnergy(CompactMatrixType * const M, uint32_t const NShift, double const Shift)
+{
+  CompactMatrixTranspose(M);
+  if(M->QComplex!=0)
+  {
+    for(uint32_t k=0;k<M->Ni*M->Nj;k++)
+    {
+      M->V[k].Re *= -1;
+      M->V[k].Im *= -1;
+    }
+    for(uint32_t k=0;k<NShift;k++) M->V[k*(1+M->Nj)].Re += Shift;
+  }
+  else
+  {
+    for(uint32_t k=0;k<M->Ni*M->Nj;k++) M->VRe[k] *= -1;
+    for(uint32_t k=0;k<NShift;k++) M->VRe[k*(1+M->Nj)] += Shift;
+  }
+  return;
+}
+/*  One chain of blocks:  a[i] -> 2 mu 1 - a[i]^T  and  b[i] -> b[i]^*.
+ *
+ *  a[0] is not part of the chain and what it is depends on the format, so the caller says
+ *  what happens to it. For a tri-diagonal and an Anderson response function it is the
+ *  constant term A0 and maps to -A0^T, which is ReflectHead with HeadShift = 0. The two
+ *  chains of a double tri-diagonal one hold half of the onsite energy of the observed block
+ *  each, so each half maps to mu - a[0] and HeadShift is mu. The two head sites of a
+ *  natural impurity orbital matrix are not reflected at all and only follow the transpose.
+ *
+ *  M is a view on one block of the chain, which is stored in a flat array of them and not
+ *  as a CompactMatrixType. The blocks are square, so CompactMatrixTranspose swaps in place
+ *  and does not reallocate; it would free the pointer of a rectangular one, and that
+ *  pointer stands in the middle of the array of the chain.
+ */
+static void BlockTriDiagonalMatrixChainInvertEnergy(BlockTriDiagonalMatrixType * const T, double const Mu, bool const ReflectHead, double const HeadShift)
+{
+  CompactMatrixType M;
+  uint32_t const Bs2 = Sqr(T->BlockSize);
+  M.Ni       = T->BlockSize;
+  M.Nj       = T->BlockSize;
+  M.QComplex = T->QComplex;
+  for(uint32_t i=0;i<=T->N;i++)
+  {
+    if(T->QComplex!=0) M.V   = &(T->a[i*Bs2]);
+    else               M.VRe = &(T->aRe[i*Bs2]);
+    if(i==0)
+    {
+      if(ReflectHead==true) CompactMatrixInvertEnergy(&M, T->BlockSizeList[0], HeadShift);
+      else                  CompactMatrixTranspose(&M);
+    }
+    else
+    {
+      CompactMatrixInvertEnergy(&M, T->BlockSizeList[i], 2*Mu);
+    }
+  }
+  for(uint32_t i=0;i<T->N;i++)
+  {
+    if(T->QComplex!=0) M.V   = &(T->b[i*Bs2]);
+    else               M.VRe = &(T->bRe[i*Bs2]);
+    CompactMatrixConjugate(&M);
+  }
+  return;
+}
+/*  the same for a single valued chain, where the transpose is nothing and only a[0], the
+ *  constant term, has changed compared to what this used to do */
+static void TriDiagonalMatrixChainInvertEnergy(TriDiagonalMatrixType * const T, double const Mu, bool const ReflectHead, double const HeadShift)
+{
+  if(ReflectHead==true) T->a[0] = HeadShift - T->a[0];
+  for(uint32_t i=1;i<=T->N;i++) T->a[i] = 2 * Mu - T->a[i];
+  return;
+}
+/*  The energy inversion. Throughout, ^* is the element by element complex conjugate, ^T the
+ *  transpose and ^+ the two combined. On the stored numbers the map reads
+ *
+ *      A0  -> -A0^T            the constant term, the value of G at infinity
+ *      e_n -> 2 mu - e_n       the poles are reflected about mu
+ *      w_n -> w_n^T            the residues
+ *
+ *  and in the continued fraction formats the same statement is A_i -> 2 mu - A_i^T for the
+ *  blocks of a chain and B_i -> B_i^* for the blocks that couple them. As a function of a
+ *  complex w that is
+ *
+ *      Ginv(mu + w) = -G(mu - w)^T
+ *
+ *  the transpose alone, and mu - w the plain reflection of the argument: nothing is
+ *  conjugated, neither the matrix nor w. Evaluated the way Quanty evaluates, at a real
+ *  frequency with +i Gamma added on both sides, the same statement reads
+ *
+ *      Ginv(mu + w, Gamma) = -[ G(mu - w, Gamma) ]^*
+ *
+ *  where the conjugate takes care of the sign of Gamma as well as of the matrix. That
+ *  second form is a corollary and not the definition: it needs w_n^* = w_n^T, which holds
+ *  because the residues are Hermitian. It is the form the test checks, since Quanty has no
+ *  negative Gamma to offer.
+ *
+ *  It is ^T and not ^+ that makes this the map one wants. A response function is
+ *  G_ij(w) = <0| A_i ( w - H + E0 )^-1 A_j^+ |0>, so its residues are w_n = v v^+ with
+ *  v_i = <0|A_i|n> and are Hermitian. The other side of the Lehmann sum, which is what
+ *  reflecting the energy axis asks for, is <0| A_j^+ ... A_i |0>: the index order swaps
+ *  together with the reflection, w_n -> w_n^T. Written with ^+ the map would leave the
+ *  Hermitian residues alone and give something that is not the response function of
+ *  anything unless G is symmetric -- invisible for every real G and silently wrong for a
+ *  complex one.
+ *
+ *  A0 follows the same rule rather than staying where it is, so the line above holds as it
+ *  stands and not only for A0 = 0. G and a self energy without its Hartree part both have
+ *  A0 = 0 and do not notice. Applying the map twice is still the identity: -(-A0^T)^T = A0.
+ *
+ *  The transpose is folded into the loops so that each of the five formats is touched once.
  */
 int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout)
 {
   ResponsefunctionCopy(Gin,Gout);
-  
-  int i;
-  double TwoMu;
+
+  double Mu;
   if(Gout->Block==true)
   {
     switch (Gout->type|32)
     {
       case 'a':
       {
-        TwoMu = 2 * ((BlockAndersonMatrixType*)(Gout->data))->mu;
-        if((((BlockAndersonMatrixType*)(Gout->data))->QComplex)==0)
+        BlockAndersonMatrixType *A = (BlockAndersonMatrixType*)(Gout->data);
+        CompactMatrixType M;
+        uint32_t const Bs2 = Sqr(A->BlockSize);
+        Mu = A->mu;
+        M.Ni       = A->BlockSize;
+        M.Nj       = A->BlockSize;
+        M.QComplex = A->QComplex;
+        /*  a[0] is the constant term and maps to -A0^T, a[1] and up are the poles */
+        for(uint32_t i=0;i<=A->N;i++)
         {
-          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockAndersonMatrixType*)(Gout->data))->aRe[i])*=-1;
-          }
-          for(int i=0;i<( ((BlockAndersonMatrixType*)(Gout->data))->N);i++)
-          {
-            for(int j=0;j<( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize);j++)
-            {
-              (((BlockAndersonMatrixType*)(Gout->data))->aRe[Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockAndersonMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
-            }
-          }
+          if(A->QComplex!=0) M.V   = &(A->a[i*Bs2]);
+          else               M.VRe = &(A->aRe[i*Bs2]);
+          if(i==0) CompactMatrixInvertEnergy(&M, 0,             0.0);
+          else     CompactMatrixInvertEnergy(&M, A->BlockSize, 2*Mu);
         }
-        else
+        for(uint32_t i=0;i<A->N;i++)
         {
-          for(int i = Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockAndersonMatrixType*)(Gout->data))->N) * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockAndersonMatrixType*)(Gout->data))->a[i].Re)*=-1;
-            (((BlockAndersonMatrixType*)(Gout->data))->a[i].Im)*=-1;
-          }
-          for(int i=0;i<( ((BlockAndersonMatrixType*)(Gout->data))->N);i++)
-          {
-            for(int j=0;j<( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize);j++)
-            {
-              (((BlockAndersonMatrixType*)(Gout->data))->a[Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockAndersonMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockAndersonMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
-            }
-          }
+          if(A->QComplex!=0) M.V   = &(A->b[i*Bs2]);
+          else               M.VRe = &(A->bRe[i*Bs2]);
+          CompactMatrixConjugate(&M);
         }
       }
       break;
       case 'l':
       {
-        TwoMu = 2 * ((BlockListOfPoles*)(Gout->data))->mu;
-        //   a_i can be found at position (i-1)*(1+BlockSize*BlockSize)
-        if((((BlockListOfPoles*)(Gout->data))->QComplex)==0)
+        BlockListOfPoles *L = (BlockListOfPoles*)(Gout->data);
+        uint32_t const Bs2 = Sqr(L->BlockSize);
+        CompactMatrixType M;
+        Mu = L->mu;
+        M.Ni       = L->BlockSize;
+        M.Nj       = L->BlockSize;
+        M.QComplex = L->QComplex;
+        M.V        = L->a0;
+        CompactMatrixInvertEnergy(&M, 0, 0.0);
+        /*  pole i stands at (1+BlockSize*BlockSize)*i, its residue follows it */
+        for(uint32_t i=0;i<L->N;i++)
         {
-          for(int i = 0; i < ( ((BlockListOfPoles*)(Gout->data))->N) * (1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )) ; i+=(1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )))
+          if(L->QComplex!=0)
           {
-            (((BlockListOfPoles*)(Gout->data))->VRe[i])*=-1;
-            (((BlockListOfPoles*)(Gout->data))->VRe[i])+=TwoMu;
+            L->V[i*(1+Bs2)].Re  = 2*Mu - L->V[i*(1+Bs2)].Re;
+            L->V[i*(1+Bs2)].Im *= -1;
+            M.V = &(L->V[i*(1+Bs2)+1]);
           }
-        }
-        else
-        {
-          for(int i = 0; i < ( ((BlockListOfPoles*)(Gout->data))->N) * (1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )) ; i+=(1+Sqr( ((BlockListOfPoles*)(Gout->data))->BlockSize  )))
+          else
           {
-            (((BlockListOfPoles*)(Gout->data))->V[i].Re)*=-1;
-            (((BlockListOfPoles*)(Gout->data))->V[i].Im)*=-1;
-            (((BlockListOfPoles*)(Gout->data))->V[i].Re)+=TwoMu;
+            L->VRe[i*(1+Bs2)] = 2*Mu - L->VRe[i*(1+Bs2)];
+            M.VRe = &(L->VRe[i*(1+Bs2)+1]);
           }
+          CompactMatrixTranspose(&M);
         }
       }
       break;
       case 't':
       {
-        TwoMu = 2 * ((BlockTriDiagonalMatrixType*)(Gout->data))->mu;
-        if((((BlockTriDiagonalMatrixType*)(Gout->data))->QComplex)==0)
-        {
-          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[i])*=-1;
-          }
-          for(int i=0;i<( ((BlockTriDiagonalMatrixType*)(Gout->data))->N);i++)
-          {
-            for(int j=0;j<( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSizeList[i]);j++)
-            {
-              (((BlockTriDiagonalMatrixType*)(Gout->data))->aRe[Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
-            }
-          }
-        }
-        else
-        {
-          for(int i = Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockTriDiagonalMatrixType*)(Gout->data))->N) * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Re)*=-1;
-            (((BlockTriDiagonalMatrixType*)(Gout->data))->a[i].Im)*=-1;
-          }
-          for(int i=0;i<( ((BlockTriDiagonalMatrixType*)(Gout->data))->N);i++)
-          {
-            for(int j=0;j<( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSizeList[i]);j++)
-            {
-              (((BlockTriDiagonalMatrixType*)(Gout->data))->a[Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockTriDiagonalMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
-            }
-          }
-        }
+        BlockTriDiagonalMatrixType *T = (BlockTriDiagonalMatrixType*)(Gout->data);
+        /*  a[0] is the constant term: reflected about 0, that is negated, and transposed */
+        BlockTriDiagonalMatrixChainInvertEnergy(T, T->mu, true, 0.0);
       }
       break;
       case 'n':
       {
-        TwoMu = 2 * ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->mu;
-        
-        if((((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->QComplex)==0)
-        {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[i])*=-1;
-          }
-          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N);i++)
-          {
-            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.BlockSizeList[i]);j++)
-            {
-              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.aRe[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
-            }
-          }
-        }
-        else
-        {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Re)*=-1;
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[i].Im)*=-1;
-          }
-          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.N);i++)
-          {
-            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.BlockSizeList[i]);j++)
-            {
-              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val.a[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
-            }
-          }
-        }
-        if((((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->QComplex)==0)
-        {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[i])*=-1;
-          }
-          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N);i++)
-          {
-            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.BlockSizeList[i]);j++)
-            {
-              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.aRe[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ])+=TwoMu;
-            }
-          }
-        }
-        else
-        {
-          for(int i = Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ); i < Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N) * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) ; i++)
-          {
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Re)*=-1;
-            (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[i].Im)*=-1;
-          }
-          for(int i=0;i< ( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.N);i++)
-          {
-            for(int j=0;j<( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.BlockSizeList[i]);j++)
-            {
-              (((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con.a[Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize  ) + i * Sqr( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize ) + j * (1+((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->BlockSize) ].Re)+=TwoMu;
-            }
-          }
-        }
-        BlockTriDiagonalMatrixType temp = ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con;
-        ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->con = ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val;
-        ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data))->val = temp;
-        //TODO: one could implement this by swapping and multiplying by -1 sub matrices of Gin.TMT.
-        SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType( ((BlockNaturalImpurityOrbitalMatrixType*)(Gout->data)));
+        BlockNaturalImpurityOrbitalMatrixType *B = (BlockNaturalImpurityOrbitalMatrixType*)(Gout->data);
+        BlockTriDiagonalMatrixType temp;
+        /*  the head sites of the two chains are the natural orbitals themselves and this
+         *  map leaves them where they are */
+        BlockTriDiagonalMatrixChainInvertEnergy(&(B->val), B->mu, false, 0.0);
+        BlockTriDiagonalMatrixChainInvertEnergy(&(B->con), B->mu, false, 0.0);
+        CompactMatrixInvertEnergy(&(B->a0), 0, 0.0);
+        temp   = B->con;
+        B->con = B->val;
+        B->val = temp;
+        /*  TMT describes the two head sites and follows from the chains, so it is derived
+         *  again from the chains as they now stand */
+        SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
       }
       break;
       case 'd':
       {
         BlockDoubleTriDiagonalMatrixType *D = (BlockDoubleTriDiagonalMatrixType*)(Gout->data);
         BlockTriDiagonalMatrixType temp;
-        BlockDoubleTriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu);
-        BlockDoubleTriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu);
+        /*  a[0] of the two chains holds half of the onsite energy of the observed block
+         *  each, and that energy maps to 2 mu - a[0]val - a[0]con, so mu - a[0] for each of
+         *  the two keeps the half and half split. The b[i] would flip sign as well, which
+         *  is a similarity transformation with diag(1,-1,1,-1,...) and leaves the head
+         *  element of the resolvent, and with it G, alone; only the conjugate of the
+         *  transpose is left. */
+        BlockTriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu, true, D->mu);
+        BlockTriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu, true, D->mu);
+        CompactMatrixInvertEnergy(&(D->a0), 0, 0.0);
+        CompactMatrixConjugate(&(D->b0));
         temp   = D->con;
         D->con = D->val;
         D->val = temp;
@@ -1162,59 +1210,37 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
   }
   else
   {
+    /*  a transpose is nothing here, so only the constant term has changed compared to what
+     *  this used to do */
     switch (Gout->type|32)
     {
       case 'a':
       {
-        TwoMu = 2 * ((AndersonMatrixType*)(Gout->data))->mu;
-        for(i=1;i<=((AndersonMatrixType*)(Gout->data))->N;i++)
-        {
-          ((AndersonMatrixType*)(Gout->data))->a[i]*=- 1;
-        }
-        for(i=1;i<=((AndersonMatrixType*)(Gout->data))->N;i++)
-        {
-          ((AndersonMatrixType*)(Gout->data))->a[i]+= TwoMu;
-        }
+        AndersonMatrixType *A = (AndersonMatrixType*)(Gout->data);
+        A->a[0] *= -1;
+        for(uint32_t i=1;i<=A->N;i++) A->a[i] = 2 * A->mu - A->a[i];
       }
       break;
       case 'l':
       {
-        TwoMu = 2 * ((ListOfPoles*)(Gout->data))->mu;
-        for(i=0;i<((ListOfPoles*)(Gout->data))->N;i++)
-        {
-          ((ListOfPoles*)(Gout->data))->a[i]*=-1;
-          ((ListOfPoles*)(Gout->data))->a[i]+=TwoMu;
-        }
+        ListOfPoles *L = (ListOfPoles*)(Gout->data);
+        L->a0 *= -1;
+        for(uint32_t i=0;i<L->N;i++) L->a[i] = 2 * L->mu - L->a[i];
       }
       break;
       case 't':
       {
-        TwoMu = 2 * ((TriDiagonalMatrixType*)(Gout->data))->mu;
-        for(i=1;i<=((TriDiagonalMatrixType*)(Gout->data))->N;i++)
-        {
-          ((TriDiagonalMatrixType*)(Gout->data))->a[i]*=-1;
-        }
-        for(i=1;i<=((TriDiagonalMatrixType*)(Gout->data))->N;i++)
-        {
-          ((TriDiagonalMatrixType*)(Gout->data))->a[i]+=TwoMu;
-        }
+        TriDiagonalMatrixType *T = (TriDiagonalMatrixType*)(Gout->data);
+        TriDiagonalMatrixChainInvertEnergy(T, T->mu, true, 0.0);
       }
       break;
       case 'n':
       {
         BADoubleTriDiagonalMatrixType *B = (BADoubleTriDiagonalMatrixType*)(Gout->data);
         TriDiagonalMatrixType temp;
-        TwoMu = 2 * B->mu;
-        for(i=1;i<=B->val.N;i++)
-        {
-          B->val.a[i]*=-1;
-          B->val.a[i]+=TwoMu;
-        }
-        for(i=1;i<=B->con.N;i++)
-        {
-          B->con.a[i]*=-1;
-          B->con.a[i]+=TwoMu;
-        }
+        TriDiagonalMatrixChainInvertEnergy(&(B->val), B->mu, false, 0.0);
+        TriDiagonalMatrixChainInvertEnergy(&(B->con), B->mu, false, 0.0);
+        B->a0 *= -1;
         /*  the states that were below mu are above it now, so the two chains change
          *  place, whole: their lengths need not be equal. The seven cached numbers that
          *  describe the observed combination of the two head sites follow from the
@@ -1229,9 +1255,9 @@ int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, Responsefunct
       {
         DoubleTriDiagonalMatrixType *D = (DoubleTriDiagonalMatrixType*)(Gout->data);
         TriDiagonalMatrixType temp;
-        DoubleTriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu);
-        DoubleTriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu);
-        /*  a0 is the constant of G and b0 enters squared, so neither of them follows */
+        TriDiagonalMatrixChainInvertEnergy(&(D->val), D->mu, true, D->mu);
+        TriDiagonalMatrixChainInvertEnergy(&(D->con), D->mu, true, D->mu);
+        D->a0 *= -1;
         temp   = D->con;
         D->con = D->val;
         D->val = temp;

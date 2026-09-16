@@ -157,11 +157,10 @@ print("  copying a block DoubleTri with an empty chain is bit exact")
 -- Both steps need the bath diagonalized, so composing costs one dense
 -- O((N*BlockSize)^3) diagonalization, which is what a direct route would cost too.
 --
--- BlockTriDiagonalMatrixToBlockAndersonMatrix carries a comment saying it does not
--- work as intended, about the hoppings coming out mixed between the orbitals of a
--- block and the bath blocks being reordered. Both are about the shape of the Anderson
--- form and not about G, and neither matters here: the second step diagonalizes every
--- bath block again, so a mixed hopping or a permuted bath changes nothing downstream.
+-- The Anderson form in between has mixed hoppings and a reordered bath, both a matter
+-- of the basis the eigensolver picks and both checked in ChangeTypeAndersonBlock.Quanty.
+-- Neither matters here: the second step diagonalizes every bath block again, so a mixed
+-- hopping or a permuted bath changes nothing downstream.
 function CheckFromTri(name, nb, mu, kBT)
 	local GT = ResponseFunction.ChangeType(MakeBlockAnderson(nb, mu), "Tri")
 	local GD = ResponseFunction.ChangeType(GT, "DoubleTri", {{"EffectivekBT", kBT}})

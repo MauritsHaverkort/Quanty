@@ -2466,15 +2466,6 @@ uint32_t BlockTriDiagonalMatrixToBlockListOfPolesFixedGrid(BlockTriDiagonalMatri
  * block coupling the impurity to the bath into a row of blocks coupling the impurity
  * to the new Anderson sites with energies obtained from eigenvalues.
  *
- * !!Does not work as intended yet!!
- * Two issues:
- * 1. I get mixed hopping in the anderson matrix: xz hops to both xz/yz, and same for yz.
- * 2. The bath orbitals become reordered because the eigenvalues from the diagonalization
- *    are sorted. Not sure if this is an issue.
- *
- * End result is a spectrum calculated after using this is slightly different from the original
- * spectrum using the BlockTridiagonalMatrix, and I think it is due to issue #1.
- *
  */
 uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType const ATri, BlockAndersonMatrixType * const B)
 {
@@ -2707,14 +2698,10 @@ uint32_t BlockTriDiagonalMatrixToBlockAndersonMatrix(BlockTriDiagonalMatrixType 
  *  composing costs one dense O((N*BlockSize)^3) diagonalization, which is what a
  *  direct route would cost too, plus the block-local ones of the second step.
  *
- *  BlockTriDiagonalMatrixToBlockAndersonMatrix carries a comment saying it does not
- *  work as intended, about two things: the hoppings come out mixed between the
- *  orbitals of a block, and the bath blocks are reordered because the eigenvalues are
- *  sorted. Both are statements about the shape of the Anderson form and not about G,
- *  which it reproduces to 5e-13 on a 120 point grid for 20 bath blocks of size 2.
- *  Neither matters here: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix
- *  diagonalizes every bath block again on its way to the hybridization poles, so a
- *  mixed hopping or a permuted bath changes nothing downstream.
+ *  The Anderson form in between has mixed hoppings and a reordered bath -- both a
+ *  matter of the basis the eigensolver picks, see ChangeTypeAndersonBlock.Quanty --
+ *  and neither matters here: BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix
+ *  diagonalizes every bath block again on its way to the hybridization poles.
  */
 uint32_t BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(BlockTriDiagonalMatrixType const ATri, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, double const SingularValue, double const MinimalPoleDistance)
 {

@@ -335,7 +335,7 @@ void BlockTriMatrixToCompact(const BlockTriDiagonalMatrixType &BTM, const vector
 }
 */
 
-void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionType * const psi, const uint32_t Npsi, double epsilon, BlockTriDiagonalMatrixType &GTri, const uint32_t NTri)
+void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionType * const psi, const uint32_t Npsi, double epsilon, double SingularValue, BlockTriDiagonalMatrixType &GTri, const uint32_t NTri)
 {
 	WaveFunctionType * Tpsi = (WaveFunctionType *) malloc(sizeof(WaveFunctionType) * Npsi) ;
 	WaveFunctionType * TpsiSameBasis = (WaveFunctionType *) malloc(sizeof(WaveFunctionType) * Npsi) ;
@@ -376,7 +376,7 @@ void CreateSpectrum(const OperatorType &H,const OperatorType &T, WaveFunctionTyp
 	}
 	InitBlockTridiagonalMatrix(&GTri);
 	GTri.mu = 0; //psiEn[0];
-	LanczosBlockTriDiagonalize(H, TpsiSameBasis, epsilon, &GTri, NAN);
+	LanczosBlockTriDiagonalize(H, TpsiSameBasis, epsilon, SingularValue, &GTri, NAN);
 
 
 }

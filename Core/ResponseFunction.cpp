@@ -2974,6 +2974,318 @@ int ResponseFunctionAddSelfEnergyOnGridBlockAndLPAnd(const BlockAndersonMatrixTy
   return 0;
 }
 
+/* ===========================================================================
+ *
+ *   G(w) for a Hamiltonian H in a space P plus a self energy given as a set of
+ *   operators V and block response functions Sigma
+ *
+ *   The mathematics is written out in front of CalculateGforHwithSigmaAsOperator
+ *   below.  The helpers here are shared with nothing else yet, but they are
+ *   deliberately not static and carry generic names: should the same thing be
+ *   implemented a second time somewhere in the amalgamated build the linker
+ *   complains instead of the two copies silently drifting apart.
+ *
+ * =========================================================================== */
+
+/*  relative cut on the eigenvalues of the overlap matrix of PsiBasis            */
+static double const SigmaAsOperatorEpsOrtho = 1e-10;
+/*  relative cut on the eigenvalues of the extended overlap matrix Sext          */
+static double const SigmaAsOperatorEpsDefl = 1e-10;
+/*  relative cut when a grid residue or a pole residue is factorized             */
+static double const SigmaAsOperatorEpsChol = 1e-10;
+/*  relative tolerance on negative spectral weight in a residue of Sigma         */
+static double const SigmaAsOperatorEpsPSD = 1e-8;
+/*  relative cut in the re-orthogonalization of the outer block Lanczos          */
+static double const SigmaAsOperatorEpsLanczos = 1e-12;
+/*  above this many bath states the poles are binned on a grid instead of kept   */
+static uint32_t const SigmaAsOperatorMaxBathExact = 20000;
+/*  memory (in Complex16) that the grid accumulators are allowed to take         */
+static double const SigmaAsOperatorMaxGridMemory = 1.25e8;
+/*  hard cap on the dimension of the extended overlap matrix Sext                */
+static uint32_t const SigmaAsOperatorMaxLi = 20000;
+
+/*  Marks a compact matrix as holding nothing, so that a call to
+ *  FreeCompactMatrix on an error path before it was ever initialized is a no-op
+ */
+static void CompactMatrixSetUnallocated(CompactMatrixType *const M)
+{
+  M->Ni = 0;
+  M->Nj = 0;
+  M->QComplex = 1;
+  M->V = NULL;
+  M->Name = NULL;
+  M->a0 = 0;
+  M->b0 = 1;
+  M->mu = 0;
+  M->OnLuaStack = false;
+}
+
+/*  Eigen decomposition of a Hermitian matrix with the convention
+ *
+ *    A_{jk} = sum_n val[n] fun[n*N+j] conj( fun[n*N+k] )
+ *
+ *  i.e. row n of fun holds eigenvector n and the eigenvalues come out in
+ *  ascending order.  This is what CompactMatrixEigensystem already returns: it
+ *  hands the row major array to LAPACK as if it were column major, so for a
+ *  complex matrix LAPACK diagonalizes the transpose, and the conjugation at the
+ *  end of that routine undoes it.  The wrapper exists to state the convention
+ *  in one place: getting it wrong is silent for a real symmetric matrix and
+ *  transposes the answer for a complex Hermitian one.
+ */
+int HermitianCompactMatrixEigensystemRowVectors(CompactMatrixType const *const A, CompactMatrixType *const fun, double *const val)
+{
+  if (CompactMatrixEigensystem(A, fun, val))
+  {
+    printf("CompactMatrixEigensystem failed in HermitianCompactMatrixEigensystemRowVectors\n");
+    return 1;
+  }
+  return 0;
+}
+
+/*  Out_{ab} = < PsiBasis[a] | PsiBasis[b] >
+ *  Out is allocated NPsi x NPsi complex on entry
+ */
+int PsiListPsiListCompactMatrix(WaveFunctionType const *const PsiBasis, uint32_t const NPsi, CompactMatrixType *const Out)
+{
+  uint32_t a, b;
+  double Re, Im;
+  for (b = 0; b < NPsi; b++)
+  {
+    for (a = 0; a <= b; a++)
+    {
+      WaveFunctionDotProduct(PsiBasis[a], PsiBasis[b], &Re, &Im);
+      Out->V[a * NPsi + b].Re = Re;
+      Out->V[a * NPsi + b].Im = Im;
+      Out->V[b * NPsi + a].Re = Re;
+      Out->V[b * NPsi + a].Im = -Im;
+    }
+  }
+  return 0;
+}
+
+/*  Out_{ab} = < PsiBasis[a] | O | PsiBasis[b] >
+ *  Out is allocated NPsi x NPsi complex on entry
+ *  O is applied NPsi times, one scratch wave function is resident
+ */
+int PsiListOperatorPsiListCompactMatrix(OperatorType const *const O, WaveFunctionType const *const PsiBasis, uint32_t const NPsi, CompactMatrixType *const Out)
+{
+  uint32_t a, b;
+  double Re, Im;
+  WaveFunctionType Opsi;
+  for (b = 0; b < NPsi; b++)
+  {
+    if (OperatorPsi(*O, PsiBasis[b], &Opsi))
+    {
+      printf("OperatorPsi failed in PsiListOperatorPsiListCompactMatrix\n");
+      return 1;
+    }
+    for (a = 0; a < NPsi; a++)
+    {
+      WaveFunctionDotProduct(PsiBasis[a], Opsi, &Re, &Im);
+      Out->V[a * NPsi + b].Re = Re;
+      Out->V[a * NPsi + b].Im = Im;
+    }
+    WaveFunctionFree(&Opsi);
+  }
+  return 0;
+}
+
+/*  A view on rows [row0,row0+nrow) of A.  The view shares memory with A and must
+ *  never be freed, which OnLuaStack takes care of.
+ */
+CompactMatrixType CompactMatrixRowBlockView(CompactMatrixType const *const A, uint32_t const row0, uint32_t const nrow)
+{
+  CompactMatrixType v;
+  v = *A;
+  v.Ni = nrow;
+  v.V = &(A->V[(size_t)row0 * A->Nj]);
+  v.OnLuaStack = true;
+  return v;
+}
+
+/*  Orthonormalizes the rows of the pair (R1,R2) -- one vector is the row of R1
+ *  followed by the row of R2 -- by modified Gram Schmidt, done twice for
+ *  stability, and returns the transformation L, allocated Ni x Ni on entry:
+ *
+ *    R_old[q] = sum_p L[q*Ni+p] R_new[p]
+ *
+ *  Rows that are linearly dependent on the earlier ones are set to zero and get
+ *  a zero row in L.  Zero rows keep the block size uniform without adding
+ *  anything to the matrix that is being built, which is what the block Lanczos
+ *  below needs when the Krylov space runs out before order blocks are filled.
+ *  R2 may have zero columns.
+ */
+int RowBlockPairOrthonormalizeWithTransform(CompactMatrixType *const R1, CompactMatrixType *const R2, CompactMatrixType *const L, double const zero)
+{
+  uint32_t p, q, r, pass, n1 = R1->Nj, n2 = R2->Nj;
+  double cRe, cIm, norm;
+  SetCompactMatrixToZero(L);
+  for (q = 0; q < R1->Ni; q++)
+  {
+    for (pass = 0; pass < 2; pass++)
+    {
+      for (p = 0; p < q; p++)
+      {
+        cRe = 0;
+        cIm = 0;
+        for (r = 0; r < n1; r++)
+        {
+          cRe += R1->V[(size_t)p * n1 + r].Re * R1->V[(size_t)q * n1 + r].Re + R1->V[(size_t)p * n1 + r].Im * R1->V[(size_t)q * n1 + r].Im;
+          cIm += R1->V[(size_t)p * n1 + r].Re * R1->V[(size_t)q * n1 + r].Im - R1->V[(size_t)p * n1 + r].Im * R1->V[(size_t)q * n1 + r].Re;
+        }
+        for (r = 0; r < n2; r++)
+        {
+          cRe += R2->V[(size_t)p * n2 + r].Re * R2->V[(size_t)q * n2 + r].Re + R2->V[(size_t)p * n2 + r].Im * R2->V[(size_t)q * n2 + r].Im;
+          cIm += R2->V[(size_t)p * n2 + r].Re * R2->V[(size_t)q * n2 + r].Im - R2->V[(size_t)p * n2 + r].Im * R2->V[(size_t)q * n2 + r].Re;
+        }
+        L->V[q * L->Nj + p].Re += cRe;
+        L->V[q * L->Nj + p].Im += cIm;
+        for (r = 0; r < n1; r++)
+        {
+          R1->V[(size_t)q * n1 + r].Re -= cRe * R1->V[(size_t)p * n1 + r].Re - cIm * R1->V[(size_t)p * n1 + r].Im;
+          R1->V[(size_t)q * n1 + r].Im -= cRe * R1->V[(size_t)p * n1 + r].Im + cIm * R1->V[(size_t)p * n1 + r].Re;
+        }
+        for (r = 0; r < n2; r++)
+        {
+          R2->V[(size_t)q * n2 + r].Re -= cRe * R2->V[(size_t)p * n2 + r].Re - cIm * R2->V[(size_t)p * n2 + r].Im;
+          R2->V[(size_t)q * n2 + r].Im -= cRe * R2->V[(size_t)p * n2 + r].Im + cIm * R2->V[(size_t)p * n2 + r].Re;
+        }
+      }
+    }
+    norm = 0;
+    for (r = 0; r < n1; r++) norm += Sqr(R1->V[(size_t)q * n1 + r].Re) + Sqr(R1->V[(size_t)q * n1 + r].Im);
+    for (r = 0; r < n2; r++) norm += Sqr(R2->V[(size_t)q * n2 + r].Re) + Sqr(R2->V[(size_t)q * n2 + r].Im);
+    norm = sqrt(norm);
+    if (norm <= zero)
+    {
+      for (r = 0; r < n1; r++) { R1->V[(size_t)q * n1 + r].Re = 0; R1->V[(size_t)q * n1 + r].Im = 0; }
+      for (r = 0; r < n2; r++) { R2->V[(size_t)q * n2 + r].Re = 0; R2->V[(size_t)q * n2 + r].Im = 0; }
+      L->V[q * L->Nj + q].Re = 0;
+      L->V[q * L->Nj + q].Im = 0;
+    }
+    else
+    {
+      L->V[q * L->Nj + q].Re = norm;
+      L->V[q * L->Nj + q].Im = 0;
+      for (r = 0; r < n1; r++) { R1->V[(size_t)q * n1 + r].Re /= norm; R1->V[(size_t)q * n1 + r].Im /= norm; }
+      for (r = 0; r < n2; r++) { R2->V[(size_t)q * n2 + r].Re /= norm; R2->V[(size_t)q * n2 + r].Im /= norm; }
+    }
+  }
+  return 0;
+}
+
+/*  The residue matrix and the energy of pole n of a block list of poles.
+ *  W is allocated BlockSize x BlockSize complex on entry.
+ */
+int BlockListOfPolesGetPole(BlockListOfPoles const *const A, uint32_t const n, CompactMatrixType *const W, double *const energy)
+{
+  uint32_t k, bs = A->BlockSize, stride = 1 + bs * bs;
+  if (A->QComplex)
+  {
+    *energy = A->V[n * stride].Re;
+    for (k = 0; k < bs * bs; k++)
+    {
+      W->V[k].Re = A->V[n * stride + 1 + k].Re;
+      W->V[k].Im = A->V[n * stride + 1 + k].Im;
+    }
+  }
+  else
+  {
+    *energy = A->VRe[n * stride];
+    for (k = 0; k < bs * bs; k++)
+    {
+      W->V[k].Re = A->VRe[n * stride + 1 + k];
+      W->V[k].Im = 0;
+    }
+  }
+  SquareCompactMatrixMakeHermitian(W);
+  return 0;
+}
+
+/*  The constant term a0 of a block list of poles.
+ *  A0 is allocated BlockSize x BlockSize complex on entry.
+ */
+int BlockListOfPolesGetA0(BlockListOfPoles const *const A, CompactMatrixType *const A0)
+{
+  uint32_t k;
+  for (k = 0; k < A->BlockSize * A->BlockSize; k++)
+  {
+    if (A->QComplex)
+    {
+      A0->V[k].Re = A->a0[k].Re;
+      A0->V[k].Im = A->a0[k].Im;
+    }
+    else
+    {
+      A0->V[k].Re = A->a0Re[k];
+      A0->V[k].Im = 0;
+    }
+  }
+  return 0;
+}
+
+/*  Factorizes a Hermitian positive semi definite matrix R (N x N) as
+ *
+ *    R = Y^dag Y ,   Y of size rho x N
+ *
+ *  keeping the eigenvalues above SingularValue * lambda_max.  Y is initialized
+ *  here and has to be freed by the caller.  The discarded and the negative
+ *  weight are added to DiscardedWeight and NegativeWeight, which lets the caller
+ *  report over the whole run instead of once per matrix.
+ */
+int HermitianCompactMatrixToRectangularRoot(CompactMatrixType const *const R, CompactMatrixType *const Y, double const SingularValue, double *const DiscardedWeight, double *const NegativeWeight)
+{
+  uint32_t k, p, rho, N = R->Ni;
+  double *val, lmax, s;
+  CompactMatrixType fun;
+  val = (double*)malloc(N * sizeof(double));
+  if (val == NULL)
+  {
+    printf("malloc failed in HermitianCompactMatrixToRectangularRoot\n");
+    return 1;
+  }
+  if (HermitianCompactMatrixEigensystemRowVectors(R, &fun, val))
+  {
+    free(val);
+    return 1;
+  }
+  lmax = Max(val[N - 1], 0.0);
+  rho = 0;
+  for (k = 0; k < N; k++)
+  {
+    if (val[k] > SingularValue * lmax) rho++;
+    else if (val[k] < -SingularValue * lmax) *NegativeWeight -= val[k];
+    else if (val[k] > 0) *DiscardedWeight += val[k];
+  }
+  Y->Ni = Max(rho, 1);
+  Y->Nj = N;
+  Y->QComplex = 1;
+  if (InitCompactMatrix(Y))
+  {
+    printf("InitCompactMatrix failed in HermitianCompactMatrixToRectangularRoot\n");
+    FreeCompactMatrix(&fun);
+    free(val);
+    return 1;
+  }
+  Y->Ni = rho;
+  rho = 0;
+  for (k = 0; k < N; k++)
+  {
+    if (val[k] <= SingularValue * lmax) continue;
+    s = sqrt(val[k]);
+    for (p = 0; p < N; p++)
+    {
+      Y->V[rho * N + p].Re = s * fun.V[k * N + p].Re;
+      Y->V[rho * N + p].Im = -s * fun.V[k * N + p].Im;
+    }
+    rho++;
+  }
+  FreeCompactMatrix(&fun);
+  free(val);
+  return 0;
+}
+
+
 /*
  *  Given a one particle basis | phi_{\tau} > with \tau in [0,Ntau] ( Ntau = H->NFermion = PsiBasis[i].NFermion )
  *  Given an operator H and basis PsiBasis[i] with i in [0,NPsiBasis)
@@ -2983,17 +3295,1011 @@ int ResponseFunctionAddSelfEnergyOnGridBlockAndLPAnd(const BlockAndersonMatrixTy
  *    SigmaOpp[i]_{jk} = V[i]_j^{\dag} Sigma[i]_{j,k}(omega) V[i]_k
  *      with j,k in [0,Sigma[i].BlockSize)
  *  calculate
- *  G_{lm} = ...
+ *    G_{lm}(w) = < PsiBasis[l] | 1 / ( w - H - SigmaOpp(w) ) | PsiBasis[m] >
  *    with l,m in [0,BlockSize)
+ *  and return it in Block Anderson (arrowhead) form in G.
  *
- *  Implementation
+ *  --------------------------------------------------------------------------
+ *  What is calculated
+ *  --------------------------------------------------------------------------
  *
- *  HMat_{i,j} = <PsiBasis[i] | H | PsiBasis[j]>
- *  SMat_{i,j} = <PsiBasis[i] | PsiBasis[j]>
+ *  Sigma[i] is a block list of poles,
  *
+ *    Sigma[i]_{jj'}(w) = a0[i]_{jj'} + sum_n W[i][n]_{jj'} / ( w - a[i][n] )
+ *
+ *  with W[i][n] Hermitian and positive semi definite.  Reading the poles as
+ *  one particle states outside P, at energy a[i][n] and hopping to the channel
+ *  operators V[i][j], the total Hamiltonian on P plus one excitation into the
+ *  bath (the space P + Q1) is H plus those bath energies plus the hopping.  H
+ *  itself contains neither, and must not.
+ *
+ *  Eliminating Q1 exactly (Feshbach) gives, without any approximation beyond
+ *  the truncation at one bath excitation,
+ *
+ *    Sigma_{ab}(w) = sum_i sum_n sum_{jj'} W[i][n]_{jj'}
+ *                    < a | V[i][j]^dag ( w - a[i][n] - H )^{-1} V[i][j'] | b >
+ *
+ *  The resolvent of H sits between the two channel operators, so every bath
+ *  energy a[i][n] is split by the whole spectrum of H in the space reached by
+ *  V[i][j] | PsiBasis[b] >.  Dropping that splitting would give the naive
+ *  hybridization-only self energy, which is wrong.
+ *
+ *  H commutes with the bath operators, so the same intermediate space serves
+ *  all poles of a block: it has to be built once per i, not once per pole.
+ *
+ *  --------------------------------------------------------------------------
+ *  How it is calculated
+ *  --------------------------------------------------------------------------
+ *
+ *  B  PsiBasis is a Krylov basis and is only locally orthogonal, so the overlap
+ *     matrix SMat_{ab} = <a|b> is formed, Loewdin orthogonalized (dropping the
+ *     null directions that the loss of global orthogonality produces) and
+ *     everything is transformed into that orthonormal basis of dimension
+ *     North <= NPsiBasis.  HMat_{ab} = <a|H|b> is formed with NPsiBasis
+ *     applications of H.
+ *
+ *  C  Per i, with mu = (j,a) a composite index of length Li = bi * North,
+ *
+ *       Sext_{mu,nu} = < a | V[i][j]^dag       V[i][j'] | b >
+ *       Hext_{mu,nu} = < a | V[i][j]^dag   H   V[i][j'] | b >
+ *
+ *     Both are matrix elements of operators that act inside P, so they are
+ *     built from operator products and cost no wave function outside P.  Sext
+ *     is diagonalized and deflated, Hext is diagonalized in what is left.
+ *
+ *     This is the one approximation in the routine.  It is Rayleigh-Ritz in
+ *     the space spanned by V[i][j]|PsiBasis[a]>, and that span is not in
+ *     general closed under H -- closing it would be a block Lanczos in the
+ *     N-1 (or N+1) sector, which needs the whole deflated seed block resident
+ *     as wave functions and is what makes the exact treatment expensive.  So:
+ *
+ *       -  whenever the span happens to be invariant under H, and in
+ *          particular whenever the channels reach the whole sector, the result
+ *          is exact within P + Q1 and agrees with an explicit bath to machine
+ *          precision;
+ *       -  otherwise the first two moments of the intermediate resolvent are
+ *          still exact, which is what matters because Sigma is only ever
+ *          evaluated inside a resolvent at w + i Gamma.  On a deliberately
+ *          bad case (three modes in P of which only one is a channel, Gamma
+ *          a tenth of the width of the intermediate spectrum) this leaves a
+ *          10 percent error on a spectrum for which leaving the self energy
+ *          out altogether is 70 percent wrong.
+ *
+ *  D  Z[i]_{n',(j,a)} = < n' | V[i][j] | PsiBasis[a] >, which follows from the
+ *     two diagonalizations without touching a wave function again.  The zeroth
+ *     moment sum rule Z^dag Z == Sext is checked.
+ *
+ *  E  The bath of the arrowhead.  Each triple (i,n,n') contributes a pole at
+ *     a[i][n] + E[i][n'] with residue G^dag W[i][n] G, G = Z[i][n'] read as a
+ *     bi x North matrix.  Below SigmaAsOperatorMaxBathExact bath states these
+ *     are kept one by one and the result is exact.  Above it, or when the
+ *     caller supplies a grid, the poles are binned on the grid conserving the
+ *     zeroth and first moment of each bin, which caps the bath at Ng * North.
+ *
+ *  F  Block Lanczos on the arrowhead from the BlockSize seed vectors,
+ *     NTriFull blocks, full re-orthogonalization, the arrowhead structure used
+ *     in the matrix vector product so the arrowhead is never formed.
+ *
+ *  G  The chain padded up to the block size of B0, with the deflation of the
+ *     seed block in BlockSizeList and b[0] carrying it back to the full set of
+ *     transition operators.
+ *
+ *  --------------------------------------------------------------------------
+ *  Arguments
+ *  --------------------------------------------------------------------------
+ *
+ *  H                    the Hamiltonian in P, without the bath and without the
+ *                       hybridization that Sigma stands for
+ *  PsiBasis, NPsiBasis  a basis of the part of P that is kept.  The first
+ *                       BlockSize entries are the seeds, the rest expands them
+ *  BlockSize            number of seed vectors, i.e. BlockSizeN[0] of the block
+ *                       Lanczos that produced PsiBasis, after its deflation
+ *  V                    V[i][j] with j < Sigma[i].BlockSize, the channels
+ *  Sigma, NSigma        the self energies.  NSigma == 0 is legal and gives the
+ *                       plain resolvent of H
+ *  NTriFull             number of blocks of the returned block tridiagonal
+ *                       matrix.  2*NTriFull moments of the BlockSize x
+ *                       BlockSize matrix spectral function come out exact.
+ *                       H alone has a discrete spectrum, the self energy turns
+ *                       it into a continuum, so this wants to be of the order
+ *                       of the NTri that produced PsiBasis, not of BlockSize
+ *  SuggestedGrid        grid to bin the poles of Sigma on, NULL for automatic.
+ *                       Binning is exact in the zeroth and first moment of a
+ *                       bin and errs at O(dg^2) in the second, so a spacing of
+ *                       about the intended broadening is enough.  Dense over
+ *                       the spectral window and sparse in the tails is right
+ *  B0                   BlockSizeFull x BlockSize, the transformation from the
+ *                       deflated seed block back to the full set of transition
+ *                       operators (b[0] of the block tridiagonal matrix that
+ *                       produced PsiBasis).  Its number of rows sets the block
+ *                       size of G.  NULL means the identity
+ *  G                    the result, not initialized on entry.  Shaped like the
+ *                       block tridiagonal matrix that a block Lanczos on H
+ *                       alone produces, so a caller can treat both the same
+ *
+ *  returns 0 on success, 1 on failure
  */
-int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize,  OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t order, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, BlockAndersonMatrixType * G)
+int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize,  OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NTriFull, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockTriDiagonalMatrixType * G)
 {
-  
-  return 0;
+  uint32_t i, j, jp, k, n, np, p, q, a;
+  uint32_t Npsi = NPsiBasis, m = BlockSize, NFull, North = 0;
+  uint32_t Dtot, Nbath = 0, NbathMax = 0, NTriUse, Ng = 0;
+  uint32_t QComplexOut;
+  int ierr = 0;
+  double *Sval = NULL, *Grid = NULL, *Ebath = NULL;
+  double **Elist = NULL;
+  double norm, Re, Emin, Emax;
+  double DiscardedWeight = 0, NegativeWeight = 0;
+  CompactMatrixType SMat, HMat, Sfun, T, TS, HO, Cseed, Ybath, Ablk, Bblk, Lblk;
+  CompactMatrixType *Zlist = NULL, *Rgrid = NULL;
+  uint32_t *Dlist = NULL;
+  BlockTriDiagonalMatrixType chain;
+  OperatorType Heff, *Hptr;
+  bool QHeffAllocated = false;
+
+  CompactMatrixSetUnallocated(&SMat);  CompactMatrixSetUnallocated(&HMat);
+  CompactMatrixSetUnallocated(&Sfun);  CompactMatrixSetUnallocated(&T);
+  CompactMatrixSetUnallocated(&TS);    CompactMatrixSetUnallocated(&HO);
+  CompactMatrixSetUnallocated(&Cseed); CompactMatrixSetUnallocated(&Ybath);
+  CompactMatrixSetUnallocated(&Ablk);  CompactMatrixSetUnallocated(&Bblk);
+  CompactMatrixSetUnallocated(&Lblk);
+  chain.a = NULL;
+
+  /* ---------------------------------------------------------------------- */
+  /*  A   input                                                             */
+  /* ---------------------------------------------------------------------- */
+  if ((H == NULL) || (PsiBasis == NULL) || (G == NULL))
+  {
+    printf("CalculateGforHwithSigmaAsOperator called with a NULL pointer for H, PsiBasis or G\n");
+    return 1;
+  }
+  if ((Npsi == 0) || (m == 0) || (m > Npsi))
+  {
+    printf("CalculateGforHwithSigmaAsOperator called with NPsiBasis=%u and BlockSize=%u, needs 0 < BlockSize <= NPsiBasis\n", Npsi, m);
+    return 1;
+  }
+  if (NTriFull == 0)
+  {
+    printf("CalculateGforHwithSigmaAsOperator called with NTriFull=0, needs at least one block\n");
+    return 1;
+  }
+  if (B0 == NULL)
+  {
+    NFull = m;
+  }
+  else
+  {
+    NFull = B0->Ni;
+    if (B0->Nj != m)
+    {
+      printf("CalculateGforHwithSigmaAsOperator called with B0 of size %u x %u, the number of columns should be BlockSize=%u\n", B0->Ni, B0->Nj, m);
+      return 1;
+    }
+    if (NFull < m)
+    {
+      printf("CalculateGforHwithSigmaAsOperator called with B0 of size %u x %u, the number of rows can not be smaller than BlockSize\n", B0->Ni, B0->Nj);
+      return 1;
+    }
+  }
+  for (i = 0; i < NSigma; i++)
+  {
+    if (Sigma[i].BlockSize == 0)
+    {
+      printf("CalculateGforHwithSigmaAsOperator called with Sigma[%u].BlockSize=0\n", i);
+      return 1;
+    }
+    if ((V == NULL) || (V[i] == NULL))
+    {
+      printf("CalculateGforHwithSigmaAsOperator called with no operators for Sigma[%u]\n", i);
+      return 1;
+    }
+  }
+  QComplexOut = (H->QComplex != 0);
+  for (a = 0; a < Npsi; a++) if (PsiBasis[a].QComplex) QComplexOut = 1;
+  for (i = 0; i < NSigma; i++)
+  {
+    if (Sigma[i].QComplex) QComplexOut = 1;
+    for (j = 0; j < Sigma[i].BlockSize; j++) if (V[i][j].QComplex) QComplexOut = 1;
+  }
+  if ((B0 != NULL) && (B0->QComplex)) QComplexOut = 1;
+
+  /* ---------------------------------------------------------------------- */
+  /*  A2  the constant term of a self energy is a static potential in P       */
+  /*                                                                          */
+  /*      Sigma[i](w) = a0[i] + sum_n W[i][n] / ( w - a[i][n] ) has, next to   */
+  /*      the poles that become bath states, a frequency independent piece.    */
+  /*      That piece is an ordinary one particle operator in P and has to act  */
+  /*      wherever H acts -- in the outer space and just as much inside the    */
+  /*      resolvent of the intermediate space.  Adding it to H once here is    */
+  /*      both cheaper and more consistent than adding it to the outer matrix  */
+  /*      alone, which would leave the intermediate spectrum unshifted.        */
+  /* ---------------------------------------------------------------------- */
+  VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: NPsiBasis=%u BlockSize=%u NSigma=%u NTriFull=%u\n", Npsi, m, NSigma, NTriFull);
+  Hptr = (OperatorType*)H;
+  for (i = 0; i < NSigma; i++)
+  {
+    uint32_t bi = Sigma[i].BlockSize;
+    CompactMatrixType A0;
+    OperatorType Oprod;
+    A0.Ni = bi; A0.Nj = bi; A0.QComplex = 1;
+    if (InitCompactMatrix(&A0)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+    BlockListOfPolesGetA0(&(Sigma[i]), &A0);
+    for (j = 0; j < bi; j++)
+    {
+      for (jp = 0; jp < bi; jp++)
+      {
+        if ((fabs(A0.V[j * bi + jp].Re) < 100 * DBL_MIN) && (fabs(A0.V[j * bi + jp].Im) < 100 * DBL_MIN)) continue;
+        if (QHeffAllocated == false)
+        {
+          if (OperatorCopy(&Heff, *H)) { printf("OperatorCopy failed in CalculateGforHwithSigmaAsOperator\n"); FreeCompactMatrix(&A0); ierr = 1; goto cleanup; }
+          QHeffAllocated = true;
+          Hptr = &Heff;
+        }
+        InitOperatorForMult(&Oprod, 2, &(V[i][j]), &(V[i][jp]));
+        OperatorMultiply2NormalOrder(&Oprod, V[i][j], V[i][jp], 'D', 'N', &QDetNotOrderedFcFaBcBa);
+        OperatorAddNormalOrder(&Heff, Oprod, A0.V[j * bi + jp].Re, A0.V[j * bi + jp].Im, &QDetNotOrderedFcFaBcBa);
+        FreeOperator(&Oprod);
+      }
+    }
+    FreeCompactMatrix(&A0);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  B   overlap and Hamiltonian in the given basis, then orthonormalize    */
+  /* ---------------------------------------------------------------------- */
+  SMat.Ni = Npsi; SMat.Nj = Npsi; SMat.QComplex = 1;
+  HMat.Ni = Npsi; HMat.Nj = Npsi; HMat.QComplex = 1;
+  if (InitCompactMatrix(&SMat) || InitCompactMatrix(&HMat))
+  {
+    printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for the %u x %u outer matrices\n", Npsi, Npsi);
+    ierr = 1; goto cleanup;
+  }
+  if (PsiListPsiListCompactMatrix(PsiBasis, Npsi, &SMat)) { ierr = 1; goto cleanup; }
+  if (PsiListOperatorPsiListCompactMatrix(Hptr, PsiBasis, Npsi, &HMat)) { ierr = 1; goto cleanup; }
+  SquareCompactMatrixMakeHermitian(&HMat);
+  /*  Loewdin: |e_p> = sum_a T_{a,p} |PsiBasis[a]>, T_{a,p} = x_{p,a}/sqrt(s_p) */
+  Sval = (double*)malloc(Npsi * sizeof(double));
+  if (Sval == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+  if (HermitianCompactMatrixEigensystemRowVectors(&SMat, &Sfun, Sval)) { ierr = 1; goto cleanup; }
+  North = 0;
+  for (p = 0; p < Npsi; p++) if (Sval[p] > SigmaAsOperatorEpsOrtho * Sval[Npsi - 1]) North++;
+  if (North < m)
+  {
+    printf("CalculateGforHwithSigmaAsOperator: the %u basis functions span only %u directions, fewer than the %u seeds\n", Npsi, North, m);
+    ierr = 1; goto cleanup;
+  }
+  if (North != Npsi)
+  {
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: PsiBasis lost orthogonality, %u of %u directions kept\n", North, Npsi);
+  }
+  T.Ni = Npsi; T.Nj = North; T.QComplex = 1;
+  if (InitCompactMatrix(&T)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+  q = 0;
+  for (p = 0; p < Npsi; p++)
+  {
+    if (Sval[p] <= SigmaAsOperatorEpsOrtho * Sval[Npsi - 1]) continue;
+    norm = 1.0 / sqrt(Sval[p]);
+    for (a = 0; a < Npsi; a++)
+    {
+      T.V[a * North + q].Re = norm * Sfun.V[p * Npsi + a].Re;
+      T.V[a * North + q].Im = norm * Sfun.V[p * Npsi + a].Im;
+    }
+    q++;
+  }
+  FreeCompactMatrix(&Sfun); CompactMatrixSetUnallocated(&Sfun);
+  /*  HO = T^dag HMat T  */
+  TS.Ni = North; TS.Nj = Npsi; TS.QComplex = 1;
+  HO.Ni = North; HO.Nj = North; HO.QComplex = 1;
+  if (InitCompactMatrix(&TS) || InitCompactMatrix(&HO)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+  CompactMatrixAddMultiply('C', 'N', &T, &HMat, &TS, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &TS, &T, &HO, 1, 0, 0, 0);
+  SquareCompactMatrixMakeHermitian(&HO);
+  /*  Cseed = ( T^dag SMat )[:,0:m], the seeds expressed in the new basis  */
+  CompactMatrixAddMultiply('C', 'N', &T, &SMat, &TS, 1, 0, 0, 0);
+  Cseed.Ni = North; Cseed.Nj = m; Cseed.QComplex = 1;
+  if (InitCompactMatrix(&Cseed)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+  for (p = 0; p < North; p++)
+  {
+    for (a = 0; a < m; a++)
+    {
+      Cseed.V[p * m + a] = TS.V[p * Npsi + a];
+    }
+  }
+  FreeCompactMatrix(&HMat); CompactMatrixSetUnallocated(&HMat);
+  FreeCompactMatrix(&SMat); CompactMatrixSetUnallocated(&SMat);
+  FreeCompactMatrix(&TS); CompactMatrixSetUnallocated(&TS);
+
+  /* ---------------------------------------------------------------------- */
+  /*  C,D the intermediate space and the tensor Z, one per self energy       */
+  /* ---------------------------------------------------------------------- */
+  if (NSigma != 0)
+  {
+    Zlist = (CompactMatrixType*)calloc(NSigma, sizeof(CompactMatrixType));
+    Elist = (double**)calloc(NSigma, sizeof(double*));
+    Dlist = (uint32_t*)calloc(NSigma, sizeof(uint32_t));
+    if ((Zlist == NULL) || (Elist == NULL) || (Dlist == NULL))
+    {
+      printf("malloc failed in CalculateGforHwithSigmaAsOperator\n");
+      ierr = 1; goto cleanup;
+    }
+  }
+  for (i = 0; i < NSigma; i++)
+  {
+    uint32_t bi = Sigma[i].BlockSize, Li = bi * North, di;
+    CompactMatrixType SextO, HextO, Mtmp, MtmpO, TM, Xdefl, Hred, Sxfun, ufun, Ws, Chk;
+    OperatorType Oprod;
+    double *sxval = NULL;
+    Li = bi * North;
+    if (Li > SigmaAsOperatorMaxLi)
+    {
+      printf("CalculateGforHwithSigmaAsOperator: the extended space of self energy %u has dimension %u x %u = %u\n", i, bi, North, Li);
+      printf("  which is above the compiled in limit SigmaAsOperatorMaxLi = %u.\n", SigmaAsOperatorMaxLi);
+      printf("  Reduce NTri, the block size, or the number of channels of the self energy.\n");
+      ierr = 1; goto cleanup;
+    }
+    SextO.Ni = Li;    SextO.Nj = Li;    SextO.QComplex = 1;
+    HextO.Ni = Li;    HextO.Nj = Li;    HextO.QComplex = 1;
+    Mtmp.Ni  = Npsi;  Mtmp.Nj  = Npsi;  Mtmp.QComplex  = 1;
+    MtmpO.Ni = North; MtmpO.Nj = North; MtmpO.QComplex = 1;
+    TM.Ni    = North; TM.Nj    = Npsi;  TM.QComplex    = 1;
+    if (InitCompactMatrix(&SextO) || InitCompactMatrix(&HextO) || InitCompactMatrix(&Mtmp) ||
+        InitCompactMatrix(&MtmpO) || InitCompactMatrix(&TM))
+    {
+      printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for self energy %u\n", i);
+      ierr = 1; goto cleanup;
+    }
+    /*  Sext and Hext.  V[i][j]^dag V[i][j'] and V[i][j]^dag H V[i][j'] act
+     *  inside P, so no wave function outside P is ever created.               */
+    for (j = 0; j < bi; j++)
+    {
+      for (jp = j; jp < bi; jp++)
+      {
+        InitOperatorForMult(&Oprod, 2, &(V[i][j]), &(V[i][jp]));
+        OperatorMultiply2NormalOrder(&Oprod, V[i][j], V[i][jp], 'D', 'N', &QDetNotOrderedFcFaBcBa);
+        if (PsiListOperatorPsiListCompactMatrix(&Oprod, PsiBasis, Npsi, &Mtmp)) { FreeOperator(&Oprod); ierr = 1; goto cleanup; }
+        FreeOperator(&Oprod);
+        CompactMatrixAddMultiply('C', 'N', &T, &Mtmp, &TM, 1, 0, 0, 0);
+        CompactMatrixAddMultiply('N', 'N', &TM, &T, &MtmpO, 1, 0, 0, 0);
+        for (p = 0; p < North; p++)
+        {
+          for (q = 0; q < North; q++)
+          {
+            SextO.V[(j * North + p) * Li + jp * North + q] = MtmpO.V[p * North + q];
+            SextO.V[(jp * North + q) * Li + j * North + p].Re =  MtmpO.V[p * North + q].Re;
+            SextO.V[(jp * North + q) * Li + j * North + p].Im = -MtmpO.V[p * North + q].Im;
+          }
+        }
+        InitOperatorForMult(&Oprod, 3, &(V[i][j]), Hptr, &(V[i][jp]));
+        OperatorMultiply3NormalOrder(&Oprod, V[i][j], *Hptr, V[i][jp], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
+        if (PsiListOperatorPsiListCompactMatrix(&Oprod, PsiBasis, Npsi, &Mtmp)) { FreeOperator(&Oprod); ierr = 1; goto cleanup; }
+        FreeOperator(&Oprod);
+        CompactMatrixAddMultiply('C', 'N', &T, &Mtmp, &TM, 1, 0, 0, 0);
+        CompactMatrixAddMultiply('N', 'N', &TM, &T, &MtmpO, 1, 0, 0, 0);
+        for (p = 0; p < North; p++)
+        {
+          for (q = 0; q < North; q++)
+          {
+            HextO.V[(j * North + p) * Li + jp * North + q] = MtmpO.V[p * North + q];
+            HextO.V[(jp * North + q) * Li + j * North + p].Re =  MtmpO.V[p * North + q].Re;
+            HextO.V[(jp * North + q) * Li + j * North + p].Im = -MtmpO.V[p * North + q].Im;
+          }
+        }
+      }
+    }
+    FreeCompactMatrix(&Mtmp);
+    FreeCompactMatrix(&MtmpO);
+    FreeCompactMatrix(&TM);
+    /*  deflate Sext                                                          */
+    sxval = (double*)malloc(Li * sizeof(double));
+    if (sxval == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+    if (HermitianCompactMatrixEigensystemRowVectors(&SextO, &Sxfun, sxval)) { free(sxval); ierr = 1; goto cleanup; }
+    di = 0;
+    for (k = 0; k < Li; k++) if (sxval[k] > SigmaAsOperatorEpsDefl * sxval[Li - 1]) di++;
+    if (di == 0)
+    {
+      VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: self energy %u does not couple to PsiBasis, skipped\n", i);
+      Dlist[i] = 0;
+      free(sxval);
+      FreeCompactMatrix(&Sxfun);
+      FreeCompactMatrix(&SextO);
+      FreeCompactMatrix(&HextO);
+      continue;
+    }
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: self energy %u, extended space %u deflated to %u\n", i, Li, di);
+    /*  Xdefl_{mu,alpha} = x_{alpha,mu} / sqrt(s_alpha)                        */
+    Xdefl.Ni = Li; Xdefl.Nj = di; Xdefl.QComplex = 1;
+    Ws.Ni = di; Ws.Nj = Li; Ws.QComplex = 1;
+    Hred.Ni = di; Hred.Nj = di; Hred.QComplex = 1;
+    TM.Ni = di; TM.Nj = Li; TM.QComplex = 1;
+    if (InitCompactMatrix(&Xdefl) || InitCompactMatrix(&Ws) || InitCompactMatrix(&Hred) || InitCompactMatrix(&TM))
+    {
+      printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for self energy %u\n", i);
+      free(sxval); ierr = 1; goto cleanup;
+    }
+    q = 0;
+    for (k = 0; k < Li; k++)
+    {
+      if (sxval[k] <= SigmaAsOperatorEpsDefl * sxval[Li - 1]) continue;
+      norm = 1.0 / sqrt(sxval[k]);
+      for (p = 0; p < Li; p++)
+      {
+        Xdefl.V[p * di + q].Re = norm * Sxfun.V[k * Li + p].Re;
+        Xdefl.V[p * di + q].Im = norm * Sxfun.V[k * Li + p].Im;
+        /*  Ws_{alpha,nu} = sqrt(s_alpha) conj( x_{alpha,nu} ) = <chi_alpha|w_nu> */
+        Ws.V[q * Li + p].Re =  sxval[k] * norm * Sxfun.V[k * Li + p].Re;
+        Ws.V[q * Li + p].Im = -sxval[k] * norm * Sxfun.V[k * Li + p].Im;
+      }
+      q++;
+    }
+    FreeCompactMatrix(&Sxfun);
+    /*  Hred = Xdefl^dag Hext Xdefl, diagonalize                              */
+    CompactMatrixAddMultiply('C', 'N', &Xdefl, &HextO, &TM, 1, 0, 0, 0);
+    CompactMatrixAddMultiply('N', 'N', &TM, &Xdefl, &Hred, 1, 0, 0, 0);
+    SquareCompactMatrixMakeHermitian(&Hred);
+    FreeCompactMatrix(&TM);
+    FreeCompactMatrix(&Xdefl);
+    FreeCompactMatrix(&HextO);
+    Elist[i] = (double*)malloc(di * sizeof(double));
+    if (Elist[i] == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); free(sxval); ierr = 1; goto cleanup; }
+    if (HermitianCompactMatrixEigensystemRowVectors(&Hred, &ufun, Elist[i])) { free(sxval); ierr = 1; goto cleanup; }
+    FreeCompactMatrix(&Hred);
+    free(sxval);
+    /*  Z_{n',nu} = sum_alpha conj( u_{n',alpha} ) <chi_alpha|w_nu>            */
+    Zlist[i].Ni = di; Zlist[i].Nj = Li; Zlist[i].QComplex = 1;
+    if (InitCompactMatrix(&(Zlist[i]))) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); FreeCompactMatrix(&ufun); ierr = 1; goto cleanup; }
+    CompactMatrixAddMultiply('*', 'N', &ufun, &Ws, &(Zlist[i]), 1, 0, 0, 0);
+    FreeCompactMatrix(&ufun);
+    FreeCompactMatrix(&Ws);
+    Dlist[i] = di;
+    /*  the zeroth moment of Sigma is exact by construction, so Z^dag Z has to
+     *  reproduce Sext.  A failure here means the deflation above is wrong and
+     *  everything downstream is meaningless, so it is always checked.         */
+    Chk.Ni = Li; Chk.Nj = Li; Chk.QComplex = 1;
+    if (InitCompactMatrix(&Chk)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+    CompactMatrixAddMultiply('C', 'N', &(Zlist[i]), &(Zlist[i]), &Chk, 1, 0, 0, 0);
+    norm = 0;
+    Re = 0;
+    for (k = 0; k < Li * Li; k++)
+    {
+      norm = Max(norm, fabs(Chk.V[k].Re - SextO.V[k].Re) + fabs(Chk.V[k].Im - SextO.V[k].Im));
+      Re = Max(Re, fabs(SextO.V[k].Re) + fabs(SextO.V[k].Im));
+    }
+    if (norm > 1e-8 * Max(Re, 1.0))
+    {
+      printf("CalculateGforHwithSigmaAsOperator: the zeroth moment sum rule of self energy %u is violated by %g\n", i, norm);
+      printf("  Z^dag Z should reproduce the extended overlap matrix.  The result is not to be trusted.\n");
+    }
+    FreeCompactMatrix(&Chk);
+    FreeCompactMatrix(&SextO);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  E   the bath of the arrowhead                                          */
+  /* ---------------------------------------------------------------------- */
+  /*  the range the poles cover, how many there are, and whether the residues
+   *  are positive semi definite.  A residue that is not has no Hamiltonian
+   *  representation: the arrowhead below would not be Hermitian and the block
+   *  Lanczos on it would be invalid, not merely inaccurate.                    */
+  Emin = DBL_MAX;
+  Emax = -DBL_MAX;
+  NbathMax = 0;
+  for (i = 0; i < NSigma; i++)
+  {
+    uint32_t bi = Sigma[i].BlockSize;
+    CompactMatrixType Wm, Wfun;
+    double *wval, en, wmax;
+    if (Dlist[i] == 0) continue;
+    Wm.Ni = bi; Wm.Nj = bi; Wm.QComplex = 1;
+    wval = (double*)malloc(bi * sizeof(double));
+    if (InitCompactMatrix(&Wm) || (wval == NULL)) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+    for (n = 0; n < Sigma[i].N; n++)
+    {
+      BlockListOfPolesGetPole(&(Sigma[i]), n, &Wm, &en);
+      for (np = 0; np < Dlist[i]; np++)
+      {
+        Emin = Min(Emin, en + Elist[i][np]);
+        Emax = Max(Emax, en + Elist[i][np]);
+      }
+      NbathMax += Dlist[i] * bi;
+      if (HermitianCompactMatrixEigensystemRowVectors(&Wm, &Wfun, wval)) { free(wval); FreeCompactMatrix(&Wm); ierr = 1; goto cleanup; }
+      FreeCompactMatrix(&Wfun);
+      wmax = Max(wval[bi - 1], 0.0);
+      for (k = 0; k < bi; k++)
+      {
+        if (wval[k] < -SigmaAsOperatorEpsPSD * Max(wmax, DBL_MIN)) NegativeWeight -= wval[k];
+      }
+    }
+    free(wval);
+    FreeCompactMatrix(&Wm);
+  }
+  if (NbathMax != 0)
+  {
+    bool UseGrid = false;
+    if ((SuggestedGrid != NULL) && (NSuggestedGridPoints >= 2)) UseGrid = true;
+    if (NbathMax > SigmaAsOperatorMaxBathExact) UseGrid = true;
+    if (UseGrid == false)
+    {
+      /*  E exact.  Every pole of every self energy, split by every state of the
+       *  intermediate space, becomes its own bath state.                      */
+      CompactMatrixType Wm, Wfun, Lt, Gm, Ysub;
+      double *wval, wmax;
+      uint32_t r;
+      Ybath.Ni = NbathMax; Ybath.Nj = North; Ybath.QComplex = 1;
+      if (InitCompactMatrix(&Ybath)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for the bath\n"); ierr = 1; goto cleanup; }
+      Ebath = (double*)calloc(NbathMax, sizeof(double));
+      if (Ebath == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+      Nbath = 0;
+      for (i = 0; i < NSigma; i++)
+      {
+        uint32_t bi = Sigma[i].BlockSize, Li = bi * North;
+        if (Dlist[i] == 0) continue;
+        Wm.Ni = bi; Wm.Nj = bi; Wm.QComplex = 1;
+        Lt.Ni = bi; Lt.Nj = bi; Lt.QComplex = 1;
+        Ysub.Ni = bi; Ysub.Nj = North; Ysub.QComplex = 1;
+        wval = (double*)malloc(bi * sizeof(double));
+        if (InitCompactMatrix(&Wm) || InitCompactMatrix(&Lt) || InitCompactMatrix(&Ysub) || (wval == NULL))
+        {
+          printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup;
+        }
+        for (n = 0; n < Sigma[i].N; n++)
+        {
+          double en;
+          BlockListOfPolesGetPole(&(Sigma[i]), n, &Wm, &en);
+          if (HermitianCompactMatrixEigensystemRowVectors(&Wm, &Wfun, wval)) { ierr = 1; goto cleanup; }
+          wmax = Max(wval[bi - 1], 0.0);
+          r = 0;
+          for (k = 0; k < bi; k++)
+          {
+            if (wval[k] > SigmaAsOperatorEpsChol * wmax) r++;
+            else if (wval[k] > 0) DiscardedWeight += wval[k];
+          }
+          if (r == 0) { FreeCompactMatrix(&Wfun); continue; }
+          Lt.Ni = r;
+          Ysub.Ni = r;
+          q = 0;
+          for (k = 0; k < bi; k++)
+          {
+            if (wval[k] <= SigmaAsOperatorEpsChol * wmax) continue;
+            norm = sqrt(wval[k]);
+            for (j = 0; j < bi; j++)
+            {
+              Lt.V[q * bi + j].Re =  norm * Wfun.V[k * bi + j].Re;
+              Lt.V[q * bi + j].Im = -norm * Wfun.V[k * bi + j].Im;
+            }
+            q++;
+          }
+          FreeCompactMatrix(&Wfun);
+          for (np = 0; np < Dlist[i]; np++)
+          {
+            Gm.Ni = bi; Gm.Nj = North; Gm.QComplex = 1; Gm.OnLuaStack = true;
+            Gm.Name = Zlist[i].Name;
+            Gm.a0 = 0; Gm.b0 = 1; Gm.mu = 0;
+            Gm.V = &(Zlist[i].V[(size_t)np * Li]);
+            CompactMatrixAddMultiply('N', 'N', &Lt, &Gm, &Ysub, 1, 0, 0, 0);
+            for (k = 0; k < r; k++)
+            {
+              Ebath[Nbath] = en + Elist[i][np];
+              for (p = 0; p < North; p++) Ybath.V[(size_t)Nbath * North + p] = Ysub.V[k * North + p];
+              Nbath++;
+            }
+          }
+        }
+        free(wval);
+        FreeCompactMatrix(&Wm);
+        FreeCompactMatrix(&Lt);
+        FreeCompactMatrix(&Ysub);
+      }
+      Ybath.Ni = Nbath;
+      VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: %u bath states, poles kept exactly\n", Nbath);
+    }
+    else
+    {
+      /*  E binned.  The zeroth and the first moment of every bin are exact, the
+       *  second is off by O(dg^2), and the bath is capped at Ng * North.       */
+      CompactMatrixType Wm, Gm, WG, Yc;
+      uint32_t c, clow, chigh;
+      double uleft, uright, en;
+      if ((SuggestedGrid != NULL) && (NSuggestedGridPoints >= 2))
+      {
+        for (k = 1; k < NSuggestedGridPoints; k++)
+        {
+          if (SuggestedGrid[k] <= SuggestedGrid[k - 1])
+          {
+            printf("CalculateGforHwithSigmaAsOperator: the grid is not strictly increasing at position %u (%g <= %g)\n", k, SuggestedGrid[k], SuggestedGrid[k - 1]);
+            ierr = 1; goto cleanup;
+          }
+        }
+        Ng = NSuggestedGridPoints + ((Emin < SuggestedGrid[0]) ? 1 : 0) + ((Emax > SuggestedGrid[NSuggestedGridPoints - 1]) ? 1 : 0);
+        Grid = (double*)malloc(Ng * sizeof(double));
+        if (Grid == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+        k = 0;
+        if (Emin < SuggestedGrid[0])
+        {
+          Grid[k++] = Emin;
+          VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: grid extended down to %g to hold all poles\n", Emin);
+        }
+        for (q = 0; q < NSuggestedGridPoints; q++) Grid[k++] = SuggestedGrid[q];
+        if (Emax > SuggestedGrid[NSuggestedGridPoints - 1])
+        {
+          Grid[k++] = Emax;
+          VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: grid extended up to %g to hold all poles\n", Emax);
+        }
+      }
+      else
+      {
+        /*  No grid was asked for, so take the finest one that is affordable:
+         *  eight bins per block of the answer, never more bins than poles, and
+         *  never more than the accumulators are allowed to cost.  With NTriFull
+         *  of the order of NTri it is the memory limit that decides, which is
+         *  the right answer -- binning error falls as the square of the
+         *  spacing, so every bin that fits is worth having.                    */
+        Ng = Max(2, 8 * NTriFull);
+        if (Ng > NbathMax) Ng = Max(2, NbathMax);
+        if ((double)Ng * (double)North * (double)North > SigmaAsOperatorMaxGridMemory)
+        {
+          Ng = (uint32_t)(SigmaAsOperatorMaxGridMemory / ((double)North * (double)North));
+          Ng = Max(2, Ng);
+          printf("CalculateGforHwithSigmaAsOperator: the automatic grid is cut back to %u points to stay inside the memory limit\n", Ng);
+          printf("  Supply GridPoints if a different distribution is wanted.\n");
+        }
+        if (Emax - Emin < 100 * DBL_MIN) { Emin -= 0.5; Emax += 0.5; }
+        Grid = (double*)malloc(Ng * sizeof(double));
+        if (Grid == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+        for (k = 0; k < Ng; k++) Grid[k] = Emin + (Emax - Emin) * (double)k / (double)(Ng - 1);
+      }
+      VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: %u poles binned on %u grid points\n", NbathMax, Ng);
+      Rgrid = (CompactMatrixType*)calloc(Ng, sizeof(CompactMatrixType));
+      if (Rgrid == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+      for (c = 0; c < Ng; c++)
+      {
+        Rgrid[c].Ni = North; Rgrid[c].Nj = North; Rgrid[c].QComplex = 1;
+        if (InitCompactMatrix(&(Rgrid[c])))
+        {
+          printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for grid point %u of %u\n", c, Ng);
+          printf("  %u accumulators of %u x %u do not fit in memory, use fewer grid points.\n", Ng, North, North);
+          ierr = 1; goto cleanup;
+        }
+      }
+      for (i = 0; i < NSigma; i++)
+      {
+        uint32_t bi = Sigma[i].BlockSize, Li = bi * North;
+        if (Dlist[i] == 0) continue;
+        Wm.Ni = bi; Wm.Nj = bi; Wm.QComplex = 1;
+        WG.Ni = bi; WG.Nj = North; WG.QComplex = 1;
+        if (InitCompactMatrix(&Wm) || InitCompactMatrix(&WG)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+        for (np = 0; np < Dlist[i]; np++)
+        {
+          Gm.Ni = bi; Gm.Nj = North; Gm.QComplex = 1; Gm.OnLuaStack = true;
+          Gm.Name = Zlist[i].Name;
+          Gm.a0 = 0; Gm.b0 = 1; Gm.mu = 0;
+          Gm.V = &(Zlist[i].V[(size_t)np * Li]);
+          for (n = 0; n < Sigma[i].N; n++)
+          {
+            BlockListOfPolesGetPole(&(Sigma[i]), n, &Wm, &en);
+            en += Elist[i][np];
+            /*  bisection for the interval that holds en                        */
+            clow = 0;
+            chigh = Ng - 1;
+            while (chigh - clow > 1)
+            {
+              c = (clow + chigh) / 2;
+              if (Grid[c] <= en) clow = c; else chigh = c;
+            }
+            FindWeigth(&(Grid[clow]), &en, &(Grid[chigh]), &uleft, &uright);
+            CompactMatrixAddMultiply('N', 'N', &Wm, &Gm, &WG, 1, 0, 0, 0);
+            CompactMatrixAddMultiply('C', 'N', &Gm, &WG, &(Rgrid[clow]),  uleft, 0, 1, 0);
+            CompactMatrixAddMultiply('C', 'N', &Gm, &WG, &(Rgrid[chigh]), uright, 0, 1, 0);
+          }
+        }
+        FreeCompactMatrix(&Wm);
+        FreeCompactMatrix(&WG);
+      }
+      /*  factorize every bin.  R_c is a positively weighted sum of G^dag W G
+       *  and is positive semi definite by construction, so the truncation only
+       *  ever throws weight away and never creates negative weight.            */
+      Nbath = 0;
+      for (c = 0; c < Ng; c++)
+      {
+        SquareCompactMatrixMakeHermitian(&(Rgrid[c]));
+        if (HermitianCompactMatrixToRectangularRoot(&(Rgrid[c]), &Yc, SigmaAsOperatorEpsChol, &DiscardedWeight, &NegativeWeight)) { ierr = 1; goto cleanup; }
+        FreeCompactMatrix(&(Rgrid[c]));
+        Rgrid[c] = Yc;
+        Nbath += Yc.Ni;
+      }
+      Ybath.Ni = Max(Nbath, 1); Ybath.Nj = North; Ybath.QComplex = 1;
+      if (InitCompactMatrix(&Ybath)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for the bath\n"); ierr = 1; goto cleanup; }
+      Ybath.Ni = Nbath;
+      Ebath = (double*)calloc(Max(Nbath, 1), sizeof(double));
+      if (Ebath == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperator\n"); ierr = 1; goto cleanup; }
+      k = 0;
+      for (c = 0; c < Ng; c++)
+      {
+        for (q = 0; q < Rgrid[c].Ni; q++)
+        {
+          Ebath[k] = Grid[c];
+          for (p = 0; p < North; p++) Ybath.V[(size_t)k * North + p] = Rgrid[c].V[q * North + p];
+          k++;
+        }
+        FreeCompactMatrix(&(Rgrid[c]));
+      }
+      free(Rgrid); Rgrid = NULL;
+      VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: %u bath states after binning\n", Nbath);
+    }
+  }
+  if (NegativeWeight > 0)
+  {
+    printf("CalculateGforHwithSigmaAsOperator: %g negative spectral weight found in the residues of Sigma\n", NegativeWeight);
+    printf("  A self energy with a residue that is not positive semi definite has no Hamiltonian representation.\n");
+    printf("  The negative part is dropped, the result is an approximation of an unphysical input.\n");
+  }
+  if (DiscardedWeight > 0)
+  {
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: %g spectral weight below the truncation threshold discarded\n", DiscardedWeight);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  F   block Lanczos on the arrowhead                                     */
+  /*                                                                         */
+  /*      M = (  HO      Ybath^dag             )                             */
+  /*          (  Ybath   diag( Ebath )         )                             */
+  /*                                                                         */
+  /*      the Schur complement of which on the outer block is                */
+  /*      w - HO - Sigma(w), so the resolvent of M in the seed block is G.    */
+  /*      The structure is used in the matrix vector product, M is never      */
+  /*      formed.                                                             */
+  /* ---------------------------------------------------------------------- */
+  Dtot = North + Nbath;
+  NTriUse = NTriFull;
+  if ((double)NTriUse * (double)m > (double)Dtot) NTriUse = (Dtot + m - 1) / m;
+  if (NTriUse == 0) NTriUse = 1;
+  if (NTriUse != NTriFull)
+  {
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: NTriFull reduced from %u to %u, the space has only %u dimensions\n", NTriFull, NTriUse, Dtot);
+  }
+  {
+    CompactMatrixType Qoall, Qball, Yo, Yb, Qok, Qbk, Qoj, Qbj, Qonext, Qbnext;
+    uint32_t l, t;
+    Qoall.Ni = NTriUse * m; Qoall.Nj = North;        Qoall.QComplex = 1;
+    Qball.Ni = NTriUse * m; Qball.Nj = Max(Nbath, 1); Qball.QComplex = 1;
+    Yo.Ni = m; Yo.Nj = North;         Yo.QComplex = 1;
+    Yb.Ni = m; Yb.Nj = Max(Nbath, 1); Yb.QComplex = 1;
+    Ablk.Ni = m; Ablk.Nj = m; Ablk.QComplex = 1;
+    Bblk.Ni = m; Bblk.Nj = m; Bblk.QComplex = 1;
+    Lblk.Ni = m; Lblk.Nj = m; Lblk.QComplex = 1;
+    if (InitCompactMatrix(&Qoall) || InitCompactMatrix(&Qball) || InitCompactMatrix(&Yo) ||
+        InitCompactMatrix(&Yb) || InitCompactMatrix(&Ablk) || InitCompactMatrix(&Bblk) || InitCompactMatrix(&Lblk))
+    {
+      printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for the block Lanczos\n");
+      printf("  %u vectors of length %u do not fit in memory, use a smaller NTriFull.\n", NTriUse * m, Dtot);
+      FreeCompactMatrix(&Qoall); FreeCompactMatrix(&Qball); FreeCompactMatrix(&Yo); FreeCompactMatrix(&Yb);
+      ierr = 1; goto cleanup;
+    }
+    Qball.Nj = Nbath;
+    Yb.Nj = Nbath;
+    chain.N = NTriUse;
+    chain.BlockSize = m;
+    chain.QComplex = 1;
+    if (InitBlockTridiagonalMatrix(&chain))
+    {
+      printf("InitBlockTridiagonalMatrix failed in CalculateGforHwithSigmaAsOperator\n");
+      FreeCompactMatrix(&Qoall); FreeCompactMatrix(&Qball); FreeCompactMatrix(&Yo); FreeCompactMatrix(&Yb);
+      ierr = 1; goto cleanup;
+    }
+    chain.mu = 0;
+    /*  the seed block, the m seeds in the orthonormalized outer basis         */
+    for (l = 0; l < m; l++)
+    {
+      for (p = 0; p < North; p++) Qoall.V[l * North + p] = Cseed.V[p * m + l];
+    }
+    Qok = CompactMatrixRowBlockView(&Qoall, 0, m);
+    Qbk = CompactMatrixRowBlockView(&Qball, 0, m);
+    RowBlockPairOrthonormalizeWithTransform(&Qok, &Qbk, &Lblk, SigmaAsOperatorEpsLanczos);
+    memcpy(chain.b, Lblk.V, Sqr(m) * sizeof(Complex16));
+    for (k = 0; k < NTriUse; k++)
+    {
+      Qok = CompactMatrixRowBlockView(&Qoall, k * m, m);
+      Qbk = CompactMatrixRowBlockView(&Qball, k * m, m);
+      /*  Y = M Q_k                                                           */
+      CompactMatrixAddMultiply('N', 'T', &Qok, &HO, &Yo, 1, 0, 0, 0);
+      if (Nbath)
+      {
+        CompactMatrixAddMultiply('N', '*', &Qbk, &Ybath, &Yo, 1, 0, 1, 0);
+        CompactMatrixAddMultiply('N', 'T', &Qok, &Ybath, &Yb, 1, 0, 0, 0);
+        for (l = 0; l < m; l++)
+        {
+          for (t = 0; t < Nbath; t++)
+          {
+            Yb.V[(size_t)l * Nbath + t].Re += Ebath[t] * Qbk.V[(size_t)l * Nbath + t].Re;
+            Yb.V[(size_t)l * Nbath + t].Im += Ebath[t] * Qbk.V[(size_t)l * Nbath + t].Im;
+          }
+        }
+      }
+      /*  A_k = Q_k^dag M Q_k                                                 */
+      CompactMatrixAddMultiply('*', 'T', &Qok, &Yo, &Ablk, 1, 0, 0, 0);
+      if (Nbath) CompactMatrixAddMultiply('*', 'T', &Qbk, &Yb, &Ablk, 1, 0, 1, 0);
+      SquareCompactMatrixMakeHermitian(&Ablk);
+      memcpy(&(chain.a[(size_t)(k + 1) * Sqr(m)]), Ablk.V, Sqr(m) * sizeof(Complex16));
+      if (k + 1 == NTriUse) break;
+      /*  the residual                                                        */
+      CompactMatrixAddMultiply('T', 'N', &Ablk, &Qok, &Yo, -1, 0, 1, 0);
+      if (Nbath) CompactMatrixAddMultiply('T', 'N', &Ablk, &Qbk, &Yb, -1, 0, 1, 0);
+      if (k != 0)
+      {
+        Qoj = CompactMatrixRowBlockView(&Qoall, (k - 1) * m, m);
+        Qbj = CompactMatrixRowBlockView(&Qball, (k - 1) * m, m);
+        memcpy(Bblk.V, &(chain.b[(size_t)k * Sqr(m)]), Sqr(m) * sizeof(Complex16));
+        CompactMatrixAddMultiply('T', 'N', &Bblk, &Qoj, &Yo, -1, 0, 1, 0);
+        if (Nbath) CompactMatrixAddMultiply('T', 'N', &Bblk, &Qbj, &Yb, -1, 0, 1, 0);
+      }
+      /*  full re-orthogonalization, twice; the vectors are cheap here         */
+      for (q = 0; q < 2; q++)
+      {
+        for (j = 0; j <= k; j++)
+        {
+          Qoj = CompactMatrixRowBlockView(&Qoall, j * m, m);
+          Qbj = CompactMatrixRowBlockView(&Qball, j * m, m);
+          CompactMatrixAddMultiply('*', 'T', &Qoj, &Yo, &Bblk, 1, 0, 0, 0);
+          if (Nbath) CompactMatrixAddMultiply('*', 'T', &Qbj, &Yb, &Bblk, 1, 0, 1, 0);
+          CompactMatrixAddMultiply('T', 'N', &Bblk, &Qoj, &Yo, -1, 0, 1, 0);
+          if (Nbath) CompactMatrixAddMultiply('T', 'N', &Bblk, &Qbj, &Yb, -1, 0, 1, 0);
+        }
+      }
+      /*  normalize what is left, zero rows keep the block size uniform        */
+      norm = 0;
+      for (l = 0; l < m; l++)
+      {
+        Re = 0;
+        for (p = 0; p < North; p++) Re += Sqr(Yo.V[l * North + p].Re) + Sqr(Yo.V[l * North + p].Im);
+        for (t = 0; t < Nbath; t++) Re += Sqr(Yb.V[(size_t)l * Nbath + t].Re) + Sqr(Yb.V[(size_t)l * Nbath + t].Im);
+        norm = Max(norm, sqrt(Re));
+      }
+      RowBlockPairOrthonormalizeWithTransform(&Yo, &Yb, &Lblk, SigmaAsOperatorEpsLanczos * Max(norm, DBL_MIN));
+      Qonext = CompactMatrixRowBlockView(&Qoall, (k + 1) * m, m);
+      Qbnext = CompactMatrixRowBlockView(&Qball, (k + 1) * m, m);
+      memcpy(Qonext.V, Yo.V, (size_t)m * North * sizeof(Complex16));
+      if (Nbath) memcpy(Qbnext.V, Yb.V, (size_t)m * Nbath * sizeof(Complex16));
+      /*  R_old[i] = sum_j Q_{k+1}[j] L[i][j] and B_k[i][j] = <v_k^i|M|v_{k+1}^j>
+       *  = conj( L[i][j] ), the block that sits at position (k,k+1)            */
+      for (p = 0; p < m; p++)
+      {
+        for (q = 0; q < m; q++)
+        {
+          chain.b[(size_t)(k + 1) * Sqr(m) + p * m + q].Re =  Lblk.V[p * m + q].Re;
+          chain.b[(size_t)(k + 1) * Sqr(m) + p * m + q].Im = -Lblk.V[p * m + q].Im;
+        }
+      }
+    }
+    FreeCompactMatrix(&Qoall);
+    FreeCompactMatrix(&Qball);
+    FreeCompactMatrix(&Yo);
+    FreeCompactMatrix(&Yb);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  G   the chain padded back up to the full block size                    */
+  /*                                                                          */
+  /*      The block Lanczos produced the chain already, so it is handed back  */
+  /*      as it is.  Turning it into an Anderson matrix here would diagonalize */
+  /*      the ((N-1)*BlockSize)^2 tail for nothing: the caller can ask for     */
+  /*      that conversion when it wants it, and the route to a spectrum        */
+  /*      evaluates the continued fraction directly and never needs it.        */
+  /*                                                                          */
+  /*      The result is shaped exactly like the block tridiagonal matrix that  */
+  /*      the block Lanczos on H alone produces: block size of the full set of */
+  /*      transition operators, the deflation of the seed block recorded in    */
+  /*      BlockSizeList, and b[0] carrying the deflated block back to the full */
+  /*      set.  B0 has that rank deficiency in it, so its columns beyond       */
+  /*      BlockSize are zero and the padded part of the chain never shows.     */
+  /* ---------------------------------------------------------------------- */
+  G->N = chain.N;
+  G->BlockSize = NFull;
+  G->QComplex = 1;
+  if (InitBlockTridiagonalMatrix(G))
+  {
+    printf("InitBlockTridiagonalMatrix failed in CalculateGforHwithSigmaAsOperator\n");
+    ierr = 1; goto cleanup;
+  }
+  G->mu = 0;
+  strcpy(G->Name, "G with self energy");
+  G->BlockSizeList[0] = NFull;
+  for (k = 1; k <= G->N; k++) G->BlockSizeList[k] = m;
+  for (k = 1; k <= G->N; k++)
+  {
+    for (p = 0; p < m; p++)
+    {
+      for (q = 0; q < m; q++)
+      {
+        G->a[(size_t)k * Sqr(NFull) + p * NFull + q] = chain.a[(size_t)k * Sqr(m) + p * m + q];
+      }
+    }
+  }
+  for (k = 1; k < G->N; k++)
+  {
+    for (p = 0; p < m; p++)
+    {
+      for (q = 0; q < m; q++)
+      {
+        G->b[(size_t)k * Sqr(NFull) + p * NFull + q] = chain.b[(size_t)k * Sqr(m) + p * m + q];
+      }
+    }
+  }
+  /*  InitBlockTridiagonalMatrix leaves b[0] as the identity, it is overwritten
+   *  here and not added to                                                    */
+  for (k = 0; k < Sqr(NFull); k++) { G->b[k].Re = 0; G->b[k].Im = 0; }
+  for (p = 0; p < NFull; p++)
+  {
+    for (q = 0; q < m; q++)
+    {
+      for (k = 0; k < m; k++)
+      {
+        Complex16 b0pk;
+        if (B0 == NULL)
+        {
+          b0pk.Re = (p == k) ? 1 : 0;
+          b0pk.Im = 0;
+        }
+        else if (B0->QComplex)
+        {
+          b0pk = B0->V[p * m + k];
+        }
+        else
+        {
+          b0pk.Re = B0->VRe[p * m + k];
+          b0pk.Im = 0;
+        }
+        G->b[p * NFull + q].Re += b0pk.Re * chain.b[k * m + q].Re - b0pk.Im * chain.b[k * m + q].Im;
+        G->b[p * NFull + q].Im += b0pk.Re * chain.b[k * m + q].Im + b0pk.Im * chain.b[k * m + q].Re;
+      }
+    }
+  }
+  if (QComplexOut == 0)
+  {
+    norm = 0;
+    Re = 0;
+    for (k = 0; k < (G->N + 1) * Sqr(NFull); k++) { norm = Max(norm, fabs(G->a[k].Im)); Re = Max(Re, fabs(G->a[k].Re)); }
+    for (k = 0; k < G->N * Sqr(NFull); k++)       { norm = Max(norm, fabs(G->b[k].Im)); Re = Max(Re, fabs(G->b[k].Re)); }
+    if (norm > 1e-10 * Max(Re, 1.0))
+    {
+      printf("CalculateGforHwithSigmaAsOperator: all input is real but the result has an imaginary part of %g, kept complex\n", norm);
+    }
+    else
+    {
+      ComplexBlockTridiagonalMatrixToReal(G);
+    }
+  }
+
+cleanup:
+  FreeCompactMatrix(&SMat);
+  FreeCompactMatrix(&HMat);
+  FreeCompactMatrix(&Sfun);
+  FreeCompactMatrix(&T);
+  FreeCompactMatrix(&TS);
+  FreeCompactMatrix(&HO);
+  FreeCompactMatrix(&Cseed);
+  FreeCompactMatrix(&Ybath);
+  FreeCompactMatrix(&Ablk);
+  FreeCompactMatrix(&Bblk);
+  FreeCompactMatrix(&Lblk);
+  if (chain.a != NULL) FreeBlockTridiagonalMatrix(&chain);
+  if (Rgrid != NULL)
+  {
+    for (k = 0; k < Ng; k++) FreeCompactMatrix(&(Rgrid[k]));
+    free(Rgrid);
+  }
+  if (Zlist != NULL)
+  {
+    for (i = 0; i < NSigma; i++) FreeCompactMatrix(&(Zlist[i]));
+    free(Zlist);
+  }
+  if (Elist != NULL)
+  {
+    for (i = 0; i < NSigma; i++) free(Elist[i]);
+    free(Elist);
+  }
+  free(Dlist);
+  if (QHeffAllocated) FreeOperator(&Heff);
+  free(Sval);
+  free(Grid);
+  free(Ebath);
+  return ierr;
 }

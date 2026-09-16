@@ -496,3 +496,67 @@ for iVec=1,#wf_list do
     end
 
 end
+
+--[[
+**  Two regressions of CompactMatrixGramSchmidtOrthogonalizeRow  **
+]]
+
+print("\n=================================================")
+print("==== Gram Schmidt, real against complex      ====")
+print("=================================================")
+
+-- The real branch compared the square of the norm against SingularValue where
+-- the complex branch compared the norm, so a real direction far above the
+-- threshold was discarded while the identical complex one was kept.
+do
+  local n = 5e-4
+  local c = n/math.sqrt(2)
+  local cases = { {"real   ", { {1,0,0}, {0,1,0}, {0,0,n}       }},
+                  {"complex", { {1,0,0}, {0,1,0}, {0,0,c + c*I} }} }
+  for _, case in ipairs(cases) do
+    local X = Orthonormalize(case[2], {{"Method","GramSchmidt"},{"SingularValue",1e-6},
+                                       {"ReduceDimension",false}})
+    local norm = 0
+    for k = 1, 3 do norm = norm + math.abs(Conjugate(X[3][k])*X[3][k]) end
+    norm = math.sqrt(norm)
+    print(string.format("%s direction of norm %8.1e at SingularValue 1e-6 -> norm %8.1e",
+                        case[1], n, norm))
+    if norm < 0.5 then
+      error("Gram Schmidt dropped a direction of norm "..n.." at SingularValue 1e-6",1)
+    end
+  end
+  print("Passed")
+end
+
+print("\n=================================================")
+print("==== Gram Schmidt after a deflated vector    ====")
+print("=================================================")
+
+-- The complex branch looped for(ii=i+1+NSingular;...) when subtracting the
+-- projection on vector i, so after a vector had been deflated it skipped that
+-- many of the vectors it still had to orthogonalize.  Row 1 here is zero and
+-- deflates, and row 3 then kept its component along row 2.
+do
+  local A = { {0, 0, 0, 0},
+              {1, 0, 0, 0},
+              {1, 1, 0, 0},
+              {1, 0, 1 + 0.5*I, 0} }
+  local X = Orthonormalize(A, {{"Method","GramSchmidt"},{"SingularValue",1e-8},
+                               {"ReduceDimension",false}})
+  local worst = 0
+  for i = 1, 4 do
+    for j = 1, 4 do
+      if i ~= j then
+        local d = 0
+        for k = 1, 4 do d = d + Conjugate(X[i][k]) * X[j][k] end
+        local m = math.abs(d)
+        if m > worst then worst = m end
+      end
+    end
+  end
+  print(string.format("worst overlap between different rows: %.3e", worst))
+  if worst > tol then
+    error("Gram Schmidt left the rows not orthogonal, worst overlap "..worst,1)
+  end
+  print("Passed")
+end

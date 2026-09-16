@@ -187,6 +187,7 @@ test-jobs-Responsefunction:
           - "CalculateRho"
           - "CalculateSelfEnergy"
           - "ChangeType"
+          - "ChangeTypeAndersonBlock"
           - "ChangeTypeDoubleTri"
           - "ChangeTypeDoubleTriBlock"
           - "ChangeTypeFromDoubleTri"
@@ -264,6 +265,7 @@ test-jobs:
   parallel:
     matrix:
       - TEST_NAME:
+          - "BitMaskCombine"
           - "BitMaskToIndex"
           - "BlockBandDiagonalize"
           - "Braket"
@@ -277,6 +279,7 @@ test-jobs:
           - "CreateFluorescenceYield"
           - "CreateResonantSpectra"
           - "CreateSpectra"
+          - "CreateSpectraWithSelfEnergy"
           - "CreateClusterHamiltonian"
           - "CreateAtomicIndicesDict"
           - "CreateAtomicIndicesList"

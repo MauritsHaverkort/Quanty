@@ -88,7 +88,7 @@ uint32_t ResonantSpectraSelfEnergy(const OperatorType OppH1, const OperatorType 
   BlockTriDiagonalMatrixType SE[NSelfEnergy];
   for (i = 0; i < NSelfEnergy; i++)
   {
-	  CreateSpectrum(OppH1,*U[i],EigenBasis,settings->NTri1,settings->epsilon,SE[i],NTriSE);
+	  CreateSpectrum(OppH1,*U[i],EigenBasis,settings->NTri1,settings->epsilon,settings->SingularValue,SE[i],NTriSE);
   }
   //PrintBlockTriDiagonalMatrix(SE[0]);
   /* determine Emin1, Emax1, NE1 and Gamma1 if not set */
