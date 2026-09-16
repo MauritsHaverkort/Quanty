@@ -265,6 +265,7 @@ test-jobs:
   parallel:
     matrix:
       - TEST_NAME:
+          - "BitMaskCombine"
           - "BitMaskToIndex"
           - "BlockBandDiagonalize"
           - "Braket"

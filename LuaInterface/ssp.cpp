@@ -5681,6 +5681,41 @@ static int LuaIndexToBitMask(lua_State * L)
   return 1;
 }
 
+/*  On stack two bitmasks. Combines them bit by bit with the operation
+ *  Operation ('a' for and, 'o' for or and 'x' for xor) and returns the resulting bitmask.
+ *  Name is the name of the Lua function calling this routine, used for the error messages.
+ */
+static int LuaBitMaskCombine(lua_State * L, char Operation, const char *Name)
+{
+  int NF;
+  char *BitMask;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(len!=2) return luaL_error(L, "%s called with %d arguments. Expected two arguments, both equal to a string.\n",Name,len);
+  const char *BitMask1 = luaL_checkstring(L, 1);
+  const char *BitMask2 = luaL_checkstring(L, 2);
+  switch(BitMaskCombine(BitMask1, BitMask2, Operation, &NF, &BitMask))
+  {
+    case 1: return luaL_error(L, "%s could not allocate memory.\n",Name);
+    case 2: return luaL_error(L, "%s called with two bitmasks containing a different number of bits (%s, %s).\n",Name,BitMask1,BitMask2);
+    case 3: return luaL_error(L, "%s called with an unknown operation (%c).\n",Name,Operation);
+  }
+  lua_pushstring(L, BitMask);
+  free(BitMask);
+  return 1;
+}
+static int LuaBitMaskAnd(lua_State * L)
+{
+  return LuaBitMaskCombine(L, 'a', "BitMaskAnd");
+}
+static int LuaBitMaskOr(lua_State * L)
+{
+  return LuaBitMaskCombine(L, 'o', "BitMaskOr");
+}
+static int LuaBitMaskXor(lua_State * L)
+{
+  return LuaBitMaskCombine(L, 'x', "BitMaskXor");
+}
+
 /*  On stack an operator and a list of indices or a Bitmask
  *  Changes the creation to annihilation and annihilation to creation operators for those listed in the index list
  */
@@ -5793,6 +5828,9 @@ static const struct luaL_Reg global_functions[] = {
   {"ZtoKMatrix",LuaZtoKMatrix},
   {"IndexToBitMask",LuaIndexToBitMask},
   {"BitMaskToIndex",LuaBitMaskToIndex},
+  {"BitMaskAnd",LuaBitMaskAnd},
+  {"BitMaskOr",LuaBitMaskOr},
+  {"BitMaskXor",LuaBitMaskXor},
   {NULL, NULL}
 };
 
