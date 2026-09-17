@@ -1,0 +1,176 @@
+====== AngularMomentumOperators ======
+
+###
+//AngularMomentumOperators(NF, IndexUp, IndexDn)// returns a table with the angular momentum, multipole, Slater and Casimir operators of a single shell. It adds no functionality: every entry can also be created one at a time with //[[documentation:language_reference:functions:newoperator|NewOperator()]]//. It only shortens scripts, by replacing the block of thirty //NewOperator// calls that a multiplet calculation normally starts with by a single line.
+###
+
+<code Quanty Example.Quanty>
+NF = 10
+IndexDn = {0,2,4,6,8}
+IndexUp = {1,3,5,7,9}
+
+F0, F2, F4 = 5.0, 10.0, 6.0
+zeta, Bz   = 0.1, 0.01
+
+d = AngularMomentumOperators(NF, IndexUp, IndexDn)
+
+H = F0*d.SlaterF[0] + F2*d.SlaterF[2] + F4*d.SlaterF[4] + zeta*d.ldots + Bz*(2*d.Sz + d.Lz)
+</code>
+
+###
+All operators are created in the basis of spherical harmonics and rotated from there with a single rotation matrix, so a Slater integral $F^k$ keeps its meaning whichever basis is asked for.
+###
+
+===== Input =====
+
+  * //NF// : Integer, the number of fermionic modes in the one particle basis.
+  * //IndexUp// : A list of indices. For the bases "Y", "Z" and "K" the $2l+1$ orbitals with spin up, ordered from $m=-l$ to $m=l$. For the basis "jjz" the $2l$ states of $j=l-1/2$, ordered from $j_z=-j$ to $j_z=j$.
+  * //IndexDn// : A list of indices. For the bases "Y", "Z" and "K" the $2l+1$ orbitals with spin down, ordered from $m=-l$ to $m=l$. For the basis "jjz" the $2l+2$ states of $j=l+1/2$, ordered from $j_z=-j$ to $j_z=j$.
+  * Possible options
+    * "Basis" : a string, one of "Y" (the default), "Z", "K" or "jjz". The same values and the same index conventions as the "Basis" option of //[[documentation:language_reference:functions:newoperator|NewOperator()]]//.
+
+###
+The angular momentum $l$ of the shell is deduced from the length of the index lists. If no options are given the basis is taken to be "jjz" when //IndexDn// is two longer than //IndexUp//, and "Y" otherwise.
+###
+
+===== Output =====
+
+  * A table with the following entries.
+
+^ entry ^ contents ^
+| //l//, //NF//, //Basis// | the angular momentum of the shell, the number of fermionic modes, and the name of the basis that was used |
+| //Index// | the index lists handed in, as //Index.Up// and //Index.Dn//, or as //Index.jmin// and //Index.jplus// on the jjz basis |
+| //Lx// //Ly// //Lz// //Lplus// //Lmin// //Lsqr// | the orbital angular momentum |
+| //Sx// //Sy// //Sz// //Splus// //Smin// //Ssqr// | the spin |
+| //Jx// //Jy// //Jz// //Jplus// //Jmin// //Jsqr// | the total angular momentum |
+| //Tx// //Ty// //Tz// | the magnetic dipole operator |
+| //Qxx// //Qyy// //Qzz// //Qxy// //Qxz// //Qyz// | the charge quadrupole operator |
+| //ldots// | the spin orbit coupling $\sum_i \vec{l}_i \cdot \vec{s}_i$ |
+| //N// | the number of electrons in the shell |
+| //SlaterF[k]// | the Coulomb repulsion of angular momentum transfer $k$, for $k=0,2,\ldots,2l$ |
+| //GG[k]// | the scalar product $u^{(k)} \cdot u^{(k)}$ of Racah's unit tensors, for $k=0,1,\ldots,2l$ |
+| //Casimir// | the Casimir operator of each group in Racah's chain, keyed by group name |
+| //CoulombJJ// | on the jjz basis only, the Coulomb repulsion with a separate set of Slater integrals per pair of $j$ shells |
+
+###
+Every operator carries a //Name//, so that //[[documentation:language_reference:functions:printexpectationvalues|PrintExpectationValues()]]// prints readable column headers without any further work.
+###
+
+===== The Slater operators =====
+
+###
+The Coulomb repulsion within the shell is split into the contributions of each angular momentum transfer $k$, which run over the even values from $0$ to $2l$. //SlaterF[k]// is the operator that multiplies $F^k$, so that
+\begin{eqnarray}
+U = \sum_{k=0,2,\ldots}^{2l} F^k \, \mathrm{SlaterF}[k]
+\end{eqnarray}
+is the same operator as //NewOperator("U", NF, IndexUp, IndexDn, {F0, F2, ...})//. The index of the list is $k$ itself, not a counter, so the list of a $d$ shell has the entries //SlaterF[0]//, //SlaterF[2]// and //SlaterF[4]//. The Slater integrals themselves are obtained from //[[documentation:language_reference:functions:getslaterintegrals|GetSlaterIntegrals()]]//.
+###
+
+===== The Casimir operators =====
+
+###
+Racah's unit tensor $u^{(k)}_q$ of a shell of angular momentum $l$ is the one particle operator, summed over spin, whose reduced matrix element is one:
+\begin{eqnarray}
+u^{(k)}_q = \sum_{m_1 = -l}^{l} \sum_{m_2 = -l}^{l} \sum_{\sigma} (-1)^{l-m_1}
+\begin{pmatrix} l & k & l \\ -m_1 & q & m_2 \end{pmatrix}
+a^{\dagger}_{m_1,\sigma} a^{\phantom{\dagger}}_{m_2,\sigma}.
+\end{eqnarray}
+The table entry //GG[k]// is the scalar product of two of them,
+\begin{eqnarray}
+\mathrm{GG}[k] = u^{(k)} \cdot u^{(k)} = \sum_{q=-k}^{k} (-1)^q \, u^{(k)}_q \, u^{(k)}_{-q}.
+\end{eqnarray}
+In this normalisation the $k=1$ one is the square of the orbital angular momentum up to a factor,
+\begin{eqnarray}
+L^2 = l(l+1)(2l+1) \, \mathrm{GG}[1],
+\end{eqnarray}
+which is the easiest way to check which convention a given table is using.
+###
+
+###
+For odd $k$ the operators $u^{(k)}$ generate the group $SO(2l+1)$, and the $k=1$ one alone generates $SO(3)$. The sum of //GG[k]// over the odd $k$ that generate a group is the Casimir operator of that group, and these are returned under //Casimir//, keyed by the name of the group:
+###
+
+^ entry ^ equals ^ exists for ^
+| //Casimir.SO3// | //GG[1]// | every shell with $l \geq 1$ |
+| //Casimir.SO5//, //Casimir.SO7//, ... | the sum of //GG[k]// over odd $k$ from $1$ to $2l-1$ | every shell with $l \geq 1$, named $SO(2l+1)$ |
+| //Casimir.G2// | //GG[1]// + //GG[5]// | an $f$ shell only |
+
+###
+For an $f$ shell this is Racah's chain $SO(3) \subset G_2 \subset SO(7)$, the standard way of labelling the terms of $f^n$ that $L$ and $S$ alone do not separate. Note that //any// scaling of a Casimir operator is allowed in a fit, and the conventions in the literature differ, which is why the $k$ resolved //GG// are returned next to the named combinations. For the $k=1$ one in particular it is usual to fit $\alpha L^2$ rather than $\alpha' \, \mathrm{Casimir.SO3}$, and $L^2 = l(l+1)(2l+1)\,\mathrm{Casimir.SO3}$ relates the two.
+###
+
+===== The Coulomb operator on the jjz basis =====
+
+###
+On the jjz basis the table carries, in addition to //SlaterF//, the entry //CoulombJJ//, in which each pair of $j$ shells has its own set of Slater integrals:
+###
+
+^ entry ^ $k$ ^ contents ^
+| //CoulombJJ.jmin.F[k]// | $0, 2, \ldots, 2l-2$ | within $j=l-1/2$ |
+| //CoulombJJ.jplus.F[k]// | $0, 2, \ldots, 2l$ | within $j=l+1/2$ |
+| //CoulombJJ.cross.F[k]// | $0, 2, \ldots, 2l-2$ | between the two $j$ shells, direct |
+| //CoulombJJ.cross.G[k]// | $1, 3, \ldots, 2l-1$ | between the two $j$ shells, exchange, which carries the odd $k$ |
+
+###
+If the radial wave functions of $j=l-1/2$ and $j=l+1/2$ are the same, these reduce to the //SlaterF// of the shell. If they are not, which is the point of solving a Dirac equation rather than a Schrödinger equation, //CoulombJJ// is the more general parametrisation and //SlaterF// is an approximation to it. The extra parameters are usually neglected; having both available makes it possible to check how much that costs.
+###
+
+===== Example =====
+
+###
+The seventeen terms of $f^3$. The two $^2H$ terms have the same $S$ and the same $L$ and are told apart only by the Casimir operators of $G_2$ and $SO(7)$; the same holds for the two $^2F$ terms and for the $^4S$ and $^4F$ terms, which the Coulomb interaction happens to leave degenerate at these parameters.
+###
+
+==== Input ====
+<code Quanty AngularMomentumOperators.Quanty>
+NF = 14
+IndexDn = {0,2,4,6,8,10,12}
+IndexUp = {1,3,5,7,9,11,13}
+
+f = AngularMomentumOperators(NF, IndexUp, IndexDn)
+
+-- the last two terms are tiny, they are there only to lift the accidental
+-- degeneracy between terms that the Coulomb interaction puts at the same energy
+H = 1.0*f.SlaterF[2] + 0.6*f.SlaterF[4] + 0.4*f.SlaterF[6]
+  + 1E-7*f.Casimir.G2 + 1E-9*f.Casimir.SO7
+
+psiList = Eigensystem(H, {NF, 0, {"11111111111111", 3, 3}}, 364, {{"DenseBorder", 400}})
+
+-- keep one state per multiplet, so that each term shows up once
+psiTerm = {}
+Eprev = nil
+for i = 1, #psiList do
+  local E = psiList[i] * H * psiList[i]
+  if (Eprev == nil) or (math.abs(E - Eprev) > 1E-8) then
+    psiTerm[#psiTerm + 1] = psiList[i]
+    Eprev = E
+  end
+end
+
+PrintExpectationValues(psiTerm, {f.Ssqr, f.Lsqr, f.Casimir.SO3, f.Casimir.G2, f.Casimir.SO7}, H)
+</code>
+
+==== Result ====
+<file Quanty_Output AngularMomentumOperators.out>
+         E       Ssqr    Lsqr    C SO3   C G2    C SO7
+ 1      -0.3786  3.75    42      0.5     0.7879  0.9784
+ 2      -0.2471  0.75    30      0.3571  0.8555  1.205
+ 3      -0.2345  3.75    0       0       0       0.8571
+ 4      -0.2345  3.75    12      0.1429  0.2857  0.8571
+ 5      -0.1996  0.75    20      0.2381  0.6856  1.1661
+ 6      -0.1752  0.75    56      0.6667  1.1212  1.4069
+ 7      -0.1522  3.75    20      0.2381  0.5974  0.7879
+ 8      -0.1277  0.75    6       0.0714  0.4762  1.0952
+ 9      -0.1276  0.75    2       0.0238  0.381   1.0952
+ 10     -0.0421  0.75    42      0.5     0.7879  1.4069
+ 11     -0.0357  0.75    72      0.8571  1.2597  1.5455
+ 12     -0.0081  3.75    6       0.0714  0.4762  0.6667
+ 13      0.0062  0.75    30      0.3571  0.664   1.3144
+ 14      0.0166  0.75    6       0.0714  0.6883  0.974
+ 15      0.0816  0.75    12      0.1429  0.5533  0.7803
+ 16      0.2215  0.75    20      0.2381  0.7214  1.1456
+ 17      0.4741  0.75    12      0.1429  0.4727  0.6743
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

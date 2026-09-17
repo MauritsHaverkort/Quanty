@@ -1,4 +1,11 @@
-# Wiki drafts — the SingularValue option
+# Wiki drafts
+
+Drop-in DokuWiki source for <https://www.quanty.org>, one file per page, named
+after the page id. See `../WIKI_EDITING_WORKFLOW.md` for the division of labour
+and the house style.
+
+
+## Batch 1 — the SingularValue option
 
 Drafted 11 September 2026, for the six commits `d60799fa .. 0c5980ab` on the
 `Claude` branch, which give the orthonormalization its own threshold instead of
@@ -12,7 +19,7 @@ read back through a summarising fetch, and I will not risk retyping a table of
 numbers I cannot verify character for character.
 
 
-## Drop-in replacements
+### Drop-in replacements
 
 Paste the whole file into the page's edit box.
 
@@ -29,9 +36,9 @@ page alone (`Gran-Schmidt`, and the broken sentence "only mixes with the second
 will fix them too.
 
 
-## Line-level edits
+### Line-level edits
 
-### `documentation:language_reference:functions:createspectra`
+#### `documentation:language_reference:functions:createspectra`
 
 Replace this line
 
@@ -59,7 +66,7 @@ The orthonormalization of a block of wave-functions is built from the overlap ma
 ###
 ```
 
-### `documentation:language_reference:functions:createresonantspectra`
+#### `documentation:language_reference:functions:createresonantspectra`
 
 Replace
 
@@ -74,7 +81,7 @@ with
     * "SingularValue" Positive real defining the smallest singular value of a list of wave-functions that is considered different from zero. A direction whose singular value is smaller is removed from the basis, which reduces the size of the blocks of the block Lanczos. Set independently of "epsilon"; see [[documentation:language_reference:functions:createspectra|]] for what the value means numerically. (Standard value 1.49E-8)
 ```
 
-### `documentation:language_reference:functions:createfluorescenceyield`
+#### `documentation:language_reference:functions:createfluorescenceyield`
 
 Replace
 
@@ -89,7 +96,7 @@ with
     * "SingularValue" Positive real defining the smallest singular value of a list of wave-functions that is considered different from zero. A direction whose singular value is smaller is removed from the basis, which reduces the size of the blocks of the block Lanczos. Set independently of "epsilon"; see [[documentation:language_reference:functions:createspectra|]] for what the value means numerically. (Standard value 1.49E-8)
 ```
 
-### `documentation:language_reference:functions:eigensystem`
+#### `documentation:language_reference:functions:eigensystem`
 
 This page indents its options with two spaces, not four. Replace
 
@@ -108,7 +115,7 @@ Note the trailing space after each bullet on this page — it is in the existing
 source, so it is kept.
 
 
-## A correction that is not about SingularValue
+### A correction that is not about SingularValue
 
 All four pages above document the standard `epsilon` as `1.49E-8`. The code has
 used `sqrt(DBL_EPSILON)/100 = 1.49E-10` since commit `923c2948` of 28 April
@@ -117,10 +124,65 @@ used `sqrt(DBL_EPSILON)/100 = 1.49E-10` since commit `923c2948` of 28 April
 eyes, since it is the one number in these edits that is not new work.
 
 
-## Not touched
+### Not touched
 
 - `ImpurityGreensFunction` also takes the new option, but has no wiki page.
   Nothing to edit; worth knowing when a page is eventually written.
 - No `===== Index =====` footers are affected: no page is added or renamed, and
   the function namespace uses the automatic `{{indexmenu>.#1}}` and
   `{{indexmenu>.#2}}` listings rather than manual footers.
+
+
+## Batch 2 — the Basis option and AngularMomentumOperators
+
+Drafted 17 September 2026, for the two commits `d626daec` and `92fff701` on the
+`Claude` branch, which make the `Basis` option of `NewOperator` work for the
+tesseral, cubic and jjz bases and add the `AngularMomentumOperators` function.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.angularmomentumoperators.txt` | `documentation:language_reference:functions:angularmomentumoperators` |
+
+The page does not exist yet, so create it at that id and paste the file in. The
+function namespace lists its children with `{{indexmenu>.#2}}` on
+`documentation:language_reference:functions:start`, sorted automatically, so no
+index footer and no `indexmenu_n` value needs setting — the page appears on its
+own once it is saved.
+
+### A drop-in replacement
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.newoperator.txt` | `documentation:language_reference:functions:newoperator` |
+
+Built from the page's own raw source, so the diff in the preview should show
+only two things: one added sentence in the first paragraph, and a new
+`===== Basis =====` section between `===== Output =====` and
+`===== Example =====`. Everything else, including the verbatim output block, is
+the existing text unchanged.
+
+### Checked
+
+Every Quanty snippet on both pages was run against the branch build, and every
+numerical claim was verified rather than asserted: that
+`NewOperator("Qzz", ..., {{"Basis","Z"}})` equals
+`Rotate(NewOperator("Qzz", ...), YtoZMatrix(2))`, that
+`L^2 = l(l+1)(2l+1) GG[1]`, that the Slater operators sum to the Coulomb
+operator, and that the `Casimir` and `CoulombJJ` keys advertised in the tables
+are the ones actually returned. The output block on the
+`AngularMomentumOperators` page is the real output of the script above it.
+
+### Not touched
+
+- `documentation:standard_operators:start` and the thirty-odd pages beneath it
+  (`Lz`, `Qzz`, `ldots`, `coulomb_repulsion`, ...) each show a bare
+  `NewOperator("Lz", NF, IndexUp, IndexDn)` with no mention of a basis. They are
+  still correct, since the default is the spherical harmonics, and repeating the
+  basis table on each of them would be worse than one link. If you want a
+  pointer there, the natural place is one sentence on
+  `documentation:standard_operators:start` rather than on every child.
+- The "P" (pyramidal harmonics) value has no rotation matrix anywhere in the
+  source. The `NewOperator` draft says in one line that it is not implemented,
+  rather than leaving it undocumented.
