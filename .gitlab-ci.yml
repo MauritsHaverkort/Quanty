@@ -295,6 +295,7 @@ test-jobs:
           - "ioGetPut"
           - "MeanFieldGroundstate"
           - "MeanFieldOperator"
+          - "NewOperatorBasis"
           - "NewTightBinding"
           - "NewWavefunction"
           - "OperatorToHoles"

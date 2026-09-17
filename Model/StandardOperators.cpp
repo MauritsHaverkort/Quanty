@@ -4,6 +4,341 @@ uint16_t lmsigmaToIndex(int const l, int const m, int const sigma, uint16_t cons
   return LindexDn[l + m];
 }
 
+/*  The one particle basis of a shell of angular momentum L can be written in several ways. Quanty labels
+ *  them by ibasis
+ *    0  SphericalHarmonicsY  - Y_{L,m}, m = -L ... L, each with spin dn and up
+ *    1  TesseralHarmonicsZ   - the real combinations of Y_{L,m} and Y_{L,-m}, sin first, than cos
+ *    2  KubicHarmonicsK      - the cubic harmonics, ordered according to irep a, b, e, t
+ *    3  PyramidalHarmonicsP  - not implemented
+ *    4  jjz                  - j = L-1/2 (2L states) followed by j = L+1/2 (2L+2 states), jz = -j ... j
+ *
+ *  All operators are defined in the spherical harmonics basis and rotated from there. The matrix
+ *
+ *    C[i][m] = <new_i|Y_m>
+ *
+ *  is what YToZMatrix, YToKMatrix and YToJJzMatrix return. A one particle operator with matrix A in the
+ *  spherical harmonics basis has in the new basis the matrix
+ *
+ *    A' = C^* A C^T
+ *
+ *  which is what RotateOperatorNormalOrder produces when it is handed C itself. Its convention is
+ *
+ *    a_m^{dag} (Y basis) = \sum_i C[i][m]^* a_i^{dag} (new basis)
+ *    a_m       (Y basis) = \sum_i C[i][m]   a_i       (new basis)
+ *
+ *  C is complex for the Z and K basis and real for jjz. It is unitary, so C^{-1} = C^{dag}, but C^T is
+ *  not C^{dag} and the transpose may never be substituted for the adjoint. Handing
+ *  RotateOperatorNormalOrder C^{dag} instead of C rotates the other way, from the new basis back to the
+ *  spherical harmonics. That mistake produces a well formed operator and no warning, so it is only
+ *  caught by a test: rotating Jz to the jjz basis with C gives a diagonal Jz and with C^{dag} does not.
+ */
+
+/*  ShellBasisSlots fills slot with the indices in the NFermion particle basis of the 2(2L+1) orbitals of
+ *  one shell, ordered as the rows of the basis rotation matrix C.
+ *  Input:
+ *    L           - The orbital angular momentum of the shell
+ *    ibasis      - The basis the indices are given in
+ *    *LindexUp   - for ibasis 0, 1, 2 and 3 an array of length 2L+1 with the spin up indices, m = -L ... L
+ *                  for ibasis 4          an array of length 2L   with the j = L-1/2 indices, jz = -j ... j
+ *    *LindexDn   - for ibasis 0, 1, 2 and 3 an array of length 2L+1 with the spin dn indices, m = -L ... L
+ *                  for ibasis 4          an array of length 2L+2 with the j = L+1/2 indices, jz = -j ... j
+ *    *slot       - An array of length 2(2L+1) that is filled
+ */
+void ShellBasisSlots(uint32_t const L, uint32_t const ibasis, uint16_t const * const LindexUp, uint16_t const * const LindexDn, uint16_t * const slot)
+{
+  uint32_t m;
+  if (ibasis == 4)
+  {
+    for (m = 0; m < 2 * L; m++)     slot[m]          = LindexUp[m];
+    for (m = 0; m < 2 * L + 2; m++) slot[m + 2 * L]  = LindexDn[m];
+  }
+  else
+  {
+    for (m = 0; m < 2 * L + 1; m++)
+    {
+      slot[2 * m]     = LindexDn[m];
+      slot[2 * m + 1] = LindexUp[m];
+    }
+  }
+}
+
+/*  ShellBasisYIndices fills, for one shell, both the slot array of ShellBasisSlots and the two index
+ *  arrays the operator is to be created on in the spherical harmonics basis. These are the same NFermion
+ *  slots, read as dn, up, dn, up, ... from m = -L to m = L.
+ *  Input:
+ *    L, ibasis, *LindexUp, *LindexDn - As for ShellBasisSlots
+ *    *slot       - An array of length 2(2L+1) that is filled
+ *    *YindexUp   - An array of length 2L+1 that is filled with the spin up spherical harmonics indices
+ *    *YindexDn   - An array of length 2L+1 that is filled with the spin dn spherical harmonics indices
+ */
+void ShellBasisYIndices(uint32_t const L, uint32_t const ibasis, uint16_t const * const LindexUp, uint16_t const * const LindexDn, uint16_t * const slot, uint16_t * const YindexUp, uint16_t * const YindexDn)
+{
+  uint32_t m;
+  ShellBasisSlots(L, ibasis, LindexUp, LindexDn, slot);
+  for (m = 0; m < 2 * L + 1; m++)
+  {
+    YindexDn[m] = slot[2 * m];
+    YindexUp[m] = slot[2 * m + 1];
+  }
+}
+
+/*  AddShellBasisRotationToMatrix writes into U the block that takes one shell of angular momentum L from
+ *  the spherical harmonics basis to the basis ibasis. U is left untouched outside of the shell.
+ *  Input:
+ *    L           - The orbital angular momentum of the shell
+ *    ibasis      - The basis to rotate to, 1 (Z), 2 (K) or 4 (jjz)
+ *    *slot       - An array of length 2(2L+1) as filled by ShellBasisSlots
+ *    U           - An initialized NFermion x NFermion matrix with QComplex set to 1
+ */
+uint32_t AddShellBasisRotationToMatrix(uint32_t const L, uint32_t const ibasis, uint16_t const * const slot, MatrixType * const U)
+{
+  uint32_t i, j;
+  MatrixType C;
+  switch (ibasis)
+  {
+    case 1:
+      C = YToZMatrix((int)(2 * (2 * L + 1)), true);
+      break;
+    case 2:
+      C = YToKMatrix((int)(2 * (2 * L + 1)), true);
+      break;
+    case 4:
+      C = YToJJzMatrix((int)(2 * (2 * L + 1)), true);
+      break;
+    default:
+      printf("AddShellBasisRotationToMatrix called with ibasis %d, only 1 (TesseralHarmonicsZ), 2 (KubicHarmonicsK) and 4 (jjz) can be reached by a rotation\n", ibasis);
+      return 1;
+  }
+  if (isNullMatrix(C))
+  {
+    printf("AddShellBasisRotationToMatrix could not create the basis rotation matrix for L = %d and ibasis = %d\n", L, ibasis);
+    return 1;
+  }
+  for (i = 0; i < 2 * (2 * L + 1); i++)
+  {
+    for (j = 0; j < 2 * (2 * L + 1); j++)
+    {
+      U->VRe[slot[i]][slot[j]] = C.VRe[i][j];
+      U->VIm[slot[i]][slot[j]] = (C.QComplex) ? C.VIm[i][j] : 0.0;
+    }
+  }
+  FreeMatrix(&C);
+  return 0;
+}
+
+/*  RotateOperatorToBasis rotates the operator Opp, defined on the shells whose slots are listed, from the
+ *  spherical harmonics basis to the basis ibasis. Opp is replaced by the rotated operator.
+ *  Input:
+ *    NFermion    - The number of Fermions in the basis
+ *    NShell      - The number of shells the operator acts on
+ *    *L          - An array of length NShell with the angular momentum of each shell
+ *    ibasis      - The basis to rotate to, 1 (Z), 2 (K) or 4 (jjz)
+ *    **slot      - An array of length NShell of arrays as filled by ShellBasisSlots
+ *    Opp         - The operator in the spherical harmonics basis, replaced by the rotated operator
+ */
+/*  RotateOperatorWithMatrix replaces Opp by the operator rotated with the matrix U. */
+uint32_t RotateOperatorWithMatrix(MatrixType const U, OperatorType * const Opp)
+{
+  OperatorType temp;
+  if (RotateOperatorNormalOrder(&temp, *Opp, U, &QDetNotOrderedFcFaBcBa))
+  {
+    printf("RotateOperatorNormalOrder failed in RotateOperatorWithMatrix\n");
+    return 1;
+  }
+  OperatorChop(&temp, 100 * DBL_EPSILON);
+  FreeOperator(Opp);
+  OperatorCopy(Opp, temp);
+  FreeOperator(&temp);
+  return 0;
+}
+
+/*  CreateBasisRotationMatrix creates the NFermion x NFermion matrix that is the identity outside of the
+ *  NShell shells listed and the basis rotation C of AddShellBasisRotationToMatrix on each of them.
+ *  Release with FreeMatrix.
+ */
+uint32_t CreateBasisRotationMatrix(uint32_t const NFermion, uint32_t const NShell, uint32_t const * const L, uint32_t const ibasis, uint16_t const * const * const slot, MatrixType * const U)
+{
+  uint32_t i;
+  U->QComplex = 1;
+  U->Ni = NFermion;
+  U->Nj = NFermion;
+  if (InitIdentityMatrix(U))
+  {
+    printf("Could not allocate the basis rotation matrix in CreateBasisRotationMatrix\n");
+    return 1;
+  }
+  for (i = 0; i < NShell; i++)
+  {
+    if (AddShellBasisRotationToMatrix(L[i], ibasis, slot[i], U))
+    {
+      FreeMatrix(U);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+uint32_t RotateOperatorToBasis(uint32_t const NFermion, uint32_t const NShell, uint32_t const * const L, uint32_t const ibasis, uint16_t const * const * const slot, OperatorType * const Opp)
+{
+  uint32_t ret;
+  MatrixType U;
+  if (CreateBasisRotationMatrix(NFermion, NShell, L, ibasis, slot, &U)) return 1;
+  ret = RotateOperatorWithMatrix(U, Opp);
+  FreeMatrix(&U);
+  return ret;
+}
+
+/*  ShellBasisYIndicesList allocates and fills, for NShell shells, the slot arrays of ShellBasisSlots and
+ *  the index arrays the operator is to be created on in the spherical harmonics basis. On failure nothing
+ *  is left allocated. Release with FreeShellBasisYIndicesList.
+ *  Input:
+ *    NShell      - The number of shells
+ *    *L          - An array of length NShell with the angular momentum of each shell
+ *    ibasis      - The basis the indices are given in
+ *    **LindexUp  - An array of length NShell of index arrays, as for ShellBasisSlots
+ *    **LindexDn  - An array of length NShell of index arrays, as for ShellBasisSlots
+ *    **slot      - An array of length NShell that is filled with allocated arrays of length 2(2L+1)
+ *    **YindexUp  - An array of length NShell that is filled with allocated arrays of length 2L+1
+ *    **YindexDn  - An array of length NShell that is filled with allocated arrays of length 2L+1
+ */
+uint32_t ShellBasisYIndicesList(uint32_t const NShell, uint32_t const * const L, uint32_t const ibasis, uint16_t * const * const LindexUp, uint16_t * const * const LindexDn, uint16_t ** const slot, uint16_t ** const YindexUp, uint16_t ** const YindexDn)
+{
+  uint32_t i;
+  for (i = 0; i < NShell; i++)
+  {
+    slot[i]     = (uint16_t *) malloc(2 * (2 * L[i] + 1) * sizeof(uint16_t));
+    YindexUp[i] = (uint16_t *) malloc((2 * L[i] + 1) * sizeof(uint16_t));
+    YindexDn[i] = (uint16_t *) malloc((2 * L[i] + 1) * sizeof(uint16_t));
+    if ((slot[i] == NULL) || (YindexUp[i] == NULL) || (YindexDn[i] == NULL))
+    {
+      printf("Could not allocate memory in ShellBasisYIndicesList\n");
+      FreeShellBasisYIndicesList(i + 1, slot, YindexUp, YindexDn);
+      return 1;
+    }
+    ShellBasisYIndices(L[i], ibasis, LindexUp[i], LindexDn[i], slot[i], YindexUp[i], YindexDn[i]);
+  }
+  return 0;
+}
+
+void FreeShellBasisYIndicesList(uint32_t const NShell, uint16_t ** const slot, uint16_t ** const YindexUp, uint16_t ** const YindexDn)
+{
+  uint32_t i;
+  for (i = 0; i < NShell; i++)
+  {
+    free(slot[i]);     slot[i]     = NULL;
+    free(YindexUp[i]); YindexUp[i] = NULL;
+    free(YindexDn[i]); YindexDn[i] = NULL;
+  }
+}
+
+/*  FinishOperatorInShellBasis rotates an operator that has just been created in the spherical harmonics
+ *  basis to the basis ibasis. ret is the return value of the routine that created the operator. If the
+ *  basis can not be reached the operator is left in the spherical harmonics basis and a non zero value is
+ *  returned.
+ */
+uint32_t FinishOperatorInShellBasis(uint32_t const NFermion, uint32_t const NShell, uint32_t const * const L, uint32_t const ibasis, uint16_t const * const * const slot, uint32_t const ret, OperatorType * const Opp)
+{
+  if (ret != 0) return ret;
+  if (ibasis == 0) return 0;
+  if (ibasis == 3)
+  {
+    printf("The PyramidalHarmonicsP basis is not implemented, the operator is returned in the SphericalHarmonicsY basis\n");
+    return 1;
+  }
+  return RotateOperatorToBasis(NFermion, NShell, L, ibasis, slot, Opp);
+}
+
+/*  CreateOperatorInShellBasis creates a single shell operator in the basis ibasis. The operator is first
+ *  created in the spherical harmonics basis by CreateOperatorY and then rotated.
+ *  Input:
+ *    NFermion        - The number of Fermions in the basis
+ *    L               - The orbital angular momentum of the shell
+ *    ibasis          - The basis to create the operator in
+ *    *LindexUp       - As for ShellBasisSlots
+ *    *LindexDn       - As for ShellBasisSlots
+ *    CreateOperatorY - The function creating the operator in the spherical harmonics basis
+ *    The operator Opp is not initialized on input
+ */
+uint32_t CreateOperatorInShellBasis(uint32_t const NFermion, uint32_t const L, uint32_t const ibasis, uint16_t * const LindexUp, uint16_t * const LindexDn, uint32_t (*CreateOperatorY) (uint32_t, uint32_t, uint16_t *, uint16_t *, OperatorType * const), OperatorType * const Opp)
+{
+  uint32_t ret;
+  uint16_t *slot[1], *YindexUp[1], *YindexDn[1];
+  if (ShellBasisYIndicesList(1, &L, ibasis, &LindexUp, &LindexDn, slot, YindexUp, YindexDn)) return 1;
+  ret = CreateOperatorY(NFermion, L, YindexUp[0], YindexDn[0], Opp);
+  ret = FinishOperatorInShellBasis(NFermion, 1, &L, ibasis, (uint16_t const * const *) slot, ret, Opp);
+  FreeShellBasisYIndicesList(1, slot, YindexUp, YindexDn);
+  return ret;
+}
+
+/*  CreateOperatorCFInShellBasis creates the crystal-field operator between two shells in the basis ibasis.
+ *  Input:
+ *    NFermion      - The number of Fermions in the basis
+ *    ibasis        - The basis to create the operator in
+ *    LCr, LAn      - The orbital angular momentum of the shell that is created and the one annihilated
+ *    *LCrindex**   - As for ShellBasisSlots, for the shell that is created
+ *    *LAnindex**   - As for ShellBasisSlots, for the shell that is annihilated
+ *    Akm           - The expansion of the potential on renormalized spherical harmonics
+ *    The operator CF is not initialized on input
+ */
+uint32_t CreateOperatorCFInShellBasis(uint32_t const NFermion, uint32_t const ibasis, uint32_t const LCr, uint32_t const LAn, uint16_t * const LCrindexUp, uint16_t * const LCrindexDn, uint16_t * const LAnindexUp, uint16_t * const LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
+{
+  uint32_t ret;
+  uint32_t L[2];
+  uint16_t *Lup[2], *Ldn[2], *slot[2], *Yup[2], *Ydn[2];
+  L[0] = LCr; Lup[0] = LCrindexUp; Ldn[0] = LCrindexDn;
+  L[1] = LAn; Lup[1] = LAnindexUp; Ldn[1] = LAnindexDn;
+  if (ShellBasisYIndicesList(2, L, ibasis, Lup, Ldn, slot, Yup, Ydn)) return 1;
+  ret = CreateOperatorCF(NFermion, LCr, LAn, Yup[0], Ydn[0], Yup[1], Ydn[1], Akm, CF);
+  ret = FinishOperatorInShellBasis(NFermion, 2, L, ibasis, (uint16_t const * const *) slot, ret, CF);
+  FreeShellBasisYIndicesList(2, slot, Yup, Ydn);
+  return ret;
+}
+
+/*  CreateOperatorCoulomb***InBasis create the coulomb operator in the basis ibasis. The operator is first
+ *  created in the spherical harmonics basis, where it is parametrized by the Slater integrals F, G and R,
+ *  and then rotated. The arguments are those of the routine wrapped, with ibasis inserted after L.
+ */
+uint32_t CreateOperatorCoulombSingleShellInBasis(uint32_t const NFermion, uint32_t const L, uint32_t const ibasis, uint16_t * const LindexUp, uint16_t * const LindexDn, double const *F, OperatorType * const U)
+{
+  uint32_t ret;
+  uint16_t *slot[1], *Yup[1], *Ydn[1];
+  if (ShellBasisYIndicesList(1, &L, ibasis, &LindexUp, &LindexDn, slot, Yup, Ydn)) return 1;
+  ret = CreateOperatorCoulombSingleShell(NFermion, L, Yup[0], Ydn[0], F, U);
+  ret = FinishOperatorInShellBasis(NFermion, 1, &L, ibasis, (uint16_t const * const *) slot, ret, U);
+  FreeShellBasisYIndicesList(1, slot, Yup, Ydn);
+  return ret;
+}
+
+uint32_t CreateOperatorCoulombTwoShellsConstantOccupationInBasis(uint32_t const NFermion, uint32_t const L1, uint32_t const L2, uint32_t const ibasis, uint16_t * const Lindex1Up, uint16_t * const Lindex1Dn, uint16_t * const Lindex2Up, uint16_t * const Lindex2Dn, double const *F, double const *G, OperatorType * const U)
+{
+  uint32_t ret;
+  uint32_t L[2];
+  uint16_t *Lup[2], *Ldn[2], *slot[2], *Yup[2], *Ydn[2];
+  L[0] = L1; Lup[0] = Lindex1Up; Ldn[0] = Lindex1Dn;
+  L[1] = L2; Lup[1] = Lindex2Up; Ldn[1] = Lindex2Dn;
+  if (ShellBasisYIndicesList(2, L, ibasis, Lup, Ldn, slot, Yup, Ydn)) return 1;
+  ret = CreateOperatorCoulombTwoShellsConstantOccupation(NFermion, L1, L2, Yup[0], Ydn[0], Yup[1], Ydn[1], F, G, U);
+  ret = FinishOperatorInShellBasis(NFermion, 2, L, ibasis, (uint16_t const * const *) slot, ret, U);
+  FreeShellBasisYIndicesList(2, slot, Yup, Ydn);
+  return ret;
+}
+
+uint32_t CreateOperatorCoulombFourShellsInBasis(uint32_t const NFermion, uint32_t const L1, uint32_t const L2, uint32_t const L3, uint32_t const L4, uint32_t const ibasis, uint16_t * const Lindex1Up, uint16_t * const Lindex1Dn, uint16_t * const Lindex2Up, uint16_t * const Lindex2Dn, uint16_t * const Lindex3Up, uint16_t * const Lindex3Dn, uint16_t * const Lindex4Up, uint16_t * const Lindex4Dn, double const *R, OperatorType * const U)
+{
+  uint32_t ret;
+  uint32_t L[4];
+  uint16_t *Lup[4], *Ldn[4], *slot[4], *Yup[4], *Ydn[4];
+  L[0] = L1; Lup[0] = Lindex1Up; Ldn[0] = Lindex1Dn;
+  L[1] = L2; Lup[1] = Lindex2Up; Ldn[1] = Lindex2Dn;
+  L[2] = L3; Lup[2] = Lindex3Up; Ldn[2] = Lindex3Dn;
+  L[3] = L4; Lup[3] = Lindex4Up; Ldn[3] = Lindex4Dn;
+  if (ShellBasisYIndicesList(4, L, ibasis, Lup, Ldn, slot, Yup, Ydn)) return 1;
+  ret = CreateOperatorCoulombFourShells(NFermion, L1, L2, L3, L4, Yup[0], Ydn[0], Yup[1], Ydn[1], Yup[2], Ydn[2], Yup[3], Ydn[3], R, U);
+  ret = FinishOperatorInShellBasis(NFermion, 4, L, ibasis, (uint16_t const * const *) slot, ret, U);
+  FreeShellBasisYIndicesList(4, slot, Yup, Ydn);
+  return ret;
+}
+
 /*  CreateOperatorCoulombSingelShell creates the coulomb operator in a single shell of angular momentum L
  *  Input:
  *    NFermion     - The number of Fermions in the basis
@@ -1245,21 +1580,15 @@ uint32_t CreateOperatorLxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorLxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorLx, Lx);
 }
 uint32_t CreateOperatorLxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorLx, Lx);
 }
 uint32_t CreateOperatorLxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorLx, Lx);
 }
 uint32_t CreateOperatorLxjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Lx)
 {
@@ -1362,21 +1691,15 @@ uint32_t CreateOperatorLyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorLyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorLy, Ly);
 }
 uint32_t CreateOperatorLyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorLy, Ly);
 }
 uint32_t CreateOperatorLyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ly)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorLy, Ly);
 }
 uint32_t CreateOperatorLyjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Ly)
 {
@@ -1470,21 +1793,15 @@ uint32_t CreateOperatorLzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorLzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorLz, Lz);
 }
 uint32_t CreateOperatorLzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorLz, Lz);
 }
 uint32_t CreateOperatorLzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorLz, Lz);
 }
 uint32_t CreateOperatorLzjjz(uint32_t NFermion, uint32_t L, uint16_t * Jindexjmin, uint16_t * Jindexjplus, OperatorType * const Lz)
 {
@@ -1605,21 +1922,15 @@ uint32_t CreateOperatorLsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
 }
 uint32_t CreateOperatorLsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorLsqr, Lsqr);
 }
 uint32_t CreateOperatorLsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorLsqr, Lsqr);
 }
 uint32_t CreateOperatorLsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorLsqr, Lsqr);
 }
 uint32_t CreateOperatorLsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Lsqr)
 {
@@ -1672,21 +1983,15 @@ uint32_t CreateOperatorLplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp
 }
 uint32_t CreateOperatorLplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorLplus, Lplus);
 }
 uint32_t CreateOperatorLplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorLplus, Lplus);
 }
 uint32_t CreateOperatorLplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorLplus, Lplus);
 }
 uint32_t CreateOperatorLplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Lplus)
 {
@@ -1765,21 +2070,15 @@ uint32_t CreateOperatorLminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
 }
 uint32_t CreateOperatorLminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorLmin, Lmin);
 }
 uint32_t CreateOperatorLminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorLmin, Lmin);
 }
 uint32_t CreateOperatorLminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Lmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorLmin, Lmin);
 }
 uint32_t CreateOperatorLminjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Lmin)
 {
@@ -1881,21 +2180,15 @@ uint32_t CreateOperatorJxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorJxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorJx, Jx);
 }
 uint32_t CreateOperatorJxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorJx, Jx);
 }
 uint32_t CreateOperatorJxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorJx, Jx);
 }
 uint32_t CreateOperatorJxjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Jx)
 {
@@ -1982,21 +2275,15 @@ uint32_t CreateOperatorJyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorJyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorJy, Jy);
 }
 uint32_t CreateOperatorJyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorJy, Jy);
 }
 uint32_t CreateOperatorJyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorJy, Jy);
 }
 uint32_t CreateOperatorJyjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Jy)
 {
@@ -2076,21 +2363,15 @@ uint32_t CreateOperatorJzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorJzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorJz, Jz);
 }
 uint32_t CreateOperatorJzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorJz, Jz);
 }
 uint32_t CreateOperatorJzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorJz, Jz);
 }
 uint32_t CreateOperatorJzjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Jz)
 {
@@ -2243,21 +2524,15 @@ uint32_t CreateOperatorJsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
 }
 uint32_t CreateOperatorJsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorJsqr, Jsqr);
 }
 uint32_t CreateOperatorJsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorJsqr, Jsqr);
 }
 uint32_t CreateOperatorJsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorJsqr, Jsqr);
 }
 uint32_t CreateOperatorJsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Jsqr)
 {
@@ -2457,21 +2732,15 @@ uint32_t CreateOperatorJplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp
 }
 uint32_t CreateOperatorJplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorJplus, Jplus);
 }
 uint32_t CreateOperatorJplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorJplus, Jplus);
 }
 uint32_t CreateOperatorJplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorJplus, Jplus);
 }
 uint32_t CreateOperatorJplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Jplus)
 {
@@ -2539,21 +2808,15 @@ uint32_t CreateOperatorJminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
 }
 uint32_t CreateOperatorJminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorJmin, Jmin);
 }
 uint32_t CreateOperatorJminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorJmin, Jmin);
 }
 uint32_t CreateOperatorJminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Jmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorJmin, Jmin);
 }
 uint32_t CreateOperatorJminjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const Jmin)
 {
@@ -2689,27 +2952,19 @@ uint32_t CreateOperatorTxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorTxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorTx, Tx);
 }
 uint32_t CreateOperatorTxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorTx, Tx);
 }
 uint32_t CreateOperatorTxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorTx, Tx);
 }
 uint32_t CreateOperatorTxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorTx, Tx);
 }
 
 uint32_t CreateOperatorTy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
@@ -2805,27 +3060,19 @@ uint32_t CreateOperatorTyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorTyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorTy, Ty);
 }
 uint32_t CreateOperatorTyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorTy, Ty);
 }
 uint32_t CreateOperatorTyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Ty)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorTy, Ty);
 }
 uint32_t CreateOperatorTyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Ty)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorTy, Ty);
 }
 
 uint32_t CreateOperatorTz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
@@ -2890,27 +3137,19 @@ uint32_t CreateOperatorTzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, u
 }
 uint32_t CreateOperatorTzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorTz, Tz);
 }
 uint32_t CreateOperatorTzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorTz, Tz);
 }
 uint32_t CreateOperatorTzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorTz, Tz);
 }
 uint32_t CreateOperatorTzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorTz, Tz);
 }
 
 uint32_t CreateOperatorTplus(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
@@ -2975,27 +3214,19 @@ uint32_t CreateOperatorTplusY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp
 }
 uint32_t CreateOperatorTplusK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorTplus, Tplus);
 }
 uint32_t CreateOperatorTplusZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorTplus, Tplus);
 }
 uint32_t CreateOperatorTplusP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorTplus, Tplus);
 }
 uint32_t CreateOperatorTplusjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tplus)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorTplus, Tplus);
 }
 
 uint32_t CreateOperatorTmin(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
@@ -3060,27 +3291,19 @@ uint32_t CreateOperatorTminY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
 }
 uint32_t CreateOperatorTminK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorTmin, Tmin);
 }
 uint32_t CreateOperatorTminZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorTmin, Tmin);
 }
 uint32_t CreateOperatorTminP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorTmin, Tmin);
 }
 uint32_t CreateOperatorTminjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tmin)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorTmin, Tmin);
 }
 
 uint32_t CreateOperatorTsqr(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
@@ -3108,27 +3331,19 @@ uint32_t CreateOperatorTsqrY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp,
 }
 uint32_t CreateOperatorTsqrK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorTsqr, Tsqr);
 }
 uint32_t CreateOperatorTsqrZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorTsqr, Tsqr);
 }
 uint32_t CreateOperatorTsqrP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Tsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorTsqr, Tsqr);
 }
 uint32_t CreateOperatorTsqrjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Tsqr)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorTsqr, Tsqr);
 }
 
 
@@ -3171,21 +3386,15 @@ uint32_t CreateOperatorldotsY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp
 }
 uint32_t CreateOperatorldotsK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorldots, ldots);
 }
 uint32_t CreateOperatorldotsZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorldots, ldots);
 }
 uint32_t CreateOperatorldotsP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const ldots)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorldots, ldots);
 }
 uint32_t CreateOperatorldotsjjz(uint32_t NFermion, uint32_t L, uint16_t * Indexjmin, uint16_t * Indexjplus, OperatorType * const ldots)
 {
@@ -3272,27 +3481,19 @@ uint32_t CreateOperatorCFY(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, 
 }
 uint32_t CreateOperatorCFK(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorCFInShellBasis(NFermion, 2, LCr, LAn, LCrindexUp, LCrindexDn, LAnindexUp, LAnindexDn, Akm, CF);
 }
 uint32_t CreateOperatorCFZ(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorCFInShellBasis(NFermion, 1, LCr, LAn, LCrindexUp, LCrindexDn, LAnindexUp, LAnindexDn, Akm, CF);
 }
 uint32_t CreateOperatorCFP(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexUp, uint16_t * LCrindexDn, uint16_t * LAnindexUp, uint16_t * LAnindexDn, HarmonicsExpansion const Akm, OperatorType * const CF)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorCFInShellBasis(NFermion, 3, LCr, LAn, LCrindexUp, LCrindexDn, LAnindexUp, LAnindexDn, Akm, CF);
 }
 uint32_t CreateOperatorCFjjz(uint32_t const NFermion, uint32_t LCr, uint32_t LAn, uint16_t * LCrindexmin, uint16_t * LCrindexplus, uint16_t * LAnindexmin, uint16_t * LAnindexplus, HarmonicsExpansion const Akm, OperatorType * const CF)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorCFInShellBasis(NFermion, 4, LCr, LAn, LCrindexmin, LCrindexplus, LAnindexmin, LAnindexplus, Akm, CF);
 }
 uint32_t CreateOperatorCFjjz(uint32_t const NFermion, uint32_t twoJ, uint16_t * JCrindexmin, uint16_t * JAnindexmin, HarmonicsExpansion const Akm, OperatorType * const CF)
 {
@@ -3380,27 +3581,19 @@ uint32_t CreateOperatorQxxY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 }
 uint32_t CreateOperatorQxxK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorQxx, Qxx);
 }
 uint32_t CreateOperatorQxxZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorQxx, Qxx);
 }
 uint32_t CreateOperatorQxxP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorQxx, Qxx);
 }
 uint32_t CreateOperatorQxxjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qxx)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorQxx, Qxx);
 }
 
 uint32_t CreateOperatorQyy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
@@ -3471,27 +3664,19 @@ uint32_t CreateOperatorQyyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 }
 uint32_t CreateOperatorQyyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorQyy, Qyy);
 }
 uint32_t CreateOperatorQyyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorQyy, Qyy);
 }
 uint32_t CreateOperatorQyyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorQyy, Qyy);
 }
 uint32_t CreateOperatorQyyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qyy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorQyy, Qyy);
 }
 
 uint32_t CreateOperatorQzz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
@@ -3532,27 +3717,19 @@ uint32_t CreateOperatorQzzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 }
 uint32_t CreateOperatorQzzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorQzz, Qzz);
 }
 uint32_t CreateOperatorQzzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorQzz, Qzz);
 }
 uint32_t CreateOperatorQzzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qzz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorQzz, Qzz);
 }
 uint32_t CreateOperatorQzzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qzz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorQzz, Qzz);
 }
 
 uint32_t CreateOperatorQxy(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
@@ -3609,27 +3786,19 @@ uint32_t CreateOperatorQxyY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 }
 uint32_t CreateOperatorQxyK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorQxy, Qxy);
 }
 uint32_t CreateOperatorQxyZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorQxy, Qxy);
 }
 uint32_t CreateOperatorQxyP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorQxy, Qxy);
 }
 uint32_t CreateOperatorQxyjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qxy)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorQxy, Qxy);
 }
 
 uint32_t CreateOperatorQxz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
@@ -3685,27 +3854,19 @@ uint32_t CreateOperatorQxzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 }
 uint32_t CreateOperatorQxzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorQxz, Qxz);
 }
 uint32_t CreateOperatorQxzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorQxz, Qxz);
 }
 uint32_t CreateOperatorQxzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qxz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorQxz, Qxz);
 }
 uint32_t CreateOperatorQxzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qxz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorQxz, Qxz);
 }
 
 uint32_t CreateOperatorQyz(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
@@ -3762,27 +3923,19 @@ uint32_t CreateOperatorQyzY(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, 
 }
 uint32_t CreateOperatorQyzK(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 2, LindexUp, LindexDn, &CreateOperatorQyz, Qyz);
 }
 uint32_t CreateOperatorQyzZ(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 1, LindexUp, LindexDn, &CreateOperatorQyz, Qyz);
 }
 uint32_t CreateOperatorQyzP(uint32_t NFermion, uint32_t L, uint16_t * LindexUp, uint16_t * LindexDn, OperatorType * const Qyz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 3, LindexUp, LindexDn, &CreateOperatorQyz, Qyz);
 }
 uint32_t CreateOperatorQyzjjz(uint32_t NFermion, uint32_t L, uint16_t * Lindexjmin, uint16_t * Lindexjplus, OperatorType * const Qyz)
 {
-  printf("not yet implemented\n");
-  //TODO:
-  return 0;
+  return CreateOperatorInShellBasis(NFermion, L, 4, Lindexjmin, Lindexjplus, &CreateOperatorQyz, Qyz);
 }
 
 

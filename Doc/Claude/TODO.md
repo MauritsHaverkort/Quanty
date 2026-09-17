@@ -659,3 +659,57 @@ not obviously an improvement either.
 **Meanwhile:** use `Complex.Re(x)` and `Complex.Im(x)`, never `x.Re`. In C the
 question does not arise: every routine reads the `QComplex` of the operand it is
 handed.
+
+## `PyramidalHarmonicsP` has no rotation matrix
+
+`NewOperator("...", NF, IndexUp, IndexDn, {{"Basis","P"}})` is accepted by the
+option parser and then fails. Every other basis is now handled by building the
+operator in the spherical harmonics basis and rotating with the matrix
+`C[i][m] = <new_i|Y_m>` that `YToZMatrix`, `YToKMatrix` and `YToJJzMatrix`
+return, but there is no `YToPMatrix`: the pyramidal harmonics exist only as an
+option string and a comment saying "alternating dn, up order rotating around z
+axis". Nothing in the source says which linear combinations they are.
+
+Until someone writes that matrix, `CreateOperatorInShellBasis` prints
+`The PyramidalHarmonicsP basis is not implemented, the operator is returned in
+the SphericalHarmonicsY basis` and returns non zero, and
+`AngularMomentumOperators` raises a lua error. That is an improvement on what it
+did before, which was to leave the operator uninitialized and segfault, but it
+is still a basis that is advertised and does not work. Either write
+`YToPMatrix` or remove the option.
+
+## `CreateOperatorCFjjz` for a single j shell
+
+The seven argument `CreateOperatorCFjjz`, which takes two j shells, is now built
+in the spherical harmonics basis and rotated. The five argument one, reached
+from lua as `NewOperator("CF", NF, Jindex, Akm)` with a single relativistic
+shell, is still not implemented. It cannot be done the same way: a single j
+shell is a *projection* of an l shell, not a rotation of one, and the caller
+hands over no indices for the other j shell to put the discarded part in. It
+needs its own reduced matrix elements.
+
+## `NewOperator` repeats its basis option parsing thirty one times
+
+Every `LuaOperatorNewXxx` in `LuaInterface/Operator.cpp` carries its own
+identical twenty five line block turning the `basis` string into `ibasis`, plus
+its own copy of the index length validation. That is around a thousand lines of
+duplication, and it is the reason a basis that does not work has to be rejected
+in thirty one places instead of one. Factoring it into a single helper — the way
+`LuaCoulombShellAngularMomentum` now does for the three coulomb branches — would
+shrink the file considerably. Not done here because it touches thirty one
+working functions at once.
+
+## The jjz rotation is Hermitian only to round off
+
+`Rotate` accumulates the `(i,j)` and `(j,i)` matrix elements of an operator in
+different orders, so a rotated operator can differ from its own adjoint in the
+last bit. With `YToZMatrix` and `YToKMatrix`, whose entries are all
+`±1/sqrt(2)`, the roundings happen to pair up and the result is exactly
+Hermitian; with `YToJJzMatrix`, whose entries are square roots of ratios, it is
+not. `Qzz`, `Tz` and the coulomb operator on the jjz basis therefore differ from
+their adjoint by about `1E-17`, and `Eigensystem` prints `called with an
+operator that is not fully Hermitian, I now will try to repair this`. The
+repair is correct and the warning is harmless, but it is noise, and it would
+disappear if `RotateOperatorNormalOrder` summed the two orders symmetrically.
+Explicitly symmetrizing after the rotation is *not* the fix: `Lplus`, `Lmin` and
+the transition operators are not Hermitian to begin with.
