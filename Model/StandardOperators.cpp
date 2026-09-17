@@ -339,6 +339,87 @@ uint32_t CreateOperatorCoulombFourShellsInBasis(uint32_t const NFermion, uint32_
   return ret;
 }
 
+/*  CreateOperatorUnitTensor creates scale times Racah's unit tensor u^{(k)}_q of a single shell of angular
+ *  momentum L, summed over spin. The tensor is normalized such that its reduced matrix element is one,
+ *
+ *    u^{(k)}_q = \sum_{m1,m2,sigma} (-1)^(L-m1) ( L   k  L ) a^{dag}_{m1,sigma} a_{m2,sigma}
+ *                                               ( -m1 q  m2)
+ *
+ *  Input:
+ *    NFermion    - The number of Fermions in the basis
+ *    L           - The orbital angular momentum of the shell
+ *    k, q        - The rank and the component of the tensor, 0 <= k <= 2L and -k <= q <= k
+ *    scale       - An overall prefactor
+ *    *LindexUp   - An array of length 2L+1 indexing the ml values from -L to L with spin up
+ *    *LindexDn   - An array of length 2L+1 indexing the ml values from -L to L with spin down
+ *    The operator u is not initialized on input
+ */
+uint32_t CreateOperatorUnitTensor(uint32_t const NFermion, uint32_t const L, uint32_t const k, int const q, double const scale, uint16_t const * const LindexUp, uint16_t const * const LindexDn, OperatorType * const u)
+{
+  int l, m1, m2;
+  double val;
+  uint16_t oadd[2];
+  l = (int)L;
+  InitNamedOperator(u, "u^(k)_q");
+  u->NFermion = NFermion;
+  u->NWord = Min(u->NFermion, 1 + (u->NFermion - 1) / 8);
+  InitOperatorFixedLength(u, 2, 8);
+  for (m1 = -l; m1 <= l; m1++)
+  {
+    /*  the 3j symbol vanishes unless -m1 + q + m2 = 0 */
+    m2 = m1 - q;
+    if ((m2 < -l) || (m2 > l)) continue;
+    val = scale * (double)(1 - 2 * (Abs(l - m1) & 1)) * ThreeJSymbol(l, -m1, (int)k, q, l, m2);
+    if (Abs(val) <= DBL_EPSILON) continue;
+    oadd[1] = CrAnMask + LindexUp[l + m1];
+    oadd[0] = LindexUp[l + m2];
+    RealOperatorAddLaderNormalOrder(u, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+    oadd[1] = CrAnMask + LindexDn[l + m1];
+    oadd[0] = LindexDn[l + m2];
+    RealOperatorAddLaderNormalOrder(u, oadd, 2, val, &QDetNotOrderedFcFaBcBa);
+  }
+  OperatorChop(u, 100 * DBL_EPSILON);
+  return 0;
+}
+
+/*  CreateOperatorGG creates the scalar product of two unit tensors of rank k of a single shell of angular
+ *  momentum L,
+ *
+ *    u^{(k)} . u^{(k)} = \sum_q (-1)^q u^{(k)}_q u^{(k)}_{-q}
+ *
+ *  For odd k these operators generate SO(2L+1), the k=1 one alone generates SO(3). Their sums are the
+ *  Casimir operators of Racah's group chain. In this normalization L^2 = L(L+1)(2L+1) u^{(1)} . u^{(1)}.
+ *  Input:
+ *    NFermion    - The number of Fermions in the basis
+ *    L           - The orbital angular momentum of the shell
+ *    k           - The rank of the tensors, 0 <= k <= 2L
+ *    *LindexUp   - An array of length 2L+1 indexing the ml values from -L to L with spin up
+ *    *LindexDn   - An array of length 2L+1 indexing the ml values from -L to L with spin down
+ *    The operator GG is not initialized on input
+ */
+uint32_t CreateOperatorGG(uint32_t const NFermion, uint32_t const L, uint32_t const k, uint16_t const * const LindexUp, uint16_t const * const LindexDn, OperatorType * const GG)
+{
+  int q;
+  OperatorType up, um;
+  char name[MAXStrLength];
+  snprintf(name, MAXStrLength, "u(%d).u(%d)", (int)k, (int)k);
+  InitNamedOperator(GG, name);
+  GG->NFermion = NFermion;
+  GG->NWord = Min(GG->NFermion, 1 + (GG->NFermion - 1) / 8);
+  InitOperatorFixedLength(GG, 2, 8);
+  InitOperatorFixedLength(GG, 4, 8);
+  for (q = -(int)k; q <= (int)k; q++)
+  {
+    CreateOperatorUnitTensor(NFermion, L, k, q, (double)(1 - 2 * (Abs(q) & 1)), LindexUp, LindexDn, &up);
+    CreateOperatorUnitTensor(NFermion, L, k, -q, 1.0, LindexUp, LindexDn, &um);
+    OperatorMultiplyNormalOrder(GG, up, um, &QDetNotOrderedFcFaBcBa);
+    FreeOperator(&up);
+    FreeOperator(&um);
+  }
+  OperatorChop(GG, 100 * DBL_EPSILON);
+  return 0;
+}
+
 /*  CreateOperatorCoulombSingelShell creates the coulomb operator in a single shell of angular momentum L
  *  Input:
  *    NFermion     - The number of Fermions in the basis
