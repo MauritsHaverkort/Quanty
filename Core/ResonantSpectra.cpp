@@ -1634,8 +1634,9 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     Specwp.Name[0]='\0';
     Specwp.NSpectra=Sqr(NT2 * NT1 * Npsi);
     Specwp.Spec= (SpectraType*)malloc(Specwp.NSpectra*sizeof(SpectraType));
+    printf("Energy2: %f\n", energy2);
     BlockTriDiagonalMatrixToSpectraWithBroadening(energy2, &GTri2, Specwp.Spec, settings->Emin2, settings->Emax2, settings->NE2, settings->Gamma2);
-    ShiftBlockTridiagonalMatrix(&GTri2,energy2);
+    //ShiftBlockTridiagonalMatrix(&GTri2,energy2);
 
     for(r=0;r<Npsi;r++)
     {

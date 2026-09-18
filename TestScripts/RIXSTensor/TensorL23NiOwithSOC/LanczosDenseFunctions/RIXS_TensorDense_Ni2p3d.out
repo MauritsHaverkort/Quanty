@@ -1,0 +1,780 @@
+=============================================================
+====    written by Maurits W. Haverkort,                 ====
+====    Yi Lu, Robert Green, Sebastian Macke,            ====
+====    Marius Retegan, Martin Brass, Simon Heinze,      ====
+====    Charles Cardot, Michelangelo Tagliavini,         ====
+====    Sina Shokri, Kai Arnold, Paul Hill,              ====
+====    Kevin Ackermann, Aleksandrs Zacinskis            ====
+====    (cc) 1995 - 2024 code and binaries released      ====
+====    under creative commons CC-BY lisence             ====
+====    www.quanty.org                                   ====
+====    Beta version, be critical and report errors!!!   ====
+=============================================================
+====    Version 0.81 beta                                ====
+====            compiled at: Sep 18 2026 at 10:10:15     ====
+=============================================================
+====    When used in scientific publications please cite ====
+====    one of the following papers as appropriate with  ====
+====    respect to the methods used in your publication: ====
+====    Phys. Rev. B 85, 165113 (2012)                   ====
+====    Phys. Rev. B 90, 085102 (2014)                   ====
+====    Euro Phys. Lett. 108, 57004 (2014)               ====
+====    J. of Phys.: Conf. Series 712, 012001 (2016)     ====
+====    New Journal of Physics 22 (9), 093018 (2020)     ====
+=============================================================
+Program executed on: Fri Sep 18 10:50:24 2026
+Running on host    : EXFLQR70635
+number of available processors              : 14
+maximum number of threads in parallel region: 14
+Smallest positive float  : 2.225074E-308 
+Smallest deviation from 1: 2.220446E-16 
+
+Map dimension:10	200
+Calculate RIXS...
+Start of BlockGroundState. Converge 45 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Outer loop   1, Number of Determinants:        45        45 last variance  2.178437603190546E+00
+Start of BlockGroundState. Converge 45 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Start of BlockOperatorPsiSerial
+Number of degenerated ground states: 9
+The indeces for the considered starting states are:
+
+         E       Jz      J^2     Lz      L^2     Sz      S^2     Coulomb std-dev 
+ 1      -1.5111 -4       20     -3.0007  12.006 -0.9993  1.9986 -1.3854  8.9e-8 
+ 2      -1.5111 -3       20     -2.2505  12.006 -0.7495  1.9986 -1.3854  2.1e-8 
+ 3      -1.5111 -2       20     -1.5004  12.006 -0.4996  1.9986 -1.3854  7.9e-8 
+ 4      -1.5111 -1       20     -0.7502  12.006 -0.2498  1.9986 -1.3854  0      
+ 5      -1.5111  0       20      5.2e-6  12.006 -5.2e-6  1.9986 -1.3854  6.3e-8 
+ 6      -1.5111  1       20      0.7502  12.006  0.2498  1.9986 -1.3854  5.6e-8 
+ 7      -1.5111  2       20      1.5004  12.006  0.4996  1.9986 -1.3854  4.2e-8 
+ 8      -1.5111  3       20      2.2505  12.006  0.7495  1.9986 -1.3854  7e-8   
+ 9      -1.5111  4       20      3.0007  12.006  0.9993  1.9986 -1.3854  9.9e-8 
+ 10     -1.347  -3       12     -2.75    12     -0.25    2      -1.3875  2.1e-8 
+ 11     -1.347  -2       12     -1.8333  12     -0.1667  2      -1.3875  2.1e-8 
+ 12     -1.347  -1       12     -0.9167  12     -0.0833  2      -1.3875  10e-8  
+ 13     -1.347   0       12      4.9e-6  12     -4.9e-6  2      -1.3875  7.9e-8 
+ 14     -1.347   1       12      0.9167  12      0.0833  2      -1.3875  1e-7   
+ 15     -1.3469  2       12      1.8333  12      0.1667  2      -1.3875  3e-8   
+ 16     -1.3469  3       12      2.75    12      0.25    2      -1.3875  4.9e-8 
+ 17     -1.2348 -2       6      -2.6629  11.966  0.6629  1.9889 -1.3772  8.3e-8 
+ 18     -1.2348 -1       6      -1.3315  11.966  0.3315  1.9889 -1.3772  6e-8   
+ 19     -1.2348  0       6      -1e-5    11.966  1e-5    1.9889 -1.3772  1.1e-7 
+ 20     -1.2348  1       6       1.3315  11.966 -0.3315  1.9889 -1.3772  6e-8   
+ 21     -1.2348  2       6       2.6629  11.966 -0.6629  1.9889 -1.3772  8.4e-8 
+ 22      0.425  -2       6      -1.9204  5.6992 -0.0796  0.1767  0.4747  3.5e-8 
+ 23      0.425  -1       6      -0.9602  5.6992 -0.0398  0.1767  0.4747  3.5e-8 
+ 24      0.425   0       6       1.1e-7  5.6992 -1.1e-7  0.1767  0.4747  2.2e-8 
+ 25      0.425   1       6       0.9602  5.6992  0.0398  0.1767  0.4747  3.2e-8 
+ 26      0.425   2       6       1.9204  5.6992  0.0796  0.1767  0.4747  4.5e-8 
+ 27      0.8491 -2       6      -1.0833  2.3343 -0.9167  1.8344  0.8202  4.1e-8 
+ 28      0.8491 -1       6      -0.5416  2.3343 -0.4584  1.8344  0.8202  6.8e-8 
+ 29      0.8491  0       6       1.3e-5  2.3343 -1.3e-5  1.8344  0.8202  6.7e-8 
+ 30      0.8491  1       6       0.5417  2.3343  0.4583  1.8344  0.8202  7.4e-8 
+ 31      0.8491  2       6       1.0833  2.3343  0.9167  1.8344  0.8202  6.9e-8 
+ 32      0.8948 -1       2      -0.5     2      -0.5     2       0.8543  6.8e-8 
+ 33      0.8948  0       2       2.8e-5  2      -2.8e-5  2       0.8543  3.5e-8 
+ 34      0.8948  1       2       0.5     2       0.5     2       0.8543  5.7e-8 
+ 35      0.9271  0       1.3e-9 -4.1e-5  1.9966  4.1e-5  1.9966  0.8626  2.4e-8 
+ 36      1.4993 -4       20     -3.9993  19.994 -7.2e-4  0.0014  1.495   5.2e-8 
+ 37      1.4993 -3       20     -2.9995  19.994 -5.4e-4  0.0014  1.495   1.1e-7 
+ 38      1.4993 -2       20     -1.9996  19.994 -3.6e-4  0.0014  1.495   3.7e-8 
+ 39      1.4993 -1       20     -0.9998  19.994 -1.8e-4  0.0014  1.495   8.7e-8 
+ 40      1.4993  0       20     -2e-10   19.994  2e-10   0.0014  1.495   8.4e-8 
+ 41      1.4993  1       20      0.9998  19.994  1.8e-4  0.0014  1.495   6.3e-8 
+ 42      1.4993  2       20      1.9996  19.994  3.6e-4  0.0014  1.495   1.4e-7 
+ 43      1.4993  3       20      2.9995  19.994  5.4e-4  0.0014  1.495   5.2e-8 
+ 44      1.4993  4       20      3.9993  19.994  7.2e-4  0.0014  1.495   1.3e-7 
+ 45      5.7276  0       0      -5e-10   0.0034  5e-10   0.0034  5.711   3.7e-7 
+test out tensor option
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:01 |            1 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:01 |            2 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:01 |            3 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:01 |            4 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:02 |            5 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:02 |            6 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:02 |            7 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:02 |            8 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorCartMethod1.dat
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            1 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            2 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            3 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            4 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            5 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            6 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            7 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            8 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+Total size spectra=81*(NE1+1)=	891	891	891
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorCartMethod2.dat
+Check that the two methods give the same result in cartesian basis
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorCartMethodDiff.dat
+Total size spectra=81*(NE1+1)=	891	891	891
+Trying to start a timing for Sum Into RIXS Spectra
+But timing still runs
+BeginTiming ignored
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorMethod2SphK.dat
+-------------------------------Start Tests---------------------------------
+---------------------------------------------------------------------------
+-Rotate Spectra Test-------------------------------------------------------
+---------------------------------------------------------------------------
+Check that the defined UCartToSphKQuanty matrix matches the manually defined UCartToSphK matrix
+{ { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } }
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorMethod1Rotated.dat
+Subsequent rotation in opposite directions should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Rotation by id() should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorMethod1SphK.dat
+The tensors for the two methods in SphK basis should be equivalent
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorSphKMethodDiff.dat
+---------------------------------------------------------------------------
+--Powder function GetPowderTensor()----------------------------------------
+---------------------------------------------------------------------------
+GetPowderTensorMethod called
+GetPowderTensorMethod pushed
+GetPowderTensor starting on Tensor with TensorBasis:"SphericalTensorK"
+ComputePowderAverage: lvec[0]=0 -> block size=1
+ComputePowderAverage: lvec[1]=1 -> block size=3
+ComputePowderAverage: lvec[2]=2 -> block size=5
+GetPowderTensor: Powder average computed successfully
+GetPowderTensor: No rotation back to original basis needed, copying powder average result
+GetPowderTensor: Successfully copied powder average result
+GetPowderTensor: Completed successfully
+GetPowderTensorMethod called
+GetPowderTensorMethod pushed
+RotateSpectra: Starting rotation
+GetPowderTensor starting on Tensor with TensorBasis:"cartesian"
+ComputePowderAverage: lvec[0]=0 -> block size=1
+ComputePowderAverage: lvec[1]=1 -> block size=3
+ComputePowderAverage: lvec[2]=2 -> block size=5
+GetPowderTensor: Powder average computed successfully
+GetPowderTensor: Rotating powder average result back to Cartesian basis
+GetPowderTensor: Inverse rotation matrix computed successfully
+RotateSpectra: Starting rotation
+GetPowderTensor: Successfully rotated powder result back to Cartesian basis
+GetPowderTensor: Completed successfully
+Powder tensor from cartesian basis and spherical basis should be equal
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorMethod1SphKPwd.dat
+Spectra printed to file: data/n3d8/SO3/chiRIXSTensorMethod1SphKPwdSum.dat
+compare powdered by SUM Matrix and powdered by GetPowderTensor()
+Test passed: the spectrum is zero within the accuracy
+---------------------------------------------------------------------------
+--ContractSpectraTensorWithPolarization()----------------------------------
+---------------------------------------------------------------------------
+The randomly chosen polarization vectors are:
+Ein=	{ (0.57513384005789 + 0.24304611305385 I) , (0.57021179664742 + 0.12499794985016 I) , (0.38836193458783 + 0.34432351097514 I) }
+Eout=	{ (-0.29924531421834 + 0.021663462728846 I) , (0.37931897058227 + 0.72858107471895 I) , (-0.06365241529441 - 0.48085137251123 I) }
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Spectra printed to file: data/n3d8/SO3/RIXSPol.dat
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+The coupled polarization vectors are:
+{ (-0.16684088627419 - 0.085189800978537 I) , (0.39523797441282 - 0.32683962988901 I) , (-0.15347771508269 + 0.26108342424569 I) , (-0.167925319831 - 0.049757812783779 I) , (0.30736329235766 - 0.36803142995675 I) , (-0.096400793832512 + 0.26623070362519 I) , (-0.1087562495995 - 0.11145046152977 I) , (0.39818064291847 - 0.15234471595157 I) , (-0.19028860798521 + 0.16482734616146 I) }
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+ContractWithPolarization: args=3 NSpectra=891 NE1=10 TensorBasis=cartesian
+polarization vector 1:
+  [0]: 0.575134 + 0.243046i
+  [1]: 0.570212 + 0.124998i
+  [2]: 0.388362 + 0.344324i
+polarization vector 2:
+  [0]: -0.299245 + 0.021663i
+  [1]: 0.379319 + 0.728581i
+  [2]: -0.063652 + -0.480851i
+coupled polarization vector:
+  [0]: -0.166841 + -0.085190i
+  [1]: 0.395238 + -0.326840i
+  [2]: -0.153478 + 0.261083i
+  [3]: -0.167925 + -0.049758i
+  [4]: 0.307363 + -0.368031i
+  [5]: -0.096401 + 0.266231i
+  [6]: -0.108756 + -0.111450i
+  [7]: 0.398181 + -0.152345i
+  [8]: -0.190289 + 0.164827i
+contraction done with the tensor function
+The coupled polarization vectors in the SphericalTensorK basis are:
+ecoupledSphK[	1	]=	(0.028732530064513 + 0.16650428700681 I)
+ecoupledSphK[	2	]=	(-0.29597751762073 - 0.34972188777561 I)
+ecoupledSphK[	3	]=	(0.2634212368536 + 0.031622851507763 I)
+ecoupledSphK[	4	]=	(0.1959264318186 + 0.39821658427516 I)
+ecoupledSphK[	5	]=	(-0.33531299037758 + 0.19999923385234 I)
+ecoupledSphK[	6	]=	(-0.21273802986486 + 0.31960775731548 I)
+ecoupledSphK[	7	]=	(0.21339057771413 + 0.080529554166146 I)
+ecoupledSphK[	8	]=	(-0.18542741468422 + 0.10580648262547 I)
+ecoupledSphK[	9	]=	(0.16073431950432 - 0.26629460549144 I)
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+ContractWithPolarization: args=3 NSpectra=891 NE1=10 TensorBasis=SphericalTensorK
+polarization vector 1:
+  [0]: 0.575134 + 0.243046i
+  [1]: 0.570212 + 0.124998i
+  [2]: 0.388362 + 0.344324i
+polarization vector 2:
+  [0]: -0.299245 + 0.021663i
+  [1]: 0.379319 + 0.728581i
+  [2]: -0.063652 + -0.480851i
+coupled polarization vector:
+  [0]: 0.028733 + 0.166504i
+  [1]: -0.295978 + -0.349722i
+  [2]: 0.263421 + 0.031623i
+  [3]: 0.195926 + 0.398217i
+  [4]: -0.335313 + 0.199999i
+  [5]: -0.212738 + 0.319608i
+  [6]: 0.213391 + 0.080530i
+  [7]: -0.185427 + 0.105806i
+  [8]: 0.160734 + -0.266295i
+contraction done with the tensor function
+Total size spectra=81*(NE1+1)=	891	11	891
+compare Polarization raw and FromTensorCart
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/SO3/RIXSPoldiffCart.dat
+compare Polarization raw and Sum
+Test passed: the spectrum is zero within the accuracy
+compare Polarization FromTensorCart and Sum
+Test passed: the spectrum is zero within the accuracy
+compare Polarization From FromTensorCart and FromTensorSphK
+Test passed: the spectrum is zero within the accuracy
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:06 |            1 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:13 |            2 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:20 |            3 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:28 |            4 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:36 |            5 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            1 |       0 | Eigensystem
+      0:00:03 |            9 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:44 |            6 |       0 | Plotting RIXS tensor
+Calculate RIXS...
+Start of BlockGroundState. Converge 45 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Outer loop   1, Number of Determinants:        45        45 last variance  2.922613309342212E+00
+Start of BlockGroundState. Converge 45 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Start of BlockOperatorPsiSerial
+Number of degenerated ground states: 1
+The indeces for the considered starting states are:
+
+         E       Jz      J^2     Lz      L^2     Sz      S^2     Coulomb std-dev 
+ 1      -2.7247 -7e-6    15.504 -6.8e-6  11.988 -2e-7    1.9991 -1.3836  1.2e-7 
+ 2      -2.722  -1.2373  15.204 -0.2473  11.995 -0.99    1.9987 -1.3848  2.1e-7 
+ 3      -2.722   1.2373  15.204  0.2473  11.995  0.99    1.9987 -1.3848  2e-7   
+ 4      -2.0579 -5e-4    15.263 -2.3e-4  10.717 -2.8e-4  1.999  -1.0987  9.9e-8 
+ 5      -2.0383  5e-4    13.057  2.3e-4  10.698  2.8e-4  1.9967 -1.094   7.9e-8 
+ 6      -2.0243 -0.7547  13.698 -0.7622  10.783  0.0076  1.9989 -1.1123  1.2e-7 
+ 7      -2.0243  0.7547  13.698  0.7622  10.783 -0.0076  1.9989 -1.1123  5.2e-8 
+ 8      -2.0217 -1.6e-5  13.092  4.4e-5  10.831 -6e-5    1.9487 -1.0623  1.4e-7 
+ 9      -1.9825  1.3e-5  11.302 -4.7e-5  10.806  6e-5    2      -1.1197  0      
+ 10     -1.5117  7e-6    13.729  6.8e-6  11.969  2.2e-7  1.9881 -1.3717  9.7e-8 
+ 11     -1.504  -0.7121  13.311  0.271   11.993 -0.9831  1.9968 -1.3828  8.4e-8 
+ 12     -1.5039  0.7121  13.311 -0.271   11.993  0.9831  1.9968 -1.3828  3.7e-8 
+ 13     -1.275  -9.3e-7  12.947 -8.1e-7  12.467 -1.2e-7  0.1268  0.9914  1.5e-7 
+ 14     -1.1543 -0.9867  12.85  -0.0041  11.73  -0.9826  1.9903 -1.3147  1.2e-7 
+ 15     -1.1543  0.9867  12.85   0.0041  11.73   0.9826  1.9903 -1.3147  7.5e-8 
+ 16     -1.1409 -2.9e-6  12.091 -2.5e-6  11.843 -4.6e-7  1.9413 -1.2487  7.5e-8 
+ 17     -0.913  -0.0072  17.494 -0.0051  10.669 -0.0021  1.9992 -1.0873  4.6e-8 
+ 18     -0.9089  0.0072  17.108  0.0051  10.65   0.0021  1.9794 -1.0534  9.9e-8 
+ 19     -0.8098 -2.3892  12.114 -2.3847  10.565 -0.0045  1.9992 -1.0646  8.7e-8 
+ 20     -0.8098  2.3892  12.114  2.3847  10.565  0.0045  1.9992 -1.0646  5.7e-8 
+ 21     -0.793  -1.4e-5  7.5542 -2.2e-5  9.6457  7.9e-6  1.4654 -0.5903  3e-8   
+ 22     -0.7172  9.2e-6  7.5414  1.6e-5  10.476 -7.3e-6  1.9957 -1.0447  5.5e-8 
+ 23     -0.4965 -5.3e-6  8.0271 -4.6e-6  9.1666 -6.4e-7  0.5469  0.1587  2.6e-8 
+ 24     -0.1047 -0.9727  14.554 -0.9692  14.512 -0.0034  0.0192  1.0684  1.3e-8 
+ 25     -0.1047  0.9727  14.554  0.9692  14.512  0.0034  0.0192  1.0684  4e-8   
+ 26      0.3781  5.6e-6  6.2309  6.1e-6  6.0383 -4.4e-7  0.1108  0.444   4.3e-8 
+ 27      0.8947 -0.5502  8.2067 -0.5474  6.4817 -0.0028  1.6232  0.4244  1.1e-7 
+ 28      0.8947  0.5502  8.2067  0.5474  6.4817  0.0028  1.6232  0.4244  5.3e-8 
+ 29      0.9179 -2.9e-4  7.7462 -10e-5   4.8213 -1.9e-4  1.9966  0.2227  6.7e-8 
+ 30      0.9434  2.9e-4  7.7614  1e-4    4.8995  1.9e-4  1.8963  0.23    1.8e-8 
+ 31      0.951  -7.5e-5  5.7689  1.5e-4  4.8962 -2.2e-4  1.9354  0.3144  3.9e-8 
+ 32      0.9626  7.7e-5  5.2046 -1.5e-4  4.5293  2.2e-4  1.9997  0.2881  2.8e-8 
+ 33      1.1291 -0.2082  12.183 -0.207   11.917 -0.0012  0.3785  0.8604  5.2e-8 
+ 34      1.1291  0.2082  12.183  0.207   11.917  0.0012  0.3785  0.8604  7.5e-8 
+ 35      1.1622 -3.2e-6  14.2   -3.6e-6  14.211  4.2e-7  0.0801  1.0701  4.2e-8 
+ 36      1.2717 -3.2e-5  17.681 -3.2e-5  17.679 -1.7e-8  0.004   1.3193  4.7e-8 
+ 37      1.4892  3.3e-5  19.905  3.3e-5  19.901  8.5e-9  0.0014  1.4883  4.7e-8 
+ 38      2.0081 -0.9738  4.2199  0.0179  2.3807 -0.9916  1.9857  0.7999  6e-8   
+ 39      2.0081  0.9738  4.2199 -0.0179  2.3807  0.9916  1.9857  0.7999  2.3e-7 
+ 40      2.0105 -7.7e-8  4.0552 -8.3e-8  2.3625  5.6e-9  1.9832  0.7997  8.4e-8 
+ 41      2.5035 -2.1075  17.659 -2.1111  17.644  0.0035  0.0096  1.3226  1.2e-7 
+ 42      2.5035  2.1076  17.659  2.1111  17.644 -0.0035  0.0096  1.3226  7.9e-8 
+ 43      2.819  -2e-4    19.999 -2e-4    19.995 -1.3e-8  0.0012  1.4955  1.7e-7 
+ 44      2.9391  2e-4    16.991  2e-4    16.989  1.5e-8  0.0019  1.7693  1.5e-7 
+ 45      6.3039  6.2e-7  1.7478  6.2e-7  1.7504  3e-10   0.0032  5.1302  4e-7   
+test out tensor option
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=10
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:44 |            6 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            9 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:44 |            6 |       0 | Plotting RIXS tensor
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorCartMethod1.dat
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:01 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:44 |            6 |       0 | Plotting RIXS tensor
+Total size spectra=81*(NE1+1)=	891	891	891
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorCartMethod2.dat
+Check that the two methods give the same result in cartesian basis
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorCartMethodDiff.dat
+Total size spectra=81*(NE1+1)=	891	891	891
+Trying to start a timing for Sum Into RIXS Spectra
+But timing still runs
+BeginTiming ignored
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |            9 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:44 |            6 |       0 | Plotting RIXS tensor
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod2SphK.dat
+-------------------------------Start Tests---------------------------------
+---------------------------------------------------------------------------
+-Rotate Spectra Test-------------------------------------------------------
+---------------------------------------------------------------------------
+Check that the defined UCartToSphKQuanty matrix matches the manually defined UCartToSphK matrix
+{ { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } }
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1Rotated.dat
+Subsequent rotation in opposite directions should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Rotation by id() should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1SphK.dat
+The tensors for the two methods in SphK basis should be equivalent
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorSphKMethodDiff.dat
+---------------------------------------------------------------------------
+--Powder function GetPowderTensor()----------------------------------------
+---------------------------------------------------------------------------
+Trying to start a timing for Sum Into RIXS tensor powder
+But timing still runs
+BeginTiming ignored
+GetPowderTensorMethod called
+GetPowderTensorMethod pushed
+GetPowderTensor starting on Tensor with TensorBasis:"SphericalTensorK"
+ComputePowderAverage: lvec[0]=0 -> block size=1
+ComputePowderAverage: lvec[1]=1 -> block size=3
+ComputePowderAverage: lvec[2]=2 -> block size=5
+GetPowderTensor: Powder average computed successfully
+GetPowderTensor: No rotation back to original basis needed, copying powder average result
+GetPowderTensor: Successfully copied powder average result
+GetPowderTensor: Completed successfully
+GetPowderTensorMethod called
+GetPowderTensorMethod pushed
+RotateSpectra: Starting rotation
+GetPowderTensor starting on Tensor with TensorBasis:"cartesian"
+ComputePowderAverage: lvec[0]=0 -> block size=1
+ComputePowderAverage: lvec[1]=1 -> block size=3
+ComputePowderAverage: lvec[2]=2 -> block size=5
+GetPowderTensor: Powder average computed successfully
+GetPowderTensor: Rotating powder average result back to Cartesian basis
+GetPowderTensor: Inverse rotation matrix computed successfully
+RotateSpectra: Starting rotation
+GetPowderTensor: Successfully rotated powder result back to Cartesian basis
+GetPowderTensor: Completed successfully
+Powder tensor from cartesian basis and spherical basis should be equal
+Rotating spectra with 891 spectra and 10 energy points
+RotateSpectra: Starting rotation
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1SphKPwd.dat
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1SphKPwdSum.dat
+compare powdered by SUM Matrix and powdered by GetPowderTensor()
+Test passed: the spectrum is zero within the accuracy
+---------------------------------------------------------------------------
+--ContractSpectraTensorWithPolarization()----------------------------------
+---------------------------------------------------------------------------
+The randomly chosen polarization vectors are:
+Ein=	{ (0.064925265636296 - 0.19039076320458 I) , (0.26662107085054 - 0.35262126508007 I) , (0.53235253881314 - 0.69333129857196 I) }
+Eout=	{ (-0.24448955141603 + 0.0035446084405194 I) , (0.2829865046245 + 0.71976185237831 I) , (-0.57954716464908 + 0.07873304901977 I) }
+Start of ResonantSpectra using Dense Methods
+Spectra printed to file: data/n3d8/D4h/RIXSPol.dat
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:44 |            6 |       0 | Plotting RIXS tensor
+The coupled polarization vectors are:
+{ (-0.016548409777237 + 0.046318417645067 I) , (-0.11866303441562 - 0.10060874605259 I) , (-0.052617298905901 + 0.10522866286863 I) , (-0.066435970322821 + 0.085267147621023 I) , (-0.17835317004278 - 0.29169073509976 I) , (-0.1822824329961 + 0.18336876453115 I) , (-0.13261222138261 + 0.16762527686814 I) , (-0.34838483558531 - 0.57937045018409 I) , (-0.3631114915803 + 0.35990444971567 I) }
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+ContractWithPolarization: args=3 NSpectra=891 NE1=10 TensorBasis=cartesian
+polarization vector 1:
+  [0]: 0.064925 + -0.190391i
+  [1]: 0.266621 + -0.352621i
+  [2]: 0.532353 + -0.693331i
+polarization vector 2:
+  [0]: -0.244490 + 0.003545i
+  [1]: 0.282987 + 0.719762i
+  [2]: -0.579547 + 0.078733i
+coupled polarization vector:
+  [0]: -0.016548 + 0.046318i
+  [1]: -0.118663 + -0.100609i
+  [2]: -0.052617 + 0.105229i
+  [3]: -0.066436 + 0.085267i
+  [4]: -0.178353 + -0.291691i
+  [5]: -0.182282 + 0.183369i
+  [6]: -0.132612 + 0.167625i
+  [7]: -0.348385 + -0.579370i
+  [8]: -0.363111 + 0.359904i
+contraction done with the tensor function
+The coupled polarization vectors in the SphericalTensorK basis are:
+ecoupledSphK[	1	]=	(0.3221689969843 - 0.066125157391739 I)
+ecoupledSphK[	2	]=	(-0.53933807100204 + 0.11745213524221 I)
+ecoupledSphK[	3	]=	(-0.04412106888214 - 0.05656495214377 I)
+ecoupledSphK[	4	]=	(0.13143410487572 - 0.036930111181481 I)
+ecoupledSphK[	5	]=	(0.11441324321203 + 0.23900856400898 I)
+ecoupledSphK[	6	]=	(-0.21691105460065 + 0.39403358178155 I)
+ecoupledSphK[	7	]=	(-0.37523842416765 - 0.2800154772865 I)
+ecoupledSphK[	8	]=	(-0.13097704987193 + 0.19293687106134 I)
+ecoupledSphK[	9	]=	(-0.13088476144143 - 0.010848148285202 I)
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+ContractWithPolarization: args=3 NSpectra=891 NE1=10 TensorBasis=SphericalTensorK
+polarization vector 1:
+  [0]: 0.064925 + -0.190391i
+  [1]: 0.266621 + -0.352621i
+  [2]: 0.532353 + -0.693331i
+polarization vector 2:
+  [0]: -0.244490 + 0.003545i
+  [1]: 0.282987 + 0.719762i
+  [2]: -0.579547 + 0.078733i
+coupled polarization vector:
+  [0]: 0.322169 + -0.066125i
+  [1]: -0.539338 + 0.117452i
+  [2]: -0.044121 + -0.056565i
+  [3]: 0.131434 + -0.036930i
+  [4]: 0.114413 + 0.239009i
+  [5]: -0.216911 + 0.394034i
+  [6]: -0.375238 + -0.280015i
+  [7]: -0.130977 + 0.192937i
+  [8]: -0.130885 + -0.010848i
+contraction done with the tensor function
+Total size spectra=81*(NE1+1)=	891	11	891
+Trying to start a timing for Sum using crontraction with polarization vectors
+But timing still runs
+BeginTiming ignored
+compare Polarization raw and FromTensorCart
+Test passed: the spectrum is zero within the accuracy
+Spectra printed to file: data/n3d8/D4h/RIXSPoldiffCart.dat
+compare Polarization raw and Sum
+Test passed: the spectrum is zero within the accuracy
+compare Polarization FromTensorCart and Sum
+Test passed: the spectrum is zero within the accuracy
+compare Polarization From FromTensorCart and FromTensorSphK
+Test passed: the spectrum is zero within the accuracy
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:52 |            7 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:00:59 |            8 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:01:08 |            9 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:01:15 |           10 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:01:22 |           11 |       0 | Plotting RIXS tensor
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:01:29 |           12 |       0 | Plotting RIXS tensor
+
+---------------------------------end of the simulation----------------------------------------The simulation took:Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:00 |            2 |       0 | Eigensystem
+      0:00:03 |           10 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |           10 |       0 | Resonant Tensor Spectra method 2
+      0:00:02 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            0 |       1 | Sum Into RIXS tensor powder
+      0:00:00 |           10 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+      0:01:29 |           12 |       0 | Plotting RIXS tensor
