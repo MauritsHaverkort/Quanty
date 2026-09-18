@@ -87,6 +87,7 @@ Source: `global_functions[]` in `LuaInterface/ssp.cpp`, registered via
 | ReadLenaBasisFunctions | LuaReadLenaBasisFunctions |
 | RelToNonRelOrbitals | LuaRelToNonRelOrbitals |
 | Rotate | Luarotate |
+| ShellAverage | LuaShellAverage |
 | Statistics | LuaStatistics |
 | TensorProduct | LuaTensorProduct |
 | TimeEnd | LuaTimeEnd |

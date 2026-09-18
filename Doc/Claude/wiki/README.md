@@ -186,3 +186,40 @@ are the ones actually returned. The output block on the
 - The "P" (pyramidal harmonics) value has no rotation matrix anywhere in the
   source. The `NewOperator` draft says in one line that it is not implemented,
   rather than leaving it undocumented.
+
+
+## Batch 3 — ShellAverage
+
+Drafted 18 September 2026, for the commit on the `Claude` branch that adds the
+`ShellAverage` function, the average of an operator over all unitary
+transformations within one shell.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.shellaverage.txt` | `documentation:language_reference:functions:shellaverage` |
+
+The page does not exist yet, so create it at that id and paste the file in. As
+with `AngularMomentumOperators`, the function namespace lists its children with
+`{{indexmenu>.#2}}`, so no index footer and no `indexmenu_n` value is needed.
+
+### Checked
+
+Both snippets were run against the branch build and the output block is the
+real output of the first one. Every number claimed on the page was verified
+numerically rather than taken from a book: the averages
+$F^0-\frac{2}{25}F^2$ (p), $F^0-\frac{2}{63}(F^2+F^4)$ (d),
+$F^0-\frac{4}{195}F^2-\frac{2}{143}F^4-\frac{100}{5577}F^6$ (f) and
+$F^0-\frac{1}{15}G^1-\frac{3}{70}G^3$ (core to valence) all come out of
+`ShellAverage` exactly, and are also what a direct trace over the two particle
+sector gives. `TestScripts/ShellAverage.Quanty` contains the same checks.
+
+### Not touched
+
+- `documentation:language_reference:functions:operatorsetonsiteenergy` is the
+  closest neighbour and is only linked to, not edited. If you want a pointer
+  back, one sentence there saying that `ShellAverage` does the same for the
+  two particle part and returns a new operator would be the natural place.
+- `documentation:language_reference:functions:operatorsettrace` says only that
+  it is deprecated in favour of `OperatorSetOnsiteEnergy`; nothing to add.

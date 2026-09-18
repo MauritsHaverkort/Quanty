@@ -1,0 +1,173 @@
+====== ShellAverage ======
+
+###
+//ShellAverage(O, shell)// returns the average of the operator //O// over all unitary transformations within one shell, the //average of configuration//. A one particle operator becomes $\epsilon \sum_{\tau} a^{\dagger}_{\tau} a^{\phantom{\dagger}}_{\tau}$ with $\epsilon$ the average of the one particle energies, a two particle operator becomes $\frac{1}{2} U_{\mathrm{av}} \hat{N} (\hat{N}-1)$ with $U_{\mathrm{av}}$ the average interaction of a pair of electrons, and the terms that change the number of electrons in the shell average to zero.
+###
+
+<code Quanty Example.Quanty>
+NF = 6
+IndexDn = {0,2,4}
+IndexUp = {1,3,5}
+All     = {0,1,2,3,4,5}
+
+H = 3.0 * NewOperator("Number", NF, All, All, {1,1,1,1,1,1})
+  + NewOperator("U", NF, IndexUp, IndexDn, {5.0, 7.0})
+  + 0.1 * NewOperator("ldots", NF, IndexUp, IndexDn)
+  + 0.2 * NewOperator("Sz", NF, IndexUp, IndexDn)
+
+print(Chop(ShellAverage(H)))
+</code>
+
+<file Quanty_Output ShellAverage.out>
+Operator: 
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          4 (largest number of product of lader operators)
+NFermionic modes =          6 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          6 (number of operators of length   2)
+C  0 A  0 |  3.00000000000000E+00
+C  1 A  1 |  3.00000000000000E+00
+C  2 A  2 |  3.00000000000000E+00
+C  3 A  3 |  3.00000000000000E+00
+C  4 A  4 |  3.00000000000000E+00
+C  5 A  5 |  3.00000000000000E+00
+
+Operator of Length   4
+QComplex      =          0 (Real==0 or Complex==1)
+N             =         15 (number of operators of length   4)
+C  1 C  0 A  1 A  0 | -4.44000000000000E+00
+C  2 C  0 A  2 A  0 | -4.44000000000000E+00
+C  3 C  0 A  3 A  0 | -4.44000000000000E+00
+C  4 C  0 A  4 A  0 | -4.44000000000000E+00
+C  5 C  0 A  5 A  0 | -4.44000000000000E+00
+C  2 C  1 A  2 A  1 | -4.44000000000000E+00
+C  3 C  1 A  3 A  1 | -4.44000000000000E+00
+C  4 C  1 A  4 A  1 | -4.44000000000000E+00
+C  5 C  1 A  5 A  1 | -4.44000000000000E+00
+C  3 C  2 A  3 A  2 | -4.44000000000000E+00
+C  4 C  2 A  4 A  2 | -4.44000000000000E+00
+C  5 C  2 A  5 A  2 | -4.44000000000000E+00
+C  4 C  3 A  4 A  3 | -4.44000000000000E+00
+C  5 C  3 A  5 A  3 | -4.44000000000000E+00
+C  5 C  4 A  5 A  4 | -4.44000000000000E+00
+</file>
+
+###
+The crystal field, the exchange field and the spin orbit coupling are gone, only the average one particle energy of 3 is left. The Coulomb interaction has become $\frac{1}{2} U_{\mathrm{av}} \hat{N} (\hat{N}-1)$ with $U_{\mathrm{av}} = F^0 - \frac{2}{25} F^2 = 5 - 0.56 = 4.44$, the centre of gravity of the $p^n$ configuration. The operator is printed in the form $a^{\dagger}_{\tau} a^{\dagger}_{\sigma} a^{\phantom{\dagger}}_{\tau} a^{\phantom{\dagger}}_{\sigma}$, which is minus $a^{\dagger}_{\tau} a^{\dagger}_{\sigma} a^{\phantom{\dagger}}_{\sigma} a^{\phantom{\dagger}}_{\tau}$, hence the minus sign in front of the prefactors.
+###
+
+===== Input =====
+
+  * //O// : An operator.
+  * //shell// : Optional. A list of the indices of the one particle states that form the shell. Each index must be one of the fermionic modes of the operator and may be given only once. If it is left out the average is over all //NF// one particle states.
+
+===== Output =====
+
+  * An operator, the average of //O// over the shell. The input operator is not changed.
+
+===== What survives the average =====
+
+###
+The average is the integral over the group $U(n)$ of all unitary transformations of the $n$ one particle states of the shell,
+###
+
+$$
+\begin{equation} \nonumber
+P[O] = \int \mathrm{d}U \; U \, O \, U^{\dagger} .
+\end{equation}
+$$
+
+###
+It is a projection: averaging twice gives the same as averaging once. The result is decided block by block in the number of creation operators $p$ and annihilation operators $q$ that a term has inside the shell.
+###
+
+###
+For $p \neq q$ the term averages to zero. The group contains the phase $a_{\tau} \to e^{i\phi} a_{\tau}$, under which the term picks up a factor $e^{i(p-q)\phi}$, and the average over $\phi$ kills it. A hybridisation to another shell, a pair creation term and a dipole transition operator therefore all disappear.
+###
+
+###
+For $p = q$ the $p$ particle states of the shell span $\Lambda^p \mathbb{C}^n$, which is an irreducible representation of $U(n)$. By Schur's lemma the only invariant operator on it is the identity, so the term becomes its trace over $\Lambda^p$ divided by $\binom{n}{p}$, times the identity on $\Lambda^p$,
+###
+
+$$
+\begin{equation} \nonumber
+\hat{1}_{\Lambda^p} = \sum_{\tau_1 < \tau_2 < \cdots < \tau_p} a^{\dagger}_{\tau_1} \cdots a^{\dagger}_{\tau_p} a^{\phantom{\dagger}}_{\tau_p} \cdots a^{\phantom{\dagger}}_{\tau_1} = \frac{1}{p!} \hat{N} (\hat{N}-1) \cdots (\hat{N}-p+1) .
+\end{equation}
+$$
+
+###
+For $p=1$ this is the trace of the one particle matrix and gives $\epsilon \hat{N}$, for $p=2$ it is the direct minus the exchange terms and gives $\frac{1}{2} U_{\mathrm{av}} \hat{N}(\hat{N}-1)$. Lader operators outside the shell, of other shells and of bosons, are spectators and are carried through untouched. The operator is normal ordered before it is averaged, without which the division of the average over the one particle and the two particle part would depend on the order in which the operator happened to be written down.
+###
+
+###
+The average over the shell is //not// the same as the spherical part of the operator. $U(n)$ is larger than the rotation group, so more is thrown away. The spin orbit coupling $\zeta \, \vec{l} \cdot \vec{s}$ is a scalar under rotations but is traceless over the shell, and does not survive. The Coulomb interaction, on the other hand, is a rotational scalar in its entirety, so a projection onto the rotational scalars would leave $F^2$ and $F^4$ untouched and would be of no use as an averaging tool.
+###
+
+###
+For a single shell the average of the Coulomb interaction is the familiar centre of gravity of the $l^n$ configuration,
+###
+
+$$
+\begin{eqnarray} \nonumber
+U_{\mathrm{av}}(p) &=& F^0 - \frac{2}{25} F^2 \\ \nonumber
+U_{\mathrm{av}}(d) &=& F^0 - \frac{2}{63} \left( F^2 + F^4 \right) \\ \nonumber
+U_{\mathrm{av}}(f) &=& F^0 - \frac{4}{195} F^2 - \frac{2}{143} F^4 - \frac{100}{5577} F^6 ,
+\end{eqnarray}
+$$
+
+###
+and for the interaction between a core and a valence shell, for example between a $2p$ core hole and the $3d$ shell,
+###
+
+$$
+\begin{equation} \nonumber
+U_{\mathrm{av}}(pd) = F^0_{pd} - \frac{1}{15} G^1_{pd} - \frac{3}{70} G^3_{pd} .
+\end{equation}
+$$
+
+===== More than one shell =====
+
+###
+Call the function once per shell. The projectors of two shells that share no one particle state commute, so the order does not matter and the result is the average over the product group $U(n_1) \times U(n_2) \times \cdots$. A hopping between the two shells changes the electron count of each of them and is lost, while a density density interaction between them survives as $U_{\mathrm{av}} \hat{N}_1 \hat{N}_2$.
+###
+
+<code Quanty Example.Quanty>
+NF = 16
+IndexDn_2p = {0,2,4}
+IndexUp_2p = {1,3,5}
+IndexDn_3d = {6,8,10,12,14}
+IndexUp_3d = {7,9,11,13,15}
+Shell_2p = {0,1,2,3,4,5}
+Shell_3d = {6,7,8,9,10,11,12,13,14,15}
+
+H = NewOperator("U", NF, IndexUp_3d, IndexDn_3d, {5.0, 8.0, 6.0})
+  + NewOperator("U", NF, IndexUp_2p, IndexDn_2p, IndexUp_3d, IndexDn_3d, {6.0, 7.0}, {5.0, 3.0})
+  + NewOperator("CF", NF, IndexUp_3d, IndexDn_3d, PotentialExpandedOnClm("Oh", 2, {0.6, -0.4}))
+  + 0.4 * NewOperator("ldots", NF, IndexUp_2p, IndexDn_2p)
+
+Hav = ShellAverage(ShellAverage(H, Shell_2p), Shell_3d)
+</code>
+
+###
+The choice of shells is the choice of how much structure is kept. Averaging the $3d$ shell as one set of ten states gives one $U_{\mathrm{av}}$. Averaging spin up and spin down as two separate shells of five states instead leaves the two spins their own onsite energy and leaves three interactions, a same spin and an opposite spin average,
+###
+
+$$
+\begin{equation} \nonumber
+\epsilon_{\uparrow} \hat{N}_{\uparrow} + \epsilon_{\downarrow} \hat{N}_{\downarrow}
++ \tfrac{1}{2} U_{\uparrow\uparrow} \hat{N}_{\uparrow} (\hat{N}_{\uparrow}-1)
++ \tfrac{1}{2} U_{\downarrow\downarrow} \hat{N}_{\downarrow} (\hat{N}_{\downarrow}-1)
++ U_{\uparrow\downarrow} \hat{N}_{\uparrow} \hat{N}_{\downarrow} .
+\end{equation}
+$$
+
+===== Related =====
+
+  * //[[documentation:language_reference:functions:operatorsetonsiteenergy|]]// shifts the one particle energies so that their average takes a given value, and returns the shift. It works on the one particle part only and changes the operator in place.
+  * //[[documentation:language_reference:functions:partialoperator|]]// splits an operator into the terms that lie inside a set of indices and the rest, without averaging anything.
+
+===== Table of contents =====
+{{indexmenu>.#1}}

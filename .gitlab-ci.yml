@@ -305,6 +305,7 @@ test-jobs:
           - "PartialMeanFieldOperator"
           - "PartialOperator"
           - "Rotate"
+          - "ShellAverage"
           - "Statistics"
           - "TensorProduct"
           - "TimeStartStopPrintSet"
