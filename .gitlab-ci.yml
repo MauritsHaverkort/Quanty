@@ -191,6 +191,7 @@ test-jobs-Responsefunction:
           - "ChangeTypeDoubleTri"
           - "ChangeTypeDoubleTriBlock"
           - "ChangeTypeFromDoubleTri"
+          - "ChangeTypeNTriMax"
           - "Chop"
           - "CreateBitMasks"
           - "Deflation"

@@ -133,6 +133,17 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
  */
 int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth)
 {
+  return ConvertBlockMatrix(Min, Mout, type, Method, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth, NTriMaxNoLimit, NTriMaxNoLimit);
+}
+
+/*  NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) the conversion
+ *  produces: NTriMaxVal on the one chain of a block tri-diagonal matrix, and the two of
+ *  them on the valence and the conduction chain of a block NaturalImpurityOrbital or a
+ *  block DoubleTri matrix. A block list of poles and a block Anderson matrix have no chain
+ *  and ignore both. See ConvertResponsefunction for where the ceiling is applied.
+ */
+int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
   if(Min->Block!=true)
   {
     printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
@@ -146,6 +157,9 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
   Mout->Block = true;
+  /*  as in ConvertResponsefunction: the switch below leaves data untouched when it does
+   *  not recognize the type of Min, and the tail has to be able to see that */
+  Mout->data = NULL;
   Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
   if(Mout->NSuggestedGridPoints==0)
   {
@@ -171,7 +185,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, SingularValue);
+          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, SingularValue, NTriMaxVal);
         }
         break;
         case 'a':
@@ -183,7 +197,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, SingularValue, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
+          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, SingularValue, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1, NTriMaxVal, NTriMaxCon);
         }
         break;
         case 'd':
@@ -465,7 +479,8 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
     }
     break;
   }
-  return 0;
+  if(Mout->data==NULL) return 0;
+  return ResponsefunctionTruncate(Mout, NTriMaxVal, NTriMaxCon);
 }
 
 /*  Rotate the block representation of a response function, GRot = U^* G U^T.

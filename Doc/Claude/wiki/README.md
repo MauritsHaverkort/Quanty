@@ -223,3 +223,55 @@ sector gives. `TestScripts/ShellAverage.Quanty` contains the same checks.
   two particle part and returns a new operator would be the natural place.
 - `documentation:language_reference:functions:operatorsettrace` says only that
   it is deprecated in favour of `OperatorSetOnsiteEnergy`; nothing to add.
+
+
+## Batch 4 — NTriMax on ChangeType
+
+Drafted 18 September 2026, for the commit on the `Claude` branch that adds the
+`NTriMax`, `NTriMaxVal` and `NTriMaxCon` options to
+`ResponseFunction.ChangeType`.
+
+### A drop-in replacement
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.responsefunction.functions.changetype.txt` | `documentation:language_reference:objects:responsefunction:functions:changetype` |
+
+Built from the page's own raw source. The existing text, the
+`{{indexmenu_n>999}}` header and the table-of-contents footer are unchanged; the
+diff in the preview should be the `===== Input =====`, `===== Output =====` and
+`===== Example =====` sections, which the page did not have, plus one line in
+the list at the top.
+
+### Two things in the diff that are not the new options
+
+- **The type list gains //DoubleTri//.** It said there are 4 types and listed
+  the four that predate the double tri-diagonal one. `NTriMaxVal` and
+  `NTriMaxCon` apply to //Nat// and //DoubleTri// both, so leaving the list at
+  four would have made the page contradict itself two sections later.
+- **The options that were already there are now written down.** The page showed
+  no options at all, so a reader had no way to know that the third argument
+  exists or what it looks like. `EffectivekBT`, `SingularValue` and
+  `MinimalPoleDistance` are listed alongside the three new ones. `Deflate`,
+  `relativeDistance` and `relativeWeigth` are left out: the first belongs to the
+  `Dense` conversion and the other two are refused by `ChangeType` as not
+  implemented.
+
+### Checked
+
+The example was run against the branch build and the output block is its real
+output, character for character. The claim that a chain cut to $N$ keeps the
+moments $\mu_0 \ldots \mu_{2N-1}$ was measured rather than quoted: the poles of
+the cut and of the full chain were summed into $\mu_k = \sum_i W_i a_i^k$, and
+for $N = 2, 3, 4, 5$ the two agree to $10^{-8}$ of $\mu_0 3^k$ up to
+$k = 3, 5, 7, 9$ and differ from the next one on.
+
+### Not touched
+
+- `documentation:language_reference:objects:responsefunction:functions:reducepoles`
+  is linked to twice but not edited. It is the other way to make a response
+  function smaller, and a sentence there pointing back at `NTriMax` would be
+  the natural counterpart if you want the link to go both ways.
+- The `Dense`, `Userdata` and `Table` targets are named in the new `Input`
+  section but not explained, since the page never explained them and that is a
+  separate piece of work.

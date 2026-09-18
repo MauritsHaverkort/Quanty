@@ -3,6 +3,7 @@ uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M);
 uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M);
 void DoubleTriDiagonalMatrixChop(DoubleTriDiagonalMatrixType * const M, double const epsilon);
 void DoubleTriDiagonalMatrixChopReduceDimension(DoubleTriDiagonalMatrixType * const M, double const epsilon);
+uint32_t DoubleTriDiagonalMatrixTruncate(DoubleTriDiagonalMatrixType * const M, uint32_t const Nval, uint32_t const Ncon);
 double DoubleTriDiagonalMatrixInverseOld(DoubleTriDiagonalMatrixType const M, MatrixType * const MI);
 void DoubleTriDiagonalMatrixAdd(DoubleTriDiagonalMatrixType * const M, DoubleTriDiagonalMatrixType B, double alphaRe);
 void DoubleTriDiagonalMatrixScalarMultiply(DoubleTriDiagonalMatrixType * const M, double alphaRe);

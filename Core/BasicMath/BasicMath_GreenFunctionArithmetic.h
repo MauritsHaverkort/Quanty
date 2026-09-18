@@ -47,7 +47,16 @@ Complex16 EvaluateAndersonMatrix(void const * A, const double omega, const doubl
 Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const * A, const double omega, const double Gamma);
 Complex16 EvaluateBADoubleTriDiagonalMatrix(void const * A, const double omega, const double Gamma);
 Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const double omega, const double Gamma);
+/*  NTriMaxNoLimit asks a conversion not to cut the chain it produces. Zero is a chain of
+ *  a[0] alone and so a value a caller can legitimately ask for, which is why the "not set"
+ *  marker has to sit at the top of the range rather than at the bottom.
+ */
+#define NTriMaxNoLimit UINT32_MAX
+uint32_t NTriMaxOr(uint32_t const NTriMax, uint32_t const N);
 int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth);
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
+int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate);
+int ResponsefunctionTruncate(ResponsefunctionType *M, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
 int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
 int ResponseFunctionTranspose(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
 int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout);

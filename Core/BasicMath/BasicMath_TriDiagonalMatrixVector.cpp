@@ -102,6 +102,31 @@ void TriDiagonalMatrixChopReduceDimension(TriDiagonalMatrixType * const M, doubl
   if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
 }
 
+/*  Cut the chain to at most N, keeping a[0..N] and b[0..N-1] and dropping the rest
+ *  without looking at the values further down the chain. A chain that is already
+ *  short enough is left as it is.
+ */
+uint32_t TriDiagonalMatrixTruncate(TriDiagonalMatrixType * const M, uint32_t const N)
+{
+  if (M->N <= N) return 0;
+  M->a = (double*)realloc(M->a, (N + 1) * sizeof(double));
+  if (M->a == NULL)
+  {
+    printf("realloc for M->a failed in TriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  M->b = (double*)realloc(M->b, N * sizeof(double));
+  if ((M->b == NULL) && (N != 0))
+  {
+    printf("realloc for M->b failed in TriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  M->N = N;
+  return 0;
+}
+
 /*
  *
  */

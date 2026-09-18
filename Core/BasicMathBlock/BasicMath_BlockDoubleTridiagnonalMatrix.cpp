@@ -126,6 +126,26 @@ uint32_t BlockDoubleTriDiagonalMatrixChop(BlockDoubleTriDiagonalMatrixType *cons
  *  disconnected by a small b[0], and a b0 chopped away entirely, which leaves G(w) = a0
  *  with no matrix behind it and so no chains either.
  */
+/*  Cut both chains, the valence one to at most Nval and the conduction one to at most
+ *  Ncon. a0 and b0 sit in front of the two chains and are left alone.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixTruncate(BlockDoubleTriDiagonalMatrixType *const A, uint32_t const Nval, uint32_t const Ncon)
+{
+  if(BlockTridiagonalMatrixTruncate(&(A->val), Nval))
+  {
+    printf("BlockTridiagonalMatrixTruncate failed for val in BlockDoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockTridiagonalMatrixTruncate(&(A->con), Ncon))
+  {
+    printf("BlockTridiagonalMatrixTruncate failed for con in BlockDoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  return 0;
+}
+
 uint32_t BlockDoubleTriDiagonalMatrixChopReduceDimension(BlockDoubleTriDiagonalMatrixType *const A, double const Epsilon)
 {
   if(BlockTridiagonalMatrixChopReduceDimension(&(A->val), Epsilon))

@@ -131,6 +131,26 @@ void DoubleTriDiagonalMatrixChopReduceDimension(DoubleTriDiagonalMatrixType * co
   }
 }
 
+/*  Cut both chains, the valence one to at most Nval and the conduction one to at most
+ *  Ncon. a0 and b0 sit in front of the two chains and are left alone.
+ */
+uint32_t DoubleTriDiagonalMatrixTruncate(DoubleTriDiagonalMatrixType * const M, uint32_t const Nval, uint32_t const Ncon)
+{
+  if (TriDiagonalMatrixTruncate(&(M->val), Nval))
+  {
+    printf("TriDiagonalMatrixTruncate failed for val in DoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (TriDiagonalMatrixTruncate(&(M->con), Ncon))
+  {
+    printf("TriDiagonalMatrixTruncate failed for con in DoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  return 0;
+}
+
 /*  MI=M^-1
  *  MI not initiallized on call
  */

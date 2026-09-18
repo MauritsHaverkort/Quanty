@@ -713,3 +713,42 @@ repair is correct and the warning is harmless, but it is noise, and it would
 disappear if `RotateOperatorNormalOrder` summed the two orders symmetrically.
 Explicitly symmetrizing after the rotation is *not* the fix: `Lplus`, `Lmin` and
 the transition operators are not Hermitian to begin with.
+
+## `Epsilon` of a block Nat is uninitialised when it comes from a list of poles
+
+**Status:** open, confirmed by running. A one-line fix, held out of the
+`NTriMax` work because it has nothing to do with the chain length.
+
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix`
+([Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp](../../Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp))
+sets `mu`, `QComplex`, `BlockSize`, `Name`, `a0`, the two chains and `TMT` — and
+never sets `B->Epsilon`, the width of the window around the Fermi level over
+which a state is counted half to the valence and half to the conduction chain.
+The struct is `malloc`ed by `ConvertBlockMatrix`, so the field keeps whatever was
+in that memory.
+
+It is visible from lua:
+
+```lua
+G = ResponseFunction.ChangeType(SomeBlockG, "ListOfPoles")
+for i = 1, 4 do
+  print(ResponseFunction.ToTable(
+        ResponseFunction.ChangeType(G, "Nat", {{"EffectivekBT", 0.05}})).epsilon)
+end
+-- 0.0966   0   -0.2025   0
+```
+
+Different on every call, and negative on some of them. The `kbT` the caller
+passes is used for the split itself and is the value `Epsilon` should get, the
+sibling `ListOfPolesToBADoubleTridiagonalMatrix` setting `M->Epsilon = Epsilon`
+at the end of its own conversion.
+
+**Why it is not simply fixed:** it is not a design question, `B->Epsilon = kbT;`
+next to `B->mu = A->mu;` is the whole fix. It is recorded rather than done
+because it was found while testing `ChangeType`'s `NTriMax` option and does not
+belong in that commit. Worth checking the other conversions to a block Nat for
+the same omission at the same time.
+
+**Meanwhile:** do not read `epsilon` off a block Nat that came from a list of
+poles. Nothing in Quanty itself reads it back, which is why this has gone
+unnoticed.

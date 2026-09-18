@@ -4290,14 +4290,38 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 }
 
 
+/*  The smaller of a ceiling on the chain length and the length the conversion would
+ *  produce on its own. Spelled out rather than written with the Min macro because the
+ *  conversions below call their input Min.
+ */
+uint32_t NTriMaxOr(uint32_t const NTriMax, uint32_t const N)
+{
+  return (NTriMax<N)?NTriMax:N;
+}
+
 /*
  *
  */
 int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth)
 {
+  return ConvertResponsefunction(Min, Mout, type, Method, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth, NTriMaxNoLimit, NTriMaxNoLimit);
+}
+
+/*  NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) the conversion
+ *  produces: NTriMaxVal on the one chain of a tri-diagonal matrix, and the two of them on
+ *  the valence and the conduction chain of a NaturalImpurityOrbital or a DoubleTri matrix.
+ *  A list of poles and an Anderson matrix have no chain and ignore both.
+ *
+ *  Where the routine that does the work takes a length of its own the ceiling is handed to
+ *  it, so that it stops there rather than building a chain that is then thrown away. The
+ *  cut at the end of this function is what makes the ceiling hold for the routes that have
+ *  no such argument, and is a no-op for the ones that do.
+ */
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
   if(Min->Block==true)
   {
-    return ConvertBlockMatrix(Min,Mout,type,Method, T,SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth);
+    return ConvertBlockMatrix(Min,Mout,type,Method, T,SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth, NTriMaxVal, NTriMaxCon);
   }
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
@@ -4328,7 +4352,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)Min->data, (TriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N);
+          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)Min->data, (TriDiagonalMatrixType*)Mout->data, NTriMaxOr(NTriMaxVal, ((ListOfPoles*)(Min->data))->N));
         }
         break;
         case 'a':
@@ -4340,7 +4364,10 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->mu, T);
+          /*  the two length arguments of ListOfPolesToBADoubleTridiagonalMatrix reduce the
+           *  number of poles before the chains are built, which is a merge and not the cut
+           *  NTriMax asks for, so they keep their old value and the cut happens at the end */
+          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((ListOfPoles*)(Min->data))->N, ((ListOfPoles*)(Min->data))->N, ((ListOfPoles*)(Min->data))->mu, T);
         }
         break;
         case 'd':
@@ -4382,6 +4409,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          /*  a pole merge rather than a cut, as for the list of poles above */
           TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->mu, T);
         }
         break;
@@ -4412,7 +4440,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N);
+          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data, NTriMaxOr(NTriMaxVal, ((AndersonMatrixType*)Min->data)->N));
         }
         break;
         case 'a':
@@ -4424,6 +4452,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          /*  a pole merge rather than a cut, as for the list of poles above */
           AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->mu, T);
         }
         break;
@@ -4541,7 +4570,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
     }
     return 1;
   }
-  return 0;
+  return ResponsefunctionTruncate(Mout, NTriMaxVal, NTriMaxCon);
 }
 
 
@@ -4702,6 +4731,53 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate)
   }
   return 0;
 }
+
+/*  Cut the chain of a response function that carries one, so that it is at most NTriMaxVal
+ *  (Tri), or its valence chain at most NTriMaxVal and its conduction chain at most
+ *  NTriMaxCon (NaturalImpurityOrbital and DoubleTri). A chain that is already short enough
+ *  is left alone, and NTriMaxNoLimit asks for no cut at all. What is dropped is dropped
+ *  without looking at the values further down the chain.
+ *
+ *  A list of poles and an Anderson matrix have no chain: they are left as they are.
+ */
+int ResponsefunctionTruncate(ResponsefunctionType *M, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
+  if((NTriMaxVal==NTriMaxNoLimit)&&(NTriMaxCon==NTriMaxNoLimit)) return 0;
+  if(M->Block==true)
+  {
+    switch (M->type|32)
+    {
+      case 't':
+        return BlockTridiagonalMatrixTruncate((BlockTriDiagonalMatrixType*)(M->data), NTriMaxVal);
+      case 'n':
+        return BlockNaturalImpurityOrbitalMatrixTruncate((BlockNaturalImpurityOrbitalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+      case 'd':
+        return BlockDoubleTriDiagonalMatrixTruncate((BlockDoubleTriDiagonalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+      case 'l':
+      case 'a':
+        return 0;
+      default:
+        printf("Error in ResponsefunctionTruncate unrecognized type to truncate: %c\n",M->type);
+        return 1;
+    }
+  }
+  switch (M->type|32)
+  {
+    case 't':
+      return TriDiagonalMatrixTruncate((TriDiagonalMatrixType*)(M->data), NTriMaxVal);
+    case 'n':
+      return BADoubleTriDiagonalMatrixTruncate((BADoubleTriDiagonalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+    case 'd':
+      return DoubleTriDiagonalMatrixTruncate((DoubleTriDiagonalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+    case 'l':
+    case 'a':
+      return 0;
+    default:
+      printf("Error in ResponsefunctionTruncate unrecognized type to truncate: %c\n",M->type);
+      return 1;
+  }
+}
+
 
 
 /*

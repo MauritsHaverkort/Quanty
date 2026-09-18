@@ -179,6 +179,59 @@ uint32_t BlockTridiagonalMatrixChop(BlockTriDiagonalMatrixType *const A, double 
   return 0;
 }
 
+/*  Cut the chain to at most N, keeping the blocks a[0..N] and b[0..N-1] and dropping
+ *  the rest without looking at the values further down the chain. A chain that is
+ *  already short enough is left as it is.
+ */
+uint32_t BlockTridiagonalMatrixTruncate(BlockTriDiagonalMatrixType *const A, uint32_t const N)
+{
+  uint32_t const NSqr = A->BlockSize*A->BlockSize;
+  if(A->N <= N) return 0;
+  A->BlockSizeList = (uint32_t*)realloc(A->BlockSizeList, (N+1)*sizeof(uint32_t));
+  if(A->BlockSizeList==NULL)
+  {
+    printf("realloc for A->BlockSizeList failed in BlockTridiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(A->QComplex)
+  {
+    A->a = (Complex16*)realloc(A->a, (N+1)*NSqr*sizeof(Complex16));
+    if(A->a==NULL)
+    {
+      printf("realloc for A->a failed in BlockTridiagonalMatrixTruncate\n");
+      fflush(stdout);
+      return 1;
+    }
+    A->b = (Complex16*)realloc(A->b, (N)*NSqr*sizeof(Complex16));
+    if((A->b==NULL)&&(N!=0))
+    {
+      printf("realloc for A->b failed in BlockTridiagonalMatrixTruncate\n");
+      fflush(stdout);
+      return 1;
+    }
+  }
+  else
+  {
+    A->aRe = (double*)realloc(A->aRe, (N+1)*NSqr*sizeof(double));
+    if(A->aRe==NULL)
+    {
+      printf("realloc for A->aRe failed in BlockTridiagonalMatrixTruncate\n");
+      fflush(stdout);
+      return 1;
+    }
+    A->bRe = (double*)realloc(A->bRe, (N)*NSqr*sizeof(double));
+    if((A->bRe==NULL)&&(N!=0))
+    {
+      printf("realloc for A->bRe failed in BlockTridiagonalMatrixTruncate\n");
+      fflush(stdout);
+      return 1;
+    }
+  }
+  A->N = N;
+  return 0;
+}
+
 void BlockTriDiagonalMatrixSetA0to0(BlockTriDiagonalMatrixType * A)
 {
   if(A->QComplex==0)

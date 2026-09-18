@@ -25,6 +25,9 @@
  *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
  *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
  *   Deflate is a boolean option to determine if the final dimension should be the same (adding zero coupling) or is allowed to be reduced
+ *   NTriMax is the largest chain length the result may have, NTriMaxVal and NTriMaxCon the same for the valence
+ *     and the conduction chain of a NaturalImpurityOrbital or a DoubleTri matrix. Tri takes NTriMax, Nat and
+ *     DoubleTri take all three, And and ListOfPoles have no chain and take none of them.
  */
 static int LuaChangeTypeResponseFunction(lua_State *L)
 {
@@ -42,6 +45,9 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     bool deflate;
     bool relativeDistance;
     bool relativeWeigth;
+    uint32_t NTriMax;
+    uint32_t NTriMaxVal;
+    uint32_t NTriMaxCon;
   } Options;
   // Standard values
   Options.Method = (char*)"Default";
@@ -52,6 +58,9 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   Options.deflate=false;
   Options.relativeDistance=false;
   Options.relativeWeigth=false;
+  Options.NTriMax    = NTriMaxNoLimit;
+  Options.NTriMaxVal = NTriMaxNoLimit;
+  Options.NTriMaxCon = NTriMaxNoLimit;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaChangeTypeResponseFunctionOptions[]={
     {"Method","char*",&(Options.Method)},
@@ -62,6 +71,9 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {"Deflate","bool",&(Options.deflate)},
     {"relativeDistance","bool",&(Options.relativeDistance)},
     {"relativeWeigth","bool",&(Options.relativeWeigth)},
+    {"NTriMax","uint32_t",&(Options.NTriMax)},
+    {"NTriMaxVal","uint32_t",&(Options.NTriMaxVal)},
+    {"NTriMaxCon","uint32_t",&(Options.NTriMaxCon)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L,-1)==1)
   {
@@ -73,8 +85,31 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
    *  yet, so refuse it here rather than let a conversion fail somewhere deep inside. */
   if(Options.relativeDistance==true) return luaL_error(L, "Error in ChangeType: relativeDistance is not implemented\n");
   if(Options.relativeWeigth==true) return luaL_error(L, "Error in ChangeType: relativeWeigth is not implemented\n");
-  Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
+  /*  NTriMax, NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) of the
+   *  result, a chain of length N being a[0..N] with b[0..N-1]. Only the representations
+   *  that have a chain take them: Tri has one and takes NTriMax, Nat and DoubleTri have a
+   *  valence and a conduction chain and take NTriMaxVal and NTriMaxCon, with NTriMax
+   *  standing for both. A chain that comes out shorter on its own is left as it is, a
+   *  longer one is cut without looking at the values further down. NTriMaxVal is what the
+   *  single chain of a Tri travels on from here.
+   */
+  if(strcmp(convert, "Tri")==0)
+  {
+    if(Options.NTriMaxVal!=NTriMaxNoLimit) return luaL_error(L, "Error in ChangeType: a tri-diagonal matrix has one chain, its length is set with NTriMax and not with NTriMaxVal\n");
+    if(Options.NTriMaxCon!=NTriMaxNoLimit) return luaL_error(L, "Error in ChangeType: a tri-diagonal matrix has one chain, its length is set with NTriMax and not with NTriMaxCon\n");
+    Options.NTriMaxVal = Options.NTriMax;
+  }
+  else if((strcmp(convert, "NaturalImpurityOrbital")==0)||(strcmp(convert, "Nat")==0)||(strcmp(convert, "DoubleTri")==0)||(strcmp(convert, "DTri")==0))
+  {
+    if(Options.NTriMaxVal==NTriMaxNoLimit) Options.NTriMaxVal = Options.NTriMax;
+    if(Options.NTriMaxCon==NTriMaxNoLimit) Options.NTriMaxCon = Options.NTriMax;
+  }
+  else if((Options.NTriMax!=NTriMaxNoLimit)||(Options.NTriMaxVal!=NTriMaxNoLimit)||(Options.NTriMaxCon!=NTriMaxNoLimit))
+  {
+    return luaL_error(L, "Error in ChangeType: a conversion to \"%s\" produces no chain and does not take NTriMax, NTriMaxVal or NTriMaxCon\n", convert);
+  }
+  Min = luaL_checkResponsefunction(L,1);
   // select the type and do the conversion
   if(strcmp(convert, "Dense")==0)
   {
@@ -303,7 +338,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     }
   }
   
-  if(ConvertResponsefunction(Min, &Mout, type, Options.Method, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance, Options.deflate, Options.relativeDistance, Options.relativeWeigth))
+  if(ConvertResponsefunction(Min, &Mout, type, Options.Method, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance, Options.deflate, Options.relativeDistance, Options.relativeWeigth, Options.NTriMaxVal, Options.NTriMaxCon))
   {
     char typein=Min->type;
     FreeResponsefunction(Min);
