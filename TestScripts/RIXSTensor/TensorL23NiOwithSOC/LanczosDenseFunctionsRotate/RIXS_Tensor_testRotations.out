@@ -1,0 +1,570 @@
+=============================================================
+====    written by Maurits W. Haverkort,                 ====
+====    Yi Lu, Robert Green, Sebastian Macke,            ====
+====    Marius Retegan, Martin Brass, Simon Heinze,      ====
+====    Charles Cardot, Michelangelo Tagliavini,         ====
+====    Sina Shokri, Kai Arnold, Paul Hill,              ====
+====    Kevin Ackermann, Aleksandrs Zacinskis            ====
+====    (cc) 1995 - 2024 code and binaries released      ====
+====    under creative commons CC-BY lisence             ====
+====    www.quanty.org                                   ====
+====    Beta version, be critical and report errors!!!   ====
+=============================================================
+====    Version 0.81 beta                                ====
+====            compiled at: Aug  5 2026 at 14:54:35     ====
+=============================================================
+====    When used in scientific publications please cite ====
+====    one of the following papers as appropriate with  ====
+====    respect to the methods used in your publication: ====
+====    Phys. Rev. B 85, 165113 (2012)                   ====
+====    Phys. Rev. B 90, 085102 (2014)                   ====
+====    Euro Phys. Lett. 108, 57004 (2014)               ====
+====    J. of Phys.: Conf. Series 712, 012001 (2016)     ====
+====    New Journal of Physics 22 (9), 093018 (2020)     ====
+=============================================================
+Program executed on: Wed Aug  5 15:18:51 2026
+Running on host    : EXFLQR70635
+number of available processors              : 14
+maximum number of threads in parallel region: 14
+Smallest positive float  : 2.225074E-308 
+Smallest deviation from 1: 2.220446E-16 
+
+Map dimension:40	400
+Calculate RIXS...
+Warning: Number of eigenstates you want to calculate largen than number of determinants in random starting vector
+This can be a problem as the dimension of the Hilbert space is larger than the number of states wanted.
+Several starting states will be 0.
+If the basis does not expand correctly during the iterative search for eigenstates you will end with 0 vectors as eigenstates.
+Start of BlockGroundState. Converge 100 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Outer loop   1, Number of Determinants:        45        45 last variance  0.000000000000000E+00
+Start of BlockGroundState. Converge 100 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Start of BlockOperatorPsiSerial
+Number of degenerated ground states: 3
+The indeces for the considered starting states are:
+
+         E       Jz      J^2     Lz      L^2     Sz      S^2     Coulomb std-dev 
+ 1      -2.7209 -1.28    15.12  -0.2856  12     -0.9944  1.9989 -1.3863  4.2e-8 
+ 2      -2.7209 -7.3e-7  15.12  -7.3e-7  12     -4.3e-9  1.9989 -1.3863  1.3e-7 
+ 3      -2.7209  1.28    15.12   0.2856  12      0.9944  1.9989 -1.3863  1.7e-7 
+ 4      -1.6548 -5.9e-5  16.766 -2.8e-5  11.988 -3.1e-5  1.9886 -1.3738  1.4e-7 
+ 5      -1.6548 -1.2e-6  16.766  6e-7    11.988 -1.8e-6  1.9886 -1.3738  1.1e-7 
+ 6      -1.6368 -0.5462  15.809 -0.0572  12     -0.489   1.9993 -1.3857  9.4e-8 
+ 7      -1.6368  5.7e-5  15.809  2.6e-5  12      3.1e-5  1.9993 -1.3857  6.3e-8 
+ 8      -1.6368  0.5462  15.809  0.0572  12      0.489   1.9993 -1.3857  4.2e-8 
+ 9      -1.5866 -0.6407  12.563 -0.1451  11.989 -0.4957  1.9972 -1.384   1.2e-7 
+ 10     -1.5866 -9.2e-6  12.563  1.1e-6  11.989 -1e-5    1.9972 -1.384   7e-8   
+ 11     -1.5866  0.6407  12.563  0.1451  11.989  0.4957  1.9972 -1.384   3e-8   
+ 12     -1.567   9.6e-6  12     -2.5e-6  12      1.2e-5  2      -1.3875  0      
+ 13     -0.9559 -1.3e-5  18.958 -6.5e-6  11.496 -6.3e-6  1.9952 -1.2634  2.8e-8 
+ 14     -0.8899  0.3792  15.35   0.868   11.439 -0.4888  1.9986 -1.2585  3.3e-8 
+ 15     -0.8899  1.1e-5  15.35   6.8e-6  11.439  4.3e-6  1.9986 -1.2585  3.8e-8 
+ 16     -0.8899 -0.3792  15.35  -0.868   11.439  0.4888  1.9986 -1.2585  5.2e-8 
+ 17     -0.8088  2.1e-6  9.0638  4.5e-6  10.85  -2.4e-6  1.7637 -0.9928  4.7e-8 
+ 18     -0.8088  3.6e-6  9.0638  1.6e-6  10.85   2e-6    1.7637 -0.9928  3.9e-8 
+ 19     -0.7821 -0.0038  9.9848  0.4872  11.307 -0.491   1.9974 -1.2307  6.5e-8 
+ 20     -0.7821 -8e-7    9.9848 -3.2e-6  11.307  2.4e-6  1.9974 -1.2307  2.8e-8 
+ 21     -0.7821  0.0038  9.9848 -0.4872  11.307  0.491   1.9974 -1.2307  7.8e-8 
+ 22     -0.4902 -6.8e-7  9.1562 -7e-7    9.7487  1.8e-8  0.2511  0.4484  5.5e-8 
+ 23     -0.4902 -1.6e-7  9.1562 -2e-7    9.7487  4.4e-8  0.2511  0.4484  2.6e-8 
+ 24      0.4645 -0.5868  7.6528 -0.5542  7.3883 -0.0326  0.1373  0.5946  8.2e-8 
+ 25      0.4645  6.4e-7  7.6528  7e-7    7.3883 -6.6e-8  0.1373  0.5946  2.1e-8 
+ 26      0.4645  0.5868  7.6528  0.5542  7.3883  0.0326  0.1373  0.5946  4.9e-8 
+ 27      0.8216 -2.7e-6  18.867 -2.7e-6  18.844 -5.2e-9  0.0296  1.6747  8.2e-8 
+ 28      0.9388 -3.5e-5  6.3455 -1.6e-5  2.7511 -1.9e-5  1.9924  0.6988  8.2e-8 
+ 29      0.9388 -1.5e-7  6.3455  1e-6    2.7511 -1.2e-6  1.9924  0.6988  3.9e-8 
+ 30      0.9666 -0.8657  6.5372 -0.3995  3.1783 -0.4662  1.8655  0.689   6.6e-8 
+ 31      0.9666  3.5e-5  6.5372  1.6e-5  3.1783  1.9e-5  1.8655  0.689   7.3e-8 
+ 32      0.9666  0.8657  6.5372  0.3995  3.1783  0.4662  1.8655  0.689   7.3e-8 
+ 33      1.0022 -0.9246  2.8792 -0.4261  2.6134 -0.4985  1.9942  0.7303  4.9e-8 
+ 34      1.0022 -5.3e-7  2.8792  3.2e-6  2.6134 -3.7e-6  1.9942  0.7303  3.9e-8 
+ 35      1.0022  0.9246  2.8792  0.4261  2.6134  0.4985  1.9942  0.7303  6.5e-8 
+ 36      1.033   7e-7    1.2543 -4.2e-6  2.7368  4.9e-6  1.9721  0.7543  6.8e-8 
+ 37      1.2804 -0.5008  19.961 -0.499   19.948 -0.0017  0.0079  1.4904  2.6e-8 
+ 38      1.2804  1.2e-6  19.961  1.2e-6  19.948  2.1e-9  0.0079  1.4904  1.1e-7 
+ 39      1.2804  0.5008  19.961  0.499   19.948  0.0017  0.0079  1.4904  7.5e-8 
+ 40      2.0424 -1e-5    16.669 -1e-5    16.662 -5.6e-9  0.0042  1.2468  1.1e-7 
+ 41      2.0424  1.9e-6  16.669  1.9e-6  16.662  3e-10   0.0042  1.2468  1.7e-7 
+ 42      2.1189 -2.0356  18.142 -2.0359  18.137  3.5e-4  0.0036  1.3574  6.7e-8 
+ 43      2.1189  1e-5    18.142  1e-5    18.137  6.1e-9  0.0036  1.3574  1.6e-7 
+ 44      2.1189  2.0356  18.142  2.0359  18.137 -3.5e-4  0.0036  1.3574  1.5e-7 
+ 45      5.9641  1.3e-8  0.9202  1.3e-8  0.923   0       0.0031  5.5176  0      
+ 46      0       0       0       0       0       0       0       0       0      
+ 47      0       0       0       0       0       0       0       0       0      
+ 48      0       0       0       0       0       0       0       0       0      
+ 49      0       0       0       0       0       0       0       0       0      
+ 50      0       0       0       0       0       0       0       0       0      
+ 51      0       0       0       0       0       0       0       0       0      
+ 52      0       0       0       0       0       0       0       0       0      
+ 53      0       0       0       0       0       0       0       0       0      
+ 54      0       0       0       0       0       0       0       0       0      
+ 55      0       0       0       0       0       0       0       0       0      
+ 56      0       0       0       0       0       0       0       0       0      
+ 57      0       0       0       0       0       0       0       0       0      
+ 58      0       0       0       0       0       0       0       0       0      
+ 59      0       0       0       0       0       0       0       0       0      
+ 60      0       0       0       0       0       0       0       0       0      
+ 61      0       0       0       0       0       0       0       0       0      
+ 62      0       0       0       0       0       0       0       0       0      
+ 63      0       0       0       0       0       0       0       0       0      
+ 64      0       0       0       0       0       0       0       0       0      
+ 65      0       0       0       0       0       0       0       0       0      
+ 66      0       0       0       0       0       0       0       0       0      
+ 67      0       0       0       0       0       0       0       0       0      
+ 68      0       0       0       0       0       0       0       0       0      
+ 69      0       0       0       0       0       0       0       0       0      
+ 70      0       0       0       0       0       0       0       0       0      
+ 71      0       0       0       0       0       0       0       0       0      
+ 72      0       0       0       0       0       0       0       0       0      
+ 73      0       0       0       0       0       0       0       0       0      
+ 74      0       0       0       0       0       0       0       0       0      
+ 75      0       0       0       0       0       0       0       0       0      
+ 76      0       0       0       0       0       0       0       0       0      
+ 77      0       0       0       0       0       0       0       0       0      
+ 78      0       0       0       0       0       0       0       0       0      
+ 79      0       0       0       0       0       0       0       0       0      
+ 80      0       0       0       0       0       0       0       0       0      
+ 81      0       0       0       0       0       0       0       0       0      
+ 82      0       0       0       0       0       0       0       0       0      
+ 83      0       0       0       0       0       0       0       0       0      
+ 84      0       0       0       0       0       0       0       0       0      
+ 85      0       0       0       0       0       0       0       0       0      
+ 86      0       0       0       0       0       0       0       0       0      
+ 87      0       0       0       0       0       0       0       0       0      
+ 88      0       0       0       0       0       0       0       0       0      
+ 89      0       0       0       0       0       0       0       0       0      
+ 90      0       0       0       0       0       0       0       0       0      
+ 91      0       0       0       0       0       0       0       0       0      
+ 92      0       0       0       0       0       0       0       0       0      
+ 93      0       0       0       0       0       0       0       0       0      
+ 94      0       0       0       0       0       0       0       0       0      
+ 95      0       0       0       0       0       0       0       0       0      
+ 96      0       0       0       0       0       0       0       0       0      
+ 97      0       0       0       0       0       0       0       0       0      
+ 98      0       0       0       0       0       0       0       0       0      
+ 99      0       0       0       0       0       0       0       0       0      
+ 100     0       0       0       0       0       0       0       0       0      
+test out tensor option
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=40
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:02 |            1 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=40
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:04 |            2 |       0 | Resonant Tensor Spectra method 1
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=40
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+Spectra printed to file: data/n3d8/Oh/chiRIXSTensorMethod1.dat
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+      0:00:00 |            1 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+      0:00:01 |            2 |       0 | Resonant Tensor Spectra method 2
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            3 |       0 | Resonant Tensor Spectra method 2
+Total size spectra=81*(NE1+1)=	3321	3321	3321
+Check that the two methods give the same result in cartesian basis
+Test passed: the spectrum is zero within the accuracy
+Total size spectra=81*(NE1+1)=	3321	3321	3321
+Trying to start a timing for Sum Into RIXS Spectra
+But timing still runs
+BeginTiming ignored
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            3 |       0 | Resonant Tensor Spectra method 2
+      0:00:38 |            1 |       0 | Sum Into RIXS Spectra
+Rotate Spectra Test
+Check that the two matrices are equal function
+{ { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } }
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/Oh/chiRIXSTensorMethod1Rotated.dat
+Subsequent rotation in opposite directions should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Rotation by id() should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/Oh/chiRIXSTensorMethod1SphK.dat
+The tensors for the two methods in SphK be equivalent
+Test passed: the spectrum is zero within the accuracy
+ContractSpectraTensorWithPolarization()
+The polarization vectors are:
+Ein=	{ (0.43045376577979 + 0.49773250548481 I) , (-0.053971448209159 + 0.28363249307526 I) , (0.44270680136086 + 0.53630428693865 I) }
+Eout=	{ (-0.067197844658405 + 0.48416951533911 I) , (-0.23321604910858 + 0.53461814647349 I) , (-0.51039320064657 - 0.40044578000366 I) }
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Start of ResonantSpectra using Dense Methods
+Spectra printed to file: data/n3d8/Oh/RIXSPol.dat
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:01 |            1 |       0 | Eigensystem
+      0:00:05 |            3 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            3 |       0 | Resonant Tensor Spectra method 2
+      0:00:38 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            3 |       0 | Resonant Spectra with polarization vectors
+The coupled polarization vectors are:
+{ (0.2120613406636 - 0.2418591427385 I) , (0.16570810294282 - 0.3462076028458 I) , (-0.41901555663875 - 0.081665892547024 I) , (0.14095297169942 + 0.007071837711831 I) , (0.16422208564356 - 0.037293533829759 I) , (-0.086032774728904 - 0.16637673462409 I) , (0.22991324381431 - 0.25038362961555 I) , (0.18347167270205 - 0.36175385649458 I) , (-0.44071532979703 - 0.096445991147217 I) }
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+polarization vector 1:
+  [0]: 0.430454 + 0.497733i
+  [1]: -0.053971 + 0.283632i
+  [2]: 0.442707 + 0.536304i
+polarization vector 2:
+  [0]: -0.067198 + 0.484170i
+  [1]: -0.233216 + 0.534618i
+  [2]: -0.510393 + -0.400446i
+coupled polarization vector:
+  [0]: 0.212061 + -0.241859i
+  [1]: 0.165708 + -0.346208i
+  [2]: -0.419016 + -0.081666i
+  [3]: 0.140953 + 0.007072i
+  [4]: 0.164222 + -0.037294i
+  [5]: -0.086033 + -0.166377i
+  [6]: 0.229913 + -0.250384i
+  [7]: 0.183472 + -0.361754i
+  [8]: -0.440715 + -0.096446i
+contraction done with the tensor function
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+polarization vector 1:
+  [0]: 0.430454 + 0.497733i
+  [1]: -0.053971 + 0.283632i
+  [2]: 0.442707 + 0.536304i
+polarization vector 2:
+  [0]: -0.067198 + 0.484170i
+  [1]: -0.233216 + 0.534618i
+  [2]: -0.510393 + -0.400446i
+coupled polarization vector:
+  [0]: 0.212061 + -0.241859i
+  [1]: 0.165708 + -0.346208i
+  [2]: -0.419016 + -0.081666i
+  [3]: 0.140953 + 0.007072i
+  [4]: 0.164222 + -0.037294i
+  [5]: -0.086033 + -0.166377i
+  [6]: 0.229913 + -0.250384i
+  [7]: 0.183472 + -0.361754i
+  [8]: -0.440715 + -0.096446i
+contraction done with the tensor function
+compare Polarization raw and Skew Hermitian
+Spectra printed to file: data/n3d8/Oh/RIXSPoldiffSkew.dat
+Test passed: the spectrum is zero within the accuracy
+Total size spectra=81*(NE1+1)=	3321	41	3321
+compare Polarization raw and FromTensor
+Test failed at i=	1	j=	1	val=	(-2.1717841284033e-11 - 0.00013825348161746 I)
+Spectra printed to file: data/n3d8/Oh/RIXSPoldiff.dat
+compare Polarization raw and Sum
+Test failed at i=	1	j=	1	val=	(-2.1717841284033e-11 - 0.00013825348161746 I)
+compare Polarization FromTensor and Sum
+Test passed: the spectrum is zero within the accuracy
+Calculate RIXS...
+Warning: Number of eigenstates you want to calculate largen than number of determinants in random starting vector
+This can be a problem as the dimension of the Hilbert space is larger than the number of states wanted.
+Several starting states will be 0.
+If the basis does not expand correctly during the iterative search for eigenstates you will end with 0 vectors as eigenstates.
+Start of BlockGroundState. Converge 100 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Outer loop   1, Number of Determinants:        45        45 last variance  0.000000000000000E+00
+Start of BlockGroundState. Converge 100 states to an energy with relative variance smaller than  1.000000000000000E-12
+
+Start of BlockOperatorPsiSerial
+Number of degenerated ground states: 1
+The indeces for the considered starting states are:
+
+         E       Jz      J^2     Lz      L^2     Sz      S^2     Coulomb std-dev 
+ 1      -2.7247 -7e-7    15.504 -6.8e-7  11.988 -2e-8    1.9991 -1.3836  1.3e-7 
+ 2      -2.722  -1.2373  15.204 -0.2473  11.995 -0.99    1.9987 -1.3848  2.3e-7 
+ 3      -2.722   1.2373  15.204  0.2473  11.995  0.99    1.9987 -1.3848  1e-7   
+ 4      -2.0579 -5e-5    15.263 -2.3e-5  10.717 -2.8e-5  1.999  -1.0987  4.2e-8 
+ 5      -2.0383  5e-5    13.057  2.3e-5  10.698  2.8e-5  1.9967 -1.094   1.4e-7 
+ 6      -2.0243 -0.7547  13.698 -0.7622  10.783  0.0076  1.9989 -1.1123  1.4e-7 
+ 7      -2.0243  0.7547  13.698  0.7622  10.783 -0.0076  1.9989 -1.1123  9.4e-8 
+ 8      -2.0217 -1.6e-6  13.092  4.4e-6  10.831 -6e-6    1.9487 -1.0623  1.3e-7 
+ 9      -1.9825  1.3e-6  11.302 -4.7e-6  10.806  6e-6    2      -1.1197  1.6e-7 
+ 10     -1.5117  7e-7    13.729  6.8e-7  11.969  2.2e-8  1.9881 -1.3717  7e-8   
+ 11     -1.504  -0.7121  13.311  0.271   11.993 -0.9831  1.9968 -1.3828  6e-8   
+ 12     -1.5039  0.7121  13.311 -0.271   11.993  0.9831  1.9968 -1.3828  5.2e-8 
+ 13     -1.275  -9.3e-8  12.947 -8.1e-8  12.467 -1.2e-8  0.1268  0.9914  6.8e-8 
+ 14     -1.1543 -0.9867  12.85  -0.0041  11.73  -0.9826  1.9903 -1.3147  1.1e-7 
+ 15     -1.1543  0.9867  12.85   0.0041  11.73   0.9826  1.9903 -1.3147  8.9e-8 
+ 16     -1.1409 -2.9e-7  12.091 -2.5e-7  11.843 -4.6e-8  1.9413 -1.2487  10e-8  
+ 17     -0.913  -7.2e-4  17.494 -5.1e-4  10.669 -2.1e-4  1.9992 -1.0873  1.1e-8 
+ 18     -0.9089  7.2e-4  17.108  5.1e-4  10.65   2.1e-4  1.9794 -1.0534  0      
+ 19     -0.8098 -2.3892  12.114 -2.3847  10.565 -0.0045  1.9992 -1.0646  6.1e-8 
+ 20     -0.8098  2.3892  12.114  2.3847  10.565  0.0045  1.9992 -1.0646  3e-8   
+ 21     -0.793  -1.4e-6  7.5542 -2.2e-6  9.6457  7.9e-7  1.4654 -0.5903  1.8e-8 
+ 22     -0.7172  9.2e-7  7.5414  1.6e-6  10.476 -7.3e-7  1.9957 -1.0447  4.7e-8 
+ 23     -0.4965 -5.3e-7  8.0271 -4.6e-7  9.1666 -6.4e-8  0.5469  0.1587  1.9e-8 
+ 24     -0.1047 -0.9727  14.554 -0.9692  14.512 -0.0034  0.0192  1.0684  7.7e-8 
+ 25     -0.1047  0.9727  14.554  0.9692  14.512  0.0034  0.0192  1.0684  8.5e-8 
+ 26      0.3781  5.6e-7  6.2309  6.1e-7  6.0383 -4.4e-8  0.1108  0.444   4.3e-8 
+ 27      0.8947 -0.5502  8.2067 -0.5474  6.4817 -0.0028  1.6232  0.4244  4.3e-8 
+ 28      0.8947  0.5502  8.2067  0.5474  6.4817  0.0028  1.6232  0.4244  9.7e-8 
+ 29      0.9179 -2.9e-5  7.7462 -10e-6   4.8213 -1.9e-5  1.9966  0.2227  1.8e-8 
+ 30      0.9434  2.9e-5  7.7614  1e-5    4.8995  1.9e-5  1.8963  0.23    4.1e-8 
+ 31      0.951  -7.5e-6  5.7689  1.5e-5  4.8962 -2.2e-5  1.9354  0.3144  9e-8   
+ 32      0.9626  7.7e-6  5.2046 -1.5e-5  4.5293  2.2e-5  1.9997  0.2881  6.9e-8 
+ 33      1.1291 -0.2082  12.183 -0.207   11.917 -0.0012  0.3785  0.8604  1.2e-7 
+ 34      1.1291  0.2082  12.183  0.207   11.917  0.0012  0.3785  0.8604  4.2e-8 
+ 35      1.1622 -3.2e-7  14.2   -3.6e-7  14.211  4.2e-8  0.0801  1.0701  6.3e-8 
+ 36      1.2717 -3.2e-6  17.681 -3.2e-6  17.679 -1.7e-9  0.004   1.3193  9.9e-8 
+ 37      1.4892  3.3e-6  19.905  3.3e-6  19.901  8e-10   0.0014  1.4883  1.2e-7 
+ 38      2.0081 -0.9738  4.2199  0.0179  2.3807 -0.9916  1.9857  0.7999  5.2e-8 
+ 39      2.0081  0.9738  4.2199 -0.0179  2.3807  0.9916  1.9857  0.7999  1.3e-7 
+ 40      2.0105 -7.7e-9  4.0552 -8.3e-9  2.3625  6e-10   1.9832  0.7997  1.9e-7 
+ 41      2.5035 -2.1076  17.659 -2.1111  17.644  0.0035  0.0096  1.3226  9.4e-8 
+ 42      2.5035  2.1076  17.659  2.1111  17.644 -0.0035  0.0096  1.3226  7.3e-8 
+ 43      2.819  -2e-5    19.999 -2e-5    19.995 -1.3e-9  0.0012  1.4955  6.7e-8 
+ 44      2.9391  2e-5    16.991  2e-5    16.989  1.5e-9  0.0019  1.7693  7.3e-8 
+ 45      6.3039  6.2e-8  1.7478  6.2e-8  1.7504  0       0.0032  5.1302  3e-7   
+ 46      0       0       0       0       0       0       0       0       0      
+ 47      0       0       0       0       0       0       0       0       0      
+ 48      0       0       0       0       0       0       0       0       0      
+ 49      0       0       0       0       0       0       0       0       0      
+ 50      0       0       0       0       0       0       0       0       0      
+ 51      0       0       0       0       0       0       0       0       0      
+ 52      0       0       0       0       0       0       0       0       0      
+ 53      0       0       0       0       0       0       0       0       0      
+ 54      0       0       0       0       0       0       0       0       0      
+ 55      0       0       0       0       0       0       0       0       0      
+ 56      0       0       0       0       0       0       0       0       0      
+ 57      0       0       0       0       0       0       0       0       0      
+ 58      0       0       0       0       0       0       0       0       0      
+ 59      0       0       0       0       0       0       0       0       0      
+ 60      0       0       0       0       0       0       0       0       0      
+ 61      0       0       0       0       0       0       0       0       0      
+ 62      0       0       0       0       0       0       0       0       0      
+ 63      0       0       0       0       0       0       0       0       0      
+ 64      0       0       0       0       0       0       0       0       0      
+ 65      0       0       0       0       0       0       0       0       0      
+ 66      0       0       0       0       0       0       0       0       0      
+ 67      0       0       0       0       0       0       0       0       0      
+ 68      0       0       0       0       0       0       0       0       0      
+ 69      0       0       0       0       0       0       0       0       0      
+ 70      0       0       0       0       0       0       0       0       0      
+ 71      0       0       0       0       0       0       0       0       0      
+ 72      0       0       0       0       0       0       0       0       0      
+ 73      0       0       0       0       0       0       0       0       0      
+ 74      0       0       0       0       0       0       0       0       0      
+ 75      0       0       0       0       0       0       0       0       0      
+ 76      0       0       0       0       0       0       0       0       0      
+ 77      0       0       0       0       0       0       0       0       0      
+ 78      0       0       0       0       0       0       0       0       0      
+ 79      0       0       0       0       0       0       0       0       0      
+ 80      0       0       0       0       0       0       0       0       0      
+ 81      0       0       0       0       0       0       0       0       0      
+ 82      0       0       0       0       0       0       0       0       0      
+ 83      0       0       0       0       0       0       0       0       0      
+ 84      0       0       0       0       0       0       0       0       0      
+ 85      0       0       0       0       0       0       0       0       0      
+ 86      0       0       0       0       0       0       0       0       0      
+ 87      0       0       0       0       0       0       0       0       0      
+ 88      0       0       0       0       0       0       0       0       0      
+ 89      0       0       0       0       0       0       0       0       0      
+ 90      0       0       0       0       0       0       0       0       0      
+ 91      0       0       0       0       0       0       0       0       0      
+ 92      0       0       0       0       0       0       0       0       0      
+ 93      0       0       0       0       0       0       0       0       0      
+ 94      0       0       0       0       0       0       0       0       0      
+ 95      0       0       0       0       0       0       0       0       0      
+ 96      0       0       0       0       0       0       0       0       0      
+ 97      0       0       0       0       0       0       0       0       0      
+ 98      0       0       0       0       0       0       0       0       0      
+ 99      0       0       0       0       0       0       0       0       0      
+ 100     0       0       0       0       0       0       0       0       0      
+test out tensor option
+Start of ResonantSpectra Tensor using Dense Methods
+Spec->NE1=40
+Using tensor basis cartesian for resonant spectra
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:02 |            2 |       0 | Eigensystem
+      0:00:07 |            4 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            3 |       0 | Resonant Tensor Spectra method 2
+      0:00:38 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            3 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:02 |            2 |       0 | Eigensystem
+      0:00:07 |            4 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            3 |       0 | Resonant Tensor Spectra method 2
+      0:00:38 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            3 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1.dat
+Start of ResonantSpectra using Dense Methods
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:02 |            2 |       0 | Eigensystem
+      0:00:07 |            4 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            4 |       0 | Resonant Tensor Spectra method 2
+      0:00:38 |            1 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            3 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+Total size spectra=81*(NE1+1)=	3321	3321	3321
+Check that the two methods give the same result in cartesian basis
+Test passed: the spectrum is zero within the accuracy
+Total size spectra=81*(NE1+1)=	3321	3321	3321
+Trying to start a timing for Sum Into RIXS Spectra
+But timing still runs
+BeginTiming ignored
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:02 |            2 |       0 | Eigensystem
+      0:00:07 |            4 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            4 |       0 | Resonant Tensor Spectra method 2
+      0:01:14 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            3 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+Rotate Spectra Test
+Check that the two matrices are equal function
+{ { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } , 
+  { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 } }
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1Rotated.dat
+Subsequent rotation in opposite directions should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Rotation by id() should leave the matrix unchanged
+Test passed: the spectrum is zero within the accuracy
+Rotating spectra with 3321 spectra and 40 energy points
+RotateSpectra: Starting rotation
+Spectra printed to file: data/n3d8/D4h/chiRIXSTensorMethod1SphK.dat
+The tensors for the two methods in SphK be equivalent
+Test passed: the spectrum is zero within the accuracy
+ContractSpectraTensorWithPolarization()
+The polarization vectors are:
+Ein=	{ (0.25172494958243 - 0.39676528213664 I) , (0.29732684432002 - 0.56915585502333 I) , (0.15262119029008 + 0.58615441076781 I) }
+Eout=	{ (-0.0013600851878185 - 0.37422680387443 I) , (-0.24753550418297 + 0.52028978418492 I) , (-0.58379432248718 - 0.43262148941498 I) }
+Start of ResonantSpectra using Dense Methods
+Spectra printed to file: data/n3d8/D4h/RIXSPol.dat
+Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:02 |            2 |       0 | Eigensystem
+      0:00:07 |            4 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            4 |       0 | Resonant Tensor Spectra method 2
+      0:01:14 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            4 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors
+The coupled polarization vectors are:
+{ (0.148137836047 + 0.094741857920959 I) , (-0.26874378532526 - 0.03275642553621 I) , (0.024693590911517 + 0.34053094168265 I) , (0.2125889866949 + 0.11204177510393 I) , (-0.36972492729356 - 0.013809838131763 I) , (0.072651330072388 + 0.46089993900574 I) , (-0.2195622695388 + 0.056317720313909 I) , (0.26719098858996 - 0.22450127375655 I) , (-0.34268237859611 - 0.27616641044748 I) }
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+polarization vector 1:
+  [0]: 0.251725 + -0.396765i
+  [1]: 0.297327 + -0.569156i
+  [2]: 0.152621 + 0.586154i
+polarization vector 2:
+  [0]: -0.001360 + -0.374227i
+  [1]: -0.247536 + 0.520290i
+  [2]: -0.583794 + -0.432621i
+coupled polarization vector:
+  [0]: 0.148138 + 0.094742i
+  [1]: -0.268744 + -0.032756i
+  [2]: 0.024694 + 0.340531i
+  [3]: 0.212589 + 0.112042i
+  [4]: -0.369725 + -0.013810i
+  [5]: 0.072651 + 0.460900i
+  [6]: -0.219562 + 0.056318i
+  [7]: 0.267191 + -0.224501i
+  [8]: -0.342682 + -0.276166i
+contraction done with the tensor function
+ContractSpectraTensorWithPolarization() test
+ContractSpectraTensorWithPolarizationMethod called
+polarization vector 1:
+  [0]: 0.251725 + -0.396765i
+  [1]: 0.297327 + -0.569156i
+  [2]: 0.152621 + 0.586154i
+polarization vector 2:
+  [0]: -0.001360 + -0.374227i
+  [1]: -0.247536 + 0.520290i
+  [2]: -0.583794 + -0.432621i
+coupled polarization vector:
+  [0]: 0.148138 + 0.094742i
+  [1]: -0.268744 + -0.032756i
+  [2]: 0.024694 + 0.340531i
+  [3]: 0.212589 + 0.112042i
+  [4]: -0.369725 + -0.013810i
+  [5]: 0.072651 + 0.460900i
+  [6]: -0.219562 + 0.056318i
+  [7]: 0.267191 + -0.224501i
+  [8]: -0.342682 + -0.276166i
+contraction done with the tensor function
+compare Polarization raw and Skew Hermitian
+Spectra printed to file: data/n3d8/D4h/RIXSPoldiffSkew.dat
+Test passed: the spectrum is zero within the accuracy
+Total size spectra=81*(NE1+1)=	3321	41	3321
+Trying to start a timing for Sum using crontraction with polarization vectors
+But timing still runs
+BeginTiming ignored
+compare Polarization raw and FromTensor
+Test failed at i=	1	j=	1	val=	(-0.00038919440361016 - 0.00026285910980275 I)
+Spectra printed to file: data/n3d8/D4h/RIXSPoldiff.dat
+compare Polarization raw and Sum
+Test failed at i=	1	j=	1	val=	(-0.00038919440361016 - 0.00026285910980275 I)
+compare Polarization FromTensor and Sum
+Test passed: the spectrum is zero within the accuracy
+
+---------------------------------end of the simulation----------------------------------------The simulation took:Timing results
+   Total_time | NumberOfRuns | Running | Name
+      0:00:02 |            2 |       0 | Eigensystem
+      0:00:07 |            4 |       0 | Resonant Tensor Spectra method 1
+      0:00:02 |            4 |       0 | Resonant Tensor Spectra method 2
+      0:01:14 |            2 |       0 | Sum Into RIXS Spectra
+      0:00:00 |            4 |       0 | Resonant Spectra with polarization vectors
+      0:00:00 |            0 |       1 | Sum using crontraction with polarization vectors

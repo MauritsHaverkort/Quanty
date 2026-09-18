@@ -1674,9 +1674,11 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
     }    
     free(Specwp.Name);
     Specwp.NSpectra=0;
+    FreeBlockTridiagonalMatrix(&GTri2);
   }
   free(BlockSizeN);
   WaveFunctionFree(*PsiBasis);
+  FreeBlockTridiagonalMatrix(&SpecTri1);
   return 0;
 }
 
