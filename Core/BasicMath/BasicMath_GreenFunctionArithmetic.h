@@ -59,6 +59,7 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate);
 int ResponsefunctionTruncate(ResponsefunctionType *M, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
 int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
 int ResponseFunctionTranspose(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
+int ResponseFunctionDownfold(ResponsefunctionType * const Gin, CompactMatrixType const * const R, ResponsefunctionType * const Gout, CompactMatrixType * const S, double const T, double const SingularValue, double const MinimalPoleWeigth, double const MinimalPoleDistance);
 int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout);
 uint32_t FreeResponsefunction(ResponsefunctionType *M);
 uint32_t FreeResponsefunctionIncludingOriginalPointer(ResponsefunctionType *M);

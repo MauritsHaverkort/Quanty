@@ -195,6 +195,7 @@ test-jobs-Responsefunction:
           - "Chop"
           - "CreateBitMasks"
           - "Deflation"
+          - "Downfold"
           - "EffectiveHamiltonian"
           - "Eigensystem"
           - "FromEffectiveHamiltonian"

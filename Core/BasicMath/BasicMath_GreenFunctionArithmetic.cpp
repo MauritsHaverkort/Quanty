@@ -1744,6 +1744,266 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
   return 0;
 }
 
+/*  The inverse of a Hermitian positive semi definite matrix, with the directions that carry
+ *  no weight left at zero instead of blown up. It is CompactMatrixInverseSqrt one power
+ *  further along: there the caller holds the square of the matrix, here the matrix itself,
+ *  and inverting the matrix itself rather than its square saves squaring the condition
+ *  number.
+ */
+static uint32_t HermitianCompactMatrixPseudoInverse(CompactMatrixType const * const A, CompactMatrixType * const Ainv, double const SingularValue)
+{
+  uint32_t i,j;
+  double val[A->Ni],sumval=0;
+  CompactMatrixType fun;
+  if(CompactMatrixEigensystem(A, &fun, val)) return 1;
+  for(i=0;i<A->Ni;i++)
+  {
+    sumval+=Abs(val[i]);
+  }
+  for(i=0;i<fun.Ni;i++)
+  {
+    if(Abs(val[i]) <= SingularValue*sumval)
+    {
+      val[i]=0;
+      for(j=0;j<A->Nj;j++)
+      {
+        if(A->QComplex==0)
+        {
+          fun.VRe[j+i*A->Nj]=0;
+        }
+        else
+        {
+          fun.V[j+i*A->Nj].Re=0;
+          fun.V[j+i*A->Nj].Im=0;
+        }
+      }
+    }
+    else
+    {
+      val[i]=1.0/val[i];
+    }
+  }
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(val, &fun, Ainv);
+  FreeCompactMatrix(&fun);
+  return 0;
+}
+
+/*  The largest element of a matrix, the crude magnitude used below to decide whether a
+ *  matrix is zero and to set the scale of that decision.
+ */
+static double CompactMatrixMaxElement(CompactMatrixType const * const M)
+{
+  uint32_t i;
+  double max=0,v;
+  for(i=0;i<M->Ni*M->Nj;i++)
+  {
+    if(M->QComplex==0) v = Abs(M->VRe[i]);
+    else               v = Abs(M->V[i].Re) + Abs(M->V[i].Im);
+    if(v>max) max=v;
+  }
+  return max;
+}
+
+/*  Downfold a response function onto a subspace: the sub block of its inverse, inverted
+ *  again,
+ *
+ *    Gsub(w) = ( R G^-1(w) R^+ )^-1 ,
+ *
+ *  with R a matrix of Nsub rows and BlockSize columns and of full row rank. R = ( 0 | 1 )
+ *  picks the lower right block of a two by two block structure; any other R picks the
+ *  subspace its rows span. The rows need not be orthonormal, the identity above holds for
+ *  any R of full row rank.
+ *
+ *  This is the symmetric improved estimator for the self energy of a discrete many body
+ *  system. With G the augmented propagator of the operators a_m and q_m = [a_m,H1] and R
+ *  selecting the q half, Gsub is Sigma(w) - Sigma^HF. Sigma^HF is not part of it: it is the
+ *  off diagonal block of the spectral weight of G, which the caller reads from B0 as
+ *  B0^* B0^T.
+ *
+ *  S comes back as the spectral weight of the result, sum_i W_i, which for the self energy
+ *  is the sum rule S = <{q,q^+}> - Sigma^HF <{a,a^+}>^-1 Sigma^HF.
+ *
+ *  The route is the one of Appendix C of Zacinskis et al., written for a response function
+ *  held as G = A0 + B0^* ( w - Heff(w) )^-1 B0^T, in which B0^* is the Hermitian root
+ *  S~^{1/2} of the spectral weight of G:
+ *
+ *    (i)   inversion    G^-1(w) = S~^{-1/2} ( w - Heff(w) ) S~^{-1/2}, which is Heff and
+ *                       costs nothing at all, ResponseFunctionEffectiveHamiltonian has it
+ *    (ii)  projection   R G^-1(w) R^+ = S^{-1/2} ( w - P Heff(w) P^+ ) S^{-1/2}
+ *    (iii) reinversion  Gsub(w)       = S^{1/2} ( w - P Heff(w) P^+ )^-1 S^{1/2}
+ *
+ *  with
+ *
+ *    S^-1 = R S~^-1 R^+ ,    P = S^{1/2} R S~^{-1/2} .
+ *
+ *  Appendix C carries the congruences of (ii) and (iii) separately, one with S~^{-1/2} and
+ *  one with S^{1/2}. Composing them into the single P above is what leaves one rotation of
+ *  Heff and nothing else to do. P is an isometry, P P^+ = S^{1/2} S^-1 S^{1/2} = 1,
+ *  whatever S~ does, so the projection is perfectly conditioned even where S~^{-1/2} on its
+ *  own is not.
+ *
+ *  Causality survives by construction: every weight of Heff is Hermitian and positive semi
+ *  definite, P W P^+ is a congruence and stays so, and so does S^{1/2} ( ) S^{1/2}.
+ *
+ *  S~ is the Gram matrix of the states behind G and is near singular whenever two of them
+ *  are near dependent -- for the self energy at small interaction the q states vanish
+ *  outright. What that costs is accuracy in the directions of P, not a large answer: a small
+ *  eigenvalue of S~ is a large one of S^-1 and so a small weight in S. Directions of S~
+ *  below SingularValue are deflated away and carry no weight at all.
+ *
+ *  A0 has to vanish. A constant added to G is not a constant added to G^-1 and the three
+ *  steps above do not hold for it; physical Green's functions have A0 = 0.
+ *
+ *  B0 has to be Hermitian, as it is for every representation the library builds, where it
+ *  comes out of a symmetric orthonormalisation. A b0 written down by hand is only defined up
+ *  to a gauge, B0 -> B0 V with V unitary leaves G alone but hides a unitary in Heff, and
+ *  the caller has to take that gauge out before asking for a subspace of the inverse.
+ *
+ *  Gout comes back as an Anderson matrix, which is where step (iii) leaves it and costs
+ *  nothing more. ChangeType turns it into the discrete spectral representation
+ *  Gsub(w) = sum_i W_i / ( w - a_i ), at the price of one dense diagonalisation of that
+ *  Anderson matrix. Gout and S are not allocated on entry.
+ */
+int ResponseFunctionDownfold(ResponsefunctionType * const Gin, CompactMatrixType const * const R, ResponsefunctionType * const Gout, CompactMatrixType * const S, double const T, double const SingularValue, double const MinimalPoleWeigth, double const MinimalPoleDistance)
+{
+  ResponsefunctionType Heff, HeffP;
+  CompactMatrixType A0, B0, InvSqrtStilde, Y, Sinv, SqrtS, P;
+  BlockAndersonMatrixType *Aout;
+  double sv = (SingularValue < 0) ? 1000*DBL_EPSILON : SingularValue;
+  double a0max, b0max;
+  uint32_t i;
+  int retval = 1;
+  /*  everything the cleanup at the end touches, empty, so that a failure anywhere can jump
+   *  straight to it. A lower case type is one this routine does not own and does not free */
+  SetCompactMatrixEmpty(&A0);   SetCompactMatrixEmpty(&B0);  SetCompactMatrixEmpty(&InvSqrtStilde);
+  SetCompactMatrixEmpty(&Y);    SetCompactMatrixEmpty(&Sinv); SetCompactMatrixEmpty(&SqrtS);
+  SetCompactMatrixEmpty(&P);
+  Heff.type='l';  Heff.Block=true;  Heff.data=NULL;  Heff.SuggestedGrid=NULL;  Heff.NSuggestedGridPoints=0;
+  HeffP.type='l'; HeffP.Block=true; HeffP.data=NULL; HeffP.SuggestedGrid=NULL; HeffP.NSuggestedGridPoints=0;
+
+  if(Gin->Block==false)
+  {
+    printf("Error in ResponseFunctionDownfold: a single valued response function has no subspace to downfold onto\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(ResponseFunctionEffectiveHamiltonian(Gin, &Heff, &A0, &B0, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance))
+  {
+    printf("ResponseFunctionEffectiveHamiltonian failed in ResponseFunctionDownfold\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(R->Nj != B0.Ni)
+  {
+    printf("Error in ResponseFunctionDownfold: the matrix selecting the subspace has %i columns and the response function has a block size of %i\n",R->Nj,B0.Ni);
+    goto Cleanup;
+  }
+  a0max = CompactMatrixMaxElement(&A0);
+  b0max = CompactMatrixMaxElement(&B0);
+  if(a0max > sv*(1.0+Sqr(b0max)))
+  {
+    printf("Error in ResponseFunctionDownfold: the response function has a constant term A0, its largest element is %E. A constant added to G is not a constant added to G^-1 and a subspace of the inverse is not defined by the three steps this routine takes\n",a0max);
+    goto Cleanup;
+  }
+  /*  the Hermitian root of the spectral weight of G is B0^*: the block convention is
+   *  G = A0 + B0^* ( w - Heff )^-1 B0^T and ( B0^* )^+ = B0^T. Everything below is written
+   *  in terms of that root, so conjugate once here and be done with it */
+  CompactMatrixConjugate(&B0);
+  if(QCompactMatrixHermitian(B0,1E-8)==0)
+  {
+    printf("Error in ResponseFunctionDownfold: B0 of the response function is not Hermitian. It is then defined only up to a unitary gauge, which sits in Heff and not in B0, and the subspace of the inverse would be taken in the wrong basis\n");
+    goto Cleanup;
+  }
+  SquareCompactMatrixMakeHermitian(&B0);
+  if(HermitianCompactMatrixPseudoInverse(&B0,&InvSqrtStilde,sv))
+  {
+    printf("HermitianCompactMatrixPseudoInverse failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  /*  Y = R S~^{-1/2}, from which both S and P follow: Y Y^+ = R S~^-1 R^+ = S^-1 */
+  if(CompactMatrixMultiply('N','N',R,&InvSqrtStilde,&Y))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  if(CompactMatrixMultiply('N','C',&Y,&Y,&Sinv))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  SquareCompactMatrixMakeHermitian(&Sinv);
+  CompactMatrixInverseSqrt(&Sinv,&SqrtS);
+  if(CompactMatrixMultiply('N','N',&SqrtS,&Y,&P))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  /*  Rotate computes U^* X U^T, so U = P^* is the congruence P X P^+ */
+  CompactMatrixConjugate(&P);
+  if(BlockResponseFunctionRotate(&Heff,&P,&HeffP,T,SingularValue,MinimalPoleWeigth,MinimalPoleDistance))
+  {
+    printf("BlockResponseFunctionRotate failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  if(ResponseFunctionFromEffectiveHamiltonian(&HeffP,Gout,T,SingularValue,MinimalPoleWeigth,MinimalPoleDistance))
+  {
+    printf("ResponseFunctionFromEffectiveHamiltonian failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  if((Gout->type|32)!='a')
+  {
+    printf("Error in ResponseFunctionDownfold: ResponseFunctionFromEffectiveHamiltonian returned a %c and not an Anderson matrix, there is then no head coupling to put S^{1/2} in\n",Gout->type);
+    FreeResponsefunction(Gout);
+    goto Cleanup;
+  }
+  /*  What FromEffectiveHamiltonian returns is ( w - P Heff(w) P^+ )^-1, an Anderson matrix
+   *  whose head energy a[0] is zero and whose head coupling b[0] is the identity. The
+   *  S^{1/2} that step (iii) puts in front of it is exactly that head coupling, and writing
+   *  it there is free. Turning the result into a list of poles instead, the pole expansion
+   *  of Eq. (20), costs a dense diagonalisation of the whole Anderson matrix, whose
+   *  dimension is the number of poles of Heff times the size of the subspace: the caller who
+   *  wants that asks ChangeType for it and pays for it there.
+   *
+   *  b0 enters as b0^* ( ) b0^T, so the head coupling to write down is the conjugate of the
+   *  Hermitian root S^{1/2}. P carries the QComplex of SqrtS into Heff and from there into
+   *  the Anderson matrix, but a conversion on the way is free to notice that everything it
+   *  holds is real, so promote when it did. */
+  Aout = (BlockAndersonMatrixType*)(Gout->data);
+  if((Aout->QComplex==0)&&(SqrtS.QComplex!=0)) RealBlockAndersonMatrixToComplex(Aout);
+  for(i=0;i<Sqr(Aout->BlockSize);i++)
+  {
+    if(Aout->QComplex==0)
+    {
+      Aout->bRe[i] = SqrtS.VRe[i];
+    }
+    else
+    {
+      Aout->b[i].Re = (SqrtS.QComplex==0) ?  SqrtS.VRe[i] :  SqrtS.V[i].Re;
+      Aout->b[i].Im = (SqrtS.QComplex==0) ?  0            : -SqrtS.V[i].Im;
+    }
+  }
+  if(CompactMatrixMultiply('N','N',&SqrtS,&SqrtS,S))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    FreeResponsefunction(Gout);
+    goto Cleanup;
+  }
+  retval = 0;
+Cleanup:
+  FreeResponsefunction(&Heff);
+  FreeResponsefunction(&HeffP);
+  FreeCompactMatrix(&A0);
+  FreeCompactMatrix(&B0);
+  FreeCompactMatrix(&InvSqrtStilde);
+  FreeCompactMatrix(&Y);
+  FreeCompactMatrix(&Sinv);
+  FreeCompactMatrix(&SqrtS);
+  FreeCompactMatrix(&P);
+  if(retval) printf("Error in ResponseFunctionDownfold\n");
+  fflush(stdout);
+  return retval;
+}
+
 
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {

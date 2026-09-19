@@ -1051,6 +1051,93 @@ static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
  return 1;
 }
 
+/*  Sigma, S = ResponseFunction.Downfold(G, R, {options})
+ *
+ *  The sub block of the inverse of G, inverted again,
+ *
+ *    Sigma(w) = ( R G^-1(w) R^+ )^-1 ,
+ *
+ *  with R a matrix of Nsub rows and as many columns as G has a block size. R = ( 0 | 1 )
+ *  takes the lower right block of a two by two block structure, any other R of full row
+ *  rank takes the subspace its rows span; the rows do not have to be orthonormal.
+ *
+ *  For G the augmented propagator of the operators a_m and q_m = [a_m,H1] and R selecting
+ *  the q half, this is the symmetric improved estimator Sigma(w) - Sigma^HF of the self
+ *  energy. Sigma^HF is not part of it and is read off the spectral weight of G itself,
+ *  B0^* B0^T, which ResponseFunction.ChangeType(G,"Dense") returns.
+ *
+ *  S comes back as the spectral weight of the result, sum_i W_i, and is the sum rule the
+ *  answer can be checked against.
+ *
+ *  Sigma comes back as an Anderson matrix, which is where the construction leaves it.
+ *  ResponseFunction.ChangeType(Sigma,"ListOfPoles") turns it into the pole expansion
+ *  Sigma(w) - Sigma^HF = sum_i W_i / ( w - a_i ), and pays a dense diagonalisation for it.
+ *
+ *  The two options that reach anything are the ones EffectiveHamiltonian takes:
+ *  SingularValue deflates the directions of the spectral weight of G that carry no weight,
+ *  and MinimalPoleDistance merges poles that coincide. See ResponseFunctionDownfold for
+ *  what the routine does with them.
+ */
+static int LuaResponseFunctionDownfold(lua_State *L)
+{
+  ResponsefunctionType *G,*Gout;
+  CompactMatrixType *R,*S;
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+  } Options;
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T                   = ValueNotSet;
+  LuaOptionsType LuaOptions[]={
+    {"SingularValue","double",&(Options.SingularValue)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=2) return luaL_error(L, "ResponseFunction.Downfold called with %d arguments, two arguments expected, a response function and the matrix selecting the subspace, and possibly a third specifying options",len);
+  G = luaL_checkResponsefunction(L,1);
+  R = luaL_checkCompactMatrix(L,2);
+  if(G->Block==false)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). A single valued response function has no subspace to downfold onto\n");
+  }
+  if(ResponseFunctionGetBlockSize(G)!=R->Nj)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). The matrix selecting the subspace has %d columns and the response function has a block size of %d\n", R->Nj, ResponseFunctionGetBlockSize(G));
+  }
+  if(R->Ni>R->Nj)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). The matrix selecting the subspace has %d rows and %d columns, a subspace is not larger than the space it sits in\n", R->Ni, R->Nj);
+  }
+  Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  S    = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if(ResponseFunctionDownfold(G,R,Gout,S,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance))
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold()\n");
+  }
+  // we give the controle of the allocation of the memory of Gout and S to Lua
+  // turn the type to a lower case letter
+  Gout->type = Gout->type | 32;
+  luaL_getmetatable(L, "ResponseFunction_Type");
+  lua_setmetatable(L, -3);
+  S->OnLuaStack=true;
+  luaL_getmetatable(L, "Matrix_Type");
+  lua_setmetatable(L, -2);
+  FreeResponsefunction(G);
+  FreeCompactMatrix(R);
+  return 2;
+}
+
 /*  G(w) -> G(w)[i1,i2,...in]
  *
  */
@@ -5180,6 +5267,7 @@ static int LuaResponseFunctionNewIndex(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
+  {"Downfold", LuaResponseFunctionDownfold},
   {"EffectiveHamiltonian",LuaResponseFunctionEffectiveHamiltonian},
   {"FromEffectiveHamiltonian",LuaResponseFunctionFromEffectiveHamiltonian},
   {"New", LuaResponseFunctionNew},

@@ -6,6 +6,7 @@ static int LuaReducePolesResponseFunction(lua_State *L);
 static int LuaPlaceOnMeshResponseFunction(lua_State *L);
 static int LuaResponseFunctionEigensystem(lua_State *L);
 static int LuaResponseFunctionRotate(lua_State * L);
+static int LuaResponseFunctionDownfold(lua_State *L);
 static int LuaResponseFunctionUnm(lua_State * L);
 static int LuaResponseFunctionAdd(lua_State * L);
 static int LuaResponseFunctionSub(lua_State * L);
