@@ -275,3 +275,66 @@ $k = 3, 5, 7, 9$ and differ from the next one on.
 - The `Dense`, `Userdata` and `Table` targets are named in the new `Input`
   section but not explained, since the page never explained them and that is a
   separate piece of work.
+
+
+## Batch 5 — Downfold
+
+Drafted 19 September 2026, for the three commits `65a737b9 .. 7ee48b91` on the
+`Claude` branch, which add `ResponseFunction.Downfold`, the symmetric improved
+estimator of the self-energy on a discrete spectral representation.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.responsefunction.functions.downfold.txt` | `documentation:language_reference:objects:responsefunction:functions:downfold` |
+
+Built on the structure of the `reducepoles` and `calculateselfenergy` pages in
+the same namespace, which is where the `{{indexmenu_n>999}}` header, the
+`###` blocks and the table-of-contents footer come from.
+
+### One thing to fill in
+
+**The paper is not cited.** The page describes the method and names nothing. I
+have the draft (`DiscreteSelfEnergy-15.pdf`, dated 18 September 2026) but not a
+DOI or a journal reference, and you are an author, so the citation is yours to
+add rather than mine to guess. The natural place is the first sentence of the
+`===== The discrete self-energy =====` section, next to "the symmetric improved
+estimator of the self-energy". Kugler's original estimator would belong there
+too; it is ref. [51] of the draft and I did not want to reproduce a reference I
+could not check.
+
+### Checked
+
+The example was run against the branch build and the output block is its real
+output. Three claims in it are measured rather than quoted:
+
+- **The table is reproducible.** With `NTri = 14` it is not: the Lanczos block
+  deflates from 4 to 3, fourteen steps then leave the augmented propagator short
+  of spanning the 56-determinant sector, and the tails of $\Sigma$ move in the
+  fourth digit between runs. Twenty two steps is where they stop moving; the
+  example and the test both use twenty four. The two columns agree with each
+  other in either case, since both are built from the same propagator — which is
+  why this was worth finding.
+- **The timings for `NTriMax`** (200 blocks / 13 s, 52 / 1.2 s / $10^{-16}$,
+  22 / 0.25 s / $2 \cdot 10^{-9}$) are from a chain of 100 blocks of size 20
+  downfolded onto 10, run on the same build.
+- **$\Sigma^{\mathrm{HF}}$ two ways.** The page says the expectation value
+  $\langle \{q,a^\dagger\} \rangle$ and the 12 block of $B_0^* B_0^T$ are the
+  same thing; both were computed and agree.
+
+The `Negative value in CompactMatrixSqrt` lines are described on the page rather
+than hidden, because every user of this function will see them and their number
+varies from run to run. They are the conversions taking the square root of a
+pole weight that is numerically zero — see the entry in `../TODO.md` on the
+conjugation conventions, which records the same underlying gap.
+
+### Not touched
+
+- `documentation:language_reference:objects:responsefunction:functions:calculateselfenergy`
+  is linked to but not edited. It is the other way to get a self-energy and a
+  sentence there pointing at `Downfold`, saying when the direct difference is
+  the wrong tool, would be the natural counterpart.
+- `documentation:language_reference:objects:responsefunction:start` still lists
+  four internal representations and there are five. That is the same omission
+  the `ChangeType` page had in batch 4 and it is a separate edit.

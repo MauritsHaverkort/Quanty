@@ -365,10 +365,14 @@ hComplex = Matrix.New({
 
 U           = 2.5
 Restrictions= {NF,0,{"11111111",4,4}}
--- four electrons in eight modes is a space of 70 determinants and the sectors with one
--- electron more or less are 56, so a block of four vectors needs fourteen Lanczos steps to
--- span them and the Green's function below is the exact one
-NTri        = 14
+-- Four electrons in eight modes is a space of 70 determinants and the sectors with one
+-- electron more or less are 56, so a block of four vectors would span them in fourteen
+-- Lanczos steps if the blocks stayed four wide. They do not, the block deflates, and
+-- fourteen steps leave the Green's function short of exact with its tails moving in the
+-- last digits from one run to the next. Twenty two steps is where they stop moving and
+-- twenty four leaves a margin. It is worth spending, because the comparison below is
+-- against the exact G0 and not against anything derived from this Green's function.
+NTri        = 24
 SpectraOpt  = {{"Tensor",true},{"NTri",NTri},{"DenseBorder",0},{"Emin",-30},{"Emax",30},{"NE",100},{"Gamma",0.1}}
 
 for ih, h in ipairs({hReal,hComplex}) do
