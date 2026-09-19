@@ -1069,14 +1069,19 @@ static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
  *  S comes back as the spectral weight of the result, sum_i W_i, and is the sum rule the
  *  answer can be checked against.
  *
- *  Sigma comes back as an Anderson matrix, which is where the construction leaves it.
- *  ResponseFunction.ChangeType(Sigma,"ListOfPoles") turns it into the pole expansion
- *  Sigma(w) - Sigma^HF = sum_i W_i / ( w - a_i ), and pays a dense diagonalisation for it.
+ *  A tri-diagonal G keeps its shape: its effective Hamiltonian is a chain, the projection
+ *  is then a block Lanczos and nothing is diagonalised, and Sigma comes back a chain too.
+ *  Every other type reaches the projection as a list of poles and Sigma comes back an
+ *  Anderson matrix. ResponseFunction.ChangeType(Sigma,"ListOfPoles") turns either into the
+ *  pole expansion Sigma(w) - Sigma^HF = sum_i W_i / ( w - a_i ), and pays a dense
+ *  diagonalisation for it.
  *
- *  The two options that reach anything are the ones EffectiveHamiltonian takes:
- *  SingularValue deflates the directions of the spectral weight of G that carry no weight,
- *  and MinimalPoleDistance merges poles that coincide. See ResponseFunctionDownfold for
- *  what the routine does with them.
+ *  SingularValue deflates the directions of the spectral weight of G that carry no weight
+ *  and MinimalPoleDistance merges poles that coincide, both as EffectiveHamiltonian takes
+ *  them. NTriMax is a ceiling on the length of the chain the tri-diagonal route produces;
+ *  leaving it out asks for no ceiling, which keeps the projection exact, and every other
+ *  type refuses it, there being no chain to cut. See ResponseFunctionDownfold for what the
+ *  routine does with them.
  */
 static int LuaResponseFunctionDownfold(lua_State *L)
 {
@@ -1089,14 +1094,17 @@ static int LuaResponseFunctionDownfold(lua_State *L)
     double MinimalPoleWeigth;
     double MinimalPoleDistance;
     double T;
+    uint32_t NTriMax;
   } Options;
   Options.SingularValue       = ValueNotSet;
   Options.MinimalPoleWeigth   = ValueNotSet;
   Options.MinimalPoleDistance = ValueNotSet;
   Options.T                   = ValueNotSet;
+  Options.NTriMax             = NTriMaxNoLimit;
   LuaOptionsType LuaOptions[]={
     {"SingularValue","double",&(Options.SingularValue)},
     {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+    {"NTriMax","uint32_t",&(Options.NTriMax)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t) lua_gettop(L);
   if(LuaTestOptionsList(L, -1))
@@ -1121,7 +1129,11 @@ static int LuaResponseFunctionDownfold(lua_State *L)
   }
   Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   S    = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
-  if(ResponseFunctionDownfold(G,R,Gout,S,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance))
+  if((Options.NTriMax!=NTriMaxNoLimit)&&((G->type|32)!='t'))
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). NTriMax is a ceiling on the length of the chain the projection produces, and only a tri-diagonal response function is downfolded into a chain. A response function of type %c is downfolded one pole at a time and the result is a star\n", G->type|32);
+  }
+  if(ResponseFunctionDownfold(G,R,Gout,S,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance,Options.NTriMax))
   {
     return luaL_error(L, "Error in ResponseFunction.Downfold()\n");
   }

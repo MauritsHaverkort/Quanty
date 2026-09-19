@@ -44,8 +44,11 @@ end
 
 function CheckIdentity(name, G, R, eps)
 	local Sigma, S = ResponseFunction.Downfold(G,R)
-	if Sigma.type ~= "And" then
-		error("Downfold: "..name.." returns a "..Sigma.type..", and the construction leaves it an Anderson matrix\n",1)
+	-- a chain keeps its shape, everything else reaches the projection as a list of poles and
+	-- the construction leaves it an Anderson matrix
+	local want = (G.type == "Tri") and "Tri" or "And"
+	if Sigma.type ~= want then
+		error("Downfold: "..name.." returns a "..Sigma.type.." and should return a "..want.."\n",1)
 	end
 	for w = -4, 4, 0.8 do
 		if not IsZero(Sigma(w,0.3) - SubOfInverse(G,R,w,0.3), eps) then
@@ -177,6 +180,93 @@ end
 print("  Tri, And, ListOfPoles, Nat and DoubleTri all give the same answer")
 
 
+print("a chain stays a chain, and NTriMax is a ceiling on its length")
+
+-- The effective Hamiltonian of a tri-diagonal G is a chain, and the projection is then a
+-- block Lanczos of that chain started on the subspace rather than a congruence of a list of
+-- poles. The two routes have to agree, which the section above checks; what is different is
+-- the shape of the answer, a chain of at most (M Ntilde / Nsub) blocks rather than a star of
+-- M Ntilde poles, and that the chain can be cut.
+function MakeChain(Ntilde, M)
+	local a, b = {Matrix.Zero(Ntilde)}, {Matrix.Identity(Ntilde)}
+	for i = 1, M do
+		local A, B = Matrix.Zero(Ntilde), Matrix.Zero(Ntilde)
+		for p = 1, Ntilde do
+			for q = 1, p do
+				A[p][q] = 0.3*math.cos(1.1*i+0.7*p+1.9*q) ; A[q][p] = A[p][q]
+				B[p][q] = 0.2*math.cos(0.9*i+1.3*p)*math.cos(0.9*i+1.3*q) ; B[q][p] = B[p][q]
+			end
+			A[p][p] = A[p][p] + 0.5*math.sin(0.3*i)
+			B[p][p] = B[p][p] + 0.4
+		end
+		a[i+1] = A
+		if i < M then b[i+1] = B end
+	end
+	return ResponseFunction.New({a,b,mu=0,type="Tri",name="chain"})
+end
+
+do
+	local Ntilde, M, Nsub = 4, 12, 2
+	local GChain = MakeChain(Ntilde,M)
+	local Rt = {}
+	for i = 1, Nsub do
+		Rt[i] = {}
+		for j = 1, Ntilde do Rt[i][j] = ((j==Ntilde-Nsub+i) and 1 or 0) end
+	end
+	local RChain = Matrix.New(Rt)
+
+	-- Without a ceiling the block Lanczos runs until the Krylov space of the chain behind
+	-- the head is exhausted, and the projection is then exact. That chain behind the head
+	-- has (M-1) blocks of Ntilde, so it takes ceil( (M-1) Ntilde / Nsub ) Lanczos blocks.
+	-- ToTable returns the list of a of the answer, which is one longer than its chain, and
+	-- the answer has the head in front of the Lanczos blocks, so two more than that.
+	local Exact, SExact = ResponseFunction.Downfold(GChain,RChain)
+	local NExact = math.ceil((M-1)*Ntilde/Nsub)
+	if #ResponseFunction.ToTable(Exact)[1] ~= NExact+2 then
+		error(string.format("Downfold: a chain of %d blocks of %d downfolded onto %d should give %d blocks and gives %d\n",
+		      M, Ntilde, Nsub, NExact+2, #ResponseFunction.ToTable(Exact)[1]),1)
+	end
+	for w = -4, 4, 0.8 do
+		if not IsZero(Exact(w,0.3) - SubOfInverse(GChain,RChain,w,0.3)) then
+			error("Downfold: the chain route is not the inverse of the sub block of the inverse\n",1)
+		end
+	end
+
+	-- a ceiling cuts the chain. The weight is untouched, since it sits in the head coupling
+	-- the cut never reaches, and the function converges to the exact one as the ceiling is
+	-- raised -- cutting a chain keeps the low moments and drops the high ones.
+	local previous = nil
+	for i, n in ipairs({3,6,12,24}) do
+		local Cut, SCut = ResponseFunction.Downfold(GChain,RChain,{{"NTriMax",n}})
+		local blocks = #ResponseFunction.ToTable(Cut)[1]
+		if blocks ~= math.min(n,NExact)+2 then
+			error(string.format("Downfold: NTriMax = %d gives %d blocks and should give %d\n", n, blocks, math.min(n,NExact)+2),1)
+		end
+		if not IsZero(SCut - SExact, 1E-12) then
+			error(string.format("Downfold: NTriMax = %d changes the spectral weight of the result\n", n),1)
+		end
+		local worst = 0.0
+		for w = -6, 6, 1.0 do
+			local T = Matrix.ToTable(Cut(w,1.0) - Exact(w,1.0))
+			for a = 1, #T do
+				for b = 1, #T[a] do
+					local v = math.sqrt(Complex.Re(T[a][b])^2 + Complex.Im(T[a][b])^2)
+					if v > worst then worst = v end
+				end
+			end
+		end
+		if previous and (worst > previous) then
+			error(string.format("Downfold: raising NTriMax from the previous value to %d moves the answer away from the exact one, %.2e after %.2e\n", n, worst, previous),1)
+		end
+		if (n >= NExact) and (worst > 1E-12) then
+			error(string.format("Downfold: NTriMax = %d is at or above the natural length and still differs from the exact answer by %.2e\n", n, worst),1)
+		end
+		previous = worst
+	end
+end
+print("  the chain route is exact, its length is the one the Krylov space asks for, and NTriMax cuts it")
+
+
 print("the spectral weight of the result is the S that comes back with it")
 
 -- S = ( R S~^-1 R^+ )^-1 with S~ the spectral weight of G, and it is also the sum of the
@@ -219,7 +309,8 @@ Refused = {
 	{"an R with the wrong number of columns", function() return ResponseFunction.Downfold(GReal, Matrix.Identity(3)) end},
 	{"an R with more rows than columns", function() return ResponseFunction.Downfold(GReal, Matrix.New({{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1},{1,1,1,1}})) end},
 	{"a response function with a constant term", function() return ResponseFunction.Downfold(GA0, RBlock) end},
-	{"one argument", function() return ResponseFunction.Downfold(GReal) end}}
+	{"one argument", function() return ResponseFunction.Downfold(GReal) end},
+	{"NTriMax on a response function with no chain", function() return ResponseFunction.Downfold(GReal, RBlock, {{"NTriMax",4}}) end}}
 for i, t in ipairs(Refused) do
 	if pcall(t[2]) then
 		error("Downfold accepted "..t[1].."\n",1)
@@ -236,7 +327,9 @@ if (SigmaD == SigmaS) ~= true then
 	error("Downfold: leaving SingularValue out is not the standard value\n",1)
 end
 ResponseFunction.Downfold(GReal, RBlock, {{"MinimalPoleDistance", 1E-8}})
-print("  the two options that reach anything are taken, the rest is refused")
+-- NTriMax is taken where there is a chain to cut
+ResponseFunction.Downfold(ResponseFunction.ChangeType(GReal,"Tri"), RBlock, {{"NTriMax", 4}})
+print("  the three options that reach anything are taken, the rest is refused")
 
 
 print("the self energy of an eight mode model with four electrons")
@@ -364,4 +457,18 @@ for ih, h in ipairs({hReal,hComplex}) do
 		end
 	end
 	print("  "..hname..": Sigma^HF + Downfold(G,(0|1)) = G0^-1 - G^-1 at every frequency")
+
+	-- and the same augmented propagator held as a chain, which takes the other route
+	local SigmaTri = ResponseFunction.Downfold(ResponseFunction.ChangeType(Gt,"Tri"), RBlock)
+	if SigmaTri.type ~= "Tri" then
+		error("the chain route of the "..hname.." model returns a "..SigmaTri.type.."\n",1)
+	end
+	for w = -4, 4, 0.5 do
+		if not IsZero(SigmaTri(w,0.1) - Sigma(w,0.1), 1E-7) then
+			print(SigmaTri(w,0.1))
+			print(Sigma(w,0.1))
+			error("the chain route and the pole route of the "..hname.." model disagree\n",1)
+		end
+	end
+	print("  "..hname..": the chain route gives the same self energy")
 end
