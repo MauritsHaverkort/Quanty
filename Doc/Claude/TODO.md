@@ -752,3 +752,81 @@ the same omission at the same time.
 **Meanwhile:** do not read `epsilon` off a block Nat that came from a list of
 poles. Nothing in Quanty itself reads it back, which is why this has gone
 unnoticed.
+
+## Which conjugate goes into the block Lanczos — two callers disagree
+
+**Status:** open. One of the two is wrong for complex data and which one is
+known; the fix is a pass over the conjugation of the block representations
+rather than one line.
+
+[Core/StructDef.cpp](../../Core/StructDef.cpp) is where the block
+representations are defined, and it is the standard every routine that touches
+them has to meet:
+
+| line | representation | what it says |
+|---|---|---|
+| 666 | block list of poles | `G = A0 + sum_i B'_i 1/(w-a_i I) B'_i^C` |
+| 716 | block tri-diagonal | `G0 = a0 + b0^* . ( G1 ) . b0^T` |
+| 762 | block Anderson | `G(w) = A0 + B0^* ( 1/( w - A1 - sum_i B_i 1/(w-A_{i+1}) B_i^+ ) ) . B0^T` |
+| 796 | block natural impurity orbital | `A = T Ap T^C`, with `T T^C = 1` |
+
+Two conversions between the first two of those hand the block Lanczos starting
+blocks that differ by a conjugation.
+
+`CompactMatrixBlockBandDiagonalize` (line 5648 of
+[Core/BasicMath/BasicMath_CompactMatrixVector.cpp](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp))
+wants the **conjugate of the left factor**. It walks the Krylov space with
+`v -> v A^T`, so its row vectors live in the conjugated space, and it closes the
+chain with `b[0] = v[0] v[1]^+`. Hand it `C^*` and the chain it returns is the
+`b0^* ( ) b0^T` of line 716 for `C 1/(w-H) C^+`.
+
+- `BlockListOfPolesToBlockTridiagonalMatrix` (line 784) transposes the column
+  stack of the `B_i` and hands over `beta^T`, whose block is `B_i^T`. The `B_i`
+  are the Hermitian principal roots of the weights, so `B_i^T = B_i^*` and this
+  obeys the rule.
+- `BlockListOfPolesToBlockTridiagonalMatrixReduceDimension` (line 868) hands
+  over `AT . beta^C`, whose block is `AT B_i^+ = AT B_i`, the left factor
+  unconjugated. With `AT` the identity the two should produce the same chain
+  from the same list of poles, and for complex `B_i` they do not.
+
+Both are in
+[Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp](../../Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp).
+
+The evidence that the first one is the right convention rather than the second:
+`BlockTriDiagonalMatrixDownfoldChain` in
+[Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp)
+hands the same Lanczos `D^*` and is checked against a hand-computed
+`( R G^-1 R^+ )^-1` in `TestScripts/Responsefunction/Downfold.Quanty`. Written
+the other way round it passes every real case in that test and fails every
+complex one.
+
+Underneath the disagreement is that the notation is not uniform, and fixing the
+notation is probably the way to fix the code. `^*`, `^T`, `^+` and `^dag` each
+mean one thing, but `^C` is used for both: for a conjugate at lines 666 to 671,
+where `B_i = B'_i B'_i^C` is the weight of a pole and `B'_i` is Hermitian, and
+for a conjugate transpose at lines 796 and 818, where `T T^C = 1` says `T` is
+unitary. The two struct comments also write the same kind of congruence in two
+mutually conjugate forms, `A = T^* Ap T^T` at line 607 against `A = T Ap T^C` at
+line 796. The same letter is overloaded in the code: in
+`CompactMatrixAddMultiply` (line 1055 of
+[Core/BasicMath/BasicMath_CompactMatrixVector.cpp](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp))
+the flag `'C'` is the BLAS conjugate transpose and `'*'` is the plain conjugate,
+so `'N','C'` and `'N','*'` read almost alike and mean different things.
+
+**Why it is not simply fixed:** changing the starting block of
+`...ReduceDimension` is one character, but it is a change to numerics with no
+failing test behind it, and the routine it feeds is reached only from the C
+drivers `Test/LanczosDyson.cpp`, `Test/NiO.cpp` and `Test/TestBasicMathBlock.cpp`
+and not from lua, so nothing in the CI would notice either way. Doing it
+properly means writing a complex-valued test that pins the identity between the
+plain and the reduced conversion, deciding on one meaning for `^C` and writing
+that into `StructDef.cpp`, and then reading every conversion against it. That is
+the same argument as for the guards: a coherent pass rather than a fix in
+passing.
+
+**Meanwhile:** a complex response function taken to a block Nat or a block Tri
+through a `…ReduceDimension` route is suspect. The routes reachable from lua all
+go through `BlockListOfPolesToBlockTridiagonalMatrix` and are not affected. When
+writing new code against these representations, read the convention off
+`StructDef.cpp` and not off a neighbouring routine, and test it with complex
+numbers — a real response function cannot tell a conjugate from a transpose.
