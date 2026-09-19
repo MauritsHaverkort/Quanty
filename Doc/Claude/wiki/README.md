@@ -1,4 +1,11 @@
-# Wiki drafts — the SingularValue option
+# Wiki drafts
+
+Drop-in DokuWiki source for <https://www.quanty.org>, one file per page, named
+after the page id. See `../WIKI_EDITING_WORKFLOW.md` for the division of labour
+and the house style.
+
+
+## Batch 1 — the SingularValue option
 
 Drafted 11 September 2026, for the six commits `d60799fa .. 0c5980ab` on the
 `Claude` branch, which give the orthonormalization its own threshold instead of
@@ -12,7 +19,7 @@ read back through a summarising fetch, and I will not risk retyping a table of
 numbers I cannot verify character for character.
 
 
-## Drop-in replacements
+### Drop-in replacements
 
 Paste the whole file into the page's edit box.
 
@@ -29,9 +36,9 @@ page alone (`Gran-Schmidt`, and the broken sentence "only mixes with the second
 will fix them too.
 
 
-## Line-level edits
+### Line-level edits
 
-### `documentation:language_reference:functions:createspectra`
+#### `documentation:language_reference:functions:createspectra`
 
 Replace this line
 
@@ -59,7 +66,7 @@ The orthonormalization of a block of wave-functions is built from the overlap ma
 ###
 ```
 
-### `documentation:language_reference:functions:createresonantspectra`
+#### `documentation:language_reference:functions:createresonantspectra`
 
 Replace
 
@@ -74,7 +81,7 @@ with
     * "SingularValue" Positive real defining the smallest singular value of a list of wave-functions that is considered different from zero. A direction whose singular value is smaller is removed from the basis, which reduces the size of the blocks of the block Lanczos. Set independently of "epsilon"; see [[documentation:language_reference:functions:createspectra|]] for what the value means numerically. (Standard value 1.49E-8)
 ```
 
-### `documentation:language_reference:functions:createfluorescenceyield`
+#### `documentation:language_reference:functions:createfluorescenceyield`
 
 Replace
 
@@ -89,7 +96,7 @@ with
     * "SingularValue" Positive real defining the smallest singular value of a list of wave-functions that is considered different from zero. A direction whose singular value is smaller is removed from the basis, which reduces the size of the blocks of the block Lanczos. Set independently of "epsilon"; see [[documentation:language_reference:functions:createspectra|]] for what the value means numerically. (Standard value 1.49E-8)
 ```
 
-### `documentation:language_reference:functions:eigensystem`
+#### `documentation:language_reference:functions:eigensystem`
 
 This page indents its options with two spaces, not four. Replace
 
@@ -108,7 +115,7 @@ Note the trailing space after each bullet on this page — it is in the existing
 source, so it is kept.
 
 
-## A correction that is not about SingularValue
+### A correction that is not about SingularValue
 
 All four pages above document the standard `epsilon` as `1.49E-8`. The code has
 used `sqrt(DBL_EPSILON)/100 = 1.49E-10` since commit `923c2948` of 28 April
@@ -117,10 +124,217 @@ used `sqrt(DBL_EPSILON)/100 = 1.49E-10` since commit `923c2948` of 28 April
 eyes, since it is the one number in these edits that is not new work.
 
 
-## Not touched
+### Not touched
 
 - `ImpurityGreensFunction` also takes the new option, but has no wiki page.
   Nothing to edit; worth knowing when a page is eventually written.
 - No `===== Index =====` footers are affected: no page is added or renamed, and
   the function namespace uses the automatic `{{indexmenu>.#1}}` and
   `{{indexmenu>.#2}}` listings rather than manual footers.
+
+
+## Batch 2 — the Basis option and AngularMomentumOperators
+
+Drafted 17 September 2026, for the two commits `d626daec` and `92fff701` on the
+`Claude` branch, which make the `Basis` option of `NewOperator` work for the
+tesseral, cubic and jjz bases and add the `AngularMomentumOperators` function.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.angularmomentumoperators.txt` | `documentation:language_reference:functions:angularmomentumoperators` |
+
+The page does not exist yet, so create it at that id and paste the file in. The
+function namespace lists its children with `{{indexmenu>.#2}}` on
+`documentation:language_reference:functions:start`, sorted automatically, so no
+index footer and no `indexmenu_n` value needs setting — the page appears on its
+own once it is saved.
+
+### A drop-in replacement
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.newoperator.txt` | `documentation:language_reference:functions:newoperator` |
+
+Built from the page's own raw source, so the diff in the preview should show
+only two things: one added sentence in the first paragraph, and a new
+`===== Basis =====` section between `===== Output =====` and
+`===== Example =====`. Everything else, including the verbatim output block, is
+the existing text unchanged.
+
+### Checked
+
+Every Quanty snippet on both pages was run against the branch build, and every
+numerical claim was verified rather than asserted: that
+`NewOperator("Qzz", ..., {{"Basis","Z"}})` equals
+`Rotate(NewOperator("Qzz", ...), YtoZMatrix(2))`, that
+`L^2 = l(l+1)(2l+1) GG[1]`, that the Slater operators sum to the Coulomb
+operator, and that the `Casimir` and `CoulombJJ` keys advertised in the tables
+are the ones actually returned. The output block on the
+`AngularMomentumOperators` page is the real output of the script above it.
+
+### Not touched
+
+- `documentation:standard_operators:start` and the thirty-odd pages beneath it
+  (`Lz`, `Qzz`, `ldots`, `coulomb_repulsion`, ...) each show a bare
+  `NewOperator("Lz", NF, IndexUp, IndexDn)` with no mention of a basis. They are
+  still correct, since the default is the spherical harmonics, and repeating the
+  basis table on each of them would be worse than one link. If you want a
+  pointer there, the natural place is one sentence on
+  `documentation:standard_operators:start` rather than on every child.
+- The "P" (pyramidal harmonics) value has no rotation matrix anywhere in the
+  source. The `NewOperator` draft says in one line that it is not implemented,
+  rather than leaving it undocumented.
+
+
+## Batch 3 — ShellAverage
+
+Drafted 18 September 2026, for the commit on the `Claude` branch that adds the
+`ShellAverage` function, the average of an operator over all unitary
+transformations within one shell.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.shellaverage.txt` | `documentation:language_reference:functions:shellaverage` |
+
+The page does not exist yet, so create it at that id and paste the file in. As
+with `AngularMomentumOperators`, the function namespace lists its children with
+`{{indexmenu>.#2}}`, so no index footer and no `indexmenu_n` value is needed.
+
+### Checked
+
+Both snippets were run against the branch build and the output block is the
+real output of the first one. Every number claimed on the page was verified
+numerically rather than taken from a book: the averages
+$F^0-\frac{2}{25}F^2$ (p), $F^0-\frac{2}{63}(F^2+F^4)$ (d),
+$F^0-\frac{4}{195}F^2-\frac{2}{143}F^4-\frac{100}{5577}F^6$ (f) and
+$F^0-\frac{1}{15}G^1-\frac{3}{70}G^3$ (core to valence) all come out of
+`ShellAverage` exactly, and are also what a direct trace over the two particle
+sector gives. `TestScripts/ShellAverage.Quanty` contains the same checks.
+
+### Not touched
+
+- `documentation:language_reference:functions:operatorsetonsiteenergy` is the
+  closest neighbour and is only linked to, not edited. If you want a pointer
+  back, one sentence there saying that `ShellAverage` does the same for the
+  two particle part and returns a new operator would be the natural place.
+- `documentation:language_reference:functions:operatorsettrace` says only that
+  it is deprecated in favour of `OperatorSetOnsiteEnergy`; nothing to add.
+
+
+## Batch 4 — NTriMax on ChangeType
+
+Drafted 18 September 2026, for the commit on the `Claude` branch that adds the
+`NTriMax`, `NTriMaxVal` and `NTriMaxCon` options to
+`ResponseFunction.ChangeType`.
+
+### A drop-in replacement
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.responsefunction.functions.changetype.txt` | `documentation:language_reference:objects:responsefunction:functions:changetype` |
+
+Built from the page's own raw source. The existing text, the
+`{{indexmenu_n>999}}` header and the table-of-contents footer are unchanged; the
+diff in the preview should be the `===== Input =====`, `===== Output =====` and
+`===== Example =====` sections, which the page did not have, plus one line in
+the list at the top.
+
+### Two things in the diff that are not the new options
+
+- **The type list gains //DoubleTri//.** It said there are 4 types and listed
+  the four that predate the double tri-diagonal one. `NTriMaxVal` and
+  `NTriMaxCon` apply to //Nat// and //DoubleTri// both, so leaving the list at
+  four would have made the page contradict itself two sections later.
+- **The options that were already there are now written down.** The page showed
+  no options at all, so a reader had no way to know that the third argument
+  exists or what it looks like. `EffectivekBT`, `SingularValue` and
+  `MinimalPoleDistance` are listed alongside the three new ones. `Deflate`,
+  `relativeDistance` and `relativeWeigth` are left out: the first belongs to the
+  `Dense` conversion and the other two are refused by `ChangeType` as not
+  implemented.
+
+### Checked
+
+The example was run against the branch build and the output block is its real
+output, character for character. The claim that a chain cut to $N$ keeps the
+moments $\mu_0 \ldots \mu_{2N-1}$ was measured rather than quoted: the poles of
+the cut and of the full chain were summed into $\mu_k = \sum_i W_i a_i^k$, and
+for $N = 2, 3, 4, 5$ the two agree to $10^{-8}$ of $\mu_0 3^k$ up to
+$k = 3, 5, 7, 9$ and differ from the next one on.
+
+### Not touched
+
+- `documentation:language_reference:objects:responsefunction:functions:reducepoles`
+  is linked to twice but not edited. It is the other way to make a response
+  function smaller, and a sentence there pointing back at `NTriMax` would be
+  the natural counterpart if you want the link to go both ways.
+- The `Dense`, `Userdata` and `Table` targets are named in the new `Input`
+  section but not explained, since the page never explained them and that is a
+  separate piece of work.
+
+
+## Batch 5 — Downfold
+
+Drafted 19 September 2026, for the three commits `65a737b9 .. 7ee48b91` on the
+`Claude` branch, which add `ResponseFunction.Downfold`, the symmetric improved
+estimator of the self-energy on a discrete spectral representation.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.responsefunction.functions.downfold.txt` | `documentation:language_reference:objects:responsefunction:functions:downfold` |
+
+Built on the structure of the `reducepoles` and `calculateselfenergy` pages in
+the same namespace, which is where the `{{indexmenu_n>999}}` header, the
+`###` blocks and the table-of-contents footer come from.
+
+### One thing to fill in
+
+**The paper is not cited.** The page describes the method and names nothing. I
+have the draft (`DiscreteSelfEnergy-15.pdf`, dated 18 September 2026) but not a
+DOI or a journal reference, and you are an author, so the citation is yours to
+add rather than mine to guess. The natural place is the first sentence of the
+`===== The discrete self-energy =====` section, next to "the symmetric improved
+estimator of the self-energy". Kugler's original estimator would belong there
+too; it is ref. [51] of the draft and I did not want to reproduce a reference I
+could not check.
+
+### Checked
+
+The example was run against the branch build and the output block is its real
+output. Three claims in it are measured rather than quoted:
+
+- **The table is reproducible.** With `NTri = 14` it is not: the Lanczos block
+  deflates from 4 to 3, fourteen steps then leave the augmented propagator short
+  of spanning the 56-determinant sector, and the tails of $\Sigma$ move in the
+  fourth digit between runs. Twenty two steps is where they stop moving; the
+  example and the test both use twenty four. The two columns agree with each
+  other in either case, since both are built from the same propagator — which is
+  why this was worth finding.
+- **The timings for `NTriMax`** (200 blocks / 13 s, 52 / 1.2 s / $10^{-16}$,
+  22 / 0.25 s / $2 \cdot 10^{-9}$) are from a chain of 100 blocks of size 20
+  downfolded onto 10, run on the same build.
+- **$\Sigma^{\mathrm{HF}}$ two ways.** The page says the expectation value
+  $\langle \{q,a^\dagger\} \rangle$ and the 12 block of $B_0^* B_0^T$ are the
+  same thing; both were computed and agree.
+
+The `Negative value in CompactMatrixSqrt` lines are described on the page rather
+than hidden, because every user of this function will see them and their number
+varies from run to run. They are the conversions taking the square root of a
+pole weight that is numerically zero — see the entry in `../TODO.md` on the
+conjugation conventions, which records the same underlying gap.
+
+### Not touched
+
+- `documentation:language_reference:objects:responsefunction:functions:calculateselfenergy`
+  is linked to but not edited. It is the other way to get a self-energy and a
+  sentence there pointing at `Downfold`, saying when the direct difference is
+  the wrong tool, would be the natural counterpart.
+- `documentation:language_reference:objects:responsefunction:start` still lists
+  four internal representations and there are five. That is the same omission
+  the `ChangeType` page had in batch 4 and it is a separate edit.

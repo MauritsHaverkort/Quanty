@@ -1744,6 +1744,465 @@ int ResponseFunctionFromEffectiveHamiltonian(ResponsefunctionType * const Gin, R
   return 0;
 }
 
+/*  The inverse of a Hermitian positive semi definite matrix, with the directions that carry
+ *  no weight left at zero instead of blown up. It is CompactMatrixInverseSqrt one power
+ *  further along: there the caller holds the square of the matrix, here the matrix itself,
+ *  and inverting the matrix itself rather than its square saves squaring the condition
+ *  number.
+ */
+static uint32_t HermitianCompactMatrixPseudoInverse(CompactMatrixType const * const A, CompactMatrixType * const Ainv, double const SingularValue)
+{
+  uint32_t i,j;
+  double val[A->Ni],sumval=0;
+  CompactMatrixType fun;
+  if(CompactMatrixEigensystem(A, &fun, val)) return 1;
+  for(i=0;i<A->Ni;i++)
+  {
+    sumval+=Abs(val[i]);
+  }
+  for(i=0;i<fun.Ni;i++)
+  {
+    if(Abs(val[i]) <= SingularValue*sumval)
+    {
+      val[i]=0;
+      for(j=0;j<A->Nj;j++)
+      {
+        if(A->QComplex==0)
+        {
+          fun.VRe[j+i*A->Nj]=0;
+        }
+        else
+        {
+          fun.V[j+i*A->Nj].Re=0;
+          fun.V[j+i*A->Nj].Im=0;
+        }
+      }
+    }
+    else
+    {
+      val[i]=1.0/val[i];
+    }
+  }
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(val, &fun, Ainv);
+  FreeCompactMatrix(&fun);
+  return 0;
+}
+
+/*  The largest element of a matrix, the crude magnitude used below to decide whether a
+ *  matrix is zero and to set the scale of that decision.
+ */
+static double CompactMatrixMaxElement(CompactMatrixType const * const M)
+{
+  uint32_t i;
+  double max=0,v;
+  for(i=0;i<M->Ni*M->Nj;i++)
+  {
+    if(M->QComplex==0) v = Abs(M->VRe[i]);
+    else               v = Abs(M->V[i].Re) + Abs(M->V[i].Im);
+    if(v>max) max=v;
+  }
+  return max;
+}
+
+/*  Step (ii) of ResponseFunctionDownfold for an effective Hamiltonian that is a chain,
+ *  Appendix C1 of Zacinskis et al. rather than its Appendix C3.
+ *
+ *  Heff is the chain Atilde1, Btilde1, Atilde2, ... and the congruence with the isometry P
+ *  is wanted at a block size of Nsub rather than the Ntilde the chain is written in:
+ *
+ *    P Heff(w) P^+ = P Atilde1 P^+ + ( P Btilde1^* ) 1/( w - Ht ) ( P Btilde1^* )^+
+ *
+ *  with Ht the chain from its second block on. The head is one triple product. The rest is
+ *  the resolvent of Ht seen through the Nsub row vectors D = P Btilde1^*, which is a block
+ *  Lanczos of Ht started on those rows -- Eq. (C7), with the projection onto the subspace as
+ *  the starting block vector. CompactMatrixBlockBandDiagonalize does exactly that and hands
+ *  back a chain of block size Nsub whose head coupling b[0] is the S^{1/2} of that Lanczos
+ *  and whose a[0] it leaves at zero for the caller to fill with the head.
+ *
+ *  That routine wants the conjugate of the left factor as its starting block, D^* and not
+ *  D: it walks the Krylov space with v -> v A^T, so its row vectors live in the conjugated
+ *  space, and it closes the chain with b[0] = v[0] v[1]^+. The list of poles route obeys
+ *  the same rule, BlockListOfPolesToBlockTridiagonalMatrix hands it beta^T and not beta.
+ *  A real response function cannot tell the two apart and a complex one can, which is what
+ *  the complex Tri case of the test is there for.
+ *
+ *  Why this is worth a route of its own: the general step (ii) rotates a list of poles, and
+ *  a chain of M blocks of size Ntilde only becomes a list of poles by diagonalising it, so
+ *  the general route pays (M Ntilde)^3 and answers with a star of M Ntilde poles. Here
+ *  nothing is diagonalised and the answer is a chain again, of at most M Ntilde / Nsub
+ *  blocks of size Nsub.
+ *
+ *  The Krylov space of Ht started on D cannot leave the first i blocks of the chain after i
+ *  steps, so ceil( dim Ht / Nsub ) steps exhaust it and the projection is then exact.
+ *  NTriMax cuts the chain shorter than that, which is an approximation that keeps the low
+ *  moments of the projected function and drops the high ones, as cutting a chain always is.
+ *
+ *  HeffP is not allocated on entry.
+ */
+static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax)
+{
+  char name[] = "block of a chain";
+  CompactMatrixType Ht, A1, D, Dfull, view;
+  uint32_t const Ntilde = Heff->BlockSize;
+  uint32_t const Nsub   = P->Ni;
+  uint32_t i,j,NTri;
+  int retval = 1;
+  SetCompactMatrixEmpty(&Ht); SetCompactMatrixEmpty(&A1);
+  SetCompactMatrixEmpty(&D);  SetCompactMatrixEmpty(&Dfull);
+  /*  view is a window on a block of the chain and owns nothing, so it is never freed */
+  SetCompactMatrixEmpty(&view);
+  view.Ni = Ntilde; view.Nj = Ntilde; view.QComplex = Heff->QComplex; view.Name = name;
+
+  /*  the head, A1 = P Atilde1 P^+ */
+  if(Heff->QComplex) view.V = Heff->a; else view.VRe = Heff->aRe;
+  if(CompactMatrixMultiply3('N','N','C',P,&view,P,&A1))
+  {
+    printf("CompactMatrixMultiply3 failed in BlockTriDiagonalMatrixDownfoldChain\n");
+    goto Cleanup;
+  }
+  SquareCompactMatrixMakeHermitian(&A1);
+
+  HeffP->BlockSize = Nsub;
+  HeffP->QComplex  = A1.QComplex;
+  if(Heff->N!=0)
+  {
+    /*  D^* = ( P Btilde1^* )^*, the starting block: the Nsub row vectors the chain behind
+     *  the head is seen through, conjugated as the block Lanczos wants them */
+    if(Heff->QComplex) view.V = Heff->b; else view.VRe = Heff->bRe;
+    if(CompactMatrixMultiply('*','N',P,&view,&D))
+    {
+      printf("CompactMatrixMultiply failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      goto Cleanup;
+    }
+    /*  Ht, the chain from its second block on, with D^* in its first block */
+    if(BlockTriDiagonalMatrixToCompactMatrix(Heff,&Ht))
+    {
+      printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      goto Cleanup;
+    }
+    Dfull.Ni = Nsub; Dfull.Nj = Ht.Ni; Dfull.QComplex = D.QComplex;
+    if(InitCompactMatrix(&Dfull)||SetCompactMatrixToZero(&Dfull))
+    {
+      printf("InitCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      goto Cleanup;
+    }
+    for(i=0;i<Nsub;i++)
+    {
+      for(j=0;j<Ntilde;j++)
+      {
+        if(Dfull.QComplex) Dfull.V[i*Dfull.Nj+j]   = D.V[i*D.Nj+j];
+        else               Dfull.VRe[i*Dfull.Nj+j] = D.VRe[i*D.Nj+j];
+      }
+    }
+    NTri = (Ht.Ni + Nsub - 1)/Nsub;
+    if(NTriMax!=NTriMaxNoLimit) NTri = Min(NTri,NTriMax);
+    /*  CompactMatrixBlockBandDiagonalize eats its starting block, which is why Dfull is a
+     *  copy of D and not D itself. NOrtho and ReOrthogonalize are what its other caller,
+     *  DiagonalMatrixBlockTridiagonalize, passes: orthogonalise against every Krylov block
+     *  and not only the last two. A chain that runs to the length asked for here is long
+     *  enough that a Lanczos without it loses orthogonality and with it the poles at the
+     *  far end of the chain. */
+    if(CompactMatrixBlockBandDiagonalize(&Ht,&Dfull,HeffP,SingularValue,NTri,Ht.Ni,true,false))
+    {
+      printf("CompactMatrixBlockBandDiagonalize failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      goto Cleanup;
+    }
+    if((A1.QComplex!=0)&&(HeffP->QComplex==0)) RealBlockTridiagonalMatrixToComplex(HeffP);
+  }
+  else
+  {
+    /*  a head and nothing behind it */
+    HeffP->N = 0;
+    if(InitBlockTridiagonalMatrix(HeffP))
+    {
+      printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      goto Cleanup;
+    }
+  }
+  /*  the head energy, which the Lanczos leaves at zero */
+  for(i=0;i<Sqr(Nsub);i++)
+  {
+    if(HeffP->QComplex==0)
+    {
+      HeffP->aRe[i] = A1.VRe[i];
+    }
+    else
+    {
+      HeffP->a[i].Re = (A1.QComplex==0) ? A1.VRe[i] : A1.V[i].Re;
+      HeffP->a[i].Im = (A1.QComplex==0) ? 0         : A1.V[i].Im;
+    }
+  }
+  HeffP->mu = Heff->mu;
+  retval = 0;
+Cleanup:
+  FreeCompactMatrix(&Ht);
+  FreeCompactMatrix(&A1);
+  FreeCompactMatrix(&D);
+  FreeCompactMatrix(&Dfull);
+  return retval;
+}
+
+/*  Downfold a response function onto a subspace: the sub block of its inverse, inverted
+ *  again,
+ *
+ *    Gsub(w) = ( R G^-1(w) R^+ )^-1 ,
+ *
+ *  with R a matrix of Nsub rows and BlockSize columns and of full row rank. R = ( 0 | 1 )
+ *  picks the lower right block of a two by two block structure; any other R picks the
+ *  subspace its rows span. The rows need not be orthonormal, the identity above holds for
+ *  any R of full row rank.
+ *
+ *  This is the symmetric improved estimator for the self energy of a discrete many body
+ *  system. With G the augmented propagator of the operators a_m and q_m = [a_m,H1] and R
+ *  selecting the q half, Gsub is Sigma(w) - Sigma^HF. Sigma^HF is not part of it: it is the
+ *  off diagonal block of the spectral weight of G, which the caller reads from B0 as
+ *  B0^* B0^T.
+ *
+ *  S comes back as the spectral weight of the result, sum_i W_i, which for the self energy
+ *  is the sum rule S = <{q,q^+}> - Sigma^HF <{a,a^+}>^-1 Sigma^HF.
+ *
+ *  The route is the one of Appendix C of Zacinskis et al., written for a response function
+ *  held as G = A0 + B0^* ( w - Heff(w) )^-1 B0^T, in which B0^* is the Hermitian root
+ *  S~^{1/2} of the spectral weight of G:
+ *
+ *    (i)   inversion    G^-1(w) = S~^{-1/2} ( w - Heff(w) ) S~^{-1/2}, which is Heff and
+ *                       costs nothing at all, ResponseFunctionEffectiveHamiltonian has it
+ *    (ii)  projection   R G^-1(w) R^+ = S^{-1/2} ( w - P Heff(w) P^+ ) S^{-1/2}
+ *    (iii) reinversion  Gsub(w)       = S^{1/2} ( w - P Heff(w) P^+ )^-1 S^{1/2}
+ *
+ *  with
+ *
+ *    S^-1 = R S~^-1 R^+ ,    P = S^{1/2} R S~^{-1/2} .
+ *
+ *  Appendix C carries the congruences of (ii) and (iii) separately, one with S~^{-1/2} and
+ *  one with S^{1/2}. Composing them into the single P above is what leaves one rotation of
+ *  Heff and nothing else to do. P is an isometry, P P^+ = S^{1/2} S^-1 S^{1/2} = 1,
+ *  whatever S~ does, so the projection is perfectly conditioned even where S~^{-1/2} on its
+ *  own is not.
+ *
+ *  Causality survives by construction: every weight of Heff is Hermitian and positive semi
+ *  definite, P W P^+ is a congruence and stays so, and so does S^{1/2} ( ) S^{1/2}.
+ *
+ *  S~ is the Gram matrix of the states behind G and is near singular whenever two of them
+ *  are near dependent -- for the self energy at small interaction the q states vanish
+ *  outright. What that costs is accuracy in the directions of P, not a large answer: a small
+ *  eigenvalue of S~ is a large one of S^-1 and so a small weight in S. Directions of S~
+ *  below SingularValue are deflated away and carry no weight at all.
+ *
+ *  A0 has to vanish. A constant added to G is not a constant added to G^-1 and the three
+ *  steps above do not hold for it; physical Green's functions have A0 = 0.
+ *
+ *  B0 has to be Hermitian, as it is for every representation the library builds, where it
+ *  comes out of a symmetric orthonormalisation. A b0 written down by hand is only defined up
+ *  to a gauge, B0 -> B0 V with V unitary leaves G alone but hides a unitary in Heff, and
+ *  the caller has to take that gauge out before asking for a subspace of the inverse.
+ *
+ *  There are two routes through step (ii) and the type of Gin picks one. An effective
+ *  Hamiltonian that is a chain, which is what a tri-diagonal Gin has, takes Appendix C1:
+ *  BlockTriDiagonalMatrixDownfoldChain projects it with a block Lanczos, nothing is
+ *  diagonalised, and Gout comes back a chain of at most (M Ntilde / Nsub) blocks. Every
+ *  other type reaches step (ii) as a list of poles and takes Appendix C3, the congruence
+ *  one weight at a time, and Gout comes back a star of as many poles as Heff has. NTriMax
+ *  is a ceiling on the length of the chain the first route produces and the second route
+ *  refuses it, there being no chain to cut; NTriMaxNoLimit asks for no ceiling, which
+ *  leaves the projection exact.
+ *
+ *  Gout is therefore a chain for a tri-diagonal Gin and an Anderson matrix otherwise, in
+ *  both cases where step (iii) leaves it and at no cost beyond it. ChangeType turns either
+ *  into the discrete spectral representation Gsub(w) = sum_i W_i / ( w - a_i ), at the
+ *  price of one dense diagonalisation. Gout and S are not allocated on entry.
+ */
+int ResponseFunctionDownfold(ResponsefunctionType * const Gin, CompactMatrixType const * const R, ResponsefunctionType * const Gout, CompactMatrixType * const S, double const T, double const SingularValue, double const MinimalPoleWeigth, double const MinimalPoleDistance, uint32_t const NTriMax)
+{
+  ResponsefunctionType Heff, HeffP;
+  CompactMatrixType A0, B0, InvSqrtStilde, Y, Sinv, SqrtS, P, Pc;
+  uint32_t *QComplexOut;
+  double *bReOut;
+  Complex16 *bOut;
+  uint32_t BlockSizeOut;
+  double sv = (SingularValue < 0) ? 1000*DBL_EPSILON : SingularValue;
+  double a0max, b0max;
+  uint32_t i;
+  int retval = 1;
+  /*  everything the cleanup at the end touches, empty, so that a failure anywhere can jump
+   *  straight to it. A lower case type is one this routine does not own and does not free */
+  SetCompactMatrixEmpty(&A0);   SetCompactMatrixEmpty(&B0);  SetCompactMatrixEmpty(&InvSqrtStilde);
+  SetCompactMatrixEmpty(&Y);    SetCompactMatrixEmpty(&Sinv); SetCompactMatrixEmpty(&SqrtS);
+  SetCompactMatrixEmpty(&P);    SetCompactMatrixEmpty(&Pc);
+  Heff.type='l';  Heff.Block=true;  Heff.data=NULL;  Heff.SuggestedGrid=NULL;  Heff.NSuggestedGridPoints=0;
+  HeffP.type='l'; HeffP.Block=true; HeffP.data=NULL; HeffP.SuggestedGrid=NULL; HeffP.NSuggestedGridPoints=0;
+
+  if(Gin->Block==false)
+  {
+    printf("Error in ResponseFunctionDownfold: a single valued response function has no subspace to downfold onto\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(ResponseFunctionEffectiveHamiltonian(Gin, &Heff, &A0, &B0, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance))
+  {
+    printf("ResponseFunctionEffectiveHamiltonian failed in ResponseFunctionDownfold\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(R->Nj != B0.Ni)
+  {
+    printf("Error in ResponseFunctionDownfold: the matrix selecting the subspace has %i columns and the response function has a block size of %i\n",R->Nj,B0.Ni);
+    goto Cleanup;
+  }
+  a0max = CompactMatrixMaxElement(&A0);
+  b0max = CompactMatrixMaxElement(&B0);
+  if(a0max > sv*(1.0+Sqr(b0max)))
+  {
+    printf("Error in ResponseFunctionDownfold: the response function has a constant term A0, its largest element is %E. A constant added to G is not a constant added to G^-1 and a subspace of the inverse is not defined by the three steps this routine takes\n",a0max);
+    goto Cleanup;
+  }
+  /*  the Hermitian root of the spectral weight of G is B0^*: the block convention is
+   *  G = A0 + B0^* ( w - Heff )^-1 B0^T and ( B0^* )^+ = B0^T. Everything below is written
+   *  in terms of that root, so conjugate once here and be done with it */
+  CompactMatrixConjugate(&B0);
+  if(QCompactMatrixHermitian(B0,1E-8)==0)
+  {
+    printf("Error in ResponseFunctionDownfold: B0 of the response function is not Hermitian. It is then defined only up to a unitary gauge, which sits in Heff and not in B0, and the subspace of the inverse would be taken in the wrong basis\n");
+    goto Cleanup;
+  }
+  SquareCompactMatrixMakeHermitian(&B0);
+  if(HermitianCompactMatrixPseudoInverse(&B0,&InvSqrtStilde,sv))
+  {
+    printf("HermitianCompactMatrixPseudoInverse failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  /*  Y = R S~^{-1/2}, from which both S and P follow: Y Y^+ = R S~^-1 R^+ = S^-1 */
+  if(CompactMatrixMultiply('N','N',R,&InvSqrtStilde,&Y))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  if(CompactMatrixMultiply('N','C',&Y,&Y,&Sinv))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  SquareCompactMatrixMakeHermitian(&Sinv);
+  CompactMatrixInverseSqrt(&Sinv,&SqrtS);
+  if(CompactMatrixMultiply('N','N',&SqrtS,&Y,&P))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  /*  Step (ii). An effective Hamiltonian that is a chain takes the route of Appendix C1,
+   *  which keeps it a chain and diagonalises nothing; everything else is a list of poles by
+   *  the time it gets here and takes the congruence of Appendix C3, one weight at a time. */
+  if((Heff.type|32)=='t')
+  {
+    HeffP.type  = 'T';
+    HeffP.Block = true;
+    HeffP.data  = malloc(sizeof(BlockTriDiagonalMatrixType));
+    if(HeffP.data==NULL)
+    {
+      printf("malloc failed in ResponseFunctionDownfold\n");
+      goto Cleanup;
+    }
+    if(BlockTriDiagonalMatrixDownfoldChain((BlockTriDiagonalMatrixType*)(Heff.data),&P,(BlockTriDiagonalMatrixType*)(HeffP.data),sv,NTriMax))
+    {
+      printf("BlockTriDiagonalMatrixDownfoldChain failed in ResponseFunctionDownfold\n");
+      free(HeffP.data);
+      HeffP.data = NULL;
+      HeffP.type = 'l';
+      goto Cleanup;
+    }
+  }
+  else
+  {
+    if(NTriMax!=NTriMaxNoLimit)
+    {
+      printf("Error in ResponseFunctionDownfold: NTriMax is a ceiling on the length of the chain the projection produces, and a response function of type %c has no chain to produce -- it is downfolded one pole at a time and the result is a star\n",Gin->type);
+      goto Cleanup;
+    }
+    /*  Rotate computes U^* X U^T, so U = P^* is the congruence P X P^+ */
+    if(CompactMatrixCopy(P,&Pc))
+    {
+      printf("CompactMatrixCopy failed in ResponseFunctionDownfold\n");
+      goto Cleanup;
+    }
+    CompactMatrixConjugate(&Pc);
+    if(BlockResponseFunctionRotate(&Heff,&Pc,&HeffP,T,SingularValue,MinimalPoleWeigth,MinimalPoleDistance))
+    {
+      printf("BlockResponseFunctionRotate failed in ResponseFunctionDownfold\n");
+      goto Cleanup;
+    }
+  }
+  if(ResponseFunctionFromEffectiveHamiltonian(&HeffP,Gout,T,SingularValue,MinimalPoleWeigth,MinimalPoleDistance))
+  {
+    printf("ResponseFunctionFromEffectiveHamiltonian failed in ResponseFunctionDownfold\n");
+    goto Cleanup;
+  }
+  /*  What FromEffectiveHamiltonian returns is ( w - P Heff(w) P^+ )^-1, with a head energy
+   *  a[0] of zero and a head coupling b[0] of one. The S^{1/2} that step (iii) puts in front
+   *  of it is exactly that head coupling, and writing it there is free. Turning the result
+   *  into a list of poles instead, the pole expansion of Eq. (20), costs a dense
+   *  diagonalisation of the whole matrix: the caller who wants that asks ChangeType for it
+   *  and pays for it there.
+   *
+   *  A chain stays a chain and everything else has become a star, and the two hold their
+   *  head energy and head coupling the same way, as the first block of a and of b.
+   *
+   *  b0 enters as b0^* ( ) b0^T, so the head coupling to write down is the conjugate of the
+   *  Hermitian root S^{1/2}. P carries the QComplex of SqrtS into Heff and from there into
+   *  the result, but a conversion on the way is free to notice that everything it holds is
+   *  real, so promote when it did. */
+  if((Gout->type|32)=='a')
+  {
+    BlockAndersonMatrixType * const Aout = (BlockAndersonMatrixType*)(Gout->data);
+    if((Aout->QComplex==0)&&(SqrtS.QComplex!=0)) RealBlockAndersonMatrixToComplex(Aout);
+    QComplexOut = &(Aout->QComplex); bReOut = Aout->bRe; bOut = Aout->b; BlockSizeOut = Aout->BlockSize;
+  }
+  else if((Gout->type|32)=='t')
+  {
+    BlockTriDiagonalMatrixType * const Tout = (BlockTriDiagonalMatrixType*)(Gout->data);
+    if((Tout->QComplex==0)&&(SqrtS.QComplex!=0)) RealBlockTridiagonalMatrixToComplex(Tout);
+    QComplexOut = &(Tout->QComplex); bReOut = Tout->bRe; bOut = Tout->b; BlockSizeOut = Tout->BlockSize;
+  }
+  else
+  {
+    printf("Error in ResponseFunctionDownfold: ResponseFunctionFromEffectiveHamiltonian returned a %c, which is neither a chain nor a star, and there is then no head coupling to put S^{1/2} in\n",Gout->type);
+    FreeResponsefunction(Gout);
+    goto Cleanup;
+  }
+  for(i=0;i<Sqr(BlockSizeOut);i++)
+  {
+    if(*QComplexOut==0)
+    {
+      bReOut[i] = SqrtS.VRe[i];
+    }
+    else
+    {
+      bOut[i].Re = (SqrtS.QComplex==0) ?  SqrtS.VRe[i] :  SqrtS.V[i].Re;
+      bOut[i].Im = (SqrtS.QComplex==0) ?  0            : -SqrtS.V[i].Im;
+    }
+  }
+  if(CompactMatrixMultiply('N','N',&SqrtS,&SqrtS,S))
+  {
+    printf("CompactMatrixMultiply failed in ResponseFunctionDownfold\n");
+    FreeResponsefunction(Gout);
+    goto Cleanup;
+  }
+  retval = 0;
+Cleanup:
+  FreeResponsefunction(&Heff);
+  FreeResponsefunction(&HeffP);
+  FreeCompactMatrix(&A0);
+  FreeCompactMatrix(&B0);
+  FreeCompactMatrix(&InvSqrtStilde);
+  FreeCompactMatrix(&Y);
+  FreeCompactMatrix(&Sinv);
+  FreeCompactMatrix(&SqrtS);
+  FreeCompactMatrix(&P);
+  FreeCompactMatrix(&Pc);
+  if(retval) printf("Error in ResponseFunctionDownfold\n");
+  fflush(stdout);
+  return retval;
+}
+
 
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {
@@ -4290,14 +4749,38 @@ Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const doub
 }
 
 
+/*  The smaller of a ceiling on the chain length and the length the conversion would
+ *  produce on its own. Spelled out rather than written with the Min macro because the
+ *  conversions below call their input Min.
+ */
+uint32_t NTriMaxOr(uint32_t const NTriMax, uint32_t const N)
+{
+  return (NTriMax<N)?NTriMax:N;
+}
+
 /*
  *
  */
 int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth)
 {
+  return ConvertResponsefunction(Min, Mout, type, Method, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth, NTriMaxNoLimit, NTriMaxNoLimit);
+}
+
+/*  NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) the conversion
+ *  produces: NTriMaxVal on the one chain of a tri-diagonal matrix, and the two of them on
+ *  the valence and the conduction chain of a NaturalImpurityOrbital or a DoubleTri matrix.
+ *  A list of poles and an Anderson matrix have no chain and ignore both.
+ *
+ *  Where the routine that does the work takes a length of its own the ceiling is handed to
+ *  it, so that it stops there rather than building a chain that is then thrown away. The
+ *  cut at the end of this function is what makes the ceiling hold for the routes that have
+ *  no such argument, and is a no-op for the ones that do.
+ */
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
   if(Min->Block==true)
   {
-    return ConvertBlockMatrix(Min,Mout,type,Method, T,SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth);
+    return ConvertBlockMatrix(Min,Mout,type,Method, T,SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth, NTriMaxVal, NTriMaxCon);
   }
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
@@ -4328,7 +4811,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)Min->data, (TriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N);
+          ListOfPolesToTridiagonalMatrix(*(ListOfPoles*)Min->data, (TriDiagonalMatrixType*)Mout->data, NTriMaxOr(NTriMaxVal, ((ListOfPoles*)(Min->data))->N));
         }
         break;
         case 'a':
@@ -4340,7 +4823,10 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
-          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->N, ((BlockListOfPoles*)(Min->data))->mu, T);
+          /*  the two length arguments of ListOfPolesToBADoubleTridiagonalMatrix reduce the
+           *  number of poles before the chains are built, which is a merge and not the cut
+           *  NTriMax asks for, so they keep their old value and the cut happens at the end */
+          ListOfPolesToBADoubleTridiagonalMatrix(*(ListOfPoles*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((ListOfPoles*)(Min->data))->N, ((ListOfPoles*)(Min->data))->N, ((ListOfPoles*)(Min->data))->mu, T);
         }
         break;
         case 'd':
@@ -4382,6 +4868,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          /*  a pole merge rather than a cut, as for the list of poles above */
           TriDiagonalMatrixToBADoubleTriDiagonalMatrix(*(TriDiagonalMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->N, ((TriDiagonalMatrixType*)Min->data)->mu, T);
         }
         break;
@@ -4412,7 +4899,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(TriDiagonalMatrixType));
-          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N);
+          AndersonMatrixToTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (TriDiagonalMatrixType*)Mout->data, NTriMaxOr(NTriMaxVal, ((AndersonMatrixType*)Min->data)->N));
         }
         break;
         case 'a':
@@ -4424,6 +4911,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BADoubleTriDiagonalMatrixType));
+          /*  a pole merge rather than a cut, as for the list of poles above */
           AndersonMatrixToBADoubleTriDiagonalMatrix(*(AndersonMatrixType*)Min->data, (BADoubleTriDiagonalMatrixType*)Mout->data, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->N, ((AndersonMatrixType*)Min->data)->mu, T);
         }
         break;
@@ -4541,7 +5029,7 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
     }
     return 1;
   }
-  return 0;
+  return ResponsefunctionTruncate(Mout, NTriMaxVal, NTriMaxCon);
 }
 
 
@@ -4702,6 +5190,53 @@ int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate)
   }
   return 0;
 }
+
+/*  Cut the chain of a response function that carries one, so that it is at most NTriMaxVal
+ *  (Tri), or its valence chain at most NTriMaxVal and its conduction chain at most
+ *  NTriMaxCon (NaturalImpurityOrbital and DoubleTri). A chain that is already short enough
+ *  is left alone, and NTriMaxNoLimit asks for no cut at all. What is dropped is dropped
+ *  without looking at the values further down the chain.
+ *
+ *  A list of poles and an Anderson matrix have no chain: they are left as they are.
+ */
+int ResponsefunctionTruncate(ResponsefunctionType *M, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
+  if((NTriMaxVal==NTriMaxNoLimit)&&(NTriMaxCon==NTriMaxNoLimit)) return 0;
+  if(M->Block==true)
+  {
+    switch (M->type|32)
+    {
+      case 't':
+        return BlockTridiagonalMatrixTruncate((BlockTriDiagonalMatrixType*)(M->data), NTriMaxVal);
+      case 'n':
+        return BlockNaturalImpurityOrbitalMatrixTruncate((BlockNaturalImpurityOrbitalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+      case 'd':
+        return BlockDoubleTriDiagonalMatrixTruncate((BlockDoubleTriDiagonalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+      case 'l':
+      case 'a':
+        return 0;
+      default:
+        printf("Error in ResponsefunctionTruncate unrecognized type to truncate: %c\n",M->type);
+        return 1;
+    }
+  }
+  switch (M->type|32)
+  {
+    case 't':
+      return TriDiagonalMatrixTruncate((TriDiagonalMatrixType*)(M->data), NTriMaxVal);
+    case 'n':
+      return BADoubleTriDiagonalMatrixTruncate((BADoubleTriDiagonalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+    case 'd':
+      return DoubleTriDiagonalMatrixTruncate((DoubleTriDiagonalMatrixType*)(M->data), NTriMaxVal, NTriMaxCon);
+    case 'l':
+    case 'a':
+      return 0;
+    default:
+      printf("Error in ResponsefunctionTruncate unrecognized type to truncate: %c\n",M->type);
+      return 1;
+  }
+}
+
 
 
 /*

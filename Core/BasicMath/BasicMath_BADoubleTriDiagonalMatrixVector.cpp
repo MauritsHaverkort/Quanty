@@ -316,6 +316,32 @@ void BADoubleTriDiagonalMatrixChopReduceDimension(BADoubleTriDiagonalMatrixType 
     M->bcA0 = 0;
 }
 
+/*  Cut both chains, the valence one to at most Nval and the conduction one to at most
+ *  Ncon. The observed orbital of a BADoubleTriDiagonalMatrix is a linear combination of
+ *  the first site of the val and of the con chain, so neither chain can be cut away
+ *  completely: SetBADoubleTriDiagonalMatrixConValFromChains pads an empty one back to a
+ *  single site. That same call refreshes acv*, bv*0 and bc*0, which are cached from
+ *  a[1] and b[0..1] of the two chains and go stale once the cut reaches into them.
+ */
+uint32_t BADoubleTriDiagonalMatrixTruncate(BADoubleTriDiagonalMatrixType * const M, uint32_t const Nval, uint32_t const Ncon)
+{
+  if ((M->val.N <= Nval) && (M->con.N <= Ncon)) return 0;
+  if (TriDiagonalMatrixTruncate(&(M->val), Nval))
+  {
+    printf("TriDiagonalMatrixTruncate failed for val in BADoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (TriDiagonalMatrixTruncate(&(M->con), Ncon))
+  {
+    printf("TriDiagonalMatrixTruncate failed for con in BADoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  SetBADoubleTriDiagonalMatrixConValFromChains(M);
+  return 0;
+}
+
 /*  MI=M^-1
  *  MI not initiallized on call
  */

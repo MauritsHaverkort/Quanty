@@ -73,3 +73,4 @@ int OperatorToHoles(OperatorType const * const Oin, OperatorType * const Oout, u
 void OperatorToHolesInlineNormalOrdered(OperatorType * const O, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 int OperatorToHolesNormalOrdered(OperatorType const * const Oin, OperatorType * const Oout, uint16_t const * const Index, uint32_t const len, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 
+uint32_t ShellAverageOperator(const OperatorType O, OperatorType * const Oavg, const uint16_t * const Shell, const uint32_t NShell);

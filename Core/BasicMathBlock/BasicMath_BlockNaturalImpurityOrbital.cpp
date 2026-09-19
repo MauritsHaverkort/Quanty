@@ -195,6 +195,36 @@ uint32_t BlockNaturalImpurityOrbitalMatrixChop(BlockNaturalImpurityOrbitalMatrix
   return 0;
 }
 
+/*  Cut both chains, the valence one to at most Nval and the conduction one to at most
+ *  Ncon. TMT is the head of the two chains in the natural impurity orbital basis and is
+ *  built from a[1..2] and b[0..1] of both, so it goes stale as soon as the cut reaches
+ *  into them and has to be built again from the chains that are left.
+ */
+uint32_t BlockNaturalImpurityOrbitalMatrixTruncate(BlockNaturalImpurityOrbitalMatrixType *const A, uint32_t const Nval, uint32_t const Ncon)
+{
+  if((A->val.N <= Nval) && (A->con.N <= Ncon)) return 0;
+  if(BlockTridiagonalMatrixTruncate(&(A->val), Nval))
+  {
+    printf("BlockTridiagonalMatrixTruncate failed for val in BlockNaturalImpurityOrbitalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  if(BlockTridiagonalMatrixTruncate(&(A->con), Ncon))
+  {
+    printf("BlockTridiagonalMatrixTruncate failed for con in BlockNaturalImpurityOrbitalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  FreeCompactMatrix(&(A->TMT));
+  if(SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(A))
+  {
+    printf("SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType failed in BlockNaturalImpurityOrbitalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  return 0;
+}
+
 uint32_t BlockNaturalImpurityOrbitalMatrixChopReduceDimension(BlockNaturalImpurityOrbitalMatrixType *const A, double const Epsilon)
 {
   int i,KeepComplex=0;

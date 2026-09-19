@@ -6891,3 +6891,201 @@ int OperatorToHolesNormalOrdered(OperatorType const * const Oin, OperatorType * 
   OperatorToHolesInlineNormalOrdered(Oout, Index, len, QDetNotOrdered);
   return 0;
 }
+
+
+
+/*  Oavg <- P[O] with P the average of the operator over the group U(n) of all unitary
+ *  transformations within one shell, i.e. within the n one particle states listed in Shell
+ *
+ *    P[O] = Integral dU U O U^dag
+ *
+ *  This is the average of configuration of O. For a one particle operator it returns
+ *  epsilon sum_tau CR(tau) An(tau) with epsilon the average of the one particle energies, for a
+ *  two particle operator (Uavg/2) N (N-1) with Uavg the average interaction of a pair of
+ *  electrons, and so on for the higher ranks. Note that the group is U(n) and not SO(3), which
+ *  is stronger: the spin orbit coupling zeta l.s is a rotational scalar, but it is traceless
+ *  over the shell and thus not part of the shell average.
+ *
+ *  The projection works block by block in the number of creation (p) and annihilation (q)
+ *  operators that the term has inside the shell:
+ *    p != q  the term averages to zero. U(n) contains the phase c -> exp(i phi) c under which
+ *            the term picks up exp(i (p-q) phi). The hybridization to another shell, a pair
+ *            creation term and the dipole operator thus all vanish.
+ *    p == q  the p particle states of the shell span Lambda^p C^n, which is an irreducible
+ *            representation of U(n). By Schur the only invariant operator on it is the identity,
+ *            so the term becomes (Tr B / binomial(n,p)) times the identity on Lambda^p, with B
+ *            the part of the term inside the shell and the trace taken over Lambda^p. Written
+ *            with lader operators the identity on Lambda^p is
+ *              sum_{tau_1 < tau_2 < ... < tau_p} CR(tau_1)..CR(tau_p) An(tau_p)..An(tau_1)
+ *            and Tr B is zero unless the indices created are a permutation of the indices
+ *            annihilated, in which case it is the sign of that permutation. For p=1 this is the
+ *            trace of the one particle matrix, for p=2 the direct minus the exchange terms.
+ *  Lader operators outside the shell, of other shells and of bosons, are spectators. They are
+ *  carried through untouched. Several shells are averaged by calling this function once per
+ *  shell, in any order: the projectors of disjoint shells commute and the result is the average
+ *  over the product group U(n_1) x U(n_2) x ...
+ *
+ *  O is normal ordered first. Without this the division of the average over the different ranks
+ *  would depend on the order in which the operator happened to be written down, as CR(a) An(a)
+ *  and An(a) CR(a) differ by a constant.
+ *
+ *  Oavg needs not to be initialized on input, O is not changed
+ */
+uint32_t ShellAverageOperator(const OperatorType O, OperatorType * const Oavg, const uint16_t * const Shell, const uint32_t NShell)
+{
+  OperatorType Onorm;
+  uint8_t *QInShell;
+  uint16_t Aterm[O.MaxLength + 1];   /* the term left to right, Aterm[0] is the leftmost lader operator */
+  uint16_t Spec[O.MaxLength + 1];    /* the lader operators outside the shell, in their original order */
+  uint16_t Tau[O.MaxLength + 1];     /* the shell indices created, left to right */
+  uint16_t Sig[O.MaxLength + 1];     /* the shell indices annihilated, right to left */
+  uint16_t Oadd[O.MaxLength + 1];
+  uint32_t Comb[O.MaxLength + 1];    /* positions in Shell of tau_1 < tau_2 < ... < tau_p */
+  uint32_t Perm[O.MaxLength + 1];
+  uint32_t Group[O.MaxLength + 1];   /* 0 creates in the shell, 1 annihilates in the shell, 2 spectator */
+  uint32_t il, iN, i, j, m, p, q, NSpec, NSign, QFound;
+  uint16_t temp;
+  double factor, VRe, VIm;
+
+  if ((QInShell = (uint8_t *) calloc(O.NFermion + 1, sizeof(uint8_t))) == NULL)
+  {
+    printf("calloc failed in ShellAverageOperator\n");
+    return 1;
+  }
+  for (i = 0; i < NShell; i++)
+  {
+    if (Shell[i] >= O.NFermion)
+    {
+      printf("Index %i of the shell is not one of the %i fermionic modes of the operator in ShellAverageOperator\n", Shell[i], O.NFermion);
+      free(QInShell);
+      return 1;
+    }
+    if (QInShell[Shell[i]])
+    {
+      printf("Index %i is given twice in the shell in ShellAverageOperator\n", Shell[i]);
+      free(QInShell);
+      return 1;
+    }
+    QInShell[Shell[i]] = 1;
+  }
+  if (InitOperatorCopySettings(&Onorm, O))
+  {
+    printf("InitOperatorCopySettings failed in ShellAverageOperator\n");
+    free(QInShell);
+    return 1;
+  }
+  if (NormalOrderOperator(O, &Onorm, &QDetNotOrderedFcFaBcBa))
+  {
+    printf("NormalOrderOperator failed in ShellAverageOperator\n");
+    FreeOperator(&Onorm);
+    free(QInShell);
+    return 1;
+  }
+  if (InitOperatorCopySettings(Oavg, Onorm))
+  {
+    printf("InitOperatorCopySettings failed in ShellAverageOperator\n");
+    FreeOperator(&Onorm);
+    free(QInShell);
+    return 1;
+  }
+  /* a constant is invariant */
+  if (Onorm.l[0].N != 0)
+  {
+    if (Onorm.l[0].QComplex) OperatorAddLader(Oavg, NULL, 0, Onorm.l[0].V[0].Re, Onorm.l[0].V[0].Im);
+    else                     OperatorAddLader(Oavg, NULL, 0, Onorm.l[0].VRe[0], 0);
+  }
+  for (il = 1; il <= Onorm.MaxLength; il++)
+  {
+    for (iN = 0; iN < Onorm.l[il].N; iN++)
+    {
+      /* the lader operator stored last is the one standing leftmost in the product */
+      for (m = 0; m < il; m++) Aterm[m] = Onorm.l[il].o[il * iN + il - 1 - m];
+      /* split the term into the part inside the shell and the spectators */
+      p = 0;
+      q = 0;
+      NSpec = 0;
+      for (m = 0; m < il; m++)
+      {
+        if (((Aterm[m] & NotCrAnMask) < O.NFermion) && (QInShell[Aterm[m] & NotCrAnMask]))
+        {
+          if (Aterm[m] & CrAnMask)
+          {
+            Group[m] = 0;
+            Tau[p] = Aterm[m] & NotCrAnMask;
+            p++;
+          }
+          else
+          {
+            Group[m] = 1;
+            Sig[q] = Aterm[m] & NotCrAnMask;
+            q++;
+          }
+        }
+        else
+        {
+          Group[m] = 2;
+          Spec[NSpec] = Aterm[m];
+          NSpec++;
+        }
+      }
+      if (p != q) continue;   /* the average over the phase inside U(n) sets these to zero */
+      /* B = CR(Tau[0])..CR(Tau[p-1]) An(Sig[p-1])..An(Sig[0]), Sig was filled from the left */
+      for (m = 0; m < p / 2; m++)
+      {
+        temp = Sig[m];
+        Sig[m] = Sig[p - 1 - m];
+        Sig[p - 1 - m] = temp;
+      }
+      /* Tr B over Lambda^p, zero unless what is created is a permutation of what is annihilated */
+      QFound = 1;
+      for (i = 0; i < p; i++)
+      {
+        Perm[i] = p;
+        for (j = 0; j < p; j++) if (Sig[j] == Tau[i]) { Perm[i] = j; break; }
+        if (Perm[i] == p) { QFound = 0; break; }
+      }
+      if (!QFound) continue;
+      NSign = 0;
+      for (i = 0; i < p; i++) for (j = i + 1; j < p; j++) if (Perm[i] > Perm[j]) NSign++;
+      /* and the sign of writing the term as (creates in shell)(annihilates in shell)(spectators),
+       * bosons commute with everything and do not enter */
+      for (i = 0; i < il; i++)
+      {
+        if ((Aterm[i] & NotCrAnMask) >= O.NFermion) continue;
+        for (j = i + 1; j < il; j++)
+        {
+          if ((Aterm[j] & NotCrAnMask) >= O.NFermion) continue;
+          if (Group[i] > Group[j]) NSign++;
+        }
+      }
+      factor = (NSign % 2) ? -1 : 1;
+      for (i = 0; i < p; i++) factor *= (double) (i + 1) / (double) (NShell - i);   /* 1 / binomial(NShell,p) */
+      VRe = (Onorm.l[il].QComplex) ? Onorm.l[il].V[iN].Re : Onorm.l[il].VRe[iN];
+      VIm = (Onorm.l[il].QComplex) ? Onorm.l[il].V[iN].Im : 0;
+      /* add Tr B / binomial(n,p) times the identity on Lambda^p times the spectators */
+      for (i = 0; i < p; i++) Comb[i] = i;
+      while (1)
+      {
+        for (i = 0; i < p; i++)     Oadd[il - 1 - i]         = CrAnMask + Shell[Comb[i]];
+        for (i = 0; i < p; i++)     Oadd[il - 1 - p - i]     = Shell[Comb[p - 1 - i]];
+        for (i = 0; i < NSpec; i++) Oadd[il - 1 - 2 * p - i] = Spec[i];
+        if (OperatorAddLaderNormalOrder(Oavg, Oadd, il, factor * VRe, factor * VIm, &QDetNotOrderedFcFaBcBa))
+        {
+          printf("OperatorAddLaderNormalOrder failed in ShellAverageOperator\n");
+          FreeOperator(&Onorm);
+          free(QInShell);
+          return 1;
+        }
+        for (i = p; i > 0; i--) if (Comb[i - 1] != NShell - p + i - 1) break;
+        if (i == 0) break;
+        Comb[i - 1]++;
+        for (j = i; j < p; j++) Comb[j] = Comb[j - 1] + 1;
+      }
+    }
+  }
+  SetQComplexOperator(Oavg);
+  OperatorSetMaxLength(Oavg);
+  FreeOperator(&Onorm);
+  free(QInShell);
+  return 0;
+}

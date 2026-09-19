@@ -3503,6 +3503,57 @@ static int LuaOperatorSetOnsiteEnergy(lua_State *L)
   return 1;
 }
 
+/*  ShellAverage(O)               averages over all NF one particle states
+ *  ShellAverage(O, {indices})    averages over the one particle states listed
+ *
+ *  Returns the average of the operator over all unitary transformations within the shell, the
+ *  average of configuration. A one particle operator becomes epsilon sum_tau CR(tau) An(tau)
+ *  with epsilon the average one particle energy, a two particle operator becomes
+ *  (Uavg/2) N (N-1), and so on. Terms that change the number of electrons in the shell, the
+ *  hybridization to another shell for example, average to zero. Several shells are done by
+ *  calling the function once per shell, in any order.
+ */
+static int LuaShellAverage(lua_State *L)
+{
+  OperatorType *O, *Oavg;
+  uint16_t *Shell;
+  uint32_t NShell, i;
+  uint32_t luaStackLen = (uint32_t)lua_gettop(L);
+
+  if (luaStackLen < 1 || luaStackLen > 2)
+    return luaL_error(L, "ShellAverage called with %d arguments. One or two expected, Operator and optionally the list of one particle states forming the shell.\n",luaStackLen);
+  O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  if(luaStackLen>1)
+  {
+    Shell = luaL_checkarray_unit16_t(L, 2, &NShell);
+  }
+  else
+  {
+    Shell = (uint16_t*)malloc(O->NFermion*sizeof(uint16_t));
+    for(i=0;i<O->NFermion;i++)
+    {
+      Shell[i]=(uint16_t)i;
+    }
+    NShell=O->NFermion;
+  }
+  if(NShell==0)
+  {
+    free(Shell);
+    return luaL_error(L, "ShellAverage called with an empty shell, there is nothing to average over.\n");
+  }
+  Oavg = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  if(ShellAverageOperator(*O, Oavg, Shell, NShell))
+  {
+    free(Shell);
+    return luaL_error(L, "ShellAverageOperator failed in ShellAverage\n");
+  }
+  free(Shell);
+  luaL_setmetatable(L, "Operator_Type");
+  strncpy(Oavg->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
+  return 1;
+}
+
+
 
 /*  transform an operator to a table
  *  on stack an operator 
@@ -5755,6 +5806,7 @@ static const struct luaL_Reg global_functions[] = {
 //  {"CalculateFermi", LuaCalculateFermi},
   {"CalculateG", LuaCalculateG},            // same as TightBinding.CalculateG
   {"CalculateRho", LuaCalculateRho},
+  {"AngularMomentumOperators", LuaAngularMomentumOperators},
   {"Chop", LuaChop},
   {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},
@@ -5812,6 +5864,7 @@ static const struct luaL_Reg global_functions[] = {
 	{"ReadLenaBasisFunctions",LuaReadLenaBasisFunctions},
 	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
+  {"ShellAverage", LuaShellAverage},
   {"Statistics",LuaStatistics},
   {"TensorProduct", LuaTensorProduct},
   {"TimeEnd",LuaTimeEnd},

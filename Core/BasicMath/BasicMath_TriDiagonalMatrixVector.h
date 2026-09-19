@@ -2,6 +2,7 @@ void FreeTriDiagonalMatrix(TriDiagonalMatrixType * const M);
 uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M);
 uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M);
 void TriDiagonalMatrixChop(TriDiagonalMatrixType * const M, double const epsilon);
+uint32_t TriDiagonalMatrixTruncate(TriDiagonalMatrixType * const M, uint32_t const N);
 void ShiftTriDiagonalMatrix(TriDiagonalMatrixType * const M, double const delta);
 double TriDiagonalMatrixInverse(TriDiagonalMatrixType const M, MatrixType * const MI);
 int TriDiagonalMatrixEffectiveHamiltonian(TriDiagonalMatrixType const * const G, TriDiagonalMatrixType * const Heff);

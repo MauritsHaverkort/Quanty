@@ -1,0 +1,104 @@
+{{indexmenu_n>999}}
+====== ChangeType ======
+
+The function //ResponseFunction.ChangeType(G, type, ...)// can be used to transform the representation of a response function. In Quanty, there are 5 different types for the response function:
+  * list of poles (//ListOfPoles//)
+  * tri-diagonal (//Tri//)
+  * Anderson (//And//)
+  * natural impurity orbital (//Nat//)
+  * double tri-diagonal (//DoubleTri//)
+See the [[documentation:language_reference:objects:responsefunction:start|first page about response functions]] for more information on how response functions are internally represented. 
+
+These types are related to each other by unitary transformations. //ResponseFunction.ChangeType(G)// allows one to transform between types.
+
+Note that
+  * Internal functions can change the type of a response function.
+  * Internal functions accept all different types of a response function.
+  * All transformations are unitary, i.e. bijective, however they take time and might lead to significance loss.
+  * You can add or subtract response functions of different types.
+
+===== Input =====
+
+  * //G//: the response function to transform
+  * //type//: (//string//) the representation to transform to, one of "ListOfPoles" (or "LP"), "Tri", "And", "NaturalImpurityOrbital" (or "Nat"), "DoubleTri" (or "DTri"), and furthermore "Dense", "Userdata" and "Table"
+
+//(Optional) Third argument, a list of options//
+
+  * NTriMax : (//integer//) the largest chain length the result may have. Accepted by the transformations to //Tri//, //Nat// and //DoubleTri//, which are the representations that have a chain (//default: $\infty$//)
+
+  * NTriMaxVal : (//integer//) the largest length of the valence chain. Accepted by the transformations to //Nat// and //DoubleTri//, which have a valence and a conduction chain. Overrules //NTriMax// for that chain (//default: the value of //NTriMax////)
+
+  * NTriMaxCon : (//integer//) the largest length of the conduction chain, as //NTriMaxVal// (//default: the value of //NTriMax////)
+
+  * EffectivekBT : (//real//) the temperature of the Fermi function that decides whether a pole belongs to the valence or to the conduction chain. Accepted by the transformations to //Nat// and //DoubleTri//
+
+  * SingularValue : (//real//) smallest singular value of a block that is considered different from zero. A direction whose singular value is smaller is removed, which reduces the size of the blocks of a matrix valued chain (//default: $1000 \, \epsilon_{\mathrm{machine}} \approx 2.2 \cdot 10^{-13}$//)
+
+  * MinimalPoleDistance : (//real//) two poles closer together than this are merged into one
+
+###
+A chain of length $N$ is $a_0 \ldots a_N$ with $b_0 \ldots b_{N-1}$, so //NTriMax// is the number of bath sites (blocks) behind the observed one, and //NTriMax// $=0$ leaves $G(\omega) = a_0 + b_0 \frac{1}{\omega - a_1} b_0$ with no bath at all. A chain that comes out shorter than //NTriMax// on its own is left as it is.
+###
+
+###
+A chain that comes out longer is **cut**, and it is cut without looking at the values further down: the $a_i$ and $b_i$ that are kept are exactly the ones the transformation without a ceiling would have produced. This is not the same as reducing the number of poles with [[documentation:language_reference:objects:responsefunction:functions:reducepoles|ResponseFunction.ReducePoles]], which merges neighbouring poles and conserves their total weight and their centre of gravity. Cutting a chain instead keeps the first $2N$ moments $\mu_0 \ldots \mu_{2N-1}$ of the spectral function exactly and says nothing about the rest, so the truncated function converges to the full one from the low moments upwards, as the example below shows.
+###
+
+###
+Where the transformation is built on a recursion — the (block) Lanczos that turns a list of poles into a chain — the ceiling stops the recursion rather than letting it run to the end and cutting afterwards. Transforming a list of $10^4$ poles into a chain of $10$ sites then costs ten steps and not $10^4$. The two give the same answer; only the one is much cheaper.
+###
+
+===== Output =====
+
+  * //ResponseFunction//: the same response function in the requested representation
+
+===== Example =====
+
+###
+A flat band given as a list of 200 poles, transformed into a tri-diagonal chain of a given length. The last row is the transformation without a ceiling, for comparison.
+###
+
+==== Input ====
+<code Quanty ChangeTypeNTriMax.Quanty>
+-- A hybridisation function given as a list of 200 poles on a flat band
+Npoles = 200
+a = {0}
+b = {}
+for i = 1, Npoles do
+  a[i+1] = -3 + 6 * (i - 0.5) / Npoles
+  b[i]   = 0.25 * 6 / Npoles
+end
+G = ResponseFunction.New({a, b, mu = 0, type = "ListOfPoles", name = "Delta"})
+
+Gfull = ResponseFunction.ChangeType(G, "Tri")
+print("chain length without a ceiling : " .. #(ResponseFunction.ToTable(Gfull)[2]))
+print("")
+print("  NTriMax   chain    -Im G(0 + 0.3 I)   -Im G(2 + 0.3 I)")
+for _, N in ipairs({4, 10, 20, 40, 80}) do
+  local Gs = ResponseFunction.ChangeType(G, "Tri", {{"NTriMax", N}})
+  print(string.format("  %7d   %5d   %16.6f   %16.6f",
+        N, #(ResponseFunction.ToTable(Gs)[2]), -Gs(0, 0.3).I, -Gs(2, 0.3).I))
+end
+print(string.format("  %7s   %5d   %16.6f   %16.6f",
+      "none", #(ResponseFunction.ToTable(Gfull)[2]), -Gfull(0, 0.3).I, -Gfull(2, 0.3).I))
+</code>
+
+==== Output ====
+<code>
+chain length without a ceiling : 200
+
+  NTriMax   chain    -Im G(0 + 0.3 I)   -Im G(2 + 0.3 I)
+        4       4           0.149765           0.192410
+       10      10           0.353597           1.168149
+       20      20           0.581795           0.727876
+       40      40           0.734219           0.747012
+       80      80           0.760022           0.740689
+     none     200           0.760419           0.740681
+</code>
+
+###
+Cutting a chain is a real approximation and not a free lunch: a chain of four sites carries four poles and cannot represent a band. It is the right tool when the chain is longer than the problem needs — a bath built from a dense energy grid, or a self-energy carried along at full length through a chain of arithmetic — and the wrong tool when the number of poles is what matters, in which case [[documentation:language_reference:objects:responsefunction:functions:reducepoles|ResponseFunction.ReducePoles]] keeps the spectral weight where it is instead of throwing the far end away.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}

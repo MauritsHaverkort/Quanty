@@ -700,6 +700,15 @@ uint32_t BlockListOfPolesEigenSystem(const BlockListOfPoles * const A, double * 
  */
 uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *const B, int const NBlockMax, double const SingularValue)
 {
+  return BlockListOfPolesToBlockTridiagonalMatrix(A, B, NBlockMax, SingularValue, NTriMaxNoLimit);
+}
+
+/*  NTriMax is a ceiling on the number of blocks of B, honoured by stopping the block
+ *  Lanczos there rather than by building the whole chain and cutting it. See
+ *  DiagonalMatrixBlockTridiagonalize for why this is not what NBlockMax does.
+ */
+uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, BlockTriDiagonalMatrixType *const B, int const NBlockMax, double const SingularValue, uint32_t const NTriMax)
+{
   double *alpha;
   int k,i,ialpha,iN;
   char name[]="temp";
@@ -773,7 +782,7 @@ uint32_t BlockListOfPolesToBlockTridiagonalMatrix(BlockListOfPoles const A, Bloc
     }
   }
   CompactMatrixTranspose(&beta);
-  DiagonalMatrixBlockTridiagonalize(alpha, &beta, &T, B, NBlockMax, SingularValue);
+  DiagonalMatrixBlockTridiagonalize(alpha, &beta, &T, B, NBlockMax, SingularValue, NTriMax);
   B->mu=A.mu;
   free(alpha);
   FreeCompactMatrix(&beta);
@@ -909,6 +918,15 @@ uint32_t BlockListOfPolesToBlockDoubleTriDiagonalMatrix(BlockListOfPoles const *
  */
 uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, double const SingularValue, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon)
 {
+  return BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(A, B, kbT, SingularValue, NBlockMaxVal, NBlockMaxCon, NTriMaxNoLimit, NTriMaxNoLimit);
+}
+
+/*  NTriMaxVal and NTriMaxCon are ceilings on the number of blocks of the two chains, each
+ *  honoured by stopping that chain's block Lanczos there. TMT is built from the chains
+ *  afterwards and so comes out right for the chains that are kept.
+ */
+uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles const *A, BlockNaturalImpurityOrbitalMatrixType * const B, double const kbT, double const SingularValue, uint32_t const NBlockMaxVal, uint32_t const NBlockMaxCon, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
   B->QComplex=A->QComplex;
@@ -944,8 +962,8 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
   {
     memset(Aval.a0Re, 0, Aval.BlockSize*Aval.BlockSize*sizeof(double));
   }
-  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, SingularValue);
-  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, SingularValue);
+  BlockListOfPolesToBlockTridiagonalMatrix(Acon, &(B->con), NBlockMaxCon, SingularValue, NTriMaxCon);
+  BlockListOfPolesToBlockTridiagonalMatrix(Aval, &(B->val), NBlockMaxVal, SingularValue, NTriMaxVal);
   SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
   return 0;
 }
@@ -5555,7 +5573,20 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
  */
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue)
 {
+  return DiagonalMatrixBlockTridiagonalize(A, psi, T, ABlock, NBlock, SingularValue, NTriMaxNoLimit);
+}
+
+/*  NTriMax is a ceiling on the number of blocks of ABlock. NBlock is not that ceiling and
+ *  never has been: it is handed in by every caller but was dropped here, psi->Nj going to
+ *  CompactMatrixBlockBandDiagonalize in its place, and the callers pass a number (the
+ *  count of poles) that is smaller than the chain a deflating block Lanczos can reach, so
+ *  starting to honour it would shorten chains that other parts of the code rely on. It is
+ *  left alone and NTriMax carries the ceiling instead.
+ */
+uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue, uint32_t const NTriMax)
+{
   int i;
+  uint32_t NTri;
   CompactMatrixType M;
   M.QComplex=0;
   M.Ni=psi->Nj;
@@ -5566,7 +5597,12 @@ uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *p
     M.VRe[i + i * M.Ni] = A[i];
   }
   CompactMatrixCopy(*psi, T);
-  CompactMatrixBlockBandDiagonalize(&M, T, ABlock, SingularValue, psi->Nj, psi->Nj, true, true);
+  /*  The block Lanczos cannot be asked for zero blocks, it writes b0 before its loop, so
+   *  one block is the floor; a caller that wants none cuts that block away afterwards. */
+  NTri = psi->Nj;
+  if(NTriMax<NTri) NTri=NTriMax;
+  if(NTri<1) NTri=1;
+  CompactMatrixBlockBandDiagonalize(&M, T, ABlock, SingularValue, NTri, psi->Nj, true, true);
   FreeCompactMatrix(&M);
   return 0;
 }

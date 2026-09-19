@@ -659,3 +659,174 @@ not obviously an improvement either.
 **Meanwhile:** use `Complex.Re(x)` and `Complex.Im(x)`, never `x.Re`. In C the
 question does not arise: every routine reads the `QComplex` of the operand it is
 handed.
+
+## `PyramidalHarmonicsP` has no rotation matrix
+
+`NewOperator("...", NF, IndexUp, IndexDn, {{"Basis","P"}})` is accepted by the
+option parser and then fails. Every other basis is now handled by building the
+operator in the spherical harmonics basis and rotating with the matrix
+`C[i][m] = <new_i|Y_m>` that `YToZMatrix`, `YToKMatrix` and `YToJJzMatrix`
+return, but there is no `YToPMatrix`: the pyramidal harmonics exist only as an
+option string and a comment saying "alternating dn, up order rotating around z
+axis". Nothing in the source says which linear combinations they are.
+
+Until someone writes that matrix, `CreateOperatorInShellBasis` prints
+`The PyramidalHarmonicsP basis is not implemented, the operator is returned in
+the SphericalHarmonicsY basis` and returns non zero, and
+`AngularMomentumOperators` raises a lua error. That is an improvement on what it
+did before, which was to leave the operator uninitialized and segfault, but it
+is still a basis that is advertised and does not work. Either write
+`YToPMatrix` or remove the option.
+
+## `CreateOperatorCFjjz` for a single j shell
+
+The seven argument `CreateOperatorCFjjz`, which takes two j shells, is now built
+in the spherical harmonics basis and rotated. The five argument one, reached
+from lua as `NewOperator("CF", NF, Jindex, Akm)` with a single relativistic
+shell, is still not implemented. It cannot be done the same way: a single j
+shell is a *projection* of an l shell, not a rotation of one, and the caller
+hands over no indices for the other j shell to put the discarded part in. It
+needs its own reduced matrix elements.
+
+## `NewOperator` repeats its basis option parsing thirty one times
+
+Every `LuaOperatorNewXxx` in `LuaInterface/Operator.cpp` carries its own
+identical twenty five line block turning the `basis` string into `ibasis`, plus
+its own copy of the index length validation. That is around a thousand lines of
+duplication, and it is the reason a basis that does not work has to be rejected
+in thirty one places instead of one. Factoring it into a single helper — the way
+`LuaCoulombShellAngularMomentum` now does for the three coulomb branches — would
+shrink the file considerably. Not done here because it touches thirty one
+working functions at once.
+
+## The jjz rotation is Hermitian only to round off
+
+`Rotate` accumulates the `(i,j)` and `(j,i)` matrix elements of an operator in
+different orders, so a rotated operator can differ from its own adjoint in the
+last bit. With `YToZMatrix` and `YToKMatrix`, whose entries are all
+`±1/sqrt(2)`, the roundings happen to pair up and the result is exactly
+Hermitian; with `YToJJzMatrix`, whose entries are square roots of ratios, it is
+not. `Qzz`, `Tz` and the coulomb operator on the jjz basis therefore differ from
+their adjoint by about `1E-17`, and `Eigensystem` prints `called with an
+operator that is not fully Hermitian, I now will try to repair this`. The
+repair is correct and the warning is harmless, but it is noise, and it would
+disappear if `RotateOperatorNormalOrder` summed the two orders symmetrically.
+Explicitly symmetrizing after the rotation is *not* the fix: `Lplus`, `Lmin` and
+the transition operators are not Hermitian to begin with.
+
+## `Epsilon` of a block Nat is uninitialised when it comes from a list of poles
+
+**Status:** open, confirmed by running. A one-line fix, held out of the
+`NTriMax` work because it has nothing to do with the chain length.
+
+`BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix`
+([Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp](../../Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp))
+sets `mu`, `QComplex`, `BlockSize`, `Name`, `a0`, the two chains and `TMT` — and
+never sets `B->Epsilon`, the width of the window around the Fermi level over
+which a state is counted half to the valence and half to the conduction chain.
+The struct is `malloc`ed by `ConvertBlockMatrix`, so the field keeps whatever was
+in that memory.
+
+It is visible from lua:
+
+```lua
+G = ResponseFunction.ChangeType(SomeBlockG, "ListOfPoles")
+for i = 1, 4 do
+  print(ResponseFunction.ToTable(
+        ResponseFunction.ChangeType(G, "Nat", {{"EffectivekBT", 0.05}})).epsilon)
+end
+-- 0.0966   0   -0.2025   0
+```
+
+Different on every call, and negative on some of them. The `kbT` the caller
+passes is used for the split itself and is the value `Epsilon` should get, the
+sibling `ListOfPolesToBADoubleTridiagonalMatrix` setting `M->Epsilon = Epsilon`
+at the end of its own conversion.
+
+**Why it is not simply fixed:** it is not a design question, `B->Epsilon = kbT;`
+next to `B->mu = A->mu;` is the whole fix. It is recorded rather than done
+because it was found while testing `ChangeType`'s `NTriMax` option and does not
+belong in that commit. Worth checking the other conversions to a block Nat for
+the same omission at the same time.
+
+**Meanwhile:** do not read `epsilon` off a block Nat that came from a list of
+poles. Nothing in Quanty itself reads it back, which is why this has gone
+unnoticed.
+
+## Which conjugate goes into the block Lanczos — two callers disagree
+
+**Status:** open. One of the two is wrong for complex data and which one is
+known; the fix is a pass over the conjugation of the block representations
+rather than one line.
+
+[Core/StructDef.cpp](../../Core/StructDef.cpp) is where the block
+representations are defined, and it is the standard every routine that touches
+them has to meet:
+
+| line | representation | what it says |
+|---|---|---|
+| 666 | block list of poles | `G = A0 + sum_i B'_i 1/(w-a_i I) B'_i^C` |
+| 716 | block tri-diagonal | `G0 = a0 + b0^* . ( G1 ) . b0^T` |
+| 762 | block Anderson | `G(w) = A0 + B0^* ( 1/( w - A1 - sum_i B_i 1/(w-A_{i+1}) B_i^+ ) ) . B0^T` |
+| 796 | block natural impurity orbital | `A = T Ap T^C`, with `T T^C = 1` |
+
+Two conversions between the first two of those hand the block Lanczos starting
+blocks that differ by a conjugation.
+
+`CompactMatrixBlockBandDiagonalize` (line 5648 of
+[Core/BasicMath/BasicMath_CompactMatrixVector.cpp](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp))
+wants the **conjugate of the left factor**. It walks the Krylov space with
+`v -> v A^T`, so its row vectors live in the conjugated space, and it closes the
+chain with `b[0] = v[0] v[1]^+`. Hand it `C^*` and the chain it returns is the
+`b0^* ( ) b0^T` of line 716 for `C 1/(w-H) C^+`.
+
+- `BlockListOfPolesToBlockTridiagonalMatrix` (line 784) transposes the column
+  stack of the `B_i` and hands over `beta^T`, whose block is `B_i^T`. The `B_i`
+  are the Hermitian principal roots of the weights, so `B_i^T = B_i^*` and this
+  obeys the rule.
+- `BlockListOfPolesToBlockTridiagonalMatrixReduceDimension` (line 868) hands
+  over `AT . beta^C`, whose block is `AT B_i^+ = AT B_i`, the left factor
+  unconjugated. With `AT` the identity the two should produce the same chain
+  from the same list of poles, and for complex `B_i` they do not.
+
+Both are in
+[Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp](../../Core/BasicMathBlock/BasicMath_BlockTypeConversion.cpp).
+
+The evidence that the first one is the right convention rather than the second:
+`BlockTriDiagonalMatrixDownfoldChain` in
+[Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp](../../Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp)
+hands the same Lanczos `D^*` and is checked against a hand-computed
+`( R G^-1 R^+ )^-1` in `TestScripts/Responsefunction/Downfold.Quanty`. Written
+the other way round it passes every real case in that test and fails every
+complex one.
+
+Underneath the disagreement is that the notation is not uniform, and fixing the
+notation is probably the way to fix the code. `^*`, `^T`, `^+` and `^dag` each
+mean one thing, but `^C` is used for both: for a conjugate at lines 666 to 671,
+where `B_i = B'_i B'_i^C` is the weight of a pole and `B'_i` is Hermitian, and
+for a conjugate transpose at lines 796 and 818, where `T T^C = 1` says `T` is
+unitary. The two struct comments also write the same kind of congruence in two
+mutually conjugate forms, `A = T^* Ap T^T` at line 607 against `A = T Ap T^C` at
+line 796. The same letter is overloaded in the code: in
+`CompactMatrixAddMultiply` (line 1055 of
+[Core/BasicMath/BasicMath_CompactMatrixVector.cpp](../../Core/BasicMath/BasicMath_CompactMatrixVector.cpp))
+the flag `'C'` is the BLAS conjugate transpose and `'*'` is the plain conjugate,
+so `'N','C'` and `'N','*'` read almost alike and mean different things.
+
+**Why it is not simply fixed:** changing the starting block of
+`...ReduceDimension` is one character, but it is a change to numerics with no
+failing test behind it, and the routine it feeds is reached only from the C
+drivers `Test/LanczosDyson.cpp`, `Test/NiO.cpp` and `Test/TestBasicMathBlock.cpp`
+and not from lua, so nothing in the CI would notice either way. Doing it
+properly means writing a complex-valued test that pins the identity between the
+plain and the reduced conversion, deciding on one meaning for `^C` and writing
+that into `StructDef.cpp`, and then reading every conversion against it. That is
+the same argument as for the guards: a coherent pass rather than a fix in
+passing.
+
+**Meanwhile:** a complex response function taken to a block Nat or a block Tri
+through a `…ReduceDimension` route is suspect. The routes reachable from lua all
+go through `BlockListOfPolesToBlockTridiagonalMatrix` and are not affected. When
+writing new code against these representations, read the convention off
+`StructDef.cpp` and not off a neighbouring routine, and test it with complex
+numbers — a real response function cannot tell a conjugate from a transpose.

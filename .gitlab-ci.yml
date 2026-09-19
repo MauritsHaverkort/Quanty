@@ -191,9 +191,11 @@ test-jobs-Responsefunction:
           - "ChangeTypeDoubleTri"
           - "ChangeTypeDoubleTriBlock"
           - "ChangeTypeFromDoubleTri"
+          - "ChangeTypeNTriMax"
           - "Chop"
           - "CreateBitMasks"
           - "Deflation"
+          - "Downfold"
           - "EffectiveHamiltonian"
           - "Eigensystem"
           - "FromEffectiveHamiltonian"
@@ -265,6 +267,7 @@ test-jobs:
   parallel:
     matrix:
       - TEST_NAME:
+          - "AngularMomentumOperators"
           - "BitMaskCombine"
           - "BitMaskToIndex"
           - "BlockBandDiagonalize"
@@ -295,6 +298,7 @@ test-jobs:
           - "ioGetPut"
           - "MeanFieldGroundstate"
           - "MeanFieldOperator"
+          - "NewOperatorBasis"
           - "NewTightBinding"
           - "NewWavefunction"
           - "OperatorToHoles"
@@ -303,6 +307,7 @@ test-jobs:
           - "PartialMeanFieldOperator"
           - "PartialOperator"
           - "Rotate"
+          - "ShellAverage"
           - "Statistics"
           - "TensorProduct"
           - "TimeStartStopPrintSet"

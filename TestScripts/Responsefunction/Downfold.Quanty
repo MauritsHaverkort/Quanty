@@ -1,0 +1,478 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction Downfold                          --")
+print("--------------------------------------------------------")
+
+-- Downfold takes a subspace of the inverse of a response function and inverts it again,
+--
+--   Sigma, S = ResponseFunction.Downfold(G, R)   with   Sigma(w) = ( R G^-1(w) R^+ )^-1 ,
+--
+-- for a matrix R of Nsub rows and as many columns as G has a block size. That identity is
+-- the whole definition and it is what the first part of this test checks, at a set of
+-- complex frequencies, by inverting the matrix G(w) returns and picking the sub block by
+-- hand. Nothing in that comparison knows how Downfold arrives at its answer.
+--
+-- The second part is the reason the routine exists. For G the augmented propagator of the
+-- operators a_m and q_m = [a_m,H1] and R selecting the q half, Sigma is the symmetric
+-- improved estimator Sigma(w) - Sigma^HF of the self energy, of Zacinskis et al. For a
+-- finite cluster the self energy is also the Dyson difference G0^-1 - G^-1, and the two are
+-- compared on an eight mode model with four electrons.
+--
+-- Sigma comes back as an Anderson matrix, which is where the construction leaves it and
+-- costs nothing more; ChangeType turns it into the pole expansion of the paper.
+
+local CC = Complex.New
+
+-- element by element rather than through Chop and a comparison against Matrix.Zero: two
+-- matrices compare equal only when both are stored as real or both as complex, and a matrix
+-- that a response function hands over is stored complex whether or not it has an imaginary
+-- part left in it
+function IsZero(M, eps)
+	eps = eps or 1E-9
+	local T = Matrix.ToTable(M)
+	for i = 1, #T do
+		for j = 1, #T[i] do
+			if math.sqrt(Complex.Re(T[i][j])^2 + Complex.Im(T[i][j])^2) > eps then return false end
+		end
+	end
+	return true
+end
+
+-- ( R G^-1(w) R^+ )^-1, by hand
+function SubOfInverse(G, R, w, Gamma)
+	return Matrix.Inverse(R * Matrix.Inverse(G(w,Gamma)) * Matrix.ConjugateTranspose(R))
+end
+
+function CheckIdentity(name, G, R, eps)
+	local Sigma, S = ResponseFunction.Downfold(G,R)
+	-- a chain keeps its shape, everything else reaches the projection as a list of poles and
+	-- the construction leaves it an Anderson matrix
+	local want = (G.type == "Tri") and "Tri" or "And"
+	if Sigma.type ~= want then
+		error("Downfold: "..name.." returns a "..Sigma.type.." and should return a "..want.."\n",1)
+	end
+	for w = -4, 4, 0.8 do
+		if not IsZero(Sigma(w,0.3) - SubOfInverse(G,R,w,0.3), eps) then
+			print("Downfold for "..name.." at w = "..w)
+			print(Sigma(w,0.3))
+			print("( R G^-1 R^+ )^-1 by hand")
+			print(SubOfInverse(G,R,w,0.3))
+			error("Downfold: "..name.." is not the inverse of the sub block of the inverse\n",1)
+		end
+	end
+	return Sigma, S
+end
+
+
+print("the defining identity, real and complex, for several subspaces")
+
+-- A0 has to vanish: a constant added to G is not a constant added to G^-1
+A0 = Matrix.Zero(4)
+W1 = Matrix.New({{1.0,0.2,0.0,0.1},{0.2,1.5,0.1,0.0},{0.0,0.1,0.8,0.2},{0.1,0.0,0.2,1.2}})
+W2 = Matrix.New({{0.7,0.0,0.1,0.0},{0.0,0.9,0.0,0.2},{0.1,0.0,1.1,0.0},{0.0,0.2,0.0,0.6}})
+W3 = Matrix.New({{1.3,0.1,0.0,0.0},{0.1,0.5,0.2,0.1},{0.0,0.2,0.9,0.0},{0.0,0.1,0.0,1.0}})
+GReal = ResponseFunction.New({{A0,-2.0,0.4,2.7},{W1,W2,W3},mu=0,type="ListOfPoles",name="GReal"})
+
+V1 = Matrix.New({{1.0,CC(0.2,0.3),0.0,CC(0.1,-0.2)},{CC(0.2,-0.3),1.5,CC(0.1,0.1),0.0},
+                 {0.0,CC(0.1,-0.1),0.8,CC(0.2,0.4)},{CC(0.1,0.2),0.0,CC(0.2,-0.4),1.2}})
+V2 = Matrix.New({{0.9,0.0,CC(0.1,0.2),0.0},{0.0,1.1,0.0,CC(0.2,-0.1)},
+                 {CC(0.1,-0.2),0.0,1.3,0.0},{0.0,CC(0.2,0.1),0.0,0.8}})
+V3 = Matrix.New({{1.4,CC(0.1,0.1),0.0,0.0},{CC(0.1,-0.1),0.6,CC(0.2,0.2),0.0},
+                 {0.0,CC(0.2,-0.2),1.0,CC(0.1,0.3)},{0.0,0.0,CC(0.1,-0.3),1.1}})
+GComplex = ResponseFunction.New({{A0,-2.0,0.4,2.7},{V1,V2,V3},mu=0,type="ListOfPoles",name="GComplex"})
+
+-- the lower right block, an orthonormal subspace that is not a block, a subspace whose rows
+-- are not orthonormal at all -- the identity holds for any R of full row rank -- a single
+-- row, and a complex R
+RBlock  = Matrix.New({{0,0,1,0},{0,0,0,1}})
+RRot    = Matrix.New({{0.5,0.5,0.5,0.5},{0.5,-0.5,0.5,-0.5}})
+RSkew   = Matrix.New({{1,0,0,0},{1,1,0,0}})
+RRow    = Matrix.New({{0,0,0,1}})
+RComplex= Matrix.New({{CC(0.5,0.5),0,CC(0.5,-0.5),0},{0,CC(0,1),0,1}})
+RAll    = Matrix.Identity(4)
+
+for i, G in ipairs({GReal,GComplex}) do
+	local gname = (i==1) and "real" or "complex"
+	for j, R in ipairs({RBlock,RRot,RSkew,RRow,RComplex,RAll}) do
+		CheckIdentity(gname.." G, subspace "..j, G, R)
+	end
+end
+print("  the block, a rotated subspace, a non orthonormal one, one row, a complex one, and the whole space")
+
+-- the head coupling of that Anderson matrix is the S^{1/2} of the construction, written
+-- there by hand. A conversion reading it back has to give the same function, and it is that
+-- pole expansion, sum_i W_i / ( w - a_i ), that the paper calls the discrete spectral
+-- representation of the self energy.
+for i, G in ipairs({GReal,GComplex}) do
+	local gname = (i==1) and "real" or "complex"
+	for j, R in ipairs({RBlock,RComplex}) do
+		local Sigma = ResponseFunction.Downfold(G,R)
+		local SigmaLP = ResponseFunction.ChangeType(Sigma,"ListOfPoles")
+		for w = -4, 4, 0.8 do
+			if not IsZero(SigmaLP(w,0.3) - SubOfInverse(G,R,w,0.3), 1E-8) then
+				print(SigmaLP(w,0.3))
+				print(SubOfInverse(G,R,w,0.3))
+				error("Downfold: the pole expansion of the result is not the same function for "..gname.." G, subspace "..j.."\n",1)
+			end
+		end
+	end
+end
+print("  and its pole expansion, which ChangeType hands over, is the same function")
+
+
+print("a subspace that carries little or no spectral weight")
+
+-- S~ is the Gram matrix of the states behind G and goes singular whenever a direction of it
+-- carries no weight, which is what the q half of the augmented propagator does as the
+-- interaction goes to zero. The answer then has to go to zero with it and not blow up: a
+-- small eigenvalue of S~ is a large one of S^-1 and so a small weight in S.
+function WeakLower(d, s)
+	local M = Matrix.Zero(4)
+	M[1][1] = 1.0   ; M[1][2] = 0.2     ; M[2][1] = 0.2     ; M[2][2] = 0.8
+	M[3][3] = s*d   ; M[3][4] = 0.3*s*d ; M[4][3] = 0.3*s*d ; M[4][4] = 0.7*s*d
+	M[1][3] = 0.1*s*d                   ; M[3][1] = 0.1*s*d
+	return M
+end
+for i, d in ipairs({1.0,1E-3,1E-6,1E-9,1E-12}) do
+	local G = ResponseFunction.New({{A0,-2.0,0.4,2.7},{WeakLower(d,1.0),WeakLower(d,0.7),WeakLower(d,1.3)},
+	                                mu=0,type="ListOfPoles",name="weak"})
+	local Sigma, S = ResponseFunction.Downfold(G,RBlock)
+	-- the weight of the result follows the weight of the subspace, and the answer stays the
+	-- inverse of the sub block of the inverse to the accuracy of that weight
+	-- 5.1 is the trace of the three lower blocks divided by delta, which S follows to the
+	-- order in delta at which the two halves stop talking to each other
+	if math.abs(Complex.Re(Matrix.Trace(S))/d - 5.1) > 0.01*5.1 then
+		error(string.format("Downfold: the weight of the result does not follow the weight of the subspace, S/delta has trace %.4e for delta = %.1e\n", Complex.Re(Matrix.Trace(S))/d, d),1)
+	end
+	for w = -4, 4, 0.8 do
+		if not IsZero(Sigma(w,0.3) - SubOfInverse(G,RBlock,w,0.3), 1E-9*d) then
+			error(string.format("Downfold: a subspace of weight %.1e is not handled to the accuracy of that weight\n", d),1)
+		end
+	end
+end
+-- and with no weight at all the routine deflates the direction away and returns zero
+GNoWeight = ResponseFunction.New({{A0,-2.0,0.4,2.7},{WeakLower(0,1.0),WeakLower(0,0.7),WeakLower(0,1.3)},
+                                  mu=0,type="ListOfPoles",name="none"})
+SigmaZero, SZero = ResponseFunction.Downfold(GNoWeight,RBlock)
+if not IsZero(SZero, 1E-14) then
+	print(SZero)
+	error("Downfold: a subspace with no spectral weight does not give a weight of zero\n",1)
+end
+for w = -4, 4, 0.8 do
+	if not IsZero(SigmaZero(w,0.3), 1E-14) then
+		print(SigmaZero(w,0.3))
+		error("Downfold: a subspace with no spectral weight does not give zero\n",1)
+	end
+end
+print("  the weight of the result follows the weight of the subspace, down to none at all")
+
+
+print("every representation of the same response function downfolds to the same thing")
+
+-- the route through the effective Hamiltonian is the same for all of them, but a list of
+-- poles gets there directly while the other four are converted first
+for i, G in ipairs({GReal,GComplex}) do
+	local gname = (i==1) and "real" or "complex"
+	for j, ty in ipairs({"Tri","And","ListOfPoles","Nat","DoubleTri"}) do
+		local Gc = ResponseFunction.ChangeType(G, ty, ((ty=="Nat") or (ty=="DoubleTri")) and {{"EffectivekBT",0.05}} or {})
+		CheckIdentity(gname.." G held as "..ty, Gc, RBlock, 1E-8)
+	end
+end
+print("  Tri, And, ListOfPoles, Nat and DoubleTri all give the same answer")
+
+
+print("a chain stays a chain, and NTriMax is a ceiling on its length")
+
+-- The effective Hamiltonian of a tri-diagonal G is a chain, and the projection is then a
+-- block Lanczos of that chain started on the subspace rather than a congruence of a list of
+-- poles. The two routes have to agree, which the section above checks; what is different is
+-- the shape of the answer, a chain of at most (M Ntilde / Nsub) blocks rather than a star of
+-- M Ntilde poles, and that the chain can be cut.
+function MakeChain(Ntilde, M)
+	local a, b = {Matrix.Zero(Ntilde)}, {Matrix.Identity(Ntilde)}
+	for i = 1, M do
+		local A, B = Matrix.Zero(Ntilde), Matrix.Zero(Ntilde)
+		for p = 1, Ntilde do
+			for q = 1, p do
+				A[p][q] = 0.3*math.cos(1.1*i+0.7*p+1.9*q) ; A[q][p] = A[p][q]
+				B[p][q] = 0.2*math.cos(0.9*i+1.3*p)*math.cos(0.9*i+1.3*q) ; B[q][p] = B[p][q]
+			end
+			A[p][p] = A[p][p] + 0.5*math.sin(0.3*i)
+			B[p][p] = B[p][p] + 0.4
+		end
+		a[i+1] = A
+		if i < M then b[i+1] = B end
+	end
+	return ResponseFunction.New({a,b,mu=0,type="Tri",name="chain"})
+end
+
+do
+	local Ntilde, M, Nsub = 4, 12, 2
+	local GChain = MakeChain(Ntilde,M)
+	local Rt = {}
+	for i = 1, Nsub do
+		Rt[i] = {}
+		for j = 1, Ntilde do Rt[i][j] = ((j==Ntilde-Nsub+i) and 1 or 0) end
+	end
+	local RChain = Matrix.New(Rt)
+
+	-- Without a ceiling the block Lanczos runs until the Krylov space of the chain behind
+	-- the head is exhausted, and the projection is then exact. That chain behind the head
+	-- has (M-1) blocks of Ntilde, so it takes ceil( (M-1) Ntilde / Nsub ) Lanczos blocks.
+	-- ToTable returns the list of a of the answer, which is one longer than its chain, and
+	-- the answer has the head in front of the Lanczos blocks, so two more than that.
+	local Exact, SExact = ResponseFunction.Downfold(GChain,RChain)
+	local NExact = math.ceil((M-1)*Ntilde/Nsub)
+	if #ResponseFunction.ToTable(Exact)[1] ~= NExact+2 then
+		error(string.format("Downfold: a chain of %d blocks of %d downfolded onto %d should give %d blocks and gives %d\n",
+		      M, Ntilde, Nsub, NExact+2, #ResponseFunction.ToTable(Exact)[1]),1)
+	end
+	for w = -4, 4, 0.8 do
+		if not IsZero(Exact(w,0.3) - SubOfInverse(GChain,RChain,w,0.3)) then
+			error("Downfold: the chain route is not the inverse of the sub block of the inverse\n",1)
+		end
+	end
+
+	-- a ceiling cuts the chain. The weight is untouched, since it sits in the head coupling
+	-- the cut never reaches, and the function converges to the exact one as the ceiling is
+	-- raised -- cutting a chain keeps the low moments and drops the high ones.
+	local previous = nil
+	for i, n in ipairs({3,6,12,24}) do
+		local Cut, SCut = ResponseFunction.Downfold(GChain,RChain,{{"NTriMax",n}})
+		local blocks = #ResponseFunction.ToTable(Cut)[1]
+		if blocks ~= math.min(n,NExact)+2 then
+			error(string.format("Downfold: NTriMax = %d gives %d blocks and should give %d\n", n, blocks, math.min(n,NExact)+2),1)
+		end
+		if not IsZero(SCut - SExact, 1E-12) then
+			error(string.format("Downfold: NTriMax = %d changes the spectral weight of the result\n", n),1)
+		end
+		local worst = 0.0
+		for w = -6, 6, 1.0 do
+			local T = Matrix.ToTable(Cut(w,1.0) - Exact(w,1.0))
+			for a = 1, #T do
+				for b = 1, #T[a] do
+					local v = math.sqrt(Complex.Re(T[a][b])^2 + Complex.Im(T[a][b])^2)
+					if v > worst then worst = v end
+				end
+			end
+		end
+		if previous and (worst > previous) then
+			error(string.format("Downfold: raising NTriMax from the previous value to %d moves the answer away from the exact one, %.2e after %.2e\n", n, worst, previous),1)
+		end
+		if (n >= NExact) and (worst > 1E-12) then
+			error(string.format("Downfold: NTriMax = %d is at or above the natural length and still differs from the exact answer by %.2e\n", n, worst),1)
+		end
+		previous = worst
+	end
+end
+print("  the chain route is exact, its length is the one the Krylov space asks for, and NTriMax cuts it")
+
+
+print("the spectral weight of the result is the S that comes back with it")
+
+-- S = ( R S~^-1 R^+ )^-1 with S~ the spectral weight of G, and it is also the sum of the
+-- weights of the poles of the result. For the self energy that is its sum rule.
+for i, G in ipairs({GReal,GComplex}) do
+	local gname = (i==1) and "real" or "complex"
+	for j, R in ipairs({RBlock,RRot,RSkew,RComplex}) do
+		local Sigma, S = ResponseFunction.Downfold(G,R)
+		local _, _, B0Sigma = ResponseFunction.ChangeType(Sigma,"Dense")
+		local _, _, B0G     = ResponseFunction.ChangeType(G,"Dense")
+		local Stilde = Matrix.Conjugate(B0G) * Matrix.Transpose(B0G)
+		if not IsZero(Matrix.Conjugate(B0Sigma) * Matrix.Transpose(B0Sigma) - S) then
+			print("sum of the weights of the poles of the result")
+			print(Matrix.Conjugate(B0Sigma) * Matrix.Transpose(B0Sigma))
+			print("S")
+			print(S)
+			error("Downfold: the weight of the result is not S for "..gname.." G, subspace "..j.."\n",1)
+		end
+		if not IsZero(Matrix.Inverse(R * Matrix.Inverse(Stilde) * Matrix.ConjugateTranspose(R)) - S) then
+			print("( R S~^-1 R^+ )^-1")
+			print(Matrix.Inverse(R * Matrix.Inverse(Stilde) * Matrix.ConjugateTranspose(R)))
+			print("S")
+			print(S)
+			error("Downfold: S is not ( R S~^-1 R^+ )^-1 for "..gname.." G, subspace "..j.."\n",1)
+		end
+	end
+end
+print("  sum_i W_i = S = ( R S~^-1 R^+ )^-1")
+
+
+print("what is refused")
+
+-- a single valued response function has no subspace, R has to match the block size and
+-- cannot be larger than the space, a constant term A0 does not survive an inversion, and
+-- the options are the two EffectiveHamiltonian reads
+GScalar = ResponseFunction.New({{0.0,-5,-2,3},{1,2,1.5},mu=0,type="ListOfPoles",name="s"})
+GA0     = ResponseFunction.New({{Matrix.Identity(4),-2.0,0.4,2.7},{W1,W2,W3},mu=0,type="ListOfPoles",name="A0"})
+Refused = {
+	{"a single valued response function", function() return ResponseFunction.Downfold(GScalar, Matrix.Identity(1)) end},
+	{"an R with the wrong number of columns", function() return ResponseFunction.Downfold(GReal, Matrix.Identity(3)) end},
+	{"an R with more rows than columns", function() return ResponseFunction.Downfold(GReal, Matrix.New({{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1},{1,1,1,1}})) end},
+	{"a response function with a constant term", function() return ResponseFunction.Downfold(GA0, RBlock) end},
+	{"one argument", function() return ResponseFunction.Downfold(GReal) end},
+	{"NTriMax on a response function with no chain", function() return ResponseFunction.Downfold(GReal, RBlock, {{"NTriMax",4}}) end}}
+for i, t in ipairs(Refused) do
+	if pcall(t[2]) then
+		error("Downfold accepted "..t[1].."\n",1)
+	end
+end
+for i, n in ipairs({"MinimalPoleWeigth","Temperature","EffectivekBT","Nonsense"}) do
+	if pcall(function() return ResponseFunction.Downfold(GReal, RBlock, {{n,0.1}}) end) then
+		error("Downfold accepted the option "..n.."\n",1)
+	end
+end
+SigmaD = ResponseFunction.Downfold(GReal, RBlock)
+SigmaS = ResponseFunction.Downfold(GReal, RBlock, {{"SingularValue", 1000*2.220446049250313E-16}})
+if (SigmaD == SigmaS) ~= true then
+	error("Downfold: leaving SingularValue out is not the standard value\n",1)
+end
+ResponseFunction.Downfold(GReal, RBlock, {{"MinimalPoleDistance", 1E-8}})
+-- NTriMax is taken where there is a chain to cut
+ResponseFunction.Downfold(ResponseFunction.ChangeType(GReal,"Tri"), RBlock, {{"NTriMax", 4}})
+print("  the three options that reach anything are taken, the rest is refused")
+
+
+print("the self energy of an eight mode model with four electrons")
+
+-- H0 is a generic hopping over all eight modes and H1 = U n_0 n_1 the Hubbard interaction
+-- between mode 0 and mode 1, so that the subspace the self energy lives on is the two modes
+-- 0 and 1 and the other six are the bath. The augmented propagator of a_m and q_m = [a_m,H1]
+-- has a block size of four, and its lower right two by two block, downfolded, is
+-- Sigma(w) - Sigma^HF.
+--
+-- The hopping is a fixed matrix rather than a random one so that the test is the same
+-- everywhere. It has no symmetry at all, which keeps the ground state from being degenerate.
+
+NF = 8
+hReal = Matrix.New({
+	{ 0.35,-0.62, 0.18, 0.41,-0.27, 0.09, 0.33,-0.15},
+	{-0.62,-0.21, 0.54,-0.13, 0.46, 0.28,-0.37, 0.22},
+	{ 0.18, 0.54, 0.77, 0.31,-0.19,-0.44, 0.12, 0.38},
+	{ 0.41,-0.13, 0.31,-0.58, 0.24, 0.16, 0.49,-0.26},
+	{-0.27, 0.46,-0.19, 0.24, 1.12,-0.35, 0.21, 0.14},
+	{ 0.09, 0.28,-0.44, 0.16,-0.35,-0.93, 0.29, 0.43},
+	{ 0.33,-0.37, 0.12, 0.49, 0.21, 0.29, 0.66,-0.18},
+	{-0.15, 0.22, 0.38,-0.26, 0.14, 0.43,-0.18, 0.05}})
+hComplex = Matrix.New({
+	{ 0.35        ,CC(-0.62, 0.21),CC( 0.18,-0.33),CC( 0.41, 0.15),CC(-0.27, 0.08),CC( 0.09,-0.24),CC( 0.33, 0.11),CC(-0.15,-0.19)},
+	{CC(-0.62,-0.21), -0.21       ,CC( 0.54, 0.27),CC(-0.13,-0.09),CC( 0.46, 0.31),CC( 0.28,-0.17),CC(-0.37, 0.05),CC( 0.22, 0.26)},
+	{CC( 0.18, 0.33),CC( 0.54,-0.27),  0.77       ,CC( 0.31, 0.19),CC(-0.19,-0.12),CC(-0.44, 0.23),CC( 0.12,-0.28),CC( 0.38, 0.07)},
+	{CC( 0.41,-0.15),CC(-0.13, 0.09),CC( 0.31,-0.19), -0.58       ,CC( 0.24, 0.29),CC( 0.16,-0.13),CC( 0.49, 0.18),CC(-0.26,-0.22)},
+	{CC(-0.27,-0.08),CC( 0.46,-0.31),CC(-0.19, 0.12),CC( 0.24,-0.29),  1.12       ,CC(-0.35, 0.16),CC( 0.21,-0.25),CC( 0.14, 0.12)},
+	{CC( 0.09, 0.24),CC( 0.28, 0.17),CC(-0.44,-0.23),CC( 0.16, 0.13),CC(-0.35,-0.16), -0.93       ,CC( 0.29, 0.14),CC( 0.43,-0.31)},
+	{CC( 0.33,-0.11),CC(-0.37,-0.05),CC( 0.12, 0.28),CC( 0.49,-0.18),CC( 0.21, 0.25),CC( 0.29,-0.14),  0.66       ,CC(-0.18, 0.09)},
+	{CC(-0.15, 0.19),CC( 0.22,-0.26),CC( 0.38,-0.07),CC(-0.26, 0.22),CC( 0.14,-0.12),CC( 0.43, 0.31),CC(-0.18,-0.09),  0.05       }})
+
+U           = 2.5
+Restrictions= {NF,0,{"11111111",4,4}}
+-- Four electrons in eight modes is a space of 70 determinants and the sectors with one
+-- electron more or less are 56, so a block of four vectors would span them in fourteen
+-- Lanczos steps if the blocks stayed four wide. They do not, the block deflates, and
+-- fourteen steps leave the Green's function short of exact with its tails moving in the
+-- last digits from one run to the next. Twenty two steps is where they stop moving and
+-- twenty four leaves a margin. It is worth spending, because the comparison below is
+-- against the exact G0 and not against anything derived from this Green's function.
+NTri        = 24
+SpectraOpt  = {{"Tensor",true},{"NTri",NTri},{"DenseBorder",0},{"Emin",-30},{"Emax",30},{"NE",100},{"Gamma",0.1}}
+
+for ih, h in ipairs({hReal,hComplex}) do
+	local hname = (ih==1) and "real hopping" or "complex hopping"
+	local H0 = Matrix.ToOperator(h)
+	local H1 = U * NewOperator(NF,0,{{0,-0,1}}) * NewOperator(NF,0,{{1,-1,1}})
+	local H  = H0 + H1
+
+	-- G(w) = Gp(w) - Gm(-w)^T, and InvertEnergy is G(w) -> -G(-w)^T
+	local function AugmentedG(Hamiltonian, Cr, An, Psi)
+		local _, Gp = CreateSpectra(Hamiltonian, Cr, Psi, SpectraOpt)
+		local _, Gm = CreateSpectra(Hamiltonian, An, Psi, SpectraOpt)
+		return Gp + ResponseFunction.InvertEnergy(Gm)
+	end
+
+	local Cr = {NewOperator(NF,0,{{ 0,1}}), NewOperator(NF,0,{{ 1,1}})}
+	local An = {NewOperator(NF,0,{{-0,1}}), NewOperator(NF,0,{{-1,1}})}
+
+	-- with H1 switched off the impurity Green's function has to be the one particle
+	-- resolvent. This fixes the energy origin and the way the removal part is reflected,
+	-- before anything interacting is asked of them.
+	local Psi0 = Eigensystem(H0, Restrictions, 1)
+	if type(Psi0)=="table" then Psi0 = Psi0[1] end
+	local G0resp = AugmentedG(H0, Cr, An, Psi0)
+	for w = -3, 3, 1.0 do
+		local G0 = Matrix.Sub(Matrix.Inverse(CC(w,0.05)*Matrix.Identity(NF) - h), 2)
+		if not IsZero(G0resp(w,0.1) - G0, 1E-8) then
+			print("G of the non interacting model at w = "..w)
+			print(G0resp(w,0.1))
+			print("[ 1 / ( w - h ) ]_imp")
+			print(G0)
+			error("the non interacting Green's function of the "..hname.." model is not the one particle resolvent\n",1)
+		end
+	end
+
+	-- the interacting ground state. A degenerate one would not give a Green's function of
+	-- a single state and the comparison below would be meaningless, so look at the gap.
+	local PsiList = Eigensystem(H, Restrictions, 2)
+	local E1, E2 = PsiList[1]*H*PsiList[1], PsiList[2]*H*PsiList[2]
+	if (E2-E1) < 1E-4 then
+		error(string.format("the ground state of the %s model is degenerate, E2 - E1 = %.2e\n", hname, E2-E1),1)
+	end
+	local Psi = PsiList[1]
+
+	-- q_m = [a_m,H1] and q_m^+ = [H1,a_m^+], the two halves of the augmented propagator
+	Cr[3] = H1*Cr[1] - Cr[1]*H1
+	Cr[4] = H1*Cr[2] - Cr[2]*H1
+	An[3] = An[1]*H1 - H1*An[1]
+	An[4] = An[2]*H1 - H1*An[2]
+	local Gt = AugmentedG(H, Cr, An, Psi)
+
+	-- the spectral weight of the augmented propagator: its 11 block is the canonical
+	-- anticommutator {a,a^+} = 1 and its 12 block is Sigma^HF = <{q,a^+}>
+	local _, _, B0t = ResponseFunction.ChangeType(Gt,"Dense")
+	local Stilde = Matrix.Conjugate(B0t) * Matrix.Transpose(B0t)
+	if not IsZero(Matrix.Sub(Stilde,{1,2},{1,2}) - Matrix.Identity(2), 1E-8) then
+		print(Matrix.Sub(Stilde,{1,2},{1,2}))
+		error("the 11 block of the spectral weight of the augmented propagator of the "..hname.." model is not the identity\n",1)
+	end
+	local SigmaHF = Matrix.Sub(Stilde,{1,2},{3,4})
+
+	local Sigma, S = ResponseFunction.Downfold(Gt, RBlock)
+
+	-- S is the Schur complement of the 11 block of the spectral weight, the sum rule for
+	-- the weight of the self energy
+	local Schur = Matrix.Sub(Stilde,{3,4},{3,4})
+	            - Matrix.Sub(Stilde,{3,4},{1,2}) * Matrix.Inverse(Matrix.Sub(Stilde,{1,2},{1,2})) * SigmaHF
+	if not IsZero(S - Schur, 1E-8) then
+		print("S")      print(S)
+		print("S22 - S21 S11^-1 S12") print(Schur)
+		error("the weight of the self energy of the "..hname.." model does not obey its sum rule\n",1)
+	end
+
+	-- and the self energy itself, against the Dyson difference, which for a finite cluster
+	-- is exact
+	for w = -4, 4, 0.5 do
+		local G0    = Matrix.Sub(Matrix.Inverse(CC(w,0.05)*Matrix.Identity(NF) - h), 2)
+		local G     = Matrix.Sub(Gt(w,0.1), 2)
+		local Dyson = Matrix.Inverse(G0) - Matrix.Inverse(G)
+		if not IsZero(SigmaHF + Sigma(w,0.1) - Dyson, 1E-7) then
+			print("Sigma^HF + Downfold( G, ( 0 | 1 ) ) at w = "..w)
+			print(SigmaHF + Sigma(w,0.1))
+			print("G0^-1 - G^-1")
+			print(Dyson)
+			error("the self energy of the "..hname.." model is not the Dyson difference\n",1)
+		end
+	end
+	print("  "..hname..": Sigma^HF + Downfold(G,(0|1)) = G0^-1 - G^-1 at every frequency")
+
+	-- and the same augmented propagator held as a chain, which takes the other route
+	local SigmaTri = ResponseFunction.Downfold(ResponseFunction.ChangeType(Gt,"Tri"), RBlock)
+	if SigmaTri.type ~= "Tri" then
+		error("the chain route of the "..hname.." model returns a "..SigmaTri.type.."\n",1)
+	end
+	for w = -4, 4, 0.5 do
+		if not IsZero(SigmaTri(w,0.1) - Sigma(w,0.1), 1E-7) then
+			print(SigmaTri(w,0.1))
+			print(Sigma(w,0.1))
+			error("the chain route and the pole route of the "..hname.." model disagree\n",1)
+		end
+	end
+	print("  "..hname..": the chain route gives the same self energy")
+end

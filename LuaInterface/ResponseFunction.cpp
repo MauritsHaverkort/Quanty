@@ -25,6 +25,9 @@
  *   SingularValue is an option used to determine if the block size needs to be reduced in a tridiagonalization routine
  *   EffectivekBT is used to determine if a state belongs to the valence or conduction bands (occupied or empty using Fermi Dirac statistics)
  *   Deflate is a boolean option to determine if the final dimension should be the same (adding zero coupling) or is allowed to be reduced
+ *   NTriMax is the largest chain length the result may have, NTriMaxVal and NTriMaxCon the same for the valence
+ *     and the conduction chain of a NaturalImpurityOrbital or a DoubleTri matrix. Tri takes NTriMax, Nat and
+ *     DoubleTri take all three, And and ListOfPoles have no chain and take none of them.
  */
 static int LuaChangeTypeResponseFunction(lua_State *L)
 {
@@ -42,6 +45,9 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     bool deflate;
     bool relativeDistance;
     bool relativeWeigth;
+    uint32_t NTriMax;
+    uint32_t NTriMaxVal;
+    uint32_t NTriMaxCon;
   } Options;
   // Standard values
   Options.Method = (char*)"Default";
@@ -52,6 +58,9 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
   Options.deflate=false;
   Options.relativeDistance=false;
   Options.relativeWeigth=false;
+  Options.NTriMax    = NTriMaxNoLimit;
+  Options.NTriMaxVal = NTriMaxNoLimit;
+  Options.NTriMaxCon = NTriMaxNoLimit;
   uint32_t len = (uint32_t)lua_gettop(L);
   LuaOptionsType LuaChangeTypeResponseFunctionOptions[]={
     {"Method","char*",&(Options.Method)},
@@ -62,6 +71,9 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     {"Deflate","bool",&(Options.deflate)},
     {"relativeDistance","bool",&(Options.relativeDistance)},
     {"relativeWeigth","bool",&(Options.relativeWeigth)},
+    {"NTriMax","uint32_t",&(Options.NTriMax)},
+    {"NTriMaxVal","uint32_t",&(Options.NTriMaxVal)},
+    {"NTriMaxCon","uint32_t",&(Options.NTriMaxCon)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L,-1)==1)
   {
@@ -73,8 +85,31 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
    *  yet, so refuse it here rather than let a conversion fail somewhere deep inside. */
   if(Options.relativeDistance==true) return luaL_error(L, "Error in ChangeType: relativeDistance is not implemented\n");
   if(Options.relativeWeigth==true) return luaL_error(L, "Error in ChangeType: relativeWeigth is not implemented\n");
-  Min = luaL_checkResponsefunction(L,1);
   convert = luaL_checkstring(L, 2);
+  /*  NTriMax, NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) of the
+   *  result, a chain of length N being a[0..N] with b[0..N-1]. Only the representations
+   *  that have a chain take them: Tri has one and takes NTriMax, Nat and DoubleTri have a
+   *  valence and a conduction chain and take NTriMaxVal and NTriMaxCon, with NTriMax
+   *  standing for both. A chain that comes out shorter on its own is left as it is, a
+   *  longer one is cut without looking at the values further down. NTriMaxVal is what the
+   *  single chain of a Tri travels on from here.
+   */
+  if(strcmp(convert, "Tri")==0)
+  {
+    if(Options.NTriMaxVal!=NTriMaxNoLimit) return luaL_error(L, "Error in ChangeType: a tri-diagonal matrix has one chain, its length is set with NTriMax and not with NTriMaxVal\n");
+    if(Options.NTriMaxCon!=NTriMaxNoLimit) return luaL_error(L, "Error in ChangeType: a tri-diagonal matrix has one chain, its length is set with NTriMax and not with NTriMaxCon\n");
+    Options.NTriMaxVal = Options.NTriMax;
+  }
+  else if((strcmp(convert, "NaturalImpurityOrbital")==0)||(strcmp(convert, "Nat")==0)||(strcmp(convert, "DoubleTri")==0)||(strcmp(convert, "DTri")==0))
+  {
+    if(Options.NTriMaxVal==NTriMaxNoLimit) Options.NTriMaxVal = Options.NTriMax;
+    if(Options.NTriMaxCon==NTriMaxNoLimit) Options.NTriMaxCon = Options.NTriMax;
+  }
+  else if((Options.NTriMax!=NTriMaxNoLimit)||(Options.NTriMaxVal!=NTriMaxNoLimit)||(Options.NTriMaxCon!=NTriMaxNoLimit))
+  {
+    return luaL_error(L, "Error in ChangeType: a conversion to \"%s\" produces no chain and does not take NTriMax, NTriMaxVal or NTriMaxCon\n", convert);
+  }
+  Min = luaL_checkResponsefunction(L,1);
   // select the type and do the conversion
   if(strcmp(convert, "Dense")==0)
   {
@@ -303,7 +338,7 @@ static int LuaChangeTypeResponseFunction(lua_State *L)
     }
   }
   
-  if(ConvertResponsefunction(Min, &Mout, type, Options.Method, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance, Options.deflate, Options.relativeDistance, Options.relativeWeigth))
+  if(ConvertResponsefunction(Min, &Mout, type, Options.Method, Options.T, Options.SingularValue, Options.MinimalPoleWeigth, Options.MinimalPoleDistance, Options.deflate, Options.relativeDistance, Options.relativeWeigth, Options.NTriMaxVal, Options.NTriMaxCon))
   {
     char typein=Min->type;
     FreeResponsefunction(Min);
@@ -1014,6 +1049,105 @@ static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
  luaL_setmetatable(L, "ResponseFunction_Type");
  FreeResponsefunction(Heff);
  return 1;
+}
+
+/*  Sigma, S = ResponseFunction.Downfold(G, R, {options})
+ *
+ *  The sub block of the inverse of G, inverted again,
+ *
+ *    Sigma(w) = ( R G^-1(w) R^+ )^-1 ,
+ *
+ *  with R a matrix of Nsub rows and as many columns as G has a block size. R = ( 0 | 1 )
+ *  takes the lower right block of a two by two block structure, any other R of full row
+ *  rank takes the subspace its rows span; the rows do not have to be orthonormal.
+ *
+ *  For G the augmented propagator of the operators a_m and q_m = [a_m,H1] and R selecting
+ *  the q half, this is the symmetric improved estimator Sigma(w) - Sigma^HF of the self
+ *  energy. Sigma^HF is not part of it and is read off the spectral weight of G itself,
+ *  B0^* B0^T, which ResponseFunction.ChangeType(G,"Dense") returns.
+ *
+ *  S comes back as the spectral weight of the result, sum_i W_i, and is the sum rule the
+ *  answer can be checked against.
+ *
+ *  A tri-diagonal G keeps its shape: its effective Hamiltonian is a chain, the projection
+ *  is then a block Lanczos and nothing is diagonalised, and Sigma comes back a chain too.
+ *  Every other type reaches the projection as a list of poles and Sigma comes back an
+ *  Anderson matrix. ResponseFunction.ChangeType(Sigma,"ListOfPoles") turns either into the
+ *  pole expansion Sigma(w) - Sigma^HF = sum_i W_i / ( w - a_i ), and pays a dense
+ *  diagonalisation for it.
+ *
+ *  SingularValue deflates the directions of the spectral weight of G that carry no weight
+ *  and MinimalPoleDistance merges poles that coincide, both as EffectiveHamiltonian takes
+ *  them. NTriMax is a ceiling on the length of the chain the tri-diagonal route produces;
+ *  leaving it out asks for no ceiling, which keeps the projection exact, and every other
+ *  type refuses it, there being no chain to cut. See ResponseFunctionDownfold for what the
+ *  routine does with them.
+ */
+static int LuaResponseFunctionDownfold(lua_State *L)
+{
+  ResponsefunctionType *G,*Gout;
+  CompactMatrixType *R,*S;
+  double ValueNotSet = -DBL_MAX;
+  struct
+  {
+    double SingularValue;
+    double MinimalPoleWeigth;
+    double MinimalPoleDistance;
+    double T;
+    uint32_t NTriMax;
+  } Options;
+  Options.SingularValue       = ValueNotSet;
+  Options.MinimalPoleWeigth   = ValueNotSet;
+  Options.MinimalPoleDistance = ValueNotSet;
+  Options.T                   = ValueNotSet;
+  Options.NTriMax             = NTriMaxNoLimit;
+  LuaOptionsType LuaOptions[]={
+    {"SingularValue","double",&(Options.SingularValue)},
+    {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
+    {"NTriMax","uint32_t",&(Options.NTriMax)},
+    {NULL, NULL, NULL}};
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaOptions);
+    len--;
+  }
+  if(len!=2) return luaL_error(L, "ResponseFunction.Downfold called with %d arguments, two arguments expected, a response function and the matrix selecting the subspace, and possibly a third specifying options",len);
+  G = luaL_checkResponsefunction(L,1);
+  R = luaL_checkCompactMatrix(L,2);
+  if(G->Block==false)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). A single valued response function has no subspace to downfold onto\n");
+  }
+  if(ResponseFunctionGetBlockSize(G)!=R->Nj)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). The matrix selecting the subspace has %d columns and the response function has a block size of %d\n", R->Nj, ResponseFunctionGetBlockSize(G));
+  }
+  if(R->Ni>R->Nj)
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). The matrix selecting the subspace has %d rows and %d columns, a subspace is not larger than the space it sits in\n", R->Ni, R->Nj);
+  }
+  Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
+  S    = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if((Options.NTriMax!=NTriMaxNoLimit)&&((G->type|32)!='t'))
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold(). NTriMax is a ceiling on the length of the chain the projection produces, and only a tri-diagonal response function is downfolded into a chain. A response function of type %c is downfolded one pole at a time and the result is a star\n", G->type|32);
+  }
+  if(ResponseFunctionDownfold(G,R,Gout,S,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance,Options.NTriMax))
+  {
+    return luaL_error(L, "Error in ResponseFunction.Downfold()\n");
+  }
+  // we give the controle of the allocation of the memory of Gout and S to Lua
+  // turn the type to a lower case letter
+  Gout->type = Gout->type | 32;
+  luaL_getmetatable(L, "ResponseFunction_Type");
+  lua_setmetatable(L, -3);
+  S->OnLuaStack=true;
+  luaL_getmetatable(L, "Matrix_Type");
+  lua_setmetatable(L, -2);
+  FreeResponsefunction(G);
+  FreeCompactMatrix(R);
+  return 2;
 }
 
 /*  G(w) -> G(w)[i1,i2,...in]
@@ -5145,6 +5279,7 @@ static int LuaResponseFunctionNewIndex(lua_State *L)
 
 static const struct luaL_Reg ResponseFunction_func[] = {
   {"ChangeType", LuaChangeTypeResponseFunction},
+  {"Downfold", LuaResponseFunctionDownfold},
   {"EffectiveHamiltonian",LuaResponseFunctionEffectiveHamiltonian},
   {"FromEffectiveHamiltonian",LuaResponseFunctionFromEffectiveHamiltonian},
   {"New", LuaResponseFunctionNew},
