@@ -1,0 +1,56 @@
+--[[
+ *  ScriptDirectory is set by Quanty to the directory that holds the input file
+ *  given on the command line. The path is absolute and ends on a directory
+ *  separator, such that a file lying next to the script is named by
+ *  concatenation. It is set in LuaInterface/main.cpp from argv[1].
+ *
+ *  This test may be started from any working directory. It is the point of the
+ *  variable that the answer does not depend on it.
+]]
+
+if type(ScriptDirectory) ~= "string" then
+  error("ScriptDirectory is not a string but "..type(ScriptDirectory),1)
+end
+
+print("ScriptDirectory = "..ScriptDirectory)
+
+-- the path is absolute: /... on unix, C:\..., C:/... or \\server\... on windows
+if not (string.match(ScriptDirectory,"^/") or
+        string.match(ScriptDirectory,"^%a:[/\\]") or
+        string.match(ScriptDirectory,"^\\\\")) then
+  error("ScriptDirectory is not an absolute path: "..ScriptDirectory,1)
+end
+
+-- it ends on a separator, so that concatenation names a neighbouring file
+if not string.match(ScriptDirectory,"[/\\]$") then
+  error("ScriptDirectory does not end on a directory separator: "..ScriptDirectory,1)
+end
+
+-- it is the directory of this script and not the working directory, whatever
+-- the working directory happened to be
+if not string.match(ScriptDirectory,"TestScripts[/\\]$") then
+  error("ScriptDirectory is not the directory of this script: "..ScriptDirectory,1)
+end
+
+-- a file next to the script is found by concatenation, this script itself
+f = io.open(ScriptDirectory.."ScriptDirectory.Quanty","r")
+if f == nil then
+  error("could not open this script through ScriptDirectory",1)
+end
+f:close()
+
+-- and a script next to this one can be included
+ScriptDirectoryIncludeRan = nil
+ScriptDirectoryIncludeSaw = nil
+dofile(ScriptDirectory.."ScriptDirectoryInclude.Quanty")
+if ScriptDirectoryIncludeRan ~= true then
+  error("dofile of a script next to this one did not run",1)
+end
+
+-- the included file sees the same value: ScriptDirectory is the directory of
+-- the input file on the command line, not of the chunk that reads it
+if ScriptDirectoryIncludeSaw ~= ScriptDirectory then
+  error("ScriptDirectory changed while running an included file",1)
+end
+
+print("passed")

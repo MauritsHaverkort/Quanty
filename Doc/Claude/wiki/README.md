@@ -338,3 +338,102 @@ conjugation conventions, which records the same underlying gap.
 - `documentation:language_reference:objects:responsefunction:start` still lists
   four internal representations and there are five. That is the same omission
   the `ChangeType` page had in batch 4 and it is a separate edit.
+
+
+## Batch 6 — the command line, args and ScriptDirectory
+
+Drafted 20 September 2026, for the three commits on the `Claude` branch that add
+`ScriptDirectory`, stop the interactive prompt calling an empty stack when its
+input ends, and test all of it.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.command_line.txt` | `documentation:command_line` |
+
+The page does not exist yet, so create it at that id and paste the file in. It
+covers the whole command line rather than only the new variable: the two ways
+to start Quanty, the interactive prompt, `args`, and `ScriptDirectory`.
+
+`args` had no documentation at all. A full text search of the wiki for "args"
+returns one hit, a Java snippet in the DokuWiki syntax help page, so a script
+author has so far had no way of learning that the arguments after the file name
+are available, that they arrive as strings, or that the table is `nil` when
+there are none.
+
+### Where it sits
+
+`documentation:` is a flat list ordered by `indexmenu_n`: getting_started 1,
+install 2, lua 3, memory 4, parallel 5, download 6, basics 7, language_reference
+10. The new page belongs directly after Getting started, which is where the
+invocation `Quanty [Filename.Quanty]` is already described, but 2 through 7 are
+taken and renumbering six pages for one insertion is not worth it. The draft
+therefore carries `{{indexmenu_n>2}}` as well and relies on the tie being broken
+by name: `command_line` sorts before `install`, so it lands in the right place
+with no edit to any other page. Say the word if you would rather renumber
+properly, it is a one character edit on each of install, lua, memory, parallel,
+download and basics.
+
+The alternative home would be the language reference, which is explicitly
+"Constants, Global functions, and Objects". Neither `args` nor `ScriptDirectory`
+is any of the three, so that would mean a fourth category and an edit to
+`documentation:language_reference:start`. A page of its own next to Getting
+started is the smaller change and is where a new user looks.
+
+### One line to add elsewhere
+
+#### `documentation:getting_started`
+
+In the first paragraph, after
+
+```
+Once the program is installed one can run Quanty by typing Quanty [Filename.Quanty] in a terminal. [Filename.Quanty] can be any name of a text file that contains the commands you want to execute. 
+```
+
+add
+
+```
+The page [[documentation:command_line|]] describes the command line in full: an interactive session when no file name is given, the arguments that a script reads back from //args//, and the directory of the script itself in //ScriptDirectory//.
+```
+
+This is optional. The new page appears in the navigation menu and in the
+`{{indexmenu>.#2|msort nsort}}` index of `documentation:start` on its own, but
+the sentence about typing `Quanty [Filename.Quanty]` is the place a reader is
+standing when the question comes up.
+
+### Checked
+
+Every snippet on the page was run against the branch build and the output blocks
+are real output, with one edit: the directory in the `ScriptDirectory` example
+is written as `/home/username/NiO/` rather than the scratch directory the
+example actually ran in.
+
+Four statements on the page are measured rather than assumed:
+
+- **Arguments are strings and are not converted.** `Quanty Args.Quanty 3.5 NiO
+  -x` gives `args[1] = "3.5"` as a string, `#args == 3`, `args[0] == nil`, and
+  the standard Lua `arg` table is not set at all.
+- **`args` is `nil`, not an empty table**, when nothing follows the file name.
+  Same for `ScriptDirectory` in an interactive session.
+- **The prompt.** A bare expression prints nothing; an unfinished statement is
+  continued at `>>`; `= 1+1` prints `2`. The session ends on `os.exit()` or on
+  end of file.
+- **`ScriptDirectory` under `dofile`.** An included file sees the same value as
+  the file that included it, since it belongs to the command line and not to the
+  chunk being run. `TestScripts/ScriptDirectory.Quanty` pins this, along with
+  the absolute form, the trailing separator, and the value being independent of
+  the working directory.
+
+### Not touched
+
+- `documentation:language_reference:start` still says the reference has three
+  parts. If `args` and `ScriptDirectory` should be findable from there, one
+  sentence at the end of that list pointing at `documentation:command_line`
+  would do it, without inventing a fourth category.
+- `documentation:install:*` describes where to put the binary and says nothing
+  about how it is called; the new page is the counterpart and neither needs to
+  know about the other.
+- The output block on `documentation:getting_started` shows the header of a 2017
+  build, with three authors and three citations. It is out of date against every
+  current build but that is a separate edit and not mine to decide.

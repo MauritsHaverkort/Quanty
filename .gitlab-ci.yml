@@ -307,6 +307,7 @@ test-jobs:
           - "PartialMeanFieldOperator"
           - "PartialOperator"
           - "Rotate"
+          - "ScriptDirectory"
           - "ShellAverage"
           - "Statistics"
           - "TensorProduct"
@@ -323,3 +324,26 @@ test-jobs:
   dependencies:
     - build-job
 
+
+# =========================================================================
+# ===== Test what Quanty makes of its command line
+# ===== These are set in LuaInterface/main.cpp and need a command line of their
+# ===== own, so they can not run in the matrix above
+#
+
+test-jobs-commandline:
+  stage: test
+  script:
+    - export OMP_NUM_THREADS=8
+    # args holds the arguments that follow the input file
+    - ./Quanty.exe "TestScripts/Args.Quanty" 3.5 NiO -x
+    # and is nil when there are none
+    - ./Quanty.exe "TestScripts/Args.Quanty"
+    # reaching the end of the input of the interactive prompt is not an error
+    # the line is printed with a marker, since the prompt itself is written to
+    # the same line whenever lua is built without readline
+    - echo 'print("interactive prompt ran "..(1+1))' | ./Quanty.exe > interactive.log 2>&1
+    - grep -q "interactive prompt ran 2" interactive.log
+    - if grep -q "attempt to call" interactive.log ; then cat interactive.log ; exit 1 ; fi
+  dependencies:
+    - build-job
