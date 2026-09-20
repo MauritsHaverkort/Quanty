@@ -340,8 +340,10 @@ test-jobs-commandline:
     # and is nil when there are none
     - ./Quanty.exe "TestScripts/Args.Quanty"
     # reaching the end of the input of the interactive prompt is not an error
-    - echo "print(1+1)" | ./Quanty.exe > interactive.log 2>&1
-    - grep -q "^2$" interactive.log
+    # the line is printed with a marker, since the prompt itself is written to
+    # the same line whenever lua is built without readline
+    - echo 'print("interactive prompt ran "..(1+1))' | ./Quanty.exe > interactive.log 2>&1
+    - grep -q "interactive prompt ran 2" interactive.log
     - if grep -q "attempt to call" interactive.log ; then cat interactive.log ; exit 1 ; fi
   dependencies:
     - build-job
