@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
   TimeStampAll();
 
-  int status,result;
+  int result;
   
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
@@ -95,10 +95,9 @@ int main(int argc, char *argv[])
   if (argc < 2)
   {
     // run Quanty interactively
+    // dotty reads, executes and reports one line at a time and returns with an
+    // empty stack once the input ends, there is nothing left to call or report
     dotty(L);
-    status = lua_pcall(L, 2, 1, 0);
-    result = lua_toboolean(L, -1);  /* get result */
-    finalreport(L, status);
   }
   else
   {
