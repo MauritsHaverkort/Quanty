@@ -109,6 +109,15 @@ int main(int argc, char *argv[])
       lua_close(L);
       return 1;
     }
+    // the directory of the script, such that a script can find files next to
+    // itself independent of the directory from which Quanty was called
+    char * ScriptDirectory = MWHFileDirectory(argv[1]);
+    if (ScriptDirectory != NULL)
+    {
+      lua_pushstring(L,ScriptDirectory);
+      lua_setglobal(L,"ScriptDirectory");
+      free(ScriptDirectory);
+    }
     if (argc > 2)
     {
       lua_push(L,&(argv[2]),argc-2);

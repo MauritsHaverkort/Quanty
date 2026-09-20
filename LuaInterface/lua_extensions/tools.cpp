@@ -77,3 +77,49 @@ uint32_t luaMWH_fulltablelen(lua_State *L, const int t)
 }
 
 
+
+// PATH_MAX should come from limits.h, but is not guaranteed by the standard
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
+/**
+ * Return the absolute path of FileName in a newly allocated string.
+ * The caller is responsible for freeing the string.
+ * Returns NULL if the path can not be resolved, for example if the file does
+ * not exist. Note that on unix like systems symbolic links are resolved,
+ * while on windows they are not.
+ */
+char * MWHRealPath(const char * FileName)
+{
+  char * AbsName;
+#if defined(_WIN32)
+  if ((AbsName = (char*)malloc(_MAX_PATH * sizeof(char))) == NULL) return NULL;
+  if (_fullpath(AbsName, FileName, _MAX_PATH) == NULL) { free(AbsName); return NULL; }
+#else
+  if ((AbsName = (char*)malloc(PATH_MAX * sizeof(char))) == NULL) return NULL;
+  if (realpath(FileName, AbsName) == NULL) { free(AbsName); return NULL; }
+#endif
+  return AbsName;
+}
+
+/**
+ * Return the directory that contains FileName in a newly allocated string.
+ * The path is absolute and ends on a directory separator, such that the name
+ * of a file next to FileName is found by simple concatenation.
+ * The caller is responsible for freeing the string.
+ * Returns NULL if the path can not be resolved.
+ */
+char * MWHFileDirectory(const char * FileName)
+{
+  char * AbsName;
+  size_t i, last;
+  if ((AbsName = MWHRealPath(FileName)) == NULL) return NULL;
+  last = 0;
+  for (i = 0; AbsName[i] != '\0'; i++)
+  {
+    if ((AbsName[i] == '/') || (AbsName[i] == '\\')) last = i + 1;
+  }
+  AbsName[last] = '\0';
+  return AbsName;
+}
