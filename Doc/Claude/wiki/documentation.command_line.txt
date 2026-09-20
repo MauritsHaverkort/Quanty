@@ -1,0 +1,129 @@
+{{indexmenu_n>2}}
+====== Running Quanty from the command line ======
+
+###
+Quanty is started from a terminal. Given the name of a text file it executes the commands in that file and stops; given no file name it opens an interactive session; anything written after the file name is handed to the script as an argument.
+###
+
+<code bash>
+Quanty                                   # an interactive session
+Quanty Filename.Quanty                   # run the commands in Filename.Quanty
+Quanty Filename.Quanty 300 NiO           # the same, with two arguments
+</code>
+
+###
+A script can ask for two things about the way it was started. The table //args// holds the arguments that follow the file name, and the string //ScriptDirectory// holds the directory the file itself lies in.
+###
+
+===== An interactive session =====
+
+###
+Quanty started without a file name prints its header and then the prompt //Q//. Every line typed at the prompt is executed the moment it is entered, and variables stay alive from one line to the next. A statement that is not finished is continued at the prompt //>>//. A bare expression is not a statement in Lua and prints nothing: write //print(1+1)//, or begin the line with an equals sign, //= 1+1//, which prints the value.
+###
+
+<file Quanty_Output>
+Q a = 2 ; print(a*3)
+6
+Q = 1+1
+2
+Q os.exit()
+</file>
+
+###
+The session ends with //os.exit()// or with the end of file character of your terminal, which is ctrl-D on Mac and linux and ctrl-Z on windows. A file can also be piped into Quanty, //Quanty < Filename.Quanty//, which runs its lines as if they had been typed; this is not the same as //Quanty Filename.Quanty//, which loads the whole file as one program and is what you normally want.
+###
+
+###
+//ScriptDirectory// and //args// are both //nil// in an interactive session. There is no input file then, so there is no directory to report and no argument that could have followed it.
+###
+
+===== Arguments: args =====
+
+###
+Everything on the command line after the name of the input file is put in the table //args//, in the order it was given. The entries are counted from 1 and are always strings, whether or not they look like a number; //tonumber// turns one into a number. The name of the input file is not part of //args//, and //args// is //nil// rather than an empty table when no arguments were given.
+###
+
+<code Quanty Arguments.Quanty>
+if (args == nil) then
+  print("no arguments given")
+else
+  for i,v in ipairs(args) do
+    print("args["..i.."] = "..v)
+  end
+  T = tonumber(args[1])
+  print("the temperature is "..(T+0.5).." K")
+end
+</code>
+
+###
+Started as //Quanty Arguments.Quanty 300 NiO// this prints
+###
+
+<file Quanty_Output>
+args[1] = 300
+args[2] = NiO
+the temperature is 300.5 K
+</file>
+
+###
+and started as //Quanty Arguments.Quanty// it prints
+###
+
+<file Quanty_Output>
+no arguments given
+</file>
+
+###
+Arguments are useful to run the same script for a series of parameters without editing it, for instance by starting it once per temperature from a shell loop, and to give a calculation the name of the file it should write its results to.
+###
+
+===== The directory of the input file: ScriptDirectory =====
+
+###
+//ScriptDirectory// is the directory that holds the input file. The path is absolute and ends on a directory separator, so the name of a file lying next to the script is //ScriptDirectory// followed by the name of that file. It does not depend on the directory Quanty was started from, which is what makes it useful: a script that reads a table of parameters, a configuration file or a second script next to itself finds them wherever the calculation is run.
+###
+
+<code Quanty Calculation.Quanty>
+print(ScriptDirectory)
+dofile(ScriptDirectory.."Parameters.Quanty")
+print("tenDq = "..tenDq.." eV, Delta = "..Delta.." eV")
+</code>
+
+###
+With //Parameters.Quanty// in the same directory as //Calculation.Quanty// and containing
+###
+
+<code Quanty Parameters.Quanty>
+tenDq = 1.2
+Delta = 4.5
+</code>
+
+###
+the script prints the same thing whether it is started as //Quanty Calculation.Quanty// from its own directory or as //Quanty /home/username/NiO/Calculation.Quanty// from anywhere else:
+###
+
+<file Quanty_Output>
+/home/username/NiO/
+tenDq = 1.2 eV, Delta = 4.5 eV
+</file>
+
+###
+Without //ScriptDirectory// the name //Parameters.Quanty// on its own would be looked for in the directory the calculation was started from, which is the same directory only by accident, and an absolute name written into the script would have to be changed on every machine.
+###
+
+###
+Two details. The directory is the one the input file lies in, also for a file included with //dofile//: it belongs to the command line and does not change while an included file runs. And on Mac and linux a symbolic link is followed, so a script reached through a link reports the directory of the file the link points at, while on windows the link itself is reported.
+###
+
+===== Availability =====
+
+###
+//ScriptDirectory// was added in September 2026. In a version compiled before that it is //nil//, and a script that should run on both can fall back on the directory Quanty was started from:
+###
+
+<code Quanty Example.Quanty>
+Directory = ScriptDirectory or "./"
+</code>
+
+===== Table of contents =====
+{{indexmenu>.#1|msort}}
