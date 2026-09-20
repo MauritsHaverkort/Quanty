@@ -1,0 +1,49 @@
+--[[
+ *  args holds the command line arguments that follow the input file. They are
+ *  strings, in a table indexed from 1, and args is nil when there are none.
+ *  It is set in LuaInterface/main.cpp.
+ *
+ *  This file is run twice, once with the three arguments it expects below and
+ *  once with none:
+ *
+ *    Quanty TestScripts/Args.Quanty 3.5 NiO -x
+ *    Quanty TestScripts/Args.Quanty
+]]
+
+if args == nil then
+
+  print("no arguments given, args is nil")
+
+else
+
+  if type(args) ~= "table" then
+    error("args is not a table but "..type(args),1)
+  end
+  if #args ~= 3 then
+    error("args has "..(#args).." entries instead of the 3 given on the command line",1)
+  end
+
+  -- the arguments are handed over as strings, in the order they were given,
+  -- and are not converted to numbers
+  if (args[1] ~= "3.5") or (args[2] ~= "NiO") or (args[3] ~= "-x") then
+    error("args does not hold the arguments given on the command line",1)
+  end
+  for i = 1,3 do
+    if type(args[i]) ~= "string" then
+      error("args["..i.."] is not a string but "..type(args[i]),1)
+    end
+  end
+  if tonumber(args[1]) ~= 3.5 then
+    error("tonumber does not turn args[1] into the number given",1)
+  end
+
+  -- the name of the input file is not part of args
+  if args[0] ~= nil then
+    error("args[0] is set, the input file should not be part of args",1)
+  end
+
+  print("args = "..args[1]..", "..args[2]..", "..args[3])
+
+end
+
+print("passed")
