@@ -4639,6 +4639,8 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
       }
     }
   }
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -4863,6 +4865,8 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
       }
     }
   }
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -5383,6 +5387,8 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
       }
     }
   }
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -5614,6 +5620,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
     }
   }
   FreeMatrix(&PsiChar);
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -5886,6 +5894,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
     }
   }
   FreeMatrix(&PsiChar);
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
