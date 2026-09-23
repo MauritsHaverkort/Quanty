@@ -976,14 +976,15 @@ static int LuaCalculateG(lua_State *L)
     }
   }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
+  free(Options.Nk);
+  if(FreeSigma==true)
+  {
+    FreeResponsefunction(Sigma);
+  }
   if(strcmp(Options.Type, "ListOfPoles")!=0)
   {
     lua_pushstring(L, Options.Type);
     return LuaChangeTypeResponseFunction(L);
-  }
-  if(FreeSigma==true)
-  {
-    FreeResponsefunction(Sigma);
   }
   return 1;
 }
