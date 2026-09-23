@@ -2912,15 +2912,16 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
 int lua_isBlockGreensfunction(lua_State *L, int narg)
 {
   const char *type;
-  if(luaL_checkudata (L, narg, "ResponseFunction_Type")!=NULL) return 1;
+  if(luaL_testudata (L, narg, "ResponseFunction_Type")!=NULL) return 1;
   if(lua_istable(L, narg)==0) return 0;
   lua_getfield(L, narg, "type");
-  if(lua_isstring(L,-1)==0) return 0;
+  if(lua_isstring(L,-1)==0) {lua_pop(L, 1);return 0;}
   type = lua_tolstring(L, -1, NULL);
   if(strcmp(type, "Tri")==0) {lua_pop(L, 1);return 1;}
   if(strcmp(type, "And")==0) {lua_pop(L, 1);return 1;}
   if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0)) {lua_pop(L, 1);return 1;}
   if(strcmp(type, "ListOfPoles")==0) {lua_pop(L, 1);return 1;}
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0)) {lua_pop(L, 1);return 1;}
   lua_pop(L, 1);
   return 0;
 }
