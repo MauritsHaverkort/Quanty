@@ -240,6 +240,7 @@ test-jobs-tightbinding:
           - "AddSpin"
           - "CalculateBands"
           - "CalculateG"
+          - "CalculateGSigmaTri"
           - "CalculateMu"
           - "Chop"
           - "Copy"

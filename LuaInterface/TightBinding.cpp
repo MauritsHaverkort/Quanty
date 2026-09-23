@@ -904,10 +904,10 @@ static int LuaCalculateG(lua_State *L)
         //TODO:
         return luaL_error(L, "Error need to transform list of poles to Block list of poles");
       }
-      if((Sigma->type!='l')&&(Sigma->type!='L'))
+      if((Sigma->type!='l')&&(Sigma->type!='L')&&(Sigma->type!='t')&&(Sigma->type!='T'))
       {
-        //TODO;
-        return luaL_error(L, "Error need to transform sigma to BlockListOfPoles");
+        //TODO; transform the other types to a BlockTriDiagonalMatrix
+        return luaL_error(L, "Error need to transform sigma to BlockListOfPoles or BlockTriDiagonalMatrix");
       }
     }
   }
@@ -937,6 +937,21 @@ static int LuaCalculateG(lua_State *L)
     else
     {
       TightBindingHamiltonianToBlockListOfPolesGrid(*a, Options.Nk, (BlockListOfPoles*)G->data, Grid.VRe, Grid.Ni);
+    }
+  }
+  else if((Sigma->type=='t')||(Sigma->type=='T'))
+  {
+    if(((BlockTriDiagonalMatrixType*)Sigma->data)->BlockSize != a->NFermion )
+    {
+      return luaL_error(L, "Error BlockSize of Sigma (%d) and NFermion of TB Hamiltonian (%d) need to be equivalent ",((BlockTriDiagonalMatrixType*)Sigma->data)->BlockSize , a->NFermion);
+    }
+    if (Grid.Ni==0)
+    {
+      TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockTriDiagonalMatrixType*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    }
+    else
+    {
+      TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockTriDiagonalMatrixType*)Sigma->data, (BlockListOfPoles*)G->data, Grid.VRe, Grid.Ni);
     }
   }
   else
