@@ -91,3 +91,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
 
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue);
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue, uint32_t const NTriMax);
+uint32_t BlockListOfPolesDirectSum(BlockListOfPoles const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockListOfPoles * const B);
+uint32_t BlockTriDiagonalMatrixDirectSum(BlockTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockTriDiagonalMatrixType * const B);
+uint32_t BlockAndersonMatrixDirectSum(BlockAndersonMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockAndersonMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixDirectSum(BlockNaturalImpurityOrbitalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockNaturalImpurityOrbitalMatrixType * const B);
+uint32_t BlockDoubleTriDiagonalMatrixDirectSum(BlockDoubleTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockDoubleTriDiagonalMatrixType * const B);

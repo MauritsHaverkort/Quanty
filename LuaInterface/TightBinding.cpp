@@ -800,10 +800,199 @@ static int LuaCalculateFermi(lua_State *L)
   return 1;
 }
 
+/*  true if the value at stack index idx is a response function, either as user data or as a lua table
+ *  with a string field type. A table of response functions has no field type.
+ */
+static bool LuaIsResponseFunctionObject(lua_State *L, int idx)
+{
+  bool ret;
+  if(luaL_testudata(L, idx, "ResponseFunction_Type")!=NULL) return true;
+  if(lua_istable(L, idx)==0) return false;
+  lua_getfield(L, idx, "type");
+  ret = (lua_type(L, -1)==LUA_TSTRING);
+  lua_pop(L, 1);
+  return ret;
+}
+
+static char const * ResponseFunctionTypeName(char const type)
+{
+  switch(type|32)
+  {
+    case 'l': return "ListOfPoles";
+    case 't': return "Tri";
+    case 'a': return "And";
+    case 'n': return "Nat";
+    case 'd': return "DoubleTri";
+  }
+  return "unknown";
+}
+
+/*  the self energies per atom or per shell collected by LuaReadSelfEnergyPerAtom */
+typedef struct SelfEnergyEntriesType
+{
+  uint32_t N;                     /* number of entries */
+  ResponsefunctionType **Sigma;   /* the self energy of each entry */
+  uint32_t *Offset;               /* index of the first orbital of each entry */
+  int *Atom;                      /* atom of each entry */
+  int *Shell;                     /* shell of each entry, -1 for all shells of the atom */
+  bool *Owned;                    /* true if Sigma was allocated here and has to be freed */
+  double mu;                      /* mu of the first entry */
+}
+SelfEnergyEntriesType;
+
+/*  writes "atom i (name)" or "atom i (name) shell j (name)" into where, which has room for 2*MAXStrLength+64 */
+static void SelfEnergyEntryName(char * const where, TightBindingDef const * const TB, int const iatom, int const ishell)
+{
+  AtomType const * const Atom = &(TB->Cell.Atom[iatom]);
+  if(ishell<0) snprintf(where, 2*MAXStrLength+64, "atom %d (%s)", iatom+1, Atom->Name);
+  else         snprintf(where, 2*MAXStrLength+64, "atom %d (%s) shell %d (%s)", iatom+1, Atom->Name, ishell+1, Atom->ShellName[ishell]);
+}
+
+/*  Read the value at stack index idx as the self energy of atom iatom and shell ishell (ishell==-1 for all
+ *  shells of the atom) and add it to E. The number 0 is a zero self energy and adds nothing.
+ */
+static void LuaReadSelfEnergyEntry(lua_State *L, int const idx, TightBindingDef const * const TB, int const iatom, int const ishell, SelfEnergyEntriesType * const E)
+{
+  AtomType const * const Atom = &(TB->Cell.Atom[iatom]);
+  ResponsefunctionType *rf;
+  char where[2*MAXStrLength+64], first[2*MAXStrLength+64];
+  int j, dim=0;
+  SelfEnergyEntryName(where, TB, iatom, ishell);
+  if(lua_type(L, idx)==LUA_TNUMBER)
+  {
+    if(lua_tonumber(L, idx)!=0) luaL_error(L, "Error CalculateG: the self energy of %s is a number, only 0 is allowed, for a zero self energy\n", where);
+    return;
+  }
+  if(!LuaIsResponseFunctionObject(L, idx))
+  {
+    if(ishell<0) luaL_error(L, "Error CalculateG: the self energy of %s should be a response function, a table of response functions per shell or 0\n", where);
+    else         luaL_error(L, "Error CalculateG: the self energy of %s should be a response function or 0\n", where);
+  }
+  rf = luaL_checkResponsefunction(L, idx);
+  if(ishell<0) for(j=0;j<Atom->Nshell;j++) dim += Atom->shelldegeneracy[j];
+  else         dim = Atom->shelldegeneracy[ishell];
+  if((int)ResponseFunctionGetBlockSize(rf)!=dim)
+  {
+    luaL_error(L, "Error CalculateG: the self energy of %s has dimension %d, but %s has %d orbitals\n", where, (int)ResponseFunctionGetBlockSize(rf), where, dim);
+  }
+  if(E->N==0)
+  {
+    E->mu = ResponseFunctionGetMu(rf);
+  }
+  else
+  {
+    SelfEnergyEntryName(first, TB, E->Atom[0], E->Shell[0]);
+    if((rf->type|32)!=(E->Sigma[0]->type|32))
+    {
+      luaL_error(L, "Error CalculateG: the self energies per atom or shell must all be of the same type, but %s has type %s and %s has type %s. Use ResponseFunction.ChangeType to give them one type\n",
+                 first, ResponseFunctionTypeName(E->Sigma[0]->type), where, ResponseFunctionTypeName(rf->type));
+    }
+    if(fabs(ResponseFunctionGetMu(rf)-E->mu) > 10*DBL_EPSILON*Max(1.0,fabs(E->mu)))
+    {
+      luaL_error(L, "Error CalculateG: the self energies per atom or shell must all have the same mu, but %s has mu = %f and %s has mu = %f\n",
+                 first, E->mu, where, ResponseFunctionGetMu(rf));
+    }
+  }
+  E->Sigma[E->N]  = rf;
+  E->Offset[E->N] = (Atom->Nshell>0) ? (TB->FermionIndex[iatom][(ishell<0)?0:ishell]) : (0);
+  E->Atom[E->N]   = iatom;
+  E->Shell[E->N]  = ishell;
+  E->Owned[E->N]  = ((rf->type&32)==0); // an upper case type was read from a lua table and allocated by luaL_checkResponsefunction
+  E->N++;
+}
+
+/*  Read a self energy given per atom, or per atom and shell, from the table at stack index narg and return
+ *  it as one block response function of dimension TB->NFermion (malloc'd, C owns it), or NULL if all entries
+ *  are zero. The table has one entry per atom of the tight binding model, which is either
+ *    -- a response function of the dimension of the atom (all its shells)
+ *    -- a table with one entry per shell, each a response function of the dimension of the shell, or 0
+ *    -- the number 0, a zero self energy
+ *  All response functions must be of the same type and have the same mu. Single valued ones are copied
+ *  into block form first. The result is the direct sum, see ResponseFunctionDirectSum.
+ */
+static ResponsefunctionType * LuaReadSelfEnergyPerAtom(lua_State *L, int const narg, TightBindingDef const * const TB)
+{
+  uint32_t i, iatom, maxentry=0, NAtoms=TB->Cell.NAtoms;
+  int ishell, idx;
+  ResponsefunctionType *rf, *Sigma=NULL;
+  SelfEnergyEntriesType E;
+  if(lua_objlen(L, narg)!=NAtoms)
+  {
+    luaL_error(L, "Error CalculateG: the self energy per atom is a table of length %d, but the tight binding model has %d atoms\n", (int)lua_objlen(L, narg), (int)NAtoms);
+  }
+  for(iatom=0;iatom<NAtoms;iatom++)
+  {
+    maxentry += (TB->Cell.Atom[iatom].Nshell>0) ? (TB->Cell.Atom[iatom].Nshell) : (1);
+  }
+  E.N      = 0;
+  E.mu     = 0;
+  E.Sigma  = (ResponsefunctionType**)malloc(maxentry*sizeof(ResponsefunctionType*));
+  E.Offset = (uint32_t*)malloc(maxentry*sizeof(uint32_t));
+  E.Atom   = (int*)malloc(maxentry*sizeof(int));
+  E.Shell  = (int*)malloc(maxentry*sizeof(int));
+  E.Owned  = (bool*)malloc(maxentry*sizeof(bool));
+  for(iatom=0;iatom<NAtoms;iatom++)
+  {
+    lua_rawgeti(L, narg, iatom+1);
+    idx = lua_gettop(L);
+    if(lua_istable(L, idx) && !LuaIsResponseFunctionObject(L, idx))
+    { // a table with one entry per shell
+      if(lua_objlen(L, idx)!=(size_t)TB->Cell.Atom[iatom].Nshell)
+      {
+        luaL_error(L, "Error CalculateG: the self energy of atom %d (%s) is a table of length %d, but the atom has %d shells\n", iatom+1, TB->Cell.Atom[iatom].Name, (int)lua_objlen(L, idx), TB->Cell.Atom[iatom].Nshell);
+      }
+      for(ishell=0;ishell<TB->Cell.Atom[iatom].Nshell;ishell++)
+      {
+        lua_rawgeti(L, idx, ishell+1);
+        LuaReadSelfEnergyEntry(L, lua_gettop(L), TB, iatom, ishell, &E);
+        lua_pop(L, 1);
+      }
+    }
+    else
+    {
+      LuaReadSelfEnergyEntry(L, idx, TB, iatom, -1, &E);
+    }
+    lua_pop(L, 1);
+  }
+  if(E.N!=0)
+  {
+    // single valued response functions are copied into block form of BlockSize 1
+    for(i=0;i<E.N;i++)
+    {
+      if(E.Sigma[i]->Block==true) continue;
+      rf = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      if(ResponseFunctionToBlockResponseFunction(E.Sigma[i], rf))
+      {
+        luaL_error(L, "Error CalculateG: could not copy the self energy of atom %d (%s) into block form\n", E.Atom[i]+1, TB->Cell.Atom[E.Atom[i]].Name);
+      }
+      if(E.Owned[i]) FreeResponsefunctionIncludingOriginalPointer(E.Sigma[i]);
+      E.Sigma[i] = rf;
+      E.Owned[i] = true;
+    }
+    Sigma = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+    if(ResponseFunctionDirectSum(E.Sigma, E.Offset, E.N, TB->NFermion, Sigma))
+    {
+      luaL_error(L, "Error CalculateG: could not merge the self energies per atom or shell into one\n");
+    }
+    for(i=0;i<E.N;i++)
+    {
+      if(E.Owned[i]) FreeResponsefunctionIncludingOriginalPointer(E.Sigma[i]);
+    }
+  }
+  free(E.Sigma);
+  free(E.Offset);
+  free(E.Atom);
+  free(E.Shell);
+  free(E.Owned);
+  return Sigma;
+}
+
 /* Calculate the Green's function from a given tight-binding Hamiltonian.
  * Input on stack:
  *   TB    : TightBinding_Type
  *   Sigma : Optional a self energy, either as a ResponseFunctionObject or as a table of Responsefunction objects or as a table of tables of response function objects
+ *           A table has one entry per atom: a response function for the atom, a table with a response function per shell, or 0 for a zero self energy (also per shell).
+ *           All must be of the same type and have the same mu, see LuaReadSelfEnergyPerAtom.
  *   Options
  *       Emin
  *       Emax
@@ -880,22 +1069,10 @@ static int LuaCalculateG(lua_State *L)
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
   if(len==2)
   {
-    if(lua_istable(L, 2))
-    {
-      //TODO: read list of response functions and create diagonal response function from this.
-      return luaL_error(L, "Error Self energy per atom or per atom and shell not jet implemented");
-      Sigma=(ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
-      FreeSigma=true;
-      // read in a table of length a->Cell.Natoms
-      // for each atom (i) read in
-      //    -- a repsonse function of dimension sum_{j=0}^{a->Cell.Atom[i].Nshell} a->Cell.Atom[i].shelldegeneracy[j]
-      //    -- or a list of length a->Cell.Atom[i].Nshell
-      //          -- for each shell (j) read in a response function of dimension a->Cell.Atom[i].shelldegeneracy[j]
-      // merge these response functions into one.
-      
-      
-      
-      
+    if(lua_istable(L, 2) && !LuaIsResponseFunctionObject(L, 2))
+    { // a self energy per atom or per atom and shell, merged into one
+      Sigma = LuaReadSelfEnergyPerAtom(L, 2, a);
+      FreeSigma = (Sigma!=NULL);
     }
     else
     {

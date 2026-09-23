@@ -6529,3 +6529,275 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToTightBinding(BlockNaturalImpurityOrb
   //TODO: BlockNaturalImpurityOrbitalMatrixType to TB
   return 0;
 }
+
+
+/*  =========================================================================
+ *  Direct sums
+ *
+ *  Given m response functions A[i] of the same type with block sizes n_i and an offset Offset[i] each, return
+ *  the response function B of block size BlockSize that is block diagonal, with A[i] in the rows and columns
+ *  Offset[i] ... Offset[i]+n_i-1. A[i] may be NULL, which is a zero response function. The blocks may not
+ *  overlap; rows and columns that no A[i] covers are zero. Nothing is transformed, the numbers of A[i] are
+ *  copied into place. Chains and baths of different length are padded with zero blocks, which couple to
+ *  nothing and so do not change the function.
+ *  The result is complex if any A[i] is complex. mu is taken from the first A[i] that is not NULL, the
+ *  caller is expected to have checked that they are equal.
+ *  ========================================================================= */
+
+/*  Copy the n by n block (row major) that starts at element Astart of A into the Nj wide matrix B, with its
+ *  first element at element Bstart of B. A is real (ARe) or complex (A) according to AQComplex and likewise
+ *  B, B can only be real if A is real.
+ */
+static void CopyBlockIntoDirectSum(double * const BRe, Complex16 * const B, uint32_t const BQComplex, uint32_t const Bstart, uint32_t const Nj, double const * const ARe, Complex16 const * const A, uint32_t const AQComplex, uint32_t const Astart, uint32_t const n)
+{
+  uint32_t i,j;
+  for(i=0;i<n;i++)
+  {
+    for(j=0;j<n;j++)
+    {
+      if(BQComplex)
+      {
+        if(AQComplex)
+        {
+          B[Bstart+i*Nj+j] = A[Astart+i*n+j];
+        }
+        else
+        {
+          B[Bstart+i*Nj+j].Re = ARe[Astart+i*n+j];
+          B[Bstart+i*Nj+j].Im = 0;
+        }
+      }
+      else
+      {
+        BRe[Bstart+i*Nj+j] = ARe[Astart+i*n+j];
+      }
+    }
+  }
+}
+
+/*  For a list of poles the poles of all A[i] are put in one list, each with its weight in block i and zeros
+ *  elsewhere. Poles of different A[i] at the same energy are then merged into one pole with a block diagonal
+ *  weight by BlockListOfPolesMergeDegeneratePoles with its standard distance (a few DBL_EPSILON times the
+ *  band width), which keeps the number of poles from growing with m when all A[i] are on one energy grid.
+ */
+uint32_t BlockListOfPolesDirectSum(BlockListOfPoles const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockListOfPoles * const B)
+{
+  uint32_t i,p,q,n=BlockSize,stride=1+BlockSize*BlockSize;
+  bool first=true;
+  B->BlockSize = BlockSize;
+  B->N = 0;
+  B->QComplex = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    B->N += A[i]->N;
+    B->QComplex |= A[i]->QComplex;
+  }
+  if(InitBlockListOfPoles(B))
+  {
+    printf("InitBlockListOfPoles failed in BlockListOfPolesDirectSum\n");
+    return 1;
+  }
+  strcpy(B->Name, "Direct sum");
+  p=0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; first=false;}
+    for(q=0;q<A[i]->N;q++)
+    {
+      if(B->QComplex) B->V[p*stride].Re = (A[i]->QComplex) ? (A[i]->V[q*(1+Sqr(A[i]->BlockSize))].Re) : (A[i]->VRe[q*(1+Sqr(A[i]->BlockSize))]);
+      else            B->VRe[p*stride]  = A[i]->VRe[q*(1+Sqr(A[i]->BlockSize))];
+      CopyBlockIntoDirectSum(B->VRe, B->V, B->QComplex, p*stride+1+Offset[i]*n+Offset[i], n, A[i]->VRe, A[i]->V, A[i]->QComplex, q*(1+Sqr(A[i]->BlockSize))+1, A[i]->BlockSize);
+      p++;
+    }
+    CopyBlockIntoDirectSum(B->a0Re, B->a0, B->QComplex, Offset[i]*n+Offset[i], n, A[i]->a0Re, A[i]->a0, A[i]->QComplex, 0, A[i]->BlockSize);
+  }
+  return BlockListOfPolesMergeDegeneratePoles(B, -1, false);
+}
+
+uint32_t BlockTriDiagonalMatrixDirectSum(BlockTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockTriDiagonalMatrixType * const B)
+{
+  uint32_t i,k,n=BlockSize;
+  bool first=true;
+  B->BlockSize = BlockSize;
+  B->N = 0;
+  B->QComplex = 0;
+  B->mu = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(A[i]->N > B->N) B->N = A[i]->N;
+    B->QComplex |= A[i]->QComplex;
+  }
+  if(InitBlockTridiagonalMatrix(B))
+  {
+    printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDirectSum\n");
+    return 1;
+  }
+  strcpy(B->Name, "Direct sum");
+  // InitBlockTridiagonalMatrix sets b0 to the identity, here it is built from the blocks of A
+  for(k=0;k<n*n;k++)
+  {
+    if(B->N==0) break;
+    if(B->QComplex) {B->b[k].Re=0; B->b[k].Im=0;}
+    else            B->bRe[k]=0;
+  }
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; first=false;}
+    for(k=0;k<=A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->aRe, B->a, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->aRe, A[i]->a, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+    for(k=0;k<A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->bRe, B->b, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->bRe, A[i]->b, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+  }
+  return 0;
+}
+
+uint32_t BlockAndersonMatrixDirectSum(BlockAndersonMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockAndersonMatrixType * const B)
+{
+  uint32_t i,k,n=BlockSize;
+  bool first=true;
+  B->BlockSize = BlockSize;
+  B->N = 0;
+  B->QComplex = 0;
+  B->mu = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(A[i]->N > B->N) B->N = A[i]->N;
+    B->QComplex |= A[i]->QComplex;
+  }
+  if(InitBlockAndersonMatrix(B))
+  {
+    printf("InitBlockAndersonMatrix failed in BlockAndersonMatrixDirectSum\n");
+    return 1;
+  }
+  strcpy(B->Name, "Direct sum");
+  // InitBlockAndersonMatrix sets b0 to the identity, here it is built from the blocks of A
+  for(k=0;k<n*n;k++)
+  {
+    if(B->N==0) break;
+    if(B->QComplex) {B->b[k].Re=0; B->b[k].Im=0;}
+    else            B->bRe[k]=0;
+  }
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; first=false;}
+    for(k=0;k<=A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->aRe, B->a, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->aRe, A[i]->a, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+    for(k=0;k<A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->bRe, B->b, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->bRe, A[i]->b, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+  }
+  return 0;
+}
+
+/*  direct sum of the n_i by n_i compact matrices A[i] (NULL is zero) into the BlockSize by BlockSize matrix B */
+static uint32_t CompactMatrixDirectSum(CompactMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, CompactMatrixType * const B)
+{
+  uint32_t i;
+  B->Ni = BlockSize;
+  B->Nj = BlockSize;
+  B->QComplex = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]!=NULL) B->QComplex |= A[i]->QComplex;
+  }
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in CompactMatrixDirectSum\n");
+    return 1;
+  }
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    CopyBlockIntoDirectSum(B->VRe, B->V, B->QComplex, Offset[i]*BlockSize+Offset[i], BlockSize, A[i]->VRe, A[i]->V, A[i]->QComplex, 0, A[i]->Ni);
+  }
+  return 0;
+}
+
+/*  a0, val and con are summed, TMT is calculated from the summed val and con */
+uint32_t BlockNaturalImpurityOrbitalMatrixDirectSum(BlockNaturalImpurityOrbitalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockNaturalImpurityOrbitalMatrixType * const B)
+{
+  uint32_t i, ret=0;
+  bool first=true;
+  BlockTriDiagonalMatrixType const **val = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  BlockTriDiagonalMatrixType const **con = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  CompactMatrixType const **a0 = (CompactMatrixType const **)malloc(m*sizeof(CompactMatrixType*));
+  if((val==NULL)||(con==NULL)||(a0==NULL))
+  {
+    printf("malloc failed in BlockNaturalImpurityOrbitalMatrixDirectSum\n");
+    return 1;
+  }
+  B->BlockSize = BlockSize;
+  B->QComplex = 0;
+  B->mu = 0;
+  B->Epsilon = 0;
+  for(i=0;i<m;i++)
+  {
+    val[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->val));
+    con[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->con));
+    a0[i]  = (A[i]==NULL) ? (NULL) : (&(A[i]->a0));
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; B->Epsilon = A[i]->Epsilon; first=false;}
+    B->QComplex |= A[i]->QComplex;
+  }
+  strcpy(B->Name, "Direct sum");
+  if(BlockTriDiagonalMatrixDirectSum(val, Offset, m, BlockSize, &(B->val))) ret=1;
+  if(BlockTriDiagonalMatrixDirectSum(con, Offset, m, BlockSize, &(B->con))) ret=1;
+  if(CompactMatrixDirectSum(a0, Offset, m, BlockSize, &(B->a0))) ret=1;
+  if(ret==0) ret = SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
+  free(val);
+  free(con);
+  free(a0);
+  return ret;
+}
+
+/*  a0, b0, val and con are summed. kBT, only used to generate the representation, is taken from the first */
+uint32_t BlockDoubleTriDiagonalMatrixDirectSum(BlockDoubleTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockDoubleTriDiagonalMatrixType * const B)
+{
+  uint32_t i, ret=0;
+  bool first=true;
+  BlockTriDiagonalMatrixType const **val = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  BlockTriDiagonalMatrixType const **con = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  CompactMatrixType const **a0 = (CompactMatrixType const **)malloc(m*sizeof(CompactMatrixType*));
+  CompactMatrixType const **b0 = (CompactMatrixType const **)malloc(m*sizeof(CompactMatrixType*));
+  if((val==NULL)||(con==NULL)||(a0==NULL)||(b0==NULL))
+  {
+    printf("malloc failed in BlockDoubleTriDiagonalMatrixDirectSum\n");
+    return 1;
+  }
+  B->BlockSize = BlockSize;
+  B->mu = 0;
+  B->kBT = 0;
+  for(i=0;i<m;i++)
+  {
+    val[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->val));
+    con[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->con));
+    a0[i]  = (A[i]==NULL) ? (NULL) : (&(A[i]->a0));
+    b0[i]  = (A[i]==NULL) ? (NULL) : (&(A[i]->b0));
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; B->kBT = A[i]->kBT; first=false;}
+  }
+  strcpy(B->Name, "Direct sum");
+  if(BlockTriDiagonalMatrixDirectSum(val, Offset, m, BlockSize, &(B->val))) ret=1;
+  if(BlockTriDiagonalMatrixDirectSum(con, Offset, m, BlockSize, &(B->con))) ret=1;
+  if(CompactMatrixDirectSum(a0, Offset, m, BlockSize, &(B->a0))) ret=1;
+  if(CompactMatrixDirectSum(b0, Offset, m, BlockSize, &(B->b0))) ret=1;
+  SetBlockDoubleTriDiagonalMatrixQComplex(B);
+  free(val);
+  free(con);
+  free(a0);
+  free(b0);
+  return ret;
+}

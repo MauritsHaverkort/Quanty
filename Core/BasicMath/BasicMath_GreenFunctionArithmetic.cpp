@@ -5176,6 +5176,82 @@ int ResponseFunctionToBlockResponseFunction(ResponsefunctionType const * const M
 }
 
 
+/*  The direct sum of m block response functions A[i] of one type (NULL is a zero response function), each
+ *  placed at the rows and columns Offset[i] ... Offset[i]+n_i-1 of a response function of block size
+ *  BlockSize. See BlockListOfPolesDirectSum and its siblings. The A[i] must all be block response functions
+ *  of the same type, which is checked, and have the same mu, which is left to the caller.
+ *
+ *  On exit Mout is a block response function of upper case type, i.e. C controls the allocation.
+ */
+int ResponseFunctionDirectSum(ResponsefunctionType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, ResponsefunctionType * const Mout)
+{
+  uint32_t i, ret=1;
+  char type=0;
+  void const **data = (void const **)malloc(m*sizeof(void*));
+  if(data==NULL)
+  {
+    printf("malloc failed in ResponseFunctionDirectSum\n");
+    return 1;
+  }
+  for(i=0;i<m;i++)
+  {
+    data[i] = (A[i]==NULL) ? (NULL) : (A[i]->data);
+    if(A[i]==NULL) continue;
+    if(A[i]->Block!=true)
+    {
+      printf("Error in ResponseFunctionDirectSum: response function %i is not a block response function\n", i+1);
+      free(data);
+      return 1;
+    }
+    if(type==0) type = A[i]->type|32;
+    if((A[i]->type|32)!=type)
+    {
+      printf("Error in ResponseFunctionDirectSum: response function %i is of type %c and not of type %c as the ones before\n", i+1, A[i]->type, type);
+      free(data);
+      return 1;
+    }
+  }
+  if(type==0)
+  {
+    printf("Error in ResponseFunctionDirectSum: all response functions are zero, the type of the sum is not defined\n");
+    free(data);
+    return 1;
+  }
+  Mout->type = type & ~32;  // upper case, C controls the allocation
+  Mout->Block = true;
+  Mout->data = NULL;
+  Mout->NSuggestedGridPoints = 0;
+  Mout->SuggestedGrid = NULL;
+  switch(type)
+  {
+    case 'l':
+      Mout->data = malloc(sizeof(BlockListOfPoles));
+      ret = BlockListOfPolesDirectSum((BlockListOfPoles const **)data, Offset, m, BlockSize, (BlockListOfPoles*)Mout->data);
+      break;
+    case 't':
+      Mout->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+      ret = BlockTriDiagonalMatrixDirectSum((BlockTriDiagonalMatrixType const **)data, Offset, m, BlockSize, (BlockTriDiagonalMatrixType*)Mout->data);
+      break;
+    case 'a':
+      Mout->data = malloc(sizeof(BlockAndersonMatrixType));
+      ret = BlockAndersonMatrixDirectSum((BlockAndersonMatrixType const **)data, Offset, m, BlockSize, (BlockAndersonMatrixType*)Mout->data);
+      break;
+    case 'n':
+      Mout->data = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+      ret = BlockNaturalImpurityOrbitalMatrixDirectSum((BlockNaturalImpurityOrbitalMatrixType const **)data, Offset, m, BlockSize, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
+      break;
+    case 'd':
+      Mout->data = malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+      ret = BlockDoubleTriDiagonalMatrixDirectSum((BlockDoubleTriDiagonalMatrixType const **)data, Offset, m, BlockSize, (BlockDoubleTriDiagonalMatrixType*)Mout->data);
+      break;
+    default:
+      printf("Error in ResponseFunctionDirectSum: unrecognized type of response function: %c\n", type);
+  }
+  free(data);
+  return ret;
+}
+
+
 /*
  *
  */

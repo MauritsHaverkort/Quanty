@@ -56,6 +56,7 @@ uint32_t NTriMaxOr(uint32_t const NTriMax, uint32_t const N);
 int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth);
 int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
 int ResponseFunctionToBlockResponseFunction(ResponsefunctionType const * const Min, ResponsefunctionType * const Mout);
+int ResponseFunctionDirectSum(ResponsefunctionType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, ResponsefunctionType * const Mout);
 int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate);
 int ResponsefunctionTruncate(ResponsefunctionType *M, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
 int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
