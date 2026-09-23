@@ -902,8 +902,15 @@ static int LuaCalculateG(lua_State *L)
       Sigma = luaL_checkResponsefunction(L, 2);
       if(Sigma->Block!=true)
       {
-        //TODO:
-        return luaL_error(L, "Error need to transform list of poles to Block list of poles");
+        // a single valued self energy is copied into the block form of the same type with BlockSize 1
+        ResponsefunctionType *SigmaBlock = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+        if(ResponseFunctionToBlockResponseFunction(Sigma, SigmaBlock))
+        {
+          return luaL_error(L, "Error CalculateG: could not copy the self energy into block form\n");
+        }
+        if(FreeSigma==true) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+        Sigma = SigmaBlock;
+        FreeSigma = true;
       }
       switch(Sigma->type)
       {
@@ -979,7 +986,7 @@ static int LuaCalculateG(lua_State *L)
   free(Options.Nk);
   if(FreeSigma==true)
   {
-    FreeResponsefunction(Sigma);
+    FreeResponsefunctionIncludingOriginalPointer(Sigma);
   }
   if(strcmp(Options.Type, "ListOfPoles")!=0)
   {

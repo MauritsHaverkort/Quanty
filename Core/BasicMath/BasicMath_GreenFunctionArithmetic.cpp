@@ -5033,6 +5033,149 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
 }
 
 
+/*  Copy a response function in its single valued (non-block) form into the block form of the same type, with
+ *  BlockSize=1. The numbers are copied, nothing is transformed, and the result evaluates to the same function:
+ *    l -> L  ListOfPoles                 to BlockListOfPoles
+ *    t -> T  TriDiagonalMatrixType       to BlockTriDiagonalMatrixType
+ *    a -> A  AndersonMatrixType          to BlockAndersonMatrixType
+ *    d -> D  DoubleTriDiagonalMatrixType to BlockDoubleTriDiagonalMatrixType
+ *    n -> N  BADoubleTriDiagonalMatrixType to BlockNaturalImpurityOrbitalMatrixType
+ *  The last one is not a pure copy, the two forms differ:
+ *    single valued  G = a0 + b0^2 (Gval + Gcon)
+ *    block          G = a0 +       Gval + Gcon
+ *  so b0 is multiplied into the head of both chains, a[0] -> b0^2 a[0] and b[0] -> b0 b[0]. The derived numbers
+ *  acvB, acvA, acvBA, bvB0, bcB0, bvA0 and bcA0 of the single valued form are not needed, the block form keeps
+ *  their equivalent in TMT, which is calculated from val and con.
+ *
+ *  On exit Mout is a block response function of upper case type, i.e. C controls the allocation. Mout->data is
+ *  allocated here.
+ */
+int ResponseFunctionToBlockResponseFunction(ResponsefunctionType const * const Min, ResponsefunctionType * const Mout)
+{
+  uint32_t i;
+  if(Min->Block==true)
+  {
+    printf("Error in ResponseFunctionToBlockResponseFunction: the response function is already a block response function\n");
+    return 1;
+  }
+  Mout->type = Min->type & ~32;  // upper case, C controls the allocation
+  Mout->Block = true;
+  Mout->data = NULL;
+  Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
+  if(Mout->NSuggestedGridPoints==0)
+  {
+    Mout->SuggestedGrid=NULL;
+  }
+  else
+  {
+    Mout->SuggestedGrid= (double*)malloc(Mout->NSuggestedGridPoints*sizeof(double));
+    memcpy(Mout->SuggestedGrid, Min->SuggestedGrid, Mout->NSuggestedGridPoints*sizeof(double));
+  }
+  switch (Min->type|32)
+  {
+    case 'l':
+    {
+      Mout->data = malloc(sizeof(BlockListOfPoles));
+      if(CopyListOfPolesToBlockListOfPoles((ListOfPoles*)Min->data, (BlockListOfPoles*)Mout->data)) return 1;
+    }
+    break;
+    case 't':
+    {
+      TriDiagonalMatrixType const * const A = (TriDiagonalMatrixType*)Min->data;
+      BlockTriDiagonalMatrixType * const B = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
+      Mout->data = B;
+      B->N = A->N;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      if(InitBlockTridiagonalMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      memcpy(B->aRe, A->a, (A->N+1)*sizeof(double));
+      memcpy(B->bRe, A->b, (A->N)*sizeof(double));
+    }
+    break;
+    case 'a':
+    {
+      AndersonMatrixType const * const A = (AndersonMatrixType*)Min->data;
+      BlockAndersonMatrixType * const B = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
+      Mout->data = B;
+      B->N = A->N;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      if(InitBlockAndersonMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      memcpy(B->aRe, A->a, (A->N+1)*sizeof(double));
+      memcpy(B->bRe, A->b, (A->N)*sizeof(double));
+    }
+    break;
+    case 'd':
+    {
+      DoubleTriDiagonalMatrixType const * const A = (DoubleTriDiagonalMatrixType*)Min->data;
+      BlockDoubleTriDiagonalMatrixType * const B = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+      Mout->data = B;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      B->val.N = A->val.N;
+      B->con.N = A->con.N;
+      if(InitBlockDoubleTriDiagonalMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      B->kBT = A->kBT;
+      B->a0.VRe[0] = A->a0;
+      B->b0.VRe[0] = A->b0;
+      strcpy(B->val.Name, A->val.Name);
+      B->val.mu = A->val.mu;
+      memcpy(B->val.aRe, A->val.a, (A->val.N+1)*sizeof(double));
+      memcpy(B->val.bRe, A->val.b, (A->val.N)*sizeof(double));
+      strcpy(B->con.Name, A->con.Name);
+      B->con.mu = A->con.mu;
+      memcpy(B->con.aRe, A->con.a, (A->con.N+1)*sizeof(double));
+      memcpy(B->con.bRe, A->con.b, (A->con.N)*sizeof(double));
+    }
+    break;
+    case 'n':
+    {
+      BADoubleTriDiagonalMatrixType const * const A = (BADoubleTriDiagonalMatrixType*)Min->data;
+      BlockNaturalImpurityOrbitalMatrixType * const B = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+      Mout->data = B;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      B->val.N = A->val.N;
+      B->con.N = A->con.N;
+      if(InitBlockNaturalImpurityOrbitalMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      B->Epsilon = A->Epsilon;
+      B->a0.VRe[0] = A->a0;
+      strcpy(B->val.Name, A->val.Name);
+      B->val.mu = A->val.mu;
+      memcpy(B->val.aRe, A->val.a, (A->val.N+1)*sizeof(double));
+      memcpy(B->val.bRe, A->val.b, (A->val.N)*sizeof(double));
+      strcpy(B->con.Name, A->con.Name);
+      B->con.mu = A->con.mu;
+      memcpy(B->con.aRe, A->con.a, (A->con.N+1)*sizeof(double));
+      memcpy(B->con.bRe, A->con.b, (A->con.N)*sizeof(double));
+      // the overall scaling b0 of the single valued form goes into the head of both chains
+      B->val.aRe[0] *= Sqr(A->b0);
+      B->con.aRe[0] *= Sqr(A->b0);
+      if(A->val.N>0) B->val.bRe[0] *= A->b0;
+      if(A->con.N>0) B->con.bRe[0] *= A->b0;
+      // TMT follows from val and con
+      FreeCompactMatrix(&(B->TMT));
+      if(SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B)) return 1;
+    }
+    break;
+    default:
+    {
+      printf("Error in ResponseFunctionToBlockResponseFunction: unrecognized type of response function: %c\n", Min->type);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
 /*
  *
  */

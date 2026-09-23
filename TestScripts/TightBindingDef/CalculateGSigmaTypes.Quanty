@@ -6,7 +6,8 @@
 -- Each type embeds its own bath (poles, a chain, a star, two chains), so they go through different
 -- matrices, which have the same eigenvalues with weight on the lattice orbitals.
 -- All four combinations of real or complex H(k) and real or complex Sigma are tested, both on a
--- uniform energy mesh (Emin, Emax, NE) and on an EnergyGrid, plus a static self energy.
+-- uniform energy mesh (Emin, Emax, NE) and on an EnergyGrid, plus a static self energy, plus a single valued
+-- (non-block) self energy of each type on a one orbital model.
 
 print("--------------------------------------------------------")
 print("-- Begin TightBinding - CalculateG with Sigma types  --")
@@ -86,6 +87,29 @@ for _, HComplex in ipairs({false, true}) do
   GRef = CalculateG(HTB, ResponseFunction.ChangeType(SigmaStatic, "ListOfPoles"), {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
   GTri = CalculateG(HTB, SigmaStatic, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
   Compare(GRef, GTri, Htext.."static Sigma, Tri")
+end
+
+-- a single valued (non-block) self energy on a one orbital model is copied into the block form of the same
+-- type with BlockSize 1. The reference is the same self energy written as a block list of poles of 1 by 1
+-- matrices. The single valued natural impurity orbital form has an overall scale b0 that the block form does
+-- not have, so the conversion from "Nat" is also a test that b0 ends up in the chains.
+HTB1 = NewTightBinding()
+HTB1.Name = "One band model"
+HTB1.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB1.Atoms = { {"A", {0,0,0}, {{"s", {"s"}}}} }
+HTB1.Hopping = {{"A.s","A.s",{ 1,0,0},{{-1}}},
+                {"A.s","A.s",{-1,0,0},{{-1}}},
+                {"A.s","A.s",{ 0,1,0},{{-0.5}}},
+                {"A.s","A.s",{0,-1,0},{{-0.5}}},
+                {"A.s","A.s",{ 0,0,0},{{0.2}}}}
+SigmaScalar = ResponseFunction.New({ {0.3, -1, 0.5, 2}, {0.4, 0.2, 0.7}, mu=0, type="ListOfPoles"})
+SigmaBlock1 = ResponseFunction.New({ {Matrix.New({{0.3}}), -1, 0.5, 2}, {Matrix.New({{0.4}}), Matrix.New({{0.2}}), Matrix.New({{0.7}})}, mu=0, type="ListOfPoles"})
+GRefMesh = CalculateG(HTB1, SigmaBlock1, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
+GRefGrid = CalculateG(HTB1, SigmaBlock1, {{"Nk",Nk},{"EnergyGrid",EGrid}})
+for _, t in ipairs({"ListOfPoles", "Tri", "And", "Nat", "DoubleTri"}) do
+  SigmaX = ResponseFunction.ChangeType(SigmaScalar, t)
+  Compare(GRefMesh, CalculateG(HTB1, SigmaX, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}}), "one band, single valued Sigma, "..t..", Emin Emax NE")
+  Compare(GRefGrid, CalculateG(HTB1, SigmaX, {{"Nk",Nk},{"EnergyGrid",EGrid}}), "one band, single valued Sigma, "..t..", EnergyGrid")
 end
 
 print("--------------------------------------------------------")
