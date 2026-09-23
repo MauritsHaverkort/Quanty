@@ -67,6 +67,9 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalI
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue, double const MinimalPoleDistance);
 uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B);
 uint32_t BlockTriDiagonalMatrixInversedToCompactMatrix(BlockTriDiagonalMatrixType const * const A, CompactMatrixType * const B);
+uint32_t BlockAndersonMatrixInversedToCompactMatrix(BlockAndersonMatrixType const * const A, CompactMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * const A, CompactMatrixType * const B);
+uint32_t BlockDoubleTriDiagonalMatrixInversedToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * const A, CompactMatrixType * const B);
 
 uint32_t TightBindingHamiltonianToDensityMatrix(TightBindingDef const * const A, int Nk[3], CompactMatrixType *rho, double mu, double kbT);
 uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
@@ -76,6 +79,12 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
 uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
 uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockAndersonMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockAndersonMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockNaturalImpurityOrbitalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockNaturalImpurityOrbitalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockDoubleTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockDoubleTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
 uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);

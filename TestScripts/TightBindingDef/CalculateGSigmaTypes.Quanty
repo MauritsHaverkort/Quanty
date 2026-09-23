@@ -1,14 +1,15 @@
--- CalculateG with a self energy given as a block tridiagonal matrix (type "Tri") must give the same
--- local Green's function as with the same self energy given as a block list of poles.
--- The list of poles is the reference and is written by hand; the tridiagonal matrix is made from it
--- with ResponseFunction.ChangeType. With a list of poles each pole is embedded as a full block, with
--- a tridiagonal matrix the chain is embedded, so the two go through different matrices, which have
--- the same eigenvalues with weight on the lattice orbitals.
+-- CalculateG with a self energy given as a block tridiagonal matrix ("Tri"), a block Anderson matrix
+-- ("And"), a block natural impurity orbital matrix ("Nat") or a block double tridiagonal matrix
+-- ("DoubleTri") must give the same local Green's function as with the same self energy given as a
+-- block list of poles. The list of poles is the reference and is written by hand; the other types are
+-- made from it with ResponseFunction.ChangeType, and are checked to be the same self energy first.
+-- Each type embeds its own bath (poles, a chain, a star, two chains), so they go through different
+-- matrices, which have the same eigenvalues with weight on the lattice orbitals.
 -- All four combinations of real or complex H(k) and real or complex Sigma are tested, both on a
 -- uniform energy mesh (Emin, Emax, NE) and on an EnergyGrid, plus a static self energy.
 
 print("--------------------------------------------------------")
-print("-- Begin TightBinding - CalculateG with Sigma as Tri  --")
+print("-- Begin TightBinding - CalculateG with Sigma types  --")
 print("--------------------------------------------------------")
 
 -- a two band model on a cubic lattice. If QComplex the hopping along x couples the two bands with
@@ -48,7 +49,7 @@ for i = 0, 300 do
 end
 
 -- evaluate both at energies on and between the poles, with a small broadening
-function Compare(GRef, GTri, text)
+function Compare(GRef, GTri, text, tol)
   local zero = 0*GRef(0,0.1)
   local maxdiff = 0
   for omega = -9, 9, 0.037 do
@@ -59,30 +60,34 @@ function Compare(GRef, GTri, text)
       end
     end
   end
-  print(string.format("%-45s max |G_LP - G_Tri| = %.3e", text, maxdiff))
-  if maxdiff > 1E-10 then
-    error("CalculateG with Sigma as Tri differs from Sigma as ListOfPoles: "..text.."\n", 1)
+  print(string.format("%-55s max |G_LP - G_X| = %.3e", text, maxdiff))
+  if maxdiff > (tol or 1E-10) then
+    error("CalculateG with Sigma of another type differs from Sigma as ListOfPoles: "..text.."\n", 1)
   end
 end
+
+Types = {"Tri", "And", "Nat", "DoubleTri"}
 
 for _, HComplex in ipairs({false, true}) do
   HTB = NewModel(HComplex)
+  Htext = HComplex and "complex H(k), " or "real H(k), "
   for _, S in ipairs({{SigmaReal, "real Sigma"}, {SigmaComplex, "complex Sigma"}}) do
-    SigmaLP  = S[1]
-    SigmaTri = ResponseFunction.ChangeType(SigmaLP, "Tri")
-    text = (HComplex and "complex H(k), " or "real H(k), ")..S[2]
-    GRef = CalculateG(HTB, SigmaLP,  {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
-    GTri = CalculateG(HTB, SigmaTri, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
-    Compare(GRef, GTri, text..", Emin Emax NE")
-    GRef = CalculateG(HTB, SigmaLP,  {{"Nk",Nk},{"EnergyGrid",EGrid}})
-    GTri = CalculateG(HTB, SigmaTri, {{"Nk",Nk},{"EnergyGrid",EGrid}})
-    Compare(GRef, GTri, text..", EnergyGrid")
+    SigmaLP = S[1]
+    GRefMesh = CalculateG(HTB, SigmaLP, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
+    GRefGrid = CalculateG(HTB, SigmaLP, {{"Nk",Nk},{"EnergyGrid",EGrid}})
+    for _, t in ipairs(Types) do
+      SigmaX = ResponseFunction.ChangeType(SigmaLP, t)
+      text = Htext..S[2]..", "..t
+      Compare(SigmaLP, SigmaX, text..", Sigma itself")
+      Compare(GRefMesh, CalculateG(HTB, SigmaX, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}}), text..", Emin Emax NE")
+      Compare(GRefGrid, CalculateG(HTB, SigmaX, {{"Nk",Nk},{"EnergyGrid",EGrid}}), text..", EnergyGrid")
+    end
   end
   GRef = CalculateG(HTB, ResponseFunction.ChangeType(SigmaStatic, "ListOfPoles"), {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
   GTri = CalculateG(HTB, SigmaStatic, {{"Nk",Nk},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
-  Compare(GRef, GTri, (HComplex and "complex H(k), " or "real H(k), ").."static Sigma")
+  Compare(GRef, GTri, Htext.."static Sigma, Tri")
 end
 
 print("--------------------------------------------------------")
-print("-- End TightBinding - CalculateG with Sigma as Tri    --")
+print("-- End TightBinding - CalculateG with Sigma types    --")
 print("--------------------------------------------------------")
