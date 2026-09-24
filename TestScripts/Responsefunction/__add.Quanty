@@ -244,6 +244,31 @@ for i, nb in ipairs({3, 12, 40}) do
 	end
 end
 
+-- ---------------------------------------------------------------------------
+-- Block functions of different block size can not be added
+-- ---------------------------------------------------------------------------
+-- MA is 3x3 and AddTestRealLP 2x2. The sum has to raise an error, for every
+-- combination of storage types, rather than read past the end of the smaller block.
+print("-- Block, different block sizes raise an error          --")
+G2List = {}
+for _, t in ipairs({"LP","Tri","And","Nat"}) do
+	G2List[#G2List+1] = ResponseFunction.ChangeType(AddTestRealLP(3), t)
+end
+for i = 1, #MAList do
+	for j = 1, #G2List do
+		local ok, msg = pcall(function() return MAList[i] + G2List[j] end)
+		if ok or (string.find(msg, "block size", 1, true) == nil) then
+			print("i=",i,"j=",j,msg)
+			error("adding response functions of different block size does not raise an error", 1)
+		end
+		ok, msg = pcall(function() return G2List[j] + MAList[i] end)
+		if ok or (string.find(msg, "block size", 1, true) == nil) then
+			print("i=",i,"j=",j,msg)
+			error("adding response functions of different block size does not raise an error", 1)
+		end
+	end
+end
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")
