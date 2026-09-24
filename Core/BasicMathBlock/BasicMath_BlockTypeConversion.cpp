@@ -1737,12 +1737,12 @@ uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMa
 // val is allocated with a minimal length of A->N * A->BlockSize
 uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val)
 {
-  uint32_t i,j,k,iBlock,jBlock;
-  char const *UPLO="U";
+  uint32_t j,k,iBlock,jBlock;
+  char const *UPLO="L";
   char const *VECT="N";
   const uint32_t N=A->N*A->BlockSize;
-  const uint32_t KD = A->BlockSize-1;
-  const uint32_t LDAB = A->BlockSize;
+  const uint32_t KD = 2*A->BlockSize-1;
+  const uint32_t LDAB = 2*A->BlockSize;
   TriDiagonalMatrixType M;
   int INFO=0;
   M.N=N;
@@ -1766,21 +1766,33 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
     }
     // use dsbtrd to transform A into a tri diagonal form
     //fill matrix AB
-    // if UPLO = 'U', AB(i,j-i) = A(i,j); (fortran and c column v.s. row major)
     j=0;
-    for(k=0;k<A->N;k++)
+    for(k=1;k<A->N;k++)
     {
-      i=0;
       for(iBlock=0;iBlock<A->BlockSize;iBlock++)
       {
         for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
         {
-          AB[j]=A->aRe[i];
-          i++;
+          AB[j]=A->aRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
           j++;
         }
-        j+=iBlock; // set the aditional values of the row to zero
+        for(jBlock=0;jBlock<A->BlockSize;jBlock++)
+        {
+          AB[j]=A->bRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=iBlock;
       }
+    }
+    k=A->N;
+    for(iBlock=0;iBlock<A->BlockSize;iBlock++)
+    {
+      for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
+      {
+        AB[j]=A->aRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+        j++;
+      }
+      j+=A->BlockSize+iBlock;
     }
     // Tridiagonalize the Block tridiagonal matrix
     dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &N, WORK, &INFO);
@@ -1810,22 +1822,33 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
       return 1;
     }
     //fill matrix AB
-    // if UPLO = 'U', AB(i,j-i) = A(i,j); (fortran and c column v.s. row major)
     j=0;
-    for(k=0;k<A->N;k++)
+    for(k=1;k<A->N;k++)
     {
-      i=0;
       for(iBlock=0;iBlock<A->BlockSize;iBlock++)
       {
         for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
         {
-          AB[j].Re=A->a[i].Re;
-          AB[j].Im=A->a[i].Im;
-          i++;
+          AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
           j++;
         }
-        j+=iBlock; // set the aditional values of the row to zero
+        for(jBlock=0;jBlock<A->BlockSize;jBlock++)
+        {
+          AB[j]=A->b[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=iBlock;
       }
+    }
+    k=A->N;
+    for(iBlock=0;iBlock<A->BlockSize;iBlock++)
+    {
+      for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
+      {
+        AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+        j++;
+      }
+      j+=A->BlockSize+iBlock;
     }
     // Tridiagonalize the Block tridiagonal matrix
     zhbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &N, WORK, &INFO);
