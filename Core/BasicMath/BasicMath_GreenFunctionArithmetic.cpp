@@ -1804,7 +1804,11 @@ static double CompactMatrixMaxElement(CompactMatrixType const * const M)
   return max;
 }
 
-/*  Step (ii) of ResponseFunctionDownfold for an effective Hamiltonian that is a chain,
+/*  Replaced by BlockTriDiagonalMatrixDownfoldChain in BasicMath_BlockTridiagonalMatrix.cpp,
+ *  which does the same projection by a band reduction of Ht instead of a block Lanczos of
+ *  the dense Ht, in the same gauge. Kept for its history; nothing calls it.
+ *
+ *  Step (ii) of ResponseFunctionDownfold for an effective Hamiltonian that is a chain,
  *  Appendix C1 of Zacinskis et al. rather than its Appendix C3.
  *
  *  Heff is the chain Atilde1, Btilde1, Atilde2, ... and the congruence with the isometry P
@@ -1839,7 +1843,7 @@ static double CompactMatrixMaxElement(CompactMatrixType const * const M)
  *
  *  HeffP is not allocated on entry.
  */
-static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax)
+int BlockTriDiagonalMatrixDownfoldChainOld(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax)
 {
   char name[] = "block of a chain";
   CompactMatrixType Ht, A1, D, Dfull, view;
@@ -1857,7 +1861,7 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
   if(Heff->QComplex) view.V = Heff->a; else view.VRe = Heff->aRe;
   if(CompactMatrixMultiply3('N','N','C',P,&view,P,&A1))
   {
-    printf("CompactMatrixMultiply3 failed in BlockTriDiagonalMatrixDownfoldChain\n");
+    printf("CompactMatrixMultiply3 failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
     goto Cleanup;
   }
   SquareCompactMatrixMakeHermitian(&A1);
@@ -1871,19 +1875,19 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
     if(Heff->QComplex) view.V = Heff->b; else view.VRe = Heff->bRe;
     if(CompactMatrixMultiply('*','N',P,&view,&D))
     {
-      printf("CompactMatrixMultiply failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("CompactMatrixMultiply failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     /*  Ht, the chain from its second block on, with D^* in its first block */
     if(BlockTriDiagonalMatrixToCompactMatrix(Heff,&Ht))
     {
-      printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     Dfull.Ni = Nsub; Dfull.Nj = Ht.Ni; Dfull.QComplex = D.QComplex;
     if(InitCompactMatrix(&Dfull)||SetCompactMatrixToZero(&Dfull))
     {
-      printf("InitCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("InitCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     for(i=0;i<Nsub;i++)
@@ -1904,7 +1908,7 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
      *  far end of the chain. */
     if(CompactMatrixBlockBandDiagonalize(&Ht,&Dfull,HeffP,SingularValue,NTri,Ht.Ni,true,false))
     {
-      printf("CompactMatrixBlockBandDiagonalize failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("CompactMatrixBlockBandDiagonalize failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     if((A1.QComplex!=0)&&(HeffP->QComplex==0)) RealBlockTridiagonalMatrixToComplex(HeffP);
@@ -1915,7 +1919,7 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
     HeffP->N = 0;
     if(InitBlockTridiagonalMatrix(HeffP))
     {
-      printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
   }
@@ -1999,8 +2003,8 @@ Cleanup:
  *
  *  There are two routes through step (ii) and the type of Gin picks one. An effective
  *  Hamiltonian that is a chain, which is what a tri-diagonal Gin has, takes Appendix C1:
- *  BlockTriDiagonalMatrixDownfoldChain projects it with a block Lanczos, nothing is
- *  diagonalised, and Gout comes back a chain of at most (M Ntilde / Nsub) blocks. Every
+ *  BlockTriDiagonalMatrixDownfoldChain projects it by a band reduction of the chain, nothing
+ *  is diagonalised, and Gout comes back a chain of at most (M Ntilde / Nsub) blocks. Every
  *  other type reaches step (ii) as a list of poles and takes Appendix C3, the congruence
  *  one weight at a time, and Gout comes back a star of as many poles as Heff has. NTriMax
  *  is a ceiling on the length of the chain the first route produces and the second route

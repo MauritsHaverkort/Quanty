@@ -642,6 +642,10 @@ int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * c
  *  coupling of order DBL_EPSILON |H|, and that has to end the chain.
  *
  *  mu is taken from A, as the list of poles route does.
+ *
+ *  The same machinery, one chain seen through a projection instead of two chains seen
+ *  through their heads, is the chain route of ResponseFunctionDownfold; both go through
+ *  BlockChainsSeenThroughV.
  */
 
 /*  A Hermitian matrix of NBlock blocks of size r (the last one padded with zeros), of which
@@ -856,6 +860,16 @@ static Complex16 BlockTriDiagonalMatrixElement(BlockTriDiagonalMatrixType const 
   return z;
 }
 
+/*  element (i,j) of a compact matrix, real or complex */
+static Complex16 CompactMatrixElementAsComplex(CompactMatrixType const * const A, uint32_t const i, uint32_t const j)
+{
+  Complex16 z;
+  if(A->QComplex) return A->V[(size_t)i*(A->Nj)+j];
+  z.Re = A->VRe[(size_t)i*(A->Nj)+j];
+  z.Im = 0;
+  return z;
+}
+
 /*  the singular value decomposition M = X diag(sv) VT of an m x n column major matrix, with
  *  X m x m and VT n x n. M is overwritten. */
 static int ColumnMajorSVD(uint32_t m, uint32_t n, Complex16 * const M, double * const sv, Complex16 * const X, Complex16 * const VT)
@@ -915,62 +929,81 @@ static int GrowChainBlocks(Complex16 ** const a, Complex16 ** const b, uint32_t 
   return 0;
 }
 
-/*  C = A + B, see the comment above HermitianBlockBandType. C is not allocated on entry. */
-int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType const * const B, BlockTriDiagonalMatrixType * const C, double const SingularValue)
+/*  The chain of
+ *
+ *    C(w) = a0 + sum_x V_x^+ [ (w - H_x)^{-1} ]_{11} V_x ,
+ *
+ *  the resolvent of the direct sum of the chains X[0] ... X[NX-1] seen through V_x, see the
+ *  comment above HermitianBlockBandType. Of every X[x] the blocks 1 ... N are used, a[0] and
+ *  b[0] are not, and V[x] is the coupling of the m directions of C to the active directions
+ *  of block 1 of X[x], column major, BlockSizeList[1] rows and m columns. a0 is m x m, row
+ *  major. real says that X, V and a0 are all real, and C then comes back real if every step
+ *  kept it so.
+ *
+ *  NTriMax, when set, cuts C after NTriMax blocks. After k steps the Krylov space lies in
+ *  the first k blocks of every X, so blocks 1 ... NTriMax of C and the couplings between
+ *  them only see blocks 1 ... NTriMax of every X, and the chains are cut there before the
+ *  reduction: the cut C is exact as far as it goes and costs nothing of the length of X.
+ *
+ *  C is not allocated on entry.
+ */
+static int BlockChainsSeenThroughV(uint32_t const NX, BlockTriDiagonalMatrixType const * const * const X, Complex16 const * const * const V, Complex16 const * const a0, uint32_t const m, double const mu, bool const real, double const SingularValue, uint32_t const NTriMax, BlockTriDiagonalMatrixType * const C)
 {
-  BlockTriDiagonalMatrixType const * const X[2] = {A, B};
-  uint32_t const m = A->BlockSize;
-  uint32_t const Kmax = Max(A->N, B->N);
-  uint32_t x,k,p,q,g,nh,n,r,rp,w,t,u,K=0,cap=16,ntail,Lb;
-  uint32_t s1[2], off1[2];
-  uint32_t *s=NULL, *off=NULL, *sOut=NULL;
+  uint32_t x,k,p,q,g,nh,n,r,rp,w,t,u,Kmax=0,K=0,cap=16,ntail,Lb,mX;
+  uint32_t *N=NULL, *s=NULL, *off=NULL, *s1=NULL, *off1=NULL, *sOut=NULL;
   double Hnorm=0, fa, fb, fbprev, ZeroH, ZeroV, svmax;
   double *sv=NULL;
   Complex16 one={1,0}, zero={0,0}, z, phase;
-  Complex16 *V=NULL, *Xs=NULL, *VT=NULL, *Qh=NULL, *Hh=NULL, *T1=NULL, *T2=NULL, *Cp=NULL;
+  Complex16 *Vh=NULL, *Xs=NULL, *VT=NULL, *Qh=NULL, *Hh=NULL, *T1=NULL, *Cp=NULL;
   Complex16 *Dm=NULL, *U=NULL, *Un=NULL, *M=NULL, *S=NULL, *b0=NULL;
   Complex16 *aOut=NULL, *bOut=NULL;
   HermitianBlockBandType H, Hn;
   int retval=1;
   H.L=NULL;
-  if(A->BlockSize!=B->BlockSize)
-  {
-    printf("Error in BlockTriDiagonalMatrixAdd: block sizes %u and %u differ\n",A->BlockSize,B->BlockSize);
-    return 1;
-  }
 
-  /*  the active size of block k of each chain, 0 behind its end, and where it sits in the
-   *  direct sum: the two first blocks together form the head, the others follow as A_2,
-   *  B_2, A_3, B_3, ... */
-  s   = (uint32_t*)calloc(2*((size_t)Kmax+2),sizeof(uint32_t));
-  off = (uint32_t*)calloc(2*((size_t)Kmax+2),sizeof(uint32_t));
-  if((s==NULL)||(off==NULL)) {printf("calloc failed in BlockTriDiagonalMatrixAdd\n"); goto Cleanup;}
-  for(x=0;x<2;x++)
+  /*  the length each chain is used to, and the active size of block k of each, 0 behind
+   *  its end, and where it sits in the direct sum: the first blocks of all chains together
+   *  form the head, the others follow as X0_2, X1_2, ..., X0_3, X1_3, ... */
+  N = (uint32_t*)malloc(NX*sizeof(uint32_t));
+  if(N==NULL) {printf("malloc failed in BlockChainsSeenThroughV\n"); goto Cleanup;}
+  for(x=0;x<NX;x++)
   {
-    for(k=1;k<=X[x]->N;k++) s[2*k+x] = X[x]->BlockSizeList[k];
+    N[x] = (NTriMax!=NTriMaxNoLimit) ? Min(X[x]->N,NTriMax) : X[x]->N;
+    Kmax = Max(Kmax,N[x]);
   }
-  s1[0] = s[2]; s1[1] = s[3];
-  off1[0] = 0;  off1[1] = s1[0];
-  nh = s1[0]+s1[1];
+  s    = (uint32_t*)calloc((size_t)NX*(Kmax+2),sizeof(uint32_t));
+  off  = (uint32_t*)calloc((size_t)NX*(Kmax+2),sizeof(uint32_t));
+  s1   = (uint32_t*)calloc(NX,sizeof(uint32_t));
+  off1 = (uint32_t*)calloc(NX,sizeof(uint32_t));
+  if((s==NULL)||(off==NULL)||(s1==NULL)||(off1==NULL)) {printf("calloc failed in BlockChainsSeenThroughV\n"); goto Cleanup;}
+  nh = 0;
+  for(x=0;x<NX;x++)
+  {
+    for(k=1;k<=N[x];k++) s[NX*k+x] = X[x]->BlockSizeList[k];
+    s1[x] = s[NX+x];
+    off1[x] = nh;
+    nh += s1[x];
+  }
   n = nh;
   for(k=2;k<=Kmax;k++)
   {
-    for(x=0;x<2;x++)
+    for(x=0;x<NX;x++)
     {
-      off[2*k+x] = n;
-      n += s[2*k+x];
+      off[NX*k+x] = n;
+      n += s[NX*k+x];
     }
   }
   /*  |H| <= max over the blocks of |a_k| + |b_k| + |b_{k-1}|, Frobenius norms */
-  for(x=0;x<2;x++)
+  for(x=0;x<NX;x++)
   {
+    mX = X[x]->BlockSize;
     fbprev=0;
-    for(k=1;k<=X[x]->N;k++)
+    for(k=1;k<=N[x];k++)
     {
       fa=0;
-      for(g=0;g<m*m;g++) {z=BlockTriDiagonalMatrixElement(X[x],'a',k,g/m,g%m); fa+=Sqr(z.Re)+Sqr(z.Im);}
+      for(g=0;g<mX*mX;g++) {z=BlockTriDiagonalMatrixElement(X[x],'a',k,g/mX,g%mX); fa+=Sqr(z.Re)+Sqr(z.Im);}
       fb=0;
-      if(k<X[x]->N) for(g=0;g<m*m;g++) {z=BlockTriDiagonalMatrixElement(X[x],'b',k,g/m,g%m); fb+=Sqr(z.Re)+Sqr(z.Im);}
+      if(k<N[x]) for(g=0;g<mX*mX;g++) {z=BlockTriDiagonalMatrixElement(X[x],'b',k,g/mX,g%mX); fb+=Sqr(z.Re)+Sqr(z.Im);}
       Hnorm = Max(Hnorm, sqrt(fa)+sqrt(fb)+fbprev);
       fbprev = sqrt(fb);
     }
@@ -988,32 +1021,32 @@ int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockT
   S  = (Complex16*)malloc((size_t)m*m*sizeof(Complex16));
   if((sOut==NULL)||(aOut==NULL)||(bOut==NULL)||(b0==NULL)||(sv==NULL)||(Dm==NULL)||(U==NULL)||(Un==NULL)||(M==NULL)||(S==NULL))
   {
-    printf("malloc failed in BlockTriDiagonalMatrixAdd\n");
+    printf("malloc failed in BlockChainsSeenThroughV\n");
     goto Cleanup;
   }
   if(nh==0) goto Assemble;
 
-  /*  V = ( c_A ; c_B ) on the head, c_X = b0_X^T, and its singular value decomposition */
-  V  = (Complex16*)calloc((size_t)nh*m,sizeof(Complex16));
+  /*  V of all chains stacked on the head, and its singular value decomposition */
+  Vh = (Complex16*)calloc((size_t)nh*m,sizeof(Complex16));
   Xs = (Complex16*)malloc((size_t)nh*nh*sizeof(Complex16));
   VT = (Complex16*)malloc((size_t)m*m*sizeof(Complex16));
   Qh = (Complex16*)malloc((size_t)nh*nh*sizeof(Complex16));
   Hh = (Complex16*)calloc((size_t)nh*nh,sizeof(Complex16));
-  T1 = (Complex16*)malloc((size_t)nh*Max(nh,m)*sizeof(Complex16));
-  Cp = (Complex16*)malloc((size_t)nh*Max(nh,m)*sizeof(Complex16));
-  if((V==NULL)||(Xs==NULL)||(VT==NULL)||(Qh==NULL)||(Hh==NULL)||(T1==NULL)||(Cp==NULL))
+  T1 = (Complex16*)malloc((size_t)Max(nh,m)*Max(nh,m)*sizeof(Complex16));
+  Cp = (Complex16*)malloc((size_t)Max(nh,m)*Max(nh,m)*sizeof(Complex16));
+  if((Vh==NULL)||(Xs==NULL)||(VT==NULL)||(Qh==NULL)||(Hh==NULL)||(T1==NULL)||(Cp==NULL))
   {
-    printf("malloc failed in BlockTriDiagonalMatrixAdd\n");
+    printf("malloc failed in BlockChainsSeenThroughV\n");
     goto Cleanup;
   }
-  for(x=0;x<2;x++)
+  for(x=0;x<NX;x++)
   {
     for(p=0;p<s1[x];p++)
     {
-      for(q=0;q<m;q++) V[off1[x]+p+q*nh] = BlockTriDiagonalMatrixElement(X[x],'b',0,q,p);
+      for(q=0;q<m;q++) Vh[off1[x]+p+q*nh] = V[x][p+q*s1[x]];
     }
   }
-  memcpy(Cp,V,(size_t)nh*m*sizeof(Complex16));
+  memcpy(Cp,Vh,(size_t)nh*m*sizeof(Complex16));
   if(ColumnMajorSVD(nh,m,Cp,sv,Xs,VT)) goto Cleanup;
   svmax = sv[0];
   ZeroV = Max(SingularValue, 1000*DBL_EPSILON*svmax);
@@ -1047,7 +1080,7 @@ int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockT
     }
   }
   /*  b0 = (E^+ V)^T, Hermitian for a V of full rank */
-  zgemm("C","N",&r,&m,&nh,&one,Qh,&nh,V,&nh,&zero,Cp,&r);
+  zgemm("C","N",&r,&m,&nh,&one,Qh,&nh,Vh,&nh,&zero,Cp,&r);
   if(r==m)
   {
     StoreHermitianBlock(Cp,m,T1,m);
@@ -1058,19 +1091,19 @@ int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockT
     for(p=0;p<r;p++) for(q=0;q<m;q++) b0[q*m+p] = Cp[p+q*r];
   }
 
-  /*  the band: head rotated by Qh, then A_2, B_2, A_3, ... Its half bandwidth w is the
-   *  largest distance between two coupled directions. */
+  /*  the band: head rotated by Qh, then the second blocks of all chains, the third, ...
+   *  Its half bandwidth w is the largest distance between two coupled directions. */
   w = nh-1;
-  if(Kmax>=2) w = Max(w, off[2*2+1]+s[2*2+1]-1);
+  if(Kmax>=2) w = Max(w, off[NX*2+NX-1]+s[NX*2+NX-1]-1);
   for(k=2;k<Kmax;k++)
   {
-    for(x=0;x<2;x++)
+    for(x=0;x<NX;x++)
     {
-      if((s[2*k+x]!=0)&&(s[2*(k+1)+x]!=0)) w = Max(w, off[2*(k+1)+x]+s[2*(k+1)+x]-1-off[2*k+x]);
+      if((s[NX*k+x]!=0)&&(s[NX*(k+1)+x]!=0)) w = Max(w, off[NX*(k+1)+x]+s[NX*(k+1)+x]-1-off[NX*k+x]);
     }
   }
   if(InitHermitianBlockBand(&H, n, r, Max(1,(w+r-1)/r))) goto Cleanup;
-  for(x=0;x<2;x++)
+  for(x=0;x<NX;x++)
   {
     for(p=0;p<s1[x];p++)
     {
@@ -1080,31 +1113,31 @@ int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockT
   zgemm("N","N",&nh,&nh,&nh,&one,Hh,&nh,Qh,&nh,&zero,T1,&nh);
   zgemm("C","N",&nh,&nh,&nh,&one,Qh,&nh,T1,&nh,&zero,Hh,&nh);
   for(q=0;q<nh;q++) for(p=q;p<nh;p++) HermitianBlockBandSet(&H,p,q,Hh[p+q*nh]);
-  for(x=0;x<2;x++)
+  for(x=0;x<NX;x++)
   {
-    if(s[2*2+x]==0) continue;
+    if(s[NX*2+x]==0) continue;
     /*  Cp = Qh^+ ( b1_X on the rows of X_1 ), the coupling of the head to X_2 */
-    for(p=0;p<nh*s[2*2+x];p++) T1[p]=zero;
+    for(p=0;p<nh*s[NX*2+x];p++) T1[p]=zero;
     for(p=0;p<s1[x];p++)
     {
-      for(q=0;q<s[2*2+x];q++) T1[off1[x]+p+q*nh] = BlockTriDiagonalMatrixElement(X[x],'b',1,p,q);
+      for(q=0;q<s[NX*2+x];q++) T1[off1[x]+p+q*nh] = BlockTriDiagonalMatrixElement(X[x],'b',1,p,q);
     }
-    zgemm("C","N",&nh,&(s[2*2+x]),&nh,&one,Qh,&nh,T1,&nh,&zero,Cp,&nh);
+    zgemm("C","N",&nh,&(s[NX*2+x]),&nh,&one,Qh,&nh,T1,&nh,&zero,Cp,&nh);
     for(p=0;p<nh;p++)
     {
-      for(q=0;q<s[2*2+x];q++) HermitianBlockBandSet(&H,p,off[2*2+x]+q,Cp[p+q*nh]);
+      for(q=0;q<s[NX*2+x];q++) HermitianBlockBandSet(&H,p,off[NX*2+x]+q,Cp[p+q*nh]);
     }
   }
   for(k=2;k<=Kmax;k++)
   {
-    for(x=0;x<2;x++)
+    for(x=0;x<NX;x++)
     {
-      for(p=0;p<s[2*k+x];p++)
+      for(p=0;p<s[NX*k+x];p++)
       {
-        for(q=0;q<=p;q++) HermitianBlockBandSet(&H,off[2*k+x]+p,off[2*k+x]+q,BlockTriDiagonalMatrixElement(X[x],'a',k,p,q));
-        if(k<X[x]->N)
+        for(q=0;q<=p;q++) HermitianBlockBandSet(&H,off[NX*k+x]+p,off[NX*k+x]+q,BlockTriDiagonalMatrixElement(X[x],'a',k,p,q));
+        if(k<N[x])
         {
-          for(q=0;q<s[2*(k+1)+x];q++) HermitianBlockBandSet(&H,off[2*k+x]+p,off[2*(k+1)+x]+q,BlockTriDiagonalMatrixElement(X[x],'b',k,p,q));
+          for(q=0;q<s[NX*(k+1)+x];q++) HermitianBlockBandSet(&H,off[NX*k+x]+p,off[NX*(k+1)+x]+q,BlockTriDiagonalMatrixElement(X[x],'b',k,p,q));
         }
       }
     }
@@ -1127,6 +1160,7 @@ int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockT
     sOut[K]=r;
     K++;
     if(t+1>=H.NBlock) break;
+    if((NTriMax!=NTriMaxNoLimit)&&(K>=NTriMax)) break;
     /*  the coupling to the next block, U^+ H(t,t+1) = U^+ H(t+1,t)^+ = X diag(sv) VT */
     zgemm("C","C",&r,&r,&r,&one,U,&r,HermitianBlockBandBlock(&H,t+1,t),&r,&zero,M,&r);
     if(ColumnMajorSVD(r,r,M,sv,Dm,S)) goto Cleanup;
@@ -1135,7 +1169,7 @@ int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockT
     if(rp==0) break;
     if(rp==r)
     {
-      /*  the next basis U VT^+ X^+ makes the coupling X diag(sv) X^+ */
+      /*  the next basis VT^+ X^+ makes the coupling X diag(sv) X^+ */
       zgemm("C","C",&r,&r,&r,&one,S,&r,Dm,&r,&zero,Un,&r);
       for(q=0;q<r;q++) for(p=0;p<r;p++) {M[p+q*r].Re = Dm[p+q*r].Re*sv[q]; M[p+q*r].Im = Dm[p+q*r].Im*sv[q];}
       zgemm("N","C",&r,&r,&r,&one,M,&r,Dm,&r,&zero,U,&r);
@@ -1207,15 +1241,9 @@ Assemble:
   C->BlockSize = m;
   C->QComplex = 1;
   if(InitBlockTridiagonalMatrix(C)) goto Cleanup;
-  C->mu = A->mu;
+  C->mu = mu;
   C->BlockSizeList[0] = m;
-  for(p=0;p<m*m;p++)
-  {
-    C->a[p] = BlockTriDiagonalMatrixElement(A,'a',0,p/m,p%m);
-    z = BlockTriDiagonalMatrixElement(B,'a',0,p/m,p%m);
-    C->a[p].Re += z.Re;
-    C->a[p].Im += z.Im;
-  }
+  memcpy(C->a,a0,(size_t)m*m*sizeof(Complex16));
   if(K>0)
   {
     memcpy(&(C->a[(size_t)m*m]),aOut,(size_t)K*m*m*sizeof(Complex16));
@@ -1223,8 +1251,8 @@ Assemble:
     if(K>1) memcpy(&(C->b[(size_t)m*m]),bOut,(size_t)(K-1)*m*m*sizeof(Complex16));
     memcpy(&(C->BlockSizeList[1]),sOut,(size_t)K*sizeof(uint32_t));
   }
-  /*  a sum of two real functions is real, and every step above keeps real data real */
-  if((A->QComplex==0)&&(B->QComplex==0))
+  /*  real data stays real through every step above */
+  if(real)
   {
     g=0;
     for(p=0;p<(K+1)*m*m;p++) if(C->a[p].Im!=0) g=1;
@@ -1233,11 +1261,140 @@ Assemble:
   }
   retval=0;
 Cleanup:
-  free(s); free(off); free(sOut); free(aOut); free(bOut); free(b0); free(sv);
-  free(V); free(Xs); free(VT); free(Qh); free(Hh); free(T1); free(Cp);
+  free(N); free(s); free(off); free(s1); free(off1); free(sOut); free(aOut); free(bOut); free(b0); free(sv);
+  free(Vh); free(Xs); free(VT); free(Qh); free(Hh); free(T1); free(Cp);
   free(Dm); free(U); free(Un); free(M); free(S);
   free(H.L);
+  if(retval) printf("Error in BlockChainsSeenThroughV\n");
+  return retval;
+}
+
+/*  C = A + B, see the comment above HermitianBlockBandType: the two chains seen through
+ *  V_X = b0_X^T, with the constant a0_A + a0_B. C is not allocated on entry. */
+int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType const * const B, BlockTriDiagonalMatrixType * const C, double const SingularValue)
+{
+  BlockTriDiagonalMatrixType const * const X[2] = {A, B};
+  uint32_t const m = A->BlockSize;
+  uint32_t x,p,q,s1;
+  Complex16 *V[2] = {NULL, NULL};
+  Complex16 *a0 = NULL;
+  Complex16 z;
+  int retval = 1;
+  if(A->BlockSize!=B->BlockSize)
+  {
+    printf("Error in BlockTriDiagonalMatrixAdd: block sizes %u and %u differ\n",A->BlockSize,B->BlockSize);
+    return 1;
+  }
+  a0 = (Complex16*)malloc((size_t)m*m*sizeof(Complex16));
+  if(a0==NULL) {printf("malloc failed in BlockTriDiagonalMatrixAdd\n"); goto Cleanup;}
+  for(p=0;p<m*m;p++)
+  {
+    a0[p] = BlockTriDiagonalMatrixElement(A,'a',0,p/m,p%m);
+    z = BlockTriDiagonalMatrixElement(B,'a',0,p/m,p%m);
+    a0[p].Re += z.Re;
+    a0[p].Im += z.Im;
+  }
+  for(x=0;x<2;x++)
+  {
+    s1 = (X[x]->N>0) ? X[x]->BlockSizeList[1] : 0;
+    V[x] = (Complex16*)malloc(((size_t)s1*m+1)*sizeof(Complex16));
+    if(V[x]==NULL) {printf("malloc failed in BlockTriDiagonalMatrixAdd\n"); goto Cleanup;}
+    for(p=0;p<s1;p++)
+    {
+      for(q=0;q<m;q++) V[x][p+q*s1] = BlockTriDiagonalMatrixElement(X[x],'b',0,q,p);
+    }
+  }
+  retval = BlockChainsSeenThroughV(2, X, (Complex16 const * const *)V, a0, m, A->mu, (A->QComplex==0)&&(B->QComplex==0), SingularValue, NTriMaxNoLimit, C);
+Cleanup:
+  free(a0); free(V[0]); free(V[1]);
   if(retval) printf("Error in BlockTriDiagonalMatrixAdd\n");
+  return retval;
+}
+
+/*  The projection of step (ii) of ResponseFunctionDownfold for an effective Hamiltonian
+ *  that is a chain, Appendix C1 of Zacinskis et al.:
+ *
+ *    P Heff(w) P^+ = P a0 P^+ + ( P b0^* ) [ (w - Ht)^{-1} ]_{11} ( P b0^* )^+
+ *
+ *  with a0 = Atilde1 and b0 the head of Heff and Ht the chain behind it. That is one chain
+ *  seen through V = ( P b0^* )^+ = b0^T P^+, plus the constant P a0 P^+, and
+ *  BlockChainsSeenThroughV makes the chain of it at the block size Nsub of P. The first block
+ *  of Ht, rotated so that the range of V comes first, couples fully to the second, so the
+ *  band has a half bandwidth of 2 Ntilde - 1 and B = ceil( (2 Ntilde - 1)/Nsub ) blocks of
+ *  Nsub; for Nsub = Ntilde there is nothing to reduce and only the gauge is fixed.
+ *
+ *  BlockTriDiagonalMatrixDownfoldChainOld did the same with a block Lanczos of the dense Ht,
+ *  in the same gauge: O(dim^3) with its reorthogonalisation and dim^2 of memory, where this
+ *  is O(dim^2 Ntilde) and a band. NTriMax cuts Ht to NTriMax blocks before anything is done,
+ *  so a cut chain costs nothing of the length of Heff.
+ *
+ *  HeffP is not allocated on entry.
+ */
+int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax)
+{
+  uint32_t const Ntilde = Heff->BlockSize;
+  uint32_t const Nsub   = P->Ni;
+  uint32_t i,j,k,s1;
+  Complex16 *V = NULL, *a0 = NULL;
+  Complex16 z, zb, zp, pa, pb;
+  BlockTriDiagonalMatrixType const * X[1] = {Heff};
+  int retval = 1;
+  s1 = (Heff->N>0) ? Heff->BlockSizeList[1] : 0;
+  V  = (Complex16*)calloc((size_t)s1*Nsub+1,sizeof(Complex16));
+  a0 = (Complex16*)calloc((size_t)Nsub*Nsub,sizeof(Complex16));
+  if((V==NULL)||(a0==NULL)) {printf("malloc failed in BlockTriDiagonalMatrixDownfoldChain\n"); goto Cleanup;}
+  /*  a0 = P Atilde1 P^+ */
+  for(i=0;i<Nsub;i++)
+  {
+    for(j=0;j<Nsub;j++)
+    {
+      z.Re=0; z.Im=0;
+      for(k=0;k<Ntilde*Ntilde;k++)
+      {
+        pa = CompactMatrixElementAsComplex(P,i,k/Ntilde);
+        pb = CompactMatrixElementAsComplex(P,j,k%Ntilde);
+        zb = BlockTriDiagonalMatrixElement(Heff,'a',0,k/Ntilde,k%Ntilde);
+        /*  pa zb conj(pb) */
+        zp.Re = pa.Re*zb.Re - pa.Im*zb.Im;
+        zp.Im = pa.Re*zb.Im + pa.Im*zb.Re;
+        z.Re += zp.Re*pb.Re + zp.Im*pb.Im;
+        z.Im += zp.Im*pb.Re - zp.Re*pb.Im;
+      }
+      a0[i*Nsub+j] = z;
+    }
+  }
+  /*  the constant is Hermitian, and rounding is not allowed to say otherwise */
+  for(i=0;i<Nsub;i++)
+  {
+    a0[i*Nsub+i].Im = 0;
+    for(j=0;j<i;j++)
+    {
+      a0[i*Nsub+j].Re = 0.5*(a0[i*Nsub+j].Re + a0[j*Nsub+i].Re);
+      a0[i*Nsub+j].Im = 0.5*(a0[i*Nsub+j].Im - a0[j*Nsub+i].Im);
+      a0[j*Nsub+i].Re =  a0[i*Nsub+j].Re;
+      a0[j*Nsub+i].Im = -a0[i*Nsub+j].Im;
+    }
+  }
+  /*  V(p,g) = sum_b b0[b][p] conj(P[g][b]), on the active directions p of block 1 */
+  for(i=0;i<s1;i++)
+  {
+    for(j=0;j<Nsub;j++)
+    {
+      z.Re=0; z.Im=0;
+      for(k=0;k<Ntilde;k++)
+      {
+        zb = BlockTriDiagonalMatrixElement(Heff,'b',0,k,i);
+        zp = CompactMatrixElementAsComplex(P,j,k);
+        z.Re += zb.Re*zp.Re + zb.Im*zp.Im;
+        z.Im += zb.Im*zp.Re - zb.Re*zp.Im;
+      }
+      V[i+j*s1] = z;
+    }
+  }
+  retval = BlockChainsSeenThroughV(1, X, (Complex16 const * const *)&V, a0, Nsub, Heff->mu, (Heff->QComplex==0)&&(P->QComplex==0), SingularValue, NTriMax, HeffP);
+Cleanup:
+  free(V); free(a0);
+  if(retval) printf("Error in BlockTriDiagonalMatrixDownfoldChain\n");
   return retval;
 }
 

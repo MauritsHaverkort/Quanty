@@ -14,3 +14,4 @@ int BlockTriDiagonalMatrixGetTail(BlockTriDiagonalMatrixType const * const A, Bl
 int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N);
 int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType const * const B, BlockTriDiagonalMatrixType * const C, double const SingularValue);
 int TriDiagonalMatrixAdd(TriDiagonalMatrixType const * const A, TriDiagonalMatrixType const * const B, TriDiagonalMatrixType * const C, double const SingularValue);
+int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax);
