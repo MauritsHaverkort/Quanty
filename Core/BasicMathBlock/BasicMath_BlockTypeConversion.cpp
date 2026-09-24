@@ -1737,12 +1737,12 @@ uint32_t BlockTriDiagonalMatrixToSpectra(const double Energy, BlockTriDiagonalMa
 // val is allocated with a minimal length of A->N * A->BlockSize
 uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * const A, double * val)
 {
-  uint32_t i,j,k,iBlock,jBlock;
-  char const *UPLO="U";
+  uint32_t j,k,iBlock,jBlock;
+  char const *UPLO="L";
   char const *VECT="N";
   const uint32_t N=A->N*A->BlockSize;
-  const uint32_t KD = A->BlockSize-1;
-  const uint32_t LDAB = A->BlockSize;
+  const uint32_t KD = 2*A->BlockSize-1;
+  const uint32_t LDAB = 2*A->BlockSize;
   TriDiagonalMatrixType M;
   int INFO=0;
   M.N=N;
@@ -1766,21 +1766,33 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
     }
     // use dsbtrd to transform A into a tri diagonal form
     //fill matrix AB
-    // if UPLO = 'U', AB(i,j-i) = A(i,j); (fortran and c column v.s. row major)
     j=0;
-    for(k=0;k<A->N;k++)
+    for(k=1;k<A->N;k++)
     {
-      i=0;
       for(iBlock=0;iBlock<A->BlockSize;iBlock++)
       {
         for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
         {
-          AB[j]=A->aRe[i];
-          i++;
+          AB[j]=A->aRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
           j++;
         }
-        j+=iBlock; // set the aditional values of the row to zero
+        for(jBlock=0;jBlock<A->BlockSize;jBlock++)
+        {
+          AB[j]=A->bRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=iBlock;
       }
+    }
+    k=A->N;
+    for(iBlock=0;iBlock<A->BlockSize;iBlock++)
+    {
+      for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
+      {
+        AB[j]=A->aRe[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+        j++;
+      }
+      j+=A->BlockSize+iBlock;
     }
     // Tridiagonalize the Block tridiagonal matrix
     dsbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &N, WORK, &INFO);
@@ -1810,22 +1822,33 @@ uint32_t BlockTriDiagonalMatrixEigenValues(const BlockTriDiagonalMatrixType * co
       return 1;
     }
     //fill matrix AB
-    // if UPLO = 'U', AB(i,j-i) = A(i,j); (fortran and c column v.s. row major)
     j=0;
-    for(k=0;k<A->N;k++)
+    for(k=1;k<A->N;k++)
     {
-      i=0;
       for(iBlock=0;iBlock<A->BlockSize;iBlock++)
       {
         for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
         {
-          AB[j].Re=A->a[i].Re;
-          AB[j].Im=A->a[i].Im;
-          i++;
+          AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
           j++;
         }
-        j+=iBlock; // set the aditional values of the row to zero
+        for(jBlock=0;jBlock<A->BlockSize;jBlock++)
+        {
+          AB[j]=A->b[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+          j++;
+        }
+        j+=iBlock;
       }
+    }
+    k=A->N;
+    for(iBlock=0;iBlock<A->BlockSize;iBlock++)
+    {
+      for(jBlock=iBlock;jBlock<A->BlockSize;jBlock++)
+      {
+        AB[j]=A->a[k*A->BlockSize*A->BlockSize + iBlock*A->BlockSize + jBlock];
+        j++;
+      }
+      j+=A->BlockSize+iBlock;
     }
     // Tridiagonalize the Block tridiagonal matrix
     zhbtrd(VECT, UPLO, &N, &KD, AB, &LDAB, &(M.a[1]), &(M.b[1]), NULL, &N, WORK, &INFO);
@@ -3737,6 +3760,207 @@ uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const 
 }
 
 /*  =========================================================================
+ *  Self energies embedded as a matrix
+ *
+ *  Each representation of a self energy has the form
+ *     Sigma(w) = a0 + C . 1/(w - Hbath) . C^+
+ *  and is written as a matrix
+ *       ( a0    C     )
+ *   B = ( C^+   Hbath )
+ *  such that (w-B)^-1_[blocksize,blocksize] = 1/(w-Sigma). The first block is the site the self energy
+ *  acts on, the other blocks are the bath of the representation, block by block as stored.
+ *  ========================================================================= */
+
+/*  Add the n by n block M (row major) to B at block position (brow,bcol). mode 'N' adds M, mode '*' adds
+ *  M^*. If AddAdjoint the adjoint of what is added is also added at block position (bcol,brow).
+ *  M is real (MRe) or complex (M) according to QComplex, B can only be real if M is real.
+ */
+static void AddBlockToCompactMatrix(CompactMatrixType * const B, uint32_t const brow, uint32_t const bcol, uint32_t const n, uint32_t const QComplex, double const * const MRe, Complex16 const * const M, char const mode, bool const AddAdjoint)
+{
+  uint32_t i,j,row,col;
+  double re,im;
+  for(i=0;i<n;i++)
+  {
+    for(j=0;j<n;j++)
+    {
+      row = brow*n+i;
+      col = bcol*n+j;
+      if(QComplex)
+      {
+        re = M[i*n+j].Re;
+        im = (mode=='*') ? (-M[i*n+j].Im) : (M[i*n+j].Im);
+      }
+      else
+      {
+        re = MRe[i*n+j];
+        im = 0;
+      }
+      if(B->QComplex)
+      {
+        B->V[row*B->Nj+col].Re += re;
+        B->V[row*B->Nj+col].Im += im;
+        if(AddAdjoint)
+        {
+          B->V[col*B->Nj+row].Re += re;
+          B->V[col*B->Nj+row].Im -= im;
+        }
+      }
+      else
+      {
+        B->VRe[row*B->Nj+col] += re;
+        if(AddAdjoint)
+        {
+          B->VRe[col*B->Nj+row] += re;
+        }
+      }
+    }
+  }
+}
+
+/*  Attach the block tridiagonal matrix
+ *     T(w) = a0 + b0^* . 1/(w - a1 - b1 . ( ... ) . b1^+) . b0^T
+ *  to block host of B: a0 is added to the host block, a1 ... aN are placed at the block positions
+ *  first ... first+N-1, b0^* couples the host to a1 and bk couples ak to ak+1.
+ */
+static void AttachBlockTriDiagonalMatrixToCompactMatrix(CompactMatrixType * const B, BlockTriDiagonalMatrixType const * const T, uint32_t const host, uint32_t const first)
+{
+  uint32_t k,n=T->BlockSize;
+  AddBlockToCompactMatrix(B, host, host, n, T->QComplex, T->aRe, T->a, 'N', false);
+  for(k=1;k<=T->N;k++)
+  {
+    AddBlockToCompactMatrix(B, first+k-1, first+k-1, n, T->QComplex, &(T->aRe[k*n*n]), &(T->a[k*n*n]), 'N', false);
+  }
+  if(T->N>0)
+  {
+    AddBlockToCompactMatrix(B, host, first, n, T->QComplex, T->bRe, T->b, '*', true);
+  }
+  for(k=1;k<T->N;k++)
+  {
+    AddBlockToCompactMatrix(B, first+k-1, first+k, n, T->QComplex, &(T->bRe[k*n*n]), &(T->b[k*n*n]), 'N', true);
+  }
+}
+
+static uint32_t InitEmbeddedSelfEnergy(CompactMatrixType * const B, uint32_t const NBlocks, uint32_t const BlockSize, uint32_t const QComplex, double const mu, char const * const caller)
+{
+  B->QComplex = QComplex;
+  B->Ni = NBlocks * BlockSize;
+  B->Nj = NBlocks * BlockSize;
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in %s\n", caller);
+    return 1;
+  }
+  B->mu = mu;
+  return 0;
+}
+
+/*  Turn a block tridiagonal matrix, representing a self energy
+ *     Sigma = a0 + b0^* . 1/(w - a1 - b1 . ( ... ) . b1^+) . b0^T
+ *  into a matrix
+ *       ( a0     b0^*   0      0   ..  )
+ *       ( b0^T   a1     b1     0   ..  )
+ *   B = ( 0      b1^+   a2     b2  ..  )
+ *       ( ..     ..     ..     ..  ..  )
+ *       ( 0      0      ..   bN-1^+ aN )
+ *
+ *   The greensfunction (w-B)^-1_[blocksize,blocksize] is equal to 1/(w-Sigma), i.e. the inverse of the
+ *   greensfunction defined by the BlockTriDiagonalMatrix. B has dimension (A->N+1)*A->BlockSize
+ *
+ */
+uint32_t BlockTriDiagonalMatrixInversedToCompactMatrix(BlockTriDiagonalMatrixType const * const A, CompactMatrixType * const B)
+{
+  if(InitEmbeddedSelfEnergy(B, A->N+1, A->BlockSize, A->QComplex, A->mu, "BlockTriDiagonalMatrixInversedToCompactMatrix")) return 1;
+  AttachBlockTriDiagonalMatrixToCompactMatrix(B, A, 0, 1);
+  return 0;
+}
+
+/*  Turn a block Anderson matrix, representing a self energy
+ *     Sigma = A0 + B0^* ( 1 / ( w - A1 - \sum_i ( B_i 1 / ( w - A_{i+1} ) . B_i^+ ) ) ) . B0^T
+ *  into a matrix
+ *       ( A0     B0^*   0      0   ..  )
+ *       ( B0^T   A1     B1     B2  ..  )
+ *   B = ( 0      B1^+   A2     0   ..  )
+ *       ( 0      B2^+   0      A3  ..  )
+ *       ( ..     ..     ..     ..  ..  )
+ *
+ *   such that (w-B)^-1_[blocksize,blocksize] is equal to 1/(w-Sigma). B has dimension (A->N+1)*A->BlockSize
+ */
+uint32_t BlockAndersonMatrixInversedToCompactMatrix(BlockAndersonMatrixType const * const A, CompactMatrixType * const B)
+{
+  uint32_t k,n=A->BlockSize;
+  if(InitEmbeddedSelfEnergy(B, A->N+1, A->BlockSize, A->QComplex, A->mu, "BlockAndersonMatrixInversedToCompactMatrix")) return 1;
+  for(k=0;k<=A->N;k++)
+  {
+    AddBlockToCompactMatrix(B, k, k, n, A->QComplex, &(A->aRe[k*n*n]), &(A->a[k*n*n]), 'N', false);
+  }
+  if(A->N>0)
+  {
+    AddBlockToCompactMatrix(B, 0, 1, n, A->QComplex, A->bRe, A->b, '*', true);
+  }
+  for(k=1;k<A->N;k++)
+  {
+    AddBlockToCompactMatrix(B, 1, k+1, n, A->QComplex, &(A->bRe[k*n*n]), &(A->b[k*n*n]), 'N', true);
+  }
+  return 0;
+}
+
+/*  Turn a block natural impurity orbital matrix, representing a self energy
+ *     Sigma = a0 + Gval(w) + Gcon(w)
+ *  with Gval and Gcon block tridiagonal matrices, into a matrix
+ *       ( a0+av0+ac0  bv0^*  ..  bc0^*  ..  )
+ *       ( bv0^T       av1    bv1  0     ..  )
+ *   B = ( ..          bv1^+  ..   0     ..  )
+ *       ( bc0^T       0      0    ac1   bc1 )
+ *       ( ..          0      0    bc1^+ ..  )
+ *
+ *   such that (w-B)^-1_[blocksize,blocksize] is equal to 1/(w-Sigma).
+ *   B has dimension (1+A->val.N+A->con.N)*A->BlockSize. TMT is not needed.
+ */
+uint32_t BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * const A, CompactMatrixType * const B)
+{
+  uint32_t n=A->BlockSize;
+  if((A->val.BlockSize!=n)||(A->con.BlockSize!=n)||(A->a0.Ni!=n)||(A->a0.Nj!=n))
+  {
+    printf("Block sizes of a0, val and con are not equal to BlockSize in BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix\n");
+    return 1;
+  }
+  if(InitEmbeddedSelfEnergy(B, 1+A->val.N+A->con.N, n, A->QComplex|A->a0.QComplex|A->val.QComplex|A->con.QComplex, A->mu, "BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix")) return 1;
+  AddBlockToCompactMatrix(B, 0, 0, n, A->a0.QComplex, A->a0.VRe, A->a0.V, 'N', false);
+  AttachBlockTriDiagonalMatrixToCompactMatrix(B, &(A->val), 0, 1);
+  AttachBlockTriDiagonalMatrixToCompactMatrix(B, &(A->con), 0, 1+A->val.N);
+  return 0;
+}
+
+/*  Turn a block double tridiagonal matrix, representing a self energy
+ *     Sigma = a0 + b0^* . 1/(w - Gval(w) - Gcon(w)) . b0^T
+ *  with Gval and Gcon block tridiagonal matrices, into a matrix
+ *       ( a0     b0^*     0      ..  0      ..  )
+ *       ( b0^T   av0+ac0  bv0^*  ..  bc0^*  ..  )
+ *   B = ( 0      bv0^T    av1    ..  0      ..  )
+ *       ( ..     ..       ..     ..  0      ..  )
+ *       ( 0      bc0^T    0      0   ac1    ..  )
+ *       ( ..     ..       0      0   ..     ..  )
+ *
+ *   such that (w-B)^-1_[blocksize,blocksize] is equal to 1/(w-Sigma).
+ *   B has dimension (2+A->val.N+A->con.N)*A->BlockSize.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixInversedToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * const A, CompactMatrixType * const B)
+{
+  uint32_t n=A->BlockSize;
+  if((A->val.BlockSize!=n)||(A->con.BlockSize!=n)||(A->a0.Ni!=n)||(A->a0.Nj!=n)||(A->b0.Ni!=n)||(A->b0.Nj!=n))
+  {
+    printf("Block sizes of a0, b0, val and con are not equal to BlockSize in BlockDoubleTriDiagonalMatrixInversedToCompactMatrix\n");
+    return 1;
+  }
+  if(InitEmbeddedSelfEnergy(B, 2+A->val.N+A->con.N, n, A->QComplex|A->a0.QComplex|A->b0.QComplex|A->val.QComplex|A->con.QComplex, A->mu, "BlockDoubleTriDiagonalMatrixInversedToCompactMatrix")) return 1;
+  AddBlockToCompactMatrix(B, 0, 0, n, A->a0.QComplex, A->a0.VRe, A->a0.V, 'N', false);
+  AddBlockToCompactMatrix(B, 0, 1, n, A->b0.QComplex, A->b0.VRe, A->b0.V, '*', true);
+  AttachBlockTriDiagonalMatrixToCompactMatrix(B, &(A->val), 1, 2);
+  AttachBlockTriDiagonalMatrixToCompactMatrix(B, &(A->con), 1, 2+A->val.N);
+  return 0;
+}
+
+/*  =========================================================================
  *  TightBindingDef to __
  *  ========================================================================= */
 
@@ -4547,6 +4771,8 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
       }
     }
   }
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -4771,6 +4997,8 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
       }
     }
   }
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -4782,6 +5010,350 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
   }
   ChopBlockListOfPoles(G, DBL_EPSILON);
   return 0;
+}
+
+
+/*  Given a tight binding Hamiltonian, a k-mesh defined by the number of divisions of a, b and c (Nk),
+ *  a self energy embedded as a matrix
+ *       ( a0    C     )
+ *   E = ( C^+   Hbath )
+ *  (see BlockTriDiagonalMatrixInversedToCompactMatrix and its siblings) and an arbitrary strictly
+ *  increasing energy grid Egrid[0..NEgrid-1], returns the Green's function as a list of NEgrid+2 poles,
+ *  as TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid.
+ *  For each k the matrix E with H(k) added to its first block is diagonalised (dense). The first
+ *  A.NFermion components of each eigenvector give the weight, which is distributed linearly over the
+ *  two poles bracketing the eigenvalue.
+ *
+ *  The first block of E must have dimension A.NFermion
+ */
+static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], CompactMatrixType const * const E, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  MatrixType H;
+  CompactMatrixType T, HSigma, HSigmaComplex;
+  double q[3], *val, rest, totmin=0, totmax=0, totnow;
+  int    iq[3],ival,iE,i,j,ii;
+  double diq[3],Nktot;
+  // init G
+  G->BlockSize=A.NFermion;
+  G->N=NEgrid+2;
+  G->QComplex=1;
+  strcpy(G->Name, A.Name);
+  if(InitBlockListOfPoles(G))
+  {
+    printf("InitBlockListOfPoles failed in TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid\n");
+    return 1;
+  }
+  // set energy of G
+  ii=-1;
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    if(ii<0)                  G->V[i].Re=Egrid[0] - (Egrid[1] - Egrid[0]);
+    else if(ii<(int)NEgrid)   G->V[i].Re=Egrid[ii];
+    else                      G->V[i].Re=Egrid[NEgrid-1] + (Egrid[NEgrid-1] - Egrid[NEgrid-2]);
+    ii++;
+  }
+  // create HSigma, the first block (a0) gets H(k) added for each k
+  CompactMatrixCopy(*E, &HSigma);
+  if(E->QComplex==0)
+  {
+    CompactMatrixCopy(*E, &HSigmaComplex);
+    MakeCompactRealMatrixComplex(&HSigmaComplex);
+  }
+  val = (double*)malloc(HSigma.Nj*sizeof(double));
+  if(val==NULL)
+  {
+    printf("malloc failed in TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid\n");
+    return 1;
+  }
+  for (iq[0] = 0; iq[0] < Nk[0]; iq[0]++)
+  {
+    for (iq[1] = 0; iq[1] < Nk[1]; iq[1]++)
+    {
+      for (iq[2] = 0; iq[2] < Nk[2]; iq[2]++)
+      {
+        diq[0] = iq[0] / ((double)(Nk[0]));
+        diq[1] = iq[1] / ((double)(Nk[1]));
+        diq[2] = iq[2] / ((double)(Nk[2]));
+        q[0] = diq[0] * A.Cell.gUnitCell[0][0] + diq[1] * A.Cell.gUnitCell[1][0] + diq[2] * A.Cell.gUnitCell[2][0];
+        q[1] = diq[0] * A.Cell.gUnitCell[0][1] + diq[1] * A.Cell.gUnitCell[1][1] + diq[2] * A.Cell.gUnitCell[2][1];
+        q[2] = diq[0] * A.Cell.gUnitCell[0][2] + diq[1] * A.Cell.gUnitCell[1][2] + diq[2] * A.Cell.gUnitCell[2][2];
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(A, q, &H);
+        if(E->QComplex)
+        {
+          for(i=0;i<A.NFermion;i++)
+          {
+            for(j=0;j<A.NFermion;j++)
+            {
+              HSigma.V[i*HSigma.Nj+j].Re=E->V[i*E->Nj+j].Re + H.VRe[i][j];
+              HSigma.V[i*HSigma.Nj+j].Im=E->V[i*E->Nj+j].Im + ((H.QComplex) ? (H.VIm[i][j]) : (0));
+            }
+          }
+          CompactMatrixEigensystem(&HSigma, &T, val);
+        }
+        else if(H.QComplex)
+        {
+          for(i=0;i<A.NFermion;i++)
+          {
+            for(j=0;j<A.NFermion;j++)
+            {
+              HSigmaComplex.V[i*HSigma.Nj+j].Re=E->VRe[i*E->Nj+j] + H.VRe[i][j];
+              HSigmaComplex.V[i*HSigma.Nj+j].Im=                    H.VIm[i][j];
+            }
+          }
+          CompactMatrixEigensystem(&HSigmaComplex, &T, val);
+        }
+        else
+        {
+          for(i=0;i<A.NFermion;i++)
+          {
+            for(j=0;j<A.NFermion;j++)
+            {
+              HSigma.VRe[i*HSigma.Nj+j]=E->VRe[i*E->Nj+j] + H.VRe[i][j];
+            }
+          }
+          CompactMatrixEigensystem(&HSigma, &T, val);
+        }
+        if(T.QComplex)
+        {
+          if(H.QComplex==0) MakeRealMatrixComplex(&H);
+        }
+        else
+        {
+          if(H.QComplex) MakeComplexMatrixReal(&H);
+        }
+        for(ival=0;ival<T.Nj;ival++)
+        {
+          /* calculate matrix B for eigen-value ival */
+          if(H.QComplex)
+          {
+            ComplexEigenFunctionToCharacter(&(T.V[ival*T.Nj]), &H);
+          }
+          else
+          {
+            RealEigenFunctionToCharacter(&(T.VRe[ival*T.Nj]), &H);
+          }
+          /* determine the position of the pole in the list of poles */
+          iE = FindEnergyInterval(Egrid, (int)NEgrid, val[ival]);
+          if (iE >= (int)NEgrid-1)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmax+totnow<10*DBL_MIN)
+            {
+              totmax+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)].Re = (totmax * G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)].Re + totnow * val[ival]) / (totmax + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(NEgrid+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmax+=totnow;
+          }
+          else if (iE < 0)
+          {
+            totnow=0;
+            for(i=0;i<A.NFermion;i++)
+            {
+              totnow+=H.VRe[i][i];
+            }
+            if(totmin+totnow<10*DBL_MIN)
+            {
+              totmin+=10*DBL_MIN;
+              totnow+=10*DBL_MIN;
+            }
+            G->V[0].Re = (totmin * G->V[0].Re + totnow * val[ival]) / (totmin + totnow);
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[1+j+i*A.NFermion].Re+=H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[1+j+i*A.NFermion].Im+=H.VIm[i][j];
+                }
+              }
+            }
+            totmin+=totnow;
+          }
+          else
+          {
+            rest = (val[ival] - Egrid[iE]) / (Egrid[iE+1] - Egrid[iE]);  /* rest is a number between 0 and 1 pole at iE+1 gets 1-rest pole at iE+2 gest rest */
+            for(i=0;i<A.NFermion;i++)
+            {
+              for(j=0;j<A.NFermion;j++)
+              {
+                G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(1-rest)*H.VRe[i][j];
+                G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Re+=(  rest)*H.VRe[i][j];
+                if(H.QComplex)
+                {
+                  G->V[(iE+1)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(1-rest)*H.VIm[i][j];
+                  G->V[(iE+2)*(1+G->BlockSize*G->BlockSize)+1+j+i*A.NFermion].Im+=(  rest)*H.VIm[i][j];
+                }
+              }
+            }
+          }
+        }
+        FreeMatrix(&H);
+        FreeCompactMatrix(&T);
+      }
+    }
+  }
+  free(val);
+  FreeCompactMatrix(&HSigma);
+  if(E->QComplex==0) FreeCompactMatrix(&HSigmaComplex);
+  Nktot=Nk[0]*Nk[1]*Nk[2];
+  for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
+  {
+    for(j=1;j<1+G->BlockSize*G->BlockSize;j++)
+    {
+      G->V[i+j].Re/=Nktot;
+      G->V[i+j].Im/=Nktot;
+    }
+  }
+  ChopBlockListOfPoles(G, DBL_EPSILON);
+  return 0;
+}
+
+/*  As above, on the energy mesh Emin to Emax in NE steps, which gives NE+3 poles as
+ *  TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles
+ */
+static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], CompactMatrixType const * const E, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  uint32_t i, ret;
+  double dE=(Emax-Emin)/((double)NE);
+  double *Egrid = (double*)malloc((NE+1)*sizeof(double));
+  if(Egrid==NULL)
+  {
+    printf("malloc failed in TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles\n");
+    return 1;
+  }
+  for(i=0;i<=NE;i++)
+  {
+    Egrid[i]=Emin+i*dE;
+  }
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, E, G, Egrid, NE+1);
+  free(Egrid);
+  return ret;
+}
+
+
+/*  As TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(Grid) above, but with the self energy given
+ *  as a block tridiagonal matrix, a block Anderson matrix, a block natural impurity orbital matrix or a
+ *  block double tridiagonal matrix. The self energy is embedded as a matrix of dimension
+ *     (1 + number of bath blocks) * A.NFermion
+ *  (2 + ... for the double tridiagonal matrix), which is diagonalised for each k. A list of poles with N
+ *  poles gives dimension (N+1)*A.NFermion, and the exact conversion of a tridiagonal matrix with N blocks
+ *  gives up to N*A.NFermion poles, each with a rank one weight.
+ *
+ *  Sigma must have dimensions BlockSize equal to A.NFermion
+ */
+static uint32_t TestSelfEnergyBlockSize(uint32_t const BlockSize, uint32_t const NFermion, char const * const caller)
+{
+  if(BlockSize!=NFermion)
+  {
+    printf("in %s\nThe dimension of the self energy (%i) is not equal to the dimension of the tight binding Hamiltonian (%i)\n",caller,BlockSize,NFermion);
+    return 1;
+  }
+  return 0;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles")) return 1;
+  if(BlockTriDiagonalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles(A, Nk, &E, G, Emin, Emax, NE);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
+  if(BlockTriDiagonalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockAndersonMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles")) return 1;
+  if(BlockAndersonMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles(A, Nk, &E, G, Emin, Emax, NE);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockAndersonMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
+  if(BlockAndersonMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockNaturalImpurityOrbitalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles")) return 1;
+  if(BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles(A, Nk, &E, G, Emin, Emax, NE);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockNaturalImpurityOrbitalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
+  if(BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockDoubleTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles")) return 1;
+  if(BlockDoubleTriDiagonalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles(A, Nk, &E, G, Emin, Emax, NE);
+  FreeCompactMatrix(&E);
+  return ret;
+}
+
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockDoubleTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+{
+  uint32_t ret;
+  CompactMatrixType E;
+  if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
+  if(BlockDoubleTriDiagonalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  FreeCompactMatrix(&E);
+  return ret;
 }
 
 
@@ -5039,6 +5611,8 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightB
       }
     }
   }
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -5270,6 +5844,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBin
     }
   }
   FreeMatrix(&PsiChar);
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -5542,6 +6118,8 @@ uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles
     }
   }
   FreeMatrix(&PsiChar);
+  FreeCompactMatrix(&HSigma);
+  if(Sigma.QComplex==0) FreeCompactMatrix(&HSigmaComplex);
   Nktot=Nk[0]*Nk[1]*Nk[2];
   for(i=0;i<G->N*(1+G->BlockSize*G->BlockSize);i+=(1+G->BlockSize*G->BlockSize))
   {
@@ -5973,4 +6551,276 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToTightBinding(BlockNaturalImpurityOrb
 {
   //TODO: BlockNaturalImpurityOrbitalMatrixType to TB
   return 0;
+}
+
+
+/*  =========================================================================
+ *  Direct sums
+ *
+ *  Given m response functions A[i] of the same type with block sizes n_i and an offset Offset[i] each, return
+ *  the response function B of block size BlockSize that is block diagonal, with A[i] in the rows and columns
+ *  Offset[i] ... Offset[i]+n_i-1. A[i] may be NULL, which is a zero response function. The blocks may not
+ *  overlap; rows and columns that no A[i] covers are zero. Nothing is transformed, the numbers of A[i] are
+ *  copied into place. Chains and baths of different length are padded with zero blocks, which couple to
+ *  nothing and so do not change the function.
+ *  The result is complex if any A[i] is complex. mu is taken from the first A[i] that is not NULL, the
+ *  caller is expected to have checked that they are equal.
+ *  ========================================================================= */
+
+/*  Copy the n by n block (row major) that starts at element Astart of A into the Nj wide matrix B, with its
+ *  first element at element Bstart of B. A is real (ARe) or complex (A) according to AQComplex and likewise
+ *  B, B can only be real if A is real.
+ */
+static void CopyBlockIntoDirectSum(double * const BRe, Complex16 * const B, uint32_t const BQComplex, uint32_t const Bstart, uint32_t const Nj, double const * const ARe, Complex16 const * const A, uint32_t const AQComplex, uint32_t const Astart, uint32_t const n)
+{
+  uint32_t i,j;
+  for(i=0;i<n;i++)
+  {
+    for(j=0;j<n;j++)
+    {
+      if(BQComplex)
+      {
+        if(AQComplex)
+        {
+          B[Bstart+i*Nj+j] = A[Astart+i*n+j];
+        }
+        else
+        {
+          B[Bstart+i*Nj+j].Re = ARe[Astart+i*n+j];
+          B[Bstart+i*Nj+j].Im = 0;
+        }
+      }
+      else
+      {
+        BRe[Bstart+i*Nj+j] = ARe[Astart+i*n+j];
+      }
+    }
+  }
+}
+
+/*  For a list of poles the poles of all A[i] are put in one list, each with its weight in block i and zeros
+ *  elsewhere. Poles of different A[i] at the same energy are then merged into one pole with a block diagonal
+ *  weight by BlockListOfPolesMergeDegeneratePoles with its standard distance (a few DBL_EPSILON times the
+ *  band width), which keeps the number of poles from growing with m when all A[i] are on one energy grid.
+ */
+uint32_t BlockListOfPolesDirectSum(BlockListOfPoles const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockListOfPoles * const B)
+{
+  uint32_t i,p,q,n=BlockSize,stride=1+BlockSize*BlockSize;
+  bool first=true;
+  B->BlockSize = BlockSize;
+  B->N = 0;
+  B->QComplex = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    B->N += A[i]->N;
+    B->QComplex |= A[i]->QComplex;
+  }
+  if(InitBlockListOfPoles(B))
+  {
+    printf("InitBlockListOfPoles failed in BlockListOfPolesDirectSum\n");
+    return 1;
+  }
+  strcpy(B->Name, "Direct sum");
+  p=0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; first=false;}
+    for(q=0;q<A[i]->N;q++)
+    {
+      if(B->QComplex) B->V[p*stride].Re = (A[i]->QComplex) ? (A[i]->V[q*(1+Sqr(A[i]->BlockSize))].Re) : (A[i]->VRe[q*(1+Sqr(A[i]->BlockSize))]);
+      else            B->VRe[p*stride]  = A[i]->VRe[q*(1+Sqr(A[i]->BlockSize))];
+      CopyBlockIntoDirectSum(B->VRe, B->V, B->QComplex, p*stride+1+Offset[i]*n+Offset[i], n, A[i]->VRe, A[i]->V, A[i]->QComplex, q*(1+Sqr(A[i]->BlockSize))+1, A[i]->BlockSize);
+      p++;
+    }
+    CopyBlockIntoDirectSum(B->a0Re, B->a0, B->QComplex, Offset[i]*n+Offset[i], n, A[i]->a0Re, A[i]->a0, A[i]->QComplex, 0, A[i]->BlockSize);
+  }
+  return BlockListOfPolesMergeDegeneratePoles(B, -1, false);
+}
+
+uint32_t BlockTriDiagonalMatrixDirectSum(BlockTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockTriDiagonalMatrixType * const B)
+{
+  uint32_t i,k,n=BlockSize;
+  bool first=true;
+  B->BlockSize = BlockSize;
+  B->N = 0;
+  B->QComplex = 0;
+  B->mu = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(A[i]->N > B->N) B->N = A[i]->N;
+    B->QComplex |= A[i]->QComplex;
+  }
+  if(InitBlockTridiagonalMatrix(B))
+  {
+    printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDirectSum\n");
+    return 1;
+  }
+  strcpy(B->Name, "Direct sum");
+  // InitBlockTridiagonalMatrix sets b0 to the identity, here it is built from the blocks of A
+  for(k=0;k<n*n;k++)
+  {
+    if(B->N==0) break;
+    if(B->QComplex) {B->b[k].Re=0; B->b[k].Im=0;}
+    else            B->bRe[k]=0;
+  }
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; first=false;}
+    for(k=0;k<=A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->aRe, B->a, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->aRe, A[i]->a, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+    for(k=0;k<A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->bRe, B->b, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->bRe, A[i]->b, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+  }
+  return 0;
+}
+
+uint32_t BlockAndersonMatrixDirectSum(BlockAndersonMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockAndersonMatrixType * const B)
+{
+  uint32_t i,k,n=BlockSize;
+  bool first=true;
+  B->BlockSize = BlockSize;
+  B->N = 0;
+  B->QComplex = 0;
+  B->mu = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(A[i]->N > B->N) B->N = A[i]->N;
+    B->QComplex |= A[i]->QComplex;
+  }
+  if(InitBlockAndersonMatrix(B))
+  {
+    printf("InitBlockAndersonMatrix failed in BlockAndersonMatrixDirectSum\n");
+    return 1;
+  }
+  strcpy(B->Name, "Direct sum");
+  // InitBlockAndersonMatrix sets b0 to the identity, here it is built from the blocks of A
+  for(k=0;k<n*n;k++)
+  {
+    if(B->N==0) break;
+    if(B->QComplex) {B->b[k].Re=0; B->b[k].Im=0;}
+    else            B->bRe[k]=0;
+  }
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; first=false;}
+    for(k=0;k<=A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->aRe, B->a, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->aRe, A[i]->a, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+    for(k=0;k<A[i]->N;k++)
+    {
+      CopyBlockIntoDirectSum(B->bRe, B->b, B->QComplex, k*n*n+Offset[i]*n+Offset[i], n, A[i]->bRe, A[i]->b, A[i]->QComplex, k*Sqr(A[i]->BlockSize), A[i]->BlockSize);
+    }
+  }
+  return 0;
+}
+
+/*  direct sum of the n_i by n_i compact matrices A[i] (NULL is zero) into the BlockSize by BlockSize matrix B */
+static uint32_t CompactMatrixDirectSum(CompactMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, CompactMatrixType * const B)
+{
+  uint32_t i;
+  B->Ni = BlockSize;
+  B->Nj = BlockSize;
+  B->QComplex = 0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]!=NULL) B->QComplex |= A[i]->QComplex;
+  }
+  if(InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in CompactMatrixDirectSum\n");
+    return 1;
+  }
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    CopyBlockIntoDirectSum(B->VRe, B->V, B->QComplex, Offset[i]*BlockSize+Offset[i], BlockSize, A[i]->VRe, A[i]->V, A[i]->QComplex, 0, A[i]->Ni);
+  }
+  return 0;
+}
+
+/*  a0, val and con are summed, TMT is calculated from the summed val and con */
+uint32_t BlockNaturalImpurityOrbitalMatrixDirectSum(BlockNaturalImpurityOrbitalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockNaturalImpurityOrbitalMatrixType * const B)
+{
+  uint32_t i, ret=0;
+  bool first=true;
+  BlockTriDiagonalMatrixType const **val = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  BlockTriDiagonalMatrixType const **con = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  CompactMatrixType const **a0 = (CompactMatrixType const **)malloc(m*sizeof(CompactMatrixType*));
+  if((val==NULL)||(con==NULL)||(a0==NULL))
+  {
+    printf("malloc failed in BlockNaturalImpurityOrbitalMatrixDirectSum\n");
+    return 1;
+  }
+  B->BlockSize = BlockSize;
+  B->QComplex = 0;
+  B->mu = 0;
+  B->Epsilon = 0;
+  for(i=0;i<m;i++)
+  {
+    val[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->val));
+    con[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->con));
+    a0[i]  = (A[i]==NULL) ? (NULL) : (&(A[i]->a0));
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; B->Epsilon = A[i]->Epsilon; first=false;}
+    B->QComplex |= A[i]->QComplex;
+  }
+  strcpy(B->Name, "Direct sum");
+  if(BlockTriDiagonalMatrixDirectSum(val, Offset, m, BlockSize, &(B->val))) ret=1;
+  if(BlockTriDiagonalMatrixDirectSum(con, Offset, m, BlockSize, &(B->con))) ret=1;
+  if(CompactMatrixDirectSum(a0, Offset, m, BlockSize, &(B->a0))) ret=1;
+  if(ret==0) ret = SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B);
+  free(val);
+  free(con);
+  free(a0);
+  return ret;
+}
+
+/*  a0, b0, val and con are summed. kBT, only used to generate the representation, is taken from the first */
+uint32_t BlockDoubleTriDiagonalMatrixDirectSum(BlockDoubleTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockDoubleTriDiagonalMatrixType * const B)
+{
+  uint32_t i, ret=0;
+  bool first=true;
+  BlockTriDiagonalMatrixType const **val = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  BlockTriDiagonalMatrixType const **con = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+  CompactMatrixType const **a0 = (CompactMatrixType const **)malloc(m*sizeof(CompactMatrixType*));
+  CompactMatrixType const **b0 = (CompactMatrixType const **)malloc(m*sizeof(CompactMatrixType*));
+  if((val==NULL)||(con==NULL)||(a0==NULL)||(b0==NULL))
+  {
+    printf("malloc failed in BlockDoubleTriDiagonalMatrixDirectSum\n");
+    return 1;
+  }
+  B->BlockSize = BlockSize;
+  B->mu = 0;
+  B->kBT = 0;
+  for(i=0;i<m;i++)
+  {
+    val[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->val));
+    con[i] = (A[i]==NULL) ? (NULL) : (&(A[i]->con));
+    a0[i]  = (A[i]==NULL) ? (NULL) : (&(A[i]->a0));
+    b0[i]  = (A[i]==NULL) ? (NULL) : (&(A[i]->b0));
+    if(A[i]==NULL) continue;
+    if(first) {B->mu = A[i]->mu; B->kBT = A[i]->kBT; first=false;}
+  }
+  strcpy(B->Name, "Direct sum");
+  if(BlockTriDiagonalMatrixDirectSum(val, Offset, m, BlockSize, &(B->val))) ret=1;
+  if(BlockTriDiagonalMatrixDirectSum(con, Offset, m, BlockSize, &(B->con))) ret=1;
+  if(CompactMatrixDirectSum(a0, Offset, m, BlockSize, &(B->a0))) ret=1;
+  if(CompactMatrixDirectSum(b0, Offset, m, BlockSize, &(B->b0))) ret=1;
+  SetBlockDoubleTriDiagonalMatrixQComplex(B);
+  free(val);
+  free(con);
+  free(a0);
+  free(b0);
+  return ret;
 }

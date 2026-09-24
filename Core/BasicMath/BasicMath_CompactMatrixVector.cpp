@@ -5784,21 +5784,44 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
 
 /* returns 1 if O=O^dag, zero otherwise
  * epsilon gives the accuracy
- * test if | O[i][j] - O[j][i] | > epsilon * | O[i][j] + O[j][i] |
+ * test if | O[i][j] - O[j][i] | > epsilon * ( | O[i][j] + O[j][i] | + max |O| )
+ *
+ * The max |O| in the bracket is a floor for the whole matrix. Without it the
+ * test is relative to the pair alone, and a pair that vanishes in exact
+ * arithmetic -- an element a symmetry forbids, say the spin off diagonal one
+ * of a matrix block diagonal in spin -- has a difference and a sum that are
+ * both rounding, so it is refused however small that rounding is. The floor is
+ * built from O itself, so multiplying O by a constant leaves the verdict alone
+ * and the same Hamiltonian passes in Rydberg, eV or Joule.
  */
 
 uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon)
 {
   uint32_t i,j;
+  double scale = 0;
   if(O.Ni!=O.Nj)return 0;
+  /* the largest element of O, times epsilon, is the floor added below */
+  if(O.QComplex)
+  {
+    for(i=0;i<O.Ni*O.Nj;i++)
+    {
+      if(fabs(O.V[i].Re)>scale) scale = fabs(O.V[i].Re);
+      if(fabs(O.V[i].Im)>scale) scale = fabs(O.V[i].Im);
+    }
+  }
+  else
+  {
+    for(i=0;i<O.Ni*O.Nj;i++) if(fabs(O.VRe[i])>scale) scale = fabs(O.VRe[i]);
+  }
+  scale *= epsilon;
   if(O.QComplex)
   {
     for(i=0;i<O.Ni;i++)
     {
       for(j=0;j<=i;j++)
       {
-        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+DBL_MIN*100) return 0;
-        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+DBL_MIN*100) return 0;
+        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+scale+DBL_MIN*100) return 0;
+        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+scale+DBL_MIN*100) return 0;
       }
     }
   }
@@ -5808,7 +5831,7 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
     {
       for(j=0;j<i;j++)
       {
-        if(fabs(O.VRe[i*O.Nj+j]-O.VRe[j*O.Nj+i])>((fabs(O.VRe[i*O.Nj+j]+O.VRe[j*O.Nj+i])*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.VRe[i*O.Nj+j]-O.VRe[j*O.Nj+i])>((fabs(O.VRe[i*O.Nj+j]+O.VRe[j*O.Nj+i])*epsilon+scale+DBL_MIN*100))) return 0;
       }
     }
   }

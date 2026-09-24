@@ -66,6 +66,10 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToBlockListOfPolesVariableGrid(BlockNa
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockTriDiagonalMatrixType * const B, const double SingularValue);
 uint32_t BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(BlockNaturalImpurityOrbitalMatrixType const * A, BlockDoubleTriDiagonalMatrixType * const B, const double kBT, const double SingularValue, double const MinimalPoleDistance);
 uint32_t BlockListOfPolesInversedToCompactMatrix(BlockListOfPoles const * const A, CompactMatrixType * const B);
+uint32_t BlockTriDiagonalMatrixInversedToCompactMatrix(BlockTriDiagonalMatrixType const * const A, CompactMatrixType * const B);
+uint32_t BlockAndersonMatrixInversedToCompactMatrix(BlockAndersonMatrixType const * const A, CompactMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix(BlockNaturalImpurityOrbitalMatrixType const * const A, CompactMatrixType * const B);
+uint32_t BlockDoubleTriDiagonalMatrixInversedToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * const A, CompactMatrixType * const B);
 
 uint32_t TightBindingHamiltonianToDensityMatrix(TightBindingDef const * const A, int Nk[3], CompactMatrixType *rho, double mu, double kbT);
 uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
@@ -73,9 +77,22 @@ uint32_t TightBindingHamiltonianToBlockListOfPolesGrid(TightBindingDef const A, 
 uint32_t TightBindingHamiltonianMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockAndersonMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockAndersonMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockNaturalImpurityOrbitalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockNaturalImpurityOrbitalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockDoubleTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
+uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], BlockDoubleTriDiagonalMatrixType const Sigma, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid);
 uint32_t TightBindingHamiltonianPlusSelfEnergyMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyToBlockListOfPoles(TightBindingDef const A, int Nk[3], BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 uint32_t TightBindingHamiltonianAddSpinPlusSelfEnergyMultiSiteToBlockListOfPoles(TightBindingDef const A, int Nk[3], uint32_t const Nvec, int const *vec, BlockListOfPoles const Sigma, BlockListOfPoles * const G, double const Emin, double const Emax, uint32_t const NE);
 
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue);
 uint32_t DiagonalMatrixBlockTridiagonalize(double const *A, CompactMatrixType *psi, CompactMatrixType *const T, BlockTriDiagonalMatrixType *const ABlock, double NBlock, double SingularValue, uint32_t const NTriMax);
+uint32_t BlockListOfPolesDirectSum(BlockListOfPoles const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockListOfPoles * const B);
+uint32_t BlockTriDiagonalMatrixDirectSum(BlockTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockTriDiagonalMatrixType * const B);
+uint32_t BlockAndersonMatrixDirectSum(BlockAndersonMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockAndersonMatrixType * const B);
+uint32_t BlockNaturalImpurityOrbitalMatrixDirectSum(BlockNaturalImpurityOrbitalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockNaturalImpurityOrbitalMatrixType * const B);
+uint32_t BlockDoubleTriDiagonalMatrixDirectSum(BlockDoubleTriDiagonalMatrixType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, BlockDoubleTriDiagonalMatrixType * const B);

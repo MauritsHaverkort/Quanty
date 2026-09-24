@@ -12,3 +12,6 @@ int BlockTriDiagonalMatrixFromEffectiveHamiltonian(BlockTriDiagonalMatrixType co
 uint32_t BlockTridiagonalMatrixChopReduceDimension(BlockTriDiagonalMatrixType *const A, double const Epsilon);
 int BlockTriDiagonalMatrixGetTail(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N);
 int BlockTriDiagonalMatrixGetTailAndAddSpin(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType  * const B, uint32_t N);
+int BlockTriDiagonalMatrixAdd(BlockTriDiagonalMatrixType const * const A, BlockTriDiagonalMatrixType const * const B, BlockTriDiagonalMatrixType * const C, double const SingularValue);
+int TriDiagonalMatrixAdd(TriDiagonalMatrixType const * const A, TriDiagonalMatrixType const * const B, TriDiagonalMatrixType * const C, double const SingularValue);
+int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax);

@@ -232,15 +232,49 @@ do
 		end
 	end
 
+	-- The chain is in the gauge of the block Lanczos: every coupling between two full blocks
+	-- is Hermitian positive semi-definite, and so is the head coupling b0.
+	local TExact = ResponseFunction.ToTable(Exact)
+	for k = 1, #TExact[2] do
+		if (TExact.BlockSize[k] == Nsub) and (TExact.BlockSize[k+1] == Nsub) then
+			local Bk = Matrix.New(TExact[2][k])
+			if not IsZero(Bk - Matrix.ConjugateTranspose(Bk), 1E-12) then
+				error(string.format("Downfold: coupling %d of the chain is not Hermitian\n", k),1)
+			end
+			local val = Eigensystem(Bk)
+			for i = 1, #val do
+				if Complex.Re(val[i]) < -1E-12 then
+					error(string.format("Downfold: coupling %d of the chain is not positive semi-definite\n", k),1)
+				end
+			end
+		end
+	end
+
 	-- a ceiling cuts the chain. The weight is untouched, since it sits in the head coupling
 	-- the cut never reaches, and the function converges to the exact one as the ceiling is
 	-- raised -- cutting a chain keeps the low moments and drops the high ones.
+	--
+	-- After k steps the Krylov space lies in the first k blocks of the chain, so the first
+	-- NTriMax blocks of the answer only see the first NTriMax blocks of the chain behind the
+	-- head, and the route cuts the chain there before it reduces anything. The cut chain is
+	-- then the exact one, block for block, as far as it goes.
 	local previous = nil
 	for i, n in ipairs({3,6,12,24}) do
 		local Cut, SCut = ResponseFunction.Downfold(GChain,RChain,{{"NTriMax",n}})
-		local blocks = #ResponseFunction.ToTable(Cut)[1]
+		local TCut = ResponseFunction.ToTable(Cut)
+		local blocks = #TCut[1]
 		if blocks ~= math.min(n,NExact)+2 then
 			error(string.format("Downfold: NTriMax = %d gives %d blocks and should give %d\n", n, blocks, math.min(n,NExact)+2),1)
+		end
+		for k = 1, #TCut[1] do
+			if not IsZero(Matrix.New(TCut[1][k]) - Matrix.New(TExact[1][k]), 1E-12) then
+				error(string.format("Downfold: NTriMax = %d changes block %d of the chain\n", n, k),1)
+			end
+		end
+		for k = 1, #TCut[2] do
+			if not IsZero(Matrix.New(TCut[2][k]) - Matrix.New(TExact[2][k]), 1E-12) then
+				error(string.format("Downfold: NTriMax = %d changes coupling %d of the chain\n", n, k),1)
+			end
 		end
 		if not IsZero(SCut - SExact, 1E-12) then
 			error(string.format("Downfold: NTriMax = %d changes the spectral weight of the result\n", n),1)
@@ -264,7 +298,7 @@ do
 		previous = worst
 	end
 end
-print("  the chain route is exact, its length is the one the Krylov space asks for, and NTriMax cuts it")
+print("  the chain route is exact, its couplings Hermitian positive semi-definite, its length the one the Krylov space asks for, and NTriMax cuts it block for block")
 
 
 print("the spectral weight of the result is the S that comes back with it")

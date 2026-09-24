@@ -1804,7 +1804,11 @@ static double CompactMatrixMaxElement(CompactMatrixType const * const M)
   return max;
 }
 
-/*  Step (ii) of ResponseFunctionDownfold for an effective Hamiltonian that is a chain,
+/*  Replaced by BlockTriDiagonalMatrixDownfoldChain in BasicMath_BlockTridiagonalMatrix.cpp,
+ *  which does the same projection by a band reduction of Ht instead of a block Lanczos of
+ *  the dense Ht, in the same gauge. Kept for its history; nothing calls it.
+ *
+ *  Step (ii) of ResponseFunctionDownfold for an effective Hamiltonian that is a chain,
  *  Appendix C1 of Zacinskis et al. rather than its Appendix C3.
  *
  *  Heff is the chain Atilde1, Btilde1, Atilde2, ... and the congruence with the isometry P
@@ -1839,7 +1843,7 @@ static double CompactMatrixMaxElement(CompactMatrixType const * const M)
  *
  *  HeffP is not allocated on entry.
  */
-static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax)
+int BlockTriDiagonalMatrixDownfoldChainOld(BlockTriDiagonalMatrixType const * const Heff, CompactMatrixType const * const P, BlockTriDiagonalMatrixType * const HeffP, double const SingularValue, uint32_t const NTriMax)
 {
   char name[] = "block of a chain";
   CompactMatrixType Ht, A1, D, Dfull, view;
@@ -1857,7 +1861,7 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
   if(Heff->QComplex) view.V = Heff->a; else view.VRe = Heff->aRe;
   if(CompactMatrixMultiply3('N','N','C',P,&view,P,&A1))
   {
-    printf("CompactMatrixMultiply3 failed in BlockTriDiagonalMatrixDownfoldChain\n");
+    printf("CompactMatrixMultiply3 failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
     goto Cleanup;
   }
   SquareCompactMatrixMakeHermitian(&A1);
@@ -1871,19 +1875,19 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
     if(Heff->QComplex) view.V = Heff->b; else view.VRe = Heff->bRe;
     if(CompactMatrixMultiply('*','N',P,&view,&D))
     {
-      printf("CompactMatrixMultiply failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("CompactMatrixMultiply failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     /*  Ht, the chain from its second block on, with D^* in its first block */
     if(BlockTriDiagonalMatrixToCompactMatrix(Heff,&Ht))
     {
-      printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("BlockTriDiagonalMatrixToCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     Dfull.Ni = Nsub; Dfull.Nj = Ht.Ni; Dfull.QComplex = D.QComplex;
     if(InitCompactMatrix(&Dfull)||SetCompactMatrixToZero(&Dfull))
     {
-      printf("InitCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("InitCompactMatrix failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     for(i=0;i<Nsub;i++)
@@ -1904,7 +1908,7 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
      *  far end of the chain. */
     if(CompactMatrixBlockBandDiagonalize(&Ht,&Dfull,HeffP,SingularValue,NTri,Ht.Ni,true,false))
     {
-      printf("CompactMatrixBlockBandDiagonalize failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("CompactMatrixBlockBandDiagonalize failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
     if((A1.QComplex!=0)&&(HeffP->QComplex==0)) RealBlockTridiagonalMatrixToComplex(HeffP);
@@ -1915,7 +1919,7 @@ static int BlockTriDiagonalMatrixDownfoldChain(BlockTriDiagonalMatrixType const 
     HeffP->N = 0;
     if(InitBlockTridiagonalMatrix(HeffP))
     {
-      printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDownfoldChain\n");
+      printf("InitBlockTridiagonalMatrix failed in BlockTriDiagonalMatrixDownfoldChainOld\n");
       goto Cleanup;
     }
   }
@@ -1999,8 +2003,8 @@ Cleanup:
  *
  *  There are two routes through step (ii) and the type of Gin picks one. An effective
  *  Hamiltonian that is a chain, which is what a tri-diagonal Gin has, takes Appendix C1:
- *  BlockTriDiagonalMatrixDownfoldChain projects it with a block Lanczos, nothing is
- *  diagonalised, and Gout comes back a chain of at most (M Ntilde / Nsub) blocks. Every
+ *  BlockTriDiagonalMatrixDownfoldChain projects it by a band reduction of the chain, nothing
+ *  is diagonalised, and Gout comes back a chain of at most (M Ntilde / Nsub) blocks. Every
  *  other type reaches step (ii) as a list of poles and takes Appendix C3, the congruence
  *  one weight at a time, and Gout comes back a star of as many poles as Heff has. NTriMax
  *  is a ceiling on the length of the chain the first route produces and the second route
@@ -2207,6 +2211,36 @@ Cleanup:
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {
   ResponsefunctionType GBLP;
+  /*  two chains add up to a chain, without going through a list of poles. Lower case, as
+   *  the list of poles below: the memory goes to Lua, which pushes it as a userdata. */
+  if(((GA->type|32)=='t')&&((GB->type|32)=='t'))
+  {
+    int retval;
+    Gsum->type = 't';
+    Gsum->Block = GA->Block;
+    Gsum->NSuggestedGridPoints = 0;
+    Gsum->SuggestedGrid = NULL;
+    Gsum->data = GA->Block ? malloc(sizeof(BlockTriDiagonalMatrixType)) : malloc(sizeof(TriDiagonalMatrixType));
+    if(Gsum->data==NULL)
+    {
+      printf("malloc failed in ResponseFunctionAdd\n");
+      return 1;
+    }
+    if(GA->Block)
+    {
+      retval = BlockTriDiagonalMatrixAdd((BlockTriDiagonalMatrixType*)(GA->data), (BlockTriDiagonalMatrixType*)(GB->data), (BlockTriDiagonalMatrixType*)(Gsum->data), 0);
+    }
+    else
+    {
+      retval = TriDiagonalMatrixAdd((TriDiagonalMatrixType*)(GA->data), (TriDiagonalMatrixType*)(GB->data), (TriDiagonalMatrixType*)(Gsum->data), 0);
+    }
+    if(retval)
+    {
+      free(Gsum->data);
+      printf("Error in ResponseFunctionAdd\n");
+    }
+    return retval;
+  }
   ConvertResponsefunction(GA, Gsum, 'l', "Default", 0, 0, 0, 0, false, false, false);
   ConvertResponsefunction(GB, &GBLP, 'l', "Default", 0, 0, 0, 0, false, false, false);
   
@@ -5030,6 +5064,242 @@ int ConvertResponsefunction(const ResponsefunctionType *const Min, Responsefunct
     return 1;
   }
   return ResponsefunctionTruncate(Mout, NTriMaxVal, NTriMaxCon);
+}
+
+
+/*  Copy a response function in its single valued (non-block) form into the block form of the same type, with
+ *  BlockSize=1. The numbers are copied, nothing is transformed, and the result evaluates to the same function:
+ *    l -> L  ListOfPoles                 to BlockListOfPoles
+ *    t -> T  TriDiagonalMatrixType       to BlockTriDiagonalMatrixType
+ *    a -> A  AndersonMatrixType          to BlockAndersonMatrixType
+ *    d -> D  DoubleTriDiagonalMatrixType to BlockDoubleTriDiagonalMatrixType
+ *    n -> N  BADoubleTriDiagonalMatrixType to BlockNaturalImpurityOrbitalMatrixType
+ *  The last one is not a pure copy, the two forms differ:
+ *    single valued  G = a0 + b0^2 (Gval + Gcon)
+ *    block          G = a0 +       Gval + Gcon
+ *  so b0 is multiplied into the head of both chains, a[0] -> b0^2 a[0] and b[0] -> b0 b[0]. The derived numbers
+ *  acvB, acvA, acvBA, bvB0, bcB0, bvA0 and bcA0 of the single valued form are not needed, the block form keeps
+ *  their equivalent in TMT, which is calculated from val and con.
+ *
+ *  On exit Mout is a block response function of upper case type, i.e. C controls the allocation. Mout->data is
+ *  allocated here.
+ */
+int ResponseFunctionToBlockResponseFunction(ResponsefunctionType const * const Min, ResponsefunctionType * const Mout)
+{
+  uint32_t i;
+  if(Min->Block==true)
+  {
+    printf("Error in ResponseFunctionToBlockResponseFunction: the response function is already a block response function\n");
+    return 1;
+  }
+  Mout->type = Min->type & ~32;  // upper case, C controls the allocation
+  Mout->Block = true;
+  Mout->data = NULL;
+  Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
+  if(Mout->NSuggestedGridPoints==0)
+  {
+    Mout->SuggestedGrid=NULL;
+  }
+  else
+  {
+    Mout->SuggestedGrid= (double*)malloc(Mout->NSuggestedGridPoints*sizeof(double));
+    memcpy(Mout->SuggestedGrid, Min->SuggestedGrid, Mout->NSuggestedGridPoints*sizeof(double));
+  }
+  switch (Min->type|32)
+  {
+    case 'l':
+    {
+      Mout->data = malloc(sizeof(BlockListOfPoles));
+      if(CopyListOfPolesToBlockListOfPoles((ListOfPoles*)Min->data, (BlockListOfPoles*)Mout->data)) return 1;
+    }
+    break;
+    case 't':
+    {
+      TriDiagonalMatrixType const * const A = (TriDiagonalMatrixType*)Min->data;
+      BlockTriDiagonalMatrixType * const B = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
+      Mout->data = B;
+      B->N = A->N;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      if(InitBlockTridiagonalMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      memcpy(B->aRe, A->a, (A->N+1)*sizeof(double));
+      memcpy(B->bRe, A->b, (A->N)*sizeof(double));
+    }
+    break;
+    case 'a':
+    {
+      AndersonMatrixType const * const A = (AndersonMatrixType*)Min->data;
+      BlockAndersonMatrixType * const B = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
+      Mout->data = B;
+      B->N = A->N;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      if(InitBlockAndersonMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      memcpy(B->aRe, A->a, (A->N+1)*sizeof(double));
+      memcpy(B->bRe, A->b, (A->N)*sizeof(double));
+    }
+    break;
+    case 'd':
+    {
+      DoubleTriDiagonalMatrixType const * const A = (DoubleTriDiagonalMatrixType*)Min->data;
+      BlockDoubleTriDiagonalMatrixType * const B = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+      Mout->data = B;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      B->val.N = A->val.N;
+      B->con.N = A->con.N;
+      if(InitBlockDoubleTriDiagonalMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      B->kBT = A->kBT;
+      B->a0.VRe[0] = A->a0;
+      B->b0.VRe[0] = A->b0;
+      strcpy(B->val.Name, A->val.Name);
+      B->val.mu = A->val.mu;
+      memcpy(B->val.aRe, A->val.a, (A->val.N+1)*sizeof(double));
+      memcpy(B->val.bRe, A->val.b, (A->val.N)*sizeof(double));
+      strcpy(B->con.Name, A->con.Name);
+      B->con.mu = A->con.mu;
+      memcpy(B->con.aRe, A->con.a, (A->con.N+1)*sizeof(double));
+      memcpy(B->con.bRe, A->con.b, (A->con.N)*sizeof(double));
+    }
+    break;
+    case 'n':
+    {
+      BADoubleTriDiagonalMatrixType const * const A = (BADoubleTriDiagonalMatrixType*)Min->data;
+      BlockNaturalImpurityOrbitalMatrixType * const B = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+      Mout->data = B;
+      B->BlockSize = 1;
+      B->QComplex = 0;
+      B->val.N = A->val.N;
+      B->con.N = A->con.N;
+      if(InitBlockNaturalImpurityOrbitalMatrix(B)) return 1;
+      strcpy(B->Name, A->Name);
+      B->mu = A->mu;
+      B->Epsilon = A->Epsilon;
+      B->a0.VRe[0] = A->a0;
+      strcpy(B->val.Name, A->val.Name);
+      B->val.mu = A->val.mu;
+      memcpy(B->val.aRe, A->val.a, (A->val.N+1)*sizeof(double));
+      memcpy(B->val.bRe, A->val.b, (A->val.N)*sizeof(double));
+      strcpy(B->con.Name, A->con.Name);
+      B->con.mu = A->con.mu;
+      memcpy(B->con.aRe, A->con.a, (A->con.N+1)*sizeof(double));
+      memcpy(B->con.bRe, A->con.b, (A->con.N)*sizeof(double));
+      // the overall scaling b0 of the single valued form goes into the head of both chains
+      B->val.aRe[0] *= Sqr(A->b0);
+      B->con.aRe[0] *= Sqr(A->b0);
+      if(A->val.N>0) B->val.bRe[0] *= A->b0;
+      if(A->con.N>0) B->con.bRe[0] *= A->b0;
+      // TMT follows from val and con
+      FreeCompactMatrix(&(B->TMT));
+      if(SetTMTFromValandConInBlockNaturalImpurityOrbitalMatrixType(B)) return 1;
+    }
+    break;
+    default:
+    {
+      printf("Error in ResponseFunctionToBlockResponseFunction: unrecognized type of response function: %c\n", Min->type);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+/*  The direct sum of m block response functions A[i] of one type (NULL is a zero response function), each
+ *  placed at the rows and columns Offset[i] ... Offset[i]+n_i-1 of a response function of block size
+ *  BlockSize. See BlockListOfPolesDirectSum and its siblings. The A[i] must all be block response functions
+ *  of the same type, which is checked, and have the same mu, which is left to the caller.
+ *
+ *  On exit Mout is a block response function of upper case type, i.e. C controls the allocation.
+ */
+int ResponseFunctionDirectSum(ResponsefunctionType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, ResponsefunctionType * const Mout)
+{
+  uint32_t i, ret=1;
+  char type=0;
+  for(i=0;i<m;i++)
+  {
+    if(A[i]==NULL) continue;
+    if(A[i]->Block!=true)
+    {
+      printf("Error in ResponseFunctionDirectSum: response function %i is not a block response function\n", i+1);
+      return 1;
+    }
+    if(type==0) type = A[i]->type|32;
+    if((A[i]->type|32)!=type)
+    {
+      printf("Error in ResponseFunctionDirectSum: response function %i is of type %c and not of type %c as the ones before\n", i+1, A[i]->type, type);
+      return 1;
+    }
+  }
+  if(type==0)
+  {
+    printf("Error in ResponseFunctionDirectSum: all response functions are zero, the type of the sum is not defined\n");
+    return 1;
+  }
+  Mout->type = type & ~32;  // upper case, C controls the allocation
+  Mout->Block = true;
+  Mout->data = NULL;
+  Mout->NSuggestedGridPoints = 0;
+  Mout->SuggestedGrid = NULL;
+  /*  Each case collects the data pointers in an array of its own type. An array of void* read back as an
+   *  array of BlockListOfPoles* (or any other type) breaks the aliasing rules, and the Intel compiler
+   *  then drops the stores and reads garbage. */
+  switch(type)
+  {
+    case 'l':
+    {
+      BlockListOfPoles const **data = (BlockListOfPoles const **)malloc(m*sizeof(BlockListOfPoles*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockListOfPoles const *)A[i]->data);
+      Mout->data = malloc(sizeof(BlockListOfPoles));
+      ret = BlockListOfPolesDirectSum(data, Offset, m, BlockSize, (BlockListOfPoles*)Mout->data);
+      free(data);
+    }
+    break;
+    case 't':
+    {
+      BlockTriDiagonalMatrixType const **data = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockTriDiagonalMatrixType const *)A[i]->data);
+      Mout->data = malloc(sizeof(BlockTriDiagonalMatrixType));
+      ret = BlockTriDiagonalMatrixDirectSum(data, Offset, m, BlockSize, (BlockTriDiagonalMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
+    case 'a':
+    {
+      BlockAndersonMatrixType const **data = (BlockAndersonMatrixType const **)malloc(m*sizeof(BlockAndersonMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockAndersonMatrixType const *)A[i]->data);
+      Mout->data = malloc(sizeof(BlockAndersonMatrixType));
+      ret = BlockAndersonMatrixDirectSum(data, Offset, m, BlockSize, (BlockAndersonMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
+    case 'n':
+    {
+      BlockNaturalImpurityOrbitalMatrixType const **data = (BlockNaturalImpurityOrbitalMatrixType const **)malloc(m*sizeof(BlockNaturalImpurityOrbitalMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockNaturalImpurityOrbitalMatrixType const *)A[i]->data);
+      Mout->data = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+      ret = BlockNaturalImpurityOrbitalMatrixDirectSum(data, Offset, m, BlockSize, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
+    case 'd':
+    {
+      BlockDoubleTriDiagonalMatrixType const **data = (BlockDoubleTriDiagonalMatrixType const **)malloc(m*sizeof(BlockDoubleTriDiagonalMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockDoubleTriDiagonalMatrixType const *)A[i]->data);
+      Mout->data = malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+      ret = BlockDoubleTriDiagonalMatrixDirectSum(data, Offset, m, BlockSize, (BlockDoubleTriDiagonalMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
+    default:
+      printf("Error in ResponseFunctionDirectSum: unrecognized type of response function: %c\n", type);
+  }
+  return ret;
 }
 
 

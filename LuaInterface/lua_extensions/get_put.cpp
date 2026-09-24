@@ -559,6 +559,19 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       fprintf(stream,")\n");
       return 0;
     }
+    if (luaL_testudata(L, narg, "Matrix_Type") != NULL)
+    {
+      fprintf(stream,"Matrix.New(");
+      // turn the matrix in a table
+      lua_remove(L, 1);
+      lua_remove(L, 1);
+      LuaMatrixToTable(L);
+      lua_pushnil(L);
+      lua_setmetatable(L, 2);
+      LuaASCIIStreamPrint(L, 2, stream);
+      fprintf(stream,")\n");
+      return 0;
+    }
     return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of user data\n");
   }
   if(lua_type(L,narg)==LUA_TTHREAD)
