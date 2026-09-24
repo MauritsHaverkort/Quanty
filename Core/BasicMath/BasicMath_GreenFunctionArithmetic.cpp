@@ -5187,34 +5187,24 @@ int ResponseFunctionDirectSum(ResponsefunctionType const * const * const A, uint
 {
   uint32_t i, ret=1;
   char type=0;
-  void const **data = (void const **)malloc(m*sizeof(void*));
-  if(data==NULL)
-  {
-    printf("malloc failed in ResponseFunctionDirectSum\n");
-    return 1;
-  }
   for(i=0;i<m;i++)
   {
-    data[i] = (A[i]==NULL) ? (NULL) : (A[i]->data);
     if(A[i]==NULL) continue;
     if(A[i]->Block!=true)
     {
       printf("Error in ResponseFunctionDirectSum: response function %i is not a block response function\n", i+1);
-      free(data);
       return 1;
     }
     if(type==0) type = A[i]->type|32;
     if((A[i]->type|32)!=type)
     {
       printf("Error in ResponseFunctionDirectSum: response function %i is of type %c and not of type %c as the ones before\n", i+1, A[i]->type, type);
-      free(data);
       return 1;
     }
   }
   if(type==0)
   {
     printf("Error in ResponseFunctionDirectSum: all response functions are zero, the type of the sum is not defined\n");
-    free(data);
     return 1;
   }
   Mout->type = type & ~32;  // upper case, C controls the allocation
@@ -5222,32 +5212,59 @@ int ResponseFunctionDirectSum(ResponsefunctionType const * const * const A, uint
   Mout->data = NULL;
   Mout->NSuggestedGridPoints = 0;
   Mout->SuggestedGrid = NULL;
+  /*  Each case collects the data pointers in an array of its own type. An array of void* read back as an
+   *  array of BlockListOfPoles* (or any other type) breaks the aliasing rules, and the Intel compiler
+   *  then drops the stores and reads garbage. */
   switch(type)
   {
     case 'l':
+    {
+      BlockListOfPoles const **data = (BlockListOfPoles const **)malloc(m*sizeof(BlockListOfPoles*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockListOfPoles const *)A[i]->data);
       Mout->data = malloc(sizeof(BlockListOfPoles));
-      ret = BlockListOfPolesDirectSum((BlockListOfPoles const **)data, Offset, m, BlockSize, (BlockListOfPoles*)Mout->data);
-      break;
+      ret = BlockListOfPolesDirectSum(data, Offset, m, BlockSize, (BlockListOfPoles*)Mout->data);
+      free(data);
+    }
+    break;
     case 't':
+    {
+      BlockTriDiagonalMatrixType const **data = (BlockTriDiagonalMatrixType const **)malloc(m*sizeof(BlockTriDiagonalMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockTriDiagonalMatrixType const *)A[i]->data);
       Mout->data = malloc(sizeof(BlockTriDiagonalMatrixType));
-      ret = BlockTriDiagonalMatrixDirectSum((BlockTriDiagonalMatrixType const **)data, Offset, m, BlockSize, (BlockTriDiagonalMatrixType*)Mout->data);
-      break;
+      ret = BlockTriDiagonalMatrixDirectSum(data, Offset, m, BlockSize, (BlockTriDiagonalMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
     case 'a':
+    {
+      BlockAndersonMatrixType const **data = (BlockAndersonMatrixType const **)malloc(m*sizeof(BlockAndersonMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockAndersonMatrixType const *)A[i]->data);
       Mout->data = malloc(sizeof(BlockAndersonMatrixType));
-      ret = BlockAndersonMatrixDirectSum((BlockAndersonMatrixType const **)data, Offset, m, BlockSize, (BlockAndersonMatrixType*)Mout->data);
-      break;
+      ret = BlockAndersonMatrixDirectSum(data, Offset, m, BlockSize, (BlockAndersonMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
     case 'n':
+    {
+      BlockNaturalImpurityOrbitalMatrixType const **data = (BlockNaturalImpurityOrbitalMatrixType const **)malloc(m*sizeof(BlockNaturalImpurityOrbitalMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockNaturalImpurityOrbitalMatrixType const *)A[i]->data);
       Mout->data = malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-      ret = BlockNaturalImpurityOrbitalMatrixDirectSum((BlockNaturalImpurityOrbitalMatrixType const **)data, Offset, m, BlockSize, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
-      break;
+      ret = BlockNaturalImpurityOrbitalMatrixDirectSum(data, Offset, m, BlockSize, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
     case 'd':
+    {
+      BlockDoubleTriDiagonalMatrixType const **data = (BlockDoubleTriDiagonalMatrixType const **)malloc(m*sizeof(BlockDoubleTriDiagonalMatrixType*));
+      for(i=0;i<m;i++) data[i] = (A[i]==NULL) ? (NULL) : ((BlockDoubleTriDiagonalMatrixType const *)A[i]->data);
       Mout->data = malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
-      ret = BlockDoubleTriDiagonalMatrixDirectSum((BlockDoubleTriDiagonalMatrixType const **)data, Offset, m, BlockSize, (BlockDoubleTriDiagonalMatrixType*)Mout->data);
-      break;
+      ret = BlockDoubleTriDiagonalMatrixDirectSum(data, Offset, m, BlockSize, (BlockDoubleTriDiagonalMatrixType*)Mout->data);
+      free(data);
+    }
+    break;
     default:
       printf("Error in ResponseFunctionDirectSum: unrecognized type of response function: %c\n", type);
   }
-  free(data);
   return ret;
 }
 
