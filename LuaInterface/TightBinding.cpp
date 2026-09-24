@@ -1114,7 +1114,10 @@ static int LuaCalculateG(lua_State *L)
   if(Options.Nk[0]<1) return luaL_error(L, "Error first number of k-points needs to be larger than 0");
   if(Options.Nk[1]<1) return luaL_error(L, "Error second number of k-points needs to be larger than 0");
   if(Options.Nk[2]<1) return luaL_error(L, "Error third number of k-points needs to be larger than 0");
-  lua_settop(L, 0);
+  /*  The arguments stay on the stack until everything that points into them has been
+   *  read: Sigma is the memory of a response function userdata, and Options.Type and
+   *  Grid point into the option table. Lua takes the top nresults values as the
+   *  result, so the output is simply pushed on top of them. */
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
@@ -1167,7 +1170,15 @@ static int LuaCalculateG(lua_State *L)
   }
   if(strcmp(Options.Type, "ListOfPoles")!=0)
   {
+    /*  ChangeType reads a response function at index 1 and a type at index 2 and
+     *  refuses any other number of arguments, so it is left those two and nothing
+     *  else. Both are pushed before the arguments under them are dropped. */
+    int iG = lua_gettop(L);
     lua_pushstring(L, Options.Type);
+    lua_pushvalue(L, iG);
+    lua_replace(L, 1);
+    lua_replace(L, 2);
+    lua_settop(L, 2);
     return LuaChangeTypeResponseFunction(L);
   }
   return 1;
