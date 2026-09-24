@@ -2207,6 +2207,36 @@ Cleanup:
 int ResponseFunctionAdd(ResponsefunctionType * const GA, ResponsefunctionType * const GB, ResponsefunctionType * const Gsum)
 {
   ResponsefunctionType GBLP;
+  /*  two chains add up to a chain, without going through a list of poles. Lower case, as
+   *  the list of poles below: the memory goes to Lua, which pushes it as a userdata. */
+  if(((GA->type|32)=='t')&&((GB->type|32)=='t'))
+  {
+    int retval;
+    Gsum->type = 't';
+    Gsum->Block = GA->Block;
+    Gsum->NSuggestedGridPoints = 0;
+    Gsum->SuggestedGrid = NULL;
+    Gsum->data = GA->Block ? malloc(sizeof(BlockTriDiagonalMatrixType)) : malloc(sizeof(TriDiagonalMatrixType));
+    if(Gsum->data==NULL)
+    {
+      printf("malloc failed in ResponseFunctionAdd\n");
+      return 1;
+    }
+    if(GA->Block)
+    {
+      retval = BlockTriDiagonalMatrixAdd((BlockTriDiagonalMatrixType*)(GA->data), (BlockTriDiagonalMatrixType*)(GB->data), (BlockTriDiagonalMatrixType*)(Gsum->data), 0);
+    }
+    else
+    {
+      retval = TriDiagonalMatrixAdd((TriDiagonalMatrixType*)(GA->data), (TriDiagonalMatrixType*)(GB->data), (TriDiagonalMatrixType*)(Gsum->data), 0);
+    }
+    if(retval)
+    {
+      free(Gsum->data);
+      printf("Error in ResponseFunctionAdd\n");
+    }
+    return retval;
+  }
   ConvertResponsefunction(GA, Gsum, 'l', "Default", 0, 0, 0, 0, false, false, false);
   ConvertResponsefunction(GB, &GBLP, 'l', "Default", 0, 0, 0, 0, false, false, false);
   

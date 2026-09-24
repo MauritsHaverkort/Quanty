@@ -1180,7 +1180,7 @@ static int LuaResponseFunctionAdd(lua_State * L)
   Mb = luaL_checkResponsefunction(L,2);
   if(Ma->Block != Mb->Block) return luaL_error(L, "Error in ResponseFunctionAdd: Block type of both functions needs to be the same\n");
   if(ResponseFunctionGetBlockSize(Ma) != ResponseFunctionGetBlockSize(Mb)) return luaL_error(L, "Error in ResponseFunctionAdd: the first function has a block size of %d and the second of %d, only functions of the same block size can be added\n", ResponseFunctionGetBlockSize(Ma), ResponseFunctionGetBlockSize(Mb));
-  ResponseFunctionAdd(Ma, Mb, &res);
+  if(ResponseFunctionAdd(Ma, Mb, &res)) return luaL_error(L, "Error in ResponseFunctionAdd\n");
   LuaPush_ResponseFunction(L, &res);
   FreeResponsefunction(Ma);
   FreeResponsefunction(Mb);
