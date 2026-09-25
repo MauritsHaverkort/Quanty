@@ -460,137 +460,71 @@ static int BathExcMatVec(BathExcSystemType const *const Sys, Complex16 const *co
   return 0;
 }
 
-/*
- *  Given an operator H and basis PsiBasis[i] with i in [0,NPsiBasis)
- *  Given hybridisation functions Sigma[i] with channel operators V[i][j]
- *  calculate
- *    G_{lm}(w) = < PsiBasis[l] | 1 / ( w - H_aux ) | PsiBasis[m] >
- *    with l,m in [0,BlockSize)
- *  where H_aux is H plus the baths the hybridisation functions stand for, in
- *  the space of at most NExcitations bath excitations, and return it in block
- *  tridiagonal form in G.
- *
- *  --------------------------------------------------------------------------
- *  What is calculated
- *  --------------------------------------------------------------------------
- *
- *  Sigma[i](w) = a0[i] + sum_n W[i][n] / ( w - a[i][n] ) is read as a bath of
- *  free particles.  W = L^dag L, and every row mu of L is a mode b_mu at energy
- *  a[i][n] coupled by
- *
- *    T = sum_mu sum_j ( L_{mu j} b_mu^dag V[i][j] + h.c. )
- *
- *  The coupling is a term of a Hamiltonian, so it is even in fermion parity and
- *  the bath particle has the parity of V: an odd V (c, c^dag c^dag c) couples
- *  to a fermion, an even V (c^dag c, a boson operator) to a boson.  All
- *  operators of one entry must have the same parity; that is checked.  At one
- *  excitation the statistics never shows, at two it sets the exchange sign of
- *  the crossed processes and whether a mode may hold two excitations.
- *
- *  The states are B(tau) | lambda > with lambda in X_m^S (see
- *  BathExcSpaceType) and B(tau) the bath creation operators of the tuple tau,
- *  the one of the largest mode index leftmost, normalized with 1/sqrt(n!) for a
- *  mode that holds n bosons.  Adding mode mu to tau' gives
- *
- *    b_mu^dag V_j B(tau') | eta > = (-1)^{pi_mu N_odd(tau',< mu)} sqrt(n_mu(tau))
- *                                   B(tau) V_j | eta >
- *
- *  with pi_mu the parity of the mode and N_odd(tau',< mu) the number of
- *  fermionic modes of tau' with an index below mu.  V_j | eta > is projected
- *  on X_m^S, which is the one approximation of the method (Rayleigh-Ritz, as
- *  in the old routine and in the paper), and the order of the system operators
- *  is the business of the operator algebra.
- *
- *  NonCrossing == false: tuples are multisets of modes and every mode of a
- *  tuple can be the one that is removed.  A state with two excitations is then
- *  reached along both orders, which gives the crossed processes, and the space
- *  is exact within at most NExcitations excitations.
- *
- *  NonCrossing == true: tuples are ordered histories and only the excitation
- *  added last can leave.  The excitations are distinguishable, there is no
- *  exchange sign, no Pauli exclusion and no Bose factor between them.  This is
- *  the nested (rainbow) approximation.  Its only use here is to measure how
- *  much the crossed processes contribute; the energy mesh method computes the
- *  same approximation far more cheaply.
- *
- *  --------------------------------------------------------------------------
- *  How it is calculated
- *  --------------------------------------------------------------------------
- *
- *  A,B  as in CalculateGforHwithSigmaAsOperator: a0 into H, P orthonormalized.
- *
- *  C    For m = 1 .. NExcitations and every multiset S of m entries: the
- *       overlap and Hamiltonian matrices of the raw vectors
- *       V[s_m]...V[s_1] | e_p > from operator products that act in P, so no
- *       wave function outside P is ever created.  Deflate, diagonalize.
- *       V[i][j] maps a raw vector of S\i into a raw vector of S, so the
- *       couplings Z follow from the eigenvectors without any further operator.
- *
- *  D    The modes, optionally binned on the grid.
- *
- *  E    The tuples and links of every block, dropping tuples that no link
- *       reaches.
- *
- *  F    Block Lanczos on the auxiliary Hamiltonian from the BlockSize seeds.
- *       Full re-orthogonalization while the vectors fit in
- *       BathExcMaxLanczosMemory, a local one against the two previous blocks
- *       beyond it.  The local one keeps the moments right and can split a
- *       converged pole into copies that share its weight.
- *
- *  G    The chain padded up to the block size of B0, as in the old routine.
- *
- *  --------------------------------------------------------------------------
- *  Arguments
- *  --------------------------------------------------------------------------
- *
- *  As CalculateGforHwithSigmaAsOperator, and
- *
- *  NExcitations         at most this many bath excitations at once, >= 1
- *  NonCrossing          see above
- *  SuggestedGrid        grid on which the poles of the hybridisation functions
- *                       are binned before they become modes, NULL for none.
- *                       (The old routine bins the poles of the self energy
- *                       after they are split by the intermediate states; that
- *                       can not be done here, the crossed processes need to
- *                       know which mode is which.)
- *
- *  returns 0 on success, 1 on failure
- */
-int CalculateGforHwithSigmaAsOperatorBathExcitations(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize, OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NExcitations, const bool NonCrossing, const uint32_t NTriFull, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockTriDiagonalMatrixType * G)
+/*  What the front end hands to the back ends: P orthonormalized (HO, Cseed),
+ *  the system spaces X_m^S with their energies and couplings, and the parity
+ *  of every hybridisation.  Everything in it is owned by it and released by
+ *  BathExcFrontEndFree.                                                        */
+typedef struct BathExcFrontType
 {
-  uint32_t i, j, jp, k, p, q, a, s, sp, t, r, lev, c;
-  uint32_t Npsi = NPsiBasis, m = BlockSize, NFull, North = 0, NTriUse, NKeep;
+  uint32_t North, NFull, QComplexOut, NSpace, NSpaceAlloc;
+  uint32_t *Parity;
+  CompactMatrixType HO, Cseed;
+  BathExcSpaceType *Space;
+  OperatorType Heff;
+  bool QHeffAllocated;
+}
+BathExcFrontType;
+
+static void BathExcFrontEndInit(BathExcFrontType *const F)
+{
+  memset(F, 0, sizeof(BathExcFrontType));
+  CompactMatrixSetUnallocated(&(F->HO));
+  CompactMatrixSetUnallocated(&(F->Cseed));
+}
+
+static void BathExcFrontEndFree(BathExcFrontType *const F, BlockListOfPoles const *const Sigma)
+{
+  uint32_t s;
+  FreeCompactMatrix(&(F->HO));
+  FreeCompactMatrix(&(F->Cseed));
+  if (F->Space != NULL)
+  {
+    for (s = 0; s < F->NSpaceAlloc; s++) BathExcSpaceFree(&(F->Space[s]), Sigma);
+    free(F->Space);
+  }
+  free(F->Parity);
+  if (F->QHeffAllocated) FreeOperator(&(F->Heff));
+  BathExcFrontEndInit(F);
+}
+
+/*  Steps A, B and C of CalculateGforHwithSigmaAsOperatorBathExcitations, shared
+ *  with the energy mesh back end CalculateGforHwithSigmaAsOperatorBathExcitationsMesh.
+ *  On failure everything is released and 1 is returned.                        */
+static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize, OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NExcitations, const bool NonCrossing, const uint32_t NTriFull, const CompactMatrixType *const B0, BathExcFrontType *const F)
+{
+  uint32_t i, j, jp, k, p, q, a, s, sp, r, lev, c;
+  uint32_t Npsi = NPsiBasis, m = BlockSize, NFull, North = 0;
   uint32_t QComplexOut, NPair = 0, NSpaceAlloc = 0, NSpace = 0;
   uint32_t *PairEntry = NULL, *PairChannel = NULL, *Parity = NULL;
   int ierr = 0, par;
-  size_t Dtot, WorkSize = 0;
-  double *Sval = NULL, norm, Re;
-  double DiscardedWeight = 0, NegativeWeight = 0;
-  bool QHeffAllocated = false, FullReorth;
-  CompactMatrixType SMat, HMat, Sfun, T, TS, HO, Cseed, Ablk, Bblk, Lblk;
-  BlockTriDiagonalMatrixType chain;
+  double *Sval = NULL, norm;
+  bool QHeffAllocated = false;
+  CompactMatrixType SMat, HMat, Sfun, T, TS, HO, Cseed;
   OperatorType Heff, *Hptr;
   BathExcSpaceType *Space = NULL;
-  BathExcModesType Modes;
-  BathExcSystemType Sys;
-  Complex16 *Qall = NULL, *Y = NULL, *Reorth = NULL;
 
-  memset(&Modes, 0, sizeof(BathExcModesType));
-  memset(&Sys, 0, sizeof(BathExcSystemType));
+  BathExcFrontEndInit(F);
   CompactMatrixSetUnallocated(&SMat);  CompactMatrixSetUnallocated(&HMat);
   CompactMatrixSetUnallocated(&Sfun);  CompactMatrixSetUnallocated(&T);
   CompactMatrixSetUnallocated(&TS);    CompactMatrixSetUnallocated(&HO);
   CompactMatrixSetUnallocated(&Cseed);
-  CompactMatrixSetUnallocated(&Ablk);  CompactMatrixSetUnallocated(&Bblk);
-  CompactMatrixSetUnallocated(&Lblk);
-  chain.a = NULL;
 
   /* ---------------------------------------------------------------------- */
   /*  A   input                                                             */
   /* ---------------------------------------------------------------------- */
-  if ((H == NULL) || (PsiBasis == NULL) || (G == NULL))
+  if ((H == NULL) || (PsiBasis == NULL))
   {
-    printf("CalculateGforHwithSigmaAsOperatorBathExcitations called with a NULL pointer for H, PsiBasis or G\n");
+    printf("CalculateGforHwithSigmaAsOperatorBathExcitations called with a NULL pointer for H or PsiBasis\n");
     return 1;
   }
   if ((Npsi == 0) || (m == 0) || (m > Npsi))
@@ -1104,6 +1038,179 @@ int CalculateGforHwithSigmaAsOperatorBathExcitations(const OperatorType *const H
   }
   for (sp = 1; sp < NSpace; sp++) { FreeCompactMatrix(&(Space[sp].C)); CompactMatrixSetUnallocated(&(Space[sp].C)); }
 
+  /*  hand over                                                                */
+  F->North = North;
+  F->NFull = NFull;
+  F->QComplexOut = QComplexOut;
+  F->NSpace = NSpace;
+  F->NSpaceAlloc = NSpaceAlloc;
+  F->Parity = Parity;             Parity = NULL;
+  F->HO = HO;                     CompactMatrixSetUnallocated(&HO);
+  F->Cseed = Cseed;               CompactMatrixSetUnallocated(&Cseed);
+  F->Space = Space;               Space = NULL;
+  F->QHeffAllocated = QHeffAllocated;
+  if (QHeffAllocated) F->Heff = Heff;
+  QHeffAllocated = false;
+
+cleanup:
+  FreeCompactMatrix(&SMat);
+  FreeCompactMatrix(&HMat);
+  FreeCompactMatrix(&Sfun);
+  FreeCompactMatrix(&T);
+  FreeCompactMatrix(&TS);
+  FreeCompactMatrix(&HO);
+  FreeCompactMatrix(&Cseed);
+  if (Space != NULL)
+  {
+    for (s = 0; s < NSpaceAlloc; s++) BathExcSpaceFree(&(Space[s]), Sigma);
+    free(Space);
+  }
+  free(Sval);
+  free(PairEntry);
+  free(PairChannel);
+  free(Parity);
+  if (QHeffAllocated) FreeOperator(&Heff);
+  return ierr;
+}
+
+/*
+ *  Given an operator H and basis PsiBasis[i] with i in [0,NPsiBasis)
+ *  Given hybridisation functions Sigma[i] with channel operators V[i][j]
+ *  calculate
+ *    G_{lm}(w) = < PsiBasis[l] | 1 / ( w - H_aux ) | PsiBasis[m] >
+ *    with l,m in [0,BlockSize)
+ *  where H_aux is H plus the baths the hybridisation functions stand for, in
+ *  the space of at most NExcitations bath excitations, and return it in block
+ *  tridiagonal form in G.
+ *
+ *  --------------------------------------------------------------------------
+ *  What is calculated
+ *  --------------------------------------------------------------------------
+ *
+ *  Sigma[i](w) = a0[i] + sum_n W[i][n] / ( w - a[i][n] ) is read as a bath of
+ *  free particles.  W = L^dag L, and every row mu of L is a mode b_mu at energy
+ *  a[i][n] coupled by
+ *
+ *    T = sum_mu sum_j ( L_{mu j} b_mu^dag V[i][j] + h.c. )
+ *
+ *  The coupling is a term of a Hamiltonian, so it is even in fermion parity and
+ *  the bath particle has the parity of V: an odd V (c, c^dag c^dag c) couples
+ *  to a fermion, an even V (c^dag c, a boson operator) to a boson.  All
+ *  operators of one entry must have the same parity; that is checked.  At one
+ *  excitation the statistics never shows, at two it sets the exchange sign of
+ *  the crossed processes and whether a mode may hold two excitations.
+ *
+ *  The states are B(tau) | lambda > with lambda in X_m^S (see
+ *  BathExcSpaceType) and B(tau) the bath creation operators of the tuple tau,
+ *  the one of the largest mode index leftmost, normalized with 1/sqrt(n!) for a
+ *  mode that holds n bosons.  Adding mode mu to tau' gives
+ *
+ *    b_mu^dag V_j B(tau') | eta > = (-1)^{pi_mu N_odd(tau',< mu)} sqrt(n_mu(tau))
+ *                                   B(tau) V_j | eta >
+ *
+ *  with pi_mu the parity of the mode and N_odd(tau',< mu) the number of
+ *  fermionic modes of tau' with an index below mu.  V_j | eta > is projected
+ *  on X_m^S, which is the one approximation of the method (Rayleigh-Ritz, as
+ *  in the old routine and in the paper), and the order of the system operators
+ *  is the business of the operator algebra.
+ *
+ *  NonCrossing == false: tuples are multisets of modes and every mode of a
+ *  tuple can be the one that is removed.  A state with two excitations is then
+ *  reached along both orders, which gives the crossed processes, and the space
+ *  is exact within at most NExcitations excitations.
+ *
+ *  NonCrossing == true: tuples are ordered histories and only the excitation
+ *  added last can leave.  The excitations are distinguishable, there is no
+ *  exchange sign, no Pauli exclusion and no Bose factor between them.  This is
+ *  the nested (rainbow) approximation.  Its only use here is to measure how
+ *  much the crossed processes contribute; the energy mesh method computes the
+ *  same approximation far more cheaply.
+ *
+ *  --------------------------------------------------------------------------
+ *  How it is calculated
+ *  --------------------------------------------------------------------------
+ *
+ *  A,B  as in CalculateGforHwithSigmaAsOperator: a0 into H, P orthonormalized.
+ *
+ *  C    For m = 1 .. NExcitations and every multiset S of m entries: the
+ *       overlap and Hamiltonian matrices of the raw vectors
+ *       V[s_m]...V[s_1] | e_p > from operator products that act in P, so no
+ *       wave function outside P is ever created.  Deflate, diagonalize.
+ *       V[i][j] maps a raw vector of S\i into a raw vector of S, so the
+ *       couplings Z follow from the eigenvectors without any further operator.
+ *
+ *  D    The modes, optionally binned on the grid.
+ *
+ *  E    The tuples and links of every block, dropping tuples that no link
+ *       reaches.
+ *
+ *  F    Block Lanczos on the auxiliary Hamiltonian from the BlockSize seeds.
+ *       Full re-orthogonalization while the vectors fit in
+ *       BathExcMaxLanczosMemory, a local one against the two previous blocks
+ *       beyond it.  The local one keeps the moments right and can split a
+ *       converged pole into copies that share its weight.
+ *
+ *  G    The chain padded up to the block size of B0, as in the old routine.
+ *
+ *  --------------------------------------------------------------------------
+ *  Arguments
+ *  --------------------------------------------------------------------------
+ *
+ *  As CalculateGforHwithSigmaAsOperator, and
+ *
+ *  NExcitations         at most this many bath excitations at once, >= 1
+ *  NonCrossing          see above
+ *  SuggestedGrid        grid on which the poles of the hybridisation functions
+ *                       are binned before they become modes, NULL for none.
+ *                       (The old routine bins the poles of the self energy
+ *                       after they are split by the intermediate states; that
+ *                       can not be done here, the crossed processes need to
+ *                       know which mode is which.)
+ *
+ *  returns 0 on success, 1 on failure
+ */
+int CalculateGforHwithSigmaAsOperatorBathExcitations(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize, OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NExcitations, const bool NonCrossing, const uint32_t NTriFull, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockTriDiagonalMatrixType * G)
+{
+  uint32_t i, j, k, p, q, s, t, r, c;
+  uint32_t m = BlockSize, NFull, North, NTriUse, NKeep;
+  uint32_t QComplexOut, NSpace;
+  uint32_t *Parity;
+  int ierr = 0;
+  size_t Dtot, WorkSize = 0;
+  double norm, Re;
+  double DiscardedWeight = 0, NegativeWeight = 0;
+  bool FullReorth;
+  CompactMatrixType HO, Cseed, Ablk, Bblk, Lblk;
+  BlockTriDiagonalMatrixType chain;
+  BathExcSpaceType *Space;
+  BathExcModesType Modes;
+  BathExcSystemType Sys;
+  BathExcFrontType Front;
+  Complex16 *Qall = NULL, *Y = NULL, *Reorth = NULL;
+
+  memset(&Modes, 0, sizeof(BathExcModesType));
+  memset(&Sys, 0, sizeof(BathExcSystemType));
+  CompactMatrixSetUnallocated(&Ablk);  CompactMatrixSetUnallocated(&Bblk);
+  CompactMatrixSetUnallocated(&Lblk);
+  chain.a = NULL;
+
+  /* ---------------------------------------------------------------------- */
+  /*  A, B, C  input, P, the system spaces                                  */
+  /* ---------------------------------------------------------------------- */
+  BathExcFrontEndInit(&Front);
+  if (G == NULL) { printf("CalculateGforHwithSigmaAsOperatorBathExcitations called with a NULL pointer for G\n"); return 1; }
+  if (BathExcFrontEndBuild(H, PsiBasis, NPsiBasis, BlockSize, V, Sigma, NSigma, NExcitations, NonCrossing, NTriFull, B0, &Front)) return 1;
+  North = Front.North;
+  NFull = Front.NFull;
+  QComplexOut = Front.QComplexOut;
+  NSpace = Front.NSpace;
+  Parity = Front.Parity;
+  Space = Front.Space;
+  HO = Front.HO;          /* views, owned by Front */
+  HO.OnLuaStack = true;
+  Cseed = Front.Cseed;
+  Cseed.OnLuaStack = true;
+
   /* ---------------------------------------------------------------------- */
   /*  D   the modes                                                          */
   /* ---------------------------------------------------------------------- */
@@ -1503,32 +1610,925 @@ int CalculateGforHwithSigmaAsOperatorBathExcitations(const OperatorType *const H
   }
 
 cleanup:
-  FreeCompactMatrix(&SMat);
-  FreeCompactMatrix(&HMat);
-  FreeCompactMatrix(&Sfun);
-  FreeCompactMatrix(&T);
-  FreeCompactMatrix(&TS);
-  FreeCompactMatrix(&HO);
-  FreeCompactMatrix(&Cseed);
   FreeCompactMatrix(&Ablk);
   FreeCompactMatrix(&Bblk);
   FreeCompactMatrix(&Lblk);
   if (chain.a != NULL) FreeBlockTridiagonalMatrix(&chain);
-  if (Space != NULL)
-  {
-    for (s = 0; s < NSpaceAlloc; s++) BathExcSpaceFree(&(Space[s]), Sigma);
-    free(Space);
-  }
   BathExcModesFree(&Modes);
   free(Sys.WorkU);
   free(Sys.WorkW);
   free(Qall);
   free(Y);
   free(Reorth);
-  free(Sval);
-  free(PairEntry);
-  free(PairChannel);
-  free(Parity);
-  if (QHeffAllocated) FreeOperator(&Heff);
+  BathExcFrontEndFree(&Front, Sigma);
+  return ierr;
+}
+
+/* ===========================================================================
+ *
+ *   The same Green function on a fixed energy mesh, in the nested (non
+ *   crossing) approximation
+ *
+ * =========================================================================== */
+
+/*  the same for B series at once, stored as a[t*B + b]: every butterfly runs
+ *  over the B contiguous series, and the twiddles tw[k] = exp(sign 2 pi i k/n),
+ *  k < n/2, are computed once by the caller                                  */
+static void BathExcFFTBatch(Complex16 *const a, uint32_t const n, size_t const B, Complex16 const *const tw)
+{
+  uint32_t i, j, k, len, half, step;
+  size_t b;
+  Complex16 *row = (Complex16*)malloc(B * sizeof(Complex16));
+  if (row == NULL) return;
+  for (i = 1, j = 0; i < n; i++)
+  {
+    uint32_t bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j)
+    {
+      memcpy(row, &(a[(size_t)i * B]), B * sizeof(Complex16));
+      memcpy(&(a[(size_t)i * B]), &(a[(size_t)j * B]), B * sizeof(Complex16));
+      memcpy(&(a[(size_t)j * B]), row, B * sizeof(Complex16));
+    }
+  }
+  free(row);
+  for (len = 2; len <= n; len <<= 1)
+  {
+    half = len >> 1;
+    step = n / len;
+    for (i = 0; i < n; i += len)
+    {
+      for (k = 0; k < half; k++)
+      {
+        Complex16 w = tw[(size_t)k * step];
+        Complex16 *u = &(a[(size_t)(i + k) * B]), *v = &(a[(size_t)(i + k + half) * B]);
+        for (b = 0; b < B; b++)
+        {
+          double vr = v[b].Re * w.Re - v[b].Im * w.Im;
+          double vi = v[b].Re * w.Im + v[b].Im * w.Re;
+          v[b].Re = u[b].Re - vr;  v[b].Im = u[b].Im - vi;
+          u[b].Re += vr;           u[b].Im += vi;
+        }
+      }
+    }
+  }
+}
+
+/*  the smallest power of two >= n                                              */
+static uint32_t BathExcPow2(size_t const n)
+{
+  uint32_t p = 1;
+  while (p < n) p <<= 1;
+  return p;
+}
+
+/*  M = z - Hdiag - Sigma, inverted in place.  Hdiag is either a full Dim x Dim
+ *  matrix (Hfull != NULL) or a list of Dim energies                          */
+static int BathExcResolvent(Complex16 const z, uint32_t const Dim, CompactMatrixType const *const Hfull, double const *const Ediag, Complex16 const *const Sig, CompactMatrixType *const Mat)
+{
+  uint32_t a, b;
+  for (a = 0; a < Dim; a++)
+  {
+    for (b = 0; b < Dim; b++)
+    {
+      Complex16 v;
+      v.Re = -Sig[a * Dim + b].Re;
+      v.Im = -Sig[a * Dim + b].Im;
+      if (Hfull != NULL) { v.Re -= Hfull->V[a * Dim + b].Re; v.Im -= Hfull->V[a * Dim + b].Im; }
+      if (a == b)
+      {
+        v.Re += z.Re;
+        v.Im += z.Im;
+        if (Ediag != NULL) v.Re -= Ediag[a];
+      }
+      Mat->V[a * Dim + b] = v;
+    }
+  }
+  if (CompactMatrixInverse(Mat) < 0) return 1;
+  return 0;
+}
+
+/*  what the evaluation at one y needs, all of it read only                     */
+typedef struct BathExcMeshType
+{
+  uint32_t p, m, North, NSpace;
+  BathExcSpaceType const *Space;
+  BlockListOfPoles const *Sigma;
+  CompactMatrixType const *HOrel, *Cseed;
+  Complex16 ***Wbin;
+  int64_t const *kL, *kH;
+  int64_t jL, jH, kOutL;
+  size_t NOut;
+  double dw;
+}
+BathExcMeshType;
+
+/*  The nested evaluation at z = w_k + i y for every mesh point k, level by
+ *  level from the top down, and its contribution wq y [A(k-1) - 2A(k) + A(k+1)]
+ *  to Racc.  Allocates its own work space, so several y can run at once.      */
+static int BathExcMeshOneY(BathExcMeshType const *const X, double const y, double const wq, Complex16 *const Racc)
+{
+  uint32_t i, l, lp, k, b, s, c, n, lev, a;
+  uint32_t p = X->p, m = X->m, North = X->North, NSpace = X->NSpace, DimMax = North;
+  BathExcSpaceType const *Space = X->Space;
+  BlockListOfPoles const *Sigma = X->Sigma;
+  int64_t const *kL = X->kL, *kH = X->kH;
+  int64_t jL = X->jL, jH = X->jH;
+  double dw = X->dw;
+  size_t GmeshMax = 0;
+  int ierr = 0;
+  Complex16 **Gmesh = NULL, *Gseed = NULL, *Sig = NULL, *Kser = NULL, *Fhat = NULL, *What = NULL, *Xbuf = NULL, *Kt = NULL;
+  CompactMatrixType Mat, Tmp;
+  CompactMatrixSetUnallocated(&Mat);
+  CompactMatrixSetUnallocated(&Tmp);
+  for (s = 1; s < NSpace; s++) DimMax = Max(DimMax, Space[s].Dim);
+  Gmesh = (Complex16**)calloc(NSpace, sizeof(Complex16*));
+  if (Gmesh == NULL) return 1;
+  for (s = 1; s < NSpace; s++)
+  {
+    lev = Space[s].Level;
+    if (lev >= p) continue;
+    Gmesh[s] = (Complex16*)malloc((size_t)(kH[lev] - kL[lev] + 1) * Sqr(Space[s].Dim) * sizeof(Complex16));
+    if (Gmesh[s] == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh for the mesh of space %u\n", s); ierr = 1; goto done; }
+    GmeshMax = Max(GmeshMax, (size_t)(kH[lev] - kL[lev] + 1));
+  }
+  Gseed = (Complex16*)malloc((size_t)(kH[0] - kL[0] + 1) * m * m * sizeof(Complex16));
+  Sig = (Complex16*)malloc((size_t)Max((size_t)(kH[0] - kL[0] + 1), GmeshMax) * Sqr(DimMax) * sizeof(Complex16));
+  Mat.Ni = DimMax; Mat.Nj = DimMax; Mat.QComplex = 1;
+  Tmp.Ni = North; Tmp.Nj = m; Tmp.QComplex = 1;
+  if ((Gseed == NULL) || (Sig == NULL) || InitCompactMatrix(&Mat) || InitCompactMatrix(&Tmp)) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh\n"); ierr = 1; goto done; }
+  for (int32_t levi = (int32_t)p - 1; levi >= 0; levi--)
+  {
+    lev = (uint32_t)levi;
+    for (s = 0; s < NSpace; s++)
+    {
+      BathExcSpaceType const *S = &(Space[s]);
+      uint32_t DimS = (s == 0) ? North : S->Dim;
+      size_t Nk = (size_t)(kH[lev] - kL[lev] + 1), kk;
+      if (S->Level != lev) continue;
+      memset(Sig, 0, Nk * DimS * DimS * sizeof(Complex16));
+      /*  the self energy from every space one level up                      */
+      for (uint32_t sc = 1; sc < NSpace; sc++)
+      {
+        BathExcSpaceType const *C = &(Space[sc]);
+        if (C->Level != lev + 1) continue;
+        for (c = 0; c < C->NCoupling; c++)
+        {
+          uint32_t bi, DimC = C->Dim;
+          if (C->CouplingParent[c] != s) continue;
+          i = C->CouplingEntry[c];
+          bi = Sigma[i].BlockSize;
+          if (C->Level == p)
+          {
+            /*  top level: exact.  Sigma += sum_l Z_l^dag T_l with
+             *  T_l[lambda,:] = sum_l' Delta_ll'(z - E_C[lambda]) Z_l'[lambda,:]  */
+            uint32_t stride = 1 + bi * bi;
+            Complex16 *Tl = (Complex16*)malloc((size_t)bi * DimC * DimS * sizeof(Complex16));
+            Complex16 *dl = (Complex16*)malloc(bi * bi * sizeof(Complex16));
+            if ((Tl == NULL) || (dl == NULL)) { free(Tl); free(dl); ierr = 1; goto done; }
+            for (kk = 0; kk < Nk; kk++)
+            {
+              double x = (double)(kL[lev] + (int64_t)kk) * dw;
+              CompactMatrixType Sv = BathExcView(&(Sig[kk * DimS * DimS]), DimS, DimS);
+              memset(Tl, 0, (size_t)bi * DimC * DimS * sizeof(Complex16));
+              for (uint32_t lam = 0; lam < DimC; lam++)
+              {
+                memset(dl, 0, bi * bi * sizeof(Complex16));
+                for (n = 0; n < Sigma[i].N; n++)
+                {
+                  double en = Sigma[i].QComplex ? Sigma[i].V[n * stride].Re : Sigma[i].VRe[n * stride];
+                  double dr = x - C->E[lam] - en, den = dr * dr + y * y;
+                  Complex16 inv;
+                  inv.Re = dr / den;
+                  inv.Im = -y / den;
+                  for (k = 0; k < bi * bi; k++)
+                  {
+                    Complex16 w;
+                    if (Sigma[i].QComplex) w = Sigma[i].V[n * stride + 1 + k];
+                    else { w.Re = Sigma[i].VRe[n * stride + 1 + k]; w.Im = 0; }
+                    dl[k].Re += w.Re * inv.Re - w.Im * inv.Im;
+                    dl[k].Im += w.Re * inv.Im + w.Im * inv.Re;
+                  }
+                }
+                for (l = 0; l < bi; l++)
+                {
+                  for (lp = 0; lp < bi; lp++)
+                  {
+                    Complex16 d = dl[l * bi + lp];
+                    if ((d.Re == 0) && (d.Im == 0)) continue;
+                    Complex16 const *zr = &(C->Z[c][lp].V[(size_t)lam * DimS]);
+                    Complex16 *tr = &(Tl[((size_t)l * DimC + lam) * DimS]);
+                    for (b = 0; b < DimS; b++)
+                    {
+                      tr[b].Re += d.Re * zr[b].Re - d.Im * zr[b].Im;
+                      tr[b].Im += d.Re * zr[b].Im + d.Im * zr[b].Re;
+                    }
+                  }
+                }
+              }
+              for (l = 0; l < bi; l++)
+              {
+                CompactMatrixType Tv = BathExcView(&(Tl[(size_t)l * DimC * DimS]), DimC, DimS);
+                CompactMatrixAddMultiply('C', 'N', &(C->Z[c][l]), &Tv, &Sv, 1, 0, 1, 0);
+              }
+            }
+            free(Tl);
+            free(dl);
+          }
+          else
+          {
+            /*  below the top level: the binned hybridisation convolved with
+             *  K_ll'(x) = Z_l^dag G_C(x) Z_l' along the real axis, by FFT      */
+            size_t Nc = (size_t)(kH[lev + 1] - kL[lev + 1] + 1), Nw = (size_t)(jH - jL + 1), t, DD = (size_t)DimS * DimS;
+            uint32_t Lf = BathExcPow2(Nc + Nw - 1), ab;
+            Complex16 *twf, *twb;
+            Kser = (Complex16*)malloc((size_t)Lf * DD * sizeof(Complex16));
+            Fhat = (Complex16*)calloc((size_t)Lf * DD, sizeof(Complex16));
+            What = (Complex16*)malloc((size_t)Lf * sizeof(Complex16));
+            Xbuf = (Complex16*)malloc(Nc * DimC * DimS * sizeof(Complex16));
+            Kt = (Complex16*)malloc((size_t)Lf * sizeof(Complex16));   /* the twiddles, both signs */
+            if ((Kser == NULL) || (Fhat == NULL) || (What == NULL) || (Xbuf == NULL) || (Kt == NULL)) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh for the convolution\n"); ierr = 1; goto done; }
+            twf = Kt;
+            twb = &(Kt[Lf / 2]);
+            for (t = 0; t < Lf / 2; t++)
+            {
+              twf[t].Re = cos(2 * M_PI * t / Lf);  twf[t].Im = -sin(2 * M_PI * t / Lf);
+              twb[t].Re = twf[t].Re;               twb[t].Im = -twf[t].Im;
+            }
+            for (lp = 0; lp < bi; lp++)
+            {
+              /*  X(x) = G_C(x) Z_l'                                              */
+              for (t = 0; t < Nc; t++)
+              {
+                CompactMatrixType Gv = BathExcView(&(Gmesh[sc][t * DimC * DimC]), DimC, DimC);
+                CompactMatrixType Xv = BathExcView(&(Xbuf[t * DimC * DimS]), DimC, DimS);
+                CompactMatrixAddMultiply('N', 'N', &Gv, &(C->Z[c][lp]), &Xv, 1, 0, 0, 0);
+              }
+              for (l = 0; l < bi; l++)
+              {
+                bool any = false;
+                for (t = 0; t < Nw; t++) if ((X->Wbin[i][t][l * bi + lp].Re != 0) || (X->Wbin[i][t][l * bi + lp].Im != 0)) any = true;
+                if (!any) continue;   /* e.g. the spin off diagonal blocks */
+                /*  K_ll'(x) = Z_l^dag X(x), block t of the series, zero padded  */
+                for (t = 0; t < Nc; t++)
+                {
+                  CompactMatrixType Kv = BathExcView(&(Kser[t * DD]), DimS, DimS);
+                  CompactMatrixType Xv = BathExcView(&(Xbuf[t * DimC * DimS]), DimC, DimS);
+                  CompactMatrixAddMultiply('C', 'N', &(C->Z[c][l]), &Xv, &Kv, 1, 0, 0, 0);
+                }
+                memset(&(Kser[Nc * DD]), 0, (Lf - Nc) * DD * sizeof(Complex16));
+                memset(What, 0, (size_t)Lf * sizeof(Complex16));
+                for (t = 0; t < Nw; t++) What[t] = X->Wbin[i][t][l * bi + lp];
+                BathExcFFTBatch(What, Lf, 1, twf);
+                BathExcFFTBatch(Kser, Lf, DD, twf);
+                for (t = 0; t < Lf; t++)
+                {
+                  Complex16 wt = What[t], *ks = &(Kser[t * DD]), *fh = &(Fhat[t * DD]);
+                  for (ab = 0; ab < DD; ab++)
+                  {
+                    fh[ab].Re += ks[ab].Re * wt.Re - ks[ab].Im * wt.Im;
+                    fh[ab].Im += ks[ab].Re * wt.Im + ks[ab].Im * wt.Re;
+                  }
+                }
+              }
+            }
+            BathExcFFTBatch(Fhat, Lf, DD, twb);
+            for (kk = 0; kk < Nk; kk++)
+            {
+              /*  F(k) sits at t = k - kL[lev+1] - jL                          */
+              t = (size_t)(kL[lev] + (int64_t)kk - kL[lev + 1] - jL);
+              for (ab = 0; ab < DD; ab++)
+              {
+                Sig[kk * DD + ab].Re += Fhat[t * DD + ab].Re / Lf;
+                Sig[kk * DD + ab].Im += Fhat[t * DD + ab].Im / Lf;
+              }
+            }
+            free(Kser); Kser = NULL;
+            free(Fhat); Fhat = NULL;
+            free(What); What = NULL;
+            free(Xbuf); Xbuf = NULL;
+            free(Kt); Kt = NULL;
+          }
+        }
+      }
+      /*  the resolvent at every mesh point                                  */
+      Mat.Ni = DimS; Mat.Nj = DimS;
+      for (kk = 0; kk < Nk; kk++)
+      {
+        Complex16 z;
+        z.Re = (double)(kL[lev] + (int64_t)kk) * dw;
+        z.Im = y;
+        if (BathExcResolvent(z, DimS, (s == 0) ? X->HOrel : NULL, (s == 0) ? NULL : S->E, &(Sig[kk * DimS * DimS]), &Mat))
+        {
+          printf("CalculateGforHwithSigmaAsOperatorBathExcitationsMesh: the resolvent is singular at w = %g + i %g\n", z.Re, z.Im);
+          ierr = 1; goto done;
+        }
+        if (s == 0)
+        {
+          /*  the seed block Cseed^dag G_P Cseed                             */
+          CompactMatrixType Gs = BathExcView(&(Gseed[kk * m * m]), m, m);
+          CompactMatrixAddMultiply('N', 'N', &Mat, X->Cseed, &Tmp, 1, 0, 0, 0);
+          CompactMatrixAddMultiply('C', 'N', X->Cseed, &Tmp, &Gs, 1, 0, 0, 0);
+        }
+        else
+        {
+          memcpy(&(Gmesh[s][kk * DimS * DimS]), Mat.V, (size_t)DimS * DimS * sizeof(Complex16));
+        }
+      }
+    }
+  }
+  /*  R_k += w_q y [A(k-1) - 2 A(k) + A(k+1)],  A = -(1/pi)(G - G^dag)/(2i)  */
+  for (size_t ko = 0; ko < X->NOut; ko++)
+  {
+    size_t kk = (size_t)(X->kOutL + (int64_t)ko - kL[0]);
+    for (a = 0; a < m; a++)
+    {
+      for (b = 0; b < m; b++)
+      {
+        double sr = 0, si = 0, cf;
+        int dk;
+        for (dk = -1; dk <= 1; dk++)
+        {
+          Complex16 gab = Gseed[(kk + dk) * m * m + a * m + b];
+          Complex16 gba = Gseed[(kk + dk) * m * m + b * m + a];
+          double dr = gab.Re - gba.Re, di = gab.Im + gba.Im;   /* G_ab - conj(G_ba) */
+          cf = (dk == 0) ? -2.0 : 1.0;
+          sr += cf * (-di / (2 * M_PI));
+          si += cf * ( dr / (2 * M_PI));
+        }
+        Racc[ko * m * m + a * m + b].Re += wq * y * sr;
+        Racc[ko * m * m + a * m + b].Im += wq * y * si;
+      }
+    }
+  }
+
+done:
+  if (Gmesh != NULL)
+  {
+    for (s = 0; s < NSpace; s++) free(Gmesh[s]);
+    free(Gmesh);
+  }
+  free(Gseed);
+  free(Sig);
+  free(Kser);
+  free(Fhat);
+  free(What);
+  free(Xbuf);
+  free(Kt);
+  FreeCompactMatrix(&Mat);
+  FreeCompactMatrix(&Tmp);
+  return ierr;
+}
+
+/*
+ *  Given the same input as CalculateGforHwithSigmaAsOperatorBathExcitations
+ *  calculate the seed block of G(w) on the uniform mesh w_k = k dw,
+ *  dw = (Emax - Emin)/NE, energies measured from E0, in the nested (non
+ *  crossing) approximation with up to NExcitations bath excitations, and
+ *  return it as a block list of poles that sit on the mesh points.
+ *
+ *  --------------------------------------------------------------------------
+ *  What is calculated
+ *  --------------------------------------------------------------------------
+ *
+ *  With distinguishable bath excitations of which the last one added leaves
+ *  first, the resolvent below a state of X_m^S with bath energy E_tau depends
+ *  on tau only through z - E_tau.  So one matrix function per system space
+ *  describes everything:
+ *
+ *    G_S(z)     = ( z - E_S - Sigma_S(z) )^-1                (G_P with H_P)
+ *    Sigma_S(z) = sum_C sum_{l,l'} sum_n W_i[n]_{ll'} Z_l^dag G_C(z - e_i[n]) Z_l'
+ *
+ *  the sum over the spaces C = S + i one level up, Z_l = < C | V[i][l] | S >.
+ *  At the top level G_C is diagonal and the sum over the poles of the
+ *  hybridisation is done exactly, with the hybridisation evaluated at
+ *  z - E_C[lambda].  At one excitation this is the whole calculation and the
+ *  result is exact.  Below the top level the poles are binned on the lattice
+ *  j dw (conserving the zeroth and the first moment of every bin), so
+ *  z - e_i[n] is again a lattice point and the sum over n is a convolution
+ *  along the real axis, done by FFT.  The binning keeps the moments M0 .. M3
+ *  of G_P.  This is the same approximation as
+ *  CalculateGforHwithSigmaAsOperatorBathExcitations with NonCrossing = true.
+ *
+ *  The result is the list of poles at w_k with residues
+ *
+ *    R_k = integral tent_k(w) A(w) dw ,   A = -(1/pi) Im G(w + i0)
+ *
+ *  with tent_k the triangle of width 2 dw at w_k: every pole of the exact G is
+ *  split over its two neighbouring mesh points, conserving its weight and its
+ *  first moment, exactly as the binning on a grid elsewhere in Quanty.  M0 and
+ *  M1 are exact, M2 is off by at most dw^2/4 per unit of weight.
+ *
+ *  --------------------------------------------------------------------------
+ *  How the residues are obtained without a broadening
+ *  --------------------------------------------------------------------------
+ *
+ *  A_y(x) = -(1/pi) Im G(x + i y) is the spectrum broadened by a Lorentzian of
+ *  half width y.  It is harmonic in (x,y), so d_x^2 A_y = - d_y^2 A_y, and two
+ *  integrations by parts give int_0^inf y d_x^2 A_y dy = - A(x).  With the
+ *  second difference on the mesh in place of d_x^2 this is exact:
+ *
+ *    R_k = -(1/dw) int_0^inf y [ A_y(w_{k-1}) - 2 A_y(w_k) + A_y(w_{k+1}) ] dy
+ *
+ *  (for one pole: y A_y = (W/pi)(1 - d^2/(d^2+y^2)), the 1 drops out of the
+ *  second difference and the rest integrates to the tent.)  Only Im G enters.
+ *  The integrand is bounded, W/pi at most, and a pole at distance d from a
+ *  mesh point gives structure at y ~ d, so the integral is done on a log grid
+ *  from y_min = BathExcMeshYmin dw, which errs by about 0.2 y_min / dw
+ *  pointwise.  Beyond Y = BathExcMeshYmaxFactor times the spectral radius the
+ *  moment expansion G = M0/z + M1/z^2 + M2/z^3 is integrated analytically.
+ *  M0, M1 and M2 are exact:  S,  < H_P >  and  < H_P^2 > + < V^dag V >.
+ *  Measured on 300 random poles with some on and next to mesh points: 2e-5
+ *  pointwise, 1e-6 in M0 and M1, with 64 nodes.
+ *
+ *  For a matrix G, Im G is the Hermitian part (G - G^dag)/(2i); the residues
+ *  come out Hermitian, and what the quadrature leaves negative is removed and
+ *  reported.
+ *
+ *  --------------------------------------------------------------------------
+ *  The mesh
+ *  --------------------------------------------------------------------------
+ *
+ *  Every pole of the result has to sit inside the mesh, so the mesh covers a
+ *  bound on the spectrum as well as [Emin, Emax]:  the extremes of the
+ *  diagonal blocks widened by the norm of the coupling, which for the nested
+ *  tree is at most twice max_S || sum_C Z^dag W_tot Z ||^(1/2).  The spaces one
+ *  level up are needed at z - e and live on the mesh shifted by the range of
+ *  the bins.
+ *
+ *  --------------------------------------------------------------------------
+ *  Cost
+ *  --------------------------------------------------------------------------
+ *
+ *  Per node of the y quadrature: one inversion per mesh point and system space
+ *  below the top level, the exact top level sums (mesh points x poles of the
+ *  hybridisation x dimension of the top spaces), and the FFT convolutions.
+ *  Memory: the matrix functions of one y at a time.
+ *
+ *  returns 0 on success, 1 on failure
+ */
+static double const BathExcMeshYmin = 1e-4;
+static double const BathExcMeshYmaxFactor = 100;
+static double const BathExcMeshPanelWidth = 2.5;
+static double const BathExcMeshKeepWeight = 1e-14;
+
+int CalculateGforHwithSigmaAsOperatorBathExcitationsMesh(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize, OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NExcitations, const double E0, const double Emin, const double Emax, const uint32_t NE, const CompactMatrixType *const B0, BlockListOfPoles * G)
+{
+  /*  8 point Gauss-Legendre on [-1,1]                                        */
+  static double const GLx[8] = {-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
+                                 0.1834346424956498,  0.5255324099163290,  0.7966664774136267,  0.9602898564975363};
+  static double const GLw[8] = { 0.1012285362903763,  0.2223810344533745,  0.3137066458778873,  0.3626837833783620,
+                                 0.3626837833783620,  0.3137066458778873,  0.2223810344533745,  0.1012285362903763};
+  uint32_t i, j, l, lp, k, a, b, s, c, lev, q, n;
+  uint32_t m = BlockSize, NFull, North, NSpace, p = NExcitations;
+  int ierr = 0;
+  int64_t kL[64], kH[64], jL = 0, jH = 0, kOutL, kOutH;
+  double dw, lo, hi, Rspec, ymin, ymax, *emin = NULL, *emax = NULL;
+  double dlo[64], dhi[64], bnorm[65];
+  double ClippedWeight = 0;
+  BathExcFrontType Front;
+  BathExcSpaceType *Space;
+  CompactMatrixType HOrel, Cseed, Tmp, M0, M1, M2;
+  Complex16 *Rsum = NULL;
+  Complex16 ***Wbin = NULL;         /* Wbin[i][j - jL] : bi x bi                 */
+  double *ynode = NULL, *yweight = NULL;
+  uint32_t Ny = 0;
+  size_t NOut;
+
+  BathExcFrontEndInit(&Front);
+  CompactMatrixSetUnallocated(&HOrel);
+  CompactMatrixSetUnallocated(&Tmp);   CompactMatrixSetUnallocated(&M0);
+  CompactMatrixSetUnallocated(&M1);    CompactMatrixSetUnallocated(&M2);
+  if (G == NULL) { printf("CalculateGforHwithSigmaAsOperatorBathExcitationsMesh called with a NULL pointer for G\n"); return 1; }
+  if ((NE == 0) || !(Emax > Emin) || (p == 0) || (p > 60))
+  {
+    printf("CalculateGforHwithSigmaAsOperatorBathExcitationsMesh called with Emin=%g Emax=%g NE=%u NExcitations=%u\n", Emin, Emax, NE, p);
+    return 1;
+  }
+  dw = (Emax - Emin) / (double)NE;
+
+  /* ---------------------------------------------------------------------- */
+  /*  A, B, C  input, P, the system spaces                                  */
+  /* ---------------------------------------------------------------------- */
+  if (BathExcFrontEndBuild(H, PsiBasis, NPsiBasis, BlockSize, V, Sigma, NSigma, NExcitations, true, 1, B0, &Front)) return 1;
+  North = Front.North;
+  NFull = Front.NFull;
+  NSpace = Front.NSpace;
+  Space = Front.Space;
+  Cseed = Front.Cseed;
+  Cseed.OnLuaStack = true;
+  /*  energies from E0 on                                                     */
+  HOrel.Ni = North; HOrel.Nj = North; HOrel.QComplex = 1;
+  if (InitCompactMatrix(&HOrel)) { ierr = 1; goto cleanup; }
+  memcpy(HOrel.V, Front.HO.V, (size_t)North * North * sizeof(Complex16));
+  for (a = 0; a < North; a++) HOrel.V[a * North + a].Re -= E0;
+  for (s = 1; s < NSpace; s++)
+  {
+    for (a = 0; a < Space[s].Dim; a++) Space[s].E[a] -= E0;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  D   the poles of the hybridisations binned on the lattice j dw         */
+  /* ---------------------------------------------------------------------- */
+  emin = (double*)malloc(Max(NSigma, 1) * sizeof(double));
+  emax = (double*)malloc(Max(NSigma, 1) * sizeof(double));
+  if ((emin == NULL) || (emax == NULL)) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh\n"); ierr = 1; goto cleanup; }
+  jL = INT64_MAX; jH = INT64_MIN;
+  for (i = 0; i < NSigma; i++)
+  {
+    uint32_t bi = Sigma[i].BlockSize, stride = 1 + bi * bi;
+    emin[i] = DBL_MAX; emax[i] = -DBL_MAX;
+    for (n = 0; n < Sigma[i].N; n++)
+    {
+      double en = Sigma[i].QComplex ? Sigma[i].V[n * stride].Re : Sigma[i].VRe[n * stride];
+      emin[i] = Min(emin[i], en);
+      emax[i] = Max(emax[i], en);
+    }
+    if (Sigma[i].N == 0) { emin[i] = 0; emax[i] = 0; }
+    jL = Min(jL, (int64_t)floor(emin[i] / dw));
+    jH = Max(jH, (int64_t)floor(emax[i] / dw) + 1);
+  }
+  if (NSigma == 0) { jL = 0; jH = 0; }
+  Wbin = (Complex16***)calloc(Max(NSigma, 1), sizeof(Complex16**));
+  if (Wbin == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh\n"); ierr = 1; goto cleanup; }
+  for (i = 0; i < NSigma; i++)
+  {
+    uint32_t bi = Sigma[i].BlockSize, stride = 1 + bi * bi;
+    Wbin[i] = (Complex16**)calloc((size_t)(jH - jL + 1), sizeof(Complex16*));
+    if (Wbin[i] == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh\n"); ierr = 1; goto cleanup; }
+    for (j = 0; j < (uint32_t)(jH - jL + 1); j++)
+    {
+      Wbin[i][j] = (Complex16*)calloc(bi * bi, sizeof(Complex16));
+      if (Wbin[i][j] == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh\n"); ierr = 1; goto cleanup; }
+    }
+    for (n = 0; n < Sigma[i].N; n++)
+    {
+      double en = Sigma[i].QComplex ? Sigma[i].V[n * stride].Re : Sigma[i].VRe[n * stride];
+      double u = en / dw, f;
+      int64_t j0 = (int64_t)floor(u);
+      f = u - (double)j0;
+      for (k = 0; k < bi * bi; k++)
+      {
+        Complex16 w;
+        if (Sigma[i].QComplex) w = Sigma[i].V[n * stride + 1 + k];
+        else { w.Re = Sigma[i].VRe[n * stride + 1 + k]; w.Im = 0; }
+        Wbin[i][j0 - jL][k].Re += (1 - f) * w.Re;  Wbin[i][j0 - jL][k].Im += (1 - f) * w.Im;
+        Wbin[i][j0 + 1 - jL][k].Re += f * w.Re;    Wbin[i][j0 + 1 - jL][k].Im += f * w.Im;
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  E   the moments of the seed block and a bound on the spectrum          */
+  /* ---------------------------------------------------------------------- */
+  M0.Ni = m; M0.Nj = m; M0.QComplex = 1;
+  M1.Ni = m; M1.Nj = m; M1.QComplex = 1;
+  M2.Ni = m; M2.Nj = m; M2.QComplex = 1;
+  Tmp.Ni = North; Tmp.Nj = m; Tmp.QComplex = 1;
+  if (InitCompactMatrix(&M0) || InitCompactMatrix(&M1) || InitCompactMatrix(&M2) || InitCompactMatrix(&Tmp)) { ierr = 1; goto cleanup; }
+  CompactMatrixAddMultiply('C', 'N', &Cseed, &Cseed, &M0, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &HOrel, &Cseed, &Tmp, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('C', 'N', &Cseed, &Tmp, &M1, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('C', 'N', &Tmp, &Tmp, &M2, 1, 0, 0, 0);
+  /*  the extremes of the diagonal blocks and the norm of the couplings.  The
+   *  coupling out of space S is sum_C sum_ll' Wtot_ll' Z_l^dag Z_l'; it is
+   *  added to M2 for S = P                                                     */
+  {
+    double *val = (double*)malloc(Max(North, 1) * sizeof(double));
+    CompactMatrixType fun;
+    if (val == NULL) { ierr = 1; goto cleanup; }
+    if (HermitianCompactMatrixEigensystemRowVectors(&HOrel, &fun, val)) { free(val); ierr = 1; goto cleanup; }
+    FreeCompactMatrix(&fun);
+    for (lev = 0; lev <= p; lev++) { dlo[lev] = DBL_MAX; dhi[lev] = -DBL_MAX; bnorm[lev] = 0; }
+    dlo[0] = val[0];
+    dhi[0] = val[North - 1];
+    free(val);
+  }
+  for (s = 0; s < NSpace; s++)
+  {
+    uint32_t DimS = Space[s].Dim;
+    CompactMatrixType Cpl, ZW;
+    double *val;
+    CompactMatrixSetUnallocated(&Cpl);
+    Cpl.Ni = DimS; Cpl.Nj = DimS; Cpl.QComplex = 1;
+    if (InitCompactMatrix(&Cpl)) { ierr = 1; goto cleanup; }
+    if (s > 0)
+    {
+      double elo = 0, ehi = 0;
+      for (k = 0; k < Space[s].Level; k++) { elo += emin[Space[s].Entry[k]]; ehi += emax[Space[s].Entry[k]]; }
+      for (a = 0; a < DimS; a++)
+      {
+        dlo[Space[s].Level] = Min(dlo[Space[s].Level], Space[s].E[a] + elo - Space[s].Level * dw);
+        dhi[Space[s].Level] = Max(dhi[Space[s].Level], Space[s].E[a] + ehi + Space[s].Level * dw);
+      }
+    }
+    for (uint32_t sc = 1; sc < NSpace; sc++)
+    {
+      BathExcSpaceType *C = &(Space[sc]);
+      if (C->Level != Space[s].Level + 1) continue;
+      for (c = 0; c < C->NCoupling; c++)
+      {
+        uint32_t bi;
+        if (C->CouplingParent[c] != s) continue;
+        i = C->CouplingEntry[c];
+        bi = Sigma[i].BlockSize;
+        CompactMatrixSetUnallocated(&ZW);
+        ZW.Ni = C->Dim; ZW.Nj = DimS; ZW.QComplex = 1;
+        if (InitCompactMatrix(&ZW)) { FreeCompactMatrix(&Cpl); ierr = 1; goto cleanup; }
+        for (l = 0; l < bi; l++)
+        {
+          /*  ZW = sum_l' Wtot_ll' Z_l'                                          */
+          SetCompactMatrixToZero(&ZW);
+          for (lp = 0; lp < bi; lp++)
+          {
+            Complex16 wt = {0, 0};
+            for (j = 0; j < (uint32_t)(jH - jL + 1); j++) { wt.Re += Wbin[i][j][l * bi + lp].Re; wt.Im += Wbin[i][j][l * bi + lp].Im; }
+            for (a = 0; a < C->Dim * DimS; a++)
+            {
+              ZW.V[a].Re += wt.Re * C->Z[c][lp].V[a].Re - wt.Im * C->Z[c][lp].V[a].Im;
+              ZW.V[a].Im += wt.Re * C->Z[c][lp].V[a].Im + wt.Im * C->Z[c][lp].V[a].Re;
+            }
+          }
+          CompactMatrixAddMultiply('C', 'N', &(C->Z[c][l]), &ZW, &Cpl, 1, 0, 1, 0);
+        }
+        FreeCompactMatrix(&ZW);
+      }
+    }
+    SquareCompactMatrixMakeHermitian(&Cpl);
+    val = (double*)malloc(Max(DimS, 1) * sizeof(double));
+    {
+      CompactMatrixType fun;
+      if ((val == NULL) || HermitianCompactMatrixEigensystemRowVectors(&Cpl, &fun, val)) { free(val); FreeCompactMatrix(&Cpl); ierr = 1; goto cleanup; }
+      FreeCompactMatrix(&fun);
+    }
+    bnorm[Space[s].Level] = Max(bnorm[Space[s].Level], sqrt(Max(val[DimS - 1], 0.0)));
+    free(val);
+    if (s == 0)
+    {
+      CompactMatrixType CT;
+      CompactMatrixSetUnallocated(&CT);
+      CT.Ni = North; CT.Nj = m; CT.QComplex = 1;
+      if (InitCompactMatrix(&CT)) { FreeCompactMatrix(&Cpl); ierr = 1; goto cleanup; }
+      CompactMatrixAddMultiply('N', 'N', &Cpl, &Cseed, &CT, 1, 0, 0, 0);
+      CompactMatrixAddMultiply('C', 'N', &Cseed, &CT, &M2, 1, 0, 1, 0);
+      FreeCompactMatrix(&CT);
+    }
+    FreeCompactMatrix(&Cpl);
+  }
+  /*  block Gershgorin: level m couples to m-1 and m+1 only, so every
+   *  eigenvalue lies within the diagonal range of some level widened by the
+   *  norms of its two couplings                                              */
+  lo = DBL_MAX;
+  hi = -DBL_MAX;
+  for (lev = 0; lev <= p; lev++)
+  {
+    double bb = bnorm[lev] + ((lev > 0) ? bnorm[lev - 1] : 0);
+    if (dlo[lev] == DBL_MAX) continue;
+    lo = Min(lo, dlo[lev] - bb);
+    hi = Max(hi, dhi[lev] + bb);
+  }
+  kOutL = (int64_t)floor(Min(lo, Emin) / dw) - 1;
+  kOutH = (int64_t)ceil(Max(hi, Emax) / dw) + 1;
+  kL[0] = kOutL - 1;
+  kH[0] = kOutH + 1;
+  for (lev = 1; lev < p; lev++)
+  {
+    kL[lev] = kL[lev - 1] - jH;
+    kH[lev] = kH[lev - 1] - jL;
+  }
+  NOut = (size_t)(kOutH - kOutL + 1);
+  Rspec = Max(Max(fabs(lo), fabs(hi)), Max(fabs(Emin), fabs(Emax)));
+  VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperatorBathExcitationsMesh: spectrum within [%g, %g], %zu mesh points of %g, bins %lld .. %lld\n", lo, hi, NOut, dw, (long long)jL, (long long)jH);
+
+  /*  the y quadrature                                                         */
+  ymin = BathExcMeshYmin * dw;
+  ymax = BathExcMeshYmaxFactor * Max(Rspec, dw);
+  {
+    uint32_t npanel = (uint32_t)ceil((log(ymax) - log(ymin)) / BathExcMeshPanelWidth), pn;
+    double h = (log(ymax) - log(ymin)) / npanel;
+    Ny = 8 * npanel;
+    ynode = (double*)malloc(Ny * sizeof(double));
+    yweight = (double*)malloc(Ny * sizeof(double));
+    if ((ynode == NULL) || (yweight == NULL)) { ierr = 1; goto cleanup; }
+    for (pn = 0; pn < npanel; pn++)
+    {
+      for (q = 0; q < 8; q++)
+      {
+        double u = log(ymin) + h * pn + h * (GLx[q] + 1) / 2;
+        ynode[pn * 8 + q] = exp(u);
+        yweight[pn * 8 + q] = GLw[q] * h / 2 * exp(u);    /* dy = y du */
+      }
+    }
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperatorBathExcitationsMesh: %u nodes in y from %g to %g\n", Ny, ymin, ymax);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  F   the nested evaluation, one y at a time, the y in parallel          */
+  /* ---------------------------------------------------------------------- */
+  Rsum = (Complex16*)calloc(NOut * m * m, sizeof(Complex16));
+  if (Rsum == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh\n"); ierr = 1; goto cleanup; }
+  {
+    BathExcMeshType X;
+    int failed = 0;
+    X.p = p; X.m = m; X.North = North; X.NSpace = NSpace; X.Space = Space; X.Sigma = Sigma;
+    X.HOrel = &HOrel; X.Cseed = &Cseed; X.Wbin = Wbin;
+    X.kL = kL; X.kH = kH; X.jL = jL; X.jH = jH; X.kOutL = kOutL; X.NOut = NOut; X.dw = dw;
+#pragma omp parallel
+    {
+      Complex16 *Rloc = (Complex16*)calloc(NOut * m * m, sizeof(Complex16));
+      int qq;
+      if (Rloc == NULL) failed = 1;
+#pragma omp for schedule(dynamic)
+      for (qq = 0; qq < (int)Ny; qq++)
+      {
+        if (failed) continue;
+        if (BathExcMeshOneY(&X, ynode[qq], yweight[qq], Rloc)) failed = 1;
+      }
+#pragma omp critical
+      {
+        if (Rloc != NULL)
+        {
+          for (size_t z = 0; z < NOut * m * m; z++) { Rsum[z].Re += Rloc[z].Re; Rsum[z].Im += Rloc[z].Im; }
+        }
+      }
+      free(Rloc);
+    }
+    if (failed) { ierr = 1; goto cleanup; }
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /*  G   the analytic tail beyond ymax, the residues, the list of poles     */
+  /* ---------------------------------------------------------------------- */
+  {
+    CompactMatrixType *Mom[3] = {&M0, &M1, &M2};
+    CompactMatrixType Rk, fun, Rfull, BR;
+    double *val = (double*)malloc(m * sizeof(double)), wmaxall = 0;
+    uint32_t Nkeep = 0, np;
+    int order, jj;
+    if (val == NULL) { ierr = 1; goto cleanup; }
+    SquareCompactMatrixMakeHermitian(&M0);
+    SquareCompactMatrixMakeHermitian(&M1);
+    SquareCompactMatrixMakeHermitian(&M2);
+    CompactMatrixSetUnallocated(&Rk);
+    CompactMatrixSetUnallocated(&Rfull);
+    CompactMatrixSetUnallocated(&BR);
+    Rk.Ni = m; Rk.Nj = m; Rk.QComplex = 1;
+    if (InitCompactMatrix(&Rk)) { free(val); ierr = 1; goto cleanup; }
+    for (size_t ko = 0; ko < NOut; ko++)
+    {
+      double x = (double)(kOutL + (int64_t)ko) * dw, tail;
+      for (n = 0; n < 3; n++)
+      {
+        tail = 0;
+        for (order = 2; order <= 4; order += 2)
+        {
+          double coef = (order == 2) ? dw * dw : pow(dw, 4) / 12, cc = 1;
+          int kk2 = (int)n + 1 + order;
+          Complex16 w0, p1, p2, I;
+          for (jj = 0; jj < order; jj++) cc *= -(double)(n + 1 + jj);
+          /*  int_Y^inf y (x+iy)^-kk2 dy = w0^(2-kk2)/(2-kk2) - x w0^(1-kk2)/(1-kk2) */
+          w0.Re = x; w0.Im = ymax;
+          p1.Re = 1; p1.Im = 0;
+          for (jj = 0; jj < kk2 - 1; jj++)
+          {
+            /*  p1 = w0^-(jj+1)                                                */
+            double den = w0.Re * w0.Re + w0.Im * w0.Im;
+            Complex16 t2;
+            t2.Re = (p1.Re * w0.Re + p1.Im * w0.Im) / den;
+            t2.Im = (p1.Im * w0.Re - p1.Re * w0.Im) / den;
+            p1 = t2;
+          }
+          /*  p1 = w0^(1-kk2),  p2 = w0^(2-kk2) = p1 w0                          */
+          p2.Re = p1.Re * w0.Re - p1.Im * w0.Im;
+          p2.Im = p1.Re * w0.Im + p1.Im * w0.Re;
+          I.Re = p2.Re / (2 - kk2) - x * p1.Re / (1 - kk2);
+          I.Im = p2.Im / (2 - kk2) - x * p1.Im / (1 - kk2);
+          tail += coef * cc * (-1.0 / M_PI) * I.Im;
+        }
+        for (a = 0; a < m * m; a++)
+        {
+          Rsum[ko * m * m + a].Re += tail * Mom[n]->V[a].Re;
+          Rsum[ko * m * m + a].Im += tail * Mom[n]->V[a].Im;
+        }
+      }
+      for (a = 0; a < m * m; a++)
+      {
+        Rk.V[a].Re = -Rsum[ko * m * m + a].Re / dw;
+        Rk.V[a].Im = -Rsum[ko * m * m + a].Im / dw;
+      }
+      SquareCompactMatrixMakeHermitian(&Rk);
+      /*  what the quadrature leaves negative is removed                     */
+      if (HermitianCompactMatrixEigensystemRowVectors(&Rk, &fun, val)) { free(val); FreeCompactMatrix(&Rk); ierr = 1; goto cleanup; }
+      SetCompactMatrixToZero(&Rk);
+      for (n = 0; n < m; n++)
+      {
+        if (val[n] <= 0) { ClippedWeight -= val[n]; continue; }
+        for (a = 0; a < m; a++)
+        {
+          for (b = 0; b < m; b++)
+          {
+            Complex16 fa = fun.V[n * m + a], fb = fun.V[n * m + b];
+            Rk.V[a * m + b].Re += val[n] * (fa.Re * fb.Re + fa.Im * fb.Im);
+            Rk.V[a * m + b].Im += val[n] * (fa.Im * fb.Re - fa.Re * fb.Im);
+          }
+        }
+      }
+      FreeCompactMatrix(&fun);
+      memcpy(&(Rsum[ko * m * m]), Rk.V, m * m * sizeof(Complex16));
+      {
+        double tr = 0;
+        for (a = 0; a < m; a++) tr += Rk.V[a * m + a].Re;
+        wmaxall = Max(wmaxall, tr);
+      }
+    }
+    free(val);
+    FreeCompactMatrix(&Rk);
+    for (size_t ko = 0; ko < NOut; ko++)
+    {
+      double tr = 0;
+      for (a = 0; a < m; a++) tr += Rsum[ko * m * m + a * m + a].Re;
+      if (tr > BathExcMeshKeepWeight * wmaxall) Nkeep++;
+    }
+    {
+      double tr0 = 0;
+      for (a = 0; a < m; a++) tr0 += M0.V[a * m + a].Re;
+      if (ClippedWeight > 1e-6 * tr0)
+      {
+        printf("CalculateGforHwithSigmaAsOperatorBathExcitationsMesh: %g negative weight (of %g) left by the quadrature was removed\n", ClippedWeight, tr0);
+      }
+    }
+    /*  the list of poles, residues B0 R B0^dag                                */
+    G->N = Max(Nkeep, 1);
+    G->BlockSize = NFull;
+    G->QComplex = 1;
+    if (InitBlockListOfPoles(G)) { ierr = 1; goto cleanup; }
+    G->N = Nkeep;
+    G->mu = 0;
+    Rk = BathExcView(NULL, m, m);
+    BR.Ni = NFull; BR.Nj = m; BR.QComplex = 1;
+    Rfull.Ni = NFull; Rfull.Nj = NFull; Rfull.QComplex = 1;
+    if (InitCompactMatrix(&BR) || InitCompactMatrix(&Rfull)) { ierr = 1; goto cleanup; }
+    np = 0;
+    for (size_t ko = 0; ko < NOut; ko++)
+    {
+      double tr = 0;
+      Complex16 *dst;
+      for (a = 0; a < m; a++) tr += Rsum[ko * m * m + a * m + a].Re;
+      if (!(tr > BathExcMeshKeepWeight * wmaxall)) continue;
+      dst = &(G->V[(size_t)np * (1 + NFull * NFull)]);
+      dst[0].Re = (double)(kOutL + (int64_t)ko) * dw;
+      dst[0].Im = 0;
+      Rk.V = &(Rsum[ko * m * m]);
+      if (B0 == NULL)
+      {
+        memcpy(&(dst[1]), Rk.V, m * m * sizeof(Complex16));
+      }
+      else
+      {
+        CompactMatrixType B0c;
+        CompactMatrixSetUnallocated(&B0c);
+        B0c.Ni = NFull; B0c.Nj = m; B0c.QComplex = 1;
+        InitCompactMatrix(&B0c);
+        for (a = 0; a < NFull * m; a++)
+        {
+          if (B0->QComplex) B0c.V[a] = B0->V[a];
+          else { B0c.V[a].Re = B0->VRe[a]; B0c.V[a].Im = 0; }
+        }
+        CompactMatrixAddMultiply('N', 'N', &B0c, &Rk, &BR, 1, 0, 0, 0);
+        CompactMatrixAddMultiply('N', 'C', &BR, &B0c, &Rfull, 1, 0, 0, 0);
+        memcpy(&(dst[1]), Rfull.V, NFull * NFull * sizeof(Complex16));
+        FreeCompactMatrix(&B0c);
+      }
+      np++;
+    }
+    FreeCompactMatrix(&BR);
+    FreeCompactMatrix(&Rfull);
+    strcpy(G->Name, "G on a mesh");
+    VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperatorBathExcitationsMesh: %u poles on the mesh\n", Nkeep);
+  }
+
+cleanup:
+  FreeCompactMatrix(&HOrel);
+  FreeCompactMatrix(&Tmp);
+  FreeCompactMatrix(&M0);
+  FreeCompactMatrix(&M1);
+  FreeCompactMatrix(&M2);
+  if (Wbin != NULL)
+  {
+    for (i = 0; i < NSigma; i++)
+    {
+      if (Wbin[i] == NULL) continue;
+      for (j = 0; j < (uint32_t)(jH - jL + 1); j++) free(Wbin[i][j]);
+      free(Wbin[i]);
+    }
+    free(Wbin);
+  }
+  free(Rsum);
+  free(ynode);
+  free(yweight);
+  free(emin);
+  free(emax);
+  BathExcFrontEndFree(&Front, Sigma);
   return ierr;
 }

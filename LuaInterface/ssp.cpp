@@ -436,7 +436,8 @@ static int LuaHelp(lua_State *L)
       printf("    - \"Gamma\"\n");
       printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
       printf("    - \"Method\"\n");
-      printf("      - \"Auto\" (default) dense methods below DenseBorder, Lanczos above, \"Dense\", \"Lanczos\"\n");
+      printf("      - \"Auto\" (default) dense methods below DenseBorder, Lanczos above, \"Dense\", \"Lanczos\",\n");
+      printf("        \"Mesh\" the hybridisation on the uniform mesh Emin, Emax, NE, returned as poles on the mesh\n");
       printf("    - \"NBathExcitations\"\n");
       printf("      - with hybridisation functions given as 4th argument: the number of excitations (particles plus holes)\n");
       printf("        allowed at once in the baths the hybridisation functions stand for (default 1)\n");
@@ -1833,6 +1834,7 @@ static int LuaCreateSpectra(lua_State *L)
     uint32_t NBathExcitations;
     bool NonCrossing;
     char *Method;
+    bool Mesh;
   } Options;
   Options.GridPoints.QComplex=0;
   Options.GridPoints.Ni=0;
@@ -1848,6 +1850,7 @@ static int LuaCreateSpectra(lua_State *L)
   Options.NBathExcitations=1;
   Options.NonCrossing=false;
   Options.Method=NULL;
+  Options.Mesh=false;
   CompactMatrixType HDense, TpsiDense, EigenfunHDense;
   SpectraTypeArray *Spec;
   OperatorType *H,*T;
@@ -1928,7 +1931,7 @@ static int LuaCreateSpectra(lua_State *L)
        "Auto"    dense methods when the Hilbert space is below DenseBorder, Lanczos otherwise (the default)
        "Dense"   dense methods, the same as ForceDenseMethod
        "Lanczos" Lanczos, whatever the size of the Hilbert space
-       "Mesh"    on a fixed energy mesh (not implemented yet) */
+       "Mesh"    the hybridisation on the uniform energy mesh Emin, Emax, NE; P by Lanczos */
   if(Options.Method!=NULL)
   {
     if(strcicmp(Options.Method,"Auto")==0)
@@ -1948,7 +1951,12 @@ static int LuaCreateSpectra(lua_State *L)
     }
     else if(strcicmp(Options.Method,"Mesh")==0)
     {
-      return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" is not implemented yet\n");
+      if(Options.DenseMethod==true)
+      {
+        return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" and ForceDenseMethod true contradict each other\n");
+      }
+      Options.Mesh=true;
+      Options.Settings.DenseBorder=0;
     }
     else
     {
@@ -1963,6 +1971,14 @@ static int LuaCreateSpectra(lua_State *L)
   if(((Options.NBathExcitations!=1)||(Options.NonCrossing==true))&&(Options.Sigma==false))
   {
     return luaL_error(L, "Error in CreateSpectra NBathExcitations and NonCrossing can only be set when a hybridisation function is given\n");
+  }
+  if((Options.Mesh==true)&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" needs a hybridisation function; without one Lanczos is exact\n");
+  }
+  if((Options.Mesh==true)&&(Options.NBathExcitations>1)&&(Options.NonCrossing==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" with more than one bath excitation includes only the nested processes.\nSet NonCrossing to true, or use Method \"Lanczos\" for the crossed processes as well\n");
   }
   if((Options.NTriFull!=-1)&&(Options.Sigma==false))
   {
@@ -2814,6 +2830,31 @@ static int LuaCreateSpectra(lua_State *L)
            excitation there is nothing to cross, so NonCrossing changes nothing
            but the route: it sends the calculation through the new routine,
            which is how the tests compare the two */
+        if(Options.Mesh==true)
+        {
+          BlockListOfPoles GLPSigma;
+          if(CalculateGforHwithSigmaAsOperatorBathExcitationsMesh(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, Options.NBathExcitations, psiEn[0], Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, &B0, &GLPSigma))
+          {
+            return luaL_error(L, "CalculateGforHwithSigmaAsOperatorBathExcitationsMesh failed in CreateSpectra\n");
+          }
+          /* the poles are already measured from the ground state energy */
+          Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          luaL_setmetatable(L, "Spectra_Type");
+          Spec->Name=(char*)malloc(sizeof(char));
+          Spec->Name[0]='\0';
+          Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+          Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
+          BlockListOfPolesToSpectraWithBroadening(0, &GLPSigma, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+          for(i=0;i<Spec->NSpectra;i++)
+          {
+            Spec->Spec[i].EminPole=Eminpole;
+            Spec->Spec[i].EmaxPole=Emaxpole;
+          }
+          LuaPushTable_BlockListOfPoles(L, &GLPSigma);
+          FreeBlockListOfPoles(&GLPSigma);
+        }
+        else
+        {
         if((Options.NBathExcitations==1)&&(Options.NonCrossing==false))
         {
           if(CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
@@ -2844,8 +2885,9 @@ static int LuaCreateSpectra(lua_State *L)
         /* Push the block tridiagonal representation of the spectrum to the stack */
         ShiftBlockTridiagonalMatrix(&GTriSigma, -psiEn[0]);
         LuaPushTable_BlockTriDiagonalMatrixType(L, &GTriSigma);
-        /* free what was allocated here. The Krylov basis itself is freed further down */
         FreeBlockTridiagonalMatrix(&GTriSigma);
+        }
+        /* free what was allocated here. The Krylov basis itself is freed further down */
         FreeCompactMatrix(&B0);
         free(PsiBasisinP);
         for(i=0;i<Sigma.NSigma;i++) FreeBlockListOfPoles(&(SigmaLP[i]));

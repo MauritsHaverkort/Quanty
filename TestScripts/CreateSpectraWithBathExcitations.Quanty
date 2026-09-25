@@ -18,7 +18,8 @@
 -- (without it every p = 2 comparison below is off by about one), the factor
 -- sqrt(2) of two bosons in one mode (the boson model is off by 0.12 without
 -- it), a fermionic and a bosonic hybridisation at once, complex couplings, and
--- that the new routine gives what the old one gives at one excitation.
+-- that the new routine gives what the old one gives at one excitation, and the
+-- energy mesh method (Method "Mesh") against the poles of the exact result.
 
 print("--------------------------------------------------------")
 print("-- CreateSpectra with more than one bath excitation   --")
@@ -251,7 +252,106 @@ for _, model in ipairs({ {"fermions", FermionModel}, {"fermions and photons", Bo
 end
 
 -- ---------------------------------------------------------------------------
--- 3  an operator that mixes an even and an odd number of fermion operators
+-- 3  Method "Mesh": the poles of the result sit on the mesh k dw with the
+--    residues of the exact poles split over their two neighbouring mesh
+--    points.  At one excitation that is exact, so it has to agree with the
+--    exact poles split the same way.  At two excitations the mesh method is
+--    the nested approximation with the hybridisation binned on the lattice
+--    j dw; with all its energies on lattice points the binning is exact and it
+--    has to agree with the non crossing Lanczos.  The energies of both models
+--    are multiples of 0.1, so dw = 0.1 (Emin = -8, Emax = 10, NE = 180).
+--    What is left is the y quadrature, about 2e-5 of the largest residue.
+-- ---------------------------------------------------------------------------
+meshthreshold = 2e-5
+dw = 0.1
+function MeshOptions(extra)
+  local o = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
+              {"Emin", -8}, {"Emax", 10}, {"NE", 180}, {"Gamma", 0.2} }
+  for _, v in ipairs(extra) do o[#o + 1] = v end
+  return o
+end
+
+-- the residues of a list of poles on the mesh, by mesh index
+function MeshResidues(Gt)
+  local R = {}
+  for n = 2, #Gt[1] do
+    local k = math.floor(Gt[1][n] / dw + 0.5)
+    if math.abs(Gt[1][n] - k * dw) > 1e-9 then error("CreateSpectra with bath excitations: a pole off the mesh at " .. Gt[1][n], 1) end
+    R[k] = Gt[2][n - 1]
+  end
+  return R
+end
+
+-- the poles of a response function split over their two neighbouring mesh points
+function TentResidues(Gr)
+  local t = ResponseFunction.ToTable(ResponseFunction.ChangeType(Gr, "LP"))
+  local R = {}
+  local bs = #t[2][1]
+  for n = 2, #t[1] do
+    local u = t[1][n] / dw
+    local k0 = math.floor(u)
+    local f = u - k0
+    for _, kw in ipairs({{k0, 1 - f}, {k0 + 1, f}}) do
+      local k, w = kw[1], kw[2]
+      if R[k] == nil then
+        R[k] = {}
+        for a = 1, bs do R[k][a] = {} for b = 1, bs do R[k][a][b] = 0 end end
+      end
+      for a = 1, bs do for b = 1, bs do R[k][a][b] = R[k][a][b] + w * t[2][n - 1][a][b] end end
+    end
+  end
+  return R
+end
+
+function CheckResidues(name, Rm, Rt)
+  local d, smax, keys = 0, 0, {}
+  local m0m, m0t = 0, 0
+  for k, _ in pairs(Rm) do keys[k] = true end
+  for k, _ in pairs(Rt) do keys[k] = true end
+  for k, _ in pairs(keys) do
+    local A, B = Rm[k], Rt[k]
+    local bs = #(A or B)
+    for a = 1, bs do
+      for b = 1, bs do
+        local x = A and A[a][b] or 0
+        local y = B and B[a][b] or 0
+        local dd = Mag(x - y)
+        if dd > d then d = dd end
+        if Mag(y) > smax then smax = Mag(y) end
+        if a == b then m0m = m0m + Complex.Re(x) ; m0t = m0t + Complex.Re(y) end
+      end
+    end
+  end
+  print(string.format("%-62s largest residue %.6f   deviation %.3e   weight %.8f / %.8f", name, smax, d, m0m, m0t))
+  if d > meshthreshold * smax then
+    error("CreateSpectra with bath excitations: " .. name .. " deviates by " .. d, 1)
+  end
+  if math.abs(m0m - m0t) > 1e-5 * m0t then
+    error("CreateSpectra with bath excitations: " .. name .. " does not conserve the weight", 1)
+  end
+end
+
+for _, model in ipairs({ {"fermions", FermionModel}, {"fermions and photons", BosonModel} }) do
+  for _, iH in ipairs({0, I}) do
+    local M = model[2](iH)
+    local tag = model[1] .. ((iH == 0) and ", real" or ", complex")
+    local Sx, Gx = CreateSpectra(M.HP, M.T, M.psi, M.Hyb, MeshOptions({{"NTriFull", 400}}))
+    local Sm, Gm = CreateSpectra(M.HP, M.T, M.psi, M.Hyb, MeshOptions({{"Method", "Mesh"}}))
+    CheckResidues(tag .. ", p = 1, mesh against exact", MeshResidues(Gm), TentResidues(Gx))
+    local Sn, Gn = CreateSpectra(M.HP, M.T, M.psi, M.Hyb, MeshOptions({{"NTriFull", 400}, {"NBathExcitations", 2}, {"NonCrossing", true}}))
+    local Sm2, Gm2 = CreateSpectra(M.HP, M.T, M.psi, M.Hyb, MeshOptions({{"Method", "Mesh"}, {"NBathExcitations", 2}, {"NonCrossing", true}}))
+    CheckResidues(tag .. ", p = 2, mesh against non crossing Lanczos", MeshResidues(Gm2), TentResidues(Gn))
+  end
+end
+
+-- the mesh has no crossed processes, so it refuses to run without NonCrossing
+M = FermionModel(0)
+ok = pcall(CreateSpectra, M.HP, M.T, M.psi, M.Hyb, MeshOptions({{"Method", "Mesh"}, {"NBathExcitations", 2}}))
+if ok then error("CreateSpectra with bath excitations: Method Mesh ran with crossed processes asked for", 1) end
+print("Method Mesh at two excitations without NonCrossing is refused")
+
+-- ---------------------------------------------------------------------------
+-- 4  an operator that mixes an even and an odd number of fermion operators
 --    can not couple to a bath of free particles and has to be refused
 -- ---------------------------------------------------------------------------
 M = FermionModel(0)
