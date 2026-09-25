@@ -2755,7 +2755,7 @@ uint32_t OperatorMultiply3(OperatorType * const O, OperatorType const C, Operato
       {
         for (ilC = 0; ilC <= C.MaxLength; ilC++)
         {
-          if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
+          if ((O->l[ilA + ilB + ilC].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
           {                     /* at least one complex */
             if (!(O->l[ilA + ilB + ilC].QComplex))
               if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB + ilC))
@@ -3104,7 +3104,7 @@ uint32_t OperatorMultiply3(OperatorType * const O, OperatorType const C, Operato
       {
         for (ilC = 0; ilC <= C.MaxLength; ilC++)
         {
-          if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
+          if ((O->l[ilA + ilB + ilC].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
           {                     /* at least one complex */
             if (!(O->l[ilA + ilB + ilC].QComplex))
               if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB + ilC))
@@ -3453,7 +3453,7 @@ uint32_t OperatorMultiply3(OperatorType * const O, OperatorType const C, Operato
       {
         for (ilC = 0; ilC <= C.MaxLength; ilC++)
         {
-          if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
+          if ((O->l[ilA + ilB + ilC].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
           {                     /* at least one complex */
             if (!(O->l[ilA + ilB + ilC].QComplex))
               if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB + ilC))
@@ -3809,6 +3809,10 @@ uint32_t OperatorMultiply3(OperatorType * const O, OperatorType const C, Operato
     printf("in OperatorMultiply3 unrecognized input for Aset Bset and or Cset\n");
     return 1;
   }
+  /* the lengths were made complex one by one and MakeRealOperatorFixedLengthComplex
+     set QComplex from what was filled at that moment, which misses every real
+     length filled later */
+  SetQComplexOperator(O);
   return 0;
 }
 
@@ -3845,7 +3849,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
       {
         for (ilC = 0; ilC <= C.MaxLength; ilC++)
         {
-          if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
+          if ((O->l[ilA + ilB + ilC].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
           {                     /* at least one complex */
             if (!(O->l[ilA + ilB + ilC].QComplex))
               if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB + ilC))
@@ -4196,7 +4200,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
       {
         for (ilC = 0; ilC <= C.MaxLength; ilC++)
         {
-          if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
+          if ((O->l[ilA + ilB + ilC].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
           {                     /* at least one complex */
             if (!(O->l[ilA + ilB + ilC].QComplex))
               if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB + ilC))
@@ -4547,7 +4551,7 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
       {
         for (ilC = 0; ilC <= C.MaxLength; ilC++)
         {
-          if ((O->l[ilA + ilB].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
+          if ((O->l[ilA + ilB + ilC].QComplex) || (A.l[ilA].QComplex) || (B.l[ilB].QComplex) || (C.l[ilC].QComplex))
           {                     /* at least one complex */
             if (!(O->l[ilA + ilB + ilC].QComplex))
               if (MakeRealOperatorFixedLengthComplex(O, ilA + ilB + ilC))
@@ -4905,6 +4909,10 @@ uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const
     printf("in OperatorMultiply3 unrecognized input for Aset and or Bset\n");
     return 1;
   }
+  /* the lengths were made complex one by one and MakeRealOperatorFixedLengthComplex
+     set QComplex from what was filled at that moment, which misses every real
+     length filled later */
+  SetQComplexOperator(O);
   return 0;
 }
 
