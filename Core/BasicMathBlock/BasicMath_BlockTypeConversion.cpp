@@ -5013,6 +5013,183 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
 }
 
 
+/*  Per atom augmented propagators, accumulated in the same k-loop as the local Green
+ *  function by TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid.
+ *
+ *  The augmented propagator of atom a is the 2 n_a by 2 n_a block response function of the
+ *  operator pair ( c_a , H c_a ), where c_a are the orbitals of atom a and H is the tight
+ *  binding Hamiltonian. For a one body H the second operator is the commutator [c_a, H], so
+ *  this is the same construction as the augmented propagator (a, [a,H1]) that gives the self
+ *  energy, with the one body Hamiltonian in place of the interaction:
+ *
+ *      Gaug = ( <c|Q|c>      <c|Q H|c>   )          Q = ( w - E - H(k) )^-1
+ *             ( <c|H Q|c>    <c|H Q H|c> )
+ *
+ *  Its Schur complement onto the second block,
+ *
+ *      S = <c|HQH|c> - <c|HQ|c> <c|Q|c>^-1 <c|QH|c> = zeta_a - (G_aa)^-1 - <H>_aa ,
+ *
+ *  is the hybridisation function of atom a, with zeta = w - Sigma(w), so
+ *  ResponseFunction.Downfold on the second block returns it. The identity needs Sigma to be
+ *  block diagonal in the atom index -- the site local self energy of single site DMFT -- and
+ *  it then survives the projection onto one atom, because the projector commutes with zeta.
+ *
+ *  What this buys is conditioning. zeta appears only inside the resolvent and is never formed
+ *  on its own, so nothing large is ever subtracted. Taking the hybridisation as zeta - G^-1
+ *  instead loses all significance where zeta is large, which is what happens near the pole a
+ *  Mott insulating self energy has at the chemical potential.
+ *
+ *  Every eigenvector contributes the outer product of v = ( u_a , (H u)_a ), where u_a are
+ *  the components of its first A.NFermion entries that belong to atom a, distributed over the
+ *  two poles bracketing the eigenvalue exactly as the weight of G is.
+ */
+typedef struct
+{
+  int NAtoms;
+  int *off;                  /* first orbital of each atom */
+  int *nor;                  /* number of orbitals of each atom */
+  double *totmin;            /* weight collected in the pole below the grid, per atom */
+  double *totmax;            /* and in the pole above it */
+  BlockListOfPoles *Gaug;
+  Complex16 *hu;             /* work space of A.NFermion */
+  Complex16 *v;              /* work space of max 2 n_a */
+}
+AugmentedPerAtomType;
+
+static uint32_t AugmentedPerAtomInit(AugmentedPerAtomType * const S, TightBindingDef const A, BlockListOfPoles * const Gaug, double const * const Egrid, uint32_t const NEgrid)
+{
+  int a,i,j,ii,nb=0;
+  S->NAtoms = (int)A.Cell.NAtoms;
+  S->Gaug   = Gaug;
+  S->off    = (int*)malloc(S->NAtoms*sizeof(int));
+  S->nor    = (int*)malloc(S->NAtoms*sizeof(int));
+  S->totmin = (double*)calloc(S->NAtoms,sizeof(double));
+  S->totmax = (double*)calloc(S->NAtoms,sizeof(double));
+  S->hu     = (Complex16*)malloc(A.NFermion*sizeof(Complex16));
+  S->v      = NULL;
+  if(S->off==NULL||S->nor==NULL||S->totmin==NULL||S->totmax==NULL||S->hu==NULL) return 1;
+  for(a=0;a<S->NAtoms;a++)
+  {
+    S->off[a] = A.FermionIndex[a][0];
+    S->nor[a] = 0;
+    for(j=0;j<A.Cell.Atom[a].Nshell;j++) S->nor[a] += A.Cell.Atom[a].shelldegeneracy[j];
+    if(2*S->nor[a]>nb) nb = 2*S->nor[a];
+  }
+  S->v = (Complex16*)malloc((nb>0?nb:1)*sizeof(Complex16));
+  if(S->v==NULL) return 1;
+  for(a=0;a<S->NAtoms;a++)
+  {
+    Gaug[a].BlockSize = 2*S->nor[a];
+    Gaug[a].N         = NEgrid+2;
+    Gaug[a].QComplex  = 1;
+    Gaug[a].mu        = 0;
+    strncpy(Gaug[a].Name, A.Cell.Atom[a].Name, MAXStrLength-1);
+    Gaug[a].Name[MAXStrLength-1]='\0';
+    if(InitBlockListOfPoles(&(Gaug[a]))) return 1;
+    ii=-1;
+    for(i=0;i<(int)(Gaug[a].N*(1+Gaug[a].BlockSize*Gaug[a].BlockSize));i+=(1+Gaug[a].BlockSize*Gaug[a].BlockSize))
+    {
+      if(ii<0)                Gaug[a].V[i].Re = Egrid[0] - (Egrid[1] - Egrid[0]);
+      else if(ii<(int)NEgrid) Gaug[a].V[i].Re = Egrid[ii];
+      else                    Gaug[a].V[i].Re = Egrid[NEgrid-1] + (Egrid[NEgrid-1] - Egrid[NEgrid-2]);
+      ii++;
+    }
+  }
+  return 0;
+}
+
+/*  Must be called before ComplexEigenFunctionToCharacter overwrites H with the character. */
+static void AugmentedPerAtomAdd(AugmentedPerAtomType * const S, MatrixType const * const H, CompactMatrixType const * const T, int const ival, int const NFermion, double const val, int const iE, double const * const Egrid, uint32_t const NEgrid)
+{
+  int a,i,j,p,r,bs,ib;
+  double rest, totnow, wRe, wIm, uRe, uIm;
+  for(i=0;i<NFermion;i++)
+  {
+    S->hu[i].Re=0; S->hu[i].Im=0;
+    for(j=0;j<NFermion;j++)
+    {
+      if(T->QComplex) { uRe=T->V[ival*T->Nj+j].Re; uIm=T->V[ival*T->Nj+j].Im; }
+      else            { uRe=T->VRe[ival*T->Nj+j];  uIm=0; }
+      S->hu[i].Re += H->VRe[i][j]*uRe - ((H->QComplex)?(H->VIm[i][j]*uIm):(0));
+      S->hu[i].Im += H->VRe[i][j]*uIm + ((H->QComplex)?(H->VIm[i][j]*uRe):(0));
+    }
+  }
+  for(a=0;a<S->NAtoms;a++)
+  {
+    bs = 2*S->nor[a];
+    if(bs==0) continue;
+    for(p=0;p<S->nor[a];p++)
+    {
+      if(T->QComplex) { S->v[p] = T->V[ival*T->Nj + S->off[a]+p]; }
+      else            { S->v[p].Re = T->VRe[ival*T->Nj + S->off[a]+p]; S->v[p].Im = 0; }
+      S->v[S->nor[a]+p] = S->hu[S->off[a]+p];
+    }
+    totnow=0;
+    for(p=0;p<bs;p++) totnow += S->v[p].Re*S->v[p].Re + S->v[p].Im*S->v[p].Im;
+    if (iE >= (int)NEgrid-1)
+    {
+      ib = (int)(NEgrid+1);
+      if(S->totmax[a]+totnow<10*DBL_MIN) { S->totmax[a]+=10*DBL_MIN; totnow+=10*DBL_MIN; }
+      S->Gaug[a].V[ib*(1+bs*bs)].Re = (S->totmax[a]*S->Gaug[a].V[ib*(1+bs*bs)].Re + totnow*val)/(S->totmax[a]+totnow);
+      S->totmax[a]+=totnow;
+      rest=0;
+    }
+    else if (iE < 0)
+    {
+      ib = 0;
+      if(S->totmin[a]+totnow<10*DBL_MIN) { S->totmin[a]+=10*DBL_MIN; totnow+=10*DBL_MIN; }
+      S->Gaug[a].V[0].Re = (S->totmin[a]*S->Gaug[a].V[0].Re + totnow*val)/(S->totmin[a]+totnow);
+      S->totmin[a]+=totnow;
+      rest=0;
+    }
+    else
+    {
+      ib   = iE+1;
+      rest = (val - Egrid[iE]) / (Egrid[iE+1] - Egrid[iE]);
+    }
+    /*  residue v^* v^T, the same convention as ComplexEigenFunctionToCharacter */
+    for(p=0;p<bs;p++)
+    {
+      for(r=0;r<bs;r++)
+      {
+        wRe = S->v[p].Re*S->v[r].Re + S->v[p].Im*S->v[r].Im;
+        wIm = S->v[p].Re*S->v[r].Im - S->v[p].Im*S->v[r].Re;
+        S->Gaug[a].V[ib*(1+bs*bs)+1+r+p*bs].Re += (1-rest)*wRe;
+        S->Gaug[a].V[ib*(1+bs*bs)+1+r+p*bs].Im += (1-rest)*wIm;
+        if(rest!=0)
+        {
+          S->Gaug[a].V[(ib+1)*(1+bs*bs)+1+r+p*bs].Re += rest*wRe;
+          S->Gaug[a].V[(ib+1)*(1+bs*bs)+1+r+p*bs].Im += rest*wIm;
+        }
+      }
+    }
+  }
+}
+
+static void AugmentedPerAtomFinish(AugmentedPerAtomType * const S, double const Nktot)
+{
+  int a,i,j,bs;
+  for(a=0;a<S->NAtoms;a++)
+  {
+    bs = 2*S->nor[a];
+    if(bs==0) continue;
+    for(i=0;i<(int)(S->Gaug[a].N*(1+bs*bs));i+=(1+bs*bs))
+    {
+      for(j=1;j<1+bs*bs;j++)
+      {
+        S->Gaug[a].V[i+j].Re/=Nktot;
+        S->Gaug[a].V[i+j].Im/=Nktot;
+      }
+    }
+    ChopBlockListOfPoles(&(S->Gaug[a]), DBL_EPSILON);
+  }
+}
+
+static void AugmentedPerAtomFree(AugmentedPerAtomType * const S)
+{
+  free(S->off); free(S->nor); free(S->totmin); free(S->totmax); free(S->hu); free(S->v);
+}
+
 /*  Given a tight binding Hamiltonian, a k-mesh defined by the number of divisions of a, b and c (Nk),
  *  a self energy embedded as a matrix
  *       ( a0    C     )
@@ -5026,9 +5203,10 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
  *
  *  The first block of E must have dimension A.NFermion
  */
-static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], CompactMatrixType const * const E, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid)
+uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(TightBindingDef const A, int Nk[3], CompactMatrixType const * const E, BlockListOfPoles * const G, double const * const Egrid, uint32_t const NEgrid, BlockListOfPoles * const Gaug)
 {
-  MatrixType H;
+  MatrixType H, Hk;
+  AugmentedPerAtomType Aug;
   CompactMatrixType T, HSigma, HSigmaComplex;
   double q[3], *val, rest, totmin=0, totmax=0, totnow;
   int    iq[3],ival,iE,i,j,ii;
@@ -5051,6 +5229,15 @@ static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesG
     else if(ii<(int)NEgrid)   G->V[i].Re=Egrid[ii];
     else                      G->V[i].Re=Egrid[NEgrid-1] + (Egrid[NEgrid-1] - Egrid[NEgrid-2]);
     ii++;
+  }
+  /*  one augmented propagator per atom, filled from the same eigenvectors */
+  if(Gaug!=NULL)
+  {
+    if(AugmentedPerAtomInit(&Aug, A, Gaug, Egrid, NEgrid))
+    {
+      printf("AugmentedPerAtomInit failed in TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid\n");
+      return 1;
+    }
   }
   // create HSigma, the first block (a0) gets H(k) added for each k
   CompactMatrixCopy(*E, &HSigma);
@@ -5121,8 +5308,14 @@ static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesG
         {
           if(H.QComplex) MakeComplexMatrixReal(&H);
         }
+        /*  ComplexEigenFunctionToCharacter writes the character into H, so H holds the
+         *  Hamiltonian only until the first eigenvector. Keep a copy of it for H u. */
+        if(Gaug!=NULL) MatrixCopy(&Hk, H);
         for(ival=0;ival<T.Nj;ival++)
         {
+          /* determine the position of the pole in the list of poles */
+          iE = FindEnergyInterval(Egrid, (int)NEgrid, val[ival]);
+          if(Gaug!=NULL) AugmentedPerAtomAdd(&Aug, &Hk, &T, ival, A.NFermion, val[ival], iE, Egrid, NEgrid);
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
@@ -5132,8 +5325,6 @@ static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesG
           {
             RealEigenFunctionToCharacter(&(T.VRe[ival*T.Nj]), &H);
           }
-          /* determine the position of the pole in the list of poles */
-          iE = FindEnergyInterval(Egrid, (int)NEgrid, val[ival]);
           if (iE >= (int)NEgrid-1)
           {
             totnow=0;
@@ -5204,6 +5395,7 @@ static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesG
             }
           }
         }
+        if(Gaug!=NULL) FreeMatrix(&Hk);
         FreeMatrix(&H);
         FreeCompactMatrix(&T);
       }
@@ -5220,6 +5412,11 @@ static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesG
       G->V[i+j].Re/=Nktot;
       G->V[i+j].Im/=Nktot;
     }
+  }
+  if(Gaug!=NULL)
+  {
+    AugmentedPerAtomFinish(&Aug, Nktot);
+    AugmentedPerAtomFree(&Aug);
   }
   ChopBlockListOfPoles(G, DBL_EPSILON);
   return 0;
@@ -5242,7 +5439,7 @@ static uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPoles(
   {
     Egrid[i]=Emin+i*dE;
   }
-  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, E, G, Egrid, NE+1);
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, E, G, Egrid, NE+1, NULL);
   free(Egrid);
   return ret;
 }
@@ -5285,7 +5482,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
   CompactMatrixType E;
   if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
   if(BlockTriDiagonalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
-  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid, NULL);
   FreeCompactMatrix(&E);
   return ret;
 }
@@ -5307,7 +5504,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
   CompactMatrixType E;
   if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
   if(BlockAndersonMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
-  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid, NULL);
   FreeCompactMatrix(&E);
   return ret;
 }
@@ -5329,7 +5526,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
   CompactMatrixType E;
   if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
   if(BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
-  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid, NULL);
   FreeCompactMatrix(&E);
   return ret;
 }
@@ -5351,7 +5548,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
   CompactMatrixType E;
   if(TestSelfEnergyBlockSize(Sigma.BlockSize, A.NFermion, "TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid")) return 1;
   if(BlockDoubleTriDiagonalMatrixInversedToCompactMatrix(&Sigma, &E)) return 1;
-  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid);
+  ret = TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(A, Nk, &E, G, Egrid, NEgrid, NULL);
   FreeCompactMatrix(&E);
   return ret;
 }

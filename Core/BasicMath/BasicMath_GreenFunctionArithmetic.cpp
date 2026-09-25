@@ -3635,12 +3635,12 @@ int GListListListRepresentation(ListOfPoles * G0, ListOfPoles * Sigma, ListOfPol
     ListOfPolesCopy(G, *G0);
     return 0;
   }
-  if(Sigma->N==0) // specia case when Sigma has no poles, still need to shift the Hartree term
+  if(Sigma->N==0) // special case when Sigma has no poles, still need to shift the Hartree term
   {
     ListOfPolesCopy(G, *G0);
     for(int i=0; i<G->N;i++)
     {
-      G->a[i]-=Sigma->a0;
+      G->a[i]+=Sigma->a0;
     }
     return 0;
   }

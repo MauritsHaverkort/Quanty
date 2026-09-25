@@ -247,6 +247,7 @@ test-jobs-tightbinding:
           - "Chop"
           - "Copy"
           - "Derivative"
+          - "HybridizationFunction"
           - "New"
           - "PhaseTests"
           - "ShiftOnsiteEnergy"

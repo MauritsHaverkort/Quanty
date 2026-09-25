@@ -1,0 +1,117 @@
+-- CalculateG with the option HybridizationFunction returns, next to the local Green
+-- function, one augmented propagator per atom of the unit cell: the 2 n_a by 2 n_a block
+-- response function of the operator pair ( c_a , H c_a ). For a one body H the second
+-- operator is the commutator [c_a, H], so this is the same construction as the augmented
+-- propagator (a, [a,H1]) that gives the self energy, with the one body Hamiltonian in
+-- place of the interaction. Downfolding it onto the second block gives the hybridisation
+--
+--     Delta_a(w) = zeta_a - (G_aa)^-1 - epsilon_a ,   zeta = w - Sigma(w)
+--
+-- which is checked here against that expression evaluated by hand. The point of the
+-- construction is that zeta is never formed on its own, only inside the resolvent, so
+-- nothing large is ever subtracted.
+
+print("--------------------------------------------------------")
+print("-- TightBinding - CalculateG HybridizationFunction    --")
+print("--------------------------------------------------------")
+
+-- two atoms in the cell, A with two orbitals and B with one
+HTB = NewTightBinding()
+HTB.Name  = "Two atom test"
+HTB.Cell  = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},   {{"s", {"s1","s2"}}}},
+              {"B", {0.5,0,0}, {{"p", {"p1"}}}} }
+HTB.Hopping = {{"A.s","A.s",{ 0,0,0},{{-0.3, 0.1},{0.1, 0.4}}},
+               {"A.s","A.s",{ 1,0,0},{{-0.25, 0.05},{0.05,-0.2}}},
+               {"A.s","A.s",{-1,0,0},{{-0.25, 0.05},{0.05,-0.2}}},
+               {"A.s","A.s",{ 0,1,0},{{-0.2, 0},{0,-0.15}}},
+               {"A.s","A.s",{ 0,-1,0},{{-0.2, 0},{0,-0.15}}},
+               {"B.p","B.p",{ 0,0,0},{{0.6}}},
+               {"B.p","B.p",{ 0,0,1},{{-0.3}}},
+               {"B.p","B.p",{ 0,0,-1},{{-0.3}}},
+               {"A.s","B.p",{ 0.5,0,0},{{0.35},{0.15}}},
+               {"B.p","A.s",{-0.5,0,0},{{0.35,0.15}}},
+               {"A.s","B.p",{-0.5,0,0},{{0.35},{0.15}}},
+               {"B.p","A.s",{ 0.5,0,0},{{0.35,0.15}}}}
+
+NF   = 3            -- A contributes 2 orbitals, B contributes 1
+Opts = {{"Nk",{14,14,14}},{"Emin",-3},{"Emax",3},{"NE",600}}
+
+-- the onsite energies, needed because the downfold leaves them out
+Eps = {Matrix.New({{-0.3,0.1},{0.1,0.4}}), Matrix.New({{0.6}})}
+
+function Block(M, off, n)
+  local t = {}
+  for i = 1, n do t[i] = {} for j = 1, n do t[i][j] = M[off+i][off+j] end end
+  return Matrix.New(t)
+end
+
+-- Delta_a from the downfold, against zeta_a - (G_aa)^-1 - eps_a evaluated by hand
+function Check(G, Aug, Sigma, text)
+  local off, dim = {0, 2}, {2, 1}
+  for atom = 1, 2 do
+    local P = {}                                   -- project onto the second block
+    for i = 1, dim[atom] do
+      P[i] = {}
+      for j = 1, 2*dim[atom] do P[i][j] = (j == dim[atom]+i) and 1 or 0 end
+    end
+    local D = ResponseFunction.Downfold(Aug[atom], Matrix.New(P))
+    local maxdiff = 0
+    --  Both sides are the same function represented on the same finite energy grid, but
+    --  binned differently, so they agree only to the binning error. It falls from 2.4E-2
+    --  at Gamma = 0.05 to 4.0E-5 at Gamma = 1, which is what says the difference is the
+    --  grid and not the construction. Gamma = 0.3 sits well inside that.
+    for w = -2.5, 2.5, 0.31 do
+      local Gaa  = Block(G(w,0.3), off[atom], dim[atom])
+      local zeta = Matrix.Identity(dim[atom]) * (w + I*0.15)
+      if Sigma ~= nil then zeta = zeta - Block(Sigma(w,0.3), off[atom], dim[atom]) end
+      local ref  = zeta - Matrix.Inverse(Gaa) - Eps[atom]
+      local d    = D(w,0.3) - ref
+      for i = 1, dim[atom] do for j = 1, dim[atom] do
+        if Abs(d[i][j]) > maxdiff then maxdiff = Abs(d[i][j]) end
+      end end
+    end
+    print(string.format("%-46s atom %d : max |Downfold - (zeta - G^-1 - eps)| = %.3e", text, atom, maxdiff))
+    if maxdiff > 5E-3 then
+      error("the hybridization function of atom "..atom.." does not match zeta - G^-1 - eps for "..text.."\n", 1)
+    end
+  end
+end
+
+-- without a self energy
+G, Aug = CalculateG(HTB, {{"Nk",{14,14,14}},{"Emin",-3},{"Emax",3},{"NE",600},{"HybridizationFunction",true}})
+if #Aug ~= 2 then error("CalculateG returned "..#Aug.." augmented propagators, 2 expected\n",1) end
+Check(G, Aug, nil, "no self energy")
+
+-- with a self energy that is block diagonal in the atom index and different on A and B,
+-- and that acts on only one of the two orbitals of atom A
+a = {Matrix.New({{0.1,0,0},{0,0,0},{0,0,-0.2}}), -0.8, 0.9}
+w = {Matrix.New({{0.30,0,0},{0,0,0},{0,0,0.10}}), Matrix.New({{0.20,0,0},{0,0,0},{0,0,0.25}})}
+Sigma = ResponseFunction.New({a, w, mu=0, type="ListOfPoles"})
+G, Aug = CalculateG(HTB, Sigma, {{"Nk",{14,14,14}},{"Emin",-3},{"Emax",3},{"NE",600},{"HybridizationFunction",true}})
+Check(G, Aug, Sigma, "self energy on A.s1 and B.p only")
+
+-- every type of self energy must give the same hybridization function
+for _, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
+  local S = ResponseFunction.ChangeType(Copy(Sigma), ty)
+  local G2, Aug2 = CalculateG(HTB, S, {{"Nk",{14,14,14}},{"Emin",-3},{"Emax",3},{"NE",600},{"HybridizationFunction",true}})
+  Check(G2, Aug2, Sigma, "self energy given as "..ty)
+end
+
+-- The option must not disturb the Green function itself. It does route G through the grid
+-- form, because that is where the augmented propagators are filled from the same
+-- eigenvectors, so the two agree to the 1E-13 that a uniform grid and Emin, Emax, NE agree
+-- to rather than bit for bit.
+Gonly = CalculateG(HTB, Copy(Sigma), Opts)
+Gboth = CalculateG(HTB, Copy(Sigma), {{"Nk",{14,14,14}},{"Emin",-3},{"Emax",3},{"NE",600},{"HybridizationFunction",true}})
+maxdiff = 0
+for w = -3, 3, 0.17 do
+  local d = Gonly(w,0.1) - Gboth(w,0.1)
+  for i = 1, NF do for j = 1, NF do if Abs(d[i][j]) > maxdiff then maxdiff = Abs(d[i][j]) end end end
+end
+print(string.format("%-46s max |G with - G without| = %.3e", "the option leaves G untouched", maxdiff))
+if maxdiff > 1E-12 then error("asking for the hybridization function changed G\n",1) end
+
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

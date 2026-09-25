@@ -1016,6 +1016,7 @@ static int LuaCalculateG(lua_State *L)
     double Emax;
     uint32_t NE;
     const char* Type;
+    bool HybridizationFunction;
   } Options;
   Options.Nk = NULL;
   //Options.Method    = "Mesh";
@@ -1023,6 +1024,7 @@ static int LuaCalculateG(lua_State *L)
   Options.Emax=NAN;
   Options.NE=0;
   Options.Type="ListOfPoles";
+  Options.HybridizationFunction=false;
   CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateGOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
@@ -1032,6 +1034,7 @@ static int LuaCalculateG(lua_State *L)
     {"NE",         "uint32_t", &(Options.NE)},
     {"EnergyGrid", "Vector",   &Grid},
     {"Type",       "char*",    &(Options.Type)},
+    {"HybridizationFunction", "bool", &(Options.HybridizationFunction)},
     {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
   if (LuaTestOptionsList(L,-1))
@@ -1118,13 +1121,61 @@ static int LuaCalculateG(lua_State *L)
    *  read: Sigma is the memory of a response function userdata, and Options.Type and
    *  Grid point into the option table. Lua takes the top nresults values as the
    *  result, so the output is simply pushed on top of them. */
+  /*  Asking for the hybridisation routes everything through the grid form, which fills the
+   *  augmented propagators from the same eigenvectors that build G. A uniform grid there
+   *  gives the same G as Emin, Emax and NE do, to 1E-13. */
+  BlockListOfPoles *Gaug=NULL;
+  uint32_t NGaug=0;
+  double *hybgrid=NULL; uint32_t hybngrid=0;
+  CompactMatrixType Ehyb;
+  if(Options.HybridizationFunction)
+  {
+    if(Grid.Ni!=0) { hybgrid=Grid.VRe; hybngrid=Grid.Ni; }
+    else
+    {
+      hybngrid = Options.NE+1;
+      hybgrid  = (double*)malloc(hybngrid*sizeof(double));
+      for(i=0;i<hybngrid;i++) hybgrid[i] = Options.Emin + i*(Options.Emax-Options.Emin)/((double)Options.NE);
+    }
+    if(Sigma==NULL)
+    {
+      Ehyb.Ni=a->NFermion; Ehyb.Nj=a->NFermion; Ehyb.QComplex=0; Ehyb.mu=0;
+      InitCompactMatrix(&Ehyb);
+      for(i=0;i<(uint32_t)(a->NFermion*a->NFermion);i++) Ehyb.VRe[i]=0;
+    }
+    else
+    {
+      int bad=0;
+      switch(Sigma->type)
+      {
+        case 'l': case 'L': bad=BlockListOfPolesInversedToCompactMatrix((BlockListOfPoles*)Sigma->data, &Ehyb); break;
+        case 't': case 'T': bad=BlockTriDiagonalMatrixInversedToCompactMatrix((BlockTriDiagonalMatrixType*)Sigma->data, &Ehyb); break;
+        case 'a': case 'A': bad=BlockAndersonMatrixInversedToCompactMatrix((BlockAndersonMatrixType*)Sigma->data, &Ehyb); break;
+        case 'n': case 'N': bad=BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, &Ehyb); break;
+        case 'd': case 'D': bad=BlockDoubleTriDiagonalMatrixInversedToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)Sigma->data, &Ehyb); break;
+        default: bad=1;
+      }
+      if(bad) return luaL_error(L, "Error CalculateG: could not embed the self energy for the hybridization function\n");
+    }
+    NGaug = a->Cell.NAtoms;
+    Gaug  = (BlockListOfPoles*)malloc(NGaug*sizeof(BlockListOfPoles));
+  }
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
   G->type = 'l';
   G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  if(Sigma==NULL)
+  if(Options.HybridizationFunction)
+  {
+    if(TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, &Ehyb, (BlockListOfPoles*)G->data, hybgrid, hybngrid, Gaug))
+    {
+      return luaL_error(L, "Error CalculateG: could not calculate the hybridization function\n");
+    }
+    FreeCompactMatrix(&Ehyb);
+    if(Grid.Ni==0) free(hybgrid);
+  }
+  else if(Sigma==NULL)
   {
     if (Grid.Ni==0)
     {
@@ -1179,7 +1230,25 @@ static int LuaCalculateG(lua_State *L)
     lua_replace(L, 1);
     lua_replace(L, 2);
     lua_settop(L, 2);
-    return LuaChangeTypeResponseFunction(L);
+    LuaChangeTypeResponseFunction(L);
+  }
+  if(Gaug!=NULL)
+  {
+    lua_newtable(L);
+    for(i=0;i<NGaug;i++)
+    {
+      ResponsefunctionType *R = (ResponsefunctionType*) lua_newuserdata(L, sizeof(ResponsefunctionType));
+      luaL_setmetatable(L, "ResponseFunction_Type");
+      R->type  = 'l';
+      R->Block = true;
+      R->NSuggestedGridPoints = 0;
+      R->SuggestedGrid = NULL;
+      R->data  = (void*)malloc(sizeof(BlockListOfPoles));
+      *((BlockListOfPoles*)R->data) = Gaug[i];
+      lua_rawseti(L, -2, i+1);
+    }
+    free(Gaug);
+    return 2;
   }
   return 1;
 }
