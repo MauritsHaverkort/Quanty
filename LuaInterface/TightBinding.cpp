@@ -1121,13 +1121,61 @@ static int LuaCalculateG(lua_State *L)
    *  read: Sigma is the memory of a response function userdata, and Options.Type and
    *  Grid point into the option table. Lua takes the top nresults values as the
    *  result, so the output is simply pushed on top of them. */
+  /*  Asking for the hybridisation routes everything through the grid form, which fills the
+   *  augmented propagators from the same eigenvectors that build G. A uniform grid there
+   *  gives the same G as Emin, Emax and NE do, to 1E-13. */
+  BlockListOfPoles *Gaug=NULL;
+  uint32_t NGaug=0;
+  double *hybgrid=NULL; uint32_t hybngrid=0;
+  CompactMatrixType Ehyb;
+  if(Options.HybridizationFunction)
+  {
+    if(Grid.Ni!=0) { hybgrid=Grid.VRe; hybngrid=Grid.Ni; }
+    else
+    {
+      hybngrid = Options.NE+1;
+      hybgrid  = (double*)malloc(hybngrid*sizeof(double));
+      for(i=0;i<hybngrid;i++) hybgrid[i] = Options.Emin + i*(Options.Emax-Options.Emin)/((double)Options.NE);
+    }
+    if(Sigma==NULL)
+    {
+      Ehyb.Ni=a->NFermion; Ehyb.Nj=a->NFermion; Ehyb.QComplex=0; Ehyb.mu=0;
+      InitCompactMatrix(&Ehyb);
+      for(i=0;i<(uint32_t)(a->NFermion*a->NFermion);i++) Ehyb.VRe[i]=0;
+    }
+    else
+    {
+      int bad=0;
+      switch(Sigma->type)
+      {
+        case 'l': case 'L': bad=BlockListOfPolesInversedToCompactMatrix((BlockListOfPoles*)Sigma->data, &Ehyb); break;
+        case 't': case 'T': bad=BlockTriDiagonalMatrixInversedToCompactMatrix((BlockTriDiagonalMatrixType*)Sigma->data, &Ehyb); break;
+        case 'a': case 'A': bad=BlockAndersonMatrixInversedToCompactMatrix((BlockAndersonMatrixType*)Sigma->data, &Ehyb); break;
+        case 'n': case 'N': bad=BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, &Ehyb); break;
+        case 'd': case 'D': bad=BlockDoubleTriDiagonalMatrixInversedToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)Sigma->data, &Ehyb); break;
+        default: bad=1;
+      }
+      if(bad) return luaL_error(L, "Error CalculateG: could not embed the self energy for the hybridization function\n");
+    }
+    NGaug = a->Cell.NAtoms;
+    Gaug  = (BlockListOfPoles*)malloc(NGaug*sizeof(BlockListOfPoles));
+  }
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
   G->type = 'l';
   G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  if(Sigma==NULL)
+  if(Options.HybridizationFunction)
+  {
+    if(TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, &Ehyb, (BlockListOfPoles*)G->data, hybgrid, hybngrid, Gaug))
+    {
+      return luaL_error(L, "Error CalculateG: could not calculate the hybridization function\n");
+    }
+    FreeCompactMatrix(&Ehyb);
+    if(Grid.Ni==0) free(hybgrid);
+  }
+  else if(Sigma==NULL)
   {
     if (Grid.Ni==0)
     {
@@ -1166,52 +1214,6 @@ static int LuaCalculateG(lua_State *L)
     }
   }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
-  /*  One augmented propagator per atom, the 2 n_a by 2 n_a block response function of the
-   *  operator pair ( c_a , H c_a ). Its Schur complement onto the second block, which is what
-   *  ResponseFunction.Downfold returns, is the hybridisation function of that atom. This is
-   *  built here, while a, Sigma and the option table are still on the stack and alive. */
-  BlockListOfPoles *Gaug=NULL;
-  uint32_t NGaug=0;
-  if(Options.HybridizationFunction)
-  {
-    CompactMatrixType E;
-    double *egrid; uint32_t negrid;
-    if(Grid.Ni!=0) { egrid=Grid.VRe; negrid=Grid.Ni; }
-    else
-    {
-      negrid = Options.NE+1;
-      egrid  = (double*)malloc(negrid*sizeof(double));
-      for(i=0;i<negrid;i++) egrid[i] = Options.Emin + i*(Options.Emax-Options.Emin)/((double)Options.NE);
-    }
-    if(Sigma==NULL)
-    {
-      E.Ni=a->NFermion; E.Nj=a->NFermion; E.QComplex=0; E.mu=0;
-      InitCompactMatrix(&E);
-      for(i=0;i<(uint32_t)(a->NFermion*a->NFermion);i++) E.VRe[i]=0;
-    }
-    else
-    {
-      int bad=0;
-      switch(Sigma->type)
-      {
-        case 'l': case 'L': bad=BlockListOfPolesInversedToCompactMatrix((BlockListOfPoles*)Sigma->data, &E); break;
-        case 't': case 'T': bad=BlockTriDiagonalMatrixInversedToCompactMatrix((BlockTriDiagonalMatrixType*)Sigma->data, &E); break;
-        case 'a': case 'A': bad=BlockAndersonMatrixInversedToCompactMatrix((BlockAndersonMatrixType*)Sigma->data, &E); break;
-        case 'n': case 'N': bad=BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, &E); break;
-        case 'd': case 'D': bad=BlockDoubleTriDiagonalMatrixInversedToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)Sigma->data, &E); break;
-        default: bad=1;
-      }
-      if(bad) return luaL_error(L, "Error CalculateG: could not embed the self energy for the hybridization function\n");
-    }
-    NGaug = a->Cell.NAtoms;
-    Gaug  = (BlockListOfPoles*)malloc(NGaug*sizeof(BlockListOfPoles));
-    if(TightBindingHamiltonianPlusEmbeddedSelfEnergyToAugmentedBlockListOfPolesGrid(*a, Options.Nk, &E, Gaug, egrid, negrid))
-    {
-      return luaL_error(L, "Error CalculateG: could not calculate the hybridization function\n");
-    }
-    FreeCompactMatrix(&E);
-    if(Grid.Ni==0) free(egrid);
-  }
   free(Options.Nk);
   if(FreeSigma==true)
   {

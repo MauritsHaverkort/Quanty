@@ -98,7 +98,10 @@ for _, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
   Check(G2, Aug2, Sigma, "self energy given as "..ty)
 end
 
--- the option must not disturb the Green function itself
+-- The option must not disturb the Green function itself. It does route G through the grid
+-- form, because that is where the augmented propagators are filled from the same
+-- eigenvectors, so the two agree to the 1E-13 that a uniform grid and Emin, Emax, NE agree
+-- to rather than bit for bit.
 Gonly = CalculateG(HTB, Copy(Sigma), Opts)
 Gboth = CalculateG(HTB, Copy(Sigma), {{"Nk",{14,14,14}},{"Emin",-3},{"Emax",3},{"NE",600},{"HybridizationFunction",true}})
 maxdiff = 0
