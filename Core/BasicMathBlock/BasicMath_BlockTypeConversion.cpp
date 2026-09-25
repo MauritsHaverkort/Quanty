@@ -929,6 +929,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(BlockListOfPoles co
 {
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
+  B->Epsilon=kbT;
   B->QComplex=A->QComplex;
   B->BlockSize = A->BlockSize;
   strcpy(B->Name, A->Name);
@@ -984,6 +985,7 @@ uint32_t BlockListOfPolesToBlockNaturalImpurityOrbitalMatrixReduceDimension(Bloc
   CompactMatrixType Aa0;
   BlockListOfPoles Acon, Aval;
   B->mu=A->mu;
+  B->Epsilon=kbT;
   B->QComplex=A->QComplex;
   B->BlockSize = AT->Ni;
   strcpy(B->Name, A->Name);
