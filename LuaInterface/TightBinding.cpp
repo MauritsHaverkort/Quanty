@@ -1016,6 +1016,7 @@ static int LuaCalculateG(lua_State *L)
     double Emax;
     uint32_t NE;
     const char* Type;
+    bool HybridizationFunction;
   } Options;
   Options.Nk = NULL;
   //Options.Method    = "Mesh";
@@ -1023,6 +1024,7 @@ static int LuaCalculateG(lua_State *L)
   Options.Emax=NAN;
   Options.NE=0;
   Options.Type="ListOfPoles";
+  Options.HybridizationFunction=false;
   CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateGOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
@@ -1032,6 +1034,7 @@ static int LuaCalculateG(lua_State *L)
     {"NE",         "uint32_t", &(Options.NE)},
     {"EnergyGrid", "Vector",   &Grid},
     {"Type",       "char*",    &(Options.Type)},
+    {"HybridizationFunction", "bool", &(Options.HybridizationFunction)},
     {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
   if (LuaTestOptionsList(L,-1))
@@ -1163,6 +1166,52 @@ static int LuaCalculateG(lua_State *L)
     }
   }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
+  /*  One augmented propagator per atom, the 2 n_a by 2 n_a block response function of the
+   *  operator pair ( c_a , H c_a ). Its Schur complement onto the second block, which is what
+   *  ResponseFunction.Downfold returns, is the hybridisation function of that atom. This is
+   *  built here, while a, Sigma and the option table are still on the stack and alive. */
+  BlockListOfPoles *Gaug=NULL;
+  uint32_t NGaug=0;
+  if(Options.HybridizationFunction)
+  {
+    CompactMatrixType E;
+    double *egrid; uint32_t negrid;
+    if(Grid.Ni!=0) { egrid=Grid.VRe; negrid=Grid.Ni; }
+    else
+    {
+      negrid = Options.NE+1;
+      egrid  = (double*)malloc(negrid*sizeof(double));
+      for(i=0;i<negrid;i++) egrid[i] = Options.Emin + i*(Options.Emax-Options.Emin)/((double)Options.NE);
+    }
+    if(Sigma==NULL)
+    {
+      E.Ni=a->NFermion; E.Nj=a->NFermion; E.QComplex=0; E.mu=0;
+      InitCompactMatrix(&E);
+      for(i=0;i<(uint32_t)(a->NFermion*a->NFermion);i++) E.VRe[i]=0;
+    }
+    else
+    {
+      int bad=0;
+      switch(Sigma->type)
+      {
+        case 'l': case 'L': bad=BlockListOfPolesInversedToCompactMatrix((BlockListOfPoles*)Sigma->data, &E); break;
+        case 't': case 'T': bad=BlockTriDiagonalMatrixInversedToCompactMatrix((BlockTriDiagonalMatrixType*)Sigma->data, &E); break;
+        case 'a': case 'A': bad=BlockAndersonMatrixInversedToCompactMatrix((BlockAndersonMatrixType*)Sigma->data, &E); break;
+        case 'n': case 'N': bad=BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, &E); break;
+        case 'd': case 'D': bad=BlockDoubleTriDiagonalMatrixInversedToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)Sigma->data, &E); break;
+        default: bad=1;
+      }
+      if(bad) return luaL_error(L, "Error CalculateG: could not embed the self energy for the hybridization function\n");
+    }
+    NGaug = a->Cell.NAtoms;
+    Gaug  = (BlockListOfPoles*)malloc(NGaug*sizeof(BlockListOfPoles));
+    if(TightBindingHamiltonianPlusEmbeddedSelfEnergyToAugmentedBlockListOfPolesGrid(*a, Options.Nk, &E, Gaug, egrid, negrid))
+    {
+      return luaL_error(L, "Error CalculateG: could not calculate the hybridization function\n");
+    }
+    FreeCompactMatrix(&E);
+    if(Grid.Ni==0) free(egrid);
+  }
   free(Options.Nk);
   if(FreeSigma==true)
   {
@@ -1179,7 +1228,25 @@ static int LuaCalculateG(lua_State *L)
     lua_replace(L, 1);
     lua_replace(L, 2);
     lua_settop(L, 2);
-    return LuaChangeTypeResponseFunction(L);
+    LuaChangeTypeResponseFunction(L);
+  }
+  if(Gaug!=NULL)
+  {
+    lua_newtable(L);
+    for(i=0;i<NGaug;i++)
+    {
+      ResponsefunctionType *R = (ResponsefunctionType*) lua_newuserdata(L, sizeof(ResponsefunctionType));
+      luaL_setmetatable(L, "ResponseFunction_Type");
+      R->type  = 'l';
+      R->Block = true;
+      R->NSuggestedGridPoints = 0;
+      R->SuggestedGrid = NULL;
+      R->data  = (void*)malloc(sizeof(BlockListOfPoles));
+      *((BlockListOfPoles*)R->data) = Gaug[i];
+      lua_rawseti(L, -2, i+1);
+    }
+    free(Gaug);
+    return 2;
   }
   return 1;
 }
