@@ -156,6 +156,35 @@ end
 
 
 
+-- A self energy that is a constant and nothing else.  Every Sigma above carries poles, so
+-- the branch that handles Sigma->N == 0 was never reached and shifted the poles the wrong
+-- way.  This function is defined as G(w) = G0(w - Sigma(w)), so a constant Sigma moves
+-- every pole of G0 up by that constant and leaves the weights alone.  The check is made
+-- against the general branch, reached by giving Sigma one pole of negligible weight far
+-- away, and against the shifted list written out by hand.
+
+do
+	local s  = 0.3
+	local G0 = ResponseFunction.New({{0, -1.0, 0.0, 2.0}, {0.25, 0.5, 0.25}, mu=0, type="ListOfPoles"})
+	local Gs = ResponseFunction.CalculateGfromG0andSigma(G0, ResponseFunction.New({{s}, {}, mu=0, type="ListOfPoles"}))
+
+	local Gref = ResponseFunction.New({{0, -1.0+s, 0.0+s, 2.0+s}, {0.25, 0.5, 0.25}, mu=0, type="ListOfPoles"})
+	if( not( Gs==Gref )) then
+		print("G for a constant Sigma")      print(Gs)
+		print("the poles of G0 shifted by s") print(Gref)
+		error("A constant self energy shifts the poles the wrong way\n",1)
+	end
+
+	-- the same Sigma with one far away pole of negligible weight takes the general branch
+	local Gg = ResponseFunction.CalculateGfromG0andSigma(G0,
+	             ResponseFunction.New({{s, 1E4}, {1E-12}, mu=0, type="ListOfPoles"}))
+	for w = -4, 4, 0.037 do
+		if( Abs(Gs(w,0.1) - Gg(w,0.1)) > 1E-8 ) then
+			error(string.format("a constant Sigma and the same Sigma with a negligible pole differ at w = %f\n", w),1)
+		end
+	end
+	print("A constant self energy shifts the poles of G0 by that constant  : ok")
+end
 
 collectgarbage()
 collectgarbage()
