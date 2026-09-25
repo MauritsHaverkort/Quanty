@@ -18,8 +18,6 @@ print("--------------------------------------------------------")
 print("-- CreateSpectra with a self energy                   --")
 print("--------------------------------------------------------")
 
-goto And
-
 Verbosity(0)
 
 threshold = 1e-9
