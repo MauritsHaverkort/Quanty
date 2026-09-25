@@ -288,6 +288,7 @@ test-jobs:
           - "CreateSpectra"
           - "CreateSpectraPoleRange"
           - "CreateSpectraWithSelfEnergy"
+          - "CreateSpectraWithBathExcitations"
           - "CreateClusterHamiltonian"
           - "CreateAtomicIndicesDict"
           - "CreateAtomicIndicesList"

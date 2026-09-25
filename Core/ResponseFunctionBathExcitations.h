@@ -1,0 +1,2 @@
+int OperatorFermionParity(OperatorType const *const O);
+int CalculateGforHwithSigmaAsOperatorBathExcitations(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize, OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NExcitations, const bool NonCrossing, const uint32_t NTriFull, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockTriDiagonalMatrixType * G);

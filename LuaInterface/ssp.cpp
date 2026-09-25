@@ -435,6 +435,14 @@ static int LuaHelp(lua_State *L)
       printf("      - largest energy in the spectrum\n");
       printf("    - \"Gamma\"\n");
       printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
+      printf("    - \"Method\"\n");
+      printf("      - \"Auto\" (default) dense methods below DenseBorder, Lanczos above, \"Dense\", \"Lanczos\"\n");
+      printf("    - \"NBathExcitations\"\n");
+      printf("      - with hybridisation functions given as 4th argument: the number of excitations (particles plus holes)\n");
+      printf("        allowed at once in the baths the hybridisation functions stand for (default 1)\n");
+      printf("      - the bath particle is a fermion when its operators are odd, a boson when they are even\n");
+      printf("    - \"NonCrossing\"\n");
+      printf("      - true keeps only the nested processes, in which the bath excitation added last leaves first (default false)\n");
       printf("\n");
       printf("\n");
     }
@@ -1822,6 +1830,9 @@ static int LuaCreateSpectra(lua_State *L)
     bool Sigma;
     bool KrylovBasis;
     bool DenseMethod;
+    uint32_t NBathExcitations;
+    bool NonCrossing;
+    char *Method;
   } Options;
   Options.GridPoints.QComplex=0;
   Options.GridPoints.Ni=0;
@@ -1834,6 +1845,9 @@ static int LuaCreateSpectra(lua_State *L)
   Options.DenseMethod=false;
   Options.KrylovBasis=false;
   Options.E0=DBL_MAX;
+  Options.NBathExcitations=1;
+  Options.NonCrossing=false;
+  Options.Method=NULL;
   CompactMatrixType HDense, TpsiDense, EigenfunHDense;
   SpectraTypeArray *Spec;
   OperatorType *H,*T;
@@ -1858,10 +1872,13 @@ static int LuaCreateSpectra(lua_State *L)
     {"Gamma","double",&(Options.Settings.Gamma)},
     {"E0","double",&(Options.E0)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
-    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+    {"ForceDenseMethod","bool",&(Options.DenseMethod)},
     
     {"GridPoints","Vector",&(Options.GridPoints)},
     {"NTriFull","int",&(Options.NTriFull)},
+    {"NBathExcitations","uint32_t",&(Options.NBathExcitations)},
+    {"NonCrossing","bool",&(Options.NonCrossing)},
+    {"Method","char*",&(Options.Method)},
     
     
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
@@ -1907,7 +1924,46 @@ static int LuaCreateSpectra(lua_State *L)
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
   }
+  /* Method selects how the spectra are calculated:
+       "Auto"    dense methods when the Hilbert space is below DenseBorder, Lanczos otherwise (the default)
+       "Dense"   dense methods, the same as ForceDenseMethod
+       "Lanczos" Lanczos, whatever the size of the Hilbert space
+       "Mesh"    on a fixed energy mesh (not implemented yet) */
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Auto")==0)
+    {
+    }
+    else if(strcicmp(Options.Method,"Dense")==0)
+    {
+      Options.DenseMethod=true;
+    }
+    else if(strcicmp(Options.Method,"Lanczos")==0)
+    {
+      if(Options.DenseMethod==true)
+      {
+        return luaL_error(L, "Error in CreateSpectra Method \"Lanczos\" and ForceDenseMethod true contradict each other\n");
+      }
+      Options.Settings.DenseBorder=0;
+    }
+    else if(strcicmp(Options.Method,"Mesh")==0)
+    {
+      return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" is not implemented yet\n");
+    }
+    else
+    {
+      return luaL_error(L, "Error in CreateSpectra unknown Method \"%s\", possible are \"Auto\", \"Dense\", \"Lanczos\" and \"Mesh\"\n",Options.Method);
+    }
+  }
   /* test if combination of options are valid */
+  if(Options.NBathExcitations==0)
+  {
+    return luaL_error(L, "Error in CreateSpectra NBathExcitations should be at least 1\n");
+  }
+  if(((Options.NBathExcitations!=1)||(Options.NonCrossing==true))&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra NBathExcitations and NonCrossing can only be set when a hybridisation function is given\n");
+  }
   if((Options.NTriFull!=-1)&&(Options.Sigma==false))
   {
     return luaL_error(L, "Error in CreateSpectra NTriFull can only be set when a self energy is given\n");
@@ -2753,9 +2809,24 @@ static int LuaCreateSpectra(lua_State *L)
         {
           return luaL_error(L, "Error in CreateSpectra, NTriFull should be at least 1 (it is %d)\n",Options.NTriFull);
         }
-        if(CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
+        /* one excitation in the baths goes through the routine that has always
+           done it, so that existing scripts give what they always gave.  At one
+           excitation there is nothing to cross, so NonCrossing changes nothing
+           but the route: it sends the calculation through the new routine,
+           which is how the tests compare the two */
+        if((Options.NBathExcitations==1)&&(Options.NonCrossing==false))
         {
-          return luaL_error(L, "CalculateGforHwithSigmaAsOperator failed in CreateSpectra\n");
+          if(CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
+          {
+            return luaL_error(L, "CalculateGforHwithSigmaAsOperator failed in CreateSpectra\n");
+          }
+        }
+        else
+        {
+          if(CalculateGforHwithSigmaAsOperatorBathExcitations(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, Options.NBathExcitations, Options.NonCrossing, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
+          {
+            return luaL_error(L, "CalculateGforHwithSigmaAsOperatorBathExcitations failed in CreateSpectra\n");
+          }
         }
         /* Transform the spectrum with self energy from Anderson form to a spectra type array and push to stack */
         Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
@@ -2921,7 +2992,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"NE2","uint32_t",&(Options.Settings.NE2)},
     {"Gamma2","double",&(Options.Settings.Gamma2)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
-    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+    {"ForceDenseMethod","bool",&(Options.DenseMethod)},
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);

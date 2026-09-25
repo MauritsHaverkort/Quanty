@@ -24,6 +24,7 @@
 #include "WaveFunctionArithmetic.cpp"
 #include "WaveFunctionPerturbationArithmetic.cpp"
 #include "ResponseFunction.cpp"
+#include "ResponseFunctionBathExcitations.cpp"
 
 
 #include "FiniteTemperatureLanczos.cpp"
