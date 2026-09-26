@@ -1723,7 +1723,9 @@ static int LuaPlotBands(lua_State *L)
   if (LuaTestOptionsList(L,-1))
   {
     LuaCheckOptions(L,-1,LuaPlotBandOptions);
-    Options.LineColor = Options.LineColor & 0x00FFFFFF + (((uint32_t)Options.LineTransparancy)<<24);
+    // Transparancy is an opacity (255 opaque) that multiplies the alpha byte of the color
+    Options.LineColor       = (Options.LineColor & 0x00FFFFFF)       + ((((Options.LineColor>>24) * (uint32_t)Options.LineTransparancy + 127) / 255)<<24);
+    Options.SecondLineColor = (Options.SecondLineColor & 0x00FFFFFF) + ((((Options.SecondLineColor>>24) * (uint32_t)Options.SecondLineTransparancy + 127) / 255)<<24);
     len--;
   }
   if(len<2)

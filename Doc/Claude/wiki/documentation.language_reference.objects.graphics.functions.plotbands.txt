@@ -15,6 +15,8 @@
       * //"NPixelX"//, //"NPixelY"// : Integers, the size of the bitmap that holds the bands. Default value 1000 by 1000
       * //"Color"// : 32 bit integer 0xAARRGGBB, the color of the bands, and of character 1. Default value 0xFF000080 (dark blue)
       * //"SecondColor"// : 32 bit integer 0xAARRGGBB, the color of character 0. Default value 0xFFFF0000 (red)
+      * //"Transparancy"// : Integer from 0 to 255, the opacity of //"Color"// (255 is opaque). It multiplies the alpha byte of //"Color"//, so 0x80 on an opaque color gives the alpha 0x80. In a plot of lines the alpha is stored in the bitmap, and whether it shows depends on the program that displays the SVG; in an intensity plot (see below) the color is mixed with white by it. Default value 255
+      * //"SecondTransparancy"// : Integer from 0 to 255, the same for //"SecondColor"//. Default value 255
       * //"LineWidth"// : Real, the width of a band line as a fraction of the height of the plot. Default value 0.002
       * //"Interpolate"// : Boolean, draw the lines between the $k$-points interpolated. Default value true
       * //"EmptyPathWidth"// : Real, the gap between two labelled points without $k$-points between them, as a fraction of the width of the plot. Default value 0.05
@@ -33,7 +35,7 @@ When //G// and the characters are tables of response functions, or when //"Gamma
 ###
 
 ###
-The color of a pixel follows from the characters as for the lines, with $c = A_c(k,\omega) / A(k,\omega)$ the character at that point. Its intensity is $\min(1, s A(k,\omega) / A_{\mathrm{ref}})$, with $s$ the //"Saturation"// and $A_{\mathrm{ref}}$ the peak height of a pole of weight 1 with the same broadening. A band of weight 1 is therefore drawn in full color, a quasiparticle band of weight 0.3 at 30 percent, and the incoherent part of a spectral function faintly; a larger //"Saturation"// makes weak features visible. The color is mixed with white by the intensity. Every $k$-point is drawn as a strip of pixel columns; //"Interpolate"// and //"LineWidth"// are not used. Without //"GammaL"// and //"GammaG"// each pole is put on the two pixel rows next to it, which gives lines one or two pixels wide.
+The color of a pixel follows from the characters as for the lines, with $c = A_c(k,\omega) / A(k,\omega)$ the character at that point. Its intensity is $\min(1, s A(k,\omega) / A_{\mathrm{ref}})$, with $s$ the //"Saturation"// and $A_{\mathrm{ref}}$ the peak height of a pole of weight 1 with the same broadening. A band of weight 1 is therefore drawn in full color, a quasiparticle band of weight 0.3 at 30 percent, and the incoherent part of a spectral function faintly; a larger //"Saturation"// makes weak features visible. The color is mixed with white by the intensity times its alpha. Every $k$-point is drawn as a strip of pixel columns; //"Interpolate"// and //"LineWidth"// are not used. Without //"GammaL"// and //"GammaG"// each pole is put on the two pixel rows next to it, which gives lines one or two pixels wide.
 ###
 
 ###

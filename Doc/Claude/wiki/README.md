@@ -547,9 +547,12 @@ on the page were measured. The costs quoted on the CalculateBands page (under a
 millisecond per k-point for 50 poles, about 0.2 s for 400) were measured on this
 laptop with one orbital.
 
-### Not documented
+### Fixed along the way
 
-- The option `"Transparancy"` of PlotBands exists but does not work for values
-  other than 255: `Options.LineColor & 0x00FFFFFF + (T<<24)` in `LuaPlotBands`
-  parses as `LineColor & (0x00FFFFFF + (T<<24))`. Left out of the page; `Color`
-  takes the alpha channel directly.
+- The options `"Transparancy"` and `"SecondTransparancy"` of PlotBands. The old
+  line `LineColor & 0x00FFFFFF + (T<<24)` parses as
+  `LineColor & (0x00FFFFFF + (T<<24))`, which gives the alpha of `Color` AND T
+  bit by bit: right whenever `Color` is opaque (the default), wrong when both
+  are set. `SecondTransparancy` was read but never used. Both now multiply the
+  alpha byte of their color, which is the old result whenever either is 255.
+  Both are documented on the PlotBands page.
