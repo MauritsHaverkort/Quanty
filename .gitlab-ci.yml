@@ -242,6 +242,7 @@ test-jobs-tightbinding:
           - "AddSpin"
           - "CalculateBands"
           - "CalculateG"
+          - "CalculateGMesh"
           - "CalculateGSigmaPerAtom"
           - "CalculateGSigmaTypes"
           - "CalculateMu"

@@ -1000,6 +1000,12 @@ static ResponsefunctionType * LuaReadSelfEnergyPerAtom(lua_State *L, int const n
  *       EnergyGrid -> arbirary increasing energy grid for the poles of the response function (in place of Emin, Emax, NE)
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Type
+ *       HybridizationFunction -> also return the augmented propagator of every atom
+ *       Method -> left out: the default route, which diagonalizes H(k) plus the embedded self energy.
+ *                 "Mesh": G is evaluated off the real axis and its residues on the grid are taken
+ *                 without a broadening (TightBindingHamiltonianPlusSelfEnergyOnMesh). The cost does
+ *                 not grow with the number of poles of Sigma. The grid is extended until it holds
+ *                 all poles of G, and the result has poles on the grid points only.
  */
 static int LuaCalculateG(lua_State *L)
 {
@@ -1011,7 +1017,7 @@ static int LuaCalculateG(lua_State *L)
   struct
   {
     int *Nk;
-    //char* Method;   //only method implemented is the mesh/grid.
+    char* Method;
     double Emin;
     double Emax;
     uint32_t NE;
@@ -1019,7 +1025,8 @@ static int LuaCalculateG(lua_State *L)
     bool HybridizationFunction;
   } Options;
   Options.Nk = NULL;
-  //Options.Method    = "Mesh";
+  Options.Method = NULL;
+  bool Mesh = false;
   Options.Emin=NAN;
   Options.Emax=NAN;
   Options.NE=0;
@@ -1028,7 +1035,7 @@ static int LuaCalculateG(lua_State *L)
   CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateGOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
-    //{"Method",     "char*",    &(Options.Method)},
+    {"Method",     "char*",    &(Options.Method)},
     {"Emin",       "double",   &(Options.Emin)},
     {"Emax",       "double",   &(Options.Emax)},
     {"NE",         "uint32_t", &(Options.NE)},
@@ -1041,6 +1048,14 @@ static int LuaCalculateG(lua_State *L)
   {
     LuaCheckOptions(L,-1,LuaCalculateGOptions);
     len--;
+  }
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Mesh")!=0)
+    {
+      return luaL_error(L, "Error CalculateG: unknown Method \"%s\"; leave it out for the default, or ask for \"Mesh\"\n", Options.Method);
+    }
+    Mesh = true;
   }
   if (Grid.Ni != 0)
   {
@@ -1128,7 +1143,7 @@ static int LuaCalculateG(lua_State *L)
   uint32_t NGaug=0;
   double *hybgrid=NULL; uint32_t hybngrid=0;
   CompactMatrixType Ehyb;
-  if(Options.HybridizationFunction)
+  if(Options.HybridizationFunction||Mesh)
   {
     if(Grid.Ni!=0) { hybgrid=Grid.VRe; hybngrid=Grid.Ni; }
     else
@@ -1137,6 +1152,9 @@ static int LuaCalculateG(lua_State *L)
       hybgrid  = (double*)malloc(hybngrid*sizeof(double));
       for(i=0;i<hybngrid;i++) hybgrid[i] = Options.Emin + i*(Options.Emax-Options.Emin)/((double)Options.NE);
     }
+  }
+  if(Options.HybridizationFunction&&!Mesh)
+  {
     if(Sigma==NULL)
     {
       Ehyb.Ni=a->NFermion; Ehyb.Nj=a->NFermion; Ehyb.QComplex=0; Ehyb.mu=0;
@@ -1157,6 +1175,9 @@ static int LuaCalculateG(lua_State *L)
       }
       if(bad) return luaL_error(L, "Error CalculateG: could not embed the self energy for the hybridization function\n");
     }
+  }
+  if(Options.HybridizationFunction)
+  {
     NGaug = a->Cell.NAtoms;
     Gaug  = (BlockListOfPoles*)malloc(NGaug*sizeof(BlockListOfPoles));
   }
@@ -1166,7 +1187,16 @@ static int LuaCalculateG(lua_State *L)
   G->type = 'l';
   G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  if(Options.HybridizationFunction)
+  if(Mesh)
+  {
+    /*  the same grid as the default route, the grid points are the poles     */
+    if(TightBindingHamiltonianPlusSelfEnergyOnMesh(a, Options.Nk, Sigma, hybgrid, hybngrid, (BlockListOfPoles*)G->data, Gaug))
+    {
+      return luaL_error(L, "Error CalculateG with Method \"Mesh\"\n");
+    }
+    if(Grid.Ni==0) free(hybgrid);
+  }
+  else if(Options.HybridizationFunction)
   {
     if(TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, &Ehyb, (BlockListOfPoles*)G->data, hybgrid, hybngrid, Gaug))
     {

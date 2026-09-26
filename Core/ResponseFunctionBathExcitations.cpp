@@ -2982,3 +2982,712 @@ cleanup:
   free(Rsum);
   return ierr;
 }
+
+
+/* ===========================================================================
+ *
+ *   CalculateG on an energy grid
+ *
+ * =========================================================================== */
+
+/*  memory (in Complex16) the Hamiltonians H(k) of all k may take before they
+ *  are rebuilt for every y instead of kept                                     */
+static double const BathExcMeshMaxHkMemory = 1.25e7;
+
+/*  Minv = M^-1 of an n x n complex matrix (row major) by Gauss-Jordan
+ *  elimination with partial pivoting.  W is n*n work space.  Returns 1 if a
+ *  pivot vanishes.                                                             */
+static int BathExcSmallInverse(Complex16 const *const M, uint32_t const n, Complex16 *const Minv, Complex16 *const W)
+{
+  uint32_t r, c, p, j;
+  if (n == 1)
+  {
+    double den = M[0].Re * M[0].Re + M[0].Im * M[0].Im;
+    if (den == 0) return 1;
+    Minv[0].Re =  M[0].Re / den;
+    Minv[0].Im = -M[0].Im / den;
+    return 0;
+  }
+  memcpy(W, M, (size_t)n * n * sizeof(Complex16));
+  memset(Minv, 0, (size_t)n * n * sizeof(Complex16));
+  for (r = 0; r < n; r++) Minv[r * n + r].Re = 1;
+  for (c = 0; c < n; c++)
+  {
+    double best = -1, den;
+    Complex16 piv, f;
+    p = c;
+    for (r = c; r < n; r++)
+    {
+      double v = W[r * n + c].Re * W[r * n + c].Re + W[r * n + c].Im * W[r * n + c].Im;
+      if (v > best) { best = v; p = r; }
+    }
+    if (!(best > 0)) return 1;
+    if (p != c)
+    {
+      for (j = 0; j < n; j++)
+      {
+        Complex16 t = W[c * n + j]; W[c * n + j] = W[p * n + j]; W[p * n + j] = t;
+        t = Minv[c * n + j]; Minv[c * n + j] = Minv[p * n + j]; Minv[p * n + j] = t;
+      }
+    }
+    den = W[c * n + c].Re * W[c * n + c].Re + W[c * n + c].Im * W[c * n + c].Im;
+    piv.Re =  W[c * n + c].Re / den;
+    piv.Im = -W[c * n + c].Im / den;
+    for (j = 0; j < n; j++)
+    {
+      Complex16 t = W[c * n + j];
+      W[c * n + j].Re = t.Re * piv.Re - t.Im * piv.Im;
+      W[c * n + j].Im = t.Re * piv.Im + t.Im * piv.Re;
+      t = Minv[c * n + j];
+      Minv[c * n + j].Re = t.Re * piv.Re - t.Im * piv.Im;
+      Minv[c * n + j].Im = t.Re * piv.Im + t.Im * piv.Re;
+    }
+    for (r = 0; r < n; r++)
+    {
+      if (r == c) continue;
+      f = W[r * n + c];
+      if ((f.Re == 0) && (f.Im == 0)) continue;
+      for (j = 0; j < n; j++)
+      {
+        Complex16 a = W[c * n + j], b = Minv[c * n + j];
+        W[r * n + j].Re    -= f.Re * a.Re - f.Im * a.Im;
+        W[r * n + j].Im    -= f.Re * a.Im + f.Im * a.Re;
+        Minv[r * n + j].Re -= f.Re * b.Re - f.Im * b.Im;
+        Minv[r * n + j].Im -= f.Re * b.Im + f.Im * b.Re;
+      }
+    }
+  }
+  return 0;
+}
+
+/*  C = A B for n x n complex matrices (row major)                             */
+static void BathExcSmallMultiply(Complex16 const *const A, Complex16 const *const B, uint32_t const n, Complex16 *const C)
+{
+  uint32_t i, j, l;
+  for (i = 0; i < n; i++)
+  {
+    for (j = 0; j < n; j++)
+    {
+      double re = 0, im = 0;
+      for (l = 0; l < n; l++)
+      {
+        Complex16 a = A[i * n + l], b = B[l * n + j];
+        re += a.Re * b.Re - a.Im * b.Im;
+        im += a.Re * b.Im + a.Im * b.Re;
+      }
+      C[i * n + j].Re = re;
+      C[i * n + j].Im = im;
+    }
+  }
+}
+
+/*  H(k) of k-point ik (the flat index of the loop of
+ *  TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid, the
+ *  third index running fastest), as an n x n complex matrix                    */
+static void BathExcTightBindingHk(TightBindingDef const *const A, int const *const Nk, size_t const ik, Complex16 *const Hk)
+{
+  MatrixType H;
+  int iq[3], i, j, n = A->NFermion;
+  double diq[3], q[3];
+  iq[2] = (int)(ik % (size_t)Nk[2]);
+  iq[1] = (int)((ik / (size_t)Nk[2]) % (size_t)Nk[1]);
+  iq[0] = (int)(ik / ((size_t)Nk[2] * (size_t)Nk[1]));
+  diq[0] = iq[0] / ((double)(Nk[0]));
+  diq[1] = iq[1] / ((double)(Nk[1]));
+  diq[2] = iq[2] / ((double)(Nk[2]));
+  q[0] = diq[0] * A->Cell.gUnitCell[0][0] + diq[1] * A->Cell.gUnitCell[1][0] + diq[2] * A->Cell.gUnitCell[2][0];
+  q[1] = diq[0] * A->Cell.gUnitCell[0][1] + diq[1] * A->Cell.gUnitCell[1][1] + diq[2] * A->Cell.gUnitCell[2][1];
+  q[2] = diq[0] * A->Cell.gUnitCell[0][2] + diq[1] * A->Cell.gUnitCell[1][2] + diq[2] * A->Cell.gUnitCell[2][2];
+  CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*A, q, &H);
+  for (i = 0; i < n; i++)
+  {
+    for (j = 0; j < n; j++)
+    {
+      Hk[i * n + j].Re = H.VRe[i][j];
+      Hk[i * n + j].Im = (H.QComplex) ? (H.VIm[i][j]) : (0);
+    }
+  }
+  FreeMatrix(&H);
+}
+
+/*  The largest eigenvalue (Top) or minus the smallest (!Top) of the Hermitian
+ *  part of the n x n matrix M                                                  */
+static int BathExcExtremeEigenvalue(Complex16 *const M, uint32_t const n, bool const Top, double *const val)
+{
+  CompactMatrixType v, fun;
+  double *ev;
+  if (n == 1) { *val = Top ? M[0].Re : -M[0].Re; return 0; }
+  ev = (double*)malloc(n * sizeof(double));
+  if (ev == NULL) return 1;
+  v = BathExcView(M, n, n);
+  SquareCompactMatrixMakeHermitian(&v);
+  if (HermitianCompactMatrixEigensystemRowVectors(&v, &fun, ev)) { free(ev); return 1; }
+  FreeCompactMatrix(&fun);
+  *val = Top ? ev[n - 1] : -ev[0];
+  free(ev);
+  return 0;
+}
+
+/*
+ *  The local Green's function of a tight binding Hamiltonian with a local self
+ *  energy,
+ *
+ *    G(z) = (1/Nk) sum_k ( z - H(k) - Sigma(z) )^-1 ,
+ *
+ *  as a block list of poles on the energy grid Grid (strictly increasing, not
+ *  necessarily uniform), and optionally the augmented propagators of every
+ *  atom a, the response function of the operator pair (c_a, H c_a),
+ *
+ *    Gaug_a(z) = (1/Nk) sum_k ( R      R H   )           R = ( z - H(k) - Sigma(z) )^-1
+ *                             ( H R    H R H ) _aa ,
+ *
+ *  whose Schur complement onto the second block is the hybridisation function
+ *  of atom a (see TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid).
+ *
+ *  The poles sit on the grid points x_k with the residues
+ *
+ *    R_k = int hat_k(w) A(w) dw ,   A = -(1/pi) Im G(w + i0)
+ *
+ *  hat_k the piecewise linear function that is one at x_k and zero at x_{k-1}
+ *  and x_{k+1}: every pole of the exact G split over its two neighbouring grid
+ *  points, which is what the default route of CalculateG does with the poles it
+ *  finds by diagonalizing H(k) plus the embedded self energy.  Here nothing is
+ *  diagonalized; the residues follow from G off the real axis, as in
+ *  ResponseFunctionDownfoldOnMesh,
+ *
+ *    R_k = - int_0^inf y sum_j g_j A_y(x_j) dy ,   A_y(x) = -(1/pi) Im G(x + i y)
+ *
+ *  g = ( 1/h-, -(1/h- + 1/h+), 1/h+ ), with the same y quadrature and the
+ *  analytic tail beyond ymax from the moments.  With P = H(k) + a0 and S0 the
+ *  spectral weight of Sigma, R = 1/z + P/z^2 + (P^2 + S0)/z^3 + ..., so the
+ *  moments of G are < 1 >, < P >, < P^2 > + S0 and those of the augmented
+ *  blocks follow by multiplying with H(k) left and right.  The cost is that of
+ *  one n x n inversion per k, grid point and y node, independent of the number
+ *  of poles of Sigma, which enters only in Sigma(z).
+ *
+ *  The default route stores G as the transpose of the resolvent above
+ *  (residue u^* u^T of the eigenvector u, while the eigensolver reconstructs
+ *  A_jk = sum val u_j u_k^*).  The same is done here, so that both routes give
+ *  the same G, also for complex H(k) and a complex, non symmetric Sigma.
+ *
+ *  The grid is extended at either end, with its end spacing, until all poles
+ *  of G sit between its second and its second to last point.  Their range is
+ *  bounded rigorously: a pole w above all poles e_p of Sigma is an eigenvalue
+ *  of H(k) + Sigma(w), so w <= Pmax + sum_p lmax(W_p) / (w - e_p) with Pmax the
+ *  largest eigenvalue of H(k) + a0 over all k.  The largest root of that
+ *  equality bounds the spectrum from above (it is exact for one band), and in
+ *  the same way from below.
+ *
+ *  Sigma may be NULL (no self energy) or a block response function of any type
+ *  with BlockSize A->NFermion; it is written as a list of poles first.  The
+ *  Hamiltonians H(k) are kept for all k if they fit in BathExcMeshMaxHkMemory,
+ *  otherwise they are rebuilt for every y node.
+ *
+ *  G receives a block list of poles; Gaug is NULL or an array of
+ *  A->Cell.NAtoms block lists of poles.
+ *
+ *  returns 0 on success, 1 on failure
+ */
+int TightBindingHamiltonianPlusSelfEnergyOnMesh(TightBindingDef const *const A, int const *const Nk, ResponsefunctionType const *const Sigma, double const *const GridIn, uint32_t const NGridIn, BlockListOfPoles *const G, BlockListOfPoles *const Gaug)
+{
+  uint32_t n = (uint32_t)A->NFermion, nn, NAtoms = A->Cell.NAtoms, NBlock, Nacc, b, a, k, q, m, i, j, NGrid = 0, Ny = 0, NSig = 0;
+  size_t ik, NkTot = (size_t)Nk[0] * (size_t)Nk[1] * (size_t)Nk[2];
+  int ierr = 0;
+  bool StoreHk;
+  double Pmin = DBL_MAX, Pmax = -DBL_MAX, lo, hi, hmin, Rspec, ymin, ymax, ClippedWeight = 0;
+  double *Grid = NULL, *ynode = NULL, *yweight = NULL, *SigE = NULL, *SigL = NULL;
+  uint32_t *bsz = NULL, *boff = NULL, *aoff = NULL;
+  ResponsefunctionType SLPr;
+  BlockListOfPoles *SLP = NULL;
+  Complex16 *a0 = NULL, *S0 = NULL, *SigW = NULL, *Hall = NULL, *Mom = NULL, *Rsum = NULL;
+
+  SLPr.data = NULL;
+  nn = n * n;
+  if ((GridIn == NULL) || (NGridIn < 2))
+  {
+    printf("TightBindingHamiltonianPlusSelfEnergyOnMesh needs an energy grid of at least two points\n");
+    return 1;
+  }
+  for (k = 1; k < NGridIn; k++)
+  {
+    if (!(GridIn[k] > GridIn[k - 1]))
+    {
+      printf("TightBindingHamiltonianPlusSelfEnergyOnMesh: the energy grid is not strictly increasing at position %u (%g after %g)\n", k + 1, GridIn[k], GridIn[k - 1]);
+      return 1;
+    }
+  }
+  if ((n == 0) || (NkTot == 0)) { printf("TightBindingHamiltonianPlusSelfEnergyOnMesh: no orbitals or no k-points\n"); return 1; }
+
+  /*  the blocks: G, then one augmented propagator per atom                    */
+  NBlock = 1 + ((Gaug != NULL) ? NAtoms : 0);
+  bsz  = (uint32_t*)malloc(NBlock * sizeof(uint32_t));
+  boff = (uint32_t*)malloc(NBlock * sizeof(uint32_t));
+  aoff = (uint32_t*)malloc(Max(NAtoms, 1) * sizeof(uint32_t));
+  if ((bsz == NULL) || (boff == NULL) || (aoff == NULL)) { ierr = 1; goto cleanup; }
+  bsz[0] = n;
+  for (a = 0; a + 1 < NBlock; a++)
+  {
+    uint32_t nor = 0;
+    int s;
+    for (s = 0; s < A->Cell.Atom[a].Nshell; s++) nor += (uint32_t)A->Cell.Atom[a].shelldegeneracy[s];
+    aoff[a] = (uint32_t)A->FermionIndex[a][0];
+    bsz[1 + a] = 2 * nor;
+  }
+  Nacc = 0;
+  for (b = 0; b < NBlock; b++) { boff[b] = Nacc; Nacc += bsz[b] * bsz[b]; }
+
+  /*  Sigma as a list of poles: a0, the poles, their weights and largest
+   *  eigenvalues, the spectral weight S0                                      */
+  a0 = (Complex16*)calloc(nn, sizeof(Complex16));
+  S0 = (Complex16*)calloc(nn, sizeof(Complex16));
+  if ((a0 == NULL) || (S0 == NULL)) { ierr = 1; goto cleanup; }
+  if (Sigma != NULL)
+  {
+    if (ConvertResponsefunction(Sigma, &SLPr, 'L', "default", -1, -1, -1, -1, false, false, false) || (SLPr.Block == false))
+    {
+      printf("TightBindingHamiltonianPlusSelfEnergyOnMesh could not write the self energy as a block list of poles\n");
+      ierr = 1; goto cleanup;
+    }
+    SLP = (BlockListOfPoles*)SLPr.data;
+    if (SLP->BlockSize != (int)n)
+    {
+      printf("TightBindingHamiltonianPlusSelfEnergyOnMesh: the self energy has BlockSize %d and the tight binding model %u orbitals\n", SLP->BlockSize, n);
+      ierr = 1; goto cleanup;
+    }
+    NSig = (uint32_t)SLP->N;
+    SigE = (double*)malloc(Max(NSig, 1) * sizeof(double));
+    SigL = (double*)malloc(Max(NSig, 1) * sizeof(double));
+    SigW = (Complex16*)malloc((size_t)Max(NSig, 1) * nn * sizeof(Complex16));
+    if ((SigE == NULL) || (SigL == NULL) || (SigW == NULL)) { ierr = 1; goto cleanup; }
+    for (i = 0; i < nn; i++)
+    {
+      if (SLP->QComplex) a0[i] = SLP->a0[i];
+      else { a0[i].Re = SLP->a0Re[i]; a0[i].Im = 0; }
+    }
+    for (q = 0; q < NSig; q++)
+    {
+      size_t off = (size_t)q * (1 + nn);
+      SigE[q] = SLP->QComplex ? SLP->V[off].Re : SLP->VRe[off];
+      for (i = 0; i < nn; i++)
+      {
+        Complex16 w;
+        if (SLP->QComplex) w = SLP->V[off + 1 + i];
+        else { w.Re = SLP->VRe[off + 1 + i]; w.Im = 0; }
+        SigW[(size_t)q * nn + i] = w;
+        S0[i].Re += w.Re;
+        S0[i].Im += w.Im;
+      }
+      {
+        Complex16 *wc = (Complex16*)malloc(nn * sizeof(Complex16));
+        if (wc == NULL) { ierr = 1; goto cleanup; }
+        memcpy(wc, &(SigW[(size_t)q * nn]), nn * sizeof(Complex16));
+        if (BathExcExtremeEigenvalue(wc, n, true, &(SigL[q]))) { free(wc); ierr = 1; goto cleanup; }
+        free(wc);
+        SigL[q] = Max(SigL[q], 0.0);
+      }
+    }
+  }
+
+  /*  one pass over k: H(k), kept if small enough, the range of the
+   *  eigenvalues of H(k) + a0, and the moments of every block                 */
+  StoreHk = ((double)NkTot * (double)nn <= BathExcMeshMaxHkMemory);
+  Mom = (Complex16*)calloc((size_t)3 * Nacc, sizeof(Complex16));
+  if (Mom == NULL) { ierr = 1; goto cleanup; }
+  if (StoreHk)
+  {
+    Hall = (Complex16*)malloc(NkTot * nn * sizeof(Complex16));
+    if (Hall == NULL) { ierr = 1; goto cleanup; }
+  }
+  {
+    Complex16 *Hk = (Complex16*)malloc(nn * sizeof(Complex16));
+    Complex16 *P  = (Complex16*)malloc(nn * sizeof(Complex16));
+    Complex16 *K  = (Complex16*)malloc(3 * nn * sizeof(Complex16));
+    Complex16 *KH = (Complex16*)malloc(nn * sizeof(Complex16));
+    Complex16 *HK = (Complex16*)malloc(nn * sizeof(Complex16));
+    Complex16 *HKH = (Complex16*)malloc(nn * sizeof(Complex16));
+    if ((Hk == NULL) || (P == NULL) || (K == NULL) || (KH == NULL) || (HK == NULL) || (HKH == NULL))
+    {
+      free(Hk); free(P); free(K); free(KH); free(HK); free(HKH);
+      ierr = 1; goto cleanup;
+    }
+    for (ik = 0; ik < NkTot; ik++)
+    {
+      double e;
+      BathExcTightBindingHk(A, Nk, ik, Hk);
+      if (StoreHk) memcpy(&(Hall[ik * nn]), Hk, nn * sizeof(Complex16));
+      for (i = 0; i < nn; i++) { P[i].Re = Hk[i].Re + a0[i].Re; P[i].Im = Hk[i].Im + a0[i].Im; }
+      memcpy(KH, P, nn * sizeof(Complex16));
+      if (BathExcExtremeEigenvalue(KH, n, true, &e)) { ierr = 1; break; }
+      Pmax = Max(Pmax, e);
+      memcpy(KH, P, nn * sizeof(Complex16));
+      if (BathExcExtremeEigenvalue(KH, n, false, &e)) { ierr = 1; break; }
+      Pmin = Min(Pmin, -e);
+      /*  K_0 = 1, K_1 = P, K_2 = P^2 + S0                                      */
+      memset(K, 0, nn * sizeof(Complex16));
+      for (i = 0; i < n; i++) K[i * n + i].Re = 1;
+      memcpy(&(K[nn]), P, nn * sizeof(Complex16));
+      BathExcSmallMultiply(P, P, n, &(K[2 * nn]));
+      for (i = 0; i < nn; i++) { K[2 * nn + i].Re += S0[i].Re; K[2 * nn + i].Im += S0[i].Im; }
+      for (m = 0; m < 3; m++)
+      {
+        Complex16 *Km = &(K[m * nn]), *Mm = &(Mom[(size_t)m * Nacc]);
+        for (i = 0; i < nn; i++) { Mm[i].Re += Km[i].Re; Mm[i].Im += Km[i].Im; }
+        if (NBlock == 1) continue;
+        BathExcSmallMultiply(Km, Hk, n, KH);
+        BathExcSmallMultiply(Hk, Km, n, HK);
+        BathExcSmallMultiply(HK, Hk, n, HKH);
+        for (a = 0; a + 1 < NBlock; a++)
+        {
+          uint32_t bs = bsz[1 + a], h = bs / 2, o = aoff[a], p, r;
+          Complex16 *Mb = &(Mm[boff[1 + a]]);
+          for (p = 0; p < h; p++)
+          {
+            for (r = 0; r < h; r++)
+            {
+              size_t src = (size_t)(o + p) * n + (o + r);
+              Mb[p * bs + r].Re           += Km[src].Re;   Mb[p * bs + r].Im           += Km[src].Im;
+              Mb[p * bs + h + r].Re       += KH[src].Re;   Mb[p * bs + h + r].Im       += KH[src].Im;
+              Mb[(h + p) * bs + r].Re     += HK[src].Re;   Mb[(h + p) * bs + r].Im     += HK[src].Im;
+              Mb[(h + p) * bs + h + r].Re += HKH[src].Re;  Mb[(h + p) * bs + h + r].Im += HKH[src].Im;
+            }
+          }
+        }
+      }
+    }
+    free(Hk); free(P); free(K); free(KH); free(HK); free(HKH);
+    if (ierr) goto cleanup;
+  }
+  for (i = 0; i < (size_t)3 * Nacc; i++) { Mom[i].Re /= (double)NkTot; Mom[i].Im /= (double)NkTot; }
+
+  /*  the range of the poles of G                                              */
+  lo = Pmin;
+  hi = Pmax;
+  {
+    double emin = DBL_MAX, emax = -DBL_MAX, Lsum = 0;
+    for (q = 0; q < NSig; q++)
+    {
+      if (!(SigL[q] > 0)) continue;
+      emin = Min(emin, SigE[q]);
+      emax = Max(emax, SigE[q]);
+      Lsum += SigL[q];
+    }
+    if (Lsum > 0)
+    {
+      /*  hi: the root of w - Pmax - sum lmax / (w - e) on (emax, Weyl bound]   */
+      double wl = emax, wh = Max(Pmax, emax) + sqrt(Lsum), wm, f;
+      int it;
+      for (it = 0; it < 200; it++)
+      {
+        wm = (wl + wh) / 2;
+        if (!((wm > wl) && (wm < wh))) break;
+        f = wm - Pmax;
+        for (q = 0; q < NSig; q++) if (SigL[q] > 0) f -= SigL[q] / (wm - SigE[q]);
+        if (f > 0) wh = wm; else wl = wm;
+      }
+      hi = wh;
+      /*  lo: the root of w - Pmin + sum lmax / (e - w) on [Weyl bound, emin)   */
+      wl = Min(Pmin, emin) - sqrt(Lsum);
+      wh = emin;
+      for (it = 0; it < 200; it++)
+      {
+        wm = (wl + wh) / 2;
+        if (!((wm > wl) && (wm < wh))) break;
+        f = wm - Pmin;
+        for (q = 0; q < NSig; q++) if (SigL[q] > 0) f += SigL[q] / (SigE[q] - wm);
+        if (f < 0) wl = wm; else wh = wm;
+      }
+      lo = wl;
+    }
+  }
+
+  /*  the grid, extended until the poles sit between its second and second to
+   *  last point                                                               */
+  {
+    uint32_t nlo = 0, nhi = 0;
+    double h0 = GridIn[1] - GridIn[0], h1 = GridIn[NGridIn - 1] - GridIn[NGridIn - 2], x;
+    for (x = GridIn[1]; x > lo; x -= h0) nlo++;
+    for (x = GridIn[NGridIn - 2]; x < hi; x += h1) nhi++;
+    NGrid = NGridIn + nlo + nhi;
+    Grid = (double*)malloc(NGrid * sizeof(double));
+    if (Grid == NULL) { ierr = 1; goto cleanup; }
+    for (k = 0; k < nlo; k++) Grid[k] = GridIn[0] - (double)(nlo - k) * h0;
+    for (k = 0; k < NGridIn; k++) Grid[nlo + k] = GridIn[k];
+    for (k = 0; k < nhi; k++) Grid[nlo + NGridIn + k] = GridIn[NGridIn - 1] + (double)(k + 1) * h1;
+    if (nlo + nhi > 0)
+    {
+      VerbosityPrintf(0x0001, "TightBindingHamiltonianPlusSelfEnergyOnMesh: the grid is extended by %u points below and %u above to hold the poles in [%g, %g]\n", nlo, nhi, lo, hi);
+    }
+  }
+  hmin = DBL_MAX;
+  for (k = 1; k < NGrid; k++) hmin = Min(hmin, Grid[k] - Grid[k - 1]);
+  Rspec = Max(fabs(Grid[0]), fabs(Grid[NGrid - 1]));
+
+  /*  the y quadrature, as in the mesh method, plus one node for [0, ymin]: a
+   *  pole of G exactly on a grid point x_j (a flat band, or H(k) on a
+   *  commensurate grid) gives y A_y(x_j) = W / pi down to y = 0, and leaving
+   *  that interval out would lose 2 ymin / (pi h) of its weight. The
+   *  rectangle rule is exact for it, and the other poles contribute O(y^2)
+   *  there.                                                                   */
+  ymin = BathExcMeshYmin * hmin;
+  ymax = BathExcMeshYmaxFactor * Max(Rspec, hmin);
+  {
+    uint32_t npanel = (uint32_t)ceil((log(ymax) - log(ymin)) / BathExcMeshPanelWidth), pn;
+    double h = (log(ymax) - log(ymin)) / npanel;
+    Ny = 8 * npanel + 1;
+    ynode = (double*)malloc(Ny * sizeof(double));
+    yweight = (double*)malloc(Ny * sizeof(double));
+    if ((ynode == NULL) || (yweight == NULL)) { ierr = 1; goto cleanup; }
+    ynode[0] = ymin;
+    yweight[0] = ymin;
+    for (pn = 0; pn < npanel; pn++)
+    {
+      for (q = 0; q < 8; q++)
+      {
+        double u = log(ymin) + h * pn + h * (GLx[q] + 1) / 2;
+        ynode[1 + pn * 8 + q] = exp(u);
+        yweight[1 + pn * 8 + q] = GLw[q] * h / 2 * exp(u);
+      }
+    }
+  }
+  VerbosityPrintf(0x0001, "TightBindingHamiltonianPlusSelfEnergyOnMesh: %u orbitals, %lu k-points (%s), %u poles of Sigma, %u grid points, %u nodes in y\n",
+                  n, (unsigned long)NkTot, StoreHk ? "H(k) kept" : "H(k) rebuilt per y", NSig, NGrid, Ny);
+
+  /*  R_k = - int y sum_j g_j A_y(x_j) dy, the y in parallel                   */
+  Rsum = (Complex16*)calloc((size_t)NGrid * Nacc, sizeof(Complex16));
+  if (Rsum == NULL) { ierr = 1; goto cleanup; }
+  {
+    int failed = 0;
+#pragma omp parallel
+    {
+      Complex16 *Rloc = (Complex16*)calloc((size_t)NGrid * Nacc, sizeof(Complex16));
+      Complex16 *Facc = (Complex16*)malloc((size_t)NGrid * Nacc * sizeof(Complex16));
+      Complex16 *Ay   = (Complex16*)malloc((size_t)NGrid * Nacc * sizeof(Complex16));
+      Complex16 *Sg   = (Complex16*)malloc((size_t)NGrid * nn * sizeof(Complex16));
+      Complex16 *Hbuf = (Complex16*)malloc(nn * sizeof(Complex16));
+      Complex16 *Mz   = (Complex16*)malloc(nn * sizeof(Complex16));
+      Complex16 *Rz   = (Complex16*)malloc(nn * sizeof(Complex16));
+      Complex16 *Wk   = (Complex16*)malloc(nn * sizeof(Complex16));
+      Complex16 *RH   = (Complex16*)malloc(nn * sizeof(Complex16));
+      Complex16 *HR   = (Complex16*)malloc(nn * sizeof(Complex16));
+      Complex16 *HRH  = (Complex16*)malloc(nn * sizeof(Complex16));
+      int qq;
+      if ((Rloc == NULL) || (Facc == NULL) || (Ay == NULL) || (Sg == NULL) || (Hbuf == NULL) || (Mz == NULL) ||
+          (Rz == NULL) || (Wk == NULL) || (RH == NULL) || (HR == NULL) || (HRH == NULL)) failed = 1;
+#pragma omp for schedule(dynamic)
+      for (qq = 0; qq < (int)Ny; qq++)
+      {
+        uint32_t jj, kk, z, pp, ab, bl;
+        size_t kq;
+        double y = ynode[qq];
+        if (failed) continue;
+        /*  Sigma(x_j + i y) = a0 + sum W / (x_j + i y - e)                      */
+        for (jj = 0; jj < NGrid; jj++)
+        {
+          Complex16 *s = &(Sg[(size_t)jj * nn]);
+          memcpy(s, a0, nn * sizeof(Complex16));
+          for (pp = 0; pp < NSig; pp++)
+          {
+            double d = Grid[jj] - SigE[pp], den = d * d + y * y, lr = d / den, li = -y / den;
+            Complex16 const *w = &(SigW[(size_t)pp * nn]);
+            for (z = 0; z < nn; z++)
+            {
+              s[z].Re += w[z].Re * lr - w[z].Im * li;
+              s[z].Im += w[z].Re * li + w[z].Im * lr;
+            }
+          }
+        }
+        memset(Facc, 0, (size_t)NGrid * Nacc * sizeof(Complex16));
+        for (kq = 0; (kq < NkTot) && !failed; kq++)
+        {
+          Complex16 const *Hk;
+          if (StoreHk) Hk = &(Hall[kq * nn]);
+          else { BathExcTightBindingHk(A, Nk, kq, Hbuf); Hk = Hbuf; }
+          for (jj = 0; jj < NGrid; jj++)
+          {
+            Complex16 const *s = &(Sg[(size_t)jj * nn]);
+            Complex16 *F = &(Facc[(size_t)jj * Nacc]);
+            for (z = 0; z < nn; z++) { Mz[z].Re = -Hk[z].Re - s[z].Re; Mz[z].Im = -Hk[z].Im - s[z].Im; }
+            for (z = 0; z < n; z++) { Mz[z * n + z].Re += Grid[jj]; Mz[z * n + z].Im += y; }
+            if (BathExcSmallInverse(Mz, n, Rz, Wk)) { failed = 1; break; }
+            for (z = 0; z < nn; z++) { F[z].Re += Rz[z].Re; F[z].Im += Rz[z].Im; }
+            if (NBlock == 1) continue;
+            BathExcSmallMultiply(Rz, Hk, n, RH);
+            BathExcSmallMultiply(Hk, Rz, n, HR);
+            BathExcSmallMultiply(HR, Hk, n, HRH);
+            for (ab = 0; ab + 1 < NBlock; ab++)
+            {
+              uint32_t bs = bsz[1 + ab], h = bs / 2, o = aoff[ab], p, r;
+              Complex16 *Fb = &(F[boff[1 + ab]]);
+              for (p = 0; p < h; p++)
+              {
+                for (r = 0; r < h; r++)
+                {
+                  size_t src = (size_t)(o + p) * n + (o + r);
+                  Fb[p * bs + r].Re           += Rz[src].Re;   Fb[p * bs + r].Im           += Rz[src].Im;
+                  Fb[p * bs + h + r].Re       += RH[src].Re;   Fb[p * bs + h + r].Im       += RH[src].Im;
+                  Fb[(h + p) * bs + r].Re     += HR[src].Re;   Fb[(h + p) * bs + r].Im     += HR[src].Im;
+                  Fb[(h + p) * bs + h + r].Re += HRH[src].Re;  Fb[(h + p) * bs + h + r].Im += HRH[src].Im;
+                }
+              }
+            }
+          }
+        }
+        if (failed) continue;
+        /*  A_y of every block at every grid point, the mean over k            */
+        memset(Ay, 0, (size_t)NGrid * Nacc * sizeof(Complex16));
+        for (jj = 0; jj < NGrid; jj++)
+        {
+          for (bl = 0; bl < NBlock; bl++)
+          {
+            size_t o = (size_t)jj * Nacc + boff[bl];
+            BathExcAddSpectralPart(&(Facc[o]), bsz[bl], 1.0 / (double)NkTot, &(Ay[o]));
+          }
+        }
+        for (kk = 1; kk + 1 < NGrid; kk++)
+        {
+          double hm = Grid[kk] - Grid[kk - 1], hp = Grid[kk + 1] - Grid[kk];
+          double g[3] = {1 / hm, -(1 / hm + 1 / hp), 1 / hp};
+          uint32_t t;
+          for (t = 0; t < 3; t++)
+          {
+            Complex16 const *ay = &(Ay[(size_t)(kk - 1 + t) * Nacc]);
+            double f = yweight[qq] * y * g[t];
+            for (z = 0; z < Nacc; z++)
+            {
+              Rloc[(size_t)kk * Nacc + z].Re -= f * ay[z].Re;
+              Rloc[(size_t)kk * Nacc + z].Im -= f * ay[z].Im;
+            }
+          }
+        }
+      }
+#pragma omp critical
+      {
+        if (Rloc != NULL)
+        {
+          for (size_t z = 0; z < (size_t)NGrid * Nacc; z++) { Rsum[z].Re += Rloc[z].Re; Rsum[z].Im += Rloc[z].Im; }
+        }
+      }
+      free(Rloc); free(Facc); free(Ay); free(Sg); free(Hbuf); free(Mz); free(Rz); free(Wk); free(RH); free(HR); free(HRH);
+    }
+    if (failed) { printf("TightBindingHamiltonianPlusSelfEnergyOnMesh: z - H(k) - Sigma(z) could not be inverted\n"); ierr = 1; goto cleanup; }
+  }
+
+  /*  the analytic tail beyond ymax:  - sum_m c_m d^m/dx^m int_Y^inf y A_y(x) dy
+   *  at x_k, c_m = sum_j g_j (x_j - x_k)^m / m!, from the moments              */
+  for (k = 1; k + 1 < NGrid; k++)
+  {
+    double hm = Grid[k] - Grid[k - 1], hp = Grid[k + 1] - Grid[k], x = Grid[k];
+    double cm[5] = {0, 0, (hm + hp) / 2, (hp * hp - hm * hm) / 6, (hm * hm * hm + hp * hp * hp) / 24};
+    uint32_t mm, jj;
+    for (m = 0; m < 3; m++)
+    {
+      double tail = 0;
+      for (mm = 2; mm <= 4; mm++)
+      {
+        double cc = 1;
+        int kk2 = (int)m + 1 + (int)mm;
+        Complex16 w0, p1, p2, I;
+        for (jj = 0; jj < mm; jj++) cc *= -(double)(m + 1 + jj);
+        w0.Re = x; w0.Im = ymax;
+        p1.Re = 1; p1.Im = 0;
+        for (jj = 0; jj + 1 < (uint32_t)kk2; jj++)
+        {
+          double den = w0.Re * w0.Re + w0.Im * w0.Im;
+          Complex16 t2;
+          t2.Re = (p1.Re * w0.Re + p1.Im * w0.Im) / den;
+          t2.Im = (p1.Im * w0.Re - p1.Re * w0.Im) / den;
+          p1 = t2;
+        }
+        p2.Re = p1.Re * w0.Re - p1.Im * w0.Im;
+        p2.Im = p1.Re * w0.Im + p1.Im * w0.Re;
+        I.Re = p2.Re / (2 - kk2) - x * p1.Re / (1 - kk2);
+        I.Im = p2.Im / (2 - kk2) - x * p1.Im / (1 - kk2);
+        tail += cm[mm] * cc * (-1.0 / M_PI) * I.Im;
+      }
+      for (i = 0; i < Nacc; i++)
+      {
+        Rsum[(size_t)k * Nacc + i].Re -= tail * Mom[(size_t)m * Nacc + i].Re;
+        Rsum[(size_t)k * Nacc + i].Im -= tail * Mom[(size_t)m * Nacc + i].Im;
+      }
+    }
+  }
+
+  /*  per block: Hermitian, positive semi definite, transposed, and the list
+   *  of poles                                                                 */
+  for (b = 0; b < NBlock; b++)
+  {
+    uint32_t bs = bsz[b], bb = bs * bs, Nkeep = 0, np = 0, p, r;
+    double *val = NULL, trmax = 0, Clipped = 0;
+    BlockListOfPoles *Out = (b == 0) ? G : &(Gaug[b - 1]);
+    if (bs > 0)
+    {
+      val = (double*)malloc(bs * sizeof(double));
+      if (val == NULL) { ierr = 1; goto cleanup; }
+      for (k = 1; k + 1 < NGrid; k++)
+      {
+        CompactMatrixType Rk, fun;
+        double tr = 0;
+        Rk = BathExcView(&(Rsum[(size_t)k * Nacc + boff[b]]), bs, bs);
+        SquareCompactMatrixMakeHermitian(&Rk);
+        if (HermitianCompactMatrixEigensystemRowVectors(&Rk, &fun, val)) { free(val); ierr = 1; goto cleanup; }
+        memset(Rk.V, 0, bb * sizeof(Complex16));
+        for (q = 0; q < bs; q++)
+        {
+          if (val[q] <= 0) { Clipped -= val[q]; continue; }
+          for (p = 0; p < bs; p++)
+          {
+            for (r = 0; r < bs; r++)
+            {
+              Complex16 fa = fun.V[q * bs + p], fb = fun.V[q * bs + r];
+              Rk.V[p * bs + r].Re += val[q] * (fa.Re * fb.Re + fa.Im * fb.Im);
+              Rk.V[p * bs + r].Im += val[q] * (fa.Im * fb.Re - fa.Re * fb.Im);
+            }
+          }
+        }
+        FreeCompactMatrix(&fun);
+        for (p = 0; p < bs; p++) tr += Rk.V[p * bs + p].Re;
+        trmax = Max(trmax, tr);
+      }
+      free(val);
+      if (b == 0) ClippedWeight = Clipped;
+      for (k = 1; k + 1 < NGrid; k++)
+      {
+        double tr = 0;
+        for (p = 0; p < bs; p++) tr += Rsum[(size_t)k * Nacc + boff[b] + p * bs + p].Re;
+        if (tr > BathExcMeshKeepWeight * trmax) Nkeep++;
+      }
+    }
+    Out->N = Max(Nkeep, 1);
+    Out->BlockSize = (int)bs;
+    Out->QComplex = 1;
+    if (InitBlockListOfPoles(Out)) { ierr = 1; goto cleanup; }
+    Out->N = (int)Nkeep;
+    Out->mu = 0;
+    for (k = 1; (k + 1 < NGrid) && (bs > 0); k++)
+    {
+      double tr = 0;
+      Complex16 *dst;
+      Complex16 const *src = &(Rsum[(size_t)k * Nacc + boff[b]]);
+      for (p = 0; p < bs; p++) tr += src[p * bs + p].Re;
+      if (!(tr > BathExcMeshKeepWeight * trmax)) continue;
+      dst = &(Out->V[(size_t)np * (1 + bb)]);
+      dst[0].Re = Grid[k];
+      dst[0].Im = 0;
+      /*  the transpose, the convention of the default route                   */
+      for (p = 0; p < bs; p++) for (r = 0; r < bs; r++) dst[1 + p * bs + r] = src[r * bs + p];
+      np++;
+    }
+  }
+  if (ClippedWeight > 1e-6 * (double)n)
+  {
+    printf("TightBindingHamiltonianPlusSelfEnergyOnMesh: %g negative weight (of %u) left by the quadrature was removed\n", ClippedWeight, n);
+  }
+  VerbosityPrintf(0x0001, "TightBindingHamiltonianPlusSelfEnergyOnMesh: %d poles on the grid\n", G->N);
+
+cleanup:
+  if (SLPr.data != NULL) FreeResponsefunction(&SLPr);
+  free(Grid); free(ynode); free(yweight); free(SigE); free(SigL);
+  free(bsz); free(boff); free(aoff);
+  free(a0); free(S0); free(SigW); free(Hall); free(Mom); free(Rsum);
+  return ierr;
+}

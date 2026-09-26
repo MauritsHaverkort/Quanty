@@ -1,0 +1,207 @@
+-- CalculateG with {"Method","Mesh"}: the local Green's function as a list of poles on an
+-- energy grid, taken from G off the real axis instead of diagonalizing H(k) plus the
+-- embedded self energy.
+--
+-- The default route on a grid splits every pole of G over its two neighbouring grid
+-- points (weight and first moment conserved). That is exactly what the mesh method
+-- returns, so on a grid that holds the whole spectrum the two agree pole by pole, up to
+-- the y quadrature, which leaves about 1e-6 of the largest residue.
+--
+-- Tested: one band on a square lattice; three orbitals on two atoms with complex hopping
+-- and a complex self energy with off diagonal elements, so that G is neither real nor
+-- symmetric and a transposed G would fail; the self energy given as a list of poles, a
+-- chain, an Anderson matrix and natural impurity orbitals; a self energy per atom; the
+-- augmented propagators of HybridizationFunction; a non uniform grid; a grid that has to
+-- be extended to hold the poles; Emin, Emax and NE against the same EnergyGrid; the input
+-- that is refused.
+
+print("--------------------------------------------------------")
+print("-- TightBinding - CalculateG on an energy grid        --")
+print("--------------------------------------------------------")
+Verbosity(0)
+threshold = 1e-5    -- relative to the largest residue
+
+-- the residues of a list of poles by grid point; poles off the grid must be empty
+function OnGrid(Gr, grid)
+  local t = ResponseFunction.ToTable(ResponseFunction.ChangeType(Gr, "LP"))
+  local R = {}
+  for pidx = 2, #t[1] do
+    local k
+    for j = 1, #grid do if math.abs(grid[j] - t[1][pidx]) < 1e-9 then k = j end end
+    local w = t[2][pidx-1]
+    if k == nil then
+      local tr = 0
+      for a = 1, #w do tr = tr + Abs(w[a][a]) end
+      if tr > 1e-12 then error("a pole with weight "..tr.." off the grid at "..t[1][pidx].."\n", 1) end
+    else
+      R[k] = w
+    end
+  end
+  return R
+end
+
+function Compare(name, A, B)
+  local d, smax, keys = 0, 0, {}
+  for k,_ in pairs(A) do keys[k] = true end
+  for k,_ in pairs(B) do keys[k] = true end
+  for k,_ in pairs(keys) do
+    local a, b = A[k], B[k]
+    local bs = #(a or b)
+    for i = 1, bs do for j = 1, bs do
+      local x = a and a[i][j] or 0
+      local y = b and b[i][j] or 0
+      d = math.max(d, Abs(x - y))
+      smax = math.max(smax, Abs(y))
+    end end
+  end
+  print(string.format("%-52s max |mesh - default| = %.3e of %.3e", name, d, smax))
+  if not (d <= threshold * smax) then error(name..": the mesh and the default route differ by "..d.."\n", 1) end
+end
+
+-- the largest |W - W^T| of the residues: a G that is not symmetric
+function Asymmetry(R)
+  local d = 0
+  for _, w in pairs(R) do
+    for i = 1, #w do for j = 1, #w do d = math.max(d, Abs(w[i][j] - w[j][i])) end end
+  end
+  return d
+end
+
+-- the sum of the residues against the identity
+function SumRule(name, R, n)
+  local d = 0
+  for i = 1, n do for j = 1, n do
+    local s = 0
+    for _, w in pairs(R) do s = s + w[i][j] end
+    d = math.max(d, Abs(s - ((i == j) and 1 or 0)))
+  end end
+  print(string.format("%-52s max |sum of residues - 1| = %.3e", name, d))
+  if not (d <= 1e-6) then error(name..": the residues add up to 1 only to "..d.."\n", 1) end
+end
+
+function Uniform(e0, e1, de)
+  local g = {}
+  for i = 0, math.floor((e1 - e0) / de + 0.5) do g[i+1] = e0 + i * de end
+  return g
+end
+
+-- ===== one band on a square lattice ==================================================
+HSq = NewTightBinding()
+HSq.Name  = "square lattice"
+HSq.Cell  = {{1,0,0},{0,1,0},{0,0,1}}
+HSq.Atoms = {{"A", {0,0,0}, {{"s", {"s"}}}}}
+HSq.Hopping = {{"A.s","A.s",{ 1,0,0},{{-0.25}}}, {"A.s","A.s",{-1,0,0},{{-0.25}}},
+               {"A.s","A.s",{ 0,1,0},{{-0.25}}}, {"A.s","A.s",{ 0,-1,0},{{-0.25}}}}
+gridSq = Uniform(-4, 4, 0.05)
+OptSq  = {{"Nk",{20,20,1}},{"EnergyGrid",gridSq}}
+SigmaSq = ResponseFunction.New({{0.05, -1.1, 0.2, 1.3}, {0.3, 0.1, 0.25}, mu=0, type="ListOfPoles"})
+G0 = CalculateG(HSq, SigmaSq, OptSq)
+G1 = CalculateG(HSq, SigmaSq, {{"Nk",{20,20,1}},{"EnergyGrid",gridSq},{"Method","Mesh"}})
+Compare("one band, square lattice", OnGrid(G1, gridSq), OnGrid(G0, gridSq))
+SumRule("one band, square lattice", OnGrid(G1, gridSq), 1)
+G0 = CalculateG(HSq, OptSq)
+G1 = CalculateG(HSq, {{"Nk",{20,20,1}},{"EnergyGrid",gridSq},{"Method","Mesh"}})
+Compare("one band, no self energy, poles on grid points", OnGrid(G1, gridSq), OnGrid(G0, gridSq))
+
+-- ===== three orbitals on two atoms, complex ==========================================
+HTB = NewTightBinding()
+HTB.Name  = "Two atom test"
+HTB.Cell  = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},   {{"s", {"s1","s2"}}}},
+              {"B", {0.5,0,0}, {{"p", {"p1"}}}} }
+c = 0.08*I
+HTB.Hopping = {{"A.s","A.s",{ 0,0,0},{{-0.3, 0.1+c},{0.1-c, 0.4}}},
+               {"A.s","A.s",{ 1,0,0},{{-0.25, 0.05+c},{0.05+c,-0.2}}},
+               {"A.s","A.s",{-1,0,0},{{-0.25, 0.05-c},{0.05-c,-0.2}}},
+               {"A.s","A.s",{ 0,1,0},{{-0.2, 0},{0,-0.15}}},
+               {"A.s","A.s",{ 0,-1,0},{{-0.2, 0},{0,-0.15}}},
+               {"B.p","B.p",{ 0,0,0},{{0.6}}},
+               {"B.p","B.p",{ 0,0,1},{{-0.3}}},
+               {"B.p","B.p",{ 0,0,-1},{{-0.3}}},
+               {"A.s","B.p",{ 0.5,0,0},{{0.35},{0.15}}},
+               {"B.p","A.s",{-0.5,0,0},{{0.35,0.15}}},
+               {"A.s","B.p",{-0.5,0,0},{{0.35},{0.15}}},
+               {"B.p","A.s",{ 0.5,0,0},{{0.35,0.15}}}}
+Nk   = {6,6,6}
+grid = Uniform(-6, 6, 0.05)
+function Default(S, extra)
+  local o = {{"Nk",Nk},{"EnergyGrid",grid}}
+  for _, e in ipairs(extra or {}) do o[#o+1] = e end
+  if S == nil then return CalculateG(HTB, o) end
+  return CalculateG(HTB, S, o)
+end
+function Mesh(S, extra)
+  local o = {{"Nk",Nk},{"EnergyGrid",grid},{"Method","Mesh"}}
+  for _, e in ipairs(extra or {}) do o[#o+1] = e end
+  if S == nil then return CalculateG(HTB, o) end
+  return CalculateG(HTB, S, o)
+end
+
+Compare("three orbitals, no self energy", OnGrid(Mesh(), grid), OnGrid(Default(), grid))
+
+a = {Matrix.New({{0.1,0.05*I,0},{-0.05*I,0,0},{0,0,-0.2}}), -0.8, 0.9}
+w = {Matrix.New({{0.30,0.1+0.1*I,0},{0.1-0.1*I,0.2,0},{0,0,0.10}}),
+     Matrix.New({{0.20,-0.05*I,0},{0.05*I,0.1,0},{0,0,0.25}})}
+Sigma = ResponseFunction.New({a, w, mu=0, type="ListOfPoles"})
+R0 = OnGrid(Default(Sigma), grid)
+R1 = OnGrid(Mesh(Sigma), grid)
+Compare("complex self energy as a list of poles", R1, R0)
+SumRule("complex self energy as a list of poles", R1, 3)
+asym = Asymmetry(R0)
+print(string.format("%-52s max |W - W^T| = %.3e", "G is not symmetric", asym))
+if asym < 1e-3 then error("the test model has a symmetric G and would not see a transposed one\n", 1) end
+for _, ty in ipairs({"Tri","And","Nat"}) do
+  local S = ResponseFunction.ChangeType(Copy(Sigma), ty)
+  Compare("complex self energy as "..ty, OnGrid(Mesh(S), grid), OnGrid(Default(S), grid))
+end
+
+-- a self energy per atom: on atom A only
+SigmaA = ResponseFunction.New({{Matrix.New({{0.1,0.05*I},{-0.05*I,0}}), -0.8, 0.9},
+                               {Matrix.New({{0.30,0.1+0.1*I},{0.1-0.1*I,0.2}}), Matrix.New({{0.20,-0.05*I},{0.05*I,0.1}})},
+                               mu=0, type="ListOfPoles"})
+Compare("self energy per atom, on A only", OnGrid(Mesh({SigmaA, 0}), grid), OnGrid(Default({SigmaA, 0}), grid))
+
+-- the augmented propagators
+G0, Aug0 = Default(Sigma, {{"HybridizationFunction",true}})
+G1, Aug1 = Mesh(Sigma, {{"HybridizationFunction",true}})
+if #Aug1 ~= 2 then error("CalculateG returned "..#Aug1.." augmented propagators, 2 expected\n", 1) end
+Compare("HybridizationFunction: G", OnGrid(G1, grid), OnGrid(G0, grid))
+Compare("HybridizationFunction: augmented propagator of A", OnGrid(Aug1[1], grid), OnGrid(Aug0[1], grid))
+Compare("HybridizationFunction: augmented propagator of B", OnGrid(Aug1[2], grid), OnGrid(Aug0[2], grid))
+
+-- a non uniform grid, denser in the middle
+gridNU = {}
+for i = 0, 200 do
+  local t = i / 200
+  gridNU[i+1] = -6 + 12*t - (3/(2*math.pi)) * math.sin(2*math.pi*t)
+end
+G0 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridNU}})
+G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridNU},{"Method","Mesh"}})
+Compare("non uniform grid", OnGrid(G1, gridNU), OnGrid(G0, gridNU))
+
+-- a grid narrower than the spectrum is extended with its spacing until it holds all
+-- poles; the result then equals the default route on the wide grid it is part of
+gridN = Uniform(-1, 1, 0.05)
+R0 = OnGrid(Default(Sigma), grid)
+outside = 0
+for k, wk in pairs(R0) do
+  if grid[k] < -1.05 or grid[k] > 1.05 then for i = 1, 3 do outside = outside + wk[i][i] end end
+end
+if outside < 0.1 then error("the narrow grid holds the spectrum and does not test its extension\n", 1) end
+G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridN},{"Method","Mesh"}})
+R1 = OnGrid(G1, grid)
+Compare(string.format("grid extended (weight %.2f outside)", outside), R1, R0)
+SumRule("grid extended", R1, 3)
+
+-- Emin, Emax and NE give the grid Emin + i (Emax - Emin) / NE
+G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"Emin",-6},{"Emax",6},{"NE",240},{"Method","Mesh"}})
+Compare("Emin, Emax, NE", OnGrid(G1, grid), OnGrid(Default(Sigma), grid))
+
+-- refused input
+ok = pcall(function() return CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",grid},{"Method","Foo"}}) end)
+if ok then error("an unknown Method was accepted\n", 1) end
+print("an unknown Method is refused")
+
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
