@@ -25,6 +25,10 @@ with the sum over a regular mesh of $N_k$ points in the Brillouin zone. The resu
       * //"Method"// : String. Left out, $G$ is calculated by diagonalisation. //"Mesh"// calculates it on the energy grid without any diagonalisation, see below
       * //"Lambda"// : Real, at least 1, only with //"Method"// //"Mesh"//. The factor by which the distance between the points grows when the energy grid is extended. Default value is 2
 
+###
+The self-energy is added to $H(k)$ in the basis of Bloch sums in which the phase of an orbital depends only on its unit cell, $|k, i\rangle = N_k^{-1/2} \sum_{R} e^{\mathrm{i} k \cdot R} |R, i\rangle$ with $R$ the lattice vector of the cell and not the position of the atom within it. A self-energy that is block diagonal in the atoms, as the table form above always is, is the same in any choice of these phases. A response function //Sigma// can also couple orbitals of two different atoms. That coupling acts between the two atoms within the same unit cell $R$, and not between atoms of different cells.
+###
+
 ===== Output =====
 
   * G : Response Function in the Block List of Poles (If not chosen otherwise) representation $\{\{A_0, a_1, a_2,\dots,a_n\},\{ B_1,B_2, \dots, B_n \}, $ type="ListOfPoles" $\dots \}$, which corresponds to

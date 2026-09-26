@@ -500,3 +500,56 @@ faster one for a two pole self-energy and twenty times slower for 81 poles.
   description and loads `../definitions.Quanty`; both were there before.
 - The first CalculateG example (the Emery model on 1000 x 1000 k-points) was not
   run; it is left as it was.
+
+
+## Batch 8 — CalculateBands and PlotBands with a self-energy
+
+Drafted 26 September 2026, for the commit on the `Claude` branch that adds a
+self-energy to `TightBinding.CalculateBands` and spectral functions to
+`Graphics.PlotBands`.
+
+### New pages
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.tightbinding.functions.calculatebands.txt` | `documentation:language_reference:objects:tightbinding:functions:calculatebands` |
+| `documentation.language_reference.objects.graphics.functions.plotbands.txt` | `documentation:language_reference:objects:graphics:functions:plotbands` |
+
+Neither function had a page. `documentation:language_reference:objects:tightbinding:functions`
+holds only its template `start` page, so CalculateBands is its first entry; the
+`indexmenu` table of contents of the tight-binding pages picks it up.
+
+**PlotBands has no obvious home.** There is no Graphics section on the site at
+all (no object page, no functions namespace). The draft assumes a new namespace
+`documentation:language_reference:objects:graphics`, which then also needs a
+`start` page and a `functions:start` page (the template pages the other objects
+have). Alternatives: put it next to CalculateBands under the tight-binding
+functions, or under `documentation:language_reference:functions`. If it moves,
+the two links to it (in the CalculateBands page, twice) have to follow.
+
+### Updated draft
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.calculateg.txt` | `documentation:language_reference:functions:calculateg` |
+
+The batch 7 draft gains one paragraph after the input list: in which basis the
+self-energy is added to H(k) (Bloch sums whose phase depends only on the unit
+cell), and what a self-energy between two atoms therefore means (a coupling
+within the same unit cell). This was undocumented; CalculateBands uses the same
+basis and refers to it.
+
+### Checked
+
+Both examples were run on the branch build and the output block is that output.
+The PlotBands example prints nothing and writes four SVG files; the sizes quoted
+on the page were measured. The costs quoted on the CalculateBands page (under a
+millisecond per k-point for 50 poles, about 0.2 s for 400) were measured on this
+laptop with one orbital.
+
+### Not documented
+
+- The option `"Transparancy"` of PlotBands exists but does not work for values
+  other than 255: `Options.LineColor & 0x00FFFFFF + (T<<24)` in `LuaPlotBands`
+  parses as `LineColor & (0x00FFFFFF + (T<<24))`. Left out of the page; `Color`
+  takes the alpha channel directly.
