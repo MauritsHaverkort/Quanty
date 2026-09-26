@@ -1456,6 +1456,176 @@ static int LuaPlotDOS(lua_State *L)
   return 0;
 }
 
+/*  The poles a[i] with weights b[i] (b NULL for weight 1) as a spectral function on the NG energies
+ *  E0 + i dE: a Lorentzian of FWHM GammaL per pole, or for GammaL 0 the weight divided by dE and
+ *  split linearly over the two energies around the pole. Poles outside the grid add nothing.
+ */
+static void BandPolesToGrid(double const *a, double const *b, int N, double E0, double dE, int NG, double GammaL, double *col)
+{
+  int i, j, i0;
+  double x, f, bb;
+  for(i=0;i<NG;i++) col[i]=0;
+  for(j=0;j<N;j++)
+  {
+    bb = (b==NULL) ? (1) : (b[j]);
+    if(GammaL>0)
+    {
+      for(i=0;i<NG;i++) col[i] += bb * (GammaL/2) / (Pi * (Sqr(GammaL/2) + Sqr(E0 + i*dE - a[j])));
+    }
+    else
+    {
+      x  = (a[j] - E0) / dE;
+      i0 = (int)floor(x);
+      f  = x - i0;
+      if(i0>=0   && i0<NG)   col[i0]   += bb * (1-f) / dE;
+      if(i0+1>=0 && i0+1<NG) col[i0+1] += bb * f / dE;
+    }
+  }
+}
+
+/*  The spectral function -Im R / Pi of the scalar response function R on the NG energies E0 + i dE with
+ *  a Lorentzian of FWHM GammaL. A list of poles directly, the other types by ResponseFunctionToSpectra.
+ */
+static void BandResponseFunctionToGrid(lua_State *L, ResponsefunctionType const *R, double E0, double dE, int NG, double GammaL, double *col)
+{
+  if(((R->type|32)=='l') && (R->Block==false))
+  {
+    ListOfPoles const *P = (ListOfPoles*)R->data;
+    BandPolesToGrid(P->a, P->b, P->N, E0, dE, NG, GammaL, col);
+    return;
+  }
+  SpectraTypeArray S;
+  // one extra energy on both sides, as a spectrum without broadening collects the poles outside on its end points
+  ResponseFunctionToSpectra(R, &S, 0, E0-dE, E0+NG*dE, 0, GammaL, NG+1);
+  if(S.NSpectra!=1)
+  {
+    luaL_error(L, "Error PlotBands: the spectral functions per k-point should be scalar response functions, not of dimension %d\n", (int)sqrt((double)S.NSpectra));
+  }
+  for(int i=0;i<NG;i++) col[i] = -S.Spec[0].Im[i+1] / Pi;
+  FreeSpectraTypeArray(&S);
+  free(S.Spec);
+}
+
+/*  Check that positions 2 to len on the stack are tables with Nktot response functions. If Ymin or Ymax
+ *  is not set (infinite) it is determined from the poles of the spectral functions on position 2 with a
+ *  weight above 1E-4, widened by Gamma and rounded outward. That needs lists of poles.
+ */
+static void LuaBandSpectraCheckAndRange(lua_State *L, int len, int Nktot, double *Ymin, double *Ymax, double Gamma)
+{
+  double lo=INFINITY, hi=-INFINITY;
+  for(int i=2;i<=len;i++)
+  {
+    if(!lua_istable(L, i) || (int)lua_objlen(L, i)!=Nktot)
+    {
+      luaL_error(L, "Error PlotBands: input at position %d should be a matrix, or a table with one response function per k-point (%d)\n", i, Nktot);
+    }
+  }
+  if(!(*Ymin==-INFINITY || *Ymax==INFINITY)) return;
+  for(int ik=0;ik<Nktot;ik++)
+  {
+    lua_rawgeti(L, 2, ik+1);
+    ResponsefunctionType *R = luaL_checkResponsefunction(L, -1);
+    if(!(((R->type|32)=='l') && (R->Block==false)))
+    {
+      luaL_error(L, "Error PlotBands: the energy range is found automatically for lists of poles only, set it with {\"Frame\",{{\"Ymin\",...},{\"Ymax\",...}}}\n");
+    }
+    ListOfPoles const *P = (ListOfPoles*)R->data;
+    for(uint32_t j=0;j<P->N;j++)
+    {
+      if(P->b[j] < 1E-4) continue;
+      if(P->a[j] < lo) lo = P->a[j];
+      if(P->a[j] > hi) hi = P->a[j];
+    }
+    FreeResponsefunctionIncludingOriginalPointer(R);
+    lua_pop(L, 1);
+  }
+  if(lo>hi) luaL_error(L, "Error PlotBands: the spectral functions have no weight, set the energy range with {\"Frame\",{{\"Ymin\",...},{\"Ymax\",...}}}\n");
+  if(*Ymin==-INFINITY) *Ymin = floor(lo - Gamma);
+  if(*Ymax== INFINITY) *Ymax = ceil(hi + Gamma);
+}
+
+/*  The band spectral functions on the pixel rows of BandPlot, drawn by ConvertBandSpectraToBitMap.
+ *  On stack 2..len either tables with one response function per k-point (BandEnergies NULL), or the
+ *  band energies (BandEnergies) and band characters as matrices, taken as poles of weight 1 and of
+ *  weight the character. Position 2 is the total, 3..len the 0, 1 or 3 characters.
+ *  Every pixel row holds the spectral function at the energy of its centre. It is broadened by a
+ *  Lorentzian of FWHM GammaL, and then by a Gaussian of FWHM GammaG as a sum over the pixel rows,
+ *  including the rows within 4 sigma outside the plot. The opacity is Saturation times the total over
+ *  the peak height of a pole of weight 1, so a band of weight 1 is drawn in full color.
+ */
+static void LuaBandSpectraToBitMap(lua_State *L, int len, CompactMatrixType const *BandEnergies, BandstructurePathType *kList, int Nktot, BitMapType *BandPlot, double Emin, double Emax,
+                                   double GammaL, double GammaG, double Saturation, uint8_t *LineColor, uint8_t *SecondLineColor, double ZeroDistance)
+{
+  int const NSet = len-1;
+  int const NY = BandPlot->NpointsY;
+  int i, j, ip, s, ik, NExt, NG;
+  double dE, sigma, E0, sum, Aref, a;
+  CompactMatrixType *BandCharacters[3];
+  if(!(Emax>Emin)) luaL_error(L, "Error PlotBands: Ymax needs to be larger than Ymin\n");
+  if(GammaL<0 || GammaG<0) luaL_error(L, "Error PlotBands: GammaL and GammaG can not be negative\n");
+  if(BandEnergies!=NULL)
+  {
+    for(s=1;s<NSet;s++)
+    {
+      BandCharacters[s-1]=(CompactMatrixType*) luaL_checkudata(L, 2+s, "Matrix_Type");
+      if(BandCharacters[s-1]->Ni!=BandEnergies->Ni || BandCharacters[s-1]->Nj!=BandEnergies->Nj)
+      {
+        luaL_error(L, "Error PlotBands: the character matrix on position %d does not have the dimensions of the band energies\n", 2+s);
+      }
+    }
+  }
+  dE    = (Emax-Emin)/NY;
+  sigma = GammaG / (2*sqrt(2*log(2.0)));
+  NExt  = (sigma>0) ? ((int)ceil(4*sigma/dE)) : (0);
+  NG    = NY + 2*NExt;
+  E0    = Emin + (0.5-NExt)*dE;
+  double *kern = (double*)malloc((2*NExt+1)*sizeof(double));
+  double *col  = (double*)malloc(NG*sizeof(double));
+  double *A    = (double*)malloc(NSet*Nktot*NY*sizeof(double));
+  sum=0;
+  for(j=0;j<=2*NExt;j++)
+  {
+    kern[j] = (NExt==0) ? (1) : (exp(-Sqr((j-NExt)*dE)/(2*Sqr(sigma))));
+    sum += kern[j];
+  }
+  for(j=0;j<=2*NExt;j++) kern[j]/=sum;
+  for(s=0;s<NSet;s++)
+  {
+    for(ik=0;ik<Nktot;ik++)
+    {
+      if(BandEnergies!=NULL)
+      {
+        BandPolesToGrid(&(BandEnergies->VRe[ik*BandEnergies->Nj]), (s==0) ? (NULL) : (&(BandCharacters[s-1]->VRe[ik*BandEnergies->Nj])), BandEnergies->Nj, E0, dE, NG, GammaL, col);
+      }
+      else
+      {
+        lua_rawgeti(L, 2+s, ik+1);
+        ResponsefunctionType *R = luaL_checkResponsefunction(L, -1);
+        BandResponseFunctionToGrid(L, R, E0, dE, NG, GammaL, col);
+        FreeResponsefunctionIncludingOriginalPointer(R);
+        lua_pop(L, 1);
+      }
+      // row ip (from the top) holds energy index i = NY-1-ip (from the bottom)
+      for(ip=0;ip<NY;ip++)
+      {
+        i = NY-1-ip;
+        sum = 0;
+        for(j=0;j<=2*NExt;j++) sum += kern[j] * col[i+j];
+        A[(s*Nktot+ik)*NY+ip] = sum;
+      }
+    }
+  }
+  // the peak height of a pole of weight 1 on a pixel centre
+  a = E0 + NExt*dE;
+  BandPolesToGrid(&a, NULL, 1, E0, dE, NG, GammaL, col);
+  Aref = 0;
+  for(j=0;j<=2*NExt;j++) Aref += kern[j] * col[j];
+  ConvertBandSpectraToBitMap(A, NSet, Nktot, kList, BandPlot, LineColor, SecondLineColor, Saturation/Aref, ZeroDistance);
+  free(kern);
+  free(col);
+  free(A);
+}
+
 /* On stack we have
  *     1) a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}
  *     2) a matrix with band energies
@@ -1464,6 +1634,12 @@ static int LuaPlotDOS(lua_State *L)
  *     3,4,5)   same as 3 (used as RGB band-color)
  *     3,4,5,6) same as 3 (used as RGB band-color and band-thickness)
  *     -1) possible options
+ *
+ *  In place of the matrices, tables with one response function per k-point can be given (as returned by
+ *  TightBinding.CalculateBands with a self energy): 2) the band spectral function and 3) (3,4,5) the
+ *  characters. They are drawn broadened by a Lorentzian of FWHM GammaL and a Gaussian of FWHM GammaG,
+ *  see LuaBandSpectraToBitMap. With GammaL or GammaG the matrices are drawn the same way, as poles of
+ *  weight 1.
  *
  *     we return
  *     1) a plot of the band-structure
@@ -1484,6 +1660,9 @@ static int LuaPlotBands(lua_State *L)
     double   LineWidth;
     FramePlotOptions Frame;
     bool     Interpolate;
+    double   GammaL;
+    double   GammaG;
+    double   Saturation;
   } Options;
   Options.NPixel[0]=1000;
   Options.NPixel[1]=1000;
@@ -1521,9 +1700,12 @@ static int LuaPlotBands(lua_State *L)
   Options.Frame.XAxis=-INFINITY;
   Options.Frame.YAxis=-INFINITY;
   Options.Interpolate = true;
+  Options.GammaL = 0;
+  Options.GammaG = 0;
+  Options.Saturation = 1;
   LuaOptionsType LuaPlotBandOptions[]={
-    {"NPixelX","double",&(Options.NPixel[0])},
-    {"NPixelY","double",&(Options.NPixel[1])},
+    {"NPixelX","int",&(Options.NPixel[0])},
+    {"NPixelY","int",&(Options.NPixel[1])},
     {"Color","uint32_t",&(Options.LineColor)},
     {"Transparancy","uint8_t",&(Options.LineTransparancy)},
     {"SecondColor","uint32_t",&(Options.SecondLineColor)},
@@ -1532,13 +1714,18 @@ static int LuaPlotBands(lua_State *L)
     {"EmptyPathWidth","double",&(Options.EmptyPathWidth)},
     {"Frame","FramePlotOptions",&(Options.Frame)},
     {"Interpolate","bool",&(Options.Interpolate)},
+    {"GammaL","double",&(Options.GammaL)},
+    {"GammaG","double",&(Options.GammaG)},
+    {"Saturation","double",&(Options.Saturation)},
     {NULL, NULL, NULL}};
   // check (and read) the input
   int len = (int)lua_gettop(L);
   if (LuaTestOptionsList(L,-1))
   {
     LuaCheckOptions(L,-1,LuaPlotBandOptions);
-    Options.LineColor = Options.LineColor & 0x00FFFFFF + (((uint32_t)Options.LineTransparancy)<<24);
+    // Transparancy is an opacity (255 opaque) that multiplies the alpha byte of the color
+    Options.LineColor       = (Options.LineColor & 0x00FFFFFF)       + ((((Options.LineColor>>24) * (uint32_t)Options.LineTransparancy + 127) / 255)<<24);
+    Options.SecondLineColor = (Options.SecondLineColor & 0x00FFFFFF) + ((((Options.SecondLineColor>>24) * (uint32_t)Options.SecondLineTransparancy + 127) / 255)<<24);
     len--;
   }
   if(len<2)
@@ -1629,8 +1816,17 @@ static int LuaPlotBands(lua_State *L)
     }
   }
   // finished reading the k-list
-  // read the matrix with eigen energies
-  CompactMatrixType *BandEnergies = (CompactMatrixType*) luaL_checkudata(L, 2, "Matrix_Type");
+  // read the matrix with eigen energies, or a table of spectral functions per k-point
+  CompactMatrixType *BandEnergies = (CompactMatrixType*) luaL_testudata(L, 2, "Matrix_Type");
+  bool Spectral = (BandEnergies==NULL) || (Options.GammaL>0) || (Options.GammaG>0);
+  if(Spectral && !(len==2 || len==3 || len==5))
+  {
+    return luaL_error(L, "Error PlotBands: spectral functions (or GammaL, GammaG) take 0, 1 or 3 characters, not %d (a band-thickness is not defined)\n", len-2);
+  }
+  if(BandEnergies==NULL)
+  {
+    LuaBandSpectraCheckAndRange(L, len, Nktot, &(Options.Frame.PlotRange[0].Y), &(Options.Frame.PlotRange[1].Y), Options.GammaL+Options.GammaG);
+  }
   // if range not set determine it automatically
   if(Options.Frame.PlotRange[0].Y == -INFINITY)
   {
@@ -1663,6 +1859,17 @@ static int LuaPlotBands(lua_State *L)
   BandPlot.NpointsX = Options.NPixel[0];
   BandPlot.NpointsY = Options.NPixel[1];
   BandPlot.Pixels = (uint32_t*)malloc(BandPlot.NpointsX*BandPlot.NpointsY*sizeof(uint32_t));
+  if(Spectral)
+  {
+    LuaBandSpectraToBitMap(L, len, BandEnergies, &kList, Nktot, &BandPlot, Options.Frame.PlotRange[0].Y, Options.Frame.PlotRange[1].Y, Options.GammaL, Options.GammaG, Options.Saturation, LineColor, SecondLineColor, Options.EmptyPathWidth);
+    GraphicsType* Graphics;
+    Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+    luaL_setmetatable(L, "Graphics_Type");
+    InitGraphics(Graphics);
+    AddBitMapInherentMemory(Graphics, &BandPlot);
+    PlotAllButDataToBandGraphics(Graphics, &(Options.Frame), &kList, Options.EmptyPathWidth);
+    return 1;
+  }
   // read character
   CompactMatrixType *BandCharacters[4];
   for(int i=3; i<=len;i++)

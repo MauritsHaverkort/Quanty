@@ -1082,6 +1082,17 @@ static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
  *  leaving it out asks for no ceiling, which keeps the projection exact, and every other
  *  type refuses it, there being no chain to cut. See ResponseFunctionDownfold for what the
  *  routine does with them.
+ *
+ *  {"Method","Mesh"} returns Sigma instead as a list of poles on an energy grid, given by
+ *  {"Emin",..},{"Emax",..},{"NE",..} or explicitly by {"EnergyGrid",{..}} (increasing, not
+ *  necessarily uniform). Every pole of the exact Sigma is split over its two neighbouring
+ *  grid points, conserving its weight and first moment, and the residues are obtained from
+ *  Sigma off the real axis without any broadening; see ResponseFunctionDownfoldOnMesh. G may
+ *  be of any type, must not have a constant part, and its spectral weight must be invertible.
+ *  The grid is extended where the poles of G reach beyond it, with distances between the
+ *  added points that grow by the factor {"Lambda",..} (default 2, at least 1; 1 extends
+ *  with the end spacing), so that little weight far out lands on a few poles. S is the
+ *  sum rule.
  */
 static int LuaResponseFunctionDownfold(lua_State *L)
 {
@@ -1095,16 +1106,34 @@ static int LuaResponseFunctionDownfold(lua_State *L)
     double MinimalPoleDistance;
     double T;
     uint32_t NTriMax;
+    char *Method;
+    double Emin;
+    double Emax;
+    uint32_t NE;
+    double Lambda;
   } Options;
+  CompactVectorType Grid={0,0,NULL};
+  bool Mesh = false;
   Options.SingularValue       = ValueNotSet;
   Options.MinimalPoleWeigth   = ValueNotSet;
   Options.MinimalPoleDistance = ValueNotSet;
   Options.T                   = ValueNotSet;
   Options.NTriMax             = NTriMaxNoLimit;
+  Options.Method              = NULL;
+  Options.Emin                = ValueNotSet;
+  Options.Emax                = ValueNotSet;
+  Options.NE                  = 0;
+  Options.Lambda              = ValueNotSet;
   LuaOptionsType LuaOptions[]={
     {"SingularValue","double",&(Options.SingularValue)},
     {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
     {"NTriMax","uint32_t",&(Options.NTriMax)},
+    {"Method","char*",&(Options.Method)},
+    {"Emin","double",&(Options.Emin)},
+    {"Emax","double",&(Options.Emax)},
+    {"NE","uint32_t",&(Options.NE)},
+    {"EnergyGrid","Vector",&Grid},
+    {"Lambda","double",&(Options.Lambda)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t) lua_gettop(L);
   if(LuaTestOptionsList(L, -1))
@@ -1127,13 +1156,77 @@ static int LuaResponseFunctionDownfold(lua_State *L)
   {
     return luaL_error(L, "Error in ResponseFunction.Downfold(). The matrix selecting the subspace has %d rows and %d columns, a subspace is not larger than the space it sits in\n", R->Ni, R->Nj);
   }
+  /* Method "Mesh": the result as poles on an energy grid, given by Emin, Emax and NE or
+     explicitly by EnergyGrid (increasing, not necessarily uniform) */
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Mesh")!=0)
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Unknown Method \"%s\"; leave it out for the default, or ask for \"Mesh\"\n", Options.Method);
+    }
+    Mesh = true;
+  }
+  if(Mesh==false)
+  {
+    if((Grid.Ni!=0)||(Options.NE!=0)||(Options.Emin!=ValueNotSet)||(Options.Emax!=ValueNotSet))
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Emin, Emax, NE and EnergyGrid belong to Method \"Mesh\"\n");
+    }
+    if(Options.Lambda!=ValueNotSet)
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Lambda belongs to Method \"Mesh\"\n");
+    }
+  }
+  else
+  {
+    if(Options.Lambda==ValueNotSet) Options.Lambda = 2;
+    if(!(Options.Lambda>=1))
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Lambda is %g, it has to be at least 1\n", Options.Lambda);
+    }
+    bool uniform = (Options.NE!=0)||(Options.Emin!=ValueNotSet)||(Options.Emax!=ValueNotSet);
+    if(Options.NTriMax!=NTriMaxNoLimit)
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). NTriMax cuts a chain; Method \"Mesh\" makes no chain\n");
+    }
+    if(uniform&&(Grid.Ni!=0))
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Give the grid either by Emin, Emax and NE or by EnergyGrid, not both\n");
+    }
+    if((uniform==false)&&(Grid.Ni==0))
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Method \"Mesh\" needs a grid: Emin, Emax and NE, or EnergyGrid\n");
+    }
+    if(uniform)
+    {
+      uint32_t k;
+      if((Options.NE==0)||(Options.Emin==ValueNotSet)||(Options.Emax==ValueNotSet)||!(Options.Emax>Options.Emin))
+      {
+        return luaL_error(L, "Error in ResponseFunction.Downfold(). A uniform grid needs Emin < Emax and NE > 0 (got %g, %g, %u)\n", Options.Emin, Options.Emax, Options.NE);
+      }
+      Grid.Ni=Options.NE+1;
+      Grid.QComplex=0;
+      Grid.VRe=(double*)malloc(Grid.Ni*sizeof(double));
+      for(k=0;k<Grid.Ni;k++) Grid.VRe[k]=Options.Emin+(Options.Emax-Options.Emin)*(double)k/(double)Options.NE;
+    }
+    if(Grid.QComplex!=0)
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). EnergyGrid has to be real\n");
+    }
+  }
   Gout = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   S    = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
   if((Options.NTriMax!=NTriMaxNoLimit)&&((G->type|32)!='t'))
   {
     return luaL_error(L, "Error in ResponseFunction.Downfold(). NTriMax is a ceiling on the length of the chain the projection produces, and only a tri-diagonal response function is downfolded into a chain. A response function of type %c is downfolded one pole at a time and the result is a star\n", G->type|32);
   }
-  if(ResponseFunctionDownfold(G,R,Gout,S,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance,Options.NTriMax))
+  if(Mesh)
+  {
+    int err = ResponseFunctionDownfoldOnMesh(G,R,Grid.VRe,Grid.Ni,Options.Lambda,Gout,S);
+    free(Grid.VRe);
+    if(err) return luaL_error(L, "Error in ResponseFunction.Downfold() with Method \"Mesh\"\n");
+  }
+  else if(ResponseFunctionDownfold(G,R,Gout,S,Options.T,Options.SingularValue,Options.MinimalPoleWeigth,Options.MinimalPoleDistance,Options.NTriMax))
   {
     return luaL_error(L, "Error in ResponseFunction.Downfold()\n");
   }

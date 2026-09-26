@@ -437,3 +437,122 @@ Four statements on the page are measured rather than assumed:
 - The output block on `documentation:getting_started` shows the header of a 2017
   build, with three authors and three citations. It is out of date against every
   current build but that is a separate edit and not mine to decide.
+
+
+## Batch 7 — CalculateG, Downfold and CreateSpectra on an energy mesh
+
+Drafted 26 September 2026, for the commits on the `Claude` branch that add bath
+excitations and `Method "Mesh"` to CreateSpectra (30a1dfdb, e5bba26f), the mesh
+route of Downfold (195f2582), `Method "Mesh"` in CalculateG (b36a85aa) and the
+growing grid extension `Lambda` (f24a1c90).
+
+### Drop-in replacements
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.calculateg.txt` | `documentation:language_reference:functions:calculateg` |
+| `documentation.language_reference.functions.createspectra.txt` | `documentation:language_reference:functions:createspectra` |
+
+Both start from the live source fetched today and keep its wording, markup and
+examples; the diff in the preview should be additions only, apart from the two
+lines below.
+
+- **CalculateG**: documents the self-energy argument (a response function or a
+  table per atom and shell), `EnergyGrid`, `HybridizationFunction` and its second
+  result, `Method "Mesh"` and `Lambda`, with a section on how the poles land on
+  the grid and a second example (square lattice with an 81 pole self-energy,
+  default against mesh, and the hybridization function against zeta - 1/G). The
+  first sentence now says "local" Green's function and gives the formula.
+- **CreateSpectra**: documents the hybridisation argument and the options
+  `Method`, `DenseBorder`, `ForceDenseMethod`, `KrylovBasis`, `NBathExcitations`,
+  `NonCrossing`, `NTriFull` and `GridPoints`, the two extra results with a
+  hybridisation, and adds a second example (one orbital with an empty band,
+  against the same band written out). **It also contains the batch 1 edit**
+  (`epsilon` reworded, `SingularValue` added, the two paragraphs after the input
+  list), which was never applied to the live page. Paste this file instead of
+  doing the batch 1 line edit for createspectra.
+
+### Updated draft, page still to be created
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.responsefunction.functions.downfold.txt` | `documentation:language_reference:objects:responsefunction:functions:downfold` |
+
+The batch 5 draft, which was never pasted (the page does not exist yet), now with
+`Method "Mesh"`, `Emin`/`Emax`/`NE`, `EnergyGrid`, `Lambda`, a section "On an
+energy grid" and the mesh route added to the example. The batch 5 notes about
+where the page sits and the sibling edits still apply.
+
+### Checked
+
+Every new example was run against the branch build (commit 69cd61da) and the
+output blocks are that output, with the progress lines left out as the pages
+say. The Downfold example reproduces the batch 5 numbers unchanged. Facts on the
+pages that are measured rather than read off the code: the dense route refuses a
+hybridisation, so a small system needs `Method "Lanczos"` (the CreateSpectra
+example needed it); with a hybridisation CreateSpectra returns S, G, S0, G0, the
+last two being the system without the baths; the default CalculateG route is the
+faster one for a two pole self-energy and twenty times slower for 81 poles.
+
+### Not touched
+
+- The first CreateSpectra example still has "description text" as its
+  description and loads `../definitions.Quanty`; both were there before.
+- The first CalculateG example (the Emery model on 1000 x 1000 k-points) was not
+  run; it is left as it was.
+
+
+## Batch 8 — CalculateBands and PlotBands with a self-energy
+
+Drafted 26 September 2026, for the commit on the `Claude` branch that adds a
+self-energy to `TightBinding.CalculateBands` and spectral functions to
+`Graphics.PlotBands`.
+
+### New pages
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.tightbinding.functions.calculatebands.txt` | `documentation:language_reference:objects:tightbinding:functions:calculatebands` |
+| `documentation.language_reference.objects.graphics.functions.plotbands.txt` | `documentation:language_reference:objects:graphics:functions:plotbands` |
+
+Neither function had a page. `documentation:language_reference:objects:tightbinding:functions`
+holds only its template `start` page, so CalculateBands is its first entry; the
+`indexmenu` table of contents of the tight-binding pages picks it up.
+
+**PlotBands has no obvious home.** There is no Graphics section on the site at
+all (no object page, no functions namespace). The draft assumes a new namespace
+`documentation:language_reference:objects:graphics`, which then also needs a
+`start` page and a `functions:start` page (the template pages the other objects
+have). Alternatives: put it next to CalculateBands under the tight-binding
+functions, or under `documentation:language_reference:functions`. If it moves,
+the two links to it (in the CalculateBands page, twice) have to follow.
+
+### Updated draft
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.calculateg.txt` | `documentation:language_reference:functions:calculateg` |
+
+The batch 7 draft gains one paragraph after the input list: in which basis the
+self-energy is added to H(k) (Bloch sums whose phase depends only on the unit
+cell), and what a self-energy between two atoms therefore means (a coupling
+within the same unit cell). This was undocumented; CalculateBands uses the same
+basis and refers to it.
+
+### Checked
+
+Both examples were run on the branch build and the output block is that output.
+The PlotBands example prints nothing and writes four SVG files; the sizes quoted
+on the page were measured. The costs quoted on the CalculateBands page (under a
+millisecond per k-point for 50 poles, about 0.2 s for 400) were measured on this
+laptop with one orbital.
+
+### Fixed along the way
+
+- The options `"Transparancy"` and `"SecondTransparancy"` of PlotBands. The old
+  line `LineColor & 0x00FFFFFF + (T<<24)` parses as
+  `LineColor & (0x00FFFFFF + (T<<24))`, which gives the alpha of `Color` AND T
+  bit by bit: right whenever `Color` is opaque (the default), wrong when both
+  are set. `SecondTransparancy` was read but never used. Both now multiply the
+  alpha byte of their color, which is the old result whenever either is 255.
+  Both are documented on the PlotBands page.

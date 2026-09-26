@@ -1,0 +1,159 @@
+-- ResponseFunction.Downfold with {"Method","Mesh"}: the downfold returned as a list of
+-- poles on an energy grid.
+--
+-- The poles of the exact downfold, split over their two neighbouring grid points (weight
+-- and first moment conserved), is what the method returns. So the reference is the
+-- default Downfold, written as poles and split over the grid here in Lua. There is no
+-- approximation between the two but the y quadrature, which leaves about 2e-5 of the
+-- largest residue; the residues have to add up to the sum rule S to 1e-5.
+--
+-- Tested: a random complex block list of poles, the same written as a chain and as an
+-- Anderson matrix, a projection onto two orthonormal rows and onto two that are not, a
+-- uniform and a non uniform grid, a grid that has to be extended to hold the poles, with
+-- its end spacing (Lambda = 1) and with growing distances (the default Lambda = 2), and
+-- the input that is refused.
+
+print("--------------------------------------------------------")
+print("-- ResponseFunction.Downfold on an energy grid        --")
+print("--------------------------------------------------------")
+Verbosity(0)
+threshold = 2e-5
+function Mag(z)
+  local lo, hi = 0, 1
+  while Chop(z, hi) ~= 0 do hi = hi * 2 end
+  for it = 1, 60 do local mid = 0.5*(lo+hi) if Chop(z, mid) ~= 0 then lo = mid else hi = mid end end
+  return hi
+end
+-- a random number generator of our own (Park-Miller, exact in double precision):
+-- math.random gives different numbers on different platforms, and so would the test
+RandomState = 7
+function Random()
+  RandomState = (16807 * RandomState) % 2147483647
+  return RandomState / 2147483647
+end
+-- a random block list of poles, block size 4, complex residues of rank 2
+n, Np = 4, 30
+lst, W = {Matrix.Zero(n)}, {}
+for p = 1, Np do
+  lst[p+1] = -3 + 6*Random()
+  local w = {}
+  for a = 1, n do w[a] = {} for b = 1, n do w[a][b] = 0 end end
+  for r = 1, 2 do
+    local v = {}
+    for a = 1, n do v[a] = (Random()-0.5) + I*(Random()-0.5) end
+    for a = 1, n do for b = 1, n do w[a][b] = w[a][b] + Conjugate(v[a])*v[b] / Np end end
+  end
+  W[p] = w
+end
+G = ResponseFunction.New({lst, W, mu = 0, type = "ListOfPoles", name = "G"})
+-- split the poles of a response function over the grid (any spacing)
+function Split(Gr, grid)
+  local t = ResponseFunction.ToTable(ResponseFunction.ChangeType(Gr, "LP"))
+  local R, bs = {}, #t[2][1]
+  for pidx = 2, #t[1] do
+    local e = t[1][pidx]
+    local k = 1
+    while grid[k+1] < e do k = k + 1 end
+    local h = grid[k+1] - grid[k]
+    for _, kw in ipairs({{k, (grid[k+1]-e)/h}, {k+1, (e-grid[k])/h}}) do
+      local kk, w = kw[1], kw[2]
+      if R[kk] == nil then R[kk] = {} for a=1,bs do R[kk][a] = {} for b=1,bs do R[kk][a][b] = 0 end end end
+      for a=1,bs do for b=1,bs do R[kk][a][b] = R[kk][a][b] + w*t[2][pidx-1][a][b] end end
+    end
+  end
+  return R
+end
+function OnGrid(Sm, grid)
+  local t = ResponseFunction.ToTable(Sm)
+  local R = {}
+  for pidx = 2, #t[1] do
+    local k
+    for j = 1, #grid do if math.abs(grid[j] - t[1][pidx]) < 1e-9 then k = j end end
+    if k == nil then error("pole off the grid at "..t[1][pidx]) end
+    R[k] = t[2][pidx-1]
+  end
+  return R
+end
+function Compare(name, A, B, S)
+  local d, smax, keys, sw = 0, 0, {}, 0
+  for k,_ in pairs(A) do keys[k] = true end
+  for k,_ in pairs(B) do keys[k] = true end
+  for k,_ in pairs(keys) do
+    local x, y = A[k], B[k]
+    local bs = #(x or y)
+    for a=1,bs do for b=1,bs do
+      local u = x and x[a][b] or 0
+      local v = y and y[a][b] or 0
+      if Mag(u-v) > d then d = Mag(u-v) end
+      if Mag(v) > smax then smax = Mag(v) end
+      if a == b and x then sw = sw + Complex.Re(u) end
+    end end
+  end
+  local s0 = 0
+  for a = 1, #S do s0 = s0 + Complex.Re(S[a][a]) end
+  print(string.format("%-48s largest residue %.5f  deviation %.2e (rel %.1e)  weight %.8f / sum rule %.8f", name, smax, d, d/smax, sw, s0))
+  if d > threshold * smax then error("Downfold on a grid: " .. name .. " deviates by " .. d, 1) end
+  if math.abs(sw - s0) > 1e-5 * s0 then error("Downfold on a grid: " .. name .. " misses the sum rule, " .. sw .. " against " .. s0, 1) end
+end
+function Uniform(lo, hi, ne) local g = {} for k = 0, ne do g[k+1] = lo + (hi-lo)*k/ne end return g end
+Rq  = Matrix.New({{0,0,1,0},{0,0,0,1}})
+Rnq = Matrix.New({{0,1,1,0},{0.5,0,0,1}})
+for _, case in ipairs({{"list of poles", G}, {"chain", ResponseFunction.ChangeType(G,"Tri")}, {"Anderson", ResponseFunction.ChangeType(G,"And")}}) do
+  for _, RR in ipairs({{"R = (0|1)", Rq}, {"R not orthonormal", Rnq}}) do
+    local Sx = ResponseFunction.Downfold(case[2], RR[2])
+    local grid = Uniform(-4, 4, 400)
+    local Sm, S = ResponseFunction.Downfold(case[2], RR[2], {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",400}})
+    Compare(case[1]..", "..RR[1], OnGrid(Sm, grid), Split(Sx, grid), S)
+  end
+end
+-- a non uniform grid, finer around zero
+grid = {}
+for k = -60, 60 do grid[#grid+1] = 4 * (k/60)^3 + 0.2*(k/60) end
+Sx = ResponseFunction.Downfold(G, Rq)
+Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"EnergyGrid",grid}})
+Compare("non uniform grid", OnGrid(Sm, grid), Split(Sx, grid), S)
+-- a grid too small: it has to be extended, here with its own spacing
+Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"Emin",-1},{"Emax",1},{"NE",100},{"Lambda",1}})
+t = ResponseFunction.ToTable(Sm)
+-- the poles of the downfold lie within the range of those of G, and the grid has to
+-- reach that far, in steps of its own spacing 0.02
+emin, emax = lst[2], lst[2]
+for p = 2, #lst do emin = math.min(emin, lst[p]) ; emax = math.max(emax, lst[p]) end
+print(string.format("grid [-1,1] extended to [%g, %g], the poles of G lie in [%g, %g]", t[1][2], t[1][#t[1]], emin, emax))
+if (t[1][2] >= -1) or (t[1][#t[1]] <= 1) or (t[1][2] < emin - 0.02) or (t[1][#t[1]] > emax + 0.02) then
+  error("Downfold on a grid: the grid was not extended to the poles of G", 1)
+end
+grid = Uniform(-5, 5, 500)   -- the lattice -1 + 0.02 j the grid [-1,1] was extended along
+Compare("extended grid", OnGrid(Sm, grid), Split(ResponseFunction.Downfold(G, Rq), grid), S)
+-- the default Lambda = 2: the distances of the added points double. The residues are
+-- the exact downfold split over whatever grid, so the reference is the split over the
+-- points the result has its poles on
+Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"Emin",-1},{"Emax",1},{"NE",100}})
+t = ResponseFunction.ToTable(Sm)
+grid, nout = {}, 0
+for p = 2, #t[1] do
+  grid[#grid+1] = t[1][p]
+  if math.abs(t[1][p]) > 1 + 1e-9 then nout = nout + 1 end
+end
+print(string.format("grid [-1,1] extended with Lambda = 2 to [%g, %g], %d poles outside [-1,1]", grid[1], grid[#grid], nout))
+if (nout > 20) or (grid[1] >= -1) or (grid[#grid] <= 1) then
+  error("Downfold on a grid: Lambda = 2 did not extend the grid in few points", 1)
+end
+Compare("grid extended with Lambda = 2", OnGrid(Sm, grid), Split(ResponseFunction.Downfold(G, Rq), grid), S)
+
+-- what is refused: no grid, two grids, NTriMax with the mesh, a grid without the mesh,
+-- an unknown method, Lambda without the mesh, Lambda below 1
+for _, o in ipairs({ {{"Method","Mesh"}},
+                     {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",10},{"EnergyGrid",{-1,0,1}}},
+                     {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",10},{"NTriMax",5}},
+                     {{"Emin",-4},{"Emax",4},{"NE",10}},
+                     {{"Method","Grid"}},
+                     {{"Lambda",2}},
+                     {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",10},{"Lambda",0.5}} }) do
+  if pcall(ResponseFunction.Downfold, G, Rq, o) then error("Downfold on a grid: an invalid set of options was accepted", 1) end
+end
+print("invalid options are refused")
+
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

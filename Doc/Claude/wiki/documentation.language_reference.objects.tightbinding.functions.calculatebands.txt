@@ -1,0 +1,128 @@
+{{indexmenu_n>999}}
+====== CalculateBands ======
+
+###
+//E, C1, ... = TightBinding.CalculateBands(HTB, kpath, f1, ...)// calculates the band structure of a tight-binding object //HTB// along a path in $k$-space: the eigenvalues of $H(k)$ at every $k$-point of the path and, for every function //f// given, the character of each eigenstate. //G, G1, ... = TightBinding.CalculateBands(HTB, kpath, Sigma, f1, ...)// does the same with a local self-energy $\Sigma(\omega)$. The bands are then no longer sharp, and the result is the band spectral function
+\begin{equation}
+A(k,\omega) = -\frac{1}{\pi} \mathrm{Im} \, \mathrm{Tr} \left( \omega + \mathrm{i} 0^{+} - H(k) - \Sigma(\omega) \right)^{-1}
+\end{equation}
+at every $k$-point, and its characters. Both results can be plotted with //[[documentation:language_reference:objects:graphics:functions:plotbands|Graphics.PlotBands()]]//.
+###
+
+===== Input =====
+
+  * //HTB// : Tight-binding object, which can be created using the function //[[documentation:language_reference:functions:NewTightBinding|NewTightBinding()]]//
+  * //kpath// : the path in $k$-space, a table //{{Label1, k1}, N1, {Label2, k2}, N2, ..., {Labeln, kn}}//. //Label// is a string of which the plot shows the first character (so "Gamma" is drawn as G), //k// a table of three reals and //N// the number of $k$-points between two labelled points. The $k$-points are Cartesian, in the inverse length unit of //HTB.Cell//, such that $k \cdot r$ is a phase; the point X of a simple cubic lattice with lattice constant 1 is //{pi,0,0}//. The path holds $N_k = N_1 + N_2 + \dots + n$ points. With //N// equal to 0 the two labelled points follow each other directly, and the plot leaves a gap between them.
+  * //Sigma// : (optional) the self-energy, in any of the forms //[[documentation:language_reference:functions:calculateg|CalculateG()]]// accepts: a response function of the dimension of all orbitals, or a table with one entry per atom (a response function, a table per shell, or 0).
+  * //f1, f2, ...// : (optional) the characters. Each is either a function that takes an eigenstate $\psi$ (a vector over the orbitals of //HTB//, indexed //psi[1]//, //psi[2]//, ...) and returns a number, usually between 0 and 1, or a matrix $P$ (made with //Matrix.ToUserdata//) for the character $\mathrm{Re} \sum_{ij} \psi_i^{*} P_{ij} \psi_j$. Without a self-energy 0 to 4 characters can be given, with a self-energy 0, 1 or 3. With a self-energy a function has to be a quadratic form, see below.
+
+###
+A matrix as a character has to be a Matrix userdata. A plain Lua table on the third position is always read as the self-energy.
+###
+
+===== Output =====
+
+Without a self-energy:
+  * //E// : a matrix of $N_k$ rows and $N_O$ columns, $N_O$ the number of orbitals of //HTB//. Row $k$ holds the eigenvalues of $H(k)$ in increasing order.
+  * //C1, ...// : for every character a matrix of the same size, with the character of the eigenstate of the corresponding eigenvalue.
+
+With a self-energy:
+  * //G// : a table of $N_k$ response functions (single valued, type ListOfPoles), the band spectral function $A(k,\omega)$ at every $k$-point of the path.
+  * //G1, ...// : for every character a table of $N_k$ response functions, $A_P(k,\omega) = -\frac{1}{\pi} \mathrm{Im} \, \mathrm{Tr} \, P \left( \omega + \mathrm{i} 0^{+} - H(k) - \Sigma(\omega) \right)^{-1}$, with the same poles as //G//.
+
+###
+Without a self-energy the band spectral function is a pole of weight one at every eigenvalue, and the pole of //G1// has the character as its weight. The result with a self-energy is therefore the same information in a different form: //E// and //C1// become the pole energies and weights of //G// and //G1//. A self-energy that is zero gives exactly the eigenvalues with weight one, and the characters.
+###
+
+===== Characters with a self-energy =====
+
+###
+The character of a spectral function is only defined for a character that is a quadratic form of the eigenstate, $f(\psi) = \sum_{ij} \psi_i^{*} P_{ij} \psi_j$. The weight on atom A, //Complex.Re(psi[1]*Conjugate(psi[1]))//, is one, and so is the bonding character //Complex.Re((psi[1]+psi[2])*Conjugate(psi[1]+psi[2]))/2//; a function like //Abs(psi[1])// or a threshold is not. With a self-energy the function is evaluated on the unit vectors $e_i$ and on $(e_i + e_j)/\sqrt{2}$ and $(e_i + \mathrm{i} e_j)/\sqrt{2}$, which gives $P$, and then on two more vectors to check that it is such a form. If it is not, //CalculateBands// stops with an error. The weights of //G1// add up to $\mathrm{Tr} \, P$ at every $k$-point, those of //G// to $N_O$.
+###
+
+===== How it is calculated =====
+
+###
+For every $k$-point the self-energy is written as a bath, $\Sigma(\omega) = A_0 + C (\omega - H_{\mathrm{bath}})^{-1} C^{\dagger}$, and the matrix with $H(k) + A_0$ in its first block and the bath coupled to it by $C$ is diagonalised, as in //[[documentation:language_reference:functions:calculateg|CalculateG()]]//. The first $N_O$ components $u$ of every eigenvector give a pole of //G// with weight $u^{\dagger} u$ and of //G1// with weight $u^{\dagger} P u$. The poles are exact, there is no energy grid and no broadening; poles of weight below about $2 \cdot 10^{-13}$ are left out. The size of the matrix is $N_O$ plus the number of bath levels, and the cost per $k$-point grows with its cube: a self-energy with 50 poles on one orbital takes less than a millisecond per $k$-point, one with 400 poles about 0.2 seconds. A self-energy with many poles can be made smaller first with //[[documentation:language_reference:objects:responsefunction:functions:changetype|ResponseFunction.ChangeType()]]// to "Tri" with the option "NTriMax".
+###
+
+###
+The self-energy is added to $H(k)$ in the same basis as in //CalculateG//, in which the phase of an orbital depends only on its unit cell. The average of //G// over a regular $k$-mesh is therefore the trace of the Green's function //CalculateG// returns for that mesh. The eigenvectors are then transformed to the phases //CalculateBands// uses without a self-energy, in which the phase of an orbital depends on the position of its atom, so that a character means the same with and without a self-energy.
+###
+
+===== Example =====
+
+###
+Two p orbitals on a honeycomb lattice, the model of the [[documentation:language_reference:objects:tightbinding:start|tight-binding object]], with the weight on atom A as character. The band structure is calculated without a self-energy and with a self-energy on atom A only, of two poles at $\pm 2$. At $\Gamma$ each band splits into a quasiparticle band and a satellite. The weights of the four poles add up to 2, their weights on atom A to 1.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- two p orbitals on a honeycomb lattice
+dAB = 0.2
+tnn = 1.1
+HTB = NewTightBinding()
+HTB.Name = "dichalcogenide tight binding"
+HTB.Cell = {{sqrt(3),0,0},
+            {sqrt(3/4),3/2,0},
+            {0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"p", {"0"}}}},
+              {"B", {sqrt(3),1,0}, {{"p", {"0"}}}}}
+HTB.Hopping = {{"A.p","A.p",{         0,   0,0},{{-dAB/2}}},
+               {"B.p","B.p",{         0,   0,0},{{ dAB/2}}},
+               {"A.p","B.p",{         0,   1,0},{{ tnn  }}},
+               {"B.p","A.p",{         0,  -1,0},{{ tnn  }}},
+               {"A.p","B.p",{ sqrt(3/4),-1/2,0},{{ tnn  }}},
+               {"B.p","A.p",{-sqrt(3/4), 1/2,0},{{ tnn  }}},
+               {"A.p","B.p",{-sqrt(3/4),-1/2,0},{{ tnn  }}},
+               {"B.p","A.p",{ sqrt(3/4), 1/2,0},{{ tnn  }}}}
+
+kpath = { {"M",{0,2*pi/3,0}}, 100, {"G",{0,0,0}}, 100, {"K",{4*pi/(3*sqrt(3)),0,0}}, 100, {"M",{2*pi/(sqrt(3)),0,0}} }
+
+-- the character of an eigenstate: its weight on atom A
+function OnA(psi)
+  return Complex.Re(psi[1]*Conjugate(psi[1]))
+end
+
+-- without a self-energy: band energies and characters, one row per k-point
+E, CA = TightBinding.CalculateBands(HTB, kpath, OnA)
+print("without a self-energy, at Gamma (k-point 101):")
+print(string.format("  energies %8.4f %8.4f   character A %6.4f %6.4f", E[101][1], E[101][2], CA[101][1], CA[101][2]))
+
+-- a self-energy on atom A only, with two poles at -2 and 2
+SigmaA = ResponseFunction.New({{0, -2, 2}, {0.5, 0.5}, mu=0, type="ListOfPoles"})
+G, GA = TightBinding.CalculateBands(HTB, kpath, {SigmaA, 0}, OnA)
+print("with a self-energy on atom A, at Gamma:")
+t, tA = ResponseFunction.ToTable(G[101]), ResponseFunction.ToTable(GA[101])
+for i = 1, #t[2] do
+  print(string.format("  pole %8.4f   weight %6.4f   on A %6.4f", t[1][i+1], t[2][i], tA[2][i]))
+end
+
+-- the plots, the bands in blue (on A) to red (on B)
+Frame = {"Frame",{{"Ymin",-4},{"Ymax",4},{"dYTick",1},{"YLabel","Energy"}}}
+pl0 = Graphics.PlotBands(kpath, E, CA, {Frame})
+pl1 = Graphics.PlotBands(kpath, G, GA, {Frame, {"GammaL",0.05}})
+for name, pl in pairs({BandsWithout=pl0, BandsWithSigma=pl1}) do
+  file = io.open(name..".svg", "w")
+  file:write(Graphics.ToSVG(pl, {{"RelativeSize",true}}))
+  file:close()
+end
+</code>
+
+==== Result ====
+<file Quanty_Output>
+without a self-energy, at Gamma (k-point 101):
+  energies  -3.3012   3.3012   character A 0.5151 0.4849
+with a self-energy on atom A, at Gamma:
+  pole  -3.5235   weight 0.8875   on A 0.4852
+  pole  -1.8712   weight 0.1119   on A 0.0294
+  pole   1.8825   weight 0.1089   on A 0.0246
+  pole   3.5122   weight 0.8917   on A 0.4608
+</file>
+
+###
+The two plots are written to //BandsWithout.svg// and //BandsWithSigma.svg//.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}
