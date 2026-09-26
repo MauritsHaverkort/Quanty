@@ -9,7 +9,8 @@
 --
 -- Tested: a random complex block list of poles, the same written as a chain and as an
 -- Anderson matrix, a projection onto two orthonormal rows and onto two that are not, a
--- uniform and a non uniform grid, a grid that has to be extended to hold the poles, and
+-- uniform and a non uniform grid, a grid that has to be extended to hold the poles, with
+-- its end spacing (Lambda = 1) and with growing distances (the default Lambda = 2), and
 -- the input that is refused.
 
 print("--------------------------------------------------------")
@@ -111,8 +112,8 @@ for k = -60, 60 do grid[#grid+1] = 4 * (k/60)^3 + 0.2*(k/60) end
 Sx = ResponseFunction.Downfold(G, Rq)
 Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"EnergyGrid",grid}})
 Compare("non uniform grid", OnGrid(Sm, grid), Split(Sx, grid), S)
--- a grid too small: it has to be extended
-Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"Emin",-1},{"Emax",1},{"NE",100}})
+-- a grid too small: it has to be extended, here with its own spacing
+Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"Emin",-1},{"Emax",1},{"NE",100},{"Lambda",1}})
 t = ResponseFunction.ToTable(Sm)
 -- the poles of the downfold lie within the range of those of G, and the grid has to
 -- reach that far, in steps of its own spacing 0.02
@@ -124,14 +125,31 @@ if (t[1][2] >= -1) or (t[1][#t[1]] <= 1) or (t[1][2] < emin - 0.02) or (t[1][#t[
 end
 grid = Uniform(-5, 5, 500)   -- the lattice -1 + 0.02 j the grid [-1,1] was extended along
 Compare("extended grid", OnGrid(Sm, grid), Split(ResponseFunction.Downfold(G, Rq), grid), S)
+-- the default Lambda = 2: the distances of the added points double. The residues are
+-- the exact downfold split over whatever grid, so the reference is the split over the
+-- points the result has its poles on
+Sm, S = ResponseFunction.Downfold(G, Rq, {{"Method","Mesh"},{"Emin",-1},{"Emax",1},{"NE",100}})
+t = ResponseFunction.ToTable(Sm)
+grid, nout = {}, 0
+for p = 2, #t[1] do
+  grid[#grid+1] = t[1][p]
+  if math.abs(t[1][p]) > 1 + 1e-9 then nout = nout + 1 end
+end
+print(string.format("grid [-1,1] extended with Lambda = 2 to [%g, %g], %d poles outside [-1,1]", grid[1], grid[#grid], nout))
+if (nout > 20) or (grid[1] >= -1) or (grid[#grid] <= 1) then
+  error("Downfold on a grid: Lambda = 2 did not extend the grid in few points", 1)
+end
+Compare("grid extended with Lambda = 2", OnGrid(Sm, grid), Split(ResponseFunction.Downfold(G, Rq), grid), S)
 
 -- what is refused: no grid, two grids, NTriMax with the mesh, a grid without the mesh,
--- an unknown method
+-- an unknown method, Lambda without the mesh, Lambda below 1
 for _, o in ipairs({ {{"Method","Mesh"}},
                      {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",10},{"EnergyGrid",{-1,0,1}}},
                      {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",10},{"NTriMax",5}},
                      {{"Emin",-4},{"Emax",4},{"NE",10}},
-                     {{"Method","Grid"}} }) do
+                     {{"Method","Grid"}},
+                     {{"Lambda",2}},
+                     {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",10},{"Lambda",0.5}} }) do
   if pcall(ResponseFunction.Downfold, G, Rq, o) then error("Downfold on a grid: an invalid set of options was accepted", 1) end
 end
 print("invalid options are refused")

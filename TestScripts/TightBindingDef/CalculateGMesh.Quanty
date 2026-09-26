@@ -12,8 +12,9 @@
 -- symmetric and a transposed G would fail; the self energy given as a list of poles, a
 -- chain, an Anderson matrix and natural impurity orbitals; a self energy per atom; the
 -- augmented propagators of HybridizationFunction; a non uniform grid; a grid that has to
--- be extended to hold the poles; Emin, Emax and NE against the same EnergyGrid; the input
--- that is refused.
+-- be extended to hold the poles, with its end spacing (Lambda = 1) and with growing
+-- distances (the default Lambda = 2); Emin, Emax and NE against the same EnergyGrid; the
+-- input that is refused.
 
 print("--------------------------------------------------------")
 print("-- TightBinding - CalculateG on an energy grid        --")
@@ -179,8 +180,9 @@ G0 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridNU}})
 G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridNU},{"Method","Mesh"}})
 Compare("non uniform grid", OnGrid(G1, gridNU), OnGrid(G0, gridNU))
 
--- a grid narrower than the spectrum is extended with its spacing until it holds all
--- poles; the result then equals the default route on the wide grid it is part of
+-- a grid narrower than the spectrum is extended until it holds all poles; with Lambda = 1
+-- in steps of its own spacing, and the result then equals the default route on the wide
+-- grid it is part of
 gridN = Uniform(-1, 1, 0.05)
 R0 = OnGrid(Default(Sigma), grid)
 outside = 0
@@ -188,19 +190,36 @@ for k, wk in pairs(R0) do
   if grid[k] < -1.05 or grid[k] > 1.05 then for i = 1, 3 do outside = outside + wk[i][i] end end
 end
 if outside < 0.1 then error("the narrow grid holds the spectrum and does not test its extension\n", 1) end
-G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridN},{"Method","Mesh"}})
+G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridN},{"Method","Mesh"},{"Lambda",1}})
 R1 = OnGrid(G1, grid)
 Compare(string.format("grid extended (weight %.2f outside)", outside), R1, R0)
 SumRule("grid extended", R1, 3)
+-- with the default Lambda = 2 the distances of the added points double; the default
+-- route on the grid the result has its poles on is the reference
+G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridN},{"Method","Mesh"}})
+t = ResponseFunction.ToTable(G1)
+gridL, nout = {}, 0
+for p = 2, #t[1] do
+  gridL[#gridL+1] = t[1][p]
+  if math.abs(t[1][p]) > 1 + 1e-9 then nout = nout + 1 end
+end
+print(string.format("%-52s [%g, %g], %d poles outside [-1,1]", "grid extended with Lambda = 2", gridL[1], gridL[#gridL], nout))
+if (nout > 20) or (gridL[1] >= -1) or (gridL[#gridL] <= 1) then error("Lambda = 2 did not extend the grid in few points\n", 1) end
+R1 = OnGrid(G1, gridL)
+Compare("grid extended with Lambda = 2", R1, OnGrid(CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",gridL}}), gridL))
+SumRule("grid extended with Lambda = 2", R1, 3)
 
 -- Emin, Emax and NE give the grid Emin + i (Emax - Emin) / NE
 G1 = CalculateG(HTB, Sigma, {{"Nk",Nk},{"Emin",-6},{"Emax",6},{"NE",240},{"Method","Mesh"}})
 Compare("Emin, Emax, NE", OnGrid(G1, grid), OnGrid(Default(Sigma), grid))
 
 -- refused input
-ok = pcall(function() return CalculateG(HTB, Sigma, {{"Nk",Nk},{"EnergyGrid",grid},{"Method","Foo"}}) end)
-if ok then error("an unknown Method was accepted\n", 1) end
-print("an unknown Method is refused")
+for _, o in ipairs({ {{"Nk",Nk},{"EnergyGrid",grid},{"Method","Foo"}},
+                     {{"Nk",Nk},{"EnergyGrid",grid},{"Lambda",2}},
+                     {{"Nk",Nk},{"EnergyGrid",grid},{"Method","Mesh"},{"Lambda",0.5}} }) do
+  if pcall(function() return CalculateG(HTB, Sigma, o) end) then error("an invalid set of options was accepted\n", 1) end
+end
+print("an unknown Method, Lambda without the mesh and Lambda below 1 are refused")
 
 print("--------------------------------------------------------")
 print("-- End                                                --")

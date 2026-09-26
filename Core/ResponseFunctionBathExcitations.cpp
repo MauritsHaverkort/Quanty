@@ -2560,6 +2560,61 @@ static void BathExcAddSpectralPart(Complex16 const *const M, uint32_t const N, d
   }
 }
 
+/*  The grid GridIn extended at either end until [lo, hi] sits between its
+ *  second and its second to last point.  The first point added below has the
+ *  distance Lambda h0 to GridIn[0] (h0 the spacing at that end), and every
+ *  further one Lambda times the distance of the one before, so the wings reach
+ *  far in few points; the same above.  Lambda = 1 continues with the end
+ *  spacing.  A tent split conserves the weight and the first moment on any
+ *  grid, so a coarse wing only lowers the resolution where it is: the weight
+ *  far out lands on a few poles instead of on many small ones.
+ *  Grid is malloc'd; returns 0 on success, 1 on failure                       */
+static int BathExcExtendGrid(double const *const GridIn, uint32_t const NGridIn, double const lo, double const hi, double const Lambda, double **const Grid, uint32_t *const NGrid, uint32_t *const nlo, uint32_t *const nhi)
+{
+  double h0 = GridIn[1] - GridIn[0], h1 = GridIn[NGridIn - 1] - GridIn[NGridIn - 2];
+  double *Slo = NULL, *Shi = NULL;       /* Slo[m] = sum_{i=1..m} Lambda^i  */
+  uint32_t k, nmax = 1024;
+  int side;
+  *Grid = NULL;
+  *nlo = 0;
+  *nhi = 0;
+  for (side = 0; side < 2; side++)
+  {
+    double **S = (side == 0) ? &Slo : &Shi, h = (side == 0) ? h0 : h1, p = 1;
+    uint32_t *n = (side == 0) ? nlo : nhi, cap = nmax;
+    bool more = (side == 0) ? (GridIn[1] > lo) : (GridIn[NGridIn - 2] < hi);
+    *S = (double*)malloc((cap + 1) * sizeof(double));
+    if (*S == NULL) { free(Slo); free(Shi); return 1; }
+    (*S)[0] = 0;
+    while (more)
+    {
+      double x;
+      if (*n == cap)
+      {
+        double *t = (double*)realloc(*S, (2 * cap + 1) * sizeof(double));
+        if (t == NULL) { free(Slo); free(Shi); return 1; }
+        *S = t;
+        cap *= 2;
+      }
+      p *= Lambda;
+      (*S)[*n + 1] = (*S)[*n] + p;
+      (*n)++;
+      /*  the second (second to last) point once n points are added          */
+      if (side == 0) { x = GridIn[0] - h * (*S)[*n - 1]; more = (x > lo); }
+      else           { x = GridIn[NGridIn - 1] + h * (*S)[*n - 1]; more = (x < hi); }
+    }
+  }
+  *NGrid = NGridIn + *nlo + *nhi;
+  *Grid = (double*)malloc(*NGrid * sizeof(double));
+  if (*Grid == NULL) { free(Slo); free(Shi); return 1; }
+  for (k = 0; k < *nlo; k++) (*Grid)[k] = GridIn[0] - h0 * Slo[*nlo - k];
+  for (k = 0; k < NGridIn; k++) (*Grid)[*nlo + k] = GridIn[k];
+  for (k = 0; k < *nhi; k++) (*Grid)[*nlo + NGridIn + k] = GridIn[NGridIn - 1] + h1 * Shi[k + 1];
+  free(Slo);
+  free(Shi);
+  return 0;
+}
+
 /*  Sigma(z) = ( R G(z)^-1 R^dag )^-1 at z = x + i y, G a block list of poles.
  *  Sig is Nsub x Nsub, allocated by the caller                                */
 static int BathExcDownfoldAt(BlockListOfPoles const *const G, CompactMatrixType const *const R, double const x, double const y, CompactMatrixType *const Sig)
@@ -2611,8 +2666,9 @@ static int BathExcDownfoldAt(BlockListOfPoles const *const G, CompactMatrixType 
  *
  *  The poles of Sigma are eigenvalues of a compression of the Hamiltonian that
  *  realizes G and lie within the range of the poles of G, so the grid is
- *  extended at either end, with its end spacing, until that range sits between
- *  its second and its second to last point.
+ *  extended at either end until that range sits between its second and its
+ *  second to last point, with distances growing by the factor Lambda (>= 1)
+ *  from the end spacing on (BathExcExtendGrid).
  *
  *  G may be of any type; it is written as a list of poles first.  It must not
  *  have a constant part, and its spectral weight M0 has to be invertible.
@@ -2622,7 +2678,7 @@ static int BathExcDownfoldAt(BlockListOfPoles const *const G, CompactMatrixType 
  *
  *  returns 0 on success, 1 on failure
  */
-int ResponseFunctionDownfoldOnMesh(ResponsefunctionType const *const Gin, CompactMatrixType const *const R, double const *const GridIn, uint32_t const NGridIn, ResponsefunctionType *const Gout, CompactMatrixType *const S)
+int ResponseFunctionDownfoldOnMesh(ResponsefunctionType const *const Gin, CompactMatrixType const *const R, double const *const GridIn, uint32_t const NGridIn, double const Lambda, ResponsefunctionType *const Gout, CompactMatrixType *const S)
 {
   uint32_t n, Nsub = R->Ni, a, b, k, q, NGrid = 0, Ny = 0, Nkeep = 0, np;
   int ierr = 0;
@@ -2753,15 +2809,7 @@ int ResponseFunctionDownfoldOnMesh(ResponsefunctionType const *const Gin, Compac
    *  last point                                                               */
   {
     uint32_t nlo = 0, nhi = 0;
-    double h0 = GridIn[1] - GridIn[0], h1 = GridIn[NGridIn - 1] - GridIn[NGridIn - 2], x;
-    for (x = GridIn[1]; x > emin; x -= h0) nlo++;
-    for (x = GridIn[NGridIn - 2]; x < emax; x += h1) nhi++;
-    NGrid = NGridIn + nlo + nhi;
-    Grid = (double*)malloc(NGrid * sizeof(double));
-    if (Grid == NULL) { ierr = 1; goto cleanup; }
-    for (k = 0; k < nlo; k++) Grid[k] = GridIn[0] - (double)(nlo - k) * h0;
-    for (k = 0; k < NGridIn; k++) Grid[nlo + k] = GridIn[k];
-    for (k = 0; k < nhi; k++) Grid[nlo + NGridIn + k] = GridIn[NGridIn - 1] + (double)(k + 1) * h1;
+    if (BathExcExtendGrid(GridIn, NGridIn, emin, emax, Lambda, &Grid, &NGrid, &nlo, &nhi)) { ierr = 1; goto cleanup; }
     if (nlo + nhi > 0)
     {
       VerbosityPrintf(0x0001, "ResponseFunctionDownfoldOnMesh: the grid is extended by %u points below and %u above to hold the poles in [%g, %g]\n", nlo, nhi, emin, emax);
@@ -3170,8 +3218,9 @@ static int BathExcExtremeEigenvalue(Complex16 *const M, uint32_t const n, bool c
  *  A_jk = sum val u_j u_k^*).  The same is done here, so that both routes give
  *  the same G, also for complex H(k) and a complex, non symmetric Sigma.
  *
- *  The grid is extended at either end, with its end spacing, until all poles
- *  of G sit between its second and its second to last point.  Their range is
+ *  The grid is extended at either end until all poles of G sit between its
+ *  second and its second to last point, with distances growing by the factor
+ *  Lambda (>= 1) from the end spacing on (BathExcExtendGrid).  Their range is
  *  bounded rigorously: a pole w above all poles e_p of Sigma is an eigenvalue
  *  of H(k) + Sigma(w), so w <= Pmax + sum_p lmax(W_p) / (w - e_p) with Pmax the
  *  largest eigenvalue of H(k) + a0 over all k.  The largest root of that
@@ -3188,7 +3237,7 @@ static int BathExcExtremeEigenvalue(Complex16 *const M, uint32_t const n, bool c
  *
  *  returns 0 on success, 1 on failure
  */
-int TightBindingHamiltonianPlusSelfEnergyOnMesh(TightBindingDef const *const A, int const *const Nk, ResponsefunctionType const *const Sigma, double const *const GridIn, uint32_t const NGridIn, BlockListOfPoles *const G, BlockListOfPoles *const Gaug)
+int TightBindingHamiltonianPlusSelfEnergyOnMesh(TightBindingDef const *const A, int const *const Nk, ResponsefunctionType const *const Sigma, double const *const GridIn, uint32_t const NGridIn, double const Lambda, BlockListOfPoles *const G, BlockListOfPoles *const Gaug)
 {
   uint32_t n = (uint32_t)A->NFermion, nn, NAtoms = A->Cell.NAtoms, NBlock, Nacc, b, a, k, q, m, i, j, NGrid = 0, Ny = 0, NSig = 0;
   size_t ik, NkTot = (size_t)Nk[0] * (size_t)Nk[1] * (size_t)Nk[2];
@@ -3404,15 +3453,7 @@ int TightBindingHamiltonianPlusSelfEnergyOnMesh(TightBindingDef const *const A, 
    *  last point                                                               */
   {
     uint32_t nlo = 0, nhi = 0;
-    double h0 = GridIn[1] - GridIn[0], h1 = GridIn[NGridIn - 1] - GridIn[NGridIn - 2], x;
-    for (x = GridIn[1]; x > lo; x -= h0) nlo++;
-    for (x = GridIn[NGridIn - 2]; x < hi; x += h1) nhi++;
-    NGrid = NGridIn + nlo + nhi;
-    Grid = (double*)malloc(NGrid * sizeof(double));
-    if (Grid == NULL) { ierr = 1; goto cleanup; }
-    for (k = 0; k < nlo; k++) Grid[k] = GridIn[0] - (double)(nlo - k) * h0;
-    for (k = 0; k < NGridIn; k++) Grid[nlo + k] = GridIn[k];
-    for (k = 0; k < nhi; k++) Grid[nlo + NGridIn + k] = GridIn[NGridIn - 1] + (double)(k + 1) * h1;
+    if (BathExcExtendGrid(GridIn, NGridIn, lo, hi, Lambda, &Grid, &NGrid, &nlo, &nhi)) { ierr = 1; goto cleanup; }
     if (nlo + nhi > 0)
     {
       VerbosityPrintf(0x0001, "TightBindingHamiltonianPlusSelfEnergyOnMesh: the grid is extended by %u points below and %u above to hold the poles in [%g, %g]\n", nlo, nhi, lo, hi);

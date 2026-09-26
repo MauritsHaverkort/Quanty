@@ -1006,6 +1006,8 @@ static ResponsefunctionType * LuaReadSelfEnergyPerAtom(lua_State *L, int const n
  *                 without a broadening (TightBindingHamiltonianPlusSelfEnergyOnMesh). The cost does
  *                 not grow with the number of poles of Sigma. The grid is extended until it holds
  *                 all poles of G, and the result has poles on the grid points only.
+ *       Lambda -> Method "Mesh" only: the distances of the points added to extend the grid grow by
+ *                 this factor, from the end spacing on (default 2, at least 1; 1 extends uniformly)
  */
 static int LuaCalculateG(lua_State *L)
 {
@@ -1018,6 +1020,7 @@ static int LuaCalculateG(lua_State *L)
   {
     int *Nk;
     char* Method;
+    double Lambda;
     double Emin;
     double Emax;
     uint32_t NE;
@@ -1026,6 +1029,7 @@ static int LuaCalculateG(lua_State *L)
   } Options;
   Options.Nk = NULL;
   Options.Method = NULL;
+  Options.Lambda = NAN;
   bool Mesh = false;
   Options.Emin=NAN;
   Options.Emax=NAN;
@@ -1036,6 +1040,7 @@ static int LuaCalculateG(lua_State *L)
   LuaOptionsType LuaCalculateGOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
     {"Method",     "char*",    &(Options.Method)},
+    {"Lambda",     "double",   &(Options.Lambda)},
     {"Emin",       "double",   &(Options.Emin)},
     {"Emax",       "double",   &(Options.Emax)},
     {"NE",         "uint32_t", &(Options.NE)},
@@ -1056,6 +1061,15 @@ static int LuaCalculateG(lua_State *L)
       return luaL_error(L, "Error CalculateG: unknown Method \"%s\"; leave it out for the default, or ask for \"Mesh\"\n", Options.Method);
     }
     Mesh = true;
+  }
+  if(!isnan(Options.Lambda) && !Mesh)
+  {
+    return luaL_error(L, "Error CalculateG: Lambda belongs to Method \"Mesh\"\n");
+  }
+  if(isnan(Options.Lambda)) Options.Lambda = 2;
+  if(!(Options.Lambda >= 1))
+  {
+    return luaL_error(L, "Error CalculateG: Lambda is %g, it has to be at least 1\n", Options.Lambda);
   }
   if (Grid.Ni != 0)
   {
@@ -1190,7 +1204,7 @@ static int LuaCalculateG(lua_State *L)
   if(Mesh)
   {
     /*  the same grid as the default route, the grid points are the poles     */
-    if(TightBindingHamiltonianPlusSelfEnergyOnMesh(a, Options.Nk, Sigma, hybgrid, hybngrid, (BlockListOfPoles*)G->data, Gaug))
+    if(TightBindingHamiltonianPlusSelfEnergyOnMesh(a, Options.Nk, Sigma, hybgrid, hybngrid, Options.Lambda, (BlockListOfPoles*)G->data, Gaug))
     {
       return luaL_error(L, "Error CalculateG with Method \"Mesh\"\n");
     }

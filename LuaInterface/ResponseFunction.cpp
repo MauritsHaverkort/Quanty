@@ -1089,7 +1089,10 @@ static int LuaResponseFunctionFromEffectiveHamiltonian(lua_State *L)
  *  grid points, conserving its weight and first moment, and the residues are obtained from
  *  Sigma off the real axis without any broadening; see ResponseFunctionDownfoldOnMesh. G may
  *  be of any type, must not have a constant part, and its spectral weight must be invertible.
- *  The grid is extended where the poles of G reach beyond it. S is the sum rule.
+ *  The grid is extended where the poles of G reach beyond it, with distances between the
+ *  added points that grow by the factor {"Lambda",..} (default 2, at least 1; 1 extends
+ *  with the end spacing), so that little weight far out lands on a few poles. S is the
+ *  sum rule.
  */
 static int LuaResponseFunctionDownfold(lua_State *L)
 {
@@ -1107,6 +1110,7 @@ static int LuaResponseFunctionDownfold(lua_State *L)
     double Emin;
     double Emax;
     uint32_t NE;
+    double Lambda;
   } Options;
   CompactVectorType Grid={0,0,NULL};
   bool Mesh = false;
@@ -1119,6 +1123,7 @@ static int LuaResponseFunctionDownfold(lua_State *L)
   Options.Emin                = ValueNotSet;
   Options.Emax                = ValueNotSet;
   Options.NE                  = 0;
+  Options.Lambda              = ValueNotSet;
   LuaOptionsType LuaOptions[]={
     {"SingularValue","double",&(Options.SingularValue)},
     {"MinimalPoleDistance","double",&(Options.MinimalPoleDistance)},
@@ -1128,6 +1133,7 @@ static int LuaResponseFunctionDownfold(lua_State *L)
     {"Emax","double",&(Options.Emax)},
     {"NE","uint32_t",&(Options.NE)},
     {"EnergyGrid","Vector",&Grid},
+    {"Lambda","double",&(Options.Lambda)},
     {NULL, NULL, NULL}};
   uint32_t len = (uint32_t) lua_gettop(L);
   if(LuaTestOptionsList(L, -1))
@@ -1166,9 +1172,18 @@ static int LuaResponseFunctionDownfold(lua_State *L)
     {
       return luaL_error(L, "Error in ResponseFunction.Downfold(). Emin, Emax, NE and EnergyGrid belong to Method \"Mesh\"\n");
     }
+    if(Options.Lambda!=ValueNotSet)
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Lambda belongs to Method \"Mesh\"\n");
+    }
   }
   else
   {
+    if(Options.Lambda==ValueNotSet) Options.Lambda = 2;
+    if(!(Options.Lambda>=1))
+    {
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Lambda is %g, it has to be at least 1\n", Options.Lambda);
+    }
     bool uniform = (Options.NE!=0)||(Options.Emin!=ValueNotSet)||(Options.Emax!=ValueNotSet);
     if(Options.NTriMax!=NTriMaxNoLimit)
     {
@@ -1207,7 +1222,7 @@ static int LuaResponseFunctionDownfold(lua_State *L)
   }
   if(Mesh)
   {
-    int err = ResponseFunctionDownfoldOnMesh(G,R,Grid.VRe,Grid.Ni,Gout,S);
+    int err = ResponseFunctionDownfoldOnMesh(G,R,Grid.VRe,Grid.Ni,Options.Lambda,Gout,S);
     free(Grid.VRe);
     if(err) return luaL_error(L, "Error in ResponseFunction.Downfold() with Method \"Mesh\"\n");
   }
