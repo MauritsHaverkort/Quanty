@@ -47,11 +47,19 @@ which is what the example below evaluates. It is also the $12$ block of the spec
 
   * MinimalPoleDistance : (//real//) two poles closer together than this are merged into one
 
-  * NTriMax : (//integer//) the largest chain length the result may have. Accepted only when //G// is tri-diagonal, which is the only case in which the result is a chain (//default: $\infty$//)
+  * NTriMax : (//integer//) the largest chain length the result may have. Accepted only when //G// is tri-diagonal, which is the only case in which the result is a chain, and not with Method "Mesh" (//default: $\infty$//)
+
+  * Method : (//string//) left out, //Sigma// is calculated exactly as described below. //"Mesh"// returns it as poles on an energy grid, see [[#on_an_energy_grid|On an energy grid]]
+
+  * Emin, Emax, NE : (//real//, //real//, //integer//) with Method "Mesh", the grid $E_{\mathrm{min}} + k (E_{\mathrm{max}} - E_{\mathrm{min}}) / N_E$, $k = 0 \dots N_E$
+
+  * EnergyGrid : (//list of reals//) with Method "Mesh", a strictly increasing grid in place of Emin, Emax and NE. It does not have to be uniform
+
+  * Lambda : (//real//, at least 1) with Method "Mesh", the factor by which the distance between the points grows when the grid is extended (//default: 2//)
 
 ===== Output =====
 
-  * //Sigma//: (//ResponseFunction//) $\left( R \, G^{-1}(\omega) \, R^{\dagger} \right)^{-1}$. It is tri-diagonal when //G// was tri-diagonal and an Anderson matrix otherwise
+  * //Sigma//: (//ResponseFunction//) $\left( R \, G^{-1}(\omega) \, R^{\dagger} \right)^{-1}$. It is tri-diagonal when //G// was tri-diagonal, a list of poles with Method "Mesh", and an Anderson matrix otherwise
   * //S//: (//Matrix//) the spectral weight of //Sigma//, $\sum_i W_i = \left( R \, \widetilde{S}^{-1} R^{\dagger} \right)^{-1}$ with $\widetilde{S}$ the spectral weight of //G//. For the self-energy this is its sum rule, and comparing it with $\left\langle \{q,q^{\dagger}\} \right\rangle - \Sigma^{\mathrm{HF}} \Sigma^{\mathrm{HF}}$ is a sharp check on the whole construction
 
 ###
@@ -64,6 +72,28 @@ The representation //Sigma// comes back in is the one the construction leaves it
 
 ###
 A subspace that carries little spectral weight is handled without the answer running away. The spectral weight of $G$ is a Gram matrix and it goes singular whenever two of the states behind $G$ become dependent, which for the self-energy is what happens as the interaction goes to zero and the $q_{\mathfrak{m}}$ vanish. A small eigenvalue there is a large one of $\widetilde{S}^{-1}$ and so a **small** weight in //S//, and the answer goes to zero with the weight of the subspace instead of diverging. A subspace with no weight at all is deflated away and //Downfold// returns zero.
+###
+
+===== On an energy grid =====
+
+###
+With //"Method"// //"Mesh"// //Sigma// comes back as a list of poles on the grid points $x_k$. Every pole of the exact $\Sigma$ is split over the two grid points next to it such that its weight and its first moment are kept, which is the same as taking as residue on $x_k$
+\begin{equation}
+W_k = \int \mathrm{hat}_k(\omega) \, A(\omega) \, \mathrm{d}\omega , \qquad A(\omega) = -\frac{1}{\pi} \mathrm{Im} \, \Sigma(\omega + \mathrm{i} 0^{+}) ,
+\end{equation}
+with $\mathrm{hat}_k$ the piecewise linear function that is one on $x_k$ and zero on its neighbours. Nothing is diagonalised to get there. $\Sigma(z) = \left( R \, G^{-1}(z) \, R^{\dagger} \right)^{-1}$ is evaluated at $z = x_j + \mathrm{i} y$ and
+\begin{equation}
+W_k = - \int_0^{\infty} y \sum_{j = k-1}^{k+1} g_j \, A_y(x_j) \, \mathrm{d}y , \qquad A_y(x) = -\frac{1}{\pi} \mathrm{Im} \, \Sigma(x + \mathrm{i} y) ,
+\end{equation}
+with $g = \left( 1/h_{-}, \, -(1/h_{-} + 1/h_{+}), \, 1/h_{+} \right)$ and $h_{\pm}$ the distances from $x_k$ to its neighbours. For a single pole this is the split above exactly, whatever its distance to the grid, so there is no broadening to choose and only the imaginary part of $\Sigma$ enters. The $y$ integral is numerical up to $100$ times the largest energy of the grid and analytic beyond, from the first three moments of $\Sigma$, which follow from those of //G//. //G// may be of any type.
+###
+
+###
+The poles of $\Sigma$ lie within the range of the poles of //G//, and the grid is extended at either end until that range is inside it. The first point added below the grid is a distance $\Lambda h$ below the first grid point, with $h$ the spacing at that end, the next $\Lambda^2 h$ below that, and so on. With //"Lambda"// $= 1$ the grid is continued with its own spacing; with the default $\Lambda = 2$ the tails of $\Sigma$ land on a few poles, which keeps a chain cut from the result afterwards from spending its sites on them. Grid points without weight are left out. //S// is the sum rule the residues add up to.
+###
+
+###
+The method is meant for a self-energy that has many poles, where a representation with a fixed energy resolution is what is wanted anyway: the result has as many poles as the grid has points, however many //G// had.
 ###
 
 ===== Example =====
@@ -134,6 +164,17 @@ for w = -4, 4, 2 do
         Complex.Re(DSR[1][1]),   Complex.Im(DSR[1][1]),
         Complex.Re(Dyson[1][1]), Complex.Im(Dyson[1][1])))
 end
+
+-- The same self-energy as poles on the grid -4, -3.98, ... 4, taken from Gtilde off the
+-- real axis. Every pole of the exact Sigma is split over its two neighbouring grid points.
+SigmaM, SM = ResponseFunction.Downfold(Gtilde, R, {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",400}})
+print("")
+print("  omega      Sigma_00 - Sigma^HF, default     Method \"Mesh\"")
+for w = -4, 4, 2 do
+  local a, b = Sigma(w,0.1)[1][1], SigmaM(w,0.1)[1][1]
+  print(string.format("  %5.1f   %9.5f %+9.5f I   %9.5f %+9.5f I", w,
+        Complex.Re(a), Complex.Im(a), Complex.Re(b), Complex.Im(b)))
+end
 </code>
 
 ==== Output ====
@@ -153,10 +194,21 @@ S, the spectral weight of Sigma - Sigma^HF
     0.0     1.58150  -0.00351 I     1.58150  -0.00351 I
     2.0     1.91711  -0.85614 I     1.91711  -0.85614 I
     4.0     2.37928  -0.08634 I     2.37928  -0.08634 I
+
+  omega      Sigma_00 - Sigma^HF, default     Method "Mesh"
+   -4.0    -0.11661  -0.02563 I    -0.11651  -0.02576 I
+   -2.0    -0.09872  -0.02278 I    -0.09883  -0.02280 I
+    0.0    -0.16320  -0.00351 I    -0.16322  -0.00351 I
+    2.0     0.17241  -0.85614 I     0.16336  -0.86464 I
+    4.0     0.63458  -0.08634 I     0.63382  -0.08696 I
 </code>
 
 ###
 The two columns agree to about $10^{-13}$, and the block above them is printed after the progress lines of the two block Lanczos runs, which are left out here. Those runs also print a handful of lines reading //Negative value in CompactMatrixSqrt, eigen value is -2.9E-18 (trace |val| = 4.4E-18)//. They come from the conversions taking the square root of the weight of a pole that is numerically zero, and a rounding-sized negative eigenvalue of a matrix that is entirely rounding is what they report. How many of them appear varies from one run to the next. They say nothing about the answer.
+###
+
+###
+The last block compares the exact self-energy with the one on the grid of spacing $0.02$, both at a broadening $\Gamma = 0.1$. They agree to the splitting of the poles over the grid, which is largest next to a sharp peak (here the one near $\omega = 2$) and falls off as the square of the grid spacing. The mesh method also prints three lines on the grid it used, left out here.
 ###
 
 ###
