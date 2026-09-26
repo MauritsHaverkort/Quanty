@@ -4057,8 +4057,11 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
     VerbosityPrintf(0x0001, "CalculateGforHwithSigmaAsOperator: NTriFull reduced from %u to %u, the space has only %u dimensions\n", NTriFull, NTriUse, Dtot);
   }
   {
-    CompactMatrixType Qoall, Qball, Yo, Yb, Qok, Qbk, Qoj, Qbj, Qonext, Qbnext;
+    CompactMatrixType Qoall, Qball, Yo, Yb, Qok, Qbk, Qoj, Qbj, Qonext, Qbnext, Coefall;
     uint32_t l, t;
+    CompactMatrixSetUnallocated(&Coefall);
+    Coefall.Ni = m; Coefall.Nj = NTriUse * m; Coefall.QComplex = 1;
+    if (InitCompactMatrix(&Coefall)) { printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperator for the block Lanczos\n"); ierr = 1; goto cleanup; }
     Qoall.Ni = NTriUse * m; Qoall.Nj = North;        Qoall.QComplex = 1;
     Qball.Ni = NTriUse * m; Qball.Nj = Max(Nbath, 1); Qball.QComplex = 1;
     Yo.Ni = m; Yo.Nj = North;         Yo.QComplex = 1;
@@ -4131,18 +4134,21 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
         CompactMatrixAddMultiply('T', 'N', &Bblk, &Qoj, &Yo, -1, 0, 1, 0);
         if (Nbath) CompactMatrixAddMultiply('T', 'N', &Bblk, &Qbj, &Yb, -1, 0, 1, 0);
       }
-      /*  full re-orthogonalization, twice; the vectors are cheap here         */
+      /*  full re-orthogonalization, twice, against all blocks 0..k at once:
+       *  C = Y Q^dag, Y -= C Q.  One product per part instead of one per block,
+       *  and 'C' lets zgemm conjugate on the fly, where '*' conjugates the
+       *  operand in place, twice, for every product                             */
       for (q = 0; q < 2; q++)
       {
-        for (j = 0; j <= k; j++)
-        {
-          Qoj = CompactMatrixRowBlockView(&Qoall, j * m, m);
-          Qbj = CompactMatrixRowBlockView(&Qball, j * m, m);
-          CompactMatrixAddMultiply('*', 'T', &Qoj, &Yo, &Bblk, 1, 0, 0, 0);
-          if (Nbath) CompactMatrixAddMultiply('*', 'T', &Qbj, &Yb, &Bblk, 1, 0, 1, 0);
-          CompactMatrixAddMultiply('T', 'N', &Bblk, &Qoj, &Yo, -1, 0, 1, 0);
-          if (Nbath) CompactMatrixAddMultiply('T', 'N', &Bblk, &Qbj, &Yb, -1, 0, 1, 0);
-        }
+        CompactMatrixType Qop = CompactMatrixRowBlockView(&Qoall, 0, (k + 1) * m);
+        CompactMatrixType Qbp = CompactMatrixRowBlockView(&Qball, 0, (k + 1) * m);
+        CompactMatrixType Coef = Coefall;
+        Coef.Nj = (k + 1) * m;
+        Coef.OnLuaStack = true;
+        CompactMatrixAddMultiply('N', 'C', &Yo, &Qop, &Coef, 1, 0, 0, 0);
+        if (Nbath) CompactMatrixAddMultiply('N', 'C', &Yb, &Qbp, &Coef, 1, 0, 1, 0);
+        CompactMatrixAddMultiply('N', 'N', &Coef, &Qop, &Yo, -1, 0, 1, 0);
+        if (Nbath) CompactMatrixAddMultiply('N', 'N', &Coef, &Qbp, &Yb, -1, 0, 1, 0);
       }
       /*  normalize what is left, zero rows keep the block size uniform        */
       norm = 0;
@@ -4173,6 +4179,7 @@ int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFun
     FreeCompactMatrix(&Qball);
     FreeCompactMatrix(&Yo);
     FreeCompactMatrix(&Yb);
+    FreeCompactMatrix(&Coefall);
   }
 
   /* ---------------------------------------------------------------------- */
