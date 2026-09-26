@@ -125,6 +125,7 @@ test-jobs-matrix:
           - "GeneralEigensystem"
           - "Identity"
           - "Inverse"
+          - "LapackBug"
           - "New"
           - "NullSpace"
           - "Random"

@@ -1,0 +1,73 @@
+-- Eigensystem of a complex Hermitian matrix of dimension 130 whose last two rows and columns
+-- are zero. The legacy LAPACK of Apple's Accelerate (found on macOS 26.6, Intel) returns wrong
+-- eigenvectors for such a matrix from zheev with uplo "U", with info = 0 and the eigenvalues
+-- correct: from dimension 130 on, and only with two or more zero rows at the end.
+--
+-- Two runs: the last two rows and columns zero, and the same with the diagonal elements
+-- (129,129) = 1 and (130,130) = 2. Tested is that the eigenvectors (the rows of fun) are
+-- orthonormal, fun fun^dag = 1, and that they diagonalise H, fun^* H fun^T diagonal.
+
+print("--------------------------------------------------------")
+print("-- Matrix - LAPACK bug with zero rows at the end       --")
+print("--------------------------------------------------------")
+Verbosity(0)
+
+N = 130
+
+-- deterministic numbers in [-0.5,0.5), the same on every platform (not math.random)
+seed = 12345
+local function Random()
+  seed = (16807 * seed) % 2147483647
+  return seed / 2147483647 - 0.5
+end
+
+-- a random complex Hermitian matrix with the last two rows and columns zero
+local function NewH()
+  local t = {}
+  for i = 1, N do t[i] = {} for j = 1, N do t[i][j] = 0 end end
+  for i = 1, N-2 do
+    t[i][i] = Random()
+    for j = i+1, N-2 do
+      t[i][j] = Random() + I*Random()
+      t[j][i] = Conjugate(t[i][j])
+    end
+  end
+  return t
+end
+
+local function MaxOffDiagonal(M)
+  local d = 0
+  for i = 1, N do for j = 1, N do if i ~= j then d = math.max(d, Abs(M[i][j])) end end end
+  return d
+end
+
+local function MaxAbs(M)
+  local d = 0
+  for i = 1, N do for j = 1, N do d = math.max(d, Abs(M[i][j])) end end
+  return d
+end
+
+local function Test(name, t)
+  local H = Matrix.New(t)
+  local val, fun = Eigensystem(H)
+  local D = Matrix.Conjugate(fun) * H * Matrix.Transpose(fun)
+  local dD = MaxOffDiagonal(D) / MaxAbs(H)
+  local dI = MaxAbs(fun * Matrix.ConjugateTranspose(fun) - Matrix.Identity(N))
+  print(string.format("%-40s off diagonal of fun^* H fun^T %.3e, |fun fun^dag - 1| %.3e", name, dD, dI))
+  if not (dD < 1e-12) then Failed[#Failed+1] = name..": fun^* H fun^T is not diagonal, largest off diagonal element "..dD.." relative" end
+  if not (dI < 1e-12) then Failed[#Failed+1] = name..": fun fun^dag is not the identity, largest deviation "..dI end
+end
+
+-- both runs are made before a failure is reported
+Failed = {}
+
+t = NewH()
+Test("last two rows and columns zero", t)
+t[N-1][N-1] = 1
+t[N][N]     = 2
+Test("the same with H(129,129)=1, H(130,130)=2", t)
+if #Failed > 0 then error(table.concat(Failed, "\n").."\n", 1) end
+
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")
