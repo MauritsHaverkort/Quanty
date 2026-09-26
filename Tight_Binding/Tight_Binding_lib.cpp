@@ -1343,6 +1343,22 @@ void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Cha
     }
   }
 }
+/*  given an eigen function the residue of its pole in the Green's function is calculated as
+ *  res_{i,j} = psi_i * psi_j^*, the transpose of the character above: the character belongs to
+ *  rho_{i,j} = <a_i^dag a_j>, the residue to G_{i,j}(z) = <a_i 1/(z-H) a_j^dag>
+ */
+void ComplexEigenFunctionToResidue(Complex16 const * EigenFun, MatrixType *Res)
+{
+  uint32_t i,j;
+  for(i=0;i<Res->Ni;i++)
+  {
+    for(j=0;j<Res->Nj;j++)
+    {
+      Res->VRe[i][j] = EigenFun[i].Re*EigenFun[j].Re+EigenFun[i].Im*EigenFun[j].Im;
+      Res->VIm[i][j] = EigenFun[i].Im*EigenFun[j].Re-EigenFun[i].Re*EigenFun[j].Im;
+    }
+  }
+}
 void ComplexEigenFunctionToCompactCharacter(Complex16 const * EigenFun, CompactMatrixType *Char)
 {
   uint32_t i,j,k=0;

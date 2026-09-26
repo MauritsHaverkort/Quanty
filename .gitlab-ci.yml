@@ -243,6 +243,7 @@ test-jobs-tightbinding:
           - "CalculateBands"
           - "CalculateBandsSelfEnergy"
           - "CalculateG"
+          - "CalculateGAgainstCreateSpectra"
           - "CalculateGMesh"
           - "CalculateGSigmaPerAtom"
           - "CalculateGSigmaTypes"

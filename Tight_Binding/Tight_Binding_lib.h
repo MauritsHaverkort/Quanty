@@ -29,6 +29,7 @@ int TightBindingBANDS(TightBindingDef A, BandstructurePathType kList, MatrixType
 void RealEigenFunctionToCharacter(double const * EigenFun, MatrixType *Char);
 void RealEigenFunctionToCompactCharacter(double const * EigenFun, CompactMatrixType *Char);
 void ComplexEigenFunctionToCharacter(Complex16 const * EigenFun, MatrixType *Char);
+void ComplexEigenFunctionToResidue(Complex16 const * EigenFun, MatrixType *Res);
 void ComplexEigenFunctionToCompactCharacter(Complex16 const * EigenFun, CompactMatrixType *Char);
 void EigenFunctionToCharacter(void const * EigenFun, MatrixType *Char);
 void EigenFunctionToCompactCharacter(void const * EigenFun, CompactMatrixType *Char);

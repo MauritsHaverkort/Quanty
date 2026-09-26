@@ -4093,7 +4093,7 @@ uint32_t TightBindingHamiltonianToBlockListOfPoles(TightBindingDef const A, int 
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
-            ComplexEigenFunctionToCharacter(&(T.V[ival*A.NFermion]), &H);
+            ComplexEigenFunctionToResidue(&(T.V[ival*A.NFermion]), &H);
           }
           else
           {
@@ -4271,7 +4271,7 @@ uint32_t TightBindingHamiltonianToBlockListOfPolesGrid(TightBindingDef const A, 
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
-            ComplexEigenFunctionToCharacter(&(T.V[ival*A.NFermion]), &H);
+            ComplexEigenFunctionToResidue(&(T.V[ival*A.NFermion]), &H);
           }
           else
           {
@@ -4689,7 +4689,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(TightBindingDef
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
-            ComplexEigenFunctionToCharacter(&(T.V[ival*T.Nj]), &H);
+            ComplexEigenFunctionToResidue(&(T.V[ival*T.Nj]), &H);
           }
           else
           {
@@ -4916,7 +4916,7 @@ uint32_t TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(TightBindin
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
-            ComplexEigenFunctionToCharacter(&(T.V[ival*T.Nj]), &H);
+            ComplexEigenFunctionToResidue(&(T.V[ival*T.Nj]), &H);
           }
           else
           {
@@ -5100,7 +5100,7 @@ static uint32_t AugmentedPerAtomInit(AugmentedPerAtomType * const S, TightBindin
   return 0;
 }
 
-/*  Must be called before ComplexEigenFunctionToCharacter overwrites H with the character. */
+/*  Must be called before ComplexEigenFunctionToResidue overwrites H with the residue. */
 static void AugmentedPerAtomAdd(AugmentedPerAtomType * const S, MatrixType const * const H, CompactMatrixType const * const T, int const ival, int const NFermion, double const val, int const iE, double const * const Egrid, uint32_t const NEgrid)
 {
   int a,i,j,p,r,bs,ib;
@@ -5149,13 +5149,13 @@ static void AugmentedPerAtomAdd(AugmentedPerAtomType * const S, MatrixType const
       ib   = iE+1;
       rest = (val - Egrid[iE]) / (Egrid[iE+1] - Egrid[iE]);
     }
-    /*  residue v^* v^T, the same convention as ComplexEigenFunctionToCharacter */
+    /*  residue v v^dag, the same convention as ComplexEigenFunctionToResidue */
     for(p=0;p<bs;p++)
     {
       for(r=0;r<bs;r++)
       {
         wRe = S->v[p].Re*S->v[r].Re + S->v[p].Im*S->v[r].Im;
-        wIm = S->v[p].Re*S->v[r].Im - S->v[p].Im*S->v[r].Re;
+        wIm = S->v[p].Im*S->v[r].Re - S->v[p].Re*S->v[r].Im;
         S->Gaug[a].V[ib*(1+bs*bs)+1+r+p*bs].Re += (1-rest)*wRe;
         S->Gaug[a].V[ib*(1+bs*bs)+1+r+p*bs].Im += (1-rest)*wIm;
         if(rest!=0)
@@ -5310,7 +5310,7 @@ uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(Tig
         {
           if(H.QComplex) MakeComplexMatrixReal(&H);
         }
-        /*  ComplexEigenFunctionToCharacter writes the character into H, so H holds the
+        /*  ComplexEigenFunctionToResidue writes the residue into H, so H holds the
          *  Hamiltonian only until the first eigenvector. Keep a copy of it for H u. */
         if(Gaug!=NULL) MatrixCopy(&Hk, H);
         for(ival=0;ival<T.Nj;ival++)
@@ -5321,7 +5321,7 @@ uint32_t TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(Tig
           /* calculate matrix B for eigen-value ival */
           if(H.QComplex)
           {
-            ComplexEigenFunctionToCharacter(&(T.V[ival*T.Nj]), &H);
+            ComplexEigenFunctionToResidue(&(T.V[ival*T.Nj]), &H);
           }
           else
           {

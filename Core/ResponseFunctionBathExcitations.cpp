@@ -3239,10 +3239,10 @@ static int BathExcExtremeEigenvalue(Complex16 *const M, uint32_t const n, bool c
  *  one n x n inversion per k, grid point and y node, independent of the number
  *  of poles of Sigma, which enters only in Sigma(z).
  *
- *  The default route stores G as the transpose of the resolvent above
- *  (residue u^* u^T of the eigenvector u, while the eigensolver reconstructs
- *  A_jk = sum val u_j u_k^*).  The same is done here, so that both routes give
- *  the same G, also for complex H(k) and a complex, non symmetric Sigma.
+ *  G is the resolvent above, not its transpose, like the default route (residue
+ *  u u^dag of the eigenvector u), so that both give G_ij = <a_i 1/(z-H) a_j^dag>
+ *  as CreateSpectra does, also for complex H(k) and a complex, non symmetric
+ *  Sigma.
  *
  *  The grid is extended at either end until all poles of G sit between its
  *  second and its second to last point, with distances growing by the factor
@@ -3679,8 +3679,7 @@ int TightBindingHamiltonianPlusSelfEnergyOnMesh(TightBindingDef const *const A, 
     }
   }
 
-  /*  per block: Hermitian, positive semi definite, transposed, and the list
-   *  of poles                                                                 */
+  /*  per block: Hermitian, positive semi definite, and the list of poles     */
   for (b = 0; b < NBlock; b++)
   {
     uint32_t bs = bsz[b], bb = bs * bs, Nkeep = 0, np = 0, p, r;
@@ -3740,8 +3739,7 @@ int TightBindingHamiltonianPlusSelfEnergyOnMesh(TightBindingDef const *const A, 
       dst = &(Out->V[(size_t)np * (1 + bb)]);
       dst[0].Re = Grid[k];
       dst[0].Im = 0;
-      /*  the transpose, the convention of the default route                   */
-      for (p = 0; p < bs; p++) for (r = 0; r < bs; r++) dst[1 + p * bs + r] = src[r * bs + p];
+      for (p = 0; p < bs; p++) for (r = 0; r < bs; r++) dst[1 + p * bs + r] = src[p * bs + r];
       np++;
     }
   }
