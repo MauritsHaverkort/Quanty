@@ -1338,3 +1338,133 @@ int ConvertBandEnergiesToBitMapRGBInterpolate(CompactMatrixType* BandEnergies, C
   }
   return 0;
 }
+
+/*  Given band spectral functions on the pixel rows generates a plot of the band-structure as bitmap
+ *  Input
+ *    A                - NSet*Nk*BandPlot->NpointsY values, A[(s*Nk+ik)*NpointsY+ip] is set s at k-point ik
+ *                       on pixel row ip (row 0 is the top of the plot, the highest energy).
+ *                       Set 0 is the total spectral function, sets 1..NSet-1 the characters.
+ *    NSet             - 1 (total only), 2 (total and one character) or 4 (total and three characters)
+ *    Nk               - number of k-points
+ *    kPath            - a path in the Brillouine zone with Nk points
+ *    BandPlot         - an allocated bitmap with the dimensions set
+ *    LineColor        - RGB alpha color used for NSet 1 and for character 1 if NSet is 2
+ *    SecondLineColor  - RGB alpha color used for character 0 if NSet is 2
+ *    Scale            - the opacity of a pixel is min(1, Scale * total)
+ *    ZeroDistance     - If there are zero k-points between two adjacent points in the kPath we add an aditional distance in ratio of the bitmap width, rounded to integer pixels
+ *  The color follows from the character c = A_c / A_total as for the band lines, character*LineColor +
+ *  (1-character)*SecondLineColor for NSet 2 and (c1, c2, c3) as RGB for NSet 4. It is blended with white
+ *  by the opacity and written opaque, pixels without weight stay white and transparent. Every k-point
+ *  gets a strip of pixel columns, as in ConvertBandEnergiesToBitMap.
+ */
+int ConvertBandSpectraToBitMap(double const *A, int NSet, int Nk, BandstructurePathType *kPath, BitMapType *BandPlot, uint8_t *LineColor, uint8_t *SecondLineColor, double Scale, double ZeroDistance)
+{
+  if(ZeroDistance<0) { printf("ERROR in ConvertBandSpectraToBitMap, ZeroDistance < 0\n"); return 1;}
+  if(!(NSet==1 || NSet==2 || NSet==4)) { printf("ERROR in ConvertBandSpectraToBitMap, NSet (%d) should be 1, 2 or 4\n", NSet); return 1;}
+  MakeBitMatWhiteTransparent(BandPlot);
+  double LengthKPath = 0;
+  int    NKPointsInPath=kPath->NQ;
+  int    NZeroDistance = 0;
+  for(int i=0;i<(kPath->NQ)-1;i++)
+  {
+    NKPointsInPath += kPath->Q[i].Nq;
+    if(kPath->Q[i].Nq==0)
+    {
+      NZeroDistance++;
+    }
+    else
+    {
+      LengthKPath += sqrt( Sqr(kPath->Q[i].q[0] - kPath->Q[i+1].q[0]) + Sqr(kPath->Q[i].q[1] - kPath->Q[i+1].q[1]) + Sqr(kPath->Q[i].q[2] - kPath->Q[i+1].q[2]));
+    }
+  }
+  if(NKPointsInPath!=Nk)
+  {
+    printf("ERROR in ConvertBandSpectraToBitMap, Number of points in kPath(%d) does not agree with the number of spectra (%d)\n",NKPointsInPath,Nk);
+    return 1;
+  }
+  int    const NY = BandPlot->NpointsY;
+  double PixelPerZeroDistance = ZeroDistance * BandPlot->NpointsX;
+  double PixelPerk = (BandPlot->NpointsX - NZeroDistance * PixelPerZeroDistance) / LengthKPath;
+  double pixelkPosMin=0,pixelkPosMax=0;
+  double dk, tot, alpha, c, col[4];
+  uint32_t *Column = (uint32_t*)malloc(NY*sizeof(uint32_t));
+  int ik=0;
+  for(int i=0;i<(kPath->NQ)-1;i++)
+  {
+    if(kPath->Q[i].Nq==0)
+    {
+      pixelkPosMin+=PixelPerZeroDistance;
+      ik++;
+      continue;
+    }
+    dk = sqrt( Sqr(kPath->Q[i].q[0] - kPath->Q[i+1].q[0]) + Sqr(kPath->Q[i].q[1] - kPath->Q[i+1].q[1]) + Sqr(kPath->Q[i].q[2] - kPath->Q[i+1].q[2])) / (kPath->Q[i].Nq+1);
+    for(int j=-1;j<=kPath->Q[i].Nq;j++)
+    {
+      if((j==-1)||(j==kPath->Q[i].Nq))
+      {
+        pixelkPosMax = pixelkPosMin + dk * PixelPerk / 2;
+      }
+      else
+      {
+        pixelkPosMax = pixelkPosMin + dk * PixelPerk;
+      }
+      // the colors of the pixel column of k-point ik
+      for(int ip=0;ip<NY;ip++)
+      {
+        tot = A[ik*NY+ip];
+        alpha = Scale * tot;
+        if(!(alpha>0))
+        {
+          Column[ip] = 0x00FFFFFF;
+          continue;
+        }
+        if(alpha>1) alpha=1;
+        if(NSet==1)
+        {
+          for(int ch=0;ch<4;ch++) col[ch] = LineColor[ch];
+        }
+        else if(NSet==2)
+        {
+          c = A[(Nk+ik)*NY+ip] / tot;
+          if(c<0) c=0;
+          if(c>1) c=1;
+          for(int ch=0;ch<4;ch++) col[ch] = c * LineColor[ch] + (1-c) * SecondLineColor[ch];
+        }
+        else
+        {
+          for(int ch=0;ch<3;ch++)
+          {
+            col[ch] = 256 * A[((ch+1)*Nk+ik)*NY+ip] / tot;
+            if(col[ch]<0) col[ch]=0;
+            if(col[ch]>255) col[ch]=255;
+          }
+          col[3] = 255;
+        }
+        // blend with white by the opacity of the pixel times the alpha channel of the color
+        alpha *= col[3] / 255;
+        Column[ip] = 0xFF;
+        for(int ch=0;ch<3;ch++)
+        {
+          c = 255 - alpha * (255 - col[ch]);
+          if(c<0) c=0;
+          if(c>255) c=255;
+          Column[ip] = (Column[ip]<<8) + (uint32_t)c;
+        }
+      }
+      for(int ip=0;ip<NY;ip++)
+      {
+        for(int jp=Max(0,floor(pixelkPosMin)); jp<=Min(BandPlot->NpointsX-1,ceil(pixelkPosMax)); jp++)
+        {
+          BandPlot->Pixels[ip*BandPlot->NpointsX + jp]=Column[ip];
+        }
+      }
+      if(j!=kPath->Q[i].Nq)
+      {
+        ik++;
+      }
+      pixelkPosMin = pixelkPosMax;
+    }
+  }
+  free(Column);
+  return 0;
+}

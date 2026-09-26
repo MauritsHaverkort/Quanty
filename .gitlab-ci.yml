@@ -241,6 +241,7 @@ test-jobs-tightbinding:
           - "__newindex"
           - "AddSpin"
           - "CalculateBands"
+          - "CalculateBandsSelfEnergy"
           - "CalculateG"
           - "CalculateGMesh"
           - "CalculateGSigmaPerAtom"
