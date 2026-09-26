@@ -197,6 +197,7 @@ test-jobs-Responsefunction:
           - "CreateBitMasks"
           - "Deflation"
           - "Downfold"
+          - "DownfoldMesh"
           - "EffectiveHamiltonian"
           - "Eigensystem"
           - "FromEffectiveHamiltonian"

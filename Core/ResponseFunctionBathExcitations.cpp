@@ -113,11 +113,15 @@ int OperatorFermionParity(OperatorType const *const O)
   return parity;
 }
 
-/*  A complex Ni x Nj view on memory owned by someone else                       */
+/*  A complex Ni x Nj view on memory owned by someone else.  It carries a name,
+ *  since CompactMatrixCopy (and so every routine that copies its input, the
+ *  eigensolvers among them) copies the name with strncpy                      */
+static char BathExcViewName[] = "view";
 static CompactMatrixType BathExcView(Complex16 *const V, uint32_t const Ni, uint32_t const Nj)
 {
   CompactMatrixType v;
   CompactMatrixSetUnallocated(&v);
+  v.Name = BathExcViewName;
   v.Ni = Ni;
   v.Nj = Nj;
   v.QComplex = 1;
@@ -2068,6 +2072,11 @@ done:
  *
  *  returns 0 on success, 1 on failure
  */
+/*  8 point Gauss-Legendre on [-1,1], the panels of the y quadrature              */
+static double const GLx[8] = {-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
+                               0.1834346424956498,  0.5255324099163290,  0.7966664774136267,  0.9602898564975363};
+static double const GLw[8] = { 0.1012285362903763,  0.2223810344533745,  0.3137066458778873,  0.3626837833783620,
+                               0.3626837833783620,  0.3137066458778873,  0.2223810344533745,  0.1012285362903763};
 static double const BathExcMeshYmin = 1e-4;
 static double const BathExcMeshYmaxFactor = 100;
 static double const BathExcMeshPanelWidth = 2.5;
@@ -2075,11 +2084,6 @@ static double const BathExcMeshKeepWeight = 1e-14;
 
 int CalculateGforHwithSigmaAsOperatorBathExcitationsMesh(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize, OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NExcitations, const double E0, const double Emin, const double Emax, const uint32_t NE, const CompactMatrixType *const B0, BlockListOfPoles * G)
 {
-  /*  8 point Gauss-Legendre on [-1,1]                                        */
-  static double const GLx[8] = {-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
-                                 0.1834346424956498,  0.5255324099163290,  0.7966664774136267,  0.9602898564975363};
-  static double const GLw[8] = { 0.1012285362903763,  0.2223810344533745,  0.3137066458778873,  0.3626837833783620,
-                                 0.3626837833783620,  0.3137066458778873,  0.2223810344533745,  0.1012285362903763};
   uint32_t i, j, l, lp, k, a, b, s, c, lev, q, n;
   uint32_t m = BlockSize, NFull, North, NSpace, p = NExcitations;
   int ierr = 0;
@@ -2530,5 +2534,451 @@ cleanup:
   free(emin);
   free(emax);
   BathExcFrontEndFree(&Front, Sigma);
+  return ierr;
+}
+
+/* ===========================================================================
+ *
+ *   ResponseFunction.Downfold on an energy grid
+ *
+ * =========================================================================== */
+
+/*  The imaginary integral on the real axis, -(1/pi)(M - M^dag)/(2i), of an
+ *  N x N complex matrix M, added with the prefactor f to Out                   */
+static void BathExcAddSpectralPart(Complex16 const *const M, uint32_t const N, double const f, Complex16 *const Out)
+{
+  uint32_t a, b;
+  for (a = 0; a < N; a++)
+  {
+    for (b = 0; b < N; b++)
+    {
+      Complex16 mab = M[a * N + b], mba = M[b * N + a];
+      double dr = mab.Re - mba.Re, di = mab.Im + mba.Im;     /* M_ab - conj(M_ba) */
+      Out[a * N + b].Re += f * (-di / (2 * M_PI));
+      Out[a * N + b].Im += f * ( dr / (2 * M_PI));
+    }
+  }
+}
+
+/*  Sigma(z) = ( R G(z)^-1 R^dag )^-1 at z = x + i y, G a block list of poles.
+ *  Sig is Nsub x Nsub, allocated by the caller                                */
+static int BathExcDownfoldAt(BlockListOfPoles const *const G, CompactMatrixType const *const R, double const x, double const y, CompactMatrixType *const Sig)
+{
+  CompactMatrixType Gw, T;
+  uint32_t n = G->BlockSize, Nsub = R->Ni;
+  CompactMatrixSetUnallocated(&T);
+  EvaluateBlockListOfPoles(G, &Gw, x, 2 * y);        /* the evaluators take the full width */
+  if (CompactMatrixInverse(&Gw) < 0) { FreeCompactMatrix(&Gw); return 1; }
+  T.Ni = Nsub; T.Nj = n; T.QComplex = 1;
+  if (InitCompactMatrix(&T)) { FreeCompactMatrix(&Gw); return 1; }
+  CompactMatrixAddMultiply('N', 'N', R, &Gw, &T, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'C', &T, R, Sig, 1, 0, 0, 0);
+  FreeCompactMatrix(&T);
+  FreeCompactMatrix(&Gw);
+  if (CompactMatrixInverse(Sig) < 0) return 1;
+  return 0;
+}
+
+/*
+ *  Sigma(w) = ( R G^-1(w) R^dag )^-1 , as ResponseFunctionDownfold defines it,
+ *  returned as a block list of poles on the energy grid Grid (strictly
+ *  increasing, not necessarily uniform).
+ *
+ *  The poles of the result sit on the grid points x_k with the residues
+ *
+ *    R_k = int hat_k(w) A(w) dw ,   A = -(1/pi) Im Sigma(w + i0)
+ *
+ *  with hat_k the piecewise linear function that is one at x_k and zero at
+ *  x_{k-1} and x_{k+1}: every pole of the exact Sigma split over its two
+ *  neighbouring grid points, conserving its weight and its first moment.
+ *
+ *  Sigma is itself a response function (analytic above the real axis, a
+ *  positive spectral weight, decaying as 1/w), so the residues follow from its
+ *  values off the real axis as in CalculateGforHwithSigmaAsOperatorBathExcitationsMesh:
+ *  hat_k(e) = (1/2) sum_j g_j |x_j - e| over j = k-1, k, k+1 with
+ *  g = ( 1/h-, -(1/h- + 1/h+), 1/h+ ), h- = x_k - x_{k-1}, h+ = x_{k+1} - x_k,
+ *  and for one pole y A_y(x) = (W/pi)(1 - d^2/(d^2+y^2)), so
+ *
+ *    R_k = - int_0^inf y sum_j g_j A_y(x_j) dy ,   A_y(x) = -(1/pi) Im Sigma(x + i y)
+ *
+ *  exactly (on a uniform grid g = (1,-2,1)/dw).  Only Im Sigma enters.  The y
+ *  integral uses the same panels as the mesh method; beyond ymax the expansion
+ *  Sigma = M0/z + M1/z^2 + M2/z^3 is integrated analytically, with the moments
+ *  of Sigma from those of G (A = M0^-1, B = A M1 A, C = A M2 A - B M0 B,
+ *  a = R A R^dag, b = R B R^dag, c = R C R^dag):
+ *
+ *    M0' = a^-1 ,  M1' = a^-1 b a^-1 ,  M2' = a^-1 (c + b a^-1 b) a^-1
+ *
+ *  The poles of Sigma are eigenvalues of a compression of the Hamiltonian that
+ *  realizes G and lie within the range of the poles of G, so the grid is
+ *  extended at either end, with its end spacing, until that range sits between
+ *  its second and its second to last point.
+ *
+ *  G may be of any type; it is written as a list of poles first.  It must not
+ *  have a constant part, and its spectral weight M0 has to be invertible.
+ *
+ *  Gout is a block list of poles, S the spectral weight M0' of Sigma, the sum
+ *  rule its residues add up to.
+ *
+ *  returns 0 on success, 1 on failure
+ */
+int ResponseFunctionDownfoldOnMesh(ResponsefunctionType const *const Gin, CompactMatrixType const *const R, double const *const GridIn, uint32_t const NGridIn, ResponsefunctionType *const Gout, CompactMatrixType *const S)
+{
+  uint32_t n, Nsub = R->Ni, a, b, k, q, NGrid = 0, Ny = 0, Nkeep = 0, np;
+  int ierr = 0;
+  double emin = DBL_MAX, emax = -DBL_MAX, a0max = 0, wmax = 0, ymin, ymax, Rspec, hmin, ClippedWeight = 0;
+  double *Grid = NULL, *ynode = NULL, *yweight = NULL;
+  ResponsefunctionType GLPr;
+  BlockListOfPoles *GLP;
+  CompactMatrixType M0, M1, M2, A, B, C, Tn, Ts, sa, sb, sc, Mom[3];
+  Complex16 *Rsum = NULL;
+
+  CompactMatrixSetUnallocated(&M0); CompactMatrixSetUnallocated(&M1); CompactMatrixSetUnallocated(&M2);
+  CompactMatrixSetUnallocated(&A);  CompactMatrixSetUnallocated(&B);  CompactMatrixSetUnallocated(&C);
+  CompactMatrixSetUnallocated(&Tn); CompactMatrixSetUnallocated(&Ts);
+  CompactMatrixSetUnallocated(&sa); CompactMatrixSetUnallocated(&sb); CompactMatrixSetUnallocated(&sc);
+  for (k = 0; k < 3; k++) CompactMatrixSetUnallocated(&(Mom[k]));
+  GLPr.data = NULL;
+  if ((GridIn == NULL) || (NGridIn < 2))
+  {
+    printf("ResponseFunctionDownfoldOnMesh needs an energy grid of at least two points\n");
+    return 1;
+  }
+  for (k = 1; k < NGridIn; k++)
+  {
+    if (!(GridIn[k] > GridIn[k - 1]))
+    {
+      printf("ResponseFunctionDownfoldOnMesh: the energy grid is not strictly increasing at position %u (%g after %g)\n", k + 1, GridIn[k], GridIn[k - 1]);
+      return 1;
+    }
+  }
+
+  /*  G as a block list of poles                                               */
+  if (ConvertResponsefunction(Gin, &GLPr, 'L', "default", -1, -1, -1, -1, false, false, false) || (GLPr.Block == false))
+  {
+    printf("ResponseFunctionDownfoldOnMesh could not write G as a block list of poles\n");
+    if (GLPr.data != NULL) FreeResponsefunction(&GLPr);
+    return 1;
+  }
+  GLP = (BlockListOfPoles*)GLPr.data;
+  n = GLP->BlockSize;
+  if (R->Nj != n) { printf("ResponseFunctionDownfoldOnMesh: R has %u columns and G a block size of %u\n", R->Nj, n); ierr = 1; goto cleanup; }
+
+  /*  its moments, the range of its poles, its constant part                   */
+  M0.Ni = M0.Nj = n; M1.Ni = M1.Nj = n; M2.Ni = M2.Nj = n;
+  M0.QComplex = M1.QComplex = M2.QComplex = 1;
+  if (InitCompactMatrix(&M0) || InitCompactMatrix(&M1) || InitCompactMatrix(&M2)) { ierr = 1; goto cleanup; }
+  for (k = 0; k < GLP->N; k++)
+  {
+    size_t off = (size_t)k * (1 + n * n);
+    double e = GLP->QComplex ? GLP->V[off].Re : GLP->VRe[off];
+    for (a = 0; a < n * n; a++)
+    {
+      Complex16 w;
+      if (GLP->QComplex) w = GLP->V[off + 1 + a];
+      else { w.Re = GLP->VRe[off + 1 + a]; w.Im = 0; }
+      M0.V[a].Re += w.Re;          M0.V[a].Im += w.Im;
+      M1.V[a].Re += e * w.Re;      M1.V[a].Im += e * w.Im;
+      M2.V[a].Re += e * e * w.Re;  M2.V[a].Im += e * e * w.Im;
+      wmax = Max(wmax, fabs(w.Re) + fabs(w.Im));
+    }
+    emin = Min(emin, e);
+    emax = Max(emax, e);
+  }
+  for (a = 0; a < n * n; a++)
+  {
+    if (GLP->QComplex) a0max = Max(a0max, fabs(GLP->a0[a].Re) + fabs(GLP->a0[a].Im));
+    else a0max = Max(a0max, fabs(GLP->a0Re[a]));
+  }
+  if (a0max > 1e-12 * Max(wmax, DBL_MIN))
+  {
+    printf("ResponseFunctionDownfoldOnMesh: G has a constant part (%g). Its downfold then does not vanish at large energies\n", a0max);
+    printf("  and is not a list of poles; downfold the response function without it.\n");
+    ierr = 1; goto cleanup;
+  }
+  if (GLP->N == 0) { printf("ResponseFunctionDownfoldOnMesh: G has no poles\n"); ierr = 1; goto cleanup; }
+  SquareCompactMatrixMakeHermitian(&M0);
+  SquareCompactMatrixMakeHermitian(&M1);
+  SquareCompactMatrixMakeHermitian(&M2);
+
+  /*  the moments of Sigma                                                     */
+  {
+    double *val = (double*)malloc(n * sizeof(double));
+    CompactMatrixType fun;
+    if (val == NULL) { ierr = 1; goto cleanup; }
+    if (HermitianCompactMatrixEigensystemRowVectors(&M0, &fun, val)) { free(val); ierr = 1; goto cleanup; }
+    FreeCompactMatrix(&fun);
+    if (!(val[0] > 1e-12 * val[n - 1]))
+    {
+      printf("ResponseFunctionDownfoldOnMesh: the spectral weight of G is singular (eigenvalues %g .. %g),\n", val[0], val[n - 1]);
+      printf("  so G has no inverse. Remove the directions without weight first.\n");
+      free(val); ierr = 1; goto cleanup;
+    }
+    free(val);
+  }
+  A.Ni = A.Nj = n; B.Ni = B.Nj = n; C.Ni = C.Nj = n; Tn.Ni = Tn.Nj = n;
+  A.QComplex = B.QComplex = C.QComplex = Tn.QComplex = 1;
+  if (InitCompactMatrix(&A) || InitCompactMatrix(&B) || InitCompactMatrix(&C) || InitCompactMatrix(&Tn)) { ierr = 1; goto cleanup; }
+  memcpy(A.V, M0.V, n * n * sizeof(Complex16));
+  if (CompactMatrixInverse(&A) < 0) { ierr = 1; goto cleanup; }
+  CompactMatrixAddMultiply('N', 'N', &A, &M1, &Tn, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &Tn, &A, &B, 1, 0, 0, 0);            /* B = A M1 A      */
+  CompactMatrixAddMultiply('N', 'N', &A, &M2, &Tn, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &Tn, &A, &C, 1, 0, 0, 0);            /* A M2 A          */
+  CompactMatrixAddMultiply('N', 'N', &B, &M0, &Tn, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &Tn, &B, &C, -1, 0, 1, 0);           /* - B M0 B        */
+  Ts.Ni = Nsub; Ts.Nj = n; Ts.QComplex = 1;
+  sa.Ni = sa.Nj = Nsub; sb.Ni = sb.Nj = Nsub; sc.Ni = sc.Nj = Nsub;
+  sa.QComplex = sb.QComplex = sc.QComplex = 1;
+  for (k = 0; k < 3; k++) { Mom[k].Ni = Mom[k].Nj = Nsub; Mom[k].QComplex = 1; }
+  if (InitCompactMatrix(&Ts) || InitCompactMatrix(&sa) || InitCompactMatrix(&sb) || InitCompactMatrix(&sc) ||
+      InitCompactMatrix(&(Mom[0])) || InitCompactMatrix(&(Mom[1])) || InitCompactMatrix(&(Mom[2]))) { ierr = 1; goto cleanup; }
+  CompactMatrixAddMultiply('N', 'N', R, &A, &Ts, 1, 0, 0, 0);  CompactMatrixAddMultiply('N', 'C', &Ts, R, &sa, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', R, &B, &Ts, 1, 0, 0, 0);  CompactMatrixAddMultiply('N', 'C', &Ts, R, &sb, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', R, &C, &Ts, 1, 0, 0, 0);  CompactMatrixAddMultiply('N', 'C', &Ts, R, &sc, 1, 0, 0, 0);
+  memcpy(Mom[0].V, sa.V, Nsub * Nsub * sizeof(Complex16));
+  if (CompactMatrixInverse(&(Mom[0])) < 0) { printf("ResponseFunctionDownfoldOnMesh: R M0^-1 R^dag is singular, R does not have full row rank\n"); ierr = 1; goto cleanup; }
+  FreeCompactMatrix(&Ts); CompactMatrixSetUnallocated(&Ts);
+  Ts.Ni = Ts.Nj = Nsub; Ts.QComplex = 1;
+  if (InitCompactMatrix(&Ts)) { ierr = 1; goto cleanup; }
+  CompactMatrixAddMultiply('N', 'N', &(Mom[0]), &sb, &Ts, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &Ts, &(Mom[0]), &(Mom[1]), 1, 0, 0, 0);   /* a^-1 b a^-1           */
+  CompactMatrixAddMultiply('N', 'N', &sb, &(Mom[0]), &Ts, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &Ts, &sb, &sc, 1, 0, 1, 0);                /* c + b a^-1 b          */
+  CompactMatrixAddMultiply('N', 'N', &(Mom[0]), &sc, &Ts, 1, 0, 0, 0);
+  CompactMatrixAddMultiply('N', 'N', &Ts, &(Mom[0]), &(Mom[2]), 1, 0, 0, 0);   /* a^-1 (c+b a^-1 b) a^-1 */
+  for (k = 0; k < 3; k++) SquareCompactMatrixMakeHermitian(&(Mom[k]));
+
+  /*  the grid, extended until the poles sit between its second and second to
+   *  last point                                                               */
+  {
+    uint32_t nlo = 0, nhi = 0;
+    double h0 = GridIn[1] - GridIn[0], h1 = GridIn[NGridIn - 1] - GridIn[NGridIn - 2], x;
+    for (x = GridIn[1]; x > emin; x -= h0) nlo++;
+    for (x = GridIn[NGridIn - 2]; x < emax; x += h1) nhi++;
+    NGrid = NGridIn + nlo + nhi;
+    Grid = (double*)malloc(NGrid * sizeof(double));
+    if (Grid == NULL) { ierr = 1; goto cleanup; }
+    for (k = 0; k < nlo; k++) Grid[k] = GridIn[0] - (double)(nlo - k) * h0;
+    for (k = 0; k < NGridIn; k++) Grid[nlo + k] = GridIn[k];
+    for (k = 0; k < nhi; k++) Grid[nlo + NGridIn + k] = GridIn[NGridIn - 1] + (double)(k + 1) * h1;
+    if (nlo + nhi > 0)
+    {
+      VerbosityPrintf(0x0001, "ResponseFunctionDownfoldOnMesh: the grid is extended by %u points below and %u above to hold the poles in [%g, %g]\n", nlo, nhi, emin, emax);
+    }
+  }
+  hmin = DBL_MAX;
+  for (k = 1; k < NGrid; k++) hmin = Min(hmin, Grid[k] - Grid[k - 1]);
+  Rspec = Max(fabs(Grid[0]), fabs(Grid[NGrid - 1]));
+
+  /*  the y quadrature, as in the mesh method                                  */
+  ymin = BathExcMeshYmin * hmin;
+  ymax = BathExcMeshYmaxFactor * Max(Rspec, hmin);
+  {
+    uint32_t npanel = (uint32_t)ceil((log(ymax) - log(ymin)) / BathExcMeshPanelWidth), pn;
+    double h = (log(ymax) - log(ymin)) / npanel;
+    Ny = 8 * npanel;
+    ynode = (double*)malloc(Ny * sizeof(double));
+    yweight = (double*)malloc(Ny * sizeof(double));
+    if ((ynode == NULL) || (yweight == NULL)) { ierr = 1; goto cleanup; }
+    for (pn = 0; pn < npanel; pn++)
+    {
+      for (q = 0; q < 8; q++)
+      {
+        double u = log(ymin) + h * pn + h * (GLx[q] + 1) / 2;
+        ynode[pn * 8 + q] = exp(u);
+        yweight[pn * 8 + q] = GLw[q] * h / 2 * exp(u);
+      }
+    }
+  }
+  VerbosityPrintf(0x0001, "ResponseFunctionDownfoldOnMesh: %u poles of block size %u onto %u, %u grid points, %u nodes in y\n", GLP->N, n, Nsub, NGrid, Ny);
+
+  /*  R_k = - int y sum_j g_j A_y(x_j) dy, the y in parallel                   */
+  Rsum = (Complex16*)calloc((size_t)NGrid * Nsub * Nsub, sizeof(Complex16));
+  if (Rsum == NULL) { ierr = 1; goto cleanup; }
+  {
+    int failed = 0;
+#pragma omp parallel
+    {
+      Complex16 *Rloc = (Complex16*)calloc((size_t)NGrid * Nsub * Nsub, sizeof(Complex16));
+      Complex16 *Ay = (Complex16*)malloc((size_t)NGrid * Nsub * Nsub * sizeof(Complex16));
+      CompactMatrixType Sg;
+      int qq;
+      CompactMatrixSetUnallocated(&Sg);
+      Sg.Ni = Sg.Nj = Nsub; Sg.QComplex = 1;
+      if ((Rloc == NULL) || (Ay == NULL) || InitCompactMatrix(&Sg)) failed = 1;
+#pragma omp for schedule(dynamic)
+      for (qq = 0; qq < (int)Ny; qq++)
+      {
+        uint32_t j, kk;
+        double y = ynode[qq];
+        if (failed) continue;
+        memset(Ay, 0, (size_t)NGrid * Nsub * Nsub * sizeof(Complex16));
+        for (j = 0; j < NGrid; j++)
+        {
+          if (BathExcDownfoldAt(GLP, R, Grid[j], y, &Sg)) { failed = 1; break; }
+          BathExcAddSpectralPart(Sg.V, Nsub, 1.0, &(Ay[(size_t)j * Nsub * Nsub]));
+        }
+        if (failed) continue;
+        for (kk = 1; kk + 1 < NGrid; kk++)
+        {
+          double hm = Grid[kk] - Grid[kk - 1], hp = Grid[kk + 1] - Grid[kk];
+          double g[3] = {1 / hm, -(1 / hm + 1 / hp), 1 / hp};
+          uint32_t t, z;
+          for (t = 0; t < 3; t++)
+          {
+            Complex16 const *ay = &(Ay[(size_t)(kk - 1 + t) * Nsub * Nsub]);
+            for (z = 0; z < Nsub * Nsub; z++)
+            {
+              Rloc[(size_t)kk * Nsub * Nsub + z].Re -= yweight[qq] * y * g[t] * ay[z].Re;
+              Rloc[(size_t)kk * Nsub * Nsub + z].Im -= yweight[qq] * y * g[t] * ay[z].Im;
+            }
+          }
+        }
+      }
+#pragma omp critical
+      {
+        if (Rloc != NULL)
+        {
+          for (size_t z = 0; z < (size_t)NGrid * Nsub * Nsub; z++) { Rsum[z].Re += Rloc[z].Re; Rsum[z].Im += Rloc[z].Im; }
+        }
+      }
+      free(Rloc);
+      free(Ay);
+      FreeCompactMatrix(&Sg);
+    }
+    if (failed) { printf("ResponseFunctionDownfoldOnMesh: G(z) or its projection could not be inverted\n"); ierr = 1; goto cleanup; }
+  }
+
+  /*  the analytic tail beyond ymax:  - sum_m c_m d^m/dx^m int_Y^inf y A_y(x) dy
+   *  at x_k, c_m = sum_j g_j (x_j - x_k)^m / m!, from the moments of Sigma     */
+  for (k = 1; k + 1 < NGrid; k++)
+  {
+    double hm = Grid[k] - Grid[k - 1], hp = Grid[k + 1] - Grid[k], x = Grid[k];
+    double cm[5] = {0, 0, (hm + hp) / 2, (hp * hp - hm * hm) / 6, (hm * hm * hm + hp * hp * hp) / 24};
+    uint32_t nn, mm, jj;
+    for (nn = 0; nn < 3; nn++)
+    {
+      double tail = 0;
+      for (mm = 2; mm <= 4; mm++)
+      {
+        double cc = 1;
+        int kk2 = (int)nn + 1 + (int)mm;
+        Complex16 w0, p1, p2, I;
+        for (jj = 0; jj < mm; jj++) cc *= -(double)(nn + 1 + jj);
+        w0.Re = x; w0.Im = ymax;
+        p1.Re = 1; p1.Im = 0;
+        for (jj = 0; jj + 1 < (uint32_t)kk2; jj++)
+        {
+          double den = w0.Re * w0.Re + w0.Im * w0.Im;
+          Complex16 t2;
+          t2.Re = (p1.Re * w0.Re + p1.Im * w0.Im) / den;
+          t2.Im = (p1.Im * w0.Re - p1.Re * w0.Im) / den;
+          p1 = t2;
+        }
+        p2.Re = p1.Re * w0.Re - p1.Im * w0.Im;
+        p2.Im = p1.Re * w0.Im + p1.Im * w0.Re;
+        I.Re = p2.Re / (2 - kk2) - x * p1.Re / (1 - kk2);
+        I.Im = p2.Im / (2 - kk2) - x * p1.Im / (1 - kk2);
+        tail += cm[mm] * cc * (-1.0 / M_PI) * I.Im;
+      }
+      for (a = 0; a < Nsub * Nsub; a++)
+      {
+        Rsum[(size_t)k * Nsub * Nsub + a].Re -= tail * Mom[nn].V[a].Re;
+        Rsum[(size_t)k * Nsub * Nsub + a].Im -= tail * Mom[nn].V[a].Im;
+      }
+    }
+  }
+
+  /*  Hermitian, positive semi definite, and the list of poles                 */
+  {
+    double *val = (double*)malloc(Nsub * sizeof(double)), trmax = 0, tr0 = 0;
+    CompactMatrixType Rk, fun;
+    BlockListOfPoles *Out;
+    if (val == NULL) { ierr = 1; goto cleanup; }
+    Rk.Ni = Rk.Nj = Nsub; Rk.QComplex = 1;
+    for (k = 1; k + 1 < NGrid; k++)
+    {
+      double tr = 0;
+      Rk = BathExcView(&(Rsum[(size_t)k * Nsub * Nsub]), Nsub, Nsub);
+      SquareCompactMatrixMakeHermitian(&Rk);
+      if (HermitianCompactMatrixEigensystemRowVectors(&Rk, &fun, val)) { free(val); ierr = 1; goto cleanup; }
+      memset(Rk.V, 0, Nsub * Nsub * sizeof(Complex16));
+      for (q = 0; q < Nsub; q++)
+      {
+        if (val[q] <= 0) { ClippedWeight -= val[q]; continue; }
+        for (a = 0; a < Nsub; a++)
+        {
+          for (b = 0; b < Nsub; b++)
+          {
+            Complex16 fa = fun.V[q * Nsub + a], fb = fun.V[q * Nsub + b];
+            Rk.V[a * Nsub + b].Re += val[q] * (fa.Re * fb.Re + fa.Im * fb.Im);
+            Rk.V[a * Nsub + b].Im += val[q] * (fa.Im * fb.Re - fa.Re * fb.Im);
+          }
+        }
+      }
+      FreeCompactMatrix(&fun);
+      for (a = 0; a < Nsub; a++) tr += Rk.V[a * Nsub + a].Re;
+      trmax = Max(trmax, tr);
+    }
+    free(val);
+    for (a = 0; a < Nsub; a++) tr0 += Mom[0].V[a * Nsub + a].Re;
+    if (ClippedWeight > 1e-6 * tr0)
+    {
+      printf("ResponseFunctionDownfoldOnMesh: %g negative weight (of %g) left by the quadrature was removed\n", ClippedWeight, tr0);
+    }
+    for (k = 1; k + 1 < NGrid; k++)
+    {
+      double tr = 0;
+      for (a = 0; a < Nsub; a++) tr += Rsum[(size_t)k * Nsub * Nsub + a * Nsub + a].Re;
+      if (tr > BathExcMeshKeepWeight * trmax) Nkeep++;
+    }
+    Out = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
+    if (Out == NULL) { ierr = 1; goto cleanup; }
+    Out->N = Max(Nkeep, 1);
+    Out->BlockSize = Nsub;
+    Out->QComplex = 1;
+    if (InitBlockListOfPoles(Out)) { free(Out); ierr = 1; goto cleanup; }
+    Out->N = Nkeep;
+    Out->mu = GLP->mu;
+    np = 0;
+    for (k = 1; k + 1 < NGrid; k++)
+    {
+      double tr = 0;
+      Complex16 *dst;
+      for (a = 0; a < Nsub; a++) tr += Rsum[(size_t)k * Nsub * Nsub + a * Nsub + a].Re;
+      if (!(tr > BathExcMeshKeepWeight * trmax)) continue;
+      dst = &(Out->V[(size_t)np * (1 + Nsub * Nsub)]);
+      dst[0].Re = Grid[k];
+      dst[0].Im = 0;
+      memcpy(&(dst[1]), &(Rsum[(size_t)k * Nsub * Nsub]), Nsub * Nsub * sizeof(Complex16));
+      np++;
+    }
+    strcpy(Out->Name, "Downfold on a grid");
+    Gout->type = 'l';
+    Gout->Block = true;
+    Gout->NSuggestedGridPoints = 0;
+    Gout->SuggestedGrid = NULL;
+    Gout->data = (void*)Out;
+  }
+  /*  the sum rule                                                             */
+  S->Ni = S->Nj = Nsub;
+  S->QComplex = 1;
+  S->OnLuaStack = false;
+  if (InitCompactMatrix(S)) { ierr = 1; goto cleanup; }
+  memcpy(S->V, Mom[0].V, Nsub * Nsub * sizeof(Complex16));
+  VerbosityPrintf(0x0001, "ResponseFunctionDownfoldOnMesh: %u poles on the grid\n", Nkeep);
+
+cleanup:
+  FreeCompactMatrix(&M0); FreeCompactMatrix(&M1); FreeCompactMatrix(&M2);
+  FreeCompactMatrix(&A);  FreeCompactMatrix(&B);  FreeCompactMatrix(&C);
+  FreeCompactMatrix(&Tn); FreeCompactMatrix(&Ts);
+  FreeCompactMatrix(&sa); FreeCompactMatrix(&sb); FreeCompactMatrix(&sc);
+  for (k = 0; k < 3; k++) FreeCompactMatrix(&(Mom[k]));
+  if (GLPr.data != NULL) FreeResponsefunction(&GLPr);
+  free(Grid);
+  free(ynode);
+  free(yweight);
+  free(Rsum);
   return ierr;
 }
