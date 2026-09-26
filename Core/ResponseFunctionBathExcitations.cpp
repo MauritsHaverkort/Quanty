@@ -516,6 +516,8 @@ static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionT
   CompactMatrixType SMat, HMat, Sfun, T, TS, HO, Cseed;
   OperatorType Heff, *Hptr;
   BathExcSpaceType *Space = NULL;
+  WaveFunctionType *Eorth = NULL;       /* the orthonormal basis of P, North functions */
+  uint32_t NEorth = 0;
 
   BathExcFrontEndInit(F);
   CompactMatrixSetUnallocated(&SMat);  CompactMatrixSetUnallocated(&HMat);
@@ -684,6 +686,35 @@ static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionT
   FreeCompactMatrix(&HMat); CompactMatrixSetUnallocated(&HMat);
   FreeCompactMatrix(&SMat); CompactMatrixSetUnallocated(&SMat);
   FreeCompactMatrix(&TS); CompactMatrixSetUnallocated(&TS);
+  /*  The orthonormal basis e_q = sum_a T_aq PsiBasis[a], formed once.  Every
+   *  later matrix element in P is taken in it: North^2 dot products each
+   *  instead of NPsiBasis^2.  A Krylov basis that has exhausted a small space
+   *  holds many more functions than directions (240 for 48 in the DMFT
+   *  tutorial), and the dot products of such small functions cost mostly the
+   *  start of their parallel region.                                          */
+  Eorth = (WaveFunctionType*)malloc(North * sizeof(WaveFunctionType));
+  if (Eorth == NULL) { printf("malloc failed in CalculateGforHwithSigmaAsOperatorBathExcitations\n"); ierr = 1; goto cleanup; }
+  for (q = 0; q < North; q++)
+  {
+    for (a = 0; a < Npsi; a++)
+    {
+      WaveFunctionType tmp;
+      if (a == 0)
+      {
+        if (WaveFunctionCopy(PsiBasis[0], &(Eorth[q]))) { ierr = 1; goto cleanup; }
+        NEorth = q + 1;
+        if (WaveFunctionMultiply(&(Eorth[q]), T.V[q].Re, T.V[q].Im)) { ierr = 1; goto cleanup; }
+        continue;
+      }
+      if (WaveFunctionCopy(PsiBasis[a], &tmp)) { ierr = 1; goto cleanup; }
+      if (WaveFunctionMultiply(&tmp, T.V[a * North + q].Re, T.V[a * North + q].Im) ||
+          WaveFunctionAddMultipliedUnionBasis(&(Eorth[q]), tmp, 1.0))
+      {
+        WaveFunctionFree(&tmp); ierr = 1; goto cleanup;
+      }
+      WaveFunctionFree(&tmp);
+    }
+  }
 
   /* ---------------------------------------------------------------------- */
   /*  C   the system spaces X_m^S                                            */
@@ -744,7 +775,7 @@ static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionT
       BathExcSpaceType *S = &(Space[NSpace]);
       uint32_t NRaw, NStringMax, d, di, pc;
       OperatorType *VsOp = NULL;
-      CompactMatrixType SextO, HextO, Mtmp, MtmpO, TM, Xdefl, Ws, Hred, Sxfun, ufun;
+      CompactMatrixType SextO, HextO, MtmpO, TM, Xdefl, Ws, Hred, Sxfun, ufun;
       double *sxval = NULL;
       OperatorType Oprod;
       bool ok = true;
@@ -812,14 +843,11 @@ static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionT
       }
       /*  Sext and Hext of the raw vectors, from operators that act in P       */
       CompactMatrixSetUnallocated(&SextO); CompactMatrixSetUnallocated(&HextO);
-      CompactMatrixSetUnallocated(&Mtmp);  CompactMatrixSetUnallocated(&MtmpO);
-      CompactMatrixSetUnallocated(&TM);
+      CompactMatrixSetUnallocated(&MtmpO);
       SextO.Ni = NRaw;  SextO.Nj = NRaw;  SextO.QComplex = 1;
       HextO.Ni = NRaw;  HextO.Nj = NRaw;  HextO.QComplex = 1;
-      Mtmp.Ni  = Npsi;  Mtmp.Nj  = Npsi;  Mtmp.QComplex  = 1;
       MtmpO.Ni = North; MtmpO.Nj = North; MtmpO.QComplex = 1;
-      TM.Ni    = North; TM.Nj    = Npsi;  TM.QComplex    = 1;
-      if (InitCompactMatrix(&SextO) || InitCompactMatrix(&HextO) || InitCompactMatrix(&Mtmp) || InitCompactMatrix(&MtmpO) || InitCompactMatrix(&TM))
+      if (InitCompactMatrix(&SextO) || InitCompactMatrix(&HextO) || InitCompactMatrix(&MtmpO))
       {
         printf("InitCompactMatrix failed in CalculateGforHwithSigmaAsOperatorBathExcitations for space %u\n", NSpace);
         free(ms); free(seq); free(sorted); ierr = 1; goto cleanup;
@@ -842,10 +870,8 @@ static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionT
               InitOperatorForMult(&Oprod, 3, &(VsOp[sp]), Hptr, &(VsOp[pc]));
               OperatorMultiply3NormalOrder(&Oprod, VsOp[sp], *Hptr, VsOp[pc], 'D', 'N', 'N', &QDetNotOrderedFcFaBcBa);
             }
-            if (PsiListOperatorPsiListCompactMatrix(&Oprod, PsiBasis, Npsi, &Mtmp)) { FreeOperator(&Oprod); ok = false; break; }
+            if (PsiListOperatorPsiListCompactMatrix(&Oprod, Eorth, North, &MtmpO)) { FreeOperator(&Oprod); ok = false; break; }
             FreeOperator(&Oprod);
-            CompactMatrixAddMultiply('C', 'N', &T, &Mtmp, &TM, 1, 0, 0, 0);
-            CompactMatrixAddMultiply('N', 'N', &TM, &T, &MtmpO, 1, 0, 0, 0);
             for (p = 0; p < North; p++)
             {
               for (q = 0; q < North; q++)
@@ -862,9 +888,7 @@ static int BathExcFrontEndBuild(const OperatorType *const H, const WaveFunctionT
       }
       for (sp = 0; sp < S->NString; sp++) FreeOperator(&(VsOp[sp]));
       free(VsOp);
-      FreeCompactMatrix(&Mtmp);
       FreeCompactMatrix(&MtmpO);
-      FreeCompactMatrix(&TM);
       if (!ok) { FreeCompactMatrix(&SextO); FreeCompactMatrix(&HextO); free(ms); free(seq); free(sorted); ierr = 1; goto cleanup; }
       /*  deflate, diagonalize (the same as step C of the old routine)          */
       sxval = (double*)malloc(NRaw * sizeof(double));
@@ -1074,6 +1098,8 @@ cleanup:
   free(PairChannel);
   free(Parity);
   if (QHeffAllocated) FreeOperator(&Heff);
+  for (q = 0; q < NEorth; q++) WaveFunctionFree(&(Eorth[q]));
+  free(Eorth);
   return ierr;
 }
 
