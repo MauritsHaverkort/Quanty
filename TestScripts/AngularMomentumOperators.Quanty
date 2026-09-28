@@ -1,0 +1,158 @@
+print("--------------------------------------------------------")
+print("--              AngularMomentumOperators              --")
+print("--------------------------------------------------------")
+
+-- AngularMomentumOperators(NF, IndexUp, IndexDn, {{"Basis", b}}) returns a table with the angular
+-- momentum, multipole, Slater and Casimir operators of one shell. It adds no functionality, every
+-- operator can also be made one at a time, so this script checks the table against NewOperator and
+-- against the reference definition of the unit tensors.
+
+threshold = 1E-11
+nfail = 0
+
+function CheckOperator(name, A, B)
+  if Chop(A - B, threshold) ~= Chop(0 * A) then
+    print("Not equal: " .. name)
+    nfail = nfail + 1
+  end
+end
+
+-- Racah's unit tensor u^(k)_q, with reduced matrix element one, summed over spin. This is the
+-- definition used in TestScripts/StandardOperators/CasimirOperators.Quanty
+function ReferenceUnitTensor(NF, l, k, q, IndexUp, IndexDn)
+  local u = 0
+  for m1 = -l, l do
+    for m2 = -l, l do
+      u = u + NewOperator(NF, 0, {{IndexDn[m1+l+1], -IndexDn[m2+l+1], (-1)^(l-m1)*ThreeJSymbol({l,-m1},{k,q},{l,m2})},
+                                  {IndexUp[m1+l+1], -IndexUp[m2+l+1], (-1)^(l-m1)*ThreeJSymbol({l,-m1},{k,q},{l,m2})}})
+    end
+  end
+  return Chop(u)
+end
+
+function ReferenceGG(NF, l, k, IndexUp, IndexDn)
+  local GG = 0
+  for q = -k, k do
+    GG = GG + ((-1)^q) * ReferenceUnitTensor(NF, l, k,  q, IndexUp, IndexDn)
+                       * ReferenceUnitTensor(NF, l, k, -q, IndexUp, IndexDn)
+  end
+  return Chop(GG)
+end
+
+NamedOperators = {"Lx","Ly","Lz","Lplus","Lmin","Lsqr","Sx","Sy","Sz","Splus","Smin","Ssqr",
+                  "Jx","Jy","Jz","Jplus","Jmin","Jsqr","Tx","Ty","Tz",
+                  "Qxx","Qyy","Qzz","Qxy","Qxz","Qyz","ldots"}
+
+print("\nAn f shell in the spherical harmonics basis")
+
+NF  = 14
+IDn = {0, 2, 4, 6, 8, 10, 12}
+IUp = {1, 3, 5, 7, 9, 11, 13}
+A   = AngularMomentumOperators(NF, IUp, IDn)
+
+if A.l ~= 3          then print("l is " .. A.l .. " instead of 3")         ; nfail = nfail + 1 end
+if A.NF ~= 14        then print("NF is " .. A.NF .. " instead of 14")      ; nfail = nfail + 1 end
+if A.Basis ~= "Y"    then print("Basis is " .. A.Basis .. " instead of Y") ; nfail = nfail + 1 end
+if A.Index.Up[1] ~= 1 or A.Index.Dn[1] ~= 0 then print("Index is not reported back") ; nfail = nfail + 1 end
+if A.Lx.Name ~= "Lx" then print("Lx is named " .. A.Lx.Name)               ; nfail = nfail + 1 end
+
+-- the unit tensors against the reference definition
+for k = 0, 6 do
+  CheckOperator("GG[" .. k .. "]", A.GG[k], ReferenceGG(NF, 3, k, IUp, IDn))
+end
+
+-- in this normalization L^2 = l(l+1)(2l+1) u^(1) . u^(1)
+CheckOperator("Lsqr == l(l+1)(2l+1) GG[1]", A.Lsqr, 3*4*7 * A.GG[1])
+
+-- the Casimir operators of Racah's chain SO(3) subset G2 subset SO(7)
+CheckOperator("Casimir.SO3", A.Casimir.SO3, A.GG[1])
+CheckOperator("Casimir.G2",  A.Casimir.G2,  A.GG[1] + A.GG[5])
+CheckOperator("Casimir.SO7", A.Casimir.SO7, A.GG[1] + A.GG[3] + A.GG[5])
+
+-- the Slater operators add up to the coulomb operator
+CheckOperator("sum_k F[k] SlaterF[k]",
+              1.0*A.SlaterF[0] + 0.5*A.SlaterF[2] + 0.3*A.SlaterF[4] + 0.2*A.SlaterF[6],
+              NewOperator("U", NF, IUp, IDn, {1.0, 0.5, 0.3, 0.2}))
+
+print("\nA d shell in every basis, against NewOperator")
+
+NF    = 10
+IDn   = {0, 2, 4, 6, 8} ; IUp = {1, 3, 5, 7, 9}
+Ijmin = {0, 1, 2, 3}    ; Ijplus = {4, 5, 6, 7, 8, 9}
+AllIndices = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+AllOnes    = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+
+for _, basis in ipairs({"Y", "Z", "K", "jjz"}) do
+  local u, d = IUp, IDn
+  if basis == "jjz" then u, d = Ijmin, Ijplus end
+  local B = AngularMomentumOperators(NF, u, d, {{"Basis", basis}})
+  if B.Basis ~= basis and not (basis == "jjz" and B.Basis == "jjz") then
+    print("Basis is reported as " .. B.Basis .. " instead of " .. basis) ; nfail = nfail + 1
+  end
+  for _, name in ipairs(NamedOperators) do
+    CheckOperator(basis .. " " .. name, B[name], NewOperator(name, NF, u, d, {{"Basis", basis}}))
+  end
+  CheckOperator(basis .. " SlaterF",
+                1.0*B.SlaterF[0] + 0.5*B.SlaterF[2] + 0.3*B.SlaterF[4],
+                NewOperator("U", NF, u, d, {1.0, 0.5, 0.3}, {{"Basis", basis}}))
+  CheckOperator(basis .. " Lsqr == l(l+1)(2l+1) GG[1]", B.Lsqr, 2*3*5 * B.GG[1])
+  CheckOperator(basis .. " Casimir.SO5", B.Casimir.SO5, B.GG[1] + B.GG[3])
+  CheckOperator(basis .. " N", B.N, NewOperator("Number", NF, AllIndices, AllIndices, AllOnes))
+  if B.Casimir.G2 ~= nil then
+    print("A d shell should not have a G2 Casimir operator") ; nfail = nfail + 1
+  end
+  if basis ~= "jjz" and B.CoulombJJ ~= nil then
+    print("CoulombJJ should only be returned on the jjz basis") ; nfail = nfail + 1
+  end
+end
+
+print("\nThe coulomb operator on the jjz basis")
+
+J = AngularMomentumOperators(NF, Ijmin, Ijplus, {{"Basis", "jjz"}})
+-- kappa is l for j = l-1/2 and -(l+1) for j = l+1/2
+CheckOperator("CoulombJJ.jmin.F[0]",  J.CoulombJJ.jmin.F[0],  NewOperator("U", NF, Ijmin,  2, {1,0}))
+CheckOperator("CoulombJJ.jmin.F[2]",  J.CoulombJJ.jmin.F[2],  NewOperator("U", NF, Ijmin,  2, {0,1}))
+CheckOperator("CoulombJJ.jplus.F[0]", J.CoulombJJ.jplus.F[0], NewOperator("U", NF, Ijplus, -3, {1,0,0}))
+CheckOperator("CoulombJJ.jplus.F[2]", J.CoulombJJ.jplus.F[2], NewOperator("U", NF, Ijplus, -3, {0,1,0}))
+CheckOperator("CoulombJJ.jplus.F[4]", J.CoulombJJ.jplus.F[4], NewOperator("U", NF, Ijplus, -3, {0,0,1}))
+CheckOperator("CoulombJJ.cross.F[0]", J.CoulombJJ.cross.F[0], NewOperator("U", NF, Ijmin, 2, Ijplus, -3, {1,0}, {0,0}))
+CheckOperator("CoulombJJ.cross.F[2]", J.CoulombJJ.cross.F[2], NewOperator("U", NF, Ijmin, 2, Ijplus, -3, {0,1}, {0,0}))
+CheckOperator("CoulombJJ.cross.G[1]", J.CoulombJJ.cross.G[1], NewOperator("U", NF, Ijmin, 2, Ijplus, -3, {0,0}, {1,0}))
+CheckOperator("CoulombJJ.cross.G[3]", J.CoulombJJ.cross.G[3], NewOperator("U", NF, Ijmin, 2, Ijplus, -3, {0,0}, {0,1}))
+
+-- for k=0 the coulomb operator is n(n-1)/2, which splits over the two j shells as
+-- nmin(nmin-1)/2 + nplus(nplus-1)/2 + nmin nplus. This fixes the relative normalization of the
+-- three pieces against the F[0] of the l shell.
+CheckOperator("F[0] of the l shell == jmin + jplus + cross",
+              J.SlaterF[0],
+              J.CoulombJJ.jmin.F[0] + J.CoulombJJ.jplus.F[0] + J.CoulombJJ.cross.F[0])
+
+-- each piece conserves the occupation of both j shells and is a scalar under J
+Njmin = NewOperator("Number", NF, Ijmin, Ijmin, {1,1,1,1})
+for _, e in ipairs({{"jmin.F[2]",  J.CoulombJJ.jmin.F[2]},  {"jplus.F[4]", J.CoulombJJ.jplus.F[4]},
+                    {"cross.F[2]", J.CoulombJJ.cross.F[2]}, {"cross.G[3]", J.CoulombJJ.cross.G[3]}}) do
+  CheckOperator("[" .. e[1] .. ", Njmin]", e[2]*Njmin  - Njmin*e[2],  0*e[2])
+  CheckOperator("[" .. e[1] .. ", Jz]",    e[2]*J.Jz   - J.Jz*e[2],   0*e[2])
+  CheckOperator("[" .. e[1] .. ", Jsqr]",  e[2]*J.Jsqr - J.Jsqr*e[2], 0*e[2])
+end
+
+print("\nA p shell and an s shell")
+
+P = AngularMomentumOperators(6, {1,3,5}, {0,2,4})
+CheckOperator("p shell Casimir.SO3", P.Casimir.SO3, P.GG[1])
+if P.Casimir.SO3 == nil then print("a p shell should have an SO3 Casimir operator") ; nfail = nfail + 1 end
+CheckOperator("p shell Lsqr", P.Lsqr, 1*2*3 * P.GG[1])
+
+S = AngularMomentumOperators(2, {1}, {0})
+if S.l ~= 0 then print("s shell reports l = " .. S.l) ; nfail = nfail + 1 end
+if S.SlaterF[0] == nil then print("an s shell should have SlaterF[0]") ; nfail = nfail + 1 end
+if S.SlaterF[2] ~= nil then print("an s shell should not have SlaterF[2]") ; nfail = nfail + 1 end
+CheckOperator("s shell Ssqr", S.Ssqr, NewOperator("Ssqr", 2, {1}, {0}))
+
+if nfail > 0 then
+  error("" .. nfail .. " checks failed\n", 1)
+end
+
+print("\n---------------------------------------------------------------")
+print("--              End of AngularMomentumOperators              --")
+print("---------------------------------------------------------------")

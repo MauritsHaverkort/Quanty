@@ -109,11 +109,52 @@ void Cross(const double x[], const double y[], double z[])
 /*
  *
  */
+int NormalizeVector(double v[3], double epsilon)
+{
+  double n = Norm(v);
+  if(!(n>epsilon)) return 1;
+  v[0]/=n; v[1]/=n; v[2]/=n;
+  return 0;
+}
+
+double AngleBetweenVectors(const double a[3], const double b[3])
+{
+  double c = Dot(a,b)/(Norm(a)*Norm(b));
+  if(c> 1.0) c= 1.0;
+  if(c<-1.0) c=-1.0;
+  return acos(c);
+}
+
+/*
+ *
+ */
 double ParallelalPipedVolume(const double x[], const double y[], const double z[])
 {
   double t[3];
   Cross(x, y, t);
   return Dot(z, t);
+}
+
+/* returns 0 on success, 1 if M is (numerically) singular */
+int Invert3x3(const double M[3][3], double Minv[3][3])
+{
+  double det = M[0][0]*(M[1][1]*M[2][2]-M[1][2]*M[2][1])
+             - M[0][1]*(M[1][0]*M[2][2]-M[1][2]*M[2][0])
+             + M[0][2]*(M[1][0]*M[2][1]-M[1][1]*M[2][0]);
+  double scale = Norm(M[0])*Norm(M[1])*Norm(M[2]);
+  if(!(scale>0.0) || fabs(det) < 1e-8*scale) return 1;
+
+  double invdet = 1.0/det;
+  Minv[0][0] =  (M[1][1]*M[2][2]-M[1][2]*M[2][1])*invdet;
+  Minv[0][1] = -(M[0][1]*M[2][2]-M[0][2]*M[2][1])*invdet;
+  Minv[0][2] =  (M[0][1]*M[1][2]-M[0][2]*M[1][1])*invdet;
+  Minv[1][0] = -(M[1][0]*M[2][2]-M[1][2]*M[2][0])*invdet;
+  Minv[1][1] =  (M[0][0]*M[2][2]-M[0][2]*M[2][0])*invdet;
+  Minv[1][2] = -(M[0][0]*M[1][2]-M[0][2]*M[1][0])*invdet;
+  Minv[2][0] =  (M[1][0]*M[2][1]-M[1][1]*M[2][0])*invdet;
+  Minv[2][1] = -(M[0][0]*M[2][1]-M[0][1]*M[2][0])*invdet;
+  Minv[2][2] =  (M[0][0]*M[1][1]-M[0][1]*M[1][0])*invdet;
+  return 0;
 }
 
 /*

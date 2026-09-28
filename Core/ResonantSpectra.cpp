@@ -1153,11 +1153,11 @@ uint32_t ResonantSpectraPartialDense(const OperatorType OppH1, const OperatorTyp
   InitBlockTridiagonalMatrix(&H1T1psi);
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, Tpsi, settings->epsilon, settings->SingularValue, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, &H1T1psi, PsiBasis, &BlockSize[1]);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, Tpsi, settings->restrictions1, settings->epsilon, settings->SingularValue, &H1T1psi, PsiBasis, &BlockSize[1]);
   }
   // 3.  Calculate eigen-states of Krylov basis (|m>) and eigen values Em
   H1T1psival= (double*)malloc(H1T1psi.N*H1T1psi.BlockSize*sizeof(double));
@@ -1344,11 +1344,11 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   
   if(settings->restrictions1.N==0)
   {
-    LanczosBlockTriDiagonalizeKrylov(OppH1, TpsiSameBasis, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
+    LanczosBlockTriDiagonalizeKrylov(OppH1, TpsiSameBasis, settings->epsilon, settings->SingularValue, &SpecTri1, PsiBasis, BlockSizeN);
   }
   else
   {
-    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, TpsiSameBasis, settings->restrictions1, settings->epsilon, &SpecTri1, PsiBasis, BlockSizeN);
+    LanczosBlockTriDiagonalizeKrylovRestricted(OppH1, TpsiSameBasis, settings->restrictions1, settings->epsilon, settings->SingularValue, &SpecTri1, PsiBasis, BlockSizeN);
   }
   BlockTridiagonalMatrixChop(&SpecTri1, settings->epsilon);
 
@@ -1584,11 +1584,11 @@ uint32_t ResonantSpectraTensor(const OperatorType OppH1, const OperatorType OppH
   
     if(settings->restrictions2.N==0)
     {
-      LanczosBlockTriDiagonalize(OppH2, TGTpsiSameBasis, settings->epsilon, &GTri2, Max(settings->Gamma2,settings->epsilon));
+      LanczosBlockTriDiagonalize(OppH2, TGTpsiSameBasis, settings->epsilon, settings->SingularValue, &GTri2, Max(settings->Gamma2,settings->epsilon));
     }
     else
     {
-      LanczosBlockTriDiagonalizeRestricted(OppH2, TGTpsiSameBasis, settings->restrictions2, settings->epsilon, &GTri2, Max(settings->Gamma2,settings->epsilon));
+      LanczosBlockTriDiagonalizeRestricted(OppH2, TGTpsiSameBasis, settings->restrictions2, settings->epsilon, settings->SingularValue, &GTri2, Max(settings->Gamma2,settings->epsilon));
     }
     BlockTridiagonalMatrixChop(&GTri2, settings->epsilon);
 

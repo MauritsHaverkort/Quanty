@@ -1,0 +1,31 @@
+====== Orthonormalize ======
+
+###
+Orthonormalizes vecors and wave-functions
+###
+
+===== Input =====
+
+  * First argument should be a table of complex vectors or wave-functions
+  * second optional argument can be a lsit of options.
+  * possible options are: (first option is standard)
+    * - "Method":         string value: "Lowdin", "GramSchmidt"
+    * - "Order":          string value: "Row", "Column"
+    * - "SingularValue":  double: values equal or smaller than SingularValue are removed from basis (standard value $10^{-12}$)
+    * - "ReduceDimension": boolean (remove singular vectors or add a zero vector to the basis) (standard value true)
+
+###
+The two methods do not return the same basis. "Lowdin" returns the symmetric orthonormal form, $A (A^{\dagger} A)^{-1/2}$, which is the orthonormal basis closest to the input, treats all vectors on the same footing and does not depend on the order in which they are given. "GramSchmidt" works through the list in order, so the first vector is left alone up to its norm and each following one is made orthogonal to those before it; the result depends on the order of the list.
+###
+
+###
+For a table of vectors the singular values are obtained from the vectors themselves and can be resolved down to $\epsilon_{\mathrm{machine}} \, s_{\mathrm{max}} \approx 2 \cdot 10^{-16} s_{\mathrm{max}}$. For a table of wave-functions with "Method" set to "Lowdin" this is not possible: the vectors are too long to hand to LAPACK, so the symmetric form is built from the overlap matrix $S_{ij} = \langle \psi_i | \psi_j \rangle$, in which a singular value $s$ enters as $s^2$. A singular value below $3 \sqrt{\epsilon_{\mathrm{machine}}} \, s_{\mathrm{max}} \approx 4.5 \cdot 10^{-8} s_{\mathrm{max}}$ can then not be distinguished from the rounding error of $S$ and is removed whatever //SingularValue// is set to, so setting //SingularValue// below that limit does not buy accuracy. "GramSchmidt" on wave-functions does not form $S$ and has no such limit, but it gives an order dependent basis rather than the symmetric one.
+###
+
+===== Output =====
+
+  * orthonormalized vectors or wave-functions
+
+
+===== Table of contents =====
+{{indexmenu>.#1}}

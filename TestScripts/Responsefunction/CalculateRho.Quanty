@@ -1,0 +1,151 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction CalculateRho                      --")
+print("--------------------------------------------------------")
+
+-- rho is always returned as a matrix of the dimension of the impurity block,
+-- i.e. BlockSize by BlockSize and 1 by 1 for a single valued response function
+
+function CheckRho(rho, expected, message)
+   local M = Matrix.ToTable(rho)
+   if(#M~=#expected) then
+      print("rho has dimension "..#M.." instead of "..#expected)
+      error(message,1)
+   end
+   for i=1,#M do
+      for j=1,#M do
+         if(Chop(M[i][j]-expected[i][j],1E-10)~=0) then
+            print("rho")
+            print(rho)
+            print("expected")
+            print(expected)
+            error(message,1)
+         end
+      end
+   end
+   print("ok -- "..message)
+end
+
+
+print("--------------------------------------------------------")
+print("-------- Single valued functions -----------------------")
+print("--------------------------------------------------------")
+
+-- G = 10 + 0.1/(w+2) + 0.2/(w+1) + 0.4/w + 0.15/(w-1) + 0.05/(w-2)
+a = {10, -2, -1, 0, 1, 2}
+b = {    0.1, 0.2, 0.4, 0.15, 0.05}
+GL = {a,b,mu=0,type="ListOfPoles", name="scalar"}
+setmetatable(GL, ResponseFunctionMeta)
+Gl = ResponseFunction.ToUserdata(GL)
+
+-- the pole at mu is counted half and the constant offset a0 does not contribute
+CheckRho(ResponseFunction.CalculateRho(Gl), {{0.5}}, "list of poles, the pole at mu counts half")
+CheckRho(CalculateRho(Gl), {{0.5}}, "list of poles, using the global function CalculateRho")
+CheckRho(CalculateRho(GL), {{0.5}}, "list of poles represented as a lua table")
+
+-- a Green's function without a pole at mu, such that all representations can be compared
+a = {0, -2, -1, 1, 2}
+b = {   0.1, 0.2, 0.15, 0.05}
+G2L = {a,b,mu=0,type="ListOfPoles", name="scalar2"}
+setmetatable(G2L, ResponseFunctionMeta)
+G2l = ResponseFunction.ToUserdata(G2L)
+
+CheckRho(CalculateRho(G2l), {{0.3}}, "list of poles")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"Tri")), {{0.3}}, "tridiagonal matrix")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"And")), {{0.3}}, "Anderson matrix")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"Nat")), {{0.3}}, "natural impurity orbitals")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G2l,"DoubleTri")), {{0.3}}, "double tri-diagonal matrix")
+
+-- options
+CheckRho(CalculateRho(G2l,{{"mu",1.5}}), {{0.45}}, "option mu")
+CheckRho(CalculateRho(G2l,{{"mu",-3}}),  {{0.0 }}, "option mu, all poles empty")
+CheckRho(CalculateRho(G2l,{{"mu", 3}}),  {{0.5 }}, "option mu, all poles filled")
+CheckRho(CalculateRho(G2l,{{"kBT",1E12}}),{{0.25}}, "option kBT, infinite temperature")
+
+-- if mu is not given the chemical potential stored in the response function is used
+G2l.mu = 1.5
+CheckRho(CalculateRho(G2l), {{0.45}}, "mu taken from the response function")
+G2l.mu = 0
+
+
+print("--------------------------------------------------------")
+print("-------- Block functions -------------------------------")
+print("--------------------------------------------------------")
+
+epsilon = 0.0
+tnn     = 1
+
+HTB = NewTightBinding()
+HTB.Name = "1s 1D chain"
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms   = { {"A", {0,0,0}, {{"s", {"0"}}}}}
+HTB.Hopping = {{"A.s","A.s",{ 0,0,0},{{epsilon}}},
+               {"A.s","A.s",{ 1,0,0},{{ tnn}}},
+               {"A.s","A.s",{-1,0,0},{{ tnn}}}}
+
+-- a two site cluster has its two levels at +-tnn, i.e. not at mu=0
+Nx,Ny,Nz = 2,1,1
+HCl, HClTB = CreateClusterHamiltonian(HTB, {"periodic", {{Nx,0,0},{0,Ny,0},{0,0,Nz}}}, {{"ReturnTBSuperCell",true}})
+
+RhoTB = Matrix.ToTable(Chop(CalculateRho(HClTB,{{"Nk",{1,1,1}}})))
+G     = CalculateG(HClTB,{{"Nk",{1,1,1}},{"Emin",-3},{"Emax",3},{"NE",600}})
+
+CheckRho(ResponseFunction.CalculateRho(G), RhoTB, "block list of poles equals rho of the Hamiltonian")
+CheckRho(CalculateRho(G), RhoTB, "block list of poles, using the global function CalculateRho")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"Tri")), RhoTB, "block tridiagonal matrix")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"And")), RhoTB, "block Anderson matrix")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"Nat")), RhoTB, "block natural impurity orbitals")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"DoubleTri")), RhoTB, "block double tri-diagonal matrix")
+CheckRho(CalculateRho(ResponseFunction.ChangeType(G,"Table")), RhoTB, "block list of poles as a lua table")
+
+-- the Green's function is normalized, with all states filled rho is the unit matrix
+CheckRho(CalculateRho(G,{{"mu", 10}}), {{1,0},{0,1}}, "all states filled")
+CheckRho(CalculateRho(G,{{"mu",-10}}), {{0,0},{0,0}}, "all states empty")
+
+-- a metal, where the Fermi energy cuts through the band
+Nk    = {400,1,1}
+G     = CalculateG(HTB,{{"Nk",Nk},{"Emin",-2.5},{"Emax",2.5},{"NE",2000}})
+RhoTB = Matrix.ToTable(CalculateRho(HTB,{{"Nk",Nk},{"kBT",0.1}}))
+CheckRho(CalculateRho(G,{{"kBT",0.1}}), RhoTB, "metal at finite temperature")
+for i, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
+	CheckRho(CalculateRho(ResponseFunction.ChangeType(G,ty),{{"kBT",0.1}}), RhoTB,
+	         "metal at finite temperature, " .. ty)
+end
+
+
+print("--------------------------------------------------------")
+print("-------- Poles that nearly coincide --------------------")
+print("--------------------------------------------------------")
+
+-- Every representation that is not a list of poles is converted to one first, and that
+-- conversion is handed a distance below which two poles are merged into one. rho does not
+-- need any merging: it is sum_i f(a_i,mu,kbT) W_i, which does not see the arbitrary
+-- eigenbasis inside a group of degenerate poles that merging exists to remove -- a unitary
+-- mixing inside the group redistributes the individual W_i and leaves their sum, and f is
+-- the same for all of them. What merging can do is move weight across mu: the surviving
+-- pole sits at the trace weighted mean of the two, so the occupation is right to second
+-- order in the distance while rho itself is right to first order only, by
+-- |f'|max delta ||W|| = delta ||W|| / (4 kbT). The distance used is therefore
+-- 4 kbT DBL_EPSILON, and zero -- which merges nothing, the test being a strict < -- when
+-- kbT <= 0, where no positive distance leaves a step function unchanged.
+--
+-- Two poles 5e-5 apart, in different orbitals, straddling mu at kBT = 0.1. The list of
+-- poles is exact, needing no conversion. A distance of kbT/1000, which is what the block
+-- Tri and Anderson conversions used to be handed, merges the two and lands 6.25e-5 away.
+
+local NearD = 5E-5
+local NearA0 = Matrix.New({{0,0},{0,0}})
+local NearW1 = Matrix.New({{1,0},{0,0}})
+local NearW2 = Matrix.New({{0,0},{0,1}})
+local NearG = ResponseFunction.New({{NearA0,-NearD/2,NearD/2},{NearW1,NearW2},
+                                    mu=0,type="ListOfPoles",name="near"})
+local NearRef = Matrix.ToTable(CalculateRho(NearG,{{"kBT",0.1}}))
+-- f(-2.5e-5) and f(2.5e-5) at kBT = 0.1, which differ in the fifth digit
+if (math.abs(Complex.Re(NearRef[1][1]) - 0.5000625) > 1E-9) then
+	error("the reference rho of two nearly coinciding poles is not what it should be\n",1)
+end
+for i, ty in ipairs({"Tri","And","Nat","DoubleTri"}) do
+	CheckRho(CalculateRho(ResponseFunction.ChangeType(NearG,ty),{{"kBT",0.1}}), NearRef,
+	         "two poles 5e-5 apart across mu, " .. ty)
+end
+
+print("Test for Responsefunction CalculateRho is passed")

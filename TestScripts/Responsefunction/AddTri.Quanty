@@ -1,0 +1,302 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction Add, two chains into a chain      --")
+print("--------------------------------------------------------")
+-- G_A + G_B of two (block) tri-diagonal functions is computed as a chain, by a band
+-- reduction of the direct sum of the two chains (BlockTriDiagonalMatrixAdd). The chain is
+-- in the gauge of the block Lanczos: every coupling Hermitian positive semi-definite, b0
+-- included. Where the Krylov space grows by fewer directions than the block size, the
+-- block size is reduced and BlockSize records it.
+--
+-- Tested here:
+--   * the sum evaluates to G_A(w) + G_B(w), and is again of type Tri
+--   * b0 and every full coupling are Hermitian positive semi-definite, and b0 carries the
+--     summed weight
+--   * the chain is unique: it does not depend on the order of the two terms, nor on the
+--     gauge of the chains that go in
+--   * G + G is 2 G, and starts as the chain of G with b0 scaled by sqrt(2)
+--   * deflation: two orbitals of which one is exhausted early continue as block size 1
+--   * a symmetry of the input is a symmetry of every block of the sum
+--   * real in, real out, and the single valued case
+
+math.randomseed(12345)
+CNew = Complex.New
+function re(z) if type(z)=="number" then return z end return Complex.Re(z) end
+function im(z) if type(z)=="number" then return 0 end return Complex.Im(z) end
+function cabs(z) return math.sqrt(re(z)^2+im(z)^2) end
+function conj(z) if type(z)=="number" then return z end return CNew(re(z),-im(z)) end
+function rnd() return 2*math.random()-1 end
+
+function Zeros(m)
+	local M = {}
+	for i=1,m do M[i] = {} for j=1,m do M[i][j] = 0 end end
+	return M
+end
+function MatMul(A,B)
+	local m, C = #A, Zeros(#A)
+	for i=1,m do for j=1,m do
+		local s = 0
+		for k=1,m do s = s + A[i][k]*B[k][j] end
+		C[i][j] = s
+	end end
+	return C
+end
+function Dag(A)
+	local m, C = #A, Zeros(#A)
+	for i=1,m do for j=1,m do C[i][j] = conj(A[j][i]) end end
+	return C
+end
+function Trans(A)
+	local m, C = #A, Zeros(#A)
+	for i=1,m do for j=1,m do C[i][j] = A[j][i] end end
+	return C
+end
+function Conj(A)
+	local m, C = #A, Zeros(#A)
+	for i=1,m do for j=1,m do C[i][j] = conj(A[i][j]) end end
+	return C
+end
+function MaxDiff(A,B)
+	local d = 0
+	for i=1,#A do for j=1,#A do d = math.max(d, cabs(A[i][j]-B[i][j])) end end
+	return d
+end
+function MaxAbs(A)
+	local d = 0
+	for i=1,#A do for j=1,#A do d = math.max(d, cabs(A[i][j])) end end
+	return d
+end
+function RandMat(m, cplx)
+	local M = Zeros(m)
+	for i=1,m do for j=1,m do M[i][j] = cplx and CNew(rnd(),rnd()) or rnd() end end
+	return M
+end
+function RandHerm(m, cplx)
+	local M = RandMat(m, cplx)
+	for i=1,m do
+		M[i][i] = re(M[i][i])
+		for j=1,i-1 do M[i][j] = conj(M[j][i]) end
+	end
+	return M
+end
+-- a Householder reflection I - 2 v v^+ / v^+ v, unitary
+function RandUnitary(m, cplx)
+	local v, n2, U = {}, 0, Zeros(m)
+	for i=1,m do v[i] = cplx and CNew(rnd(),rnd()) or rnd() n2 = n2 + cabs(v[i])^2 end
+	for i=1,m do for j=1,m do U[i][j] = (i==j and 1 or 0) - 2*v[i]*conj(v[j])/n2 end end
+	return U
+end
+-- a random chain of N blocks of size m
+function RandChain(m, N, cplx, name)
+	local a, b = {RandHerm(m,cplx)}, {RandMat(m,cplx)}
+	for k=1,N do
+		a[#a+1] = RandHerm(m,cplx)
+		for i=1,m do a[#a][i][i] = a[#a][i][i] + 3*rnd() end
+		if k<N then b[#b+1] = RandMat(m,cplx) end
+	end
+	return {a, b, mu=0, type="Tri", name=name}
+end
+-- the same function as chain C, in a different gauge within every block:
+-- a_k -> U_k^+ a_k U_k, b_k -> U_k^+ b_k U_{k+1}, b0 -> b0 U_1^*
+function Regauge(C, cplx)
+	local a, b, U = {C[1][1]}, {}, {}
+	local N = #C[1]-1
+	for k=1,N do U[k] = RandUnitary(#C[1][1], cplx) end
+	for k=1,N do a[k+1] = MatMul(Dag(U[k]), MatMul(C[1][k+1], U[k])) end
+	b[1] = MatMul(C[2][1], Conj(U[1]))
+	for k=1,N-1 do b[k+1] = MatMul(Dag(U[k]), MatMul(C[2][k+1], U[k+1])) end
+	return {a, b, mu=C.mu, type="Tri", name=C.name}
+end
+-- largest deviation of G from GA + GB over a grid, relative to the largest |G|
+function WorstDeviation(G, GA, GB, block)
+	local worst, big = 0, 0
+	for k=0,200 do
+		local w = -12 + 24*k/200
+		local g, ga, gb = G(w,0.05), GA(w,0.05), GB(w,0.05)
+		if block then
+			for i=1,#g do for j=1,#g do
+				worst = math.max(worst, cabs(g[i][j]-ga[i][j]-gb[i][j]))
+				big = math.max(big, cabs(g[i][j]))
+			end end
+		else
+			worst = math.max(worst, cabs(g-ga-gb))
+			big = math.max(big, cabs(g))
+		end
+	end
+	return worst/big
+end
+-- compare two chains in table form element by element
+function ChainDiff(T1, T2)
+	if #T1[1] ~= #T2[1] then return math.huge end
+	local d = 0
+	for k=1,#T1[1] do d = math.max(d, MaxDiff(T1[1][k], T2[1][k])) end
+	for k=1,#T1[2] do d = math.max(d, MaxDiff(T1[2][k], T2[2][k])) end
+	return d
+end
+-- Hermitian positive semi-definite, for a block whose size is not reduced
+function IsHermitianPSD(M)
+	if MaxDiff(M, Dag(M)) > 1E-12*math.max(1,MaxAbs(M)) then return false end
+	local val = Eigensystem(M)
+	for i=1,#val do if re(val[i]) < -1E-12*math.max(1,MaxAbs(M)) then return false end end
+	return true
+end
+function Check(ok, what)
+	if not ok then error(what, 2) end
+end
+
+print("-- Block, complex, random chains                       --")
+for _, cfg in ipairs({{3,12,9}, {3,9,12}, {2,20,20}, {4,6,15}}) do
+	local m, NA, NB = cfg[1], cfg[2], cfg[3]
+	local CA, CB = RandChain(m,NA,true,"A"), RandChain(m,NB,true,"B")
+	local GA, GB = ResponseFunction.New(CA), ResponseFunction.New(CB)
+	local G = GA + GB
+	local T = ResponseFunction.ToTable(G)
+	Check(T.type=="Tri", "the sum of two chains is not a chain")
+	local dev = WorstDeviation(G, GA, GB, true)
+	-- b0^* b0^T is the summed weight
+	local S  = MatMul(Conj(T[2][1]), Trans(T[2][1]))
+	local SA = MatMul(Conj(CA[2][1]), Trans(CA[2][1]))
+	local SB = MatMul(Conj(CB[2][1]), Trans(CB[2][1]))
+	local dS = 0
+	for i=1,m do for j=1,m do dS = math.max(dS, cabs(S[i][j]-SA[i][j]-SB[i][j])) end end
+	local herm = IsHermitianPSD(Trans(T[2][1]))
+	for k=2,#T[2] do
+		if T.BlockSize[k]==m and T.BlockSize[k+1]==m then herm = herm and IsHermitianPSD(T[2][k]) end
+	end
+	-- uniqueness: order of the terms and gauge of the input
+	local d1 = ChainDiff(T, ResponseFunction.ToTable(GB + GA))
+	local d2 = ChainDiff(T, ResponseFunction.ToTable(ResponseFunction.New(Regauge(CA,true)) + GB))
+	print(string.format("  m=%d NA=%2d NB=%2d -> N=%2d  |G-GA-GB|=%8.1e  |S-SA-SB|=%8.1e  B+A %8.1e  regauged %8.1e",
+	      m, NA, NB, #T[1]-1, dev, dS, d1, d2))
+	Check(dev < 1E-11, "the sum does not evaluate to GA + GB")
+	Check(dS < 1E-12, "b0 does not carry the summed weight")
+	Check(herm, "a coupling is not Hermitian positive semi-definite")
+	Check(#T[1]-1 == NA+NB, "a generic sum has the length of both chains together")
+	Check(d1 < 1E-10, "GA + GB and GB + GA are different chains")
+	Check(d2 < 1E-10, "the chain of the sum depends on the gauge of the input")
+end
+
+print("-- Block, G + G is 2 G                                 --")
+-- G + G has every pole of G twice. Its Krylov space is that of G, but rounding in any
+-- unitary that mixes the two copies splits each degenerate pair by O(DBL_EPSILON) with an
+-- arbitrary share of the weight, and the chain then carries both members of every pair:
+-- it is 2 G to rounding, with b0 scaled by sqrt(2) and the first block of G, but it is not
+-- always as short as G. (The list of poles route has all 2N poles as well.)
+do
+	local C = RandChain(3,10,true,"G")
+	local G = ResponseFunction.New(C)
+	local GS = G + G
+	local T, TS = ResponseFunction.ToTable(G + ResponseFunction.New({{Zeros(3)},{},mu=0,type="Tri"})), ResponseFunction.ToTable(GS)
+	local dev = WorstDeviation(GS, G, G, true)
+	local d = math.max(MaxDiff(TS[1][2], T[1][2]))
+	for i=1,3 do for j=1,3 do d = math.max(d, cabs(TS[1][1][i][j]-2*T[1][1][i][j]), cabs(TS[2][1][i][j]-math.sqrt(2)*T[2][1][i][j])) end end
+	print(string.format("  N=%d  G+G has N=%d  |G+G-2G|=%8.1e  |a0,a1,b0 - (2 a0, a1, sqrt(2) b0)| = %8.1e", #T[1]-1, #TS[1]-1, dev, d))
+	Check(dev < 1E-11, "G + G does not evaluate to 2 G")
+	Check(d < 1E-12, "G + G does not start as G with b0 scaled by sqrt(2)")
+	Check(#TS[1]-1 <= 20, "G + G is longer than the two chains together")
+end
+
+print("-- Block, deflation to block size 1                     --")
+-- orbital 1 of both terms is the same chain g1, orbital 2 is g2 in A and g3 in B. The
+-- orbital 1 part of the sum is 2 g1, exhausted after N1 blocks; orbital 2 is g2 + g3 and
+-- runs for N2 + N3 blocks. The chain has block size 2 for N1 blocks and 1 after that.
+do
+	local N1, N2, N3 = 5, 7, 6
+	local function Diag2(x,y) return {{x,0},{0,y}} end
+	local g1, g2, g3 = RandChain(1,N1,false,"g1"), RandChain(1,N2,false,"g2"), RandChain(1,N3,false,"g3")
+	local function Merge(ga, gb, N)
+		local a, b = {}, {}
+		for k=1,N+1 do a[k] = Diag2(ga[1][k] and ga[1][k][1][1] or 0, gb[1][k] and gb[1][k][1][1] or 0) end
+		for k=1,N do b[k] = Diag2(ga[2][k] and ga[2][k][1][1] or 0, gb[2][k] and gb[2][k][1][1] or 0) end
+		return a, b
+	end
+	-- a chain of block size 2 in which orbital 1 ends after N1 blocks: the rest of that
+	-- orbital is a zero coupled on nothing
+	local aA, bA = Merge(g1, g2, N2)
+	local aB, bB = Merge(g1, g3, N3)
+	local GA = ResponseFunction.New({aA, bA, mu=0, type="Tri"})
+	local GB = ResponseFunction.New({aB, bB, mu=0, type="Tri"})
+	local G = GA + GB
+	local T = ResponseFunction.ToTable(G)
+	local dev = WorstDeviation(G, GA, GB, true)
+	local sizes = {}
+	for k=2,#T.BlockSize do sizes[#sizes+1] = T.BlockSize[k] end
+	print(string.format("  N=%d  |G-GA-GB|=%8.1e  BlockSize %s", #T[1]-1, dev, table.concat(sizes," ")))
+	Check(dev < 1E-11, "the deflated sum does not evaluate to GA + GB")
+	Check(#T[1]-1 == N2+N3, "the deflated sum does not have the length of orbital 2")
+	for k=1,#sizes do
+		Check(sizes[k] == ((k<=N1) and 2 or 1), "the block size is not reduced where orbital 1 ends")
+		if sizes[k]==1 then
+			-- zeros outside the active block
+			Check(cabs(T[1][k+1][1][2])+cabs(T[1][k+1][2][1])+cabs(T[1][k+1][2][2]) == 0, "a reduced block is not padded with zeros")
+		end
+	end
+end
+
+print("-- Block, a symmetry survives into every block          --")
+-- both terms commute with the exchange of the two orbitals, so every block of the sum
+-- has the form {{x,y},{y,x}}. The reduction keeps that to rounding, but the coefficients
+-- deep in a chain are sensitive to the matrix they come from, so the breaking grows from
+-- 1E-16 at the head to about 1E-12 .. 1E-9 at block 14. The list of poles route loses the
+-- symmetry altogether on the same input, which is why the bound is loose.
+do
+	local function Sym(cplx)
+		local x, y = cplx and CNew(rnd(),rnd()) or rnd(), cplx and CNew(rnd(),rnd()) or rnd()
+		return {{x,y},{y,x}}
+	end
+	local function SymHerm()
+		local x, y = rnd()+3*rnd(), rnd()
+		return {{x,y},{y,x}}
+	end
+	local function SymChain(N)
+		local a, b = {SymHerm()}, {Sym(false)}
+		for k=1,N do a[#a+1] = SymHerm() if k<N then b[#b+1] = Sym(false) end end
+		return ResponseFunction.New({a, b, mu=0, type="Tri"})
+	end
+	local T = ResponseFunction.ToTable(SymChain(8) + SymChain(6))
+	local d = 0
+	for _, list in ipairs({T[1], T[2]}) do
+		for k=1,#list do
+			d = math.max(d, cabs(list[k][1][1]-list[k][2][2]), cabs(list[k][1][2]-list[k][2][1]))
+		end
+	end
+	print(string.format("  N=%d  largest breaking of the exchange symmetry %8.1e", #T[1]-1, d))
+	Check(d < 1E-8, "the exchange symmetry of the input does not survive into the sum")
+end
+
+print("-- Block, real in, real out                             --")
+do
+	local GA, GB = ResponseFunction.New(RandChain(3,8,false,"A")), ResponseFunction.New(RandChain(3,5,false,"B"))
+	local G = GA + GB
+	local T = ResponseFunction.ToTable(G)
+	local dev = WorstDeviation(G, GA, GB, true)
+	print(string.format("  N=%d  |G-GA-GB|=%8.1e  element type %s", #T[1]-1, dev, type(T[1][2][1][2])))
+	Check(dev < 1E-11, "the real sum does not evaluate to GA + GB")
+	Check(type(T[1][2][1][2])=="number", "the sum of two real chains is not real")
+end
+
+print("-- Single valued                                        --")
+do
+	local CA, CB = RandChain(1,9,false,"A"), RandChain(1,7,false,"B")
+	local function Scalar(C)
+		local a, b = {}, {}
+		for k=1,#C[1] do a[k] = C[1][k][1][1] end
+		for k=1,#C[2] do b[k] = C[2][k][1][1] end
+		return ResponseFunction.New({a, b, mu=0, type="Tri"})
+	end
+	local GA, GB = Scalar(CA), Scalar(CB)
+	local G = GA + GB
+	local T = ResponseFunction.ToTable(G)
+	local dev = WorstDeviation(G, GA, GB, false)
+	local pos = true
+	for k=1,#T[2] do pos = pos and (T[2][k] >= 0) end
+	print(string.format("  N=%d  |G-GA-GB|=%8.1e", #T[1]-1, dev))
+	Check(T.type=="Tri", "the sum of two single valued chains is not a chain")
+	Check(dev < 1E-11, "the single valued sum does not evaluate to GA + GB")
+	Check(pos, "a coupling of the single valued sum is negative")
+	Check(#T[1]-1 == 16, "a generic single valued sum has the length of both chains together")
+end
+
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

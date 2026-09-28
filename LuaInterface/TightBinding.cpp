@@ -80,6 +80,30 @@ static int LuaTightBindingAddSpin(lua_State * L)
   return 1;
 }
 
+/*  TightBinding.ShiftOnsiteEnergy(TB, dE) leaves TB untouched and returns a shifted copy
+ */
+static int LuaTightBindingShiftOnsiteEnergy(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  double shift = (double)luaL_checknumber(L, 2);
+  TightBindingDef *TBNew;
+  TBNew = (TightBindingDef *) lua_newuserdata(L, sizeof(TightBindingDef));
+  CopyTightBindingDef(TB, TBNew);
+  luaL_setmetatable(L, "TightBinding_Type");
+  TightBindingShiftOnsiteEnergy(TBNew, shift);
+  return 1;
+}
+
+/*  TB.ShiftOnsiteEnergy(dE) shifts TB itself, TB is the upvalue set in LuaTightBindingIndex
+ */
+static int LuaTightBindingShiftOnsiteEnergyMethod(lua_State * L)
+{
+  TightBindingDef *TB = (TightBindingDef*) luaL_checkudata(L, lua_upvalueindex(1), "TightBinding_Type");
+  double shift = (double)luaL_checknumber(L, 1);
+  TightBindingShiftOnsiteEnergy(TB, shift);
+  return 0;
+}
+
 static int LuaTightBindingDerivative(lua_State * L)
 {
   TightBindingDef *TBDx, *TBDy, *TBDz;
@@ -93,6 +117,68 @@ static int LuaTightBindingDerivative(lua_State * L)
   TightBindingDerivative(TB, TBDx, TBDy , TBDz);
   return 3;
 }
+
+/*  On stack l1, l2, {x,y,z}, {l1_l2_sigma, ...}
+ *  Return the Slater Koster hopping matrix elements as table on a basis of Kubic Harmonics
+ */
+static int LuaSlaterKosterTable(lua_State * L)
+{
+  double x,y,z;
+  double params[5];
+  
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if(len!=4)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected on stack l1, l2, {x,y,z} ,{hopping parameters}\nFound only %d parameters",len);
+  }
+  uint32_t l1 = (uint32_t)luaL_checkunsigned(L, 1);
+  uint32_t l2 = (uint32_t)luaL_checkunsigned(L, 2);
+  if((l1>4)||(l2>4))
+  {
+    luaL_error(L,"Slater Koster Table only implemented for s,p,d,f and g orbitals");
+  }
+  luaL_checktype(L, 3, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 3);
+  if(len !=3)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected the directional cosins {x,y,z} on position 3 on the stack. Found a table with length %d\n",len);
+  }
+  lua_rawgeti(L, 3, 1);
+  x = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, 3, 2);
+  y = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, 3, 3);
+  z = (double)luaL_checknumber(L, -1);
+  lua_pop(L, 1);
+  if(Abs(x)+Abs(y)+Abs(z)==0)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, Hopping vector should not be {0,0,0}\n",len);
+  }
+  luaL_checktype(L,4, LUA_TTABLE);
+  len = (uint32_t)lua_objlen(L, 4);
+  if(len !=Min(l1,l2)+1)
+  {
+    luaL_error(L, "Error in SlaterKosterTable, expected the hopping parameters on position 4 on the stack.\nThe number of hopping parameters should be Min(l1,l2)+1.\nFound a table with length %d\n",len);
+  }
+  for (int i=0;i<=Min(l1,l2);i++)
+  {
+    lua_rawgeti(L, 4, i+1);
+    params[i] = (double)luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+  }
+  CompactMatrixType *H;
+  H = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+  if( SlaterKosterTable(l1, l2, x, y, z, params, H) )
+  {
+    luaL_error(L, "SlaterKosterTable failed\nFatal Error\n");
+  }
+  luaL_setmetatable(L, "Matrix_Type");
+  H->OnLuaStack=true;
+  return 1;
+}
+
 
 
 static int LuaFileReadStuttgartCTRL(lua_State * L)
@@ -488,21 +574,95 @@ static int LuaCalculateDOS(lua_State *L)
  *     3,4,5)   same as 3 (used as RGB band-color)
  *     3,4,5,6) same as 3 (used as RGB band-color and band-thickness)
  *     -1) possible options
+ *  In place of a function a matrix P of dimension HTB.NFermion can be given, the character of eigenstate
+ *  psi is then Re(sum_ij psi_i^* P_ij psi_j).
  *
  *     we return
  *     1) a matrix of dimensions HTB.NFermion by sum_i N_i + (#(kpath)+1)/2 with the band eigenbvalues
  *     2) (3,4,5,6) a matrix of dimensions HTB.NFermion by sum_i N_i + (#(kpath)+1)/2 with the band character
+ *
+ *  With a self energy on position 3, in any of the forms CalculateG accepts, followed by 0, 1 or 3
+ *  characters, see LuaCalculateBandsSelfEnergy.
  */
+static bool LuaIsResponseFunctionObject(lua_State *L, int idx);
+/*  Re(sum_ij u_i^* P_ij u_j) for u = ur + I ui of length n and P an n by n matrix, real or complex
+ */
+static double CharacterQuadraticForm(CompactMatrixType const * const P, double const * const ur, double const * const ui, int const n)
+{
+  double ret=0, pr, pi;
+  for(int i=0;i<n;i++)
+  {
+    for(int j=0;j<n;j++)
+    {
+      pr = (P->QComplex) ? (P->V[i*P->Nj+j].Re) : (P->VRe[i*P->Nj+j]);
+      pi = (P->QComplex) ? (P->V[i*P->Nj+j].Im) : (0);
+      // Re( (ur_i - I ui_i) (pr + I pi) (ur_j + I ui_j) )
+      ret += pr * (ur[i]*ur[j] + ui[i]*ui[j]) - pi * (ur[i]*ui[j] - ui[i]*ur[j]);
+    }
+  }
+  return ret;
+}
+static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter);
+static int LuaCalculateBandsSelfEnergyMesh(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter, double const Emin, double const Emax, uint32_t const NE, CompactVectorType const * const GridIn, double const Lambda);
 static int LuaCalculateBands(lua_State *L)
 {
   // check (and read) the input
+  struct
+  {
+    char* Method;
+    double Lambda;
+    double Emin;
+    double Emax;
+    uint32_t NE;
+  } Options;
+  Options.Method=NULL;
+  Options.Lambda=NAN;
+  Options.Emin=NAN;
+  Options.Emax=NAN;
+  Options.NE=0;
+  CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateBandOptions[]={
+  {"Method",     "char*",    &(Options.Method)},
+  {"Lambda",     "double",   &(Options.Lambda)},
+  {"Emin",       "double",   &(Options.Emin)},
+  {"Emax",       "double",   &(Options.Emax)},
+  {"NE",         "uint32_t", &(Options.NE)},
+  {"EnergyGrid", "Vector",   &Grid},
   {NULL, NULL, NULL}};
   int len = (int)lua_gettop(L);
+  bool Mesh=false;
   if (LuaTestOptionsList(L,-1))
   {
     LuaCheckOptions(L,-1,LuaCalculateBandOptions);
     len--;
+  }
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Mesh")!=0)
+    {
+      return luaL_error(L, "Error CalculateBands: unknown Method \"%s\"; leave it out for the default, which gives the poles where they are, or ask for \"Mesh\", which puts them on an energy grid\n", Options.Method);
+    }
+    Mesh = true;
+  }
+  if(isnan(Options.Lambda)) Options.Lambda = 2;
+  if(!(Options.Lambda >= 1))
+  {
+    return luaL_error(L, "Error CalculateBands: Lambda is %g, it has to be at least 1\n", Options.Lambda);
+  }
+  if (Grid.Ni != 0)
+  {
+    if (!isnan(Options.Emin) || !isnan(Options.Emax) || Options.NE != 0)
+      return luaL_error(L, "Error CalculateBands: option EnergyGrid cannot be combined with Emin, Emax or NE.\n");
+    if (Grid.Ni < 2) return luaL_error(L, "Error CalculateBands: option EnergyGrid needs at least 2 energies.\n");
+    if (Grid.QComplex) return luaL_error(L, "Error CalculateBands: option EnergyGrid needs a real vector.\n");
+    for (uint32_t ig=0; (ig+1)<Grid.Ni; ig++)
+    {
+      if (!(Grid.VRe[ig+1] > Grid.VRe[ig]))
+      {
+        return luaL_error(L, "Error CalculateBands: EnergyGrid must be strictly increasing, but element %d (%f) is not larger than element %d (%f).\n",
+                          (int)ig+2, Grid.VRe[ig+1], (int)ig+1, Grid.VRe[ig]);
+      }
+    }
   }
   if(len<2)
   {
@@ -514,6 +674,16 @@ static int LuaCalculateBands(lua_State *L)
   }
   int NCharacter = len-2;
   TightBindingDef *HTB = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  // a self energy on position 3 is a response function or a table per atom, a character is a function or a matrix
+  bool WithSigma = (len>=3) && (LuaIsResponseFunctionObject(L, 3) || (lua_istable(L, 3) && !lua_isfunction(L, 3)));
+  if(WithSigma)
+  {
+    NCharacter = len-3;
+    if(!(NCharacter==0 || NCharacter==1 || NCharacter==3))
+    {
+      return luaL_error(L, "Error CalculateBands: with a self energy 0, 1 or 3 characters are possible, not %d (a band-thickness is not defined for a spectral function)\n", NCharacter);
+    }
+  }
   // check (and read) the k-list
   BandstructurePathType kList;
   if(!(lua_istable(L, 2)))
@@ -522,7 +692,7 @@ static int LuaCalculateBands(lua_State *L)
   }
   int lenklist = (int)lua_objlen(L, 2);
   int Nktot = (lenklist+1)/2;
-  if(lenklist&&1==0)
+  if((lenklist&1)==0)
   {
     return luaL_error(L, "Error CalculateBands: input at position 2 should be a path in k-space of the form {{Label, k-point}, N1 , {Label, k-point} , N2, {Label, k-point}}).\nThe length should be odd and not %d\n",lenklist);
   }
@@ -593,6 +763,19 @@ static int LuaCalculateBands(lua_State *L)
     }
   }
   // finished reading the k-list
+  if(WithSigma)
+  {
+    int ret;
+    if(Mesh) ret = LuaCalculateBandsSelfEnergyMesh(L, HTB, &kList, Nktot, 3, 4, NCharacter, Options.Emin, Options.Emax, Options.NE, &Grid, Options.Lambda);
+    else     ret = LuaCalculateBandsSelfEnergy(L, HTB, &kList, Nktot, 3, 4, NCharacter);
+    free(kList.Q);
+    return ret;
+  }
+  if(Mesh || !isnan(Options.Emin) || !isnan(Options.Emax) || (Options.NE!=0) || (Grid.Ni!=0))
+  {
+    free(kList.Q);
+    return luaL_error(L, "Error CalculateBands: Method, Emin, Emax, NE and EnergyGrid belong to a band structure with a self energy\n");
+  }
   // produce output
   // we will place these on the lua stack later by copying the pointers
   CompactMatrixType val;
@@ -611,12 +794,20 @@ static int LuaCalculateBands(lua_State *L)
     InitCompactMatrix(&(Character[i]));
     sprintf(Character[i].Name, "Band Character %d",i+1);
   }
-  // check that position 3 to 2+NCharacterare indeed functions
+  // check that position 3 to 2+NCharacterare indeed functions or matrices of dimension NFermion
   for(int i=0;i<NCharacter;i++)
   {
-    if (!lua_isfunction(L, 3+i))
+    CompactMatrixType *P = (CompactMatrixType*)luaL_testudata(L, 3+i, "Matrix_Type");
+    if (P!=NULL)
     {
-      return luaL_error(L, "Expected a function that takes an eigenstate and returns a character (number of type double bewteen 0 and 1) on position %d\n",3+i);
+      if(P->Ni!=HTB->NFermion || P->Nj!=HTB->NFermion)
+      {
+        return luaL_error(L, "Error CalculateBands: the character matrix on position %d is %d by %d, it should be %d by %d\n", 3+i, P->Ni, P->Nj, HTB->NFermion, HTB->NFermion);
+      }
+    }
+    else if (!lua_isfunction(L, 3+i))
+    {
+      return luaL_error(L, "Expected a function that takes an eigenstate and returns a character (number of type double bewteen 0 and 1), or a matrix (Matrix.ToUserdata) on position %d\n",3+i);
     }
   }
   // loop over all k-points
@@ -625,6 +816,7 @@ static int LuaCalculateBands(lua_State *L)
     T = (CompactMatrixType*)lua_newuserdata(L,sizeof(CompactMatrixType));
     T->OnLuaStack=false; // warning danger -- we should not loose track of T on the lua stack before we make T save to be garbage collected
     luaL_setmetatable(L, "Matrix_Type");
+    int iT = lua_gettop(L);
     int ik=0;
     double k[3];
     for(int i=0; i<kList.NQ; i++)
@@ -648,9 +840,24 @@ static int LuaCalculateBands(lua_State *L)
         // transform eigenstates to character
         for(int c=0;c<NCharacter;c++)
         {
+          CompactMatrixType *P = (CompactMatrixType*)luaL_testudata(L, 3+c, "Matrix_Type");
+          if(P!=NULL)
+          {
+            double ur[T->Nj], ui[T->Nj];
+            for(int l=0;l<T->Nj;l++)
+            {
+              for(int m=0;m<T->Nj;m++)
+              {
+                ur[m] = (T->QComplex) ? (T->V[l*T->Nj+m].Re) : (T->VRe[l*T->Nj+m]);
+                ui[m] = (T->QComplex) ? (T->V[l*T->Nj+m].Im) : (0);
+              }
+              Character[c].VRe[ik*T->Nj+l] = CharacterQuadraticForm(P, ur, ui, T->Nj);
+            }
+            continue;
+          }
           lua_pushvalue(L, 3+c);             // Lua function
           lua_createtable(L, 0, 2);
-          lua_pushvalue(L, 3+NCharacter);    // pointer to T
+          lua_pushvalue(L, iT);              // pointer to T
           lua_setfield(L,-2,"__Matrix");
           lua_pushnumber(L, 0);
           lua_setfield(L,-2,"__Row");
@@ -714,51 +921,798 @@ static int LuaCalculateFermi(lua_State *L)
   return 1;
 }
 
+/*  true if the value at stack index idx is a response function, either as user data or as a lua table
+ *  with a string field type. A table of response functions has no field type.
+ */
+static bool LuaIsResponseFunctionObject(lua_State *L, int idx)
+{
+  bool ret;
+  if(luaL_testudata(L, idx, "ResponseFunction_Type")!=NULL) return true;
+  if(lua_istable(L, idx)==0) return false;
+  lua_getfield(L, idx, "type");
+  ret = (lua_type(L, -1)==LUA_TSTRING);
+  lua_pop(L, 1);
+  return ret;
+}
+
+static char const * ResponseFunctionTypeName(char const type)
+{
+  switch(type|32)
+  {
+    case 'l': return "ListOfPoles";
+    case 't': return "Tri";
+    case 'a': return "And";
+    case 'n': return "Nat";
+    case 'd': return "DoubleTri";
+  }
+  return "unknown";
+}
+
+/*  the self energies per atom or per shell collected by LuaReadSelfEnergyPerAtom */
+typedef struct SelfEnergyEntriesType
+{
+  uint32_t N;                     /* number of entries */
+  ResponsefunctionType **Sigma;   /* the self energy of each entry */
+  uint32_t *Offset;               /* index of the first orbital of each entry */
+  int *Atom;                      /* atom of each entry */
+  int *Shell;                     /* shell of each entry, -1 for all shells of the atom */
+  bool *Owned;                    /* true if Sigma was allocated here and has to be freed */
+  double mu;                      /* mu of the first entry */
+}
+SelfEnergyEntriesType;
+
+/*  writes "atom i (name)" or "atom i (name) shell j (name)" into where, which has room for 2*MAXStrLength+64 */
+static void SelfEnergyEntryName(char * const where, TightBindingDef const * const TB, int const iatom, int const ishell)
+{
+  AtomType const * const Atom = &(TB->Cell.Atom[iatom]);
+  if(ishell<0) snprintf(where, 2*MAXStrLength+64, "atom %d (%s)", iatom+1, Atom->Name);
+  else         snprintf(where, 2*MAXStrLength+64, "atom %d (%s) shell %d (%s)", iatom+1, Atom->Name, ishell+1, Atom->ShellName[ishell]);
+}
+
+/*  Read the value at stack index idx as the self energy of atom iatom and shell ishell (ishell==-1 for all
+ *  shells of the atom) and add it to E. The number 0 is a zero self energy and adds nothing.
+ */
+static void LuaReadSelfEnergyEntry(lua_State *L, int const idx, TightBindingDef const * const TB, int const iatom, int const ishell, SelfEnergyEntriesType * const E)
+{
+  AtomType const * const Atom = &(TB->Cell.Atom[iatom]);
+  ResponsefunctionType *rf;
+  char where[2*MAXStrLength+64], first[2*MAXStrLength+64];
+  int j, dim=0;
+  SelfEnergyEntryName(where, TB, iatom, ishell);
+  if(lua_type(L, idx)==LUA_TNUMBER)
+  {
+    if(lua_tonumber(L, idx)!=0) luaL_error(L, "Error CalculateG: the self energy of %s is a number, only 0 is allowed, for a zero self energy\n", where);
+    return;
+  }
+  if(!LuaIsResponseFunctionObject(L, idx))
+  {
+    if(ishell<0) luaL_error(L, "Error CalculateG: the self energy of %s should be a response function, a table of response functions per shell or 0\n", where);
+    else         luaL_error(L, "Error CalculateG: the self energy of %s should be a response function or 0\n", where);
+  }
+  rf = luaL_checkResponsefunction(L, idx);
+  if(ishell<0) for(j=0;j<Atom->Nshell;j++) dim += Atom->shelldegeneracy[j];
+  else         dim = Atom->shelldegeneracy[ishell];
+  if((int)ResponseFunctionGetBlockSize(rf)!=dim)
+  {
+    luaL_error(L, "Error CalculateG: the self energy of %s has dimension %d, but %s has %d orbitals\n", where, (int)ResponseFunctionGetBlockSize(rf), where, dim);
+  }
+  if(E->N==0)
+  {
+    E->mu = ResponseFunctionGetMu(rf);
+  }
+  else
+  {
+    SelfEnergyEntryName(first, TB, E->Atom[0], E->Shell[0]);
+    if((rf->type|32)!=(E->Sigma[0]->type|32))
+    {
+      luaL_error(L, "Error CalculateG: the self energies per atom or shell must all be of the same type, but %s has type %s and %s has type %s. Use ResponseFunction.ChangeType to give them one type\n",
+                 first, ResponseFunctionTypeName(E->Sigma[0]->type), where, ResponseFunctionTypeName(rf->type));
+    }
+    if(fabs(ResponseFunctionGetMu(rf)-E->mu) > 10*DBL_EPSILON*Max(1.0,fabs(E->mu)))
+    {
+      luaL_error(L, "Error CalculateG: the self energies per atom or shell must all have the same mu, but %s has mu = %f and %s has mu = %f\n",
+                 first, E->mu, where, ResponseFunctionGetMu(rf));
+    }
+  }
+  E->Sigma[E->N]  = rf;
+  E->Offset[E->N] = (Atom->Nshell>0) ? (TB->FermionIndex[iatom][(ishell<0)?0:ishell]) : (0);
+  E->Atom[E->N]   = iatom;
+  E->Shell[E->N]  = ishell;
+  E->Owned[E->N]  = ((rf->type&32)==0); // an upper case type was read from a lua table and allocated by luaL_checkResponsefunction
+  E->N++;
+}
+
+/*  Read a self energy given per atom, or per atom and shell, from the table at stack index narg and return
+ *  it as one block response function of dimension TB->NFermion (malloc'd, C owns it), or NULL if all entries
+ *  are zero. The table has one entry per atom of the tight binding model, which is either
+ *    -- a response function of the dimension of the atom (all its shells)
+ *    -- a table with one entry per shell, each a response function of the dimension of the shell, or 0
+ *    -- the number 0, a zero self energy
+ *  All response functions must be of the same type and have the same mu. Single valued ones are copied
+ *  into block form first. The result is the direct sum, see ResponseFunctionDirectSum.
+ */
+static ResponsefunctionType * LuaReadSelfEnergyPerAtom(lua_State *L, int const narg, TightBindingDef const * const TB)
+{
+  uint32_t i, iatom, maxentry=0, NAtoms=TB->Cell.NAtoms;
+  int ishell, idx;
+  ResponsefunctionType *rf, *Sigma=NULL;
+  SelfEnergyEntriesType E;
+  if(lua_objlen(L, narg)!=NAtoms)
+  {
+    luaL_error(L, "Error CalculateG: the self energy per atom is a table of length %d, but the tight binding model has %d atoms\n", (int)lua_objlen(L, narg), (int)NAtoms);
+  }
+  for(iatom=0;iatom<NAtoms;iatom++)
+  {
+    maxentry += (TB->Cell.Atom[iatom].Nshell>0) ? (TB->Cell.Atom[iatom].Nshell) : (1);
+  }
+  E.N      = 0;
+  E.mu     = 0;
+  E.Sigma  = (ResponsefunctionType**)malloc(maxentry*sizeof(ResponsefunctionType*));
+  E.Offset = (uint32_t*)malloc(maxentry*sizeof(uint32_t));
+  E.Atom   = (int*)malloc(maxentry*sizeof(int));
+  E.Shell  = (int*)malloc(maxentry*sizeof(int));
+  E.Owned  = (bool*)malloc(maxentry*sizeof(bool));
+  for(iatom=0;iatom<NAtoms;iatom++)
+  {
+    lua_rawgeti(L, narg, iatom+1);
+    idx = lua_gettop(L);
+    if(lua_istable(L, idx) && !LuaIsResponseFunctionObject(L, idx))
+    { // a table with one entry per shell
+      if(lua_objlen(L, idx)!=(size_t)TB->Cell.Atom[iatom].Nshell)
+      {
+        luaL_error(L, "Error CalculateG: the self energy of atom %d (%s) is a table of length %d, but the atom has %d shells\n", iatom+1, TB->Cell.Atom[iatom].Name, (int)lua_objlen(L, idx), TB->Cell.Atom[iatom].Nshell);
+      }
+      for(ishell=0;ishell<TB->Cell.Atom[iatom].Nshell;ishell++)
+      {
+        lua_rawgeti(L, idx, ishell+1);
+        LuaReadSelfEnergyEntry(L, lua_gettop(L), TB, iatom, ishell, &E);
+        lua_pop(L, 1);
+      }
+    }
+    else
+    {
+      LuaReadSelfEnergyEntry(L, idx, TB, iatom, -1, &E);
+    }
+    lua_pop(L, 1);
+  }
+  if(E.N!=0)
+  {
+    // single valued response functions are copied into block form of BlockSize 1
+    for(i=0;i<E.N;i++)
+    {
+      if(E.Sigma[i]->Block==true) continue;
+      rf = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      if(ResponseFunctionToBlockResponseFunction(E.Sigma[i], rf))
+      {
+        luaL_error(L, "Error CalculateG: could not copy the self energy of atom %d (%s) into block form\n", E.Atom[i]+1, TB->Cell.Atom[E.Atom[i]].Name);
+      }
+      if(E.Owned[i]) FreeResponsefunctionIncludingOriginalPointer(E.Sigma[i]);
+      E.Sigma[i] = rf;
+      E.Owned[i] = true;
+    }
+    Sigma = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+    if(ResponseFunctionDirectSum(E.Sigma, E.Offset, E.N, TB->NFermion, Sigma))
+    {
+      luaL_error(L, "Error CalculateG: could not merge the self energies per atom or shell into one\n");
+    }
+    for(i=0;i<E.N;i++)
+    {
+      if(E.Owned[i]) FreeResponsefunctionIncludingOriginalPointer(E.Sigma[i]);
+    }
+  }
+  free(E.Sigma);
+  free(E.Offset);
+  free(E.Atom);
+  free(E.Shell);
+  free(E.Owned);
+  return Sigma;
+}
+
+/*  Read the self energy at stack index idx in any of the forms CalculateG accepts (a response function,
+ *  or a table per atom or per atom and shell, see LuaReadSelfEnergyPerAtom) and return it embedded as
+ *  the hermitian matrix
+ *       ( a0    C     )
+ *   E = ( C^+   Hbath )
+ *  whose first block has dimension TB->NFermion (see BlockTriDiagonalMatrixInversedToCompactMatrix and
+ *  its siblings). A zero self energy gives the zero matrix of dimension TB->NFermion.
+ */
+static void LuaReadSelfEnergyEmbedded(lua_State *L, int const idx, TightBindingDef const * const TB, CompactMatrixType * const E)
+{
+  ResponsefunctionType *Sigma, *SigmaBlock;
+  bool FreeSigma=false;
+  uint32_t BlockSize;
+  int bad=0;
+  if(lua_istable(L, idx) && !LuaIsResponseFunctionObject(L, idx))
+  {
+    Sigma = LuaReadSelfEnergyPerAtom(L, idx, TB);
+    FreeSigma = (Sigma!=NULL);
+  }
+  else
+  {
+    Sigma = luaL_checkResponsefunction(L, idx);
+    FreeSigma = ((Sigma->type&32)==0);
+    if(Sigma->Block!=true)
+    {
+      SigmaBlock = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      if(ResponseFunctionToBlockResponseFunction(Sigma, SigmaBlock))
+      {
+        luaL_error(L, "Error: could not copy the self energy into block form\n");
+      }
+      if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+      Sigma = SigmaBlock;
+      FreeSigma = true;
+    }
+    BlockSize = ResponseFunctionGetBlockSize(Sigma);
+    if(BlockSize != (uint32_t)TB->NFermion)
+    {
+      luaL_error(L, "Error: the BlockSize of the self energy (%d) and NFermion of the tight binding Hamiltonian (%d) need to be equal\n", (int)BlockSize, TB->NFermion);
+    }
+  }
+  if(Sigma==NULL)
+  {
+    E->Ni=TB->NFermion; E->Nj=TB->NFermion; E->QComplex=0; E->mu=0;
+    InitCompactMatrix(E);
+    for(int i=0;i<TB->NFermion*TB->NFermion;i++) E->VRe[i]=0;
+    return;
+  }
+  switch(Sigma->type)
+  {
+    case 'l': case 'L': bad=BlockListOfPolesInversedToCompactMatrix((BlockListOfPoles*)Sigma->data, E); break;
+    case 't': case 'T': bad=BlockTriDiagonalMatrixInversedToCompactMatrix((BlockTriDiagonalMatrixType*)Sigma->data, E); break;
+    case 'a': case 'A': bad=BlockAndersonMatrixInversedToCompactMatrix((BlockAndersonMatrixType*)Sigma->data, E); break;
+    case 'n': case 'N': bad=BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, E); break;
+    case 'd': case 'D': bad=BlockDoubleTriDiagonalMatrixInversedToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)Sigma->data, E); break;
+    default: bad=1;
+  }
+  if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+  if(bad) luaL_error(L, "Error: could not embed the self energy as a matrix\n");
+}
+
+/*  Return the character at stack index iChar, a function that takes an eigenstate or a matrix
+ *  (Matrix_Type), as the complex n by n matrix P with character(psi) = Re(sum_ij psi_i^* P_ij psi_j).
+ *  A function is evaluated on e_i, (e_i+e_j)/sqrt(2) and (e_i+I e_j)/sqrt(2), which gives P by
+ *  polarisation, and then on two more vectors to check that it is such a quadratic form. Only then
+ *  has the character of a spectral function, Tr[P A(k,w)], a meaning.
+ */
+static void LuaCharacterToMatrix(lua_State *L, int const iChar, int const n, int const c, CompactMatrixType * const P)
+{
+  CompactMatrixType *Pin = (CompactMatrixType*)luaL_testudata(L, iChar, "Matrix_Type");
+  int i, j, r, iR, NRow = n*n+2;
+  double f[NRow], ur[n], ui[n], norm, diff, scale=1;
+  P->Ni=n; P->Nj=n; P->QComplex=1;
+  InitCompactMatrix(P);
+  sprintf(P->Name, "Character %d", c+1);
+  if(Pin!=NULL)
+  {
+    if(Pin->Ni!=n || Pin->Nj!=n)
+    {
+      luaL_error(L, "Error CalculateBands: character %d is a %d by %d matrix, it should be %d by %d\n", c+1, Pin->Ni, Pin->Nj, n, n);
+    }
+    for(i=0;i<n*n;i++)
+    {
+      P->V[i].Re = (Pin->QComplex) ? (Pin->V[i].Re) : (Pin->VRe[i]);
+      P->V[i].Im = (Pin->QComplex) ? (Pin->V[i].Im) : (0);
+    }
+    return;
+  }
+  if(!lua_isfunction(L, iChar))
+  {
+    luaL_error(L, "Error CalculateBands: character %d should be a function that takes an eigenstate and returns a number, or a matrix (Matrix.ToUserdata)\n", c+1);
+  }
+  // the test vectors, as rows of a matrix on the Lua stack
+  CompactMatrixType *R = (CompactMatrixType*)lua_newuserdata(L, sizeof(CompactMatrixType));
+  R->Ni=NRow; R->Nj=n; R->QComplex=1;
+  InitCompactMatrix(R);
+  strcpy(R->Name, "Character test vectors");
+  R->OnLuaStack=true;
+  luaL_setmetatable(L, "Matrix_Type");
+  iR = lua_gettop(L);
+  for(i=0;i<NRow*n;i++) { R->V[i].Re=0; R->V[i].Im=0; }
+  r = n;
+  for(i=0;i<n;i++)
+  {
+    R->V[i*n+i].Re = 1;
+    for(j=i+1;j<n;j++)
+    {
+      R->V[r*n+i].Re = 1/sqrt(2.0); R->V[r*n+j].Re = 1/sqrt(2.0); r++;
+      R->V[r*n+i].Re = 1/sqrt(2.0); R->V[r*n+j].Im = 1/sqrt(2.0); r++;
+    }
+  }
+  for(r=n*n;r<NRow;r++)
+  {
+    norm=0;
+    for(i=0;i<n;i++)
+    {
+      R->V[r*n+i].Re = (r==n*n) ? (cos(1.1*i+0.3)+0.5) : (fmod(i,3.0)-0.8);
+      R->V[r*n+i].Im = (r==n*n) ? (sin(0.7*i*i+0.9))   : (0.3*cos(2.3*i+0.1));
+      norm += Sqr(R->V[r*n+i].Re) + Sqr(R->V[r*n+i].Im);
+    }
+    for(i=0;i<n;i++) { R->V[r*n+i].Re/=sqrt(norm); R->V[r*n+i].Im/=sqrt(norm); }
+  }
+  for(r=0;r<NRow;r++)
+  {
+    lua_pushvalue(L, iChar);
+    lua_createtable(L, 0, 2);
+    lua_pushvalue(L, iR);
+    lua_setfield(L,-2,"__Matrix");
+    lua_pushnumber(L, r+1);
+    lua_setfield(L,-2,"__Row");
+    lua_getglobal(L, "MatrixRowMeta");
+    lua_setmetatable(L, -2);
+    if (lua_pcall(L, 1, 1, 0) != LUA_OK)
+    {
+      const char *err = lua_tostring(L, -1);
+      luaL_error(L, "Error in character function %d: %s", c+1, err);
+    }
+    f[r] = (double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+  }
+  // polarisation: f((e_i+e_j)/sqrt(2)) = (P_ii+P_jj)/2 + Re P_ij, f((e_i+I e_j)/sqrt(2)) = (P_ii+P_jj)/2 - Im P_ij
+  for(i=0;i<n;i++) { P->V[i*n+i].Re = f[i]; P->V[i*n+i].Im = 0; }
+  r = n;
+  for(i=0;i<n;i++)
+  {
+    for(j=i+1;j<n;j++)
+    {
+      P->V[i*n+j].Re =   f[r]   - (f[i]+f[j])/2;
+      P->V[i*n+j].Im = -(f[r+1] - (f[i]+f[j])/2);
+      P->V[j*n+i].Re =  P->V[i*n+j].Re;
+      P->V[j*n+i].Im = -P->V[i*n+j].Im;
+      r+=2;
+    }
+  }
+  for(i=0;i<n*n;i++) scale += fabs(P->V[i].Re) + fabs(P->V[i].Im);
+  for(r=n*n;r<NRow;r++)
+  {
+    for(i=0;i<n;i++) { ur[i]=R->V[r*n+i].Re; ui[i]=R->V[r*n+i].Im; }
+    diff = f[r] - CharacterQuadraticForm(P, ur, ui, n);
+    if(fabs(diff) > 1E-10*scale)
+    {
+      luaL_error(L, "Error CalculateBands: with a self energy character function %d must be a quadratic form, character(psi) = sum_ij psi_i^* P_ij psi_j, "
+                    "as only then Tr[P A(k,w)] is its spectral function. It differs from one by %g on a test vector.\n", c+1, diff);
+    }
+  }
+  lua_pop(L,1);
+}
+
+/*  How much memory the poles of the k-points may take before CalculateBands walks the path in
+ *  blocks.  One k-point costs (1+NCharacter) N doubles, N the dimension of H(k) plus the
+ *  embedded self energy, so 64 MB is 20000 k-points of a one band model with 100 poles of
+ *  Sigma, or 2000 of a ten band model with 200.                                            */
+static size_t const BandsBufferBytes = 64*1024*1024;
+
+
+/*  CalculateBands with a self energy, Method "Mesh". On stack
+ *     iSigma) a self energy in any of the forms CalculateG accepts
+ *     iChar .. iChar+NCharacter-1) the characters (0, 1 or 3)
+ *  Where the default route diagonalizes H(k) plus the embedded self energy at every k, this
+ *  one evaluates the resolvent off the real axis and takes its residues on an energy grid,
+ *  so that the cost does not grow with the number of poles of the self energy.  The poles
+ *  come out on grid points only, each exact pole split over the two that bracket it, which
+ *  is what the default route does by hand; the grid spacing is the resolution and wants to
+ *  be well below the broadening the bands are drawn with.  The grid is extended at either
+ *  end until it holds every pole, so the lists can reach beyond Emin and Emax.
+ *
+ *  We return 1 + NCharacter tables with one scalar list of poles per k-point.
+ */
+static int LuaCalculateBandsSelfEnergyMesh(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter, double const Emin, double const Emax, uint32_t const NE, CompactVectorType const * const GridIn, double const Lambda)
+{
+  int const n = HTB->NFermion;
+  int const NSet = 1+NCharacter;
+  int i, m, s, ik, Np, iTab;
+  uint32_t NGrid=0, NGridIn=0;
+  double *kall=NULL, *gin=NULL, *Grid=NULL, *W=NULL;
+  bool FreeGin=false, FreeSigma=false;
+  CompactMatrixType P[3];
+  ResponsefunctionType *Sigma=NULL, *SigmaBlock=NULL;
+  ResponsefunctionType *G;
+  ListOfPoles *LOP;
+
+  /*  the grid asked for, either as Emin, Emax and NE or as EnergyGrid  */
+  if(GridIn->Ni != 0) { gin = GridIn->VRe; NGridIn = GridIn->Ni; }
+  else
+  {
+    if(isnan(Emin) || isnan(Emax) || (NE==0))
+    {
+      return luaL_error(L, "Error CalculateBands: Method \"Mesh\" needs an energy grid, either Emin, Emax and NE or EnergyGrid\n");
+    }
+    if(!(Emax>Emin)) return luaL_error(L, "Error CalculateBands: Emax (%g) has to be above Emin (%g)\n", Emax, Emin);
+    NGridIn = NE+1;
+    gin = (double*)malloc(NGridIn*sizeof(double));
+    if(gin==NULL) return luaL_error(L, "Error CalculateBands: out of memory\n");
+    FreeGin = true;
+    for(uint32_t q=0;q<NGridIn;q++) gin[q] = Emin + (Emax-Emin)*q/((double)NE);
+  }
+
+  for(i=0;i<NCharacter;i++) LuaCharacterToMatrix(L, iChar+i, n, i, &(P[i]));
+
+  /*  the self energy as a block response function, as the mesh routine wants it  */
+  if(lua_istable(L, iSigma) && !LuaIsResponseFunctionObject(L, iSigma))
+  {
+    Sigma = LuaReadSelfEnergyPerAtom(L, iSigma, HTB);
+    FreeSigma = (Sigma!=NULL);
+  }
+  else
+  {
+    Sigma = luaL_checkResponsefunction(L, iSigma);
+    FreeSigma = ((Sigma->type&32)==0);
+    if(Sigma->Block!=true)
+    {
+      SigmaBlock = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      if(ResponseFunctionToBlockResponseFunction(Sigma, SigmaBlock))
+      {
+        luaL_error(L, "Error CalculateBands: could not copy the self energy into block form\n");
+      }
+      if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+      Sigma = SigmaBlock;
+      FreeSigma = true;
+    }
+    if(ResponseFunctionGetBlockSize(Sigma) != (uint32_t)n)
+    {
+      luaL_error(L, "Error CalculateBands: the BlockSize of the self energy (%d) and NFermion of the tight binding Hamiltonian (%d) need to be equal\n", (int)ResponseFunctionGetBlockSize(Sigma), n);
+    }
+  }
+
+  /*  the k-points of the path */
+  kall = (double*)malloc(3*(size_t)Nktot*sizeof(double));
+  if(kall==NULL) luaL_error(L, "Error CalculateBands: out of memory for %d k-points\n", Nktot);
+  ik=0;
+  for(int iq=0; iq<kList->NQ; iq++)
+  {
+    for(int jq=0; jq<=kList->Q[iq].Nq; jq++)
+    {
+      for(i=0;i<3;i++)
+      {
+        if(jq==0) kall[3*ik+i] = kList->Q[iq].q[i];
+        else      kall[3*ik+i] = kList->Q[iq].q[i] * (kList->Q[iq].Nq + 1 - jq) / (kList->Q[iq].Nq + 1) + kList->Q[iq+1].q[i] * jq / (kList->Q[iq].Nq + 1) ;
+      }
+      ik++;
+    }
+  }
+
+  if(TightBindingBandsPlusSelfEnergyOnMesh(HTB, kall, (uint32_t)Nktot, Sigma, P, (uint32_t)NCharacter, gin, NGridIn, Lambda, &Grid, &NGrid, &W))
+  {
+    free(kall); if(FreeGin) free(gin);
+    if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+    for(i=0;i<NCharacter;i++) FreeCompactMatrix(&(P[i]));
+    return luaL_error(L, "Error CalculateBands: the band spectral function on the mesh failed\n");
+  }
+
+  /*  one list of poles per k-point and per set, the grid points that carry nothing left out */
+  iTab = lua_gettop(L)+1;
+  for(s=0;s<NSet;s++) lua_createtable(L, Nktot, 0);
+  for(ik=0; ik<Nktot; ik++)
+  {
+    Np=0;
+    for(uint32_t q=0;q<NGrid;q++) if(W[(size_t)ik*(size_t)NGrid+q] > 0) Np++;
+    for(s=0;s<NSet;s++)
+    {
+      LOP = (ListOfPoles*)malloc(sizeof(ListOfPoles));
+      LOP->N = Np;
+      InitListOfPoles(LOP);
+      if(s==0) strcpy(LOP->Name, "Band spectral function");
+      else     sprintf(LOP->Name, "Band character %d", s);
+      m=0;
+      for(uint32_t q=0;q<NGrid;q++)
+      {
+        if(W[(size_t)ik*(size_t)NGrid+q] > 0)
+        {
+          LOP->a[m] = Grid[q];
+          LOP->b[m] = W[(((size_t)s*(size_t)Nktot)+(size_t)ik)*(size_t)NGrid+q];
+          m++;
+        }
+      }
+      G = (ResponsefunctionType*)lua_newuserdata(L, sizeof(ResponsefunctionType));
+      G->type = 'l';
+      G->Block = false;
+      G->data = (void*)LOP;
+      G->SuggestedGrid = NULL;
+      G->NSuggestedGridPoints = 0;
+      luaL_setmetatable(L, "ResponseFunction_Type");
+      lua_rawseti(L, iTab+s, ik+1);
+    }
+  }
+  for(s=0;s<NSet;s++) lua_pushvalue(L, iTab+s);
+
+  free(kall); free(Grid); free(W);
+  if(FreeGin) free(gin);
+  if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+  for(i=0;i<NCharacter;i++) FreeCompactMatrix(&(P[i]));
+  return NSet;
+}
+
+/*  CalculateBands with a self energy. On stack
+ *     iSigma) a self energy in any of the forms CalculateG accepts
+ *     iChar .. iChar+NCharacter-1) the characters (0, 1 or 3), functions of a quadratic form or matrices, see LuaCharacterToMatrix
+ *  At every k of the path the self energy embedded as a hermitian matrix E (see LuaReadSelfEnergyEmbedded)
+ *  with H(k) added to its first block is diagonalised. The first HTB->NFermion components u of eigenvector m
+ *  give the poles of the band spectral functions:
+ *     Tr[A(k,w)]     = sum_m |u_m|^2       delta(w-e_m)
+ *     Tr[P_c A(k,w)] = sum_m u_m^dag P_c u_m delta(w-e_m)
+ *  H(k) and E are added in the gauge of CalculateG, constant phase within the unit cell, in which a k
+ *  independent self energy couples orbitals within the same unit cell. u is then rotated to the gauge of
+ *  CalculateBands without self energy, u_i -> e^{I k.r_i} u_i, such that a character means the same with
+ *  and without self energy. Poles with a total weight below 1000 DBL_EPSILON are dropped.
+ *
+ *  We return 1 + NCharacter tables with one scalar list of poles per k-point: the total, and one per character.
+ */
+static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter)
+{
+  int const n = HTB->NFermion;
+  int const NSet = 1+NCharacter;
+  int i, m, s, a, sh, o, ik, Np, N, iTab;
+  CompactMatrixType E, P[3];
+  ResponsefunctionType *G;
+  ListOfPoles *LOP;
+  for(i=0;i<NCharacter;i++) LuaCharacterToMatrix(L, iChar+i, n, i, &(P[i]));
+  LuaReadSelfEnergyEmbedded(L, iSigma, HTB, &E);
+  N = E.Ni;
+  double *rpos = (double*)malloc(3*n*sizeof(double));
+  if(rpos==NULL) luaL_error(L, "Error CalculateBands: out of memory\n");
+  // position of the atom of every orbital
+  for(a=0;a<HTB->Cell.NAtoms;a++)
+  {
+    for(sh=0;sh<HTB->Cell.Atom[a].Nshell;sh++)
+    {
+      for(o=0;o<HTB->Cell.Atom[a].shelldegeneracy[sh];o++)
+      {
+        i = HTB->FermionIndex[a][sh]+o;
+        rpos[3*i+0] = HTB->Cell.Atom[a].Position[0];
+        rpos[3*i+1] = HTB->Cell.Atom[a].Position[1];
+        rpos[3*i+2] = HTB->Cell.Atom[a].Position[2];
+      }
+    }
+  }
+  iTab = lua_gettop(L)+1;
+  for(s=0;s<NSet;s++) lua_createtable(L, Nktot, 0);
+  /*  the k-points of the path, so that the loop over them can be a flat one */
+  double *kall = (double*)malloc(3*(size_t)Nktot*sizeof(double));
+  if(kall==NULL) luaL_error(L, "Error CalculateBands: out of memory for %d k-points\n", Nktot);
+  ik=0;
+  for(int iq=0; iq<kList->NQ; iq++)
+  {
+    for(int jq=0; jq<=kList->Q[iq].Nq; jq++)
+    {
+      for(i=0;i<3;i++)
+      {
+        if(jq==0) kall[3*ik+i] = kList->Q[iq].q[i];
+        else      kall[3*ik+i] = kList->Q[iq].q[i] * (kList->Q[iq].Nq + 1 - jq) / (kList->Q[iq].Nq + 1) + kList->Q[iq+1].q[i] * jq / (kList->Q[iq].Nq + 1) ;
+      }
+      ik++;
+    }
+  }
+  /*  The k-points are independent and are diagonalized in parallel into a plain buffer; the
+   *  Lua objects are built from that buffer afterwards, as Lua may only be touched by one
+   *  thread.  The buffer holds KBlock k-points at a time, so that a long path with a self
+   *  energy of many poles does not ask for more memory than the calculation itself.       */
+  size_t const PerK = (size_t)(1+NSet)*(size_t)N*sizeof(double);
+  int KBlock = (int)(BandsBufferBytes/PerK);
+  if(KBlock<1) KBlock=1;
+  if(KBlock>Nktot) KBlock=Nktot;
+  double *eAll  = (double*)malloc((size_t)KBlock*(size_t)N*sizeof(double));
+  double *wAll  = (double*)malloc((size_t)NSet*(size_t)KBlock*(size_t)N*sizeof(double));
+  int    *NpAll = (int*)malloc((size_t)KBlock*sizeof(int));
+  if((eAll==NULL)||(wAll==NULL)||(NpAll==NULL))
+  {
+    free(kall); free(eAll); free(wAll); free(NpAll);
+    luaL_error(L, "Error CalculateBands: out of memory for the poles of %d k-points of dimension %d\n", KBlock, N);
+  }
+  for(int kstart=0; kstart<Nktot; kstart+=KBlock)
+  {
+    int const kend = Min(kstart+KBlock, Nktot);
+    int failed=0;
+#pragma omp parallel
+    {
+      double *valt = (double*)malloc(N*sizeof(double));
+      double *urt  = (double*)malloc(n*sizeof(double));
+      double *uit  = (double*)malloc(n*sizeof(double));
+      int ikk;
+      if((valt==NULL)||(urt==NULL)||(uit==NULL)) failed=1;
+#pragma omp for schedule(static)
+      for(ikk=kstart; ikk<kend; ikk++)
+      {
+        int ii, jj, mm, ss, Np1, lk=ikk-kstart;
+        double tr1, ti1, phase1, wt1;
+        double const * const kk = kall+3*(size_t)ikk;
+        double * const el = eAll+(size_t)lk*(size_t)N;
+        CompactMatrixType HS1, T1;
+        MatrixType Hcp1;
+        if(failed) continue;
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*HTB, kk, &Hcp1);
+        HS1.Ni=N; HS1.Nj=N; HS1.QComplex=(E.QComplex || Hcp1.QComplex);
+        InitCompactMatrix(&HS1);
+        if(HS1.QComplex)
+        {
+          for(ii=0;ii<N*N;ii++)
+          {
+            HS1.V[ii].Re = (E.QComplex) ? (E.V[ii].Re) : (E.VRe[ii]);
+            HS1.V[ii].Im = (E.QComplex) ? (E.V[ii].Im) : (0);
+          }
+          for(ii=0;ii<n;ii++)
+          {
+            for(jj=0;jj<n;jj++)
+            {
+              HS1.V[ii*N+jj].Re += Hcp1.VRe[ii][jj];
+              if(Hcp1.QComplex) HS1.V[ii*N+jj].Im += Hcp1.VIm[ii][jj];
+            }
+          }
+        }
+        else
+        {
+          for(ii=0;ii<N*N;ii++) HS1.VRe[ii] = E.VRe[ii];
+          for(ii=0;ii<n;ii++) for(jj=0;jj<n;jj++) HS1.VRe[ii*N+jj] += Hcp1.VRe[ii][jj];
+        }
+        FreeMatrix(&Hcp1);
+        CompactMatrixEigensystem(&HS1, &T1, valt);
+        Np1=0;
+        for(mm=0;mm<N;mm++)
+        {
+          wt1=0;
+          for(ii=0;ii<n;ii++)
+          {
+            tr1 = (T1.QComplex) ? (T1.V[mm*T1.Nj+ii].Re) : (T1.VRe[mm*T1.Nj+ii]);
+            ti1 = (T1.QComplex) ? (T1.V[mm*T1.Nj+ii].Im) : (0);
+            double *ri = rpos+3*ii;
+            phase1 = Dot(kk, ri);
+            urt[ii] = tr1*cos(phase1) - ti1*sin(phase1);
+            uit[ii] = tr1*sin(phase1) + ti1*cos(phase1);
+            wt1 += Sqr(urt[ii]) + Sqr(uit[ii]);
+          }
+          if(wt1 < 1000*DBL_EPSILON) continue;
+          el[Np1] = valt[mm];
+          wAll[(size_t)lk*(size_t)N+Np1] = wt1;
+          for(ss=1;ss<NSet;ss++) wAll[((size_t)ss*(size_t)KBlock+(size_t)lk)*(size_t)N+Np1] = CharacterQuadraticForm(&(P[ss-1]), urt, uit, n);
+          Np1++;
+        }
+        NpAll[lk] = Np1;
+        FreeCompactMatrix(&T1);
+        FreeCompactMatrix(&HS1);
+      }
+      free(valt); free(urt); free(uit);
+    }
+    if(failed)
+    {
+      free(kall); free(eAll); free(wAll); free(NpAll);
+      luaL_error(L, "Error CalculateBands: out of memory while diagonalizing the k-points\n");
+    }
+    /*  and now, one thread, the response function of every k-point of this block */
+    for(ik=kstart; ik<kend; ik++)
+    {
+      int const lk = ik-kstart;
+      Np = NpAll[lk];
+      for(s=0;s<NSet;s++)
+      {
+        LOP = (ListOfPoles*)malloc(sizeof(ListOfPoles));
+        LOP->N = Np;
+        InitListOfPoles(LOP);
+        if(s==0) strcpy(LOP->Name, "Band spectral function");
+        else     sprintf(LOP->Name, "Band character %d", s);
+        for(m=0;m<Np;m++) { LOP->a[m] = eAll[(size_t)lk*(size_t)N+m]; LOP->b[m] = wAll[((size_t)s*(size_t)KBlock+(size_t)lk)*(size_t)N+m]; }
+        G = (ResponsefunctionType*)lua_newuserdata(L, sizeof(ResponsefunctionType));
+        G->type = 'l';
+        G->Block = false;
+        G->data = (void*)LOP;
+        G->SuggestedGrid = NULL;
+        G->NSuggestedGridPoints = 0;
+        luaL_setmetatable(L, "ResponseFunction_Type");
+        lua_rawseti(L, iTab+s, ik+1);
+      }
+    }
+  }
+  free(kall); free(eAll); free(wAll); free(NpAll);
+  for(s=0;s<NSet;s++) lua_pushvalue(L, iTab+s);
+  FreeCompactMatrix(&E);
+  for(i=0;i<NCharacter;i++) FreeCompactMatrix(&(P[i]));
+  free(rpos);
+  return NSet;
+}
+
 /* Calculate the Green's function from a given tight-binding Hamiltonian.
  * Input on stack:
  *   TB    : TightBinding_Type
  *   Sigma : Optional a self energy, either as a ResponseFunctionObject or as a table of Responsefunction objects or as a table of tables of response function objects
+ *           A table has one entry per atom: a response function for the atom, a table with a response function per shell, or 0 for a zero self energy (also per shell).
+ *           All must be of the same type and have the same mu, see LuaReadSelfEnergyPerAtom.
  *   Options
  *       Emin
  *       Emax
  *       NE
+ *       EnergyGrid -> arbirary increasing energy grid for the poles of the response function (in place of Emin, Emax, NE)
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
  *       Type
+ *       HybridizationFunction -> also return the augmented propagator of every atom
+ *       Method -> left out: the default route, which diagonalizes H(k) plus the embedded self energy.
+ *                 "Mesh": G is evaluated off the real axis and its residues on the grid are taken
+ *                 without a broadening (TightBindingHamiltonianPlusSelfEnergyOnMesh). The cost does
+ *                 not grow with the number of poles of Sigma. The grid is extended until it holds
+ *                 all poles of G, and the result has poles on the grid points only.
+ *       Lambda -> Method "Mesh" only: the distances of the points added to extend the grid grow by
+ *                 this factor, from the end spacing on (default 2, at least 1; 1 extends uniformly)
  */
 static int LuaCalculateG(lua_State *L)
 {
-  uint32_t len;
+  uint32_t len, i;
   TightBindingDef *a;
   ResponsefunctionType *G, *Sigma=NULL;
+  uint32_t SigmaBlockSize;
   bool FreeSigma=false;
   struct
   {
     int *Nk;
-    //char* Method;   //only method implemented is the mesh/grid.
+    char* Method;
+    double Lambda;
     double Emin;
     double Emax;
     uint32_t NE;
     const char* Type;
+    bool HybridizationFunction;
   } Options;
   Options.Nk = NULL;
-  //Options.Method    = "Mesh";
-  Options.Emin=-10;
-  Options.Emax=10;
-  Options.NE=2000;
+  Options.Method = NULL;
+  Options.Lambda = NAN;
+  bool Mesh = false;
+  Options.Emin=NAN;
+  Options.Emax=NAN;
+  Options.NE=0;
   Options.Type="ListOfPoles";
+  Options.HybridizationFunction=false;
+  CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateGOptions[]={
     {"Nk", "array-uint32_t-3", &(Options.Nk)},
-    //{"Method",     "char*",    &(Options.Method)},
+    {"Method",     "char*",    &(Options.Method)},
+    {"Lambda",     "double",   &(Options.Lambda)},
     {"Emin",       "double",   &(Options.Emin)},
     {"Emax",       "double",   &(Options.Emax)},
     {"NE",         "uint32_t", &(Options.NE)},
+    {"EnergyGrid", "Vector",   &Grid},
     {"Type",       "char*",    &(Options.Type)},
+    {"HybridizationFunction", "bool", &(Options.HybridizationFunction)},
     {NULL, NULL, NULL}};
   len = (uint32_t)lua_gettop(L);
   if (LuaTestOptionsList(L,-1))
   {
     LuaCheckOptions(L,-1,LuaCalculateGOptions);
     len--;
+  }
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Mesh")!=0)
+    {
+      return luaL_error(L, "Error CalculateG: unknown Method \"%s\"; leave it out for the default, or ask for \"Mesh\"\n", Options.Method);
+    }
+    Mesh = true;
+  }
+  if(!isnan(Options.Lambda) && !Mesh)
+  {
+    return luaL_error(L, "Error CalculateG: Lambda belongs to Method \"Mesh\"\n");
+  }
+  if(isnan(Options.Lambda)) Options.Lambda = 2;
+  if(!(Options.Lambda >= 1))
+  {
+    return luaL_error(L, "Error CalculateG: Lambda is %g, it has to be at least 1\n", Options.Lambda);
+  }
+  if (Grid.Ni != 0)
+  {
+    if (!isnan(Options.Emin) || !isnan(Options.Emax) || Options.NE != 0)
+      return luaL_error(L, "Error CalculateG: option EnergyGrid cannot be combined with Emin, Emax or NE.\n");
+    if (Grid.Ni < 2) return luaL_error(L, "Error CalculateG: option EnergyGrid needs at least 2 energies.\n");
+    if (Grid.QComplex) return luaL_error(L, "Error CalculateG: option EnergyGrid needs a real vector.\n");
+    for (i=0; (i+1)<Grid.Ni; i++)
+    {
+      if (!(Grid.VRe[i+1] > Grid.VRe[i]))
+      {
+        return luaL_error(L, "Error CalculateG: EnergyGrid must be strictly increasing, but element %d (%f) is not larger than element %d (%f).\n",
+                          (int)i+2, Grid.VRe[i+1], (int)i+1, Grid.VRe[i]);
+      }
+    }
+  }
+  else
+  {
+    if (isnan(Options.Emin)) Options.Emin = -10;
+    if (isnan(Options.Emax)) Options.Emax =  10;
+    if (Options.NE == 0)     Options.NE   =  2000;
+    if (Options.Emax <= Options.Emin)
+      return luaL_error(L, "Error CalculateG: Emax needs to be larger than Emin.\n");
   }
   if(!(len==1||len==2))
   {
@@ -767,35 +1721,38 @@ static int LuaCalculateG(lua_State *L)
   a = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
   if(len==2)
   {
-    if(lua_istable(L, 2))
-    {
-      //TODO: read list of response functions and create diagonal response function from this.
-      return luaL_error(L, "Error Self energy per atom or per atom and shell not jet implemented");
-      Sigma=(ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
-      FreeSigma=true;
-      // read in a table of length a->Cell.Natoms
-      // for each atom (i) read in
-      //    -- a repsonse function of dimension sum_{j=0}^{a->Cell.Atom[i].Nshell} a->Cell.Atom[i].shelldegeneracy[j]
-      //    -- or a list of length a->Cell.Atom[i].Nshell
-      //          -- for each shell (j) read in a response function of dimension a->Cell.Atom[i].shelldegeneracy[j]
-      // merge these response functions into one.
-      
-      
-      
-      
+    if(lua_istable(L, 2) && !LuaIsResponseFunctionObject(L, 2))
+    { // a self energy per atom or per atom and shell, merged into one
+      Sigma = LuaReadSelfEnergyPerAtom(L, 2, a);
+      FreeSigma = (Sigma!=NULL);
     }
     else
     {
       Sigma = luaL_checkResponsefunction(L, 2);
       if(Sigma->Block!=true)
       {
-        //TODO:
-        return luaL_error(L, "Error need to transform list of poles to Block list of poles");
+        // a single valued self energy is copied into the block form of the same type with BlockSize 1
+        ResponsefunctionType *SigmaBlock = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+        if(ResponseFunctionToBlockResponseFunction(Sigma, SigmaBlock))
+        {
+          return luaL_error(L, "Error CalculateG: could not copy the self energy into block form\n");
+        }
+        if(FreeSigma==true) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+        Sigma = SigmaBlock;
+        FreeSigma = true;
       }
-      if((Sigma->type!='l')&&(Sigma->type!='L'))
+      switch(Sigma->type)
       {
-        //TODO;
-        return luaL_error(L, "Error need to transform sigma to BlockListOfPoles");
+        case 'l': case 'L': SigmaBlockSize = ((BlockListOfPoles*)Sigma->data)->BlockSize; break;
+        case 't': case 'T': SigmaBlockSize = ((BlockTriDiagonalMatrixType*)Sigma->data)->BlockSize; break;
+        case 'a': case 'A': SigmaBlockSize = ((BlockAndersonMatrixType*)Sigma->data)->BlockSize; break;
+        case 'n': case 'N': SigmaBlockSize = ((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data)->BlockSize; break;
+        case 'd': case 'D': SigmaBlockSize = ((BlockDoubleTriDiagonalMatrixType*)Sigma->data)->BlockSize; break;
+        default: return luaL_error(L, "Error CalculateG: self energy of unknown type %c\n", Sigma->type);
+      }
+      if(SigmaBlockSize != a->NFermion)
+      {
+        return luaL_error(L, "Error BlockSize of Sigma (%d) and NFermion of TB Hamiltonian (%d) need to be equivalent ", SigmaBlockSize, a->NFermion);
       }
     }
   }
@@ -809,51 +1766,223 @@ static int LuaCalculateG(lua_State *L)
   if(Options.Nk[0]<1) return luaL_error(L, "Error first number of k-points needs to be larger than 0");
   if(Options.Nk[1]<1) return luaL_error(L, "Error second number of k-points needs to be larger than 0");
   if(Options.Nk[2]<1) return luaL_error(L, "Error third number of k-points needs to be larger than 0");
-  lua_settop(L, 0);
+  /*  The arguments stay on the stack until everything that points into them has been
+   *  read: Sigma is the memory of a response function userdata, and Options.Type and
+   *  Grid point into the option table. Lua takes the top nresults values as the
+   *  result, so the output is simply pushed on top of them. */
+  /*  Asking for the hybridisation routes everything through the grid form, which fills the
+   *  augmented propagators from the same eigenvectors that build G. A uniform grid there
+   *  gives the same G as Emin, Emax and NE do, to 1E-13. */
+  BlockListOfPoles *Gaug=NULL;
+  uint32_t NGaug=0;
+  double *hybgrid=NULL; uint32_t hybngrid=0;
+  CompactMatrixType Ehyb;
+  if(Options.HybridizationFunction||Mesh)
+  {
+    if(Grid.Ni!=0) { hybgrid=Grid.VRe; hybngrid=Grid.Ni; }
+    else
+    {
+      hybngrid = Options.NE+1;
+      hybgrid  = (double*)malloc(hybngrid*sizeof(double));
+      for(i=0;i<hybngrid;i++) hybgrid[i] = Options.Emin + i*(Options.Emax-Options.Emin)/((double)Options.NE);
+    }
+  }
+  if(Options.HybridizationFunction&&!Mesh)
+  {
+    if(Sigma==NULL)
+    {
+      Ehyb.Ni=a->NFermion; Ehyb.Nj=a->NFermion; Ehyb.QComplex=0; Ehyb.mu=0;
+      InitCompactMatrix(&Ehyb);
+      for(i=0;i<(uint32_t)(a->NFermion*a->NFermion);i++) Ehyb.VRe[i]=0;
+    }
+    else
+    {
+      int bad=0;
+      switch(Sigma->type)
+      {
+        case 'l': case 'L': bad=BlockListOfPolesInversedToCompactMatrix((BlockListOfPoles*)Sigma->data, &Ehyb); break;
+        case 't': case 'T': bad=BlockTriDiagonalMatrixInversedToCompactMatrix((BlockTriDiagonalMatrixType*)Sigma->data, &Ehyb); break;
+        case 'a': case 'A': bad=BlockAndersonMatrixInversedToCompactMatrix((BlockAndersonMatrixType*)Sigma->data, &Ehyb); break;
+        case 'n': case 'N': bad=BlockNaturalImpurityOrbitalMatrixInversedToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, &Ehyb); break;
+        case 'd': case 'D': bad=BlockDoubleTriDiagonalMatrixInversedToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)Sigma->data, &Ehyb); break;
+        default: bad=1;
+      }
+      if(bad) return luaL_error(L, "Error CalculateG: could not embed the self energy for the hybridization function\n");
+    }
+  }
+  if(Options.HybridizationFunction)
+  {
+    NGaug = a->Cell.NAtoms;
+    Gaug  = (BlockListOfPoles*)malloc(NGaug*sizeof(BlockListOfPoles));
+  }
   G = (ResponsefunctionType *) lua_newuserdata(L, sizeof(ResponsefunctionType));
   luaL_setmetatable(L, "ResponseFunction_Type");
   G->NSuggestedGridPoints = 0;
   G->type = 'l';
   G->Block = true;
   G->data = (void*) malloc(sizeof(BlockListOfPoles));
-  if(Sigma==NULL)
+  if(Mesh)
   {
-    TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    /*  the same grid as the default route, the grid points are the poles     */
+    if(TightBindingHamiltonianPlusSelfEnergyOnMesh(a, Options.Nk, Sigma, hybgrid, hybngrid, Options.Lambda, (BlockListOfPoles*)G->data, Gaug))
+    {
+      return luaL_error(L, "Error CalculateG with Method \"Mesh\"\n");
+    }
+    if(Grid.Ni==0) free(hybgrid);
+  }
+  else if(Options.HybridizationFunction)
+  {
+    if(TightBindingHamiltonianPlusEmbeddedSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, &Ehyb, (BlockListOfPoles*)G->data, hybgrid, hybngrid, Gaug))
+    {
+      return luaL_error(L, "Error CalculateG: could not calculate the hybridization function\n");
+    }
+    FreeCompactMatrix(&Ehyb);
+    if(Grid.Ni==0) free(hybgrid);
+  }
+  else if(Sigma==NULL)
+  {
+    if (Grid.Ni==0)
+    {
+      TightBindingHamiltonianToBlockListOfPoles(*a, Options.Nk, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
+    }
+    else
+    {
+      TightBindingHamiltonianToBlockListOfPolesGrid(*a, Options.Nk, (BlockListOfPoles*)G->data, Grid.VRe, Grid.Ni);
+    }
   }
   else
   {
-    if(((BlockListOfPoles*)Sigma->data)->BlockSize != a->NFermion )
+    BlockListOfPoles *GBLP = (BlockListOfPoles*)G->data;
+    switch(Sigma->type)
     {
-      return luaL_error(L, "Error BlockSize of Sigma (%d) and NFermion of TB Hamiltonian (%d) need to be equivalent ",((BlockListOfPoles*)Sigma->data)->BlockSize , a->NFermion);
+      case 'l': case 'L':
+        if (Grid.Ni==0) TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, GBLP, Options.Emin, Options.Emax, Options.NE);
+        else            TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, GBLP, Grid.VRe, Grid.Ni);
+        break;
+      case 't': case 'T':
+        if (Grid.Ni==0) TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockTriDiagonalMatrixType*)Sigma->data, GBLP, Options.Emin, Options.Emax, Options.NE);
+        else            TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockTriDiagonalMatrixType*)Sigma->data, GBLP, Grid.VRe, Grid.Ni);
+        break;
+      case 'a': case 'A':
+        if (Grid.Ni==0) TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockAndersonMatrixType*)Sigma->data, GBLP, Options.Emin, Options.Emax, Options.NE);
+        else            TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockAndersonMatrixType*)Sigma->data, GBLP, Grid.VRe, Grid.Ni);
+        break;
+      case 'n': case 'N':
+        if (Grid.Ni==0) TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, GBLP, Options.Emin, Options.Emax, Options.NE);
+        else            TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockNaturalImpurityOrbitalMatrixType*)Sigma->data, GBLP, Grid.VRe, Grid.Ni);
+        break;
+      case 'd': case 'D':
+        if (Grid.Ni==0) TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockDoubleTriDiagonalMatrixType*)Sigma->data, GBLP, Options.Emin, Options.Emax, Options.NE);
+        else            TightBindingHamiltonianPlusSelfEnergyToBlockListOfPolesGrid(*a, Options.Nk, *(BlockDoubleTriDiagonalMatrixType*)Sigma->data, GBLP, Grid.VRe, Grid.Ni);
+        break;
     }
-    TightBindingHamiltonianPlusSelfEnergyToBlockListOfPoles(*a, Options.Nk, *(BlockListOfPoles*)Sigma->data, (BlockListOfPoles*)G->data, Options.Emin, Options.Emax, Options.NE);
   }
   ChopBlockListOfPoles((BlockListOfPoles*)G->data, 1000*DBL_EPSILON);
-  if(strcmp(Options.Type, "ListOfPoles")!=0)
-  {
-    lua_pushstring(L, Options.Type);
-    return LuaChangeTypeResponseFunction(L);
-  }
+  free(Options.Nk);
   if(FreeSigma==true)
   {
-    FreeResponsefunction(Sigma);
+    FreeResponsefunctionIncludingOriginalPointer(Sigma);
+  }
+  if(strcmp(Options.Type, "ListOfPoles")!=0)
+  {
+    /*  ChangeType reads a response function at index 1 and a type at index 2 and
+     *  refuses any other number of arguments, so it is left those two and nothing
+     *  else. Both are pushed before the arguments under them are dropped. */
+    int iG = lua_gettop(L);
+    lua_pushstring(L, Options.Type);
+    lua_pushvalue(L, iG);
+    lua_replace(L, 1);
+    lua_replace(L, 2);
+    lua_settop(L, 2);
+    LuaChangeTypeResponseFunction(L);
+  }
+  if(Gaug!=NULL)
+  {
+    lua_newtable(L);
+    for(i=0;i<NGaug;i++)
+    {
+      ResponsefunctionType *R = (ResponsefunctionType*) lua_newuserdata(L, sizeof(ResponsefunctionType));
+      luaL_setmetatable(L, "ResponseFunction_Type");
+      R->type  = 'l';
+      R->Block = true;
+      R->NSuggestedGridPoints = 0;
+      R->SuggestedGrid = NULL;
+      R->data  = (void*)malloc(sizeof(BlockListOfPoles));
+      *((BlockListOfPoles*)R->data) = Gaug[i];
+      lua_rawseti(L, -2, i+1);
+    }
+    free(Gaug);
+    return 2;
   }
   return 1;
 }
 
+static int LuaCalculateMu(lua_State *L)
+{
+  uint32_t len;
+  TightBindingDef *A;
+  len = (uint32_t)lua_gettop(L);
+  A = (TightBindingDef*) luaL_checkudata(L, 1, "TightBinding_Type");
+  int NStateEF, NoccEF;
+  double mu, Emin, Emax, gap;
+  struct
+  {
+    int *Nk;
+    double nd;
+    double kBT;
+    //char* Method;   //only method implemented is the mesh/grid.
+  } Options;
+  Options.Nk = (int*)malloc(3*sizeof(int));
+  Options.Nk[0]=40;
+  Options.Nk[1]=40;
+  Options.Nk[2]=40;
+  Options.nd =0.5 * A->NFermion;
+  Options.kBT=1E-10;
+  LuaOptionsType LuaCalculateMuOptions[]={
+    {"Nk", "array-uint32_t-3", &(Options.Nk)},
+    {"n", "double"           , &(Options.nd)},
+    {"kbT","double"          , &(Options.kBT)},
+    {"kBT","double"          , &(Options.kBT)},
+    {NULL, NULL, NULL}};
+  if (LuaTestOptionsList(L,len))
+  {
+    LuaCheckOptions(L,len,LuaCalculateMuOptions);
+    len--;
+  }
+  TightBindingDetermineMu(A, Options.Nk, Options.nd, Options.kBT, &mu, &Emin, &Emax, &gap, &NStateEF, &NoccEF);
+  lua_pushnumber(L,mu);
+  lua_pushnumber(L,Emin);
+  lua_pushnumber(L,Emax);
+  lua_pushnumber(L,gap);
+  lua_pushnumber(L,NStateEF);
+  lua_pushnumber(L,NoccEF);
+  return 6;
+}
 
-/* Calculate the Density matrix from a given tight-binding Hamiltonian.
+
+
+/* Calculate the Density matrix from a given tight-binding Hamiltonian or from a given
+ * Green's function represented as a response function.
  * Input on stack:
  *   TB : TightBinding_Type
  *   Options
  *       Nk -> {Nkx,Nky,Nkz} number of k-points       standard {40,40,40}
+ *  or
+ *   G  : ResponseFunction_Type
+ *   Options (see LuaResponseFunctionCalculateRho)
  */
 static int LuaCalculateRho(lua_State *L)
 {
   uint32_t len;
   TightBindingDef *a;
   CompactMatrixType *rho;
-  
+
+  /* a Green's function is handled by the response function version of CalculateRho */
+  if(luaL_testudata(L, 1, "TightBinding_Type") == NULL)
+  {
+    return LuaResponseFunctionCalculateRho(L);
+  }
+
   struct
   {
     int *Nk;
@@ -2225,12 +3354,15 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
   }
   // read H
   lua_rawgeti(L, narg, 4);
-  if((lua_type(L,-1)!=LUA_TTABLE)) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
+  if((lua_type(L,-1)!=LUA_TTABLE) && (luaL_testudata(L, -1, "Matrix_Type") == NULL) ) return luaL_error(L, "ReadHopping expects a matrix for the definition of H between atom %s and %s\n",AtomShell1,AtomShell2);
   H->Hop = *luaL_checkMatrix(L, -1);
-  //TODO: check if dimension of H->Hop corresponds to the size of the atoms known in the structure
-  
-  
-  
+  if( (H->Hop.Ni!=Cell->Atom[H->Atompos1].shelldegeneracy[H->Shellpos1]) || (H->Hop.Nj!=Cell->Atom[H->Atompos2].shelldegeneracy[H->Shellpos2]) )
+  {
+    printf("Matrix found\n");
+    PrintMatrix(H->Hop);
+    printf("Expected dimension, %d %d\n",Cell->Atom[H->Atompos1].shelldegeneracy[H->Shellpos1],Cell->Atom[H->Atompos2].shelldegeneracy[H->Shellpos2]);
+    return luaL_error(L, "ReadHopping found inconsistency in matrix defining the hopping");
+  }
   lua_pop(L,1);
   return 0;
 }
@@ -2357,6 +3489,12 @@ static int LuaTightBindingIndex(lua_State * L)
   else if (strcmp(str, "NF")==0)
   {
     lua_pushinteger(L, a->NFermion);
+    return 1;
+  }
+  else if (strcmp(str, "ShiftOnsiteEnergy")==0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaTightBindingShiftOnsiteEnergyMethod, 1);
     return 1;
   }
   return luaL_error(L, "Error index %s not found in TightBinding Object\n",str);
@@ -2558,6 +3696,15 @@ static int LuaTightBindingToString(lua_State * L)
   return 1;
 }
 
+static int LuaCrystalStructureToCIF(lua_State *L)
+{
+  char *Buffer;
+  TightBindingDef *res = (TightBindingDef *) luaL_checkudata(L, 1, "TightBinding_Type");
+  CrystalStructureTypeToCif(&(res->Cell), &Buffer);
+  lua_pushstring(L, Buffer);
+  free(Buffer);
+  return 1;
+}
 
 static int LuaTightBindingCall(lua_State * L)
 {
@@ -2675,13 +3822,17 @@ static int LuaDresdenFPLODestroy(lua_State * L)
 }
 
 static const struct luaL_Reg TightBinding_func[] = {
-  {"New",            LuaNewTightBinding},
-  {"Chop",           LuaTightBindingChop},
-  {"Copy",           LuaTightBindingCopy},
-  {"AddSpin",        LuaTightBindingAddSpin},
-  {"Derivative",     LuaTightBindingDerivative},
-  {"CalculateG",     LuaCalculateG},
-  {"CalculateBands", LuaCalculateBands},
+  {"New",               LuaNewTightBinding},
+  {"Chop",              LuaTightBindingChop},
+  {"Copy",              LuaTightBindingCopy},
+  {"AddSpin",           LuaTightBindingAddSpin},
+  {"Derivative",        LuaTightBindingDerivative},
+  {"ShiftOnsiteEnergy", LuaTightBindingShiftOnsiteEnergy},
+  {"CalculateG",        LuaCalculateG},
+  {"CalculateMu",       LuaCalculateMu},
+  {"CalculateBands",    LuaCalculateBands},
+  {"SlaterKosterTable", LuaSlaterKosterTable},
+  {"ExportCIF",         LuaCrystalStructureToCIF},
   {NULL, NULL}
 };
   

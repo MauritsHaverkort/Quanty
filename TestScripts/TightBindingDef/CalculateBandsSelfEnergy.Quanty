@@ -1,0 +1,229 @@
+-- CalculateBands with a self energy returns per k-point the band spectral function Tr[A(k,w)] and the
+-- characters Tr[P A(k,w)] as lists of poles; PlotBands draws them broadened.
+--
+-- Tested: a zero self energy gives poles of weight 1 at the old band energies, with the old characters as
+-- weights, also for a character that couples the two atoms (it tests the gauge) and for a character given
+-- as a complex matrix; averaged over the two k-points of a 2x1x1 mesh the result equals CalculateG with the
+-- same mesh, pole by pole on an energy grid, for the total and for the diagonal of G, with the self energy
+-- per atom, as one response function and as a chain; one band with a one pole self energy against the
+-- closed form; the sum rules; the input that is refused; and PlotBands for all forms of its input.
+
+print("--------------------------------------------------------")
+print("-- TightBinding - CalculateBands with a self energy   --")
+print("--------------------------------------------------------")
+Verbosity(0)
+
+-- two atoms at different positions, three orbitals, complex hopping and on-site energies
+HTB = NewTightBinding()
+HTB.Name = "two atoms, three orbitals"
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},     {{"s", {"0"}}}},
+              {"B", {0.5,0.3,0}, {{"p", {"x","y"}}}} }
+hop = {}
+-- a bond and its hermitian conjugate
+function Bond(o1, o2, v, M)
+  hop[#hop+1] = {o1, o2, v, M}
+  local Mt = {}
+  for i = 1, #M[1] do Mt[i] = {} for j = 1, #M do Mt[i][j] = Conjugate(M[j][i]) end end
+  hop[#hop+1] = {o2, o1, {-v[1],-v[2],-v[3]}, Mt}
+end
+hop[#hop+1] = {"A.s","A.s",{0,0,0},{{0.2}}}
+hop[#hop+1] = {"B.p","B.p",{0,0,0},{{-0.3, 0.1+0.2*I},{0.1-0.2*I, 0.4}}}
+Bond("A.s","A.s",{1,0,0},{{-1.0}})
+Bond("A.s","A.s",{0,1,0},{{-0.8}})
+Bond("B.p","B.p",{1,0,0},{{0.3, 0.2*I},{0.1,-0.2}})
+Bond("A.s","B.p",{ 0.5, 0.3,0},{{0.5, 0.3*I}})
+Bond("A.s","B.p",{-0.5, 0.3,0},{{0.4,-0.2}})
+Bond("A.s","B.p",{ 0.5,-0.7,0},{{0.2*I, 0.3}})
+HTB.Hopping = hop
+NF = 3
+
+-- the poles and weights of a scalar list of poles
+function Poles(G)
+  local t = ResponseFunction.ToTable(G)
+  local e, w = {}, {}
+  for i = 2, #t[1] do e[i-1] = t[1][i]; w[i-1] = t[2][i-1] end
+  return e, w
+end
+
+function Check(name, d, threshold)
+  print(string.format("%-60s max deviation %.3e", name, d))
+  if not (d <= threshold) then error(name..": deviation "..d.." above "..threshold.."\n", 1) end
+end
+
+-- characters: atom A, the bond between A and the first orbital of B, and a complex matrix
+function fA(p)    return Complex.Re(p[1]*Conjugate(p[1])) end
+function fbond(p) local x = p[1]+p[2]; return Complex.Re(x*Conjugate(x))/2 end
+PM = Matrix.ToUserdata({{0,0.5*I,0},{-0.5*I,0,0},{0,0,1}})
+
+-- (1) a zero self energy reproduces the bands and their characters
+kpath = { {"A",{0.1,0.2,0}}, 7, {"B",{2.0,0.7,0}}, 5, {"C",{-1.1,2.9,0}} }
+E, cA, cb, cm = TightBinding.CalculateBands(HTB, kpath, fA, fbond, PM)
+G, gA, gb, gm = TightBinding.CalculateBands(HTB, kpath, {0,0}, fA, fbond, PM)
+dE, dW, dC = 0, 0, 0
+if #G ~= #E then error("CalculateBands returned "..#G.." k-points instead of "..#E.."\n") end
+for ik = 1, #E do
+  local e, w = Poles(G[ik])
+  if #e ~= NF then error("k-point "..ik.." has "..#e.." poles instead of "..NF.."\n") end
+  for m = 1, NF do
+    dE = math.max(dE, math.abs(e[m] - E[ik][m]))
+    dW = math.max(dW, math.abs(w[m] - 1))
+    for c, pair in ipairs({{gA, cA}, {gb, cb}, {gm, cm}}) do
+      local ec, wc = Poles(pair[1][ik])
+      dE = math.max(dE, math.abs(ec[m] - E[ik][m]))
+      dC = math.max(dC, math.abs(wc[m] - pair[2][ik][m]))
+    end
+  end
+end
+Check("zero self energy: pole energies = band energies", dE, 1e-10)
+Check("zero self energy: total weight 1 per band", dW, 1e-10)
+Check("zero self energy: characters (A, bond A-B, complex matrix)", dC, 1e-10)
+
+-- the self energies: a list of poles on A (scalar) and on B (2x2, complex, off diagonal)
+SigA = ResponseFunction.New({{0.1, -2.5, 1.7}, {0.3, 0.2}, mu=0, type="ListOfPoles"})
+SigB = ResponseFunction.New({{Matrix.New({{0.2, 0.1*I},{-0.1*I,-0.1}}), -1.8, 2.2},
+                             {Matrix.New({{0.4, 0.1+0.1*I},{0.1-0.1*I, 0.3}}), Matrix.New({{0.2,-0.05},{-0.05,0.5}})},
+                             mu=0, type="ListOfPoles"})
+-- the same as one self energy of dimension 3
+function Blk(a, B) return Matrix.New({{a,0,0},{0,B[1][1],B[1][2]},{0,B[2][1],B[2][2]}}) end
+SigAll = ResponseFunction.New({{Blk(0.1, {{0.2,0.1*I},{-0.1*I,-0.1}}), -2.5, 1.7, -1.8, 2.2},
+                               {Blk(0.3, {{0,0},{0,0}}), Blk(0.2, {{0,0},{0,0}}),
+                                Blk(0,   {{0.4,0.1+0.1*I},{0.1-0.1*I,0.3}}), Blk(0, {{0.2,-0.05},{-0.05,0.5}})},
+                               mu=0, type="ListOfPoles"})
+P1 = Matrix.ToUserdata({{1,0,0},{0,0,0},{0,0,0}})
+P2 = Matrix.ToUserdata({{0,0,0},{0,1,0},{0,0,0}})
+P3 = Matrix.ToUserdata({{0,0,0},{0,0,0},{0,0,1}})
+
+-- (2) averaged over k = 0 and k = (pi,0,0) the band spectral functions are CalculateG on a 2x1x1 mesh.
+-- CalculateG on a grid splits every pole linearly over its two neighbouring grid points; the same split
+-- of the poles of CalculateBands must give its residues.
+Emin, h, NGrid = -10, 0.02, 1001
+grid = {}
+for j = 1, NGrid do grid[j] = Emin + (j-1)*h end
+function Split(Gk, scale, R)
+  local e, w = Poles(Gk)
+  for m = 1, #e do
+    local x = (e[m] - Emin) / h
+    local j = math.floor(x)
+    local f = x - j
+    if j < 0 or j+1 >= NGrid then error("a pole at "..e[m].." outside the grid\n") end
+    R[j+1] = (R[j+1] or 0) + scale * w[m] * (1-f)
+    R[j+2] = (R[j+2] or 0) + scale * w[m] * f
+  end
+end
+kpath2 = { {"G",{0,0,0}}, 0, {"X",{pi,0,0}} }
+function CompareCalculateG(name, Sigma)
+  local Gb = {TightBinding.CalculateBands(HTB, kpath2, Sigma, P1, P2, P3)}
+  local Gref = ResponseFunction.ToTable(CalculateG(HTB, Sigma, {{"Nk",{2,1,1}},{"EnergyGrid",grid}}))
+  local d, smax = 0, 0
+  for s = 1, 4 do
+    local R = {}
+    Split(Gb[s][1], 0.5, R)
+    Split(Gb[s][2], 0.5, R)
+    -- the poles of CalculateG: one below the grid, the grid points, one above
+    for p = 2, #Gref[1] do
+      local j = p - 2
+      local W = Gref[2][p-1]
+      local ref = 0
+      if s == 1 then for i = 1, NF do ref = ref + Complex.Re(W[i][i]) end
+      else ref = Complex.Re(W[s-1][s-1]) end
+      local x = (j >= 1 and j <= NGrid) and (R[j] or 0) or 0
+      d = math.max(d, math.abs(x - ref))
+      smax = math.max(smax, math.abs(ref))
+    end
+  end
+  Check(name, d / smax, 1e-10)
+end
+CompareCalculateG("= CalculateG, self energy per atom", {SigA, SigB})
+CompareCalculateG("= CalculateG, self energy as one response function", SigAll)
+CompareCalculateG("= CalculateG, self energy as a chain", ResponseFunction.ChangeType(SigAll, "Tri"))
+
+-- (3) sum rules at every k: sum of the weights is NF for the total and Tr P for a character
+G, gA, gb, gm = TightBinding.CalculateBands(HTB, kpath, {SigA, SigB}, fA, fbond, PM)
+d = 0
+for ik = 1, #G do
+  for c, pair in ipairs({{G, NF}, {gA, 1}, {gb, 1}, {gm, 1}}) do
+    local _, w = Poles(pair[1][ik])
+    local sum = 0
+    for m = 1, #w do sum = sum + w[m] end
+    d = math.max(d, math.abs(sum - pair[2]))
+  end
+end
+Check("sum rules of the total and the characters", d, 1e-10)
+
+-- (4) one band with a self energy of one pole: G = 1/(z - eps_k - a0 - W/(z-e)) has the poles
+-- z = (eps+a0+e)/2 +- sqrt((eps+a0-e)^2/4 + W) with residues (z-e)/(z-z')
+H1 = NewTightBinding()
+H1.Name = "chain"
+H1.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+H1.Atoms = { {"A", {0,0,0}, {{"s", {"0"}}}} }
+H1.Hopping = { {"A.s","A.s",{1,0,0},{{-1}}}, {"A.s","A.s",{-1,0,0},{{-1}}} }
+a0, e0, W0 = 0.3, 1.2, 0.7
+Sig1 = ResponseFunction.New({{a0, e0}, {W0}, mu=0, type="ListOfPoles"})
+kpath1 = { {"G",{0,0,0}}, 9, {"X",{pi,0,0}} }
+G1 = TightBinding.CalculateBands(H1, kpath1, Sig1)
+d = 0
+for ik = 1, #G1 do
+  local k = pi * (ik-1) / 10
+  local eps = -2*cos(k)
+  local zp = (eps+a0+e0)/2 + sqrt((eps+a0-e0)^2/4 + W0)
+  local zm = (eps+a0+e0)/2 - sqrt((eps+a0-e0)^2/4 + W0)
+  local e, w = Poles(G1[ik])
+  if #e ~= 2 then error("the chain has "..#e.." poles instead of 2 at k-point "..ik.."\n") end
+  d = math.max(d, math.abs(e[1]-zm), math.abs(e[2]-zp), math.abs(w[1]-(zm-e0)/(zm-zp)), math.abs(w[2]-(zp-e0)/(zp-zm)))
+end
+Check("one band, one pole self energy: closed form", d, 1e-12)
+
+-- (5) refused input
+function fnq(p) return Abs(p[1]) end
+for name, f in pairs({
+    ["a character that is not a quadratic form"] = function() return TightBinding.CalculateBands(HTB, kpath, {SigA, SigB}, fnq) end,
+    ["two characters with a self energy"]        = function() return TightBinding.CalculateBands(HTB, kpath, {SigA, SigB}, fA, fbond) end,
+    ["a character matrix of the wrong size"]     = function() return TightBinding.CalculateBands(HTB, kpath, {SigA, SigB}, Matrix.ToUserdata({{1,0},{0,1}})) end,
+    ["a self energy of the wrong size"]          = function() return TightBinding.CalculateBands(HTB, kpath, SigA) end }) do
+  if pcall(f) then error(name.." was accepted\n", 1) end
+  print("refused: "..name)
+end
+
+-- (6) PlotBands of spectral functions, a total, one and three characters, the matrices broadened, other
+-- response function types, and a small bitmap (NPixelX and NPixelY)
+opt = {{"GammaL",0.1},{"GammaG",0.1},{"NPixelX",200},{"NPixelY",150}}
+pl = {}
+pl[1] = Graphics.PlotBands(kpath, G, opt)
+pl[2] = Graphics.PlotBands(kpath, G, gA, opt)
+pl[3] = Graphics.PlotBands(kpath, G, gA, gb, gm, opt)
+pl[4] = Graphics.PlotBands(kpath, E, cA, {{"GammaL",0.05},{"NPixelX",200},{"NPixelY",150}})
+pl[5] = Graphics.PlotBands(kpath, E, {{"GammaG",0.05},{"NPixelX",200},{"NPixelY",150}})
+GTri = {}
+for ik = 1, #G do GTri[ik] = ResponseFunction.ChangeType(G[ik], "Tri") end
+pl[6] = Graphics.PlotBands(kpath, GTri, {{"GammaL",0.4},{"NPixelX",200},{"NPixelY",150},{"Frame",{{"Ymin",-6},{"Ymax",4}}}})
+for i = 1, #pl do
+  local svg = Graphics.ToSVG(pl[i], {{"RelativeSize",true}})
+  -- a 200 x 150 bitmap as base64 is about 160 kB
+  if not (#svg > 100000 and #svg < 400000) then error("PlotBands "..i.." gave an SVG of "..#svg.." bytes\n") end
+end
+print("PlotBands: spectral functions with 0, 1 and 3 characters, broadened matrices, chains")
+-- Transparancy and SecondTransparancy multiply the alpha byte of Color and SecondColor (0x80 * 0x80 / 255 = 0x40)
+function SVG(o) return Graphics.ToSVG(Graphics.PlotBands(kpath, G, gA, o), {{"RelativeSize",true}}) end
+base = {{"GammaL",0.1},{"NPixelX",60},{"NPixelY",50}}
+function With(extra) local o = {} for _, x in ipairs(base) do o[#o+1] = x end for _, x in ipairs(extra) do o[#o+1] = x end return o end
+for name, pair in pairs({
+    ["Transparancy on an opaque Color"]            = {{{"Color",0xFF000080},{"Transparancy",0x80}}, {{"Color",0x80000080}}},
+    ["Transparancy on a Color with alpha"]         = {{{"Color",0x80000080},{"Transparancy",0x80}}, {{"Color",0x40000080}}},
+    ["SecondTransparancy on a SecondColor"]        = {{{"SecondColor",0x80FF0000},{"SecondTransparancy",0x80}}, {{"SecondColor",0x40FF0000}}},
+    ["the default Transparancy keeps Color alpha"] = {{{"Color",0x80000080}}, {{"Color",0x80000080},{"Transparancy",0xFF}}} }) do
+  if SVG(With(pair[1])) ~= SVG(With(pair[2])) then error("PlotBands: "..name.." does not give the expected color\n", 1) end
+  print("PlotBands: "..name)
+end
+if SVG(With({{"Color",0xFF000080}})) == SVG(With({{"Color",0x40000080}})) then error("PlotBands: the alpha of Color has no effect\n", 1) end
+for name, f in pairs({
+    ["two characters"]                         = function() return Graphics.PlotBands(kpath, G, gA, gb, opt) end,
+    ["a table of the wrong length"]            = function() return Graphics.PlotBands(kpath, {G[1]}, opt) end,
+    ["an automatic energy range for chains"]   = function() return Graphics.PlotBands(kpath, GTri, opt) end }) do
+  if pcall(f) then error("PlotBands: "..name.." was accepted\n", 1) end
+  print("PlotBands refused: "..name)
+end
+
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

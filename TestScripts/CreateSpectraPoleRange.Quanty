@@ -1,0 +1,46 @@
+print("--------------------------------------------------------")
+print("--          Create Spectra, EminPole EmaxPole         --")
+print("--------------------------------------------------------")
+
+-- With several transition operators and Tensor true CreateSpectra builds a block
+-- tri-diagonal matrix and sets EminPole and EmaxPole from its eigenvalues. Those
+-- have to be the lowest and highest eigenvalue of the whole block chain, couplings
+-- included, which ResponseFunction.ToMatrix returns as a dense matrix.
+-- H couples every orbital to every other one, such that no Krylov block deflates
+-- and the chain is 5 full blocks of 3.
+
+N = 20
+HMatR = {}
+HMatC = {}
+for i=1,N do
+	HMatR[i] = {}
+	HMatC[i] = {}
+	for j=1,N do
+		HMatR[i][j] = math.cos(i+2*j) + math.cos(2*i+j)
+		HMatC[i][j] = HMatR[i][j] + I * math.sin(i-j)
+	end
+	HMatR[i][i] = HMatR[i][i] + i
+	HMatC[i][i] = HMatC[i][i] + i
+end
+
+T  = {NewOperator(N,0,{{0,1}}), NewOperator(N,0,{{1,1}}), NewOperator(N,0,{{2,1}})}
+psi0 = NewWavefunction(N,0,{{"00000000000000000000",1}})
+NTri = 5
+
+for _, HMat in ipairs({HMatR,HMatC}) do
+	H = Matrix.ToOperator(HMat)
+	S, G = CreateSpectra(H, T, psi0, {{"Tensor", true}, {"DenseBorder", 0}, {"Emin",-30}, {"Emax",30}, {"NE",100}, {"Gamma",0.1}, {"NTri", NTri}})
+	M = ResponseFunction.ToMatrix(G)
+	if #M ~= 3*NTri then
+		print(M)
+		error("Test failed, the Krylov chain deflated and does not test the couplings",1)
+	end
+	val = Eigensystem(M)
+	Emin = S.EminPole[1]
+	Emax = S.EmaxPole[1]
+	print("EminPole ",Emin," lowest eigenvalue ", val[1])
+	print("EmaxPole ",Emax," highest eigenvalue ",val[#val])
+	if (math.abs(Emin-val[1]) > 1E-10) or (math.abs(Emax-val[#val]) > 1E-10) then
+		error("Test failed, EminPole and EmaxPole are not the extreme eigenvalues of the block tri-diagonal matrix",1)
+	end
+end

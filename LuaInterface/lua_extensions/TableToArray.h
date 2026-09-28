@@ -13,6 +13,9 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg);
 BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, int narg);
 AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg);
 BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int narg);
+DoubleTriDiagonalMatrixType * luaL_checkDoubleTriDiagonalMatrixType(lua_State *L, int narg);
+BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lua_State *L, int narg);
+
 BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_State *L, int narg);
 BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMatrixType(lua_State *L, int narg);
 ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg);
@@ -53,6 +56,10 @@ void LuaPushTable_NaturalImpurityOrbital(lua_State* L, BADoubleTriDiagonalMatrix
 void LuaPushTable_NaturalImpurityOrbital(lua_State* L, void * const M);
 void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, BlockNaturalImpurityOrbitalMatrixType * const M);
 void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, void * const M);
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, DoubleTriDiagonalMatrixType * const M);
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, void * const M);
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, BlockDoubleTriDiagonalMatrixType * const M);
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, void * const M);
 void LuaInsertTable_CompactMatrixType(lua_State*L, int len, CompactMatrixType const * const M);
 void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const M);
 void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M);

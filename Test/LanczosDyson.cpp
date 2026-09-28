@@ -287,7 +287,7 @@ void TestLanczosDyson2()
   OperatorAddLaderNormalOrder(&O, oadd, 2, G0Double.Dt.a0, 0.0, &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 1;
   oadd[0] = 1;
-  OperatorAddLaderNormalOrder(&O, oadd, 2, (G0Double.Dt.val.a[0] + G0Double.Dt.con.a[0]) / 2, 0.0,
+  OperatorAddLaderNormalOrder(&O, oadd, 2, (G0Double.Dt.val.a[0] + G0Double.Dt.con.a[0]), 0.0,
                               &QDetNotOrderedFcFaBcBa);
   oadd[1] = CrAnMask + 1;
   oadd[0] = 0;

@@ -1,0 +1,203 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction ChangeType NTriMax                --")
+print("--------------------------------------------------------")
+
+-- NTriMax, NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) that a
+-- conversion produces. A chain of length N is a[0..N] with b[0..N-1], so the number the
+-- option carries is the N of the representation. A chain that comes out shorter on its
+-- own is left as it is, a longer one is cut, and what is cut away is cut without looking
+-- at the values further down the chain: the blocks that are kept have to be exactly the
+-- blocks the conversion without a ceiling would have put there.
+
+local kBT = 0.05
+
+local function MaxDiff(x, y)
+	if type(x) == "number" then return math.abs(x - y) end
+	if type(x) ~= "table" then return 0 end
+	local m = 0
+	for k, v in pairs(x) do
+		-- epsilon of a block Nat is left uninitialised by the conversion from a list of
+		-- poles, which has nothing to do with the chain length, so it is skipped here
+		if (k ~= "epsilon") and (type(v) == "number" or type(v) == "table") then
+			local d = MaxDiff(v, y[k])
+			if d > m then m = d end
+		end
+	end
+	return m
+end
+
+local function LenTri(G)   local T = ResponseFunction.ToTable(G) return #T[2] end
+local function LenVal(G)   local T = ResponseFunction.ToTable(G) return #T.val[2] end
+local function LenCon(G)   local T = ResponseFunction.ToTable(G) return #T.con[2] end
+
+-- the blocks a cut chain still has have to equal the ones of the chain without a ceiling
+local function HeadDiff(cut, full)
+	local Tc, Tf = ResponseFunction.ToTable(cut), ResponseFunction.ToTable(full)
+	local m = 0
+	for j = 1, 2 do
+		for i = 1, #Tc[j] do
+			local d = MaxDiff(Tc[j][i], Tf[j][i])
+			if d > m then m = d end
+		end
+	end
+	return m
+end
+
+-- ===== the response functions the conversions start from ==================
+local a = {10, 11, 12, 13, 14, 15, 16, 17, 18}
+local b = {     1,  2,  3,  4,  5,  4,  3,  2}
+local Gsingle = ResponseFunction.New({a, b, mu = 14, type = "Tri", name = "G"})
+
+local A, B = {}, {}
+A[1] = Matrix.New({{0,0,0},{0,0,0},{0,0,0}})
+for i = 2, 9 do A[i] = Matrix.New({{i,0.2,0.3},{0.2,i+1,0.6},{0.3,0.6,i+2}}) / 3 end
+B[1] = Matrix.New({{1,0,0},{0,1,0},{0,0,1}})
+for i = 2, 8 do
+	local s = Matrix.New({{i,0.1,0.3},{0.1,i,0.6},{0.3,0.6,i}})
+	B[i] = s * s / 50
+end
+local Gblock = ResponseFunction.New({A, B, mu = 1.5, type = "Tri", name = "G"})
+
+for _, g in ipairs({{"single valued", Gsingle}, {"block", Gblock}}) do
+	local tag, G = g[1], g[2]
+	local sources = {{"Tri",  G},
+	                 {"And",  ResponseFunction.ChangeType(G, "And")},
+	                 {"LP",   ResponseFunction.ChangeType(G, "ListOfPoles")},
+	                 {"Nat",  ResponseFunction.ChangeType(G, "Nat",  {{"EffectivekBT", kBT}})},
+	                 {"DTri", ResponseFunction.ChangeType(G, "DTri", {{"EffectivekBT", kBT}})}}
+
+	-- ===== target Tri, one chain, NTriMax ==================================
+	for _, s in ipairs(sources) do
+		local name, Gin = s[1], s[2]
+		local full = ResponseFunction.ChangeType(Gin, "Tri")
+		local Lfull = LenTri(full)
+		for _, k in ipairs({0, 1, 3, Lfull, Lfull + 5}) do
+			local cut = ResponseFunction.ChangeType(Gin, "Tri", {{"NTriMax", k}})
+			local want = (k < Lfull) and k or Lfull
+			if LenTri(cut) ~= want then
+				error(string.format("%s %s -> Tri with NTriMax=%d gives a chain of %d and not of %d",
+				      tag, name, k, LenTri(cut), want), 1)
+			end
+			if HeadDiff(cut, full) > 1E-10 then
+				error(string.format("%s %s -> Tri with NTriMax=%d does not keep the blocks of the chain it cuts",
+				      tag, name, k), 1)
+			end
+		end
+	end
+
+	-- ===== targets Nat and DoubleTri, two chains ===========================
+	for _, target in ipairs({"Nat", "DTri"}) do
+		for _, s in ipairs(sources) do
+			local name, Gin = s[1], s[2]
+			local full = ResponseFunction.ChangeType(Gin, target, {{"EffectivekBT", kBT}})
+			local Lv, Lc = LenVal(full), LenCon(full)
+			local cut = ResponseFunction.ChangeType(Gin, target,
+			            {{"EffectivekBT", kBT}, {"NTriMaxVal", 2}, {"NTriMaxCon", 3}})
+			local wv = (2 < Lv) and 2 or Lv
+			local wc = (3 < Lc) and 3 or Lc
+			if (LenVal(cut) ~= wv) or (LenCon(cut) ~= wc) then
+				error(string.format("%s %s -> %s with NTriMaxVal=2 NTriMaxCon=3 gives chains of (%d,%d) and not of (%d,%d)",
+				      tag, name, target, LenVal(cut), LenCon(cut), wv, wc), 1)
+			end
+			-- NTriMax on a target with two chains sets both of them
+			local both = ResponseFunction.ChangeType(Gin, target,
+			             {{"EffectivekBT", kBT}, {"NTriMax", 2}})
+			if (LenVal(both) > 2) or (LenCon(both) > 2) then
+				error(string.format("%s %s -> %s with NTriMax=2 gives chains of (%d,%d)",
+				      tag, name, target, LenVal(both), LenCon(both)), 1)
+			end
+			-- and NTriMaxVal / NTriMaxCon overrule it
+			local mix = ResponseFunction.ChangeType(Gin, target,
+			            {{"EffectivekBT", kBT}, {"NTriMax", 2}, {"NTriMaxCon", 1}})
+			if (LenVal(mix) > 2) or (LenCon(mix) > 1) then
+				error(string.format("%s %s -> %s NTriMaxCon does not overrule NTriMax, chains are (%d,%d)",
+				      tag, name, target, LenVal(mix), LenCon(mix)), 1)
+			end
+		end
+	end
+
+	-- ===== stopping early and cutting afterwards have to agree =============
+	-- A conversion from a list of poles hands the ceiling to the block Lanczos so that it
+	-- stops there. Converting without a ceiling and cutting the result afterwards goes
+	-- through a different piece of code, and the two have to give the same thing.
+	local Gl = ResponseFunction.ChangeType(G, "ListOfPoles")
+	for _, k in ipairs({1, 3, 6}) do
+		local early = ResponseFunction.ChangeType(Gl, "Tri", {{"NTriMax", k}})
+		local late  = ResponseFunction.ChangeType(ResponseFunction.ChangeType(Gl, "Tri"),
+		                                          "Tri", {{"NTriMax", k}})
+		if MaxDiff(ResponseFunction.ToTable(early), ResponseFunction.ToTable(late)) > 1E-12 then
+			error(string.format("%s LP -> Tri with NTriMax=%d differs from converting and cutting afterwards",
+			      tag, k), 1)
+		end
+	end
+	for _, target in ipairs({"Nat", "DTri"}) do
+		for _, vc in ipairs({{1, 1}, {2, 3}, {5, 4}}) do
+			local early = ResponseFunction.ChangeType(Gl, target,
+			              {{"EffectivekBT", kBT}, {"NTriMaxVal", vc[1]}, {"NTriMaxCon", vc[2]}})
+			local late  = ResponseFunction.ChangeType(
+			              ResponseFunction.ChangeType(Gl, target, {{"EffectivekBT", kBT}}), target,
+			              {{"EffectivekBT", kBT}, {"NTriMaxVal", vc[1]}, {"NTriMaxCon", vc[2]}})
+			if MaxDiff(ResponseFunction.ToTable(early), ResponseFunction.ToTable(late)) > 1E-12 then
+				error(string.format("%s LP -> %s with NTriMaxVal=%d NTriMaxCon=%d differs from converting and cutting afterwards",
+				      tag, target, vc[1], vc[2]), 1)
+			end
+		end
+	end
+
+	-- ===== a cut chain still has to be a response function =================
+	-- the cut chains of a Nat carry their head in a rotated basis (TMT) and those of a
+	-- non block Nat a set of cached couplings, both of which have to follow the cut
+	for _, target in ipairs({"Nat", "DTri"}) do
+		local cut = ResponseFunction.ChangeType(G, target,
+		            {{"EffectivekBT", kBT}, {"NTriMax", 2}})
+		local viaTri = ResponseFunction.ChangeType(cut, "Tri")
+		local w, gamma = 12.0, 0.4
+		if tag == "block" then w, gamma = 1.2, 0.4 end
+		local d = MaxDiff(cut(w, gamma), viaTri(w, gamma))
+		if d > 1E-8 then
+			error(string.format("%s a %s cut to NTriMax=2 does not evaluate to the same as its tri-diagonal form (%.2e)",
+			      tag, target, d), 1)
+		end
+	end
+end
+
+-- ===== the options are refused where there is no chain =====================
+for _, c in ipairs({{"And", "NTriMax"}, {"And", "NTriMaxVal"}, {"And", "NTriMaxCon"},
+                    {"ListOfPoles", "NTriMax"}, {"LP", "NTriMaxVal"}, {"LP", "NTriMaxCon"},
+                    {"Userdata", "NTriMax"}, {"Table", "NTriMax"}, {"Dense", "NTriMax"},
+                    {"Tri", "NTriMaxVal"}, {"Tri", "NTriMaxCon"}}) do
+	if pcall(function() return ResponseFunction.ChangeType(Gsingle, c[1], {{c[2], 2}}) end) then
+		error("ChangeType to " .. c[1] .. " accepts " .. c[2] .. ", which it should not", 1)
+	end
+end
+
+-- ===== and taken where there is one ========================================
+for _, c in ipairs({{"Nat", "NTriMax"}, {"Nat", "NTriMaxVal"}, {"Nat", "NTriMaxCon"},
+                    {"DoubleTri", "NTriMax"}, {"DTri", "NTriMaxVal"}, {"DTri", "NTriMaxCon"}}) do
+	if not pcall(function() return ResponseFunction.ChangeType(Gsingle, c[1],
+	                          {{"EffectivekBT", kBT}, {c[2], 2}}) end) then
+		error("ChangeType to " .. c[1] .. " refuses " .. c[2], 1)
+	end
+end
+if not pcall(function() return ResponseFunction.ChangeType(Gsingle, "Tri", {{"NTriMax", 2}}) end) then
+	error("ChangeType to Tri refuses NTriMax", 1)
+end
+
+-- ===== leaving the options out changes nothing =============================
+for _, target in ipairs({"Tri", "Nat", "DTri"}) do
+	-- a conversion to Tri does not take EffectivekBT, the two with a valence and a
+	-- conduction chain need it to know where to split
+	local opt = (target == "Tri") and {} or {{"EffectivekBT", kBT}}
+	local wideopt = (target == "Tri") and {{"NTriMax", 10000}}
+	                                   or {{"EffectivekBT", kBT}, {"NTriMax", 10000}}
+	local plain = ResponseFunction.ChangeType(Gblock, target, opt)
+	local wide  = ResponseFunction.ChangeType(Gblock, target, wideopt)
+	if MaxDiff(ResponseFunction.ToTable(plain), ResponseFunction.ToTable(wide)) > 1E-12 then
+		error("a ceiling above the length of the chain changes the conversion to " .. target, 1)
+	end
+end
+
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

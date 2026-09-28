@@ -1,0 +1,131 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - ShiftOnsiteEnergy             --")
+print("--------------------------------------------------------")
+
+-- ShiftOnsiteEnergy adds dE times the unit matrix to the onsite ellements of a
+-- tight binding Hamiltonian, i.e. H -> H + dE. It shifts all bands by dE and thus
+-- also the chemical potential at fixed electron count.
+
+-- TightBinding.ShiftOnsiteEnergy(TB, dE) returns a shifted copy and leaves TB alone
+-- TB.ShiftOnsiteEnergy(dE)               shifts TB itself
+
+-- ---------------------------------------------------------------------------
+-- 1: a one band model, onsite ellement present
+--    the chemical potential has to shift by dE
+-- ---------------------------------------------------------------------------
+ed = -0.123
+t  = -1
+dE =  0.456
+
+HTB = NewTightBinding()
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = {{"Cu",{0,0,0},{{"d",{"x2-y2"}}}}}
+HTB.Hopping = {{"Cu.d","Cu.d",{ 0, 0, 0},{{ed}}},
+               {"Cu.d","Cu.d",{ 0, 0, 1},{{t}}},
+               {"Cu.d","Cu.d",{ 0, 0,-1},{{t}}},
+               {"Cu.d","Cu.d",{ 0, 1, 0},{{t}}},
+               {"Cu.d","Cu.d",{ 0,-1, 0},{{t}}}
+              }
+
+mu = TightBinding.CalculateMu(HTB,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+
+-- the shifted copy
+HTB2 = TightBinding.ShiftOnsiteEnergy(HTB, dE)
+mu2  = TightBinding.CalculateMu(HTB2,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+if(Chop(mu2 - mu - dE)~=0) then error("ShiftOnsiteEnergy did not shift mu by dE\n",1) end
+
+-- the original must be unchanged
+muAgain = TightBinding.CalculateMu(HTB,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+if(Chop(muAgain - mu)~=0) then error("TightBinding.ShiftOnsiteEnergy changed its argument\n",1) end
+
+-- the method form shifts the object itself
+HTB.ShiftOnsiteEnergy(dE)
+mu3 = TightBinding.CalculateMu(HTB,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+if(Chop(mu3 - mu - dE)~=0) then error("TB.ShiftOnsiteEnergy(dE) did not shift TB itself\n",1) end
+
+-- shifting back returns the original Hamiltonian
+HTB.ShiftOnsiteEnergy(-dE)
+mu4 = TightBinding.CalculateMu(HTB,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+if(Chop(mu4 - mu)~=0) then error("ShiftOnsiteEnergy is not its own inverse\n",1) end
+
+collectgarbage()
+
+-- ---------------------------------------------------------------------------
+-- 2: no onsite ellement defined at all
+--    the shell still has to be shifted, the onsite ellement is created
+-- ---------------------------------------------------------------------------
+HTBnoOnsite = NewTightBinding()
+HTBnoOnsite.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTBnoOnsite.Atoms = {{"Cu",{0,0,0},{{"d",{"x2-y2"}}}}}
+HTBnoOnsite.Hopping = {{"Cu.d","Cu.d",{ 0, 0, 1},{{t}}},
+                       {"Cu.d","Cu.d",{ 0, 0,-1},{{t}}},
+                       {"Cu.d","Cu.d",{ 0, 1, 0},{{t}}},
+                       {"Cu.d","Cu.d",{ 0,-1, 0},{{t}}}
+                      }
+
+muNo = TightBinding.CalculateMu(HTBnoOnsite,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+HTBnoOnsite.ShiftOnsiteEnergy(dE)
+muNo2 = TightBinding.CalculateMu(HTBnoOnsite,{{"n",0.5},{"kBT",0.001},{"Nk",{1,40,40}}})
+if(Chop(muNo2 - muNo - dE)~=0) then error("ShiftOnsiteEnergy did not create a missing onsite ellement\n",1) end
+
+collectgarbage()
+
+-- ---------------------------------------------------------------------------
+-- 3: two shells on one atom with an onsite d - p hybridisation
+--    the hybridisation block has a connecting vector of zero as well, but is not
+--    diagonal in orbital space and must not be shifted
+-- ---------------------------------------------------------------------------
+edd = -1.0
+epp =  1.0
+vdp =  0.7
+
+HTB2shell = NewTightBinding()
+HTB2shell.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB2shell.Atoms = {{"Cu",{0,0,0},{{"d",{"x2-y2"}},{"p",{"x"}}}}}
+HTB2shell.Hopping = {{"Cu.d","Cu.d",{0,0,0},{{edd}}},
+                     {"Cu.p","Cu.p",{0,0,0},{{epp}}},
+                     {"Cu.d","Cu.p",{0,0,0},{{vdp}}},
+                     {"Cu.p","Cu.d",{0,0,0},{{vdp}}}
+                    }
+
+-- at k = 0 the Hamiltonian is the 2x2 onsite block
+Hk  = HTB2shell({0,0,0})
+Hk2 = TightBinding.ShiftOnsiteEnergy(HTB2shell, dE)({0,0,0})
+
+-- the diagonal shifts by dE, the off diagonal hybridisation does not change
+if(Chop(Hk2[1][1] - Hk[1][1] - dE)~=0) then error("d onsite energy not shifted\n",1) end
+if(Chop(Hk2[2][2] - Hk[2][2] - dE)~=0) then error("p onsite energy not shifted\n",1) end
+if(Chop(Hk2[1][2] - Hk[1][2])~=0)      then error("d - p hybridisation was shifted\n",1) end
+if(Chop(Hk2[2][1] - Hk[2][1])~=0)      then error("p - d hybridisation was shifted\n",1) end
+
+collectgarbage()
+
+-- ---------------------------------------------------------------------------
+-- 4: two atoms, one of which has no onsite ellement, and a shell with more than
+--    one orbital. Every orbital of every shell has to shift by dE exactly once
+-- ---------------------------------------------------------------------------
+HTB2atom = NewTightBinding()
+HTB2atom.Cell = {{4,0,0},{0,4,0},{0,0,4}}
+HTB2atom.Atoms = {{"A",{0,0,0},{{"d",{"x2-y2","z2"}}}},
+                  {"B",{2,0,0},{{"p",{"x"}}}}}
+-- only atom A has an onsite ellement, atom B has none
+HTB2atom.Hopping = {{"A.d","A.d",{0,0,0},{{-1.0,0},{0,-1.0}}},
+                    {"A.d","B.p",{2,0,0},{{0.5},{0.5}}},
+                    {"B.p","A.d",{-2,0,0},{{0.5,0.5}}}
+                   }
+
+H0 = HTB2atom({0,0,0})
+H1 = TightBinding.ShiftOnsiteEnergy(HTB2atom, dE)({0,0,0})
+for i = 1, 3 do
+  for j = 1, 3 do
+    if(i==j) then
+      if(Chop(H1[i][j] - H0[i][j] - dE)~=0) then error("diagonal ellement "..i.." not shifted by exactly dE\n",1) end
+    else
+      if(Chop(H1[i][j] - H0[i][j])~=0) then error("off diagonal ellement "..i..","..j.." was changed\n",1) end
+    end
+  end
+end
+
+collectgarbage()
+
+print("TightBinding - ShiftOnsiteEnergy passed")

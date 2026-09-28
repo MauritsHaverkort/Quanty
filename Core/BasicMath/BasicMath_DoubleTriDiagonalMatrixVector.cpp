@@ -7,7 +7,7 @@
 *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
 *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
 *
-*   a0 = (a0val + a0con)/2 
+*   a0 = a0val + a0con
 *
 *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
 *
@@ -23,23 +23,25 @@ void FreeDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
   FreeTriDiagonalMatrix(&M->val);
   FreeTriDiagonalMatrix(&M->con);
   M->mu = 0;
-  M->Epsilon = 0;
+  M->kBT = 0;
   M->a0 = 0;
   M->b0 = 0;
   strcpy(M->Name, "free");
 }
 
-/*  Init Tri diagonal matrix
+/*  Init Double Tri diagonal matrix
  *  M.val.N M.con.N must be set
+ *
+ *  A chain of length zero is allowed and means that branch is absent: the
+ *  branch then contributes only its site energy a[0] to the denominator of
+ *  G, no hopping and no bath site. That happens whenever the chemical
+ *  potential lies outside the bath, so that the Fermi function puts all of
+ *  the hybridization weight in the other chain. InitTriDiagonalMatrix
+ *  handles N = 0 (it allocates a[0] and no b, and leaves b[0] alone).
  */
 uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
   strcpy(M->Name, "Matrix");
-  if ((M->val.N == 0) || (M->con.N == 0))
-  {
-    printf("Error in InitDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n", M->val.N, M->con.N);
-    return 2;
-  };
   if (InitTriDiagonalMatrix(&M->val))
   {
     printf("InitTriDiagonalMatrix failed in InitDoubleTriDiagonalMatrix\n");
@@ -61,16 +63,15 @@ uint32_t InitDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 
 /*  Init double tri-diagonal matrix and set diagonal (a) equal to one
  *  M.val.N M.con.N must be set
+ *
+ *  A chain of length zero is allowed, as in InitDoubleTriDiagonalMatrix: that
+ *  branch is absent and contributes only its site energy a[0] to the
+ *  denominator of G. Since the head slot is an offset rather than a diagonal
+ *  element it stays zero here, so an absent branch contributes nothing.
  */
 uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const M)
 {
   strcpy(M->Name, "I_Matrix");
-  if ((M->val.N == 0) || (M->con.N == 0))
-  {
-    printf("Error in InitIdentityDoubleTriDiagonalMatrix M->val.N=%i M->con.N=%i\n", M->val.N, M->con.N);
-    fflush(stdout);
-    return 2;
-  };
   if (InitIdentityTriDiagonalMatrix(&M->val))
   {
     printf("InitIdentityTriDiagonalMatrix failed in InitIdentityDoubleTriDiagonalMatrix\n");
@@ -90,39 +91,70 @@ uint32_t InitIdentityDoubleTriDiagonalMatrix(DoubleTriDiagonalMatrixType * const
   return 0;
 }
 
-/* set elements with an absolute value smaller then epsilon to zero
+/*  set elements with an absolute value smaller then epsilon to zero, keeping the
+ *  dimensions. The two chains are ordinary tri-diagonal matrices, so they are chopped
+ *  by the tri-diagonal routine; what is left is the pair a0, b0 of the matrix itself.
  */
 void DoubleTriDiagonalMatrixChop(DoubleTriDiagonalMatrixType * const M, double const epsilon)
 {
-  uint32_t i;
-  for (i = 0; i < M->val.N; i++)
-  {
-    if ((fabs(M->val.a[i]) < epsilon))
-      M->val.a[i] = 0;
-    if ((fabs(M->val.b[i]) < epsilon))
-      M->val.b[i] = 0;
-  }
-  if ((fabs(M->val.a[M->val.N]) < epsilon))
-    M->val.a[M->val.N] = 0;
-  for (i = 0; i < M->con.N; i++)
-  {
-    if ((fabs(M->con.a[i]) < epsilon))
-      M->con.a[i] = 0;
-    if ((fabs(M->con.b[i]) < epsilon))
-      M->con.b[i] = 0;
-  }
-  if ((fabs(M->con.a[M->con.N]) < epsilon))
-    M->con.a[M->con.N] = 0;
-  if ((fabs(M->a0) < epsilon))
-    M->a0 = 0;
+  TriDiagonalMatrixChop(&(M->val), epsilon);
+  TriDiagonalMatrixChop(&(M->con), epsilon);
+  if ((fabs(M->a0) < epsilon)) M->a0 = 0;
+  if ((fabs(M->b0) < epsilon)) M->b0 = 0;
+}
+
+/*  as above, and shorten what a chopped hopping has disconnected.
+ *
+ *  There are three places a dimension can collapse and all three already mean
+ *  something:
+ *
+ *   - a small val.b[k] cuts the valence chain at k. TriDiagonalMatrixChopReduceDimension
+ *     does that;
+ *   - a small val.b[0] disconnects the whole branch, so val.N becomes 0 and the branch
+ *     contributes only its site energy val.a[0] to the denominator. That is the same
+ *     call: it sets N = i at the first small b, and i = 0 gives N = 0;
+ *   - a small b0 is the hopping onto the observed site itself. Nothing then couples to
+ *     the matrix at all, so G(w) = a0 and the matrix has no dimension left: both chains
+ *     go to zero. This is the b0 == 0 convention the conversions out of this type all
+ *     test for.
+ */
+void DoubleTriDiagonalMatrixChopReduceDimension(DoubleTriDiagonalMatrixType * const M, double const epsilon)
+{
+  TriDiagonalMatrixChopReduceDimension(&(M->val), epsilon);
+  TriDiagonalMatrixChopReduceDimension(&(M->con), epsilon);
+  if ((fabs(M->a0) < epsilon)) M->a0 = 0;
   if ((fabs(M->b0) < epsilon))
+  {
     M->b0 = 0;
+    M->val.N = 0;
+    M->con.N = 0;
+  }
+}
+
+/*  Cut both chains, the valence one to at most Nval and the conduction one to at most
+ *  Ncon. a0 and b0 sit in front of the two chains and are left alone.
+ */
+uint32_t DoubleTriDiagonalMatrixTruncate(DoubleTriDiagonalMatrixType * const M, uint32_t const Nval, uint32_t const Ncon)
+{
+  if (TriDiagonalMatrixTruncate(&(M->val), Nval))
+  {
+    printf("TriDiagonalMatrixTruncate failed for val in DoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  if (TriDiagonalMatrixTruncate(&(M->con), Ncon))
+  {
+    printf("TriDiagonalMatrixTruncate failed for con in DoubleTriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  return 0;
 }
 
 /*  MI=M^-1
  *  MI not initiallized on call
  */
-double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, MatrixType * const MI)
+double DoubleTriDiagonalMatrixInverseOld(DoubleTriDiagonalMatrixType const M, MatrixType * const MI)
 {
   uint32_t i;
   MI->Ni = M.val.N + M.con.N + 1;
@@ -130,11 +162,11 @@ double DoubleTriDiagonalMatrixInverse(DoubleTriDiagonalMatrixType const M, Matri
   MI->QComplex = 0;
   if (InitMatrix(MI))
   {
-    printf("InitMatrix failed in DoubleTriDiagonalMatrixInverse\n");
+    printf("InitMatrix failed in DoubleTriDiagonalMatrixInverseOld\n");
     fflush(stdout);
     return -1;
   }
-  MI->VRe[0][0] = (M.con.a[0] + M.val.a[0]) / 2.0;
+  MI->VRe[0][0] = M.con.a[0] + M.val.a[0];
   for (i = 1; i <= M.val.N; i++)
   {
     MI->VRe[i - 1][i] = M.val.b[i - 1];
@@ -209,7 +241,7 @@ uint32_t DoubleTriDiagonalMatrixPart(DoubleTriDiagonalMatrixType * const M, Doub
   M->con.N = iEndcon;
   InitDoubleTriDiagonalMatrix(M);
   M->mu = A.mu;
-  M->Epsilon = A.Epsilon;
+  M->kBT = A.kBT;
   M->a0 = A.a0;
   M->b0 = A.b0;
   for (i = 0; i < M->val.N; i++)
@@ -235,8 +267,9 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
   M->val.N = A.val.N;
   M->con.N = A.con.N;
   InitDoubleTriDiagonalMatrix(M);
+  strcpy(M->Name, A.Name);
   M->mu = A.mu;
-  M->Epsilon = A.Epsilon;
+  M->kBT = A.kBT;
   M->a0 = A.a0;
   M->b0 = A.b0;
   for (i = 0; i < M->val.N; i++)
@@ -260,10 +293,10 @@ uint32_t DoubleTriDiagonalMatrixCopy(DoubleTriDiagonalMatrixType * const M, Doub
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
+uint32_t RealDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
-  y[0] = (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
+  y[0] = (M.val.a[0] + M.con.a[0]) * x[0];
   for (i = 1; i <= M.val.N; i++)
   {
     y[i] = M.val.a[i] * x[i];
@@ -292,11 +325,11 @@ uint32_t RealDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, 
  * y already allocated
  * y[i]=sum_j M[i][j] x[j]
  */
-uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
-  yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0;
-  yIm[0] = (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;
+  yRe[0] = (M.val.a[0] + M.con.a[0]) * xRe[0];
+  yIm[0] = (M.val.a[0] + M.con.a[0]) * xIm[0];
   for (i = 1; i <= M.val.N; i++)
   {
     yRe[i] = M.val.a[i] * xRe[i];
@@ -333,10 +366,10 @@ uint32_t ComplexDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const 
  * y already allocated
  * y=sum_ij x[i] M[i][j] x[j]
  */
-uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
+uint32_t RealVectorDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const x, double *const y)
 {
   uint32_t i;
-  *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0] / 2.0;
+  *y = x[0] * (M.val.a[0] + M.con.a[0]) * x[0];
   for (i = 1; i <= M.val.N; i++)
   {
     *y += x[i] * M.val.a[i] * x[i];
@@ -361,10 +394,10 @@ uint32_t RealVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType con
  * y already allocated
  * y=sum_ij x[i]^* M[i][j] x[j]
  */
-uint32_t ComplexVectorDoubleTriDiagonalMatrixVector(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
+uint32_t ComplexVectorDoubleTriDiagonalMatrixVectorOld(DoubleTriDiagonalMatrixType const M, const double *const xRe, const double *const xIm, double *const yRe, double *const yIm)
 {
   uint32_t i;
-  *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] / 2.0 + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0] / 2.0;
+  *yRe = xRe[0] * (M.val.a[0] + M.con.a[0]) * xRe[0] + xIm[0] * (M.val.a[0] + M.con.a[0]) * xIm[0];
   *yIm = 0;
   for (i = 1; i <= M.val.N; i++)
   {

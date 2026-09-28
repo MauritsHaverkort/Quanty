@@ -1,0 +1,232 @@
+====== CreateSpectra ======
+
+###
+CreateSpectra($O_1$,$O_2$,$\psi$) calculates
+\begin{equation}
+\langle \psi | O_2^{\dagger} \frac{1}{(\omega + \mathrm{i} \Gamma/2 + E_0 - O_1)} O_2 | \psi \rangle,
+\end{equation}
+with $E_0 = \langle \psi | O_1 | \psi \rangle$ and returns the result as a spectrum object and as a tri-diagonal matrix. $O_1$ and $O_2$ are allowed to be tables of operators or tables of wavefunctions. CreateSpectra can take a fourth element specifying options.
+###
+
+###
+CreateSpectra($O_1$,$O_2$,$\psi$,//Hybridisation//) does the same for a Hamiltonian $O_1$ that is coupled to baths of free particles, which are not given as operators but as hybridisation functions. The options then come as a fifth element. See [[#hybridisation_functions|Hybridisation functions]] below.
+###
+
+===== Input =====
+
+  * $O_1$ : Operator
+  * $O_2$ : Operator or a list of operators
+  * $\psi$ : Wavefunction or a list of Wavefunctions
+  * //Hybridisation// : (optional) a list of hybridisation functions with the operators they couple to, $\{\{\Delta_1, \{V_{1,1}, V_{1,2}, \dots\}\}, \{\Delta_2, \{V_{2,1}, \dots\}\}, \dots\}$. Each $\Delta_i$ is a response function of any type whose block size is the number of operators $V_{i,j}$ that follow it. See [[#hybridisation_functions|Hybridisation functions]] below
+  * Possible options are:
+    * "NTri" Positive integer specifying the number of states in the Krylov basis. (Default value 200)
+    * "epsilon" Positive real defining the smallest absolute prefactor of a determinant that is kept in a wave-function. (Default value 1.49E-10)
+    * "SingularValue" Positive real defining the smallest singular value of a list of wave-functions that is considered different from zero. A direction whose singular value is smaller is removed from the basis, which reduces the size of the blocks of the block Lanczos. Set independently of "epsilon". (Default value 1.49E-8)
+    * "restrictions" A list of restrictions defining restrictions on configurations and occupations included. Allows one to do restricted active space calculations
+    * "Emin" Real value defining the minimum energy in the spectra (Default value determined such that the spectrum fits into the range
+    * "Emax" Real value defining the maximum energy in the spectra (Default value determined such that the spectrum fits into the range
+    * "NE" Positive integer defining the number of points in the spectrum. (Default value 1000)
+    * "Gamma" Positive real defining the full width half maximum Lorenzian broadening. (Default value 10*(Emax-Emin)/NE)
+    * "Tensor" Bolean defining if off diagonal elements are calculated or not. (Default false)
+    * "E0" Overwrites the standard value of $E_0 = \langle \psi | O_1 | \psi \rangle$ to the value set in the options
+    * "Method" String selecting how the spectrum is calculated. "Auto": by exact diagonalisation when the space the spectrum lives in has at most "DenseBorder" determinants, by Lanczos otherwise. "Dense": always by exact diagonalisation. "Lanczos": always by Lanczos. "Mesh": with hybridisation functions only, the spectrum on the energy mesh given by "Emin", "Emax" and "NE", see below. (Default "Auto")
+    * "DenseBorder" Positive integer, the size of the space below which "Method" "Auto" diagonalises exactly. (Default value 1513)
+    * "ForceDenseMethod" Boolean, the same as "Method" "Dense". (Default false)
+    * "KrylovBasis" Boolean, also return the Krylov basis as the last result. (Default false)
+    * "NBathExcitations" Positive integer, with hybridisation functions only: the number of excitations (particles and holes together) allowed at once in the baths the hybridisation functions stand for. (Default value 1)
+    * "NonCrossing" Boolean, with hybridisation functions only: keep only the processes in which the bath excitation that was added last leaves first. (Default false)
+    * "NTriFull" Positive integer, with hybridisation functions only: the number of blocks of the tri-diagonal matrix returned by the "Lanczos" route. (Default value "NTri" times the number of hybridisation functions)
+    * "GridPoints" List of reals, with hybridisation functions only: a grid on which the poles of the baths are binned before the "Lanczos" route builds its tri-diagonal matrix. The binning keeps the weight and the first moment of every bin. (Default: automatic; the poles are kept one by one when there are few enough of them)
+
+###
+The two thresholds answer different questions. //epsilon// controls the wave-functions: a determinant whose prefactor is smaller than //epsilon// is dropped, which is what keeps the Krylov vectors from filling memory. //SingularValue// controls the blocks: the starting block and every block of the block Lanczos are orthonormalized, and a direction whose singular value is smaller than //SingularValue// is removed, so the blocks can get smaller as the recursion proceeds. Neither follows the other.
+###
+
+###
+The orthonormalization of a block of wave-functions is built from the overlap matrix $S_{ij} = \langle \psi_i | \psi_j \rangle$, in which a singular value $s$ enters as $s^2$. A singular value below $3 \sqrt{\epsilon_{\mathrm{machine}}} \, s_{\mathrm{max}} \approx 4.5 \cdot 10^{-8} s_{\mathrm{max}}$ can therefore not be distinguished from the rounding error of $S$, and is removed whatever //SingularValue// is set to. Setting //SingularValue// above that limit is meaningful and removes directions that could still have been resolved; setting it below does not buy accuracy.
+###
+
+===== Output =====
+
+  * //S// : Spectrum object. In the case that both a list of operators $\{O_2^a,O_2^b\}$ as well as a list of Wavefunctions $\{\psi_1,\psi_2,\psi_3\}$ is given the output order first the Wavefunctions and then the operators, i.e. $\{I_1^a,I_2^a,I_3^a,I_1^b,I_2^b,I_3^b\}$ with $a$ and $b$ referring to the index of the operators and $1,2,3$ to the index of the Wavefunctions.
+  * //G// : Response function object. Response functions are lists that contain the pole energies and residues in one of the different formats. Create spectra outputs either a tridiagonal format or a list of poles. When the option tensor = true is set the output is a matrix valued response function.
+  * With hybridisation functions two more results follow, //S0// and //G0//: the spectrum and the response function of $O_1$ without the baths, as CreateSpectra($O_1$,$O_2$,$\psi$) would give them.
+  * With "KrylovBasis" the Krylov basis comes last, as a table of wavefunctions.
+
+===== Hybridisation functions =====
+
+###
+A hybridisation function $\Delta_i(\omega) = A_0 + \sum_n W_n / (\omega - \epsilon_n)$ stands for a bath of free particles. Every residue is written as $W_n = L_n^{\dagger} L_n$, and every row $\mu$ of $L_n$ is a bath mode $b_{\mu}$ at energy $\epsilon_n$ that couples to the operators $V_{i,j}$ that follow $\Delta_i$ in the list:
+\begin{equation}
+H_{\mathrm{aux}} = O_1 + \sum_{i} \sum_{jj'} (A_0)_{jj'} V_{i,j}^{\dagger} V_{i,j'} + \sum_{\mu} \epsilon_{\mu} \, b_{\mu}^{\dagger} b_{\mu} + \sum_{\mu, j} \left( L_{\mu j} \, b_{\mu}^{\dagger} V_{i,j} + \mathrm{h.c.} \right) .
+\end{equation}
+CreateSpectra returns the spectrum of $H_{\mathrm{aux}}$ from $O_2 |\psi\rangle$, with $\psi$ a state of $O_1$ alone and the baths empty. The bath is never written down as operators. Its modes do not need orbitals of their own, and a hybridisation function with a thousand poles costs little more than one with ten.
+###
+
+###
+The operators $V_{i,j}$ can be any operators on the orbitals of $O_1$. An annihilation operator couples to an empty band of fermions: the electron moves from the system into the bath. A filled band is given in the hole picture, with the energies of its hybridisation function inverted by [[documentation:language_reference:objects:responsefunction:functions:invertenergy|ResponseFunction.InvertEnergy]] and creation operators as $V$. An operator with an even number of fermion operators, such as $c^{\dagger} c$, couples to a bath of bosons, for example the decay into photons of a fluorescence process. Whether the bath particles are fermions or bosons follows from the operators and needs no option; all operators of one hybridisation function have to have the same parity.
+###
+
+###
+"NBathExcitations" $= p$ allows $p$ excitations in the baths at once, the $p$ of Y. Lu, X. Cao, P. Hansmann and M. W. Haverkort, Phys. Rev. B **100**, 115134 (2019). At $p = 1$ an excitation of the system can leave into a bath and come back. At $p = 2$ a second one can leave while the first is out, in either order, which includes the processes in which the two cross; for bosons a mode can then hold two excitations, and for fermions it cannot. "NonCrossing" keeps only the nested processes, in which the excitation that left last comes back first. At $p = 1$ there is nothing to cross and the option changes nothing. The starting state $\psi$ is always that of $O_1$ alone, with no excitation in the baths.
+###
+
+###
+The states of $O_1$ that the baths reach are those of the Krylov space of $O_1$ with the operators $V$ applied to them. That is exact whenever the $V$ reach the whole sector the spectrum lives in, and keeps the first two moments right otherwise.
+###
+
+###
+The hybridisation needs "Tensor" true and a Lanczos route. The exact diagonalisation route does not take hybridisation functions, so for a small system, which "Method" "Auto" would diagonalise exactly, ask for "Method" "Lanczos".
+###
+
+==== On an energy mesh ====
+
+###
+"Method" "Mesh" calculates the spectrum with hybridisation functions directly on the uniform energy mesh $\omega_k = E_{\mathrm{min}} + k (E_{\mathrm{max}} - E_{\mathrm{min}}) / N_E$, with $\omega$ measured from $E_0$, and needs "Emin" and "Emax". //G// comes back as a list of poles on the mesh points: every pole of the exact response function is split over the two mesh points next to it such that its weight and its first moment are kept, so there is no broadening in //G//. //S// is //G// on the same mesh, broadened by "Gamma". The mesh is extended, with the same spacing, until it holds the whole spectrum, so //G// can have poles outside $[E_{\mathrm{min}}, E_{\mathrm{max}}]$.
+###
+
+###
+The residues are calculated from the imaginary part of the response function off the real axis; the page of [[documentation:language_reference:functions:calculateg|CalculateG]] gives the identity. The baths enter as a nested recursion on the mesh, the highest level exactly and the levels below through a convolution on the mesh. There is no tri-diagonal matrix of "NTriFull" blocks to converge, and a spectrum that is continuous comes out continuous. With "NBathExcitations" larger than one the mesh method keeps only the nested processes and asks for "NonCrossing" to be set; the crossed processes need "Method" "Lanczos".
+###
+
+===== Example =====
+
+###
+description text
+###
+
+==== Input ====
+<code Quanty CreateSpectra.Quanty>
+dofile("../definitions.Quanty")
+-- define an Hamiltonian (in this case a magnetic field of 6 tesla in the z direction)
+H = 6 * EnergyUnits.Tesla.value * (2*OppSz + OppLz)
+-- define a transition operator (in this case a pulsed magnetic field of 20 tesla in the x direction)
+T = 20 * EnergyUnits.Tesla.value * (2*OppSx + OppLx)
+-- define a ground-state (in this case a p electron with spin and angular momentum down)
+psigrd = psim1dn
+
+-- calculate < psigrd | T^dag 1/(w-H+i*G/2+E0) T | psigrd >
+--   with E0 = <psigrd | H | psigrd >
+-- spectri is optional
+spec, spectri = CreateSpectra(H, T, psigrd,{{"NE",20}})
+
+-- the real and imaginary part on a fixed energy grid
+print(spec)
+
+-- the spectrum represented as a continued fraction
+-- spectri contains {a,b,E0}
+-- and the spectrum is a[1] + b[1]^2 / (w + E0 + i G/2 - a[2] - b[2]^2 / (w + E0 + i G/2 - a[3] - b[3]^2 / ... ))
+print(spectri)
+</code>
+
+==== Result ====
+<file Quanty_Output CreateSpectra.out>
+#Spectra: 1
+Emin______Emax       3.038900445581886E-04  7.380186796413151E-04
+EminPole__EmaxPole   3.473029080665012E-04  6.946058161330025E-04
+dE________Gamma      2.170643175415633E-05  2.170643175415633E-04
+Energy               Re[0]                  Im[0]
+ 3.038900445582E-04 -5.313499244491392E-03 -6.207216396406420E-03
+ 3.255964763123E-04 -4.530120135703289E-03 -6.919966484421555E-03
+ 3.473029080665E-04 -3.515600809214091E-03 -7.272899174061652E-03
+ 3.690093398207E-04 -2.517203983251221E-03 -7.171656631527070E-03
+ 3.907157715748E-04 -1.782244773628827E-03 -6.719544484357337E-03
+ 4.124222033290E-04 -1.413455673284595E-03 -6.131215006631856E-03
+ 4.341286350831E-04 -1.372258888529464E-03 -5.591509432157396E-03
+ 4.558350668373E-04 -1.564713253998241E-03 -5.201614330859017E-03
+ 4.775414985914E-04 -1.902890978987316E-03 -5.000149700104968E-03
+ 4.992479303456E-04 -2.322043353835751E-03 -4.998296710798989E-03
+ 5.209543620998E-04 -2.774954571317865E-03 -5.203039821220997E-03
+ 5.426607938539E-04 -3.219375361758718E-03 -5.628003383025635E-03
+ 5.643672256081E-04 -3.603346747444065E-03 -6.295735047500588E-03
+ 5.860736573622E-04 -3.848348813887564E-03 -7.231512606316196E-03
+ 6.077800891164E-04 -3.831631961478373E-03 -8.442956473257584E-03
+ 6.294865208705E-04 -3.379188728845951E-03 -9.875468445796350E-03
+ 6.511929526247E-04 -2.302467572417779E-03 -1.134374714025916E-02
+ 6.728993843788E-04 -5.224385625615705E-04 -1.249103108669947E-02
+ 6.946058161330E-04  1.757800404607050E-03 -1.289786046880420E-02
+ 7.163122478872E-04  4.046100622038835E-03 -1.236518601314671E-02
+ 7.380186796413E-04  5.850339581477893E-03 -1.108758309628370E-02
+
+{ { { 0 , -0.00081037345215517 , -0.00092614108817734 } ,
+  { 0.0014178581849128 , 0.00016372016094642 } ,
+  mu = 0 ,
+  name = Matrix ,
+  type = Tri } }
+</file>
+
+===== Example with a hybridisation function =====
+
+###
+One orbital with spin and a Hubbard $U$, holding one electron, hybridises with an empty band that is given as a hybridisation function of three poles per spin. The electron addition spectrum is calculated with the hybridisation function by Lanczos, with the hybridisation function on an energy mesh, and with the band written out as six more orbitals, restricted to at most one electron, which is the space the hybridisation function stands for at "NBathExcitations" $= 1$.
+###
+
+==== Input ====
+<code Quanty CreateSpectraHybridisation.Quanty>
+ed, U = -0.5, 2.0
+ek = { 0.6, 1.0, 1.4}      -- energies of the bath poles
+Vk = { 0.2, 0.3, 0.2}      -- hybridisation strength of each pole
+
+-- the orbital alone, mode 0 spin down and mode 1 spin up
+NF   = 2
+Hsys = ed * (NewOperator(NF,0,{{0,-0,1}}) + NewOperator(NF,0,{{1,-1,1}}))
+     + U * NewOperator(NF,0,{{0,-0,1}}) * NewOperator(NF,0,{{1,-1,1}})
+psi  = NewWavefunction(NF,0,{{"01",1}})        -- one electron, spin up
+Cr   = {NewOperator(NF,0,{{0,1}}), NewOperator(NF,0,{{1,1}})}
+
+-- Delta(w) = sum_k Vk^2 / (w - ek), the same for both spins, coupled through the
+-- annihilation operators: an electron of the orbital moves into the empty band
+W = {}
+for k = 1, 3 do W[k] = Matrix.New({{Vk[k]^2, 0}, {0, Vk[k]^2}}) end
+Delta = ResponseFunction.New({{Matrix.Zero(2), ek[1], ek[2], ek[3]}, W, mu = 0, type = "ListOfPoles"})
+Hybridisation = {{Delta, {NewOperator(NF,0,{{-0,1}}), NewOperator(NF,0,{{-1,1}})}}}
+
+Opt  = {{"Tensor",true},{"Emin",-1},{"Emax",5},{"NE",600},{"Method","Lanczos"}}
+S, G = CreateSpectra(Hsys, Cr, psi, Hybridisation, Opt)
+OptM = {{"Tensor",true},{"Emin",-1},{"Emax",5},{"NE",600},{"Method","Mesh"}}
+SM, GM = CreateSpectra(Hsys, Cr, psi, Hybridisation, OptM)
+
+-- the same with the band as modes 2 .. 7 (2k spin down, 2k+1 spin up), empty to start
+-- with and restricted to at most one electron
+NFb = 8
+Hb  = ed * (NewOperator(NFb,0,{{0,-0,1}}) + NewOperator(NFb,0,{{1,-1,1}}))
+    + U * NewOperator(NFb,0,{{0,-0,1}}) * NewOperator(NFb,0,{{1,-1,1}})
+for k = 1, 3 do
+  for s = 0, 1 do
+    local b = 2*k + s
+    Hb = Hb + ek[k] * NewOperator(NFb,0,{{b,-b,1}})
+            + Vk[k] * (NewOperator(NFb,0,{{b,-s,1}}) + NewOperator(NFb,0,{{s,-b,1}}))
+  end
+end
+psib = NewWavefunction(NFb,0,{{"01000000",1}})
+Crb  = {NewOperator(NFb,0,{{0,1}}), NewOperator(NFb,0,{{1,1}})}
+Sb, Gb = CreateSpectra(Hb, Crb, psib, {{"Tensor",true},{"Emin",-1},{"Emax",5},{"NE",600},
+                                       {"Restrictions",{NFb,0,{"00111111",0,1}}}})
+
+print("  omega    explicit bath    hybridisation    on the mesh")
+for w = 0, 4, 0.5 do
+  print(string.format("  %5.2f   %12.6f   %14.6f   %12.6f", w,
+        -Complex.Im(Gb(w,0.1)[1][1])/Pi, -Complex.Im(G(w,0.1)[1][1])/Pi, -Complex.Im(GM(w,0.1)[1][1])/Pi))
+end
+</code>
+
+==== Result ====
+<code>
+  omega    explicit bath    hybridisation    on the mesh
+   0.00       0.017858         0.017858       0.017860
+   0.50       0.743393         0.743393       0.744075
+   1.00       0.084504         0.084504       0.084551
+   1.50       0.097100         0.097100       0.097133
+   2.00       1.026462         1.026462       1.031328
+   2.50       0.031542         0.031542       0.031548
+   3.00       0.009839         0.009839       0.009839
+   3.50       0.004844         0.004844       0.004844
+   4.00       0.002903         0.002903       0.002903
+</code>
+
+###
+Without the band the spectrum would be a single line at $\epsilon_d + U = 1.5$; the band pushes it into the two peaks near $0.5$ and $2$ and spreads a little weight in between. The hybridisation function gives the spectrum of the explicit band exactly. The mesh differs from both by the splitting of the poles over the mesh of spacing $0.01$, seen here at a broadening of $0.1$ and largest on the sharp peaks. The calculation prints some lines of progress output, left out here.
+###
+
+===== Table of contents =====
+{{indexmenu>.#1}}

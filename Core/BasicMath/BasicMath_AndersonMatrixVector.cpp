@@ -99,8 +99,8 @@ void AndersonMatrixChopReduceDimension(AndersonMatrixType * const M, double cons
   {
     if ((fabs(M->b[i]) < epsilon))
     {
-      memcpy(&(M->b[i]),   &(M->b[i+1]), (M->N-i-1)*sizeof(double));
-      memcpy(&(M->a[i+1]), &(M->a[i+2]), (M->N-i-1)*sizeof(double));
+      memmove(&(M->b[i]),   &(M->b[i+1]), (M->N-i-1)*sizeof(double));
+      memmove(&(M->a[i+1]), &(M->a[i+2]), (M->N-i-1)*sizeof(double));
       M->N--;
       i--;
     }
@@ -241,6 +241,7 @@ uint32_t AndersonMatrixCopy(AndersonMatrixType * const M, AndersonMatrixType A)
   M->N = A.N;
   if (InitAndersonMatrix(M))
     return 1;
+  strcpy(M->Name, A.Name);
   for (i = 0; i < M->N; i++)
   {
     M->a[i] = A.a[i];

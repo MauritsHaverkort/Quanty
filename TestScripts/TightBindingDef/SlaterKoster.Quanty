@@ -1,0 +1,70 @@
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - SlaterKosterTable             --")
+print("--------------------------------------------------------")
+
+
+-- obtain the euler angles from directional vector.
+function EulerAnglesFromDirection(v)
+	local nx,ny,nz = v[1],v[2],v[3]
+	local r = sqrt(nx*nx+ny*ny+nz*nz)
+	local beta  = acos(nz/r)     -- polar angle theta
+	local alpha = atan2(ny,nx)   -- azimuthal angle phi
+	return alpha,beta
+end
+
+-- Rotation operator in the K (SlaterKosterTable) basis
+function RotationOperatorK(l,v)
+	local alpha,beta = EulerAnglesFromDirection(v)
+	return Rotate(WignerD(l,alpha,beta,0), YtoKMatrix(l,{{"addSpin",false}}))
+end
+
+directions = { {"Hz",{0,0,1}},   -- trivial check: identity rotation
+							 {"Hx",{1,0,0}},
+							 {"Hy",{0,1,0}},
+							 {"Ha",{1,2,3}},
+							 {"Hb",{1,1,0}},
+							 {"Hc",{5,3,1}} }
+
+for l1=0,4 do
+	for l2=0,4 do
+		for lambda = 0, min(l1,l2) do
+			print("test for l1",l1,"l2",l2,"Lambda",lambda)
+			param = {}
+			for i=1,min(l1,l2)+1 do
+				param[i]=0
+			end
+			param[lambda+1]=1
+
+			Hz = TightBinding.SlaterKosterTable(l1,l2,{0,0,1},param)
+
+			for _,d in ipairs(directions) do
+				local name, vec = d[1], d[2]
+
+				local test1 = TightBinding.SlaterKosterTable(l1,l2,vec,param)
+
+				local R1 = RotationOperatorK(l1,vec)
+				local R2 = RotationOperatorK(l2,vec)
+				local test2 = R1 * Hz * Matrix.ConjugateTranspose(R2)
+				
+				if not( Chop(test1 - test2) == 0*test1) then
+					print(name)
+					print(test1)
+					print(test2)
+					print(test1-test2)
+					print(Chop(test1-test2))
+					error("SlaterKosterTable or WignerD or YtoK failed for "..name.."\n",1)
+				end
+			end
+		end
+	end
+end
+
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

@@ -11,6 +11,7 @@ void OrderListOfPolesOld(ListOfPoles * const M);
 void MergeOnePoleWithNothers(double const *a, double *const b, uint32_t Ntot, uint32_t n);
 void ReduceListOfPolesWeigth(ListOfPoles * M, double const bmin, double const Ef);
 void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef);
+void ReduceListOfPolesWeightFermi(ListOfPoles * M, double const bmin, double const Ef);
 void ReduceListOfPolesNumber(ListOfPoles * M, uint32_t N);
 void ReduceListOfPolesMoment(ListOfPoles * M, uint32_t N);
 void ReduceListOfPolesSpacing(ListOfPoles * M, double da);
@@ -19,6 +20,7 @@ uint32_t ListOfPolesMovePositiveEnergyToMu(ListOfPoles * const A, double const m
 uint32_t ListOfPolesRemoveNegativeEnergy(ListOfPoles * const A, double const mu);
 uint32_t ListOfPolesRemovePositiveEnergy(ListOfPoles * const A, double const mu);
 uint32_t SubtractListOfPoles(ListOfPoles * const A, ListOfPoles const * const  B);
+int MakeListOfPolesPhysical(ListOfPoles *const A);
 uint32_t GaussianBroadenListOfPoles(ListOfPoles * const M, double const G, uint32_t const Nmul);
 uint32_t ListOfPolesCopy(ListOfPoles * M, ListOfPoles B);
 uint32_t ListOfPolesCopyVal(ListOfPoles * M, ListOfPoles B, double Ef, double Epsilon);
@@ -34,3 +36,4 @@ uint32_t ShiftListOfPolesToMakeChemPotZero(ListOfPoles * const M, double const o
 uint32_t ShiftListOfPoles(ListOfPoles * const M, double const munew);
 uint32_t ShiftListOfPolesToMakeFirstMomentZero(ListOfPoles * const M);
 uint32_t ListOfPolesCalculateChemicalPotential(ListOfPoles const M, double const occupation, double *const mu);
+int CopyListOfPolesToBlockListOfPoles(ListOfPoles const * const M, BlockListOfPoles *MB);

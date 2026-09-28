@@ -1,0 +1,165 @@
+-- CalculateG with a self energy given per atom or per atom and shell. The entries are merged into one block
+-- diagonal self energy (a direct sum) with each block at the orbitals of its atom or shell. The reference is
+-- that direct sum written out by hand as one list of poles of the full dimension.
+-- The entries have different numbers of poles, so chains of different length are merged, one entry is
+-- complex, and one is single valued (a one orbital shell). Every type is tested, the placeholder 0 for a zero
+-- self energy, and that mixed types, different mu and a wrong dimension are refused.
+
+print("--------------------------------------------------------")
+print("-- Begin TightBinding - CalculateG with Sigma per atom --")
+print("--------------------------------------------------------")
+
+-- atom A: shell s (2 orbitals) and shell d (3 orbitals), atom B: shell p (2 orbitals), atom C: shell s (1 orbital)
+HTB = NewTightBinding()
+HTB.Name = "Three atom model"
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0},       {{"s", {"s1","s2"}}, {"d", {"d1","d2","d3"}}}},
+              {"B", {0.5,0,0},     {{"p", {"p1","p2"}}}},
+              {"C", {0,0.5,0},     {{"s", {"s"}}}} }
+HTB.Hopping = {{"A.s","A.s",{ 1,0,0},{{-1, 0.3},{0,-1}}},
+               {"A.s","A.s",{-1,0,0},{{-1, 0},{0.3,-1}}},
+               {"A.s","A.d",{ 0,0,0},{{0.3,0.1,0},{0,0.2,0.1}}},
+               {"A.d","A.s",{ 0,0,0},{{0.3,0},{0.1,0.2},{0,0.1}}},
+               {"A.d","A.d",{ 0,0,0},{{1,0.1,0},{0.1,1.5,0},{0,0,2}}},
+               {"A.s","B.p",{ 0.5,0,0},{{0.5,0},{0,0.5}}},
+               {"B.p","A.s",{-0.5,0,0},{{0.5,0},{0,0.5}}},
+               {"A.s","B.p",{-0.5,0,0},{{0.5,0},{0,0.5}}},
+               {"B.p","A.s",{ 0.5,0,0},{{0.5,0},{0,0.5}}},
+               {"B.p","B.p",{ 0,0,0},{{-1,0.2},{0.2,-1.5}}},
+               {"A.s","C.s",{ 0, 0.5,0},{{0.4},{0}}},
+               {"C.s","A.s",{ 0,-0.5,0},{{0.4,0}}},
+               {"A.s","C.s",{ 0,-0.5,0},{{0.4},{0}}},
+               {"C.s","A.s",{ 0, 0.5,0},{{0.4,0}}},
+               {"C.s","C.s",{ 0,0,0},{{0.5}}}}
+NF = 8
+Offset = {As=0, Ad=2, Bp=5, Cs=7}
+
+-- the self energies, each as a0, pole energies and weights
+SData = {}
+SData.As = {a0={{0,0.2},{0.2,0.1}}, E={-2,1,3},
+            W={{{0.3,0.1},{0.1,0.2}}, {{0.5,-0.1},{-0.1,0.4}}, {{0.2,0},{0,0.3}}}}
+SData.Ad = {a0={{0.1,0.1*I,0},{-0.1*I,0,0},{0,0,0.2}}, E={-3,-1,0.5,2.5},
+            W={{{0.2,0.1*I,0},{-0.1*I,0.3,0.05},{0,0.05,0.1}},
+               {{0.4,0,0.1},{0,0.2,0},{0.1,0,0.3}},
+               {{0.1,0.05-0.05*I,0},{0.05+0.05*I,0.2,0},{0,0,0.2}},
+               {{0.3,0,0},{0,0.1,0.02*I},{0,-0.02*I,0.2}}}}
+SData.Bp = {a0={{-0.1,0},{0,0.1}}, E={-1.5,2},
+            W={{{0.6,0.2},{0.2,0.3}}, {{0.2,-0.1},{-0.1,0.5}}}}
+SData.Cs = {a0=0.3, E={-0.5,1.5}, W={0.4,0.25}}
+
+function ToMatrix(x)
+  if type(x)=="table" then return Matrix.New(x) end
+  return Matrix.New({{x}})
+end
+
+-- the self energy of one shell as a block list of poles
+function ShellSigma(d)
+  local a, w = {ToMatrix(d.a0)}, {}
+  for i = 1, #d.E do a[i+1] = d.E[i]; w[i] = ToMatrix(d.W[i]) end
+  return ResponseFunction.New({a, w, mu=0, type="ListOfPoles"})
+end
+
+-- the single valued self energy of a one orbital shell
+function ScalarSigma(d)
+  local a = {d.a0}
+  for i = 1, #d.E do a[i+1] = d.E[i] end
+  return ResponseFunction.New({a, d.W, mu=0, type="ListOfPoles"})
+end
+
+-- a matrix of dimension NF with the matrix x at the rows and columns off+1 ...
+function Embed(x, off)
+  local m = ToMatrix(x)
+  local t = {}
+  for i = 1, NF do t[i] = {} for j = 1, NF do t[i][j] = 0 end end
+  for i = 1, #m do for j = 1, #m[i] do t[off+i][off+j] = m[i][j] end end
+  return Matrix.New(t)
+end
+
+-- the direct sum of the given shells written out as one list of poles of dimension NF
+function DirectSum(shells)
+  local a0 = Embed(0, 0)
+  local a, w = {}, {}
+  for _, s in ipairs(shells) do
+    local d = SData[s]
+    a0 = a0 + Embed(d.a0, Offset[s])
+    for i = 1, #d.E do a[#a+1] = d.E[i]; w[#w+1] = Embed(d.W[i], Offset[s]) end
+  end
+  table.insert(a, 1, a0)
+  return ResponseFunction.New({a, w, mu=0, type="ListOfPoles"})
+end
+
+Nk = {3,3,1}
+Opts = {{"Nk",Nk},{"Emin",-8},{"Emax",8},{"NE",300}}
+
+function Compare(GRef, G, text)
+  local maxdiff = 0
+  for omega = -9, 9, 0.037 do
+    local d = GRef(omega,0.1) - G(omega,0.1)
+    for i = 1, #d do for j = 1, #d[i] do
+      if Abs(d[i][j]) > maxdiff then maxdiff = Abs(d[i][j]) end
+    end end
+  end
+  print(string.format("%-60s max |G_ref - G| = %.3e", text, maxdiff))
+  if maxdiff > 1E-10 then
+    error("CalculateG with a self energy per atom differs from the direct sum: "..text.."\n", 1)
+  end
+end
+
+-- the self energies per shell as list of poles
+S = {As=ShellSigma(SData.As), Ad=ShellSigma(SData.Ad), Bp=ShellSigma(SData.Bp), Cs=ScalarSigma(SData.Cs)}
+GRef = CalculateG(HTB, DirectSum({"As","Ad","Bp","Cs"}), Opts)
+
+-- per shell, for each type. The one orbital shell of atom C is single valued.
+for _, t in ipairs({"ListOfPoles", "Tri", "And", "Nat", "DoubleTri"}) do
+  local X = {}
+  for k, v in pairs(S) do X[k] = ResponseFunction.ChangeType(v, t) end
+  Compare(GRef, CalculateG(HTB, {{X.As, X.Ad}, {X.Bp}, {X.Cs}}, Opts), "per shell, "..t)
+  -- atom B and C given for the whole atom instead of per shell
+  Compare(GRef, CalculateG(HTB, {{X.As, X.Ad}, X.Bp, X.Cs}, Opts), "per shell for A, per atom for B and C, "..t)
+end
+
+-- atom A given as one response function for both shells
+do
+  local off = {As=0, Ad=2}
+  local a0 = {} for i = 1, 5 do a0[i] = {} for j = 1, 5 do a0[i][j] = 0 end end
+  local a, w = {}, {}
+  for _, s in ipairs({"As","Ad"}) do
+    local d = SData[s]
+    local m = Matrix.New(d.a0)
+    for i = 1, #m do for j = 1, #m[i] do a0[off[s]+i][off[s]+j] = m[i][j] end end
+    for p = 1, #d.E do
+      local wt = {} for i = 1, 5 do wt[i] = {} for j = 1, 5 do wt[i][j] = 0 end end
+      local mw = Matrix.New(d.W[p])
+      for i = 1, #mw do for j = 1, #mw[i] do wt[off[s]+i][off[s]+j] = mw[i][j] end end
+      a[#a+1] = d.E[p]; w[#w+1] = Matrix.New(wt)
+    end
+  end
+  table.insert(a, 1, Matrix.New(a0))
+  SA = ResponseFunction.New({a, w, mu=0, type="ListOfPoles"})
+end
+Compare(GRef, CalculateG(HTB, {SA, S.Bp, S.Cs}, Opts), "per atom, ListOfPoles")
+Compare(GRef, CalculateG(HTB, {ResponseFunction.ChangeType(SA,"Tri"), ResponseFunction.ChangeType(S.Bp,"Tri"), ResponseFunction.ChangeType(S.Cs,"Tri")}, Opts), "per atom, Tri")
+
+-- zero self energies given as 0, per shell and per atom
+Compare(CalculateG(HTB, DirectSum({"Ad"}), Opts), CalculateG(HTB, {{0, S.Ad}, 0, 0}, Opts), "only A.d, the rest 0")
+Compare(CalculateG(HTB, DirectSum({"As","Bp"}), Opts), CalculateG(HTB, {{S.As, 0}, S.Bp, {0}}, Opts), "A.s and B.p, the rest 0")
+Compare(CalculateG(HTB, Opts), CalculateG(HTB, {0, 0, 0}, Opts), "all 0")
+
+-- refused input
+function ExpectError(f, text, pattern)
+  local ok, msg = pcall(f)
+  if ok then error("CalculateG accepted "..text.."\n", 1) end
+  if not string.find(msg, pattern, 1, true) then error("CalculateG refused "..text.." with an unexpected message: "..msg.."\n", 1) end
+  print(string.format("%-60s refused", text))
+end
+ExpectError(function() return CalculateG(HTB, {{S.As, ResponseFunction.ChangeType(S.Ad,"Tri")}, S.Bp, S.Cs}, Opts) end, "mixed types", "same type")
+SBpmu = ResponseFunction.New({ {Matrix.New(SData.Bp.a0), -1.5, 2}, {Matrix.New(SData.Bp.W[1]), Matrix.New(SData.Bp.W[2])}, mu=0.1, type="ListOfPoles"})
+ExpectError(function() return CalculateG(HTB, {{S.As, S.Ad}, SBpmu, S.Cs}, Opts) end, "different mu", "same mu")
+ExpectError(function() return CalculateG(HTB, {{S.Ad, S.As}, S.Bp, S.Cs}, Opts) end, "wrong dimension", "has dimension")
+ExpectError(function() return CalculateG(HTB, {{S.As, S.Ad}, S.Bp}, Opts) end, "table shorter than the number of atoms", "has 3 atoms")
+ExpectError(function() return CalculateG(HTB, {{S.As}, S.Bp, S.Cs}, Opts) end, "table shorter than the number of shells", "shells")
+ExpectError(function() return CalculateG(HTB, {{S.As, S.Ad}, 1, S.Cs}, Opts) end, "a number other than 0", "only 0 is allowed")
+
+print("--------------------------------------------------------")
+print("-- End TightBinding - CalculateG with Sigma per atom   --")
+print("--------------------------------------------------------")

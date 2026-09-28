@@ -420,6 +420,7 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *     check (Block) TriDiagonalMatrixType
  *     check (Block) AndersonMatrixType
  *     check (Block) NaturalImpurityMatrixType
+ *     check (Block) DoubleTriDiagonalMatrixType
  *     check (Block) ListOfPoles
  *
  *  the later functions read from the lua stack a function of any of the types possible
@@ -466,6 +467,16 @@ MatrixType* luaL_checkMatrix(lua_State *L, int narg)
  *    and defines the Green's function
  *    A0 + B0^* ( Gval(w) + Gcon(w) ) B0^T
  *
+ *  The format of DoubleTriDiagonalMatrixType should be
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, type="DoubleTri" }
+ *    and defines the Green's function
+ *    a0 + b0^2 ( 1/(w - Gval(w) - Gcon(w) ) )
+ *
+ *  The format of BlockDoubleTriDiagonalMatrixType should be
+ *    { {A0, B0}, val=Gval, con=Gcon, mu=0, type="DoubleTri" }
+ *    and defines the Green's function
+ *    A0 + B0^* ( 1/ ( w - Gval(w) + Gcon(w) ) ) B0^T
+ *
  *
  *  The format of ListOfPoles should be:
  *    { {a0,a1,a2,a3,..,an}, {b1,b2,b3,..,bn}, mu=0, type="ListOfPoles"}
@@ -497,7 +508,7 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 't', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((TriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -582,6 +593,17 @@ TriDiagonalMatrixType* luaL_checkTriDiagonalMatrixType(lua_State *L, int narg)
     free(temp);
     return buff;
   }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    DoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkDoubleTriDiagonalMatrixType(L, narg);
+    buff = (TriDiagonalMatrixType*)malloc(sizeof(TriDiagonalMatrixType));
+    DoubleTriDiagonalMatrixToTriDiagonalMatrix(*temp, buff);
+    FreeDoubleTriDiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
   if(strcmp(type, "ListOfPoles")==0)
   {
     ListOfPoles *temp;
@@ -617,7 +639,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
     if (buffRes->Block==false) luaL_error(L, "Encountered a single valued response function where I expected a Block response function");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 't', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -890,7 +912,7 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
-    BlockAndersonMatrixToBlockTridiagonalMatrix(temp, buff, 100*DBL_EPSILON);
+    BlockAndersonMatrixToBlockTridiagonalMatrix(temp, buff, 100*DBL_EPSILON, -1, false);
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;
@@ -903,6 +925,19 @@ BlockTriDiagonalMatrixType* luaL_checkBlockTriDiagonalMatrixType(lua_State *L, i
     buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
     BlockNaturalImpurityOrbitalMatrixToBlockTridiagonalMatrix(temp, buff, 100*DBL_EPSILON);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    BlockDoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
+    buff = (BlockTriDiagonalMatrixType*)malloc(sizeof(BlockTriDiagonalMatrixType));
+    /*  as the And branch above: deflate at 100*DBL_EPSILON and ask
+     *  BlockListOfPolesMergeDegeneratePoles for its standard tolerance with -1 */
+    BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix(temp, buff, 100*DBL_EPSILON, -1, false);
+    FreeBlockDoubleTriDiagonalMatrix(temp);
     free(temp);
     return buff;
   }
@@ -938,7 +973,7 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'a', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((AndersonMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1023,6 +1058,17 @@ AndersonMatrixType* luaL_checkAndersonMatrixType(lua_State *L, int narg)
     free(temp);
     return buff;
   }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    DoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkDoubleTriDiagonalMatrixType(L, narg);
+    buff = (AndersonMatrixType*)malloc(sizeof(AndersonMatrixType));
+    DoubleTriDiagonalMatrixToAndersonMatrix(*temp, buff);
+    FreeDoubleTriDiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
   if(strcmp(type, "ListOfPoles")==0)
   {
     ListOfPoles *temp;
@@ -1056,7 +1102,7 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'a', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockAndersonMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1315,6 +1361,19 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
     free(temp);
     return buff;
   }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    BlockDoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
+    buff = (BlockAndersonMatrixType*)malloc(sizeof(BlockAndersonMatrixType));
+    /*  a negative MinimalPoleDistance asks BlockListOfPolesMergeDegeneratePoles for the
+     *  standard value, which is the one place that decides it */
+    BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix(temp, buff, -1.0, false);
+    FreeBlockDoubleTriDiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
   if(strcmp(type, "ListOfPoles")==0)
   {
     BlockListOfPoles *temp;
@@ -1329,6 +1388,392 @@ BlockAndersonMatrixType* luaL_checkBlockAndersonMatrixType(lua_State *L, int nar
   luaL_error(L, "Errorr reading Greens function of unknown type (%s)",type);
   return NULL;
 }
+
+
+/*
+ *  The format of DoubleTriDiagonalMatrixType should be
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, kBT=0, type="DoubleTri" }
+ *    and defines the Green's function
+ *    a0 + b0^2 ( 1/ ( w - Gval(w) - Gcon(w) ) )
+ */
+DoubleTriDiagonalMatrixType * luaL_checkDoubleTriDiagonalMatrixType(lua_State *L, int narg)
+{
+  const char *type;
+  DoubleTriDiagonalMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 'd', "Default", 0, 0, 0, 0, false, false, false);
+    buff = ((DoubleTriDiagonalMatrixType*)(buffResTri.data));
+    return buff;
+  }
+  if(lua_istable(L, narg)==0)
+  {
+    luaL_error(L, "Error Green's function should be represented by a table");
+  }
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    luaL_error(L, "Error Reading Green's function without type declaration.");
+  }
+  type = lua_tolstring(L, -1, NULL);
+  /*  A table of one of the other types read where a DoubleTri is wanted. None of these
+   *  carries a temperature, so the valence/conduction split is a sharp step at the mu of
+   *  the source; that is the same choice the block reader makes. mu comes from the table.
+   */
+  if(strcmp(type, "Tri")==0)
+  {
+    TriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkTriDiagonalMatrixType(L, narg);
+    buff = (DoubleTriDiagonalMatrixType*)malloc(sizeof(DoubleTriDiagonalMatrixType));
+    if(buff==NULL) luaL_error(L, "malloc failed reading a Green's function of format Tri as DoubleTri");
+    if(TriDiagonalMatrixToDoubleTriDiagonalMatrix(*temp, buff, temp->mu, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format Tri to DoubleTri");
+    }
+    FreeTriDiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if(strcmp(type, "And")==0)
+  {
+    AndersonMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkAndersonMatrixType(L, narg);
+    buff = (DoubleTriDiagonalMatrixType*)malloc(sizeof(DoubleTriDiagonalMatrixType));
+    if(buff==NULL) luaL_error(L, "malloc failed reading a Green's function of format And as DoubleTri");
+    if(AndersonMatrixToDoubleTriDiagonalMatrix(*temp, buff, temp->mu, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format And to DoubleTri");
+    }
+    FreeAndersonMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
+  {
+    BADoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkNatrualImpurityOrbitalMatrixType(L, narg);
+    buff = (DoubleTriDiagonalMatrixType*)malloc(sizeof(DoubleTriDiagonalMatrixType));
+    if(buff==NULL) luaL_error(L, "malloc failed reading a Green's function of format Nat as DoubleTri");
+    if(BADoubleTriDiagonalMatrixToDoubleTriDiagonalMatrix(temp, buff, temp->mu, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format Nat to DoubleTri");
+    }
+    FreeBADoubleTriDiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if(strcmp(type, "ListOfPoles")==0)
+  {
+    ListOfPoles *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkListOfPoles(L, narg);
+    buff = (DoubleTriDiagonalMatrixType*)malloc(sizeof(DoubleTriDiagonalMatrixType));
+    if(buff==NULL) luaL_error(L, "malloc failed reading a Green's function of format ListOfPoles as DoubleTri");
+    if(ListOfPolesToDoubleTridiagonalMatrix(*temp, buff, temp->mu, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format ListOfPoles to DoubleTri");
+    }
+    FreeListOfPoles(temp);
+    free(temp);
+    return buff;
+  }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    TriDiagonalMatrixType *temp;
+    buff = (DoubleTriDiagonalMatrixType*)malloc(sizeof(DoubleTriDiagonalMatrixType));
+    lua_pop(L,1);
+    /* read val */
+    lua_getfield(L, narg, "val");
+    if(lua_isnil(L,-1)==1)
+    {
+      luaL_error(L, "Error Green's function of format DoubleTriDiagonalMatrix should have a field val");
+    }
+    temp = luaL_checkTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->val = *temp;
+    free(temp);
+    lua_pop(L,1);
+    /* read con */
+    lua_getfield(L, narg, "con");
+    if(lua_isnil(L,-1)==1)
+    {
+      luaL_error(L, "Error Green's function of format DoubleTriDiagonalMatrix should have a field con");
+    }
+    temp = luaL_checkTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->con = *temp;
+    free(temp);
+    lua_pop(L,1);
+    /* read {a0,b0} */
+    lua_rawgeti(L, narg, 1);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format DoubleTriDiagonalMatrix should have the table {a0, b0} at position 1");
+    }
+    lua_rawgeti(L, -1, 1);
+    buff->a0 = (double)luaL_checknumber(L, -1);
+    lua_pop(L,1);
+    lua_rawgeti(L, -1, 2);
+    buff->b0 = (double)luaL_checknumber(L, -1);
+    lua_pop(L,2);
+    /* read mu */
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading DoubleTriDiagonalMatrix matrix without mu defined");
+    }
+    lua_pop(L,1);
+    /* read name */
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading NaturalImpurityOrbital matrix without name correctly defined");
+    }
+    lua_pop(L,1);
+    /* read epsilon */
+    lua_getfield(L, narg, "kBT");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->kBT=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      buff->kBT=0;
+    }
+    lua_pop(L,1);
+    return buff;
+  }
+  luaL_error(L, "Errorr reading Greens function of unknown type (%s)",type);
+  return NULL;
+}
+
+/*
+ *
+ */
+BlockDoubleTriDiagonalMatrixType * luaL_checkBlockDoubleTriDiagonalMatrixType(lua_State *L, int narg)
+{
+  const char *type;
+  BlockDoubleTriDiagonalMatrixType *buff;
+  if (luaL_testudata(L, narg, "ResponseFunction_Type") != NULL)
+  {
+    ResponsefunctionType *buffRes, buffResTri;
+    buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
+    if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
+    ConvertResponsefunction(buffRes, &buffResTri, 'd', "Default", 0, 0, 0, 0, false, false, false);
+    buff = ((BlockDoubleTriDiagonalMatrixType*)(buffResTri.data));
+    return buff;
+  }
+  if(lua_istable(L, narg)==0)
+  {
+    luaL_error(L, "Error Green's function should be represented by a table");
+  }
+  lua_getfield(L, narg, "type");
+  if(lua_isstring(L,-1)==0)
+  {
+    luaL_error(L, "Error Reading Green's function without type declaration.");
+  }
+  type = lua_tolstring(L, -1, NULL);
+  if(strcmp(type, "And")==0)
+  {
+    BlockAndersonMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockAndersonMatrixType(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format And as DoubleTri");
+    }
+    /*  none of these table formats carries a temperature, so the valence/conduction
+     *  split is a sharp step at the mu of the source. MergeTolerance 0 asks for the
+     *  default, a few DBL_EPSILON times the band width. */
+    if(BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format And to DoubleTri");
+    }
+    FreeBlockAndersonMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if(strcmp(type, "Tri")==0)
+  {
+    BlockTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format Tri as a block DoubleTri");
+    }
+    if(BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(*temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format Tri to a block DoubleTri");
+    }
+    FreeBlockTridiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0))
+  {
+    BlockNaturalImpurityOrbitalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format Nat as a block DoubleTri");
+    }
+    if(BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format Nat to a block DoubleTri");
+    }
+    FreeBlockNaturalImpurityOrbitalMatrix(temp);
+    free(temp);
+    return buff;
+  }
+  if(strcmp(type, "ListOfPoles")==0)
+  {
+    BlockListOfPoles *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockListOfPoles(L, narg);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    if(buff==NULL)
+    {
+      luaL_error(L, "malloc failed reading a Green's function of format ListOfPoles as a block DoubleTri");
+    }
+    if(BlockListOfPolesToBlockDoubleTriDiagonalMatrix(temp, buff, 0, 1000*DBL_EPSILON, 0))
+    {
+      luaL_error(L, "Failed to convert a Green's function of format ListOfPoles to a block DoubleTri");
+    }
+    FreeBlockListOfPoles(temp);
+    free(temp);
+    return buff;
+  }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    BlockTriDiagonalMatrixType *temp;
+    CompactMatrixType *tempM;
+    lua_pop(L, 1);
+    buff = (BlockDoubleTriDiagonalMatrixType*)malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+    // read val from stack
+    lua_getfield(L, narg, "val");
+    if(lua_isnil(L,-1)==1)
+    {
+      luaL_error(L, "Error Green's function of format DoubleTri should have a field val");
+    }
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->val = *temp;
+    free(temp);
+    lua_pop(L,1);
+    // read con from stack
+    lua_getfield(L, narg, "con");
+    if(lua_isnil(L,-1)==1)
+    {
+      luaL_error(L, "Error Green's function of format DoubleTri should have a field con");
+    }
+    temp = luaL_checkBlockTriDiagonalMatrixType(L, lua_gettop(L));
+    buff->con = *temp;
+    free(temp);
+    lua_pop(L,1);
+    // read A0 and B0 from stack
+    lua_rawgeti(L, narg, 1);
+    if(lua_istable(L,-1)==0)
+    {
+      luaL_error(L, "Error Green's function of format DoubleTri should have the table {A0, B0} at position 1");
+    }
+    //read A0 from stack
+    lua_rawgeti(L, -1, 1);
+    tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
+    if(tempM->OnLuaStack==true)
+    {
+      CompactMatrixCopy(*tempM, &(buff->a0));
+    }
+    else
+    {
+      buff->a0 = *tempM;
+    }
+    lua_pop(L,1);
+    // read B0 from stack.
+    lua_rawgeti(L, -1, 2);
+    tempM = luaL_checkCompactMatrix(L, lua_gettop(L));
+    if(tempM->OnLuaStack==true)
+    {
+      CompactMatrixCopy(*tempM, &(buff->b0));
+    }
+    else
+    {
+      buff->b0 = *tempM;
+    }
+    lua_pop(L,1);
+    /* read mu */
+    lua_getfield(L, narg, "mu");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->mu=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      luaL_error(L, "Reading DoubleTri matrix without mu defined");
+    }
+    lua_pop(L,1);
+    /* read name */
+    lua_getfield(L, narg, "name");
+    if(lua_isstring(L, -1)==1)
+    {
+      strncpy(buff->Name, luaL_checkstring(L, -1), MAXStrLength);
+      buff->Name[MAXStrLength-1]='\0';
+    }
+    else if(lua_isnil(L, -1)==1)
+    {
+      buff->Name[0]='\0';
+    }
+    else
+    {
+      luaL_error(L, "Reading DoubleTri matrix without name correctly defined");
+    }
+    lua_pop(L,1);
+    /* read epsilon */
+    lua_getfield(L, narg, "kBT");
+    if(lua_isnumber(L, -1)==1)
+    {
+      buff->kBT=(double)luaL_checknumber(L, -1);
+    }
+    else
+    {
+      buff->kBT=0;
+    }
+    lua_pop(L,1);
+    // set QComplex: 0 all four parts real, 1 all four complex, 2 mixed
+    SetBlockDoubleTriDiagonalMatrixQComplex(buff);
+    // set blocksize and test consistency
+    buff->BlockSize = buff->a0.Ni;
+    if(buff->a0.Nj!=buff->BlockSize) luaL_error(L, "Reading DoubleTri matrix A0 is not quadratic\n Number of rows   %d\n Number of columns %d",buff->a0.Ni,buff->a0.Nj);
+    if(buff->val.BlockSize!=buff->BlockSize) luaL_error(L, "Reading DoubleTri matrix A0 (%d) has different dimension from matrix val (%d)",buff->BlockSize,buff->val.BlockSize);
+    if(buff->con.BlockSize!=buff->BlockSize) luaL_error(L, "Reading DoubleTri matrix A0 (%d) has different dimension from matrix con (%d)",buff->BlockSize,buff->con.BlockSize);
+    lua_pop(L,1);
+    return buff;
+  }
+  luaL_error(L, "Errorr reading Greens function of unknown type (%s)",type);
+  return NULL;
+}
+
+
 
 /*
  *  The format of NaturalImpurityMatrixType should be
@@ -1345,7 +1790,7 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'n', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BADoubleTriDiagonalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1456,14 +1901,26 @@ BADoubleTriDiagonalMatrixType * luaL_checkNatrualImpurityOrbitalMatrixType(lua_S
       buff->Epsilon=0;
     }
     lua_pop(L,1);
-    /* set aditional values */
-    buff->acvB  = Sqr(buff->val.b[0]) * buff->val.a[1] + Sqr(buff->con.b[0]) * buff->con.a[1];
-    buff->acvA  = Sqr(buff->val.b[0]) * buff->con.a[1] + Sqr(buff->con.b[0]) * buff->val.a[1];
-    buff->acvBA =  buff->val.b[0] * buff->con.b[0] * (buff->val.a[1]-buff->con.a[1]);
-    buff->bvB0  =  buff->val.b[0] * buff->val.b[1];
-    buff->bcB0  =  buff->con.b[0] * buff->con.b[1];
-    buff->bvA0  =  buff->con.b[0] * buff->val.b[1];
-    buff->bcA0  = -buff->val.b[0] * buff->con.b[1];
+    /*  set aditional values. SetBADoubleTriDiagonalMatrixConValFromChains and not
+     *  SetBADoubleTriDiagonalMatrixConVal: b0 has just been read from the {a0,b0} pair
+     *  above, and the latter would overwrite it with sqrt(val.b[0]^2+con.b[0]^2) */
+    if((buff->val.N==0)||(buff->con.N==0))
+    {
+      printf("\n\n WARNING: Read a NaturalImpurityOrbital matrix %s with a chain of length zero (val.N=%i, con.N=%i). The observed orbital of this type is a linear combination of the first site of the val and of the con chain, so both of those sites have to exist. A site of zero energy and zero coupling was added to the empty chain, which leaves G unchanged.\n\n", buff->Name, buff->val.N, buff->con.N);
+      fflush(stdout);
+    }
+    SetBADoubleTriDiagonalMatrixConValFromChains(buff);
+    return buff;
+  }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    DoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkDoubleTriDiagonalMatrixType(L, narg);
+    buff = (BADoubleTriDiagonalMatrixType*)malloc(sizeof(BADoubleTriDiagonalMatrixType));
+    DoubleTriDiagonalMatrixToBADoubleTriDiagonalMatrix(*temp, buff, temp->mu, temp->kBT);
+    FreeDoubleTriDiagonalMatrix(temp);
+    free(temp);
     return buff;
   }
   if(strcmp(type, "ListOfPoles")==0)
@@ -1493,7 +1950,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'n', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockNaturalImpurityOrbitalMatrixType*)(buffResTri.data));
     return buff;
   }
@@ -1513,7 +1970,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff, 1000 * DBL_MIN);
+    BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*temp, buff, 1000 * DBL_MIN, 1000 * DBL_EPSILON, -1, false);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -1524,7 +1981,7 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000*DBL_MIN);
+    BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000*DBL_MIN, 1000*DBL_EPSILON, -1, false);
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;
@@ -1699,7 +2156,15 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     }
     lua_pop(L,1);
     // set QComplex
-    buff->QComplex = buff->a0.QComplex + buff->con.QComplex + buff->val.QComplex;
+    /*  0 all real, 1 all complex, 2 mixed. TMT is not counted, it is derived from val and
+     *  con. Same convention as SetQComplexOperator.
+     */
+    {
+      uint32_t ncomplex = (buff->a0.QComplex!=0) + (buff->con.QComplex!=0) + (buff->val.QComplex!=0);
+      if(ncomplex==0)      buff->QComplex = 0;
+      else if(ncomplex==3) buff->QComplex = 1;
+      else                 buff->QComplex = 2;
+    }
     // set blocksize and test consistency
     buff->BlockSize = buff->a0.Ni;
     if(buff->a0.Nj!=buff->BlockSize) luaL_error(L, "Reading NaturalImpurityOrbital matrix A0 is not quadratic\n Number of rows   %d\n Number of columns %d",buff->a0.Ni,buff->a0.Nj);
@@ -1710,13 +2175,26 @@ BlockNaturalImpurityOrbitalMatrixType * luaL_checkBlockNatrualImpurityOrbitalMat
     lua_pop(L,1);
     return buff;
   }
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    BlockDoubleTriDiagonalMatrixType *temp;
+    lua_pop(L, 1);
+    temp = luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
+    buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+    /*  no temperature in a table, so the split is at mu; -1 asks
+     *  BlockListOfPolesMergeDegeneratePoles for its standard tolerance */
+    BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix(temp, buff, 1000 * DBL_MIN, 1000 * DBL_EPSILON, -1, false);
+    FreeBlockDoubleTriDiagonalMatrix(temp);
+    free(temp);
+    return buff;
+  }
   if(strcmp(type, "ListOfPoles")==0)
   {
     BlockListOfPoles *temp;
     lua_pop(L, 1);
     temp = luaL_checkBlockListOfPoles(L, narg);
     buff = (BlockNaturalImpurityOrbitalMatrixType*)malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-    BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000 * DBL_MIN, temp->N, temp->N);
+    BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix(temp, buff, 1000 * DBL_MIN, 1000 * DBL_EPSILON, temp->N, temp->N);
     FreeBlockListOfPoles(temp);
     free(temp);
     return buff;
@@ -1749,7 +2227,7 @@ ListOfPoles * luaL_checkListOfPoles(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'l', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((ListOfPoles*)(buffResTri.data));
     return buff;
   }
@@ -1891,7 +2369,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     ResponsefunctionType *buffRes, buffResTri;
     buffRes = (ResponsefunctionType*)luaL_checkudata(L, narg, "ResponseFunction_Type");
     if (buffRes==NULL) luaL_error(L, "Failed to read a user data of \"ResponseFunction_type\"");
-    ConvertResponsefunction(buffRes, &buffResTri, 't', 0, 0);
+    ConvertResponsefunction(buffRes, &buffResTri, 'l', "Default", 0, 0, 0, 0, false, false, false);
     buff = ((BlockListOfPoles*)(buffResTri.data));
     return buff;
   }
@@ -1911,7 +2389,8 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockTriDiagonalMatrixType(L, narg);
     buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-    BlockTriDiagonalMatrixToBlockListOfPoles(temp, buff);
+    //TODO: allow user to set limits when poles are merged
+    BlockTriDiagonalMatrixToBlockListOfPoles(temp, buff, 1000*DBL_EPSILON,false);
     FreeBlockTridiagonalMatrix(temp);
     free(temp);
     return buff;
@@ -1922,7 +2401,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockAndersonMatrixType(L, narg);
     buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-    BlockAndersonMatrixToBlockListOfPoles(temp, buff);
+    BlockAndersonMatrixToBlockListOfPoles(temp, buff, 1000*DBL_EPSILON, false);
     FreeBlockAndersonMatrix(temp);
     free(temp);
     return buff;
@@ -1933,7 +2412,7 @@ BlockListOfPoles * luaL_checkBlockListOfPoles(lua_State *L, int narg)
     lua_pop(L, 1);
     temp = luaL_checkBlockNatrualImpurityOrbitalMatrixType(L, narg);
     buff = (BlockListOfPoles*)malloc(sizeof(BlockListOfPoles));
-    BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(temp, buff);
+    BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles(temp, buff, -1, false);
     FreeBlockNaturalImpurityOrbitalMatrix(temp);
     free(temp);
     return buff;
@@ -2281,7 +2760,7 @@ BlockListOfPoles * luaL_checkBlockListOfPolesVariableGrid(lua_State *L, int narg
 
 
 /*  reads a response function from the stack
- *  These functions can be in different formats (t, a, n, l) for tri-diagonal, anderson, natural or list of poles
+ *  These functions can be in different formats (t, a, n, l, d) for tri-diagonal, anderson, natural, list of poles, or double tridiagonal
  *  they can be in Block form or not
  *  If a pointer to an excisting structure is returned (user data on stack) a lowercase letter is returned
  *  If a newly created structure is returned (table on stack) an upper case letter is returned
@@ -2410,7 +2889,21 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
     }
     return buff;
   }
-  luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles",type);
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0))
+  {
+    lua_pop(L, 1);
+    buff->type='D';
+    if(buff->Block==true)
+    {
+      buff->data = (void*)luaL_checkBlockDoubleTriDiagonalMatrixType(L, narg);
+    }
+    else
+    {
+      buff->data = (void*)luaL_checkDoubleTriDiagonalMatrixType(L, narg);
+    }
+    return buff;
+  }
+  luaL_error(L, "Errorr reading Greens function of unknown type (%s)\nAllowed are:\nTri\nAnd\nNaturalImpurityOrbital\nListOfPoles\nDoubleTri",type);
   free(buff);
   return NULL;
 }
@@ -2419,15 +2912,16 @@ ResponsefunctionType * luaL_checkResponsefunction(lua_State *L, int narg)
 int lua_isBlockGreensfunction(lua_State *L, int narg)
 {
   const char *type;
-  if(luaL_checkudata (L, narg, "ResponseFunction_Type")!=NULL) return 1;
+  if(luaL_testudata (L, narg, "ResponseFunction_Type")!=NULL) return 1;
   if(lua_istable(L, narg)==0) return 0;
   lua_getfield(L, narg, "type");
-  if(lua_isstring(L,-1)==0) return 0;
+  if(lua_isstring(L,-1)==0) {lua_pop(L, 1);return 0;}
   type = lua_tolstring(L, -1, NULL);
   if(strcmp(type, "Tri")==0) {lua_pop(L, 1);return 1;}
   if(strcmp(type, "And")==0) {lua_pop(L, 1);return 1;}
   if((strcmp(type, "NaturalImpurityOrbital")==0)||(strcmp(type, "Nat")==0)) {lua_pop(L, 1);return 1;}
   if(strcmp(type, "ListOfPoles")==0) {lua_pop(L, 1);return 1;}
+  if((strcmp(type, "DoubleTri")==0)||(strcmp(type, "DTri")==0)) {lua_pop(L, 1);return 1;}
   lua_pop(L, 1);
   return 0;
 }
@@ -3327,6 +3821,96 @@ void LuaPushTable_BlockNaturalImpurityOrbital(lua_State* L, void * const M)
 }
 
 
+/*  The table pushed is of the form
+ *    { {a0, b0}, val=Gval, con=Gcon, mu=0, kBT=0, type="DoubleTri", name="" }
+ *  The field is named kBT (and not epsilon as for the NaturalImpurityOrbital type) as
+ *  luaL_checkDoubleTriDiagonalMatrixType reads kBT. Writing epsilon here would loose the
+ *  temperature when a response function is converted to a table and read back.
+ */
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, DoubleTriDiagonalMatrixType * const M)
+{
+  lua_createtable(L, 1, 4);
+  /* push {a0, b0} */
+  lua_createtable(L,2,0);
+  lua_pushnumber(L,M->a0);
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L,M->b0);
+  lua_rawseti(L, -2, 2);
+  lua_rawseti(L, -2, 1);
+  /* push val */
+  LuaPushTable_TriDiagonalMatrixType(L, &(M->val));
+  lua_setfield(L, -2, "val");
+  /* push con */
+  LuaPushTable_TriDiagonalMatrixType(L, &(M->con));
+  lua_setfield(L, -2, "con");
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push kBT */
+  lua_pushnumber(L, M->kBT);
+  lua_setfield(L,-2,"kBT");
+  /* push type */
+  lua_pushstring(L, "DoubleTri");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_DoubleTriDiagonal(lua_State* L, void * const M)
+{
+	DoubleTriDiagonalMatrixType *MTypecast = (DoubleTriDiagonalMatrixType*) M;
+	LuaPushTable_DoubleTriDiagonal(L, MTypecast);
+}
+
+
+/*  As LuaPushTable_DoubleTriDiagonal, but for matrix valued response functions.
+ *  Note that B0 is pushed from M->b0 and not as an identity matrix (as is done for the
+ *  BlockNaturalImpurityOrbital type, which has no b0 of its own).
+ */
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, BlockDoubleTriDiagonalMatrixType * const M)
+{
+  lua_createtable(L, 1, 4);
+  /* push {A0, B0} */
+  lua_createtable(L,2,0);
+  LuaPushTable_CompactMatrixType(L, &(M->a0));
+  lua_rawseti(L, -2, 1);
+  LuaPushTable_CompactMatrixType(L, &(M->b0));
+  lua_rawseti(L, -2, 2);
+  lua_rawseti(L, -2, 1);
+  /* push val */
+  LuaPushTable_BlockTriDiagonalMatrixType(L, &(M->val));
+  lua_setfield(L, -2, "val");
+  /* push con */
+  LuaPushTable_BlockTriDiagonalMatrixType(L, &(M->con));
+  lua_setfield(L, -2, "con");
+  /* push mu */
+  lua_pushnumber(L, M->mu);
+  lua_setfield(L,-2,"mu");
+  /* push kBT */
+  lua_pushnumber(L, M->kBT);
+  lua_setfield(L,-2,"kBT");
+  /* push type */
+  lua_pushstring(L, "DoubleTri");
+  lua_setfield(L,-2,"type");
+  /* push name */
+  lua_pushstring(L, M->Name);
+  lua_setfield(L,-2,"name");
+  /* set metatable */
+  lua_getglobal(L, "ResponseFunctionMeta");
+  lua_setmetatable(L, -2);
+}
+
+void LuaPushTable_BlockDoubleTriDiagonal(lua_State* L, void * const M)
+{
+	BlockDoubleTriDiagonalMatrixType *MTypecast = (BlockDoubleTriDiagonalMatrixType*) M;
+	LuaPushTable_BlockDoubleTriDiagonal(L, MTypecast);
+}
+
+
 /*  if at position len of the lua stack a table is found it is over writen by the table in matrix M
  *  otherwise an error is thrown
  */
@@ -3448,9 +4032,21 @@ void LuaPush_ResponseFunction(lua_State *L, ResponsefunctionType const * const M
       }
       return;
     }
+    case 'D':
+    {
+      if(M->Block==true)
+      {
+        LuaPushTable_BlockDoubleTriDiagonal(L, M->data);
+      }
+      else
+      {
+        LuaPushTable_DoubleTriDiagonal(L, M->data);
+      }
+      return;
+    }
     default:
     {
-      printf("Error in LuaPush_ResponseFunction: Type of response function should be either t/T,a/A,l/L, or n/N\n");
+      printf("Error in LuaPush_ResponseFunction: Type of response function should be either t/T,a/A,l/L,n/N, or d/D\n");
       return;
     }
   }

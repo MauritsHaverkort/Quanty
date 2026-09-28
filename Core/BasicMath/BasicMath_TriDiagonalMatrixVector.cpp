@@ -30,7 +30,7 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   };
   M->b = (double*)malloc(M->N * sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc for M->b failed in InitTriDiagonalMatrix\n");
@@ -45,17 +45,15 @@ uint32_t InitTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 
 /*  Init tri-diagonal matrix and set diagonal (a) equal to one
  *  M.N must be set
+ *
+ *  N = 0 is allowed and means there is no chain: a[0], the additive offset, is
+ *  the only element, and there is no site energy to set to one and no hopping.
+ *  Same as InitTriDiagonalMatrix, which also allocates a[0] and no b for N = 0.
  */
 uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
 {
   uint32_t i;
   strcpy(M->Name, "I_Matrix");
-  if (M->N == 0)
-  {
-    printf("Initialized a TriDiagonalMatrix with size zero.\n");
-    fflush(stdout);
-    return 2;
-  };
   M->a = (double*)malloc((M->N + 1) * sizeof(double));
   if (M->a == NULL)
   {
@@ -64,7 +62,7 @@ uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     return 1;
   };
   M->b = (double*)calloc((M->N), sizeof(double));
-  if (M->b == NULL)
+  if ((M->b == NULL)&&(M->N!=0))
   {
     free(M->a);
     printf("malloc for M->b failed in InitTriDiagonalMatrix\n");
@@ -76,7 +74,7 @@ uint32_t InitIdentityTriDiagonalMatrix(TriDiagonalMatrixType * const M)
     M->a[i] = 1;
   }
   M->a[0] = 0;
-  M->b[0] = 1;
+  if(M->N!=0) M->b[0] = 1;
   M->mu = 0;
   return 0;
 }
@@ -102,6 +100,31 @@ void TriDiagonalMatrixChopReduceDimension(TriDiagonalMatrixType * const M, doubl
     if ((fabs(M->b[i]) < epsilon)) M->N=i;
   }
   if ((fabs(M->a[M->N]) < epsilon)) M->a[M->N] = 0;
+}
+
+/*  Cut the chain to at most N, keeping a[0..N] and b[0..N-1] and dropping the rest
+ *  without looking at the values further down the chain. A chain that is already
+ *  short enough is left as it is.
+ */
+uint32_t TriDiagonalMatrixTruncate(TriDiagonalMatrixType * const M, uint32_t const N)
+{
+  if (M->N <= N) return 0;
+  M->a = (double*)realloc(M->a, (N + 1) * sizeof(double));
+  if (M->a == NULL)
+  {
+    printf("realloc for M->a failed in TriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  M->b = (double*)realloc(M->b, N * sizeof(double));
+  if ((M->b == NULL) && (N != 0))
+  {
+    printf("realloc for M->b failed in TriDiagonalMatrixTruncate\n");
+    fflush(stdout);
+    return 1;
+  }
+  M->N = N;
+  return 0;
 }
 
 /*
@@ -205,20 +228,24 @@ void TriDiagonalMatrixScalarMultiply(TriDiagonalMatrixType * const M, double alp
 /* Create a new matrix that has dimensions (1+iEnd-iStart,1+iEnd-iStart)
  * and is a copy of a part of A
  * namely A[{iStart;;iEnd}][{iStart;;iEnd}]
+ * a[0] and b[0] are set to A.a[iStart-1] and A.b[iStart-1], the on site energy of the
+ * last site before the part and the hopping connecting it to the part, such that the
+ * result evaluates as the Green's function of the part as seen from site iStart-1.
+ * For iStart=1 this reduces to the offset a[0] and the scaling b[0] of A.
  * M not allocated on call of the subroutine
  */
 uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd)
 {
   uint32_t i;
-  if ((iEnd < iStart) || (iEnd > A.N))
+  if ((iEnd < iStart) || (iEnd > A.N) || (iStart == 0))
   {
     printf("TriDiagonalMatrixPart called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
     return 1;
   }
   M->N = 1 + iEnd - iStart;
   InitTriDiagonalMatrix(M);
-  M->a[0] = A.a[0];
-  M->b[0] = A.b[0];
+  M->a[0] = A.a[iStart-1];
+  M->b[0] = A.b[iStart-1];
   for (i = 1; i < M->N; i++)
   {
     M->a[i] = A.a[i + iStart - 1];
@@ -226,6 +253,36 @@ uint32_t TriDiagonalMatrixPart(TriDiagonalMatrixType * const M, TriDiagonalMatri
   }
   M->mu = A.mu;
   M->a[M->N] = A.a[iEnd];
+  return 0;
+}
+/*  as TriDiagonalMatrixPart, but each site is doubled in order to represent spin up and spin down
+ */
+uint32_t TriDiagonalMatrixPartAddSpin(BlockTriDiagonalMatrixType * const M, TriDiagonalMatrixType A, const uint32_t iStart, const uint32_t iEnd)
+{
+  uint32_t i;
+  if ((iEnd < iStart) || (iEnd > A.N) || (iStart == 0))
+  {
+    printf("TriDiagonalMatrixPartAddSpin called with iStart=%i, iEnd=%i, and A.N=%i.\nThat's not an option\n", iStart, iEnd,A.N);
+    return 1;
+  }
+  M->N = 1 + iEnd - iStart;
+  M->QComplex=0;
+  M->BlockSize=2;
+  InitBlockTridiagonalMatrix(M);
+  M->aRe[0] = A.a[iStart-1];
+  M->bRe[0] = A.b[iStart-1];
+  M->aRe[3] = A.a[iStart-1];
+  M->bRe[3] = A.b[iStart-1];
+  for (i = 1; i < M->N; i++)
+  {
+    M->aRe[4*i]   = A.a[i + iStart - 1];
+    M->bRe[4*i]   = A.b[i + iStart - 1];
+    M->aRe[4*i+3] = A.a[i + iStart - 1];
+    M->bRe[4*i+3] = A.b[i + iStart - 1];
+  }
+  M->mu = A.mu;
+  M->aRe[4*M->N]   = A.a[iEnd];
+  M->aRe[4*M->N+3] = A.a[iEnd];
   return 0;
 }
 
@@ -241,6 +298,7 @@ uint32_t TriDiagonalMatrixCopy(TriDiagonalMatrixType * const M, TriDiagonalMatri
     fflush(stdout);
     return 1;
   };
+  strcpy(M->Name, A.Name);
   for (i = 0; i < M->N; i++)
   {
     M->a[i] = A.a[i];

@@ -139,6 +139,65 @@ uint32_t CopyBlockListOfPolesVal(BlockListOfPoles A, BlockListOfPoles *B, double
   return 0;
 }
 
+/*  Remove every pole whose weight matrix is exactly zero.
+ *
+ *  The Fermi split of a hybridization multiplies each weight by f or by 1-f, and
+ *  FermiFunction returns exactly 1.0 below mu-40 kbT and exactly 0.0 above mu+40 kbT,
+ *  so a level outside that window comes out with an exactly zero weight in one of the
+ *  two halves. Dropping those is exact -- they contribute nothing to G -- and it is
+ *  what makes an absent branch come out as a pole list with no poles rather than as a
+ *  block Lanczos that deflates to nothing on its first step.
+ *
+ *  There is deliberately no tolerance here. A pole with a small but nonzero weight is
+ *  kept, so this can never quietly discard spectral weight; the tiny weights near the
+ *  edge of the Fermi window are exactly the ones the scalar code keeps as well.
+ */
+uint32_t BlockListOfPolesRemoveZeroWeightPoles(BlockListOfPoles * const A)
+{
+  uint32_t i, j, keep, stride;
+  bool zero;
+  stride = 1 + Sqr(A->BlockSize);
+  keep = 0;
+  for(i=0;i<A->N;i++)
+  {
+    zero = true;
+    for(j=1;j<stride;j++)
+    {
+      if(A->QComplex)
+      {
+        if((A->V[i*stride+j].Re!=0)||(A->V[i*stride+j].Im!=0)) { zero = false; break; }
+      }
+      else
+      {
+        if(A->VRe[i*stride+j]!=0) { zero = false; break; }
+      }
+    }
+    if(zero) continue;
+    if(keep!=i)
+    {
+      if(A->QComplex) memmove(&(A->V[keep*stride]),   &(A->V[i*stride]),   stride*sizeof(Complex16));
+      else            memmove(&(A->VRe[keep*stride]), &(A->VRe[i*stride]), stride*sizeof(double));
+    }
+    keep++;
+  }
+  if(keep!=A->N)
+  { /*  a0 sits at V[N*stride] and moves down with N */
+    if(A->QComplex)
+    {
+      memmove(&(A->V[keep*stride]), A->a0, Sqr(A->BlockSize)*sizeof(Complex16));
+      A->N  = keep;
+      A->a0 = &(A->V[A->N*stride]);
+    }
+    else
+    {
+      memmove(&(A->VRe[keep*stride]), A->a0Re, Sqr(A->BlockSize)*sizeof(double));
+      A->N    = keep;
+      A->a0Re = &(A->VRe[A->N*stride]);
+    }
+  }
+  return 0;
+}
+
 /*
  *   A <- scale * A
  */
@@ -299,7 +358,8 @@ uint32_t ChopBlockListOfPolesReduceDimension(BlockListOfPoles *A, double const e
       }
       if(KeepBlock==false)
       {
-        memcpy(&(A->V[i*((1+A->BlockSize*A->BlockSize))]), &(A->V[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16) );
+        /* the source and the destination overlap, so this has to be memmove */
+        memmove(&(A->V[i*((1+A->BlockSize*A->BlockSize))]), &(A->V[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16) );
         i--;
         A->N--;
         A->a0 = &(A->V[(A->N)*((1+A->BlockSize*A->BlockSize))]);
@@ -343,7 +403,8 @@ uint32_t ChopBlockListOfPolesReduceDimension(BlockListOfPoles *A, double const e
       }
       if(KeepBlock==false)
       {
-        memcpy(&(A->VRe[i*((1+A->BlockSize*A->BlockSize))]), &(A->VRe[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double) );
+        /* the source and the destination overlap, so this has to be memmove */
+        memmove(&(A->VRe[i*((1+A->BlockSize*A->BlockSize))]), &(A->VRe[(i+1)*((1+A->BlockSize*A->BlockSize))]), ((A->N-i)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(double) );
         i--;
         A->N--;
         A->a0Re = &(A->VRe[(A->N)*((1+A->BlockSize*A->BlockSize))]);
@@ -447,11 +508,46 @@ uint32_t ComplexBlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double
   }
   return 0;
 }
-uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon)
+/*  Merge poles that lie closer together than epsilon, adding their weight matrices.
+ *
+ *  A negative epsilon asks for the standard value, 10 * DBL_EPSILON * (BandWidth + DBL_EPSILON)
+ *  with BandWidth taken from the outermost two poles. That is the one place in the code
+ *  where this default is decided; every caller only forwards what it was handed, and an
+ *  unset MinimalPoleDistance arrives here negative all the way from ChangeType.
+ *
+ *  Why the default has to be of this size. Two poles that are degenerate by symmetry come
+ *  out of a diagonalization a few ulp apart, and how many depends on the arithmetic path:
+ *  rotate the bath and the same physical level moves by roundoff. Unmerged, the two rank
+ *  one weights stay separate and the arbitrary eigenbasis inside the degenerate group
+ *  survives into whatever is built next, which lifts the degeneracy. Scaling with the band
+ *  width covers that and nothing else -- on a band of tens of eV the threshold is around
+ *  1e-13 eV, some seven orders below the micro eV splittings a magnetic field produces.
+ *
+ *  Note epsilon == 0 does not mean "merge only identical poles": the test below is a
+ *  strict <, so a zero epsilon merges nothing at all, not even two bit-identical poles.
+ */
+uint32_t BlockListOfPolesMergeDegeneratePoles(BlockListOfPoles *A, double const epsilon, bool relativeMinimumPoleDistance)
 {
+  double eps = epsilon, BandWidth;
+  if(relativeMinimumPoleDistance==true)
+  {
+    //TODO: implement relative pole mergeing windows
+    // A pole at energy w_i-mu is merged with all poles at energy (wi-mu) / epsilon to (wi-mu) * epsilon
+    printf("BlockListOfPolesMergeDegeneratePoles with relativeMinimumPoleDistance==true not implemented");
+    return 1;
+  }
+  if(eps<0)
+  { /*  the outermost poles give the band width. Ordering is what the merge does first
+     *  anyway, so doing it here costs nothing */
+    if(A->N==0) return 0;
+    OrderBlockListOfPoles(A);
+    if(A->QComplex) BandWidth = fabs(A->V[0].Re)  + fabs(A->V[(A->N-1)*(1+Sqr(A->BlockSize))].Re);
+    else            BandWidth = fabs(A->VRe[0])   + fabs(A->VRe[(A->N-1)*(1+Sqr(A->BlockSize))]);
+    eps = 10 * DBL_EPSILON * (BandWidth + DBL_EPSILON);
+  }
   //TODO: do not shift spectral weight through the chemical potential
-  if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, epsilon);
-  return ComplexBlockListOfPolesMergeDegeneratePoles(A, epsilon);
+  if(A->QComplex==0) return RealBlockListOfPolesMergeDegeneratePoles(A, eps);
+  return ComplexBlockListOfPolesMergeDegeneratePoles(A, eps);
 }
 
 
@@ -475,7 +571,7 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   else if(B.QComplex)
   {
     if(MakeRealBlockListOfPolesComplex(A)){printf("MakeRealBlockListOfPolesComplex failed in AddBlockListOfPoles\n");return 1;}
-    temp= realloc(A->V, (A->N+B.N+1)*A->BlockSize*A->BlockSize*sizeof(Complex16));
+    temp= realloc(A->V, ((A->N+B.N+1)*(1+A->BlockSize*A->BlockSize)-1)*sizeof(Complex16));
   }
   else
   {
@@ -490,7 +586,9 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   {
     A->V=(Complex16*)temp;
     A->a0=&(A->V[A->N*(1+A->BlockSize*A->BlockSize)]);
-    memcpy(&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
+    /*  source and destination are the same block when B.N is zero, so this has to be a
+     *  memmove and not a memcpy */
+    memmove(&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0, A->BlockSize*A->BlockSize*sizeof(Complex16));
     A->a0=&(A->V[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]);
     if(B.QComplex)
     {
@@ -518,7 +616,8 @@ uint32_t AddBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const 
   {
     A->VRe=(double*)temp;
     A->a0Re=&(A->VRe[A->N*(1+A->BlockSize*A->BlockSize)]);
-    memcpy(&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0Re, A->BlockSize*A->BlockSize*sizeof(double));
+    /*  and the same here */
+    memmove(&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]), A->a0Re, A->BlockSize*A->BlockSize*sizeof(double));
     A->a0Re=&(A->VRe[(A->N+B.N)*(1+A->BlockSize*A->BlockSize)]);
     for(i=0;i<A->BlockSize*A->BlockSize;i++)
     {
@@ -924,44 +1023,136 @@ double ListOfPolesNormFlatWeightDistanceComplex(Complex16 * b, uint32_t Ntau, do
   return retval;
 }
 
+static uint32_t ReduceBlockListOfPolesWorker(BlockListOfPoles * const A, uint32_t const N, double const bmin, bool const Weight);
+
+/*  Picks the pole that goes next: the one with the smallest weight, the trace of its residue
+ *  block.  Writes its index in iOut and returns 1, or returns 0 when the reduction is done.
+ *
+ *  Weight == false is the Number method: keep going while more than N poles are left, and
+ *  every pole may go.  Weight == true is the Weight method: keep going while the smallest
+ *  weight is below bmin, and a pole may only go if its side of the chemical potential keeps
+ *  at least one pole, which leaves at least two.  A pole sitting on mu never goes, and
+ *  neither does a neighbour of one, which makes three.  Both are needed to keep weight on its
+ *  own side of mu: the merge sends a pole down when the pole above it is above mu and up when
+ *  the pole below it is below mu, but a pole sitting exactly on mu is neither, so a neighbour
+ *  of it would split across mu and the pole on mu would move off it and lose its protection.
+ *  The outermost pole has one neighbour only and gives its weight to it, which is on its own
+ *  side of mu exactly when a second pole there is what allowed it to be removed.
+ */
+static int BlockListOfPolesNextPoleToMerge(BlockListOfPoles const * const A, uint32_t const N, double const bmin, bool const Weight, uint32_t * const iOut)
+{
+  uint32_t const Np = 1+A->BlockSize*A->BlockSize;    /* one pole: its energy and its residue */
+  double const mu = A->mu;
+  uint32_t i, Nbelow=0, Nabove=0, iSmallest=0;
+  double Normi, SmallestNorm=0, e;
+  int Found=0;
+  if(A->N<2) return 0;
+  if(!Weight && (A->N<=N)) return 0;
+  /*  real and complex, and the two methods, are separate loops: what they test does not
+   *  change from pole to pole and has no business inside the loop                          */
+  if(A->QComplex)
+  {
+    if(Weight)
+    {
+      for(i=0;i<A->N;i++)
+      {
+        e=A->V[i*Np].Re;
+        if(e<mu) Nbelow++;
+        else if(e>mu) Nabove++;
+      }
+      for(i=0;i<A->N;i++)
+      {
+        e=A->V[i*Np].Re;
+        if(e==mu) continue;
+        if((i>0) && (A->V[(i-1)*Np].Re==mu)) continue;
+        if((i+1<A->N) && (A->V[(i+1)*Np].Re==mu)) continue;
+        if(!(((e<mu)&&(Nbelow>1)) || ((e>mu)&&(Nabove>1)))) continue;
+        Normi=ListOfPolesNormFlatWeightComplex(A->V+1+i*Np, A->BlockSize, 0, 0, 0);
+        if((Found==0) || (Normi<SmallestNorm)) { SmallestNorm=Normi; iSmallest=i; Found=1; }
+      }
+    }
+    else
+    {
+      SmallestNorm=ListOfPolesNormFlatWeightComplex(A->V+1, A->BlockSize, 0, 0, 0);
+      Found=1;
+      for(i=1;i<A->N;i++)
+      {
+        Normi=ListOfPolesNormFlatWeightComplex(A->V+1+i*Np, A->BlockSize, 0, 0, 0);
+        if(Normi<SmallestNorm) { SmallestNorm=Normi; iSmallest=i; }
+      }
+    }
+  }
+  else
+  {
+    if(Weight)
+    {
+      for(i=0;i<A->N;i++)
+      {
+        e=A->VRe[i*Np];
+        if(e<mu) Nbelow++;
+        else if(e>mu) Nabove++;
+      }
+      for(i=0;i<A->N;i++)
+      {
+        e=A->VRe[i*Np];
+        if(e==mu) continue;
+        if((i>0) && (A->VRe[(i-1)*Np]==mu)) continue;
+        if((i+1<A->N) && (A->VRe[(i+1)*Np]==mu)) continue;
+        if(!(((e<mu)&&(Nbelow>1)) || ((e>mu)&&(Nabove>1)))) continue;
+        Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+i*Np, A->BlockSize, 0, 0, 0);
+        if((Found==0) || (Normi<SmallestNorm)) { SmallestNorm=Normi; iSmallest=i; Found=1; }
+      }
+    }
+    else
+    {
+      SmallestNorm=ListOfPolesNormFlatWeightReal(A->VRe+1, A->BlockSize, 0, 0, 0);
+      Found=1;
+      for(i=1;i<A->N;i++)
+      {
+        Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+i*Np, A->BlockSize, 0, 0, 0);
+        if(Normi<SmallestNorm) { SmallestNorm=Normi; iSmallest=i; }
+      }
+    }
+  }
+  if(Found==0) return 0;
+  if(Weight && !(SmallestNorm<bmin)) return 0;
+  *iOut = iSmallest;
+  return 1;
+}
+
 /*  reduce the number of poles to N
  *
  */
 uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
 {
-  double const Ef = A->mu;
-  double SmallestNorm=0,Normi,Normiplus,Normimin,a,amin,aplus;
-  uint32_t iSmallestNorm=0,i;
   if(N==0) {printf("Reducing a list of poles to zero poles does not make sence\n");return 1;};
   if(A->N<=N) {return 0;}
+  return ReduceBlockListOfPolesWorker(A, N, 0, false);
+}
+
+/*  Merge away every pole whose weight is below bmin, the smallest one first.  The weight of a
+ *  pole is the trace of its residue block, and bmin is an absolute weight, not a fraction of
+ *  the total.  See BlockListOfPolesNextPoleToMerge for what is kept.
+ */
+uint32_t ReduceBlockListOfPolesWeight(BlockListOfPoles * const A, double const bmin)
+{
+  if(!(bmin>0)) {printf("Reducing a list of poles asks for a weight above zero\n");return 1;}
+  return ReduceBlockListOfPolesWorker(A, 0, bmin, true);
+}
+
+/*  the body of both: remove poles one at a time, the one with the smallest weight first,
+ *  merging it into its neighbours, for as long as BlockListOfPolesNextPoleToMerge says so
+ */
+static uint32_t ReduceBlockListOfPolesWorker(BlockListOfPoles * const A, uint32_t const N, double const bmin, bool const Weight)
+{
+  double const Ef = A->mu;
+  double Normi,Normiplus,Normimin,a,amin,aplus;
+  uint32_t iSmallestNorm=0,i;
   OrderBlockListOfPoles(A);
   if(A->QComplex)
   {
-    Complex16 *iBlock;
-    while(A->N>N)
+    while(BlockListOfPolesNextPoleToMerge(A, N, bmin, Weight, &iSmallestNorm))
     {
-      /* find smallest Norm */
-      iBlock=A->V+1;
-      a=A->V[0].Re;
-      aplus=iBlock[A->BlockSize*A->BlockSize].Re;
-      amin=2*a-aplus;
-      SmallestNorm=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-      iSmallestNorm=0;
-      for(i=1;i<A->N-1;i++)
-      {
-        iBlock+=A->BlockSize*A->BlockSize+1;
-        amin=a;
-        a=aplus;
-        aplus=iBlock[A->BlockSize*A->BlockSize].Re;
-        Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-        if(Normi<SmallestNorm)iSmallestNorm=i;
-      }
-      iBlock+=A->BlockSize*A->BlockSize+1;
-      amin=a;
-      a=aplus;
-      aplus=2*a-amin;
-      Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-      if(Normi<SmallestNorm)iSmallestNorm=A->N-1;
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
@@ -1073,31 +1264,8 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
   }
   else /* Real */
   {
-    double *iBlock;
-    while(A->N>N)
+    while(BlockListOfPolesNextPoleToMerge(A, N, bmin, Weight, &iSmallestNorm))
     {
-      /* find smallest Norm */
-      iBlock=A->VRe+1;
-      a=A->VRe[0];
-      aplus=iBlock[A->BlockSize*A->BlockSize];
-      amin=2*a-aplus;
-      SmallestNorm=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-      iSmallestNorm=0;
-      for(i=1;i<A->N-1;i++)
-      {
-        iBlock+=A->BlockSize*A->BlockSize+1;
-        amin=a;
-        a=aplus;
-        aplus=iBlock[A->BlockSize*A->BlockSize];
-        Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-        if(Normi<SmallestNorm)iSmallestNorm=i;
-      }
-      iBlock+=A->BlockSize*A->BlockSize+1;
-      amin=a;
-      a=aplus;
-      aplus=2*a-amin;
-      Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-      if(Normi<SmallestNorm)iSmallestNorm=A->N-1;
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
@@ -1237,7 +1405,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
       {
         if(nMerged>1)
         {
-          memcpy(&(M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->VRe[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged-1);
           M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1263,7 +1431,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
     }
     if(nMerged>1)
     {
-      memcpy(&(M->VRe[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
+      memmove(&(M->VRe[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
       M->N-=(nMerged-1);
       M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -1276,7 +1444,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
       {
         if(nMerged>1)
         {
-          memcpy(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged-1);
           M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1304,7 +1472,7 @@ void MergeBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double E
     }
     if(nMerged>1)
     {
-      memcpy(&(M->V[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
+      memmove(&(M->V[(M->N-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
       M->N-=(nMerged-1);
       M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -1324,7 +1492,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
       {
         if(nMerged>0)
         {
-          memcpy(&(M->VRe[(i-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->VRe[(i-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[i*(Sqr(M->BlockSize)+1)]), sizeof(double) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged);
           M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1337,7 +1505,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
     }
     if(nMerged>0)
     {
-      memcpy(&(M->VRe[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
+      memmove(&(M->VRe[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->VRe[M->N*(Sqr(M->BlockSize)+1)]), sizeof(double) * Sqr(M->BlockSize) );
       M->N-=(nMerged);
       M->a0Re = &(M->VRe[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -1350,7 +1518,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
       {
         if(nMerged>0)
         {
-          memcpy(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
+          memmove(&(M->V[(i-(nMerged-1))*(Sqr(M->BlockSize)+1)]), &(M->V[i*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * ( (Sqr(M->BlockSize)+1) * (1+M->N-i) -1 ) );
           M->N-=(nMerged);
           M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
         }
@@ -1363,7 +1531,7 @@ void RemoveBlockListOfPolesInInterval(BlockListOfPoles * M, double Emin, double 
     }
     if(nMerged>0)
     {
-      memcpy(&(M->V[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
+      memmove(&(M->V[(M->N-(nMerged))*(Sqr(M->BlockSize)+1)]), &(M->V[M->N*(Sqr(M->BlockSize)+1)]), sizeof(Complex16) * Sqr(M->BlockSize) );
       M->N-=(nMerged);
       M->a0 = &(M->V[(M->N)*(Sqr(M->BlockSize)+1)]);
     }
@@ -3438,7 +3606,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
       iE = (int)(floor(rest));
       if(G->QComplex)
       {
-        if (iE >= NE)
+        if (iE >= (int)NE)
         {
           totnow=0;
           for(ic=0;ic<G0->BlockSize;ic++)
@@ -3501,7 +3669,7 @@ uint32_t BlockListOfPolesG0plusSigmaToGFixedEGrid(BlockListOfPoles const *G0, Bl
       }
       else /* all are real */
       {
-        if (iE >= NE)
+        if (iE >= (int)NE)
         {
           totnow=0;
           for(ic=0;ic<G0->BlockSize;ic++)

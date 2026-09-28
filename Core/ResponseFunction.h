@@ -2,6 +2,8 @@ uint32_t ResponseFunctionEstimateEminAndEmaxPole(const ResponsefunctionType *con
 uint32_t ResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
 uint32_t BlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraTypeArray *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
 uint32_t NoneBlockResponseFunctionToSpectra(const ResponsefunctionType *M, SpectraType *A, double GroundStateEnergy, double Emin, double Emax, double GammaG, double GammaL, uint32_t NE);
+double ResponseFunctionGetMu(const ResponsefunctionType *const a);
+uint32_t ResponseFunctionToDensityMatrix(const ResponsefunctionType *M, CompactMatrixType *rho, double mu, double kbT);
 int ResponseFunctionAddSelfEnergyDenseViaTri(const ResponsefunctionType *const G0, const ResponsefunctionType *const Sigma, ResponsefunctionType * G, double Epsilon);
 int ResponseFunctionAddSelfEnergyDenseTriTriLP(const TriDiagonalMatrixType *const G0, const TriDiagonalMatrixType *const Sigma, ListOfPoles * G);
 int ResponseFunctionAddSelfEnergyDenseBlockTriTriLP(const BlockTriDiagonalMatrixType *const G0, const BlockTriDiagonalMatrixType *const Sigma, BlockListOfPoles * G);
@@ -16,3 +18,4 @@ int ResponseFunctionAddSelfEnergyAndLPAnd(const AndersonMatrixType *const G0, co
 int ResponseFunctionAddSelfEnergyBlockAndLPAnd(const BlockAndersonMatrixType *const G0, const BlockListOfPoles *const Sigma, BlockAndersonMatrixType * G, double Epsilon);
 int ResponseFunctionAddSelfEnergyOnGridAndLPAnd(const AndersonMatrixType *const G0, const ListOfPoles *const Sigma, AndersonMatrixType * G, double Epsilon, CompactVectorType *const Grid);
 int ResponseFunctionAddSelfEnergyOnGridBlockAndLPAnd(const BlockAndersonMatrixType *const G0, const BlockListOfPoles *const Sigma, BlockAndersonMatrixType * G, double Epsilon, CompactVectorType *const Grid);
+int CalculateGforHwithSigmaAsOperator(const OperatorType *const H, const WaveFunctionType *const PsiBasis, const uint32_t NPsiBasis, const uint32_t BlockSize,  OperatorType ** V, const BlockListOfPoles *const Sigma, const uint32_t NSigma, const uint32_t NTriFull, const double *const SuggestedGrid, const uint32_t NSuggestedGridPoints, const CompactMatrixType *const B0, BlockTriDiagonalMatrixType * G);

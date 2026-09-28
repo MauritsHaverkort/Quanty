@@ -184,6 +184,91 @@ for i=1,#MAList do
 	end
 end
 
+-- ---------------------------------------------------------------------------
+-- A real block list of poles plus a complex one
+-- ---------------------------------------------------------------------------
+-- AddBlockListOfPoles makes A complex when B is and A is not, and used to allocate
+-- (N+1)*BlockSize^2 rather than (N+1)*(1+BlockSize^2)-1 for it -- one energy per pole
+-- short, so the poles of B were written past the end of the block. Small lists survived
+-- on what malloc rounded up; 82 poles of BlockSize 2 aborted. The other two branches of
+-- that realloc always had the right size, which is why only this one direction crashed.
+--
+-- The sum has to be the two pole lists concatenated, and to evaluate as G1 + G2.
+CAdd = Complex.New
+function AddTestRealLP(nb)
+	local a = {{{0.0,0.0},{0.0,0.0}}, {{1.7,0.2},{0.2,1.3}}}
+	local b = {{{1.4,0.0},{0.0,1.4}}}
+	for i = 1, nb do
+		local E = -5.0 + 10.0 * (i - 0.5) / nb
+		a[#a+1] = {{E,0.1},{0.1,E+0.2}}
+		b[#b+1] = {{0.3,0.05},{-0.05,0.25}}
+	end
+	return ResponseFunction.ChangeType(ResponseFunction.New({a,b,mu=0,type="And",name="r"}), "LP")
+end
+function AddTestComplexLP(nb)
+	local a = {{{0.0,0.0},{0.0,0.0}}, {{0.9,CAdd(0.2,0.3)},{CAdd(0.2,-0.3),1.1}}}
+	local b = {{{1.0,0.0},{0.0,1.0}}}
+	for i = 1, nb do
+		local E = -4.0 + 8.0 * (i - 0.5) / nb
+		a[#a+1] = {{E,CAdd(0.1,0.15)},{CAdd(0.1,-0.15),E+0.2}}
+		b[#b+1] = {{CAdd(0.3,0.1),CAdd(0.05,-0.02)},{CAdd(-0.05,0.03),CAdd(0.25,0.08)}}
+	end
+	return ResponseFunction.ChangeType(ResponseFunction.New({a,b,mu=0,type="And",name="c"}), "LP")
+end
+print("-- Block, a real list of poles plus a complex one      --")
+for i, nb in ipairs({3, 12, 40}) do
+	local G1, G2 = AddTestRealLP(nb), AddTestComplexLP(nb)
+	local GS = G1 + G2
+	local worst = 0.0
+	for k = 0, 60 do
+		local w = -6.0 + 12.0 * k / 60
+		local s, t1, t2 = GS(w, 0.1), G1(w, 0.1), G2(w, 0.1)
+		for x = 1, 2 do
+			for y = 1, 2 do
+				local d = math.sqrt((Complex.Re(s[x][y]) - Complex.Re(t1[x][y]) - Complex.Re(t2[x][y]))^2
+				                  + (Complex.Im(s[x][y]) - Complex.Im(t1[x][y]) - Complex.Im(t2[x][y]))^2)
+				if d > worst then worst = d end
+			end
+		end
+	end
+	local n1 = #(ResponseFunction.ToTable(G1)[1]) - 1
+	local n2 = #(ResponseFunction.ToTable(G2)[1]) - 1
+	local ns = #(ResponseFunction.ToTable(GS)[1]) - 1
+	print(string.format("  real %3d poles + complex %3d poles = %3d poles   worst deviation %9.2e",
+	      n1, n2, ns, worst))
+	if ns ~= (n1 + n2) then
+		error("adding a real and a complex block list of poles does not concatenate the poles", 1)
+	end
+	if worst > 1E-12 then
+		error("adding a real and a complex block list of poles does not give G1 + G2", 1)
+	end
+end
+
+-- ---------------------------------------------------------------------------
+-- Block functions of different block size can not be added
+-- ---------------------------------------------------------------------------
+-- MA is 3x3 and AddTestRealLP 2x2. The sum has to raise an error, for every
+-- combination of storage types, rather than read past the end of the smaller block.
+print("-- Block, different block sizes raise an error          --")
+G2List = {}
+for _, t in ipairs({"LP","Tri","And","Nat"}) do
+	G2List[#G2List+1] = ResponseFunction.ChangeType(AddTestRealLP(3), t)
+end
+for i = 1, #MAList do
+	for j = 1, #G2List do
+		local ok, msg = pcall(function() return MAList[i] + G2List[j] end)
+		if ok or (string.find(msg, "block size", 1, true) == nil) then
+			print("i=",i,"j=",j,msg)
+			error("adding response functions of different block size does not raise an error", 1)
+		end
+		ok, msg = pcall(function() return G2List[j] + MAList[i] end)
+		if ok or (string.find(msg, "block size", 1, true) == nil) then
+			print("i=",i,"j=",j,msg)
+			error("adding response functions of different block size does not raise an error", 1)
+		end
+	end
+end
+
 collectgarbage()
 print("--------------------------------------------------------")
 print("-- End                                                --")

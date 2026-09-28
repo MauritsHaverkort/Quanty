@@ -213,14 +213,43 @@ uint32_t BlockAndersonMatrixChopReduceDimension(BlockAndersonMatrixType *const A
       {
         A->N--;
         if(A->N==i) return 0;
-        memcpy(&(A->aRe[(i+1)*Sqr(A->BlockSize)]), &( A->aRe[(i+2)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
-        memcpy(&(A->bRe[(i  )*Sqr(A->BlockSize)]), &( A->bRe[(i+1)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
+        memmove(&(A->aRe[(i+1)*Sqr(A->BlockSize)]), &( A->aRe[(i+2)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
+        memmove(&(A->bRe[(i  )*Sqr(A->BlockSize)]), &( A->bRe[(i+1)*Sqr(A->BlockSize)]), (A->N - i) * Sqr(A->BlockSize) * sizeof(double));
         i--;
       }
     }
   }
   return 0;
 }
+
+
+void ShiftBlockAndersonMatrix(BlockAndersonMatrixType *const A, double const delta)
+{
+  uint32_t i,k;
+  if(A->QComplex)
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=k*A->BlockSize*A->BlockSize;i<(k+1)*A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        A->a[i].Re+=delta;
+      }
+    }
+  }
+  else
+  {
+    for(k=1;k<=A->N;k++)
+    {
+      for(i=k*A->BlockSize*A->BlockSize;i<(k+1)*A->BlockSize*A->BlockSize;i+=A->BlockSize+1)
+      {
+        A->aRe[i]+=delta;
+      }
+    }
+  }
+  //A->mu+=delta;
+}
+
+
 
 /*
  *  B <- A
@@ -452,7 +481,6 @@ int BlockAndersonMatrixFromListOfPolesAsSelfEnergy(BlockListOfPoles const * cons
       memcpy(&(G->b[(i+1)*Sqr(Sigma->BlockSize)]), SqrtS.V, Sqr(Sigma->BlockSize)*sizeof(Complex16));
       FreeCompactMatrix(&SqrtS);
     }
-    
   }
   return 0;
 }

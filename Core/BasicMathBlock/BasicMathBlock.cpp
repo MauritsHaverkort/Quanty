@@ -3,6 +3,7 @@
 #include "BasicMath_BlockMatrixToOperator.cpp"
 #include "BasicMath_BlockNaturalImpurityOrbital.cpp"
 #include "BasicMath_BlockTridiagonalMatrix.cpp"
+#include "BasicMath_BlockDoubleTridiagnonalMatrix.cpp"
 #include "BasicMath_BlockTypeConversion.cpp"
 
 /* Free the BlockMatrix, independent if the type is capital or small */
@@ -41,9 +42,15 @@ uint32_t FreeBlockMatrix(ResponsefunctionType *M)
       free((BlockNaturalImpurityOrbitalMatrixType *)(M->data));
       return 0;
     }
+    case 'd':
+    {
+      FreeBlockDoubleTriDiagonalMatrix((BlockDoubleTriDiagonalMatrixType *)M->data);
+      free((BlockDoubleTriDiagonalMatrixType *)(M->data));
+      return 0;
+    }
     default:
     {
-      printf("Error in FreeBlockMatrix unrecognized type %c",M->type);
+      printf("Error in FreeBlockMatrix unrecognized type %c\n",M->type);
       return 1;
     }
   }
@@ -99,6 +106,16 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
       free((BlockNaturalImpurityOrbitalMatrixType *)(M->data));
       return 0;
     }
+    case 'd':
+    {
+      return 0;
+    }
+    case 'D':
+    {
+      FreeBlockDoubleTriDiagonalMatrix((BlockDoubleTriDiagonalMatrixType *)M->data);
+      free((BlockDoubleTriDiagonalMatrixType *)(M->data));
+      return 0;
+    }
     default:
     {
       printf("Error in FreeBlockMatrixFromLua unrecognized type %c",M->type);
@@ -109,13 +126,40 @@ uint32_t FreeBlockMatrixFromLua(ResponsefunctionType *M)
 
 /*
  * change the type of a Block response function from M->type to type
+ * SingularValue is used in TriDiagonal Matrices to determine when to deflate the matrix dimension
+ * MinimalPoleWeigth is used in ListOfPoles or Anderson Matrices to set weight to zero (can be set to be relative)
+ * MinimalPoleDistance is used in ListOfPoles or Anderson Matrices to determine if two poles are merged (can be set to be relative)
+ * KbT is used in NaturalImpurity representaiton and DoubleTriDiagonal representation to seperate val and con bath
  */
-int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue)
+int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth)
 {
-  if(Min->Block!=true) printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+  return ConvertBlockMatrix(Min, Mout, type, Method, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, deflate, relativeDistance, relativeWeigth, NTriMaxNoLimit, NTriMaxNoLimit);
+}
+
+/*  NTriMaxVal and NTriMaxCon put a ceiling on the length of the chain(s) the conversion
+ *  produces: NTriMaxVal on the one chain of a block tri-diagonal matrix, and the two of
+ *  them on the valence and the conduction chain of a block NaturalImpurityOrbital or a
+ *  block DoubleTri matrix. A block list of poles and a block Anderson matrix have no chain
+ *  and ignore both. See ConvertResponsefunction for where the ceiling is applied.
+ */
+int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon)
+{
+  if(Min->Block!=true)
+  {
+    printf("ERROR: called ConvertBlockMatrix on a ResponsefunctionType that is not in Block Form.\n");
+    Mout->type=type;
+    Mout->data=NULL;
+    Mout->Block=true;
+    Mout->NSuggestedGridPoints=0;
+    Mout->SuggestedGrid=NULL;
+    return 1;
+  }
   Mout->NSuggestedGridPoints = 0;
   Mout->type = type;
   Mout->Block = true;
+  /*  as in ConvertResponsefunction: the switch below leaves data untouched when it does
+   *  not recognize the type of Min, and the tail has to be able to see that */
+  Mout->data = NULL;
   Mout->NSuggestedGridPoints=Min->NSuggestedGridPoints;
   if(Mout->NSuggestedGridPoints==0)
   {
@@ -141,7 +185,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, SingularValue);
+          BlockListOfPolesToBlockTridiagonalMatrix(*(BlockListOfPoles*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, ((BlockListOfPoles*)(Min->data))->N, SingularValue, NTriMaxVal);
         }
         break;
         case 'a':
@@ -153,7 +197,21 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1);
+          BlockListOfPolesToBlockNaturalImpurityOrbitalMatrix((BlockListOfPoles*)(Min->data), (BlockNaturalImpurityOrbitalMatrixType*)(Mout->data), T, SingularValue, ((BlockListOfPoles*)(Min->data))->N+1, ((BlockListOfPoles*)(Min->data))->N+1, NTriMaxVal, NTriMaxCon);
+        }
+        break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockListOfPolesToBlockDoubleTriDiagonalMatrix((BlockListOfPoles*)(Min->data), (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, MinimalPoleDistance))
+          {
+            printf("BlockListOfPolesToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
         }
         break;
         default:
@@ -177,7 +235,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           }
           else
           {
-            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
+            BlockTriDiagonalMatrixToBlockListOfPoles((BlockTriDiagonalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, MinimalPoleDistance, relativeDistance);
           }
         }
         break;
@@ -196,7 +254,21 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
+          BlockTriDiagonalMatrixToBlockNaturalImpurityMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T, SingularValue, MinimalPoleDistance, relativeDistance);
+        }
+        break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix(*(BlockTriDiagonalMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,MinimalPoleDistance))
+          {
+            printf("BlockTriDiagonalMatrixToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
         }
         break;
         default:
@@ -220,14 +292,14 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           }
           else
           {
-            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
+            BlockAndersonMatrixToBlockListOfPoles((BlockAndersonMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, MinimalPoleDistance, relativeDistance);
           }
         }
         break;
         case 't':
         {
           Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
-          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, SingularValue);
+          BlockAndersonMatrixToBlockTridiagonalMatrix((BlockAndersonMatrixType*)Min->data, (BlockTriDiagonalMatrixType*)Mout->data, SingularValue, MinimalPoleDistance, relativeDistance);
         }
         break;
         case 'a':
@@ -239,12 +311,27 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
         case 'n':
         {
           Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
-          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T);
+          BlockAndersonMatrixToBlockNaturalImpurityOrbitalMatrix((BlockAndersonMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T, SingularValue, MinimalPoleDistance, relativeDistance);
+        }
+        break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix((BlockAndersonMatrixType*)Min->data,(BlockDoubleTriDiagonalMatrixType*)Mout->data,T,SingularValue,MinimalPoleDistance))
+          {
+            printf("BlockAndersonMatrixToBlockDoubleTriDiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
         }
         break;
         default:
         {
           printf("Error in ConvertBlockMatrix unrecognized type: %c",type);
+          return 1;
         }
         break;
       }
@@ -263,7 +350,7 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           }
           else
           {
-            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data);
+            BlockNaturalImpurityOrbitalMatrixToBlockListOfPoles((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockListOfPoles*)Mout->data, MinimalPoleDistance, relativeDistance);
           }
         }
         break;
@@ -286,9 +373,101 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
           CopyBlockNaturalImpurityOrbitalMatrix(*(BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockNaturalImpurityOrbitalMatrixType*)Mout->data);
         }
         break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix((BlockNaturalImpurityOrbitalMatrixType*)Min->data, (BlockDoubleTriDiagonalMatrixType*)Mout->data, T, SingularValue, MinimalPoleDistance))
+          {
+            printf("BlockNaturalImpurityOrbitalMatrixToBlockDoubleTridiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
         default:
         {
           printf("Error in ConvertBlockMatrix unrecognized type to convert to: %c",type);
+        }
+        break;
+      }
+    }
+    break;
+    case 'd': // original double tri-diagonal
+    {
+      switch (type|32)
+      {
+        case 'n':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockNaturalImpurityOrbitalMatrixType));
+          /* through the list of poles: kBT for the Fermi split, SingularValue for the
+             deflation of the two block Lanczos runs, MinimalPoleDistance for the merge */
+          if(BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockNaturalImpurityOrbitalMatrixType*)Mout->data,T,SingularValue,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockNaturalImpurityMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
+        case 'l':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockListOfPoles));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockDoubleTriDiagonalMatrixToBlockListOfPoles((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockListOfPoles*)Mout->data,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockListOfPoles failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
+        case 't':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockTriDiagonalMatrixType));
+          /* through the Anderson form: SingularValue is what the block Lanczos of the
+             second step deflates on, MinimalPoleDistance the merge tolerance of the
+             first, negative asking for the standard value */
+          if(BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockTriDiagonalMatrixType*)Mout->data,SingularValue,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockTriDiagonalMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
+        case 'a':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockAndersonMatrixType));
+          /* a negative MinimalPoleDistance asks for the standard value, which
+             BlockListOfPolesMergeDegeneratePoles decides */
+          if(BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix((BlockDoubleTriDiagonalMatrixType*)Min->data,(BlockAndersonMatrixType*)Mout->data,MinimalPoleDistance,relativeDistance))
+          {
+            printf("BlockDoubleTriDiagonalMatrixToBlockAndersonMatrix failed in ConvertBlockMatrix\n");
+            free(Mout->data);
+            Mout->data = NULL;
+            return 1;
+          }
+        }
+        break;
+        case 'd':
+        {
+          Mout->data = (void*) malloc(sizeof(BlockDoubleTriDiagonalMatrixType));
+          CopyBlockDoubleTriDiagonalMatrix(*(BlockDoubleTriDiagonalMatrixType*)Min->data, (BlockDoubleTriDiagonalMatrixType*)Mout->data);
+        }
+        break;
+        default:
+        {
+          //TODO: conversions from BlockDoubleTriDiagonalMatrixType to other types
+          printf("Error in ConvertBlockMatrix conversion from DoubleTri to %c is not implemented\n",type);
+          Mout->data = NULL;
+          return 1;
         }
         break;
       }
@@ -300,10 +479,15 @@ int ConvertBlockMatrix(const ResponsefunctionType *const Min, ResponsefunctionTy
     }
     break;
   }
-  return 0;
+  if(Mout->data==NULL) return 0;
+  return ResponsefunctionTruncate(Mout, NTriMaxVal, NTriMaxCon);
 }
 
-int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot)
+/*  Rotate the block representation of a response function, GRot = U^* G U^T.
+ *
+ *  Currently all response functions are transformed to a (Block) list of poles format. This takes the option MinimalPoleDistance.
+ */
+int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const CompactMatrixType *const U, ResponsefunctionType * const GRot, double const T, double const SingularValue, double const MinimalPoleWeigth, const double MinimalPoleDistance)
 {
   GRot->type  = G->type;
   GRot->Block = G->Block;
@@ -393,8 +577,8 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 't': // original tri-diagonal
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
-      BlockResponseFunctionRotate(&Gp, U, GRot);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance);
       FreeResponsefunction(&Gp);
       return 0;
     }
@@ -402,8 +586,8 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'a': // original anderson matrix
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
-      BlockResponseFunctionRotate(&Gp, U, GRot);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance);
       FreeResponsefunction(&Gp);
       return 0;
     }
@@ -411,15 +595,40 @@ int BlockResponseFunctionRotate(const ResponsefunctionType *const G, const Compa
     case 'n': // original natural impurity orbitals
     {
       ResponsefunctionType Gp;
-      ConvertBlockMatrix(G, &Gp, 'L', 0, 0);
-      BlockResponseFunctionRotate(&Gp, U, GRot);
+      ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false);
+      BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance);
+      FreeResponsefunction(&Gp);
+      return 0;
+    }
+    break;
+    case 'd': // original double tri-diagonal
+    {
+      ResponsefunctionType Gp;
+      if(ConvertBlockMatrix(G, &Gp, 'L', "Default", T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance, false, false, false))
+      {
+        printf("ConvertBlockMatrix to a list of poles failed in BlockResponseFunctionRotate\n");
+        fflush(stdout);
+        return 1;
+      }
+      if(BlockResponseFunctionRotate(&Gp, U, GRot, T, SingularValue, MinimalPoleWeigth, MinimalPoleDistance))
+      {
+        printf("BlockResponseFunctionRotate failed on the list of poles in BlockResponseFunctionRotate\n");
+        fflush(stdout);
+        FreeResponsefunction(&Gp);
+        return 1;
+      }
       FreeResponsefunction(&Gp);
       return 0;
     }
     break;
     default:
     {
-      printf("Error in BlockResponseFunctionRotate unrecognized type of G: %c",G->type);
+      /*  return 1 rather than falling through to the return 0 below: the caller has to be
+       *  told, or it hands lua a response function whose data was never allocated and the
+       *  first use of it takes the process down */
+      printf("Error in BlockResponseFunctionRotate unrecognized type of G: %c\n",G->type);
+      fflush(stdout);
+      return 1;
     }
     break;
   }

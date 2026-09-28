@@ -1,0 +1,7 @@
+--[[
+ *  Included by ScriptDirectory.Quanty through dofile(ScriptDirectory.."...").
+ *  It is not a test of its own and is not registered in .gitlab-ci.yml.
+]]
+
+ScriptDirectoryIncludeRan = true
+ScriptDirectoryIncludeSaw = ScriptDirectory

@@ -15,6 +15,10 @@ uint32_t DifferenceGreensFunctionTriDiagonalRepresentation(TriDiagonalMatrixType
 uint32_t SelfEnergyTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const G,TriDiagonalMatrixType * const Sigma);
 uint32_t SelfEnergyListOfPolesFromAndersonRepresentation(AndersonMatrixType const G0, AndersonMatrixType const G,ListOfPoles * const Sigma);
 uint32_t SelfEnergyListOfPolesFromTriDiagonalRepresentation(TriDiagonalMatrixType const G0,TriDiagonalMatrixType const G, ListOfPoles * const Sigma);
+
+int   CalculateGBathFromGandSigma(ResponsefunctionType  * const G, ResponsefunctionType  * const Sigma, ResponsefunctionType  * const GBath, double Epsilon, CompactVectorType *const Grid, uint32_t Nv, uint32_t Nc, ResponsefunctionType  * const Gv, ResponsefunctionType  * const Gc, char const * const Method, char const * const Type);
+
+
 uint32_t GBathAndTriAndRepresentation(AndersonMatrixType const G0, double const mu, TriDiagonalMatrixType const Sigma,AndersonMatrixType * const G);
 uint32_t GBathTriDiagonalRepresentation(TriDiagonalMatrixType const G0, TriDiagonalMatrixType const Sigma,TriDiagonalMatrixType * const GBath, uint32_t NTriDiag);
 uint32_t GBathAndListAndRepresentation(AndersonMatrixType const G0, double const mu, ListOfPoles const Sigma,AndersonMatrixType * const G);
@@ -43,7 +47,21 @@ Complex16 EvaluateAndersonMatrix(void const * A, const double omega, const doubl
 Complex16 EvaluateBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType const * A, const double omega, const double Gamma);
 Complex16 EvaluateBADoubleTriDiagonalMatrix(void const * A, const double omega, const double Gamma);
 Complex16 EvaluateResponsefunctionType(ResponsefunctionType const *A, const double omega, const double Gamma);
-int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, double T, double SingularValue);
+/*  NTriMaxNoLimit asks a conversion not to cut the chain it produces. Zero is a chain of
+ *  a[0] alone and so a value a caller can legitimately ask for, which is why the "not set"
+ *  marker has to sit at the top of the range rather than at the bottom.
+ */
+#define NTriMaxNoLimit UINT32_MAX
+uint32_t NTriMaxOr(uint32_t const NTriMax, uint32_t const N);
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth);
+int ConvertResponsefunction(const ResponsefunctionType *const Min, ResponsefunctionType *Mout, const char type, const char * const Method, const double T, const double SingularValue, const double MinimalPoleWeigth, const double MinimalPoleDistance, bool deflate, bool relativeDistance, bool relativeWeigth, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
+int ResponseFunctionToBlockResponseFunction(ResponsefunctionType const * const Min, ResponsefunctionType * const Mout);
+int ResponseFunctionDirectSum(ResponsefunctionType const * const * const A, uint32_t const * const Offset, uint32_t const m, uint32_t const BlockSize, ResponsefunctionType * const Mout);
+int ResponsefunctionChop(ResponsefunctionType *M, double epsilon, bool Deflate);
+int ResponsefunctionTruncate(ResponsefunctionType *M, uint32_t const NTriMaxVal, uint32_t const NTriMaxCon);
+int ResponseFunctionInvertEnergy(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
+int ResponseFunctionTranspose(ResponsefunctionType * const Gin, ResponsefunctionType * const Gout);
+int ResponseFunctionDownfold(ResponsefunctionType * const Gin, CompactMatrixType const * const R, ResponsefunctionType * const Gout, CompactMatrixType * const S, double const T, double const SingularValue, double const MinimalPoleWeigth, double const MinimalPoleDistance, uint32_t const NTriMax);
 int ResponsefunctionCopy(ResponsefunctionType *Min, ResponsefunctionType *Mout);
 uint32_t FreeResponsefunction(ResponsefunctionType *M);
 uint32_t FreeResponsefunctionIncludingOriginalPointer(ResponsefunctionType *M);

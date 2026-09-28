@@ -435,6 +435,15 @@ static int LuaHelp(lua_State *L)
       printf("      - largest energy in the spectrum\n");
       printf("    - \"Gamma\"\n");
       printf("      - Lorenzian broadening of the spectra (full with half maximum FWHM)\n");
+      printf("    - \"Method\"\n");
+      printf("      - \"Auto\" (default) dense methods below DenseBorder, Lanczos above, \"Dense\", \"Lanczos\",\n");
+      printf("        \"Mesh\" the hybridisation on the uniform mesh Emin, Emax, NE, returned as poles on the mesh\n");
+      printf("    - \"NBathExcitations\"\n");
+      printf("      - with hybridisation functions given as 4th argument: the number of excitations (particles plus holes)\n");
+      printf("        allowed at once in the baths the hybridisation functions stand for (default 1)\n");
+      printf("      - the bath particle is a fermion when its operators are odd, a boson when they are even\n");
+      printf("    - \"NonCrossing\"\n");
+      printf("      - true keeps only the nested processes, in which the bath excitation added last leaves first (default false)\n");
       printf("\n");
       printf("\n");
     }
@@ -1889,32 +1898,32 @@ static int LuaCreateSpectra(lua_State *L)
   struct
   {
     OperatorType **V;
-    SpectraTypeArray **SonGrid;
-    ResponsefunctionType **SasMatrix;
+    ResponsefunctionType **S;
     uint32_t NSigma;
   } Sigma;
+  Sigma.NSigma=0;
   struct
   {
     double E0;
+    int NTriFull;
     uint32_t Npsi;
     uint32_t NT;
     ConvergenceSettingsType Settings;
-    DeterminantRestrictionType FilledEmptySpinOrbitals;
     CompactVectorType GridPoints;
-    char *GridType; // "PoleEnergy", "bin"
     char *stream;
     bool Tensor;
     bool Sigma;
     bool KrylovBasis;
     bool DenseMethod;
-    bool HybridizationExpansion;
+    uint32_t NBathExcitations;
+    bool NonCrossing;
+    char *Method;
+    bool Mesh;
   } Options;
-  Options.HybridizationExpansion=false;
   Options.GridPoints.QComplex=0;
   Options.GridPoints.Ni=0;
   Options.GridPoints.VRe=NULL;
-  Options.GridType=NULL;
-  Options.FilledEmptySpinOrbitals.N=0;
+  Options.NTriFull=-1;
   Options.Settings=InitConvergenceSettings();
   Options.stream=NULL;
   Options.Tensor=false;
@@ -1922,6 +1931,10 @@ static int LuaCreateSpectra(lua_State *L)
   Options.DenseMethod=false;
   Options.KrylovBasis=false;
   Options.E0=DBL_MAX;
+  Options.NBathExcitations=1;
+  Options.NonCrossing=false;
+  Options.Method=NULL;
+  Options.Mesh=false;
   CompactMatrixType HDense, TpsiDense, EigenfunHDense;
   SpectraTypeArray *Spec;
   OperatorType *H,*T;
@@ -1933,11 +1946,11 @@ static int LuaCreateSpectra(lua_State *L)
   char filename[MAXStrLength];
   LuaOptionsType LuaCreateSpectraOptions[]={
     {"Tensor","bool",&(Options.Tensor)},
-    {"Sigma","bool",&(Options.Sigma)},
     {"KrylovBasis","bool",&(Options.KrylovBasis)},
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
@@ -1946,12 +1959,13 @@ static int LuaCreateSpectra(lua_State *L)
     {"Gamma","double",&(Options.Settings.Gamma)},
     {"E0","double",&(Options.E0)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
-    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+    {"ForceDenseMethod","bool",&(Options.DenseMethod)},
     
-    {"HybridizationExpansion","bool",&(Options.HybridizationExpansion)},
-    {"FilledEmptySpinOrbitals", "DeterminantRestrictionType", &(Options.FilledEmptySpinOrbitals)},
-    {"GridType","char*",&(Options.GridType)},
     {"GridPoints","Vector",&(Options.GridPoints)},
+    {"NTriFull","int",&(Options.NTriFull)},
+    {"NBathExcitations","uint32_t",&(Options.NBathExcitations)},
+    {"NonCrossing","bool",&(Options.NonCrossing)},
+    {"Method","char*",&(Options.Method)},
     
     
     {"file","char*",&(Options.stream)}, // temporary undoccumented option
@@ -1960,7 +1974,7 @@ static int LuaCreateSpectra(lua_State *L)
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
   /* check number of input parameters */
   len = (uint32_t)lua_gettop(L);
-  if(!((len==3)||(len==4)||(len=5)))
+  if(!((len==3)||(len==4)||(len==5)))
   {
     return luaL_error(L, "Error CreateSpectra called with %d arguments, 3,4 or 5 expected\n",len);
   }
@@ -1997,51 +2011,109 @@ static int LuaCreateSpectra(lua_State *L)
   {
     LuaCheckOptions(L, -1, LuaCreateSpectraOptions);
   }
+  /* Method selects how the spectra are calculated:
+       "Auto"    dense methods when the Hilbert space is below DenseBorder, Lanczos otherwise (the default)
+       "Dense"   dense methods, the same as ForceDenseMethod
+       "Lanczos" Lanczos, whatever the size of the Hilbert space
+       "Mesh"    the hybridisation on the uniform energy mesh Emin, Emax, NE; P by Lanczos */
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Auto")==0)
+    {
+    }
+    else if(strcicmp(Options.Method,"Dense")==0)
+    {
+      Options.DenseMethod=true;
+    }
+    else if(strcicmp(Options.Method,"Lanczos")==0)
+    {
+      if(Options.DenseMethod==true)
+      {
+        return luaL_error(L, "Error in CreateSpectra Method \"Lanczos\" and ForceDenseMethod true contradict each other\n");
+      }
+      Options.Settings.DenseBorder=0;
+    }
+    else if(strcicmp(Options.Method,"Mesh")==0)
+    {
+      if(Options.DenseMethod==true)
+      {
+        return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" and ForceDenseMethod true contradict each other\n");
+      }
+      Options.Mesh=true;
+      Options.Settings.DenseBorder=0;
+    }
+    else
+    {
+      return luaL_error(L, "Error in CreateSpectra unknown Method \"%s\", possible are \"Auto\", \"Dense\", \"Lanczos\" and \"Mesh\"\n",Options.Method);
+    }
+  }
+  /* test if combination of options are valid */
+  if(Options.NBathExcitations==0)
+  {
+    return luaL_error(L, "Error in CreateSpectra NBathExcitations should be at least 1\n");
+  }
+  if(((Options.NBathExcitations!=1)||(Options.NonCrossing==true))&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra NBathExcitations and NonCrossing can only be set when a hybridisation function is given\n");
+  }
+  if((Options.Mesh==true)&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" needs a hybridisation function; without one Lanczos is exact\n");
+  }
+  if((Options.Mesh==true)&&(Options.NBathExcitations>1)&&(Options.NonCrossing==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra Method \"Mesh\" with more than one bath excitation includes only the nested processes.\nSet NonCrossing to true, or use Method \"Lanczos\" for the crossed processes as well\n");
+  }
+  if((Options.NTriFull!=-1)&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra NTriFull can only be set when a self energy is given\n");
+  }
+  if((Options.GridPoints.Ni!=0)&&(Options.Sigma==false))
+  {
+    return luaL_error(L, "Error in CreateSpectra GridPoints can only be set when a self energ is given\n");
+  }
+  if(Options.GridPoints.QComplex!=0)
+  {
+    return luaL_error(L, "Error in CreateSpectra GridPoints need to be real and not complex\n");
+  }
   /* read self energy */
   if(Options.Sigma==true)
   {
     /* read self energy */
-    /* the self energy can be */
-    // 1 a single object of spectra type
-    // 2 a single object of ResponseFunction type
-    // 3 A list of length 2 containing an operator or a list of operators and a self energy in format 1 or 2
-    // 4 a list of objects of form 1, 2 or 3
-    Sigma.NSigma=0;
+    /* the self energy must be given as a list of lists containing a (Block) response function and a list of operators of dimension NBlock*/
     if(lua_type(L,4)!=LUA_TTABLE)
     {
-      Sigma.NSigma=1;
-    }
-    else if (lua_objlen(L,4)==2)
-    {
-      // we still can have one or two self energies
-      lua_rawgeti(L,4,1);
-      if(luaL_checkudata(L, -1, "Operator_Type")!=NULL)Sigma.NSigma=1;
-      else if (lua_istable(L,-1))
-      {
-        lua_rawgeti(L,-1,(int)lua_objlen(L, -1));
-        if(luaL_checkudata(L, -1, "Operator_Type")!=NULL)Sigma.NSigma=1;
-        lua_pop(L,1);
-      }
-      lua_pop(L,1);
-    }
-    if(Sigma.NSigma==1)
-    {
-      Sigma.V= (OperatorType**)malloc(Sigma.NSigma*sizeof(OperatorType*));
-      Sigma.SonGrid= (SpectraTypeArray**)malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
-      LuaReadSingleSelfenergy(L, 4, Sigma.V[0], Sigma.SonGrid[0], Sigma.SasMatrix[0]);
+      return luaL_error(L, "Error CreateSpectra input parameter 4 should represent a self energy in the form of a list of response functions and operators\n");
     }
     else
     {
       Sigma.NSigma=(uint32_t)lua_objlen(L, 4);
+      Sigma.S= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       Sigma.V= (OperatorType**)malloc(Sigma.NSigma*sizeof(OperatorType*));
-      Sigma.SonGrid= (SpectraTypeArray**)malloc(Sigma.NSigma*sizeof(SpectraTypeArray*));
-      Sigma.SasMatrix= (ResponsefunctionType**)malloc(Sigma.NSigma*sizeof(ResponsefunctionType*));
       for(i=0;i<Sigma.NSigma;i++)
       {
         lua_rawgeti(L,4,i+1);
-        LuaReadSingleSelfenergy(L, -1, Sigma.V[i], Sigma.SonGrid[i], Sigma.SasMatrix[i]);
-        lua_pop(L, 1);
+        if((lua_type(L,-1)!=LUA_TTABLE)||(lua_objlen(L, -1)!=2))
+        {
+          return luaL_error(L, "Error CreateSpectra input parameter 4 at position %d should represent a self energy self energies are given as a list of a response function type and a list of operators\n",i);
+        }
+        lua_rawgeti(L,-1,1);
+        Sigma.S[i] = luaL_checkResponsefunction(L, -1);
+        lua_pop(L, 1); // remove Sigma(w) from stack
+        lua_rawgeti(L,-1,2);
+        if((lua_type(L,-1)!=LUA_TTABLE)||(lua_objlen(L, -1)!=ResponseFunctionGetBlockSize(Sigma.S[i])))
+        {
+          return luaL_error(L, "Error CreateSpectra input parameter 4 at position %d should represent a self energy. Self energies are given as a list of a response function type and a list of operators that should have the same dimension as the BlockSize (%d) of the response function. (currently %d)\n",i,ResponseFunctionGetBlockSize(Sigma.S[i]),lua_objlen(L, -1));
+        }
+        Sigma.V[i] = (OperatorType*)malloc(ResponseFunctionGetBlockSize(Sigma.S[i])*sizeof(OperatorType));
+        for(j=0;j<lua_objlen(L, -1);j++)
+        {
+          lua_rawgeti(L,-1,j+1);
+          Sigma.V[i][j] = *( (OperatorType *) luaL_checkudata(L, -1, "Operator_Type"));
+          lua_pop(L,1);
+        }
+        lua_pop(L,1); // remove table with V from stack
+        lua_pop(L, 1); // remove table with {Sigma,V} from stack
       }
     }
   }
@@ -2143,8 +2215,8 @@ static int LuaCreateSpectra(lua_State *L)
       }
     }
   }
-  /* calculate Tpsi for all functions and transition operators 
-     Tpsi is a single vector, the functions are stored at Tpsi[iT*Options.Npsi+ipsi] */
+  /* calculate Tpsi for all functions and transition operators
+   Tpsi is a single vector, the functions are stored at Tpsi[iT*Options.Npsi+ipsi] */
   /* different function calls with and without restrictions */
   Tpsi= (WaveFunctionType*)malloc((Options.NT*Options.Npsi)*sizeof(WaveFunctionType));
   if(Options.Settings.restrictions.N==0)
@@ -2187,54 +2259,80 @@ static int LuaCreateSpectra(lua_State *L)
       WaveFunctionFree(&psiDenseBasis);
       break;
     }
-		if (i > 0)
+    if (i > 0)
     {
-			if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
-			{
-				luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-			}
+      if(WaveFunctionAddMultipliedUnionBasis(&psiDenseBasis, Tpsi[i], (double)(1+rand())/(double)RAND_MAX))
+      {
+        luaL_error(L, "WaveFunctionAddMultipliedUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+      }
     }
   }
   /* expand psiBasis to represent H^n psiBasis for all n */
-	if (psiDenseBasis.N == 0)
-	{
-		Options.DenseMethod = false;
-		WaveFunctionFree(&psiDenseBasis);
-	}
-	else
-	{
-		len = 0;
-		if ((Options.DenseMethod == true) || (psiDenseBasis.N <= Options.Settings.DenseBorder))
-		{
-			while (len != psiDenseBasis.N)
-			{
-				len = psiDenseBasis.N;
-				if ((Options.Settings.restrictions.N == 0) ? (OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)) : (OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
-				{
-					luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-				}
+  if (psiDenseBasis.N == 0)
+  {
+    Options.DenseMethod = false;
+    WaveFunctionFree(&psiDenseBasis);
+  }
+  else
+  {
+    len = 0;
+    if ((Options.DenseMethod == true) || (psiDenseBasis.N <= Options.Settings.DenseBorder))
+    {
+      while (len != psiDenseBasis.N)
+      {
+        len = psiDenseBasis.N;
+        if ((Options.Settings.restrictions.N == 0) ? (OperatorPsi(*H, psiDenseBasis, &OpsiDenseBasis)) : (OperatorPsiRestricted(*H, psiDenseBasis, &OpsiDenseBasis, Options.Settings.restrictions)))
+        {
+          luaL_error(L, "OperatorPsi failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+        }
         WaveFunctionAddMultipliedUnionBasis(&OpsiDenseBasis, psiDenseBasis, 0);
-				if ((Options.DenseMethod == false) && (OpsiDenseBasis.N > Options.Settings.DenseBorder))
-				{
-					WaveFunctionFree(&OpsiDenseBasis);
-					WaveFunctionFree(&psiDenseBasis);
-					break;
-				}
-				WaveFunctionNormalize(&OpsiDenseBasis);
-				if (WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
-				{
-					luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
-				}
-				WaveFunctionFree(&OpsiDenseBasis);
-				if ((Options.DenseMethod == false) && (psiDenseBasis.N > Options.Settings.DenseBorder))
-				{
-					WaveFunctionFree(&psiDenseBasis);
-					break;
-				}
-				if (len == psiDenseBasis.N) Options.DenseMethod = true;
-			}
-		}
-	}
+        if ((Options.DenseMethod == false) && (OpsiDenseBasis.N > Options.Settings.DenseBorder))
+        {
+          WaveFunctionFree(&OpsiDenseBasis);
+          WaveFunctionFree(&psiDenseBasis);
+          break;
+        }
+        WaveFunctionNormalize(&OpsiDenseBasis);
+        if (WaveFunctionAddUnionBasis(&psiDenseBasis, OpsiDenseBasis))
+        {
+          luaL_error(L, "WaveFunctionAddUnionBasis failed in calculation of spectra\n Out of memory?\nTry to split the call to several calls for different wave-functions or transition operators\n");
+        }
+        WaveFunctionFree(&OpsiDenseBasis);
+        if ((Options.DenseMethod == false) && (psiDenseBasis.N > Options.Settings.DenseBorder))
+        {
+          WaveFunctionFree(&psiDenseBasis);
+          break;
+        }
+        if (len == psiDenseBasis.N) Options.DenseMethod = true;
+      }
+    }
+  }
+  /* Filter out cases when Sigma == true that are not yet implemented */
+  if(Options.Sigma==true)
+  {
+    if(Options.DenseMethod==true)
+    {
+      if(Options.Tensor==false)
+      {
+        return luaL_error(L, "Dense methods with Tensor false and self energy not yet implemented\n");
+      }
+      else
+      {
+        return luaL_error(L, "Dense methods with Tensor true and self energy not yet implemented\n");
+      }
+    }
+    else
+    {
+      if(Options.Tensor==false)
+      {
+        return luaL_error(L, "Sparse methods with Tensor false and self energy not yet implemented\n");
+      }
+      else
+      {
+        // Implementation started, needs to be finished
+      }
+    }
+  }
   /* If DenseMethod is true calculate spectra using dense methods */
   if(Options.DenseMethod==true)
   {
@@ -2679,28 +2777,28 @@ static int LuaCreateSpectra(lua_State *L)
       GTri.mu=0;//psiEn[0];
       if(Options.Settings.restrictions.N==0)
       {
-        if(Options.KrylovBasis==true)
+        if((Options.KrylovBasis==true)||(Options.Sigma==true))
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-          LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
+          LanczosBlockTriDiagonalizeKrylov(*H, TpsiSameBasis, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, psiBasis, BlockSizeN);
         }
         else
         {
-        	LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          LanczosBlockTriDiagonalize(*H, TpsiSameBasis, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
       else
       {
-        if(Options.KrylovBasis==true)
+        if((Options.KrylovBasis==true)||(Options.Sigma==true))
         {
           BlockSizeN= (uint32_t*)malloc(GTri.N*sizeof(uint32_t));
           psiBasis= (WaveFunctionType**)malloc(Options.Settings.NTri*sizeof(WaveFunctionType*));
-          LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, psiBasis, BlockSizeN);
+          LanczosBlockTriDiagonalizeKrylovRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, psiBasis, BlockSizeN);
         }
         else
         {
-          LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
+          LanczosBlockTriDiagonalizeRestricted(*H, TpsiSameBasis, Options.Settings.restrictions, Options.Settings.epsilon, Options.Settings.SingularValue, &GTri, Max(Options.Settings.Gamma,Options.Settings.epsilon));
         }
       }
       /* determine Eminpole and Emaxpole */
@@ -2735,9 +2833,151 @@ static int LuaCreateSpectra(lua_State *L)
       if(Options.Settings.Emin== DBL_MAX) Options.Settings.Emin = Eminpole - 0.125 * (Emaxpole-Eminpole);
       if(Options.Settings.Emax==-DBL_MAX) Options.Settings.Emax = Emaxpole + 0.125 * (Emaxpole-Eminpole);
       if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
-      
-      //TODO: different transformation to spectralform when self energy is present
-      
+      /* calculate G with the self energy and push the spectrum and a response function object to the stack */
+      if(Options.Sigma==true)
+      {
+        BlockListOfPoles *SigmaLP;
+        BlockTriDiagonalMatrixType GTriSigma;
+        WaveFunctionType *PsiBasisinP;
+        ResponsefunctionType Temp;
+        CompactMatrixType B0;
+        uint32_t NPsiBasisinP=0;
+        /* the block Lanczos stops as soon as a block deflates to nothing and
+           leaves the entries of BlockSizeN and psiBasis beyond that point
+           untouched, so every loop over the Krylov basis has to stop there */
+        if(BlockSizeN[0]==0)
+        {
+          return luaL_error(L, "Error in CreateSpectra, all transition operators give zero when acting on the wave functions\n");
+        }
+        for(i=0;i<GTri.N;i++)
+        {
+          if(BlockSizeN[i]==0) break;
+          NPsiBasisinP+=BlockSizeN[i];
+        }
+        PsiBasisinP= (WaveFunctionType*)malloc(NPsiBasisinP*sizeof(WaveFunctionType));
+        k=0;
+        for(i=0;i<GTri.N;i++)
+        {
+          if(BlockSizeN[i]==0) break;
+          for(j=0;j<BlockSizeN[i];j++)
+          {
+            PsiBasisinP[k]=psiBasis[i][j];
+            k++;
+          }
+        }
+        /* b[0] of GTri takes the deflated first Krylov block back to the NT*Npsi
+           transition operators. The seed block deflates whenever a transition
+           operator gives zero (z polarized light on a x2-y2 hole, IPES into a
+           full band), so its dimension is BlockSizeN[0] and not GTri.BlockSize */
+        B0.Ni=GTri.BlockSize;
+        B0.Nj=BlockSizeN[0];
+        B0.QComplex=GTri.QComplex;
+        if(InitCompactMatrix(&B0)) return luaL_error(L, "malloc failed in CreateSpectra\n");
+        for(i=0;i<GTri.BlockSize;i++)
+        {
+          for(j=0;j<BlockSizeN[0];j++)
+          {
+            if(GTri.QComplex) B0.V[i*BlockSizeN[0]+j]   = GTri.b[i*GTri.BlockSize+j];
+            else              B0.VRe[i*BlockSizeN[0]+j] = GTri.bRe[i*GTri.BlockSize+j];
+          }
+        }
+        SigmaLP= (BlockListOfPoles*)malloc(Sigma.NSigma*sizeof(BlockListOfPoles));
+        for(i=0;i<Sigma.NSigma;i++)
+        {
+          if(ConvertResponsefunction(Sigma.S[i], &Temp, 'L', "defeault", -1, -1, -1, -1, false, false, false))
+          {
+            return luaL_error(L, "Could not convert self energy %d to a list of poles in CreateSpectra\n",i);
+          }
+          if(Temp.Block==true)
+          {
+            /* the poles are taken over into SigmaLP[i] and freed with it, so
+               only the shell of the converted response function is released */
+            SigmaLP[i]=*((BlockListOfPoles*)Temp.data);
+            if(Temp.NSuggestedGridPoints!=0) free(Temp.SuggestedGrid);
+            free(Temp.data);
+          }
+          else
+          {
+            /* a self energy with one channel can come in as a scalar function */
+            CopyListOfPolesToBlockListOfPoles((ListOfPoles*)Temp.data, &(SigmaLP[i]));
+            FreeResponsefunction(&Temp);
+          }
+        }
+        /* H alone has a discrete spectrum, the self energy turns it into a
+           continuum, so the result needs many more poles than H did */
+        if(Options.NTriFull==-1) Options.NTriFull=(int)(Options.Settings.NTri*Sigma.NSigma);
+        if(Options.NTriFull<1)
+        {
+          return luaL_error(L, "Error in CreateSpectra, NTriFull should be at least 1 (it is %d)\n",Options.NTriFull);
+        }
+        /* one excitation in the baths goes through the routine that has always
+           done it, so that existing scripts give what they always gave.  At one
+           excitation there is nothing to cross, so NonCrossing changes nothing
+           but the route: it sends the calculation through the new routine,
+           which is how the tests compare the two */
+        if(Options.Mesh==true)
+        {
+          BlockListOfPoles GLPSigma;
+          if(CalculateGforHwithSigmaAsOperatorBathExcitationsMesh(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, Options.NBathExcitations, psiEn[0], Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, &B0, &GLPSigma))
+          {
+            return luaL_error(L, "CalculateGforHwithSigmaAsOperatorBathExcitationsMesh failed in CreateSpectra\n");
+          }
+          /* the poles are already measured from the ground state energy */
+          Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          luaL_setmetatable(L, "Spectra_Type");
+          Spec->Name=(char*)malloc(sizeof(char));
+          Spec->Name[0]='\0';
+          Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+          Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
+          BlockListOfPolesToSpectraWithBroadening(0, &GLPSigma, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+          for(i=0;i<Spec->NSpectra;i++)
+          {
+            Spec->Spec[i].EminPole=Eminpole;
+            Spec->Spec[i].EmaxPole=Emaxpole;
+          }
+          LuaPushTable_BlockListOfPoles(L, &GLPSigma);
+          FreeBlockListOfPoles(&GLPSigma);
+        }
+        else
+        {
+        if((Options.NBathExcitations==1)&&(Options.NonCrossing==false))
+        {
+          if(CalculateGforHwithSigmaAsOperator(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
+          {
+            return luaL_error(L, "CalculateGforHwithSigmaAsOperator failed in CreateSpectra\n");
+          }
+        }
+        else
+        {
+          if(CalculateGforHwithSigmaAsOperatorBathExcitations(H, PsiBasisinP, NPsiBasisinP, BlockSizeN[0], Sigma.V, SigmaLP, Sigma.NSigma, Options.NBathExcitations, Options.NonCrossing, (uint32_t)Options.NTriFull, Options.GridPoints.VRe, Options.GridPoints.Ni, &B0, &GTriSigma))
+          {
+            return luaL_error(L, "CalculateGforHwithSigmaAsOperatorBathExcitations failed in CreateSpectra\n");
+          }
+        }
+        /* Transform the spectrum with self energy from Anderson form to a spectra type array and push to stack */
+        Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        luaL_setmetatable(L, "Spectra_Type");
+        Spec->Name=(char*)malloc(sizeof(char));
+        Spec->Name[0]='\0';
+        Spec->NSpectra=Sqr(Options.NT*Options.Npsi);
+        Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
+        BlockTriDiagonalMatrixToSpectraWithBroadening(psiEn[0], &GTriSigma, Spec->Spec, Options.Settings.Emin, Options.Settings.Emax, Options.Settings.NE, Options.Settings.Gamma);
+        for(i=0;i<Spec->NSpectra;i++)
+        {
+          Spec->Spec[i].EminPole=Eminpole;
+          Spec->Spec[i].EmaxPole=Emaxpole;
+        }
+        /* Push the block tridiagonal representation of the spectrum to the stack */
+        ShiftBlockTridiagonalMatrix(&GTriSigma, -psiEn[0]);
+        LuaPushTable_BlockTriDiagonalMatrixType(L, &GTriSigma);
+        FreeBlockTridiagonalMatrix(&GTriSigma);
+        }
+        /* free what was allocated here. The Krylov basis itself is freed further down */
+        FreeCompactMatrix(&B0);
+        free(PsiBasisinP);
+        for(i=0;i<Sigma.NSigma;i++) FreeBlockListOfPoles(&(SigmaLP[i]));
+        free(SigmaLP);
+      }
       /* transform tridiagonal form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
       luaL_setmetatable(L, "Spectra_Type");
@@ -2768,18 +3008,45 @@ static int LuaCreateSpectra(lua_State *L)
             lua_rawseti(L, -2, i+1);
           }
         }
+        free(psiBasis);
+        free(BlockSizeN);
+      }
+      else if(Options.Sigma==true)
+      {
+        /* the Krylov basis was only created in order to build the self energy */
+        for(i=0;i<GTri.N;i++)
+        {
+          if(BlockSizeN[i]==0) break;
+          WaveFunctionArraySeperateBasis(psiBasis[i], BlockSizeN[i]);
+          for(j=0;j<BlockSizeN[i];j++) WaveFunctionFree(&(psiBasis[i][j]));
+          free(psiBasis[i]);
+        }
+        free(psiBasis);
         free(BlockSizeN);
       }
       /* free tridiagonal representation in memory */
       FreeBlockTridiagonalMatrix(&GTri);
-      
-      if(Options.KrylovBasis==true)
+      if(Options.Sigma==true)
       {
-        return 3;
+        if(Options.KrylovBasis==true)
+        {
+          return 5;
+        }
+        else
+        {
+          return 4;
+        }
       }
       else
       {
-        return 2;
+        if(Options.KrylovBasis==true)
+        {
+          return 3;
+        }
+        else
+        {
+          return 2;
+        }
       }
     }
   }
@@ -2842,6 +3109,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"Restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"E0","double",&(Options.E0)},
     {"E0_1","double",&(Options.E01)},
     {"E0_2","double",&(Options.E02)},
@@ -2854,7 +3122,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"NE2","uint32_t",&(Options.Settings.NE2)},
     {"Gamma2","double",&(Options.Settings.Gamma2)},
     {"DenseBorder","uint32_t",&(Options.Settings.DenseBorder)},
-    {"ForceDenseMethod","uint32_t",&(Options.DenseMethod)},
+    {"ForceDenseMethod","bool",&(Options.DenseMethod)},
     {NULL, NULL, NULL}};
   /* free garbage full cycle*/
   if(L->l_G->gcrunning) lua_gc(L, LUA_GCCOLLECT, 0);
@@ -3183,6 +3451,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
     {"NTri","uint32_t",&(Options.Settings.NTri)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Emin","double",&(Options.Settings.Emin)},
@@ -3464,6 +3733,57 @@ static int LuaOperatorSetOnsiteEnergy(lua_State *L)
   return 1;
 }
 
+/*  ShellAverage(O)               averages over all NF one particle states
+ *  ShellAverage(O, {indices})    averages over the one particle states listed
+ *
+ *  Returns the average of the operator over all unitary transformations within the shell, the
+ *  average of configuration. A one particle operator becomes epsilon sum_tau CR(tau) An(tau)
+ *  with epsilon the average one particle energy, a two particle operator becomes
+ *  (Uavg/2) N (N-1), and so on. Terms that change the number of electrons in the shell, the
+ *  hybridization to another shell for example, average to zero. Several shells are done by
+ *  calling the function once per shell, in any order.
+ */
+static int LuaShellAverage(lua_State *L)
+{
+  OperatorType *O, *Oavg;
+  uint16_t *Shell;
+  uint32_t NShell, i;
+  uint32_t luaStackLen = (uint32_t)lua_gettop(L);
+
+  if (luaStackLen < 1 || luaStackLen > 2)
+    return luaL_error(L, "ShellAverage called with %d arguments. One or two expected, Operator and optionally the list of one particle states forming the shell.\n",luaStackLen);
+  O = (OperatorType *) luaL_checkudata(L, 1, "Operator_Type");
+  if(luaStackLen>1)
+  {
+    Shell = luaL_checkarray_unit16_t(L, 2, &NShell);
+  }
+  else
+  {
+    Shell = (uint16_t*)malloc(O->NFermion*sizeof(uint16_t));
+    for(i=0;i<O->NFermion;i++)
+    {
+      Shell[i]=(uint16_t)i;
+    }
+    NShell=O->NFermion;
+  }
+  if(NShell==0)
+  {
+    free(Shell);
+    return luaL_error(L, "ShellAverage called with an empty shell, there is nothing to average over.\n");
+  }
+  Oavg = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  if(ShellAverageOperator(*O, Oavg, Shell, NShell))
+  {
+    free(Shell);
+    return luaL_error(L, "ShellAverageOperator failed in ShellAverage\n");
+  }
+  free(Shell);
+  luaL_setmetatable(L, "Operator_Type");
+  strncpy(Oavg->Name, "", MAXStrLength-1); //An appropriate Name can be given in Lua.
+  return 1;
+}
+
+
 
 /*  transform an operator to a table
  *  on stack an operator 
@@ -3730,6 +4050,7 @@ static int LuaEigensystem(lua_State * L)
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"zero","double",&(Options.Settings.zero)},
     {"Zero","double",&(Options.Settings.zero)},
     {"restrictions", "DeterminantRestrictionType", &(Options.DeterminantRestrictions)},
@@ -4029,6 +4350,7 @@ static int LuaImpurityGreensFunction(lua_State * L)
     {"NBitsKey","uint32_t",&(Options.Settings.NBitsKey)},
     {"epsilon","double",&(Options.Settings.epsilon)},
     {"Epsilon","double",&(Options.Settings.epsilon)},
+    {"SingularValue","double",&(Options.Settings.SingularValue)},
     {"restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Restrictions", "DeterminantRestrictionType", &(Options.Settings.restrictions)},
     {"Tensor","bool",&(Options.Tensor)},
@@ -4103,7 +4425,10 @@ static int LuaImpurityGreensFunction(lua_State * L)
 
 
   }
-  if(DeltaBath->type&32)
+  /*  a capital type came from a lua table, so luaL_checkResponsefunction allocated the
+   *  structure and the content and both are ours to free. A small type came from a
+   *  userdata, where lua owns them. type&32 is set for the small letters. */
+  if((DeltaBath->type&32)==0)
   {
     FreeBlockMatrix(DeltaBath);
     free(DeltaBath);
@@ -4286,10 +4611,17 @@ static int LuaOrthonormalize(lua_State *L)
  *         Second argument is a list of atoms with positions, shells and orbitals used as the starting block
  *     In all cases:
  *         Posible third argument specifies options
- *         - SingularValue:   double:  values equal or smaller than SignularValue are removed from basis (standard 10^-6)
+ *         - SingularValue:   double:  singular values equal or smaller than SingularValue are removed from the
+ *                                     basis, which reduces the size of the blocks (standard 10^-6)
+ *         - Epsilon:         double:  smallest absolute prefactor of a determinant kept in a wave-function
+ *                                     (standard sqrt(DBL_EPSILON)/100 = 1.5*10^-10).  Case 2 only, the other
+ *                                     two cases work on dense matrices and have no determinants to truncate.
+ *                                     Independent of SingularValue: Epsilon says which determinants we keep,
+ *                                     SingularValue which directions of a block we can still resolve.
  *         - NTri:            integer: Maximum number of blocks included (standard infinity)
  *         - NOrtho:          integer: Maximum number of reorthogonalizations (standard infinity)
  *         - ReOrthogonalize: boolean: Use aditional Gramm-Schmidt orthogonalization after the Lowdin orthogonalization (standard true)
+ *         NOrtho and ReOrthogonalize are used by case 1 and case 3 only.
  */
 static int LuaBlockBandDiagonalize(lua_State *L)
 {
@@ -4298,6 +4630,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   struct
   {
     double SingularValue;
+    double epsilon;
     uint32_t NTri;
     uint32_t NOrtho;
     bool ReOrthogonalize;
@@ -4305,12 +4638,15 @@ static int LuaBlockBandDiagonalize(lua_State *L)
   } Options;
   LuaOptionsType LuaBlockBandDiagonalizeOptions[]={
     {"SingularValue",   "double",    &(Options.SingularValue)},
+    {"epsilon",         "double",    &(Options.epsilon)},
+    {"Epsilon",         "double",    &(Options.epsilon)},
     {"NTri",            "uint32_t", &(Options.NTri)},
     {"NOrtho",          "uint32_t", &(Options.NOrtho)},
     {"ReOrthogonalize", "bool",     &(Options.ReOrthogonalize)},
     {"ReturnT",         "bool",     &(Options.ReturnT)},
     {NULL, NULL, NULL}};
   Options.SingularValue=1E-6;
+  Options.epsilon=sqrt(DBL_EPSILON)/100;
   Options.NTri  =200;
   Options.NOrtho=UINT32_MAX;
   Options.ReOrthogonalize=true;
@@ -4439,7 +4775,7 @@ static int LuaBlockBandDiagonalize(lua_State *L)
       if(psilist[i].QComplex) B.QComplex=1;
     }
     InitBlockTridiagonalMatrix(&B);
-    if(LanczosBlockTriDiagonalize(*O, psilist, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
+    if(LanczosBlockTriDiagonalize(*O, psilist, Options.epsilon, Options.SingularValue, &B, 0)) luaL_error(L, "LanczosBlockTriDiagonalize failed in BlockBandDiagonalize");
     LuaPushTable_BlockTriDiagonalMatrixType(L, &B);
     FreeBlockTridiagonalMatrix(&B);
     return 1;
@@ -5674,6 +6010,41 @@ static int LuaIndexToBitMask(lua_State * L)
   return 1;
 }
 
+/*  On stack two bitmasks. Combines them bit by bit with the operation
+ *  Operation ('a' for and, 'o' for or and 'x' for xor) and returns the resulting bitmask.
+ *  Name is the name of the Lua function calling this routine, used for the error messages.
+ */
+static int LuaBitMaskCombine(lua_State * L, char Operation, const char *Name)
+{
+  int NF;
+  char *BitMask;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if(len!=2) return luaL_error(L, "%s called with %d arguments. Expected two arguments, both equal to a string.\n",Name,len);
+  const char *BitMask1 = luaL_checkstring(L, 1);
+  const char *BitMask2 = luaL_checkstring(L, 2);
+  switch(BitMaskCombine(BitMask1, BitMask2, Operation, &NF, &BitMask))
+  {
+    case 1: return luaL_error(L, "%s could not allocate memory.\n",Name);
+    case 2: return luaL_error(L, "%s called with two bitmasks containing a different number of bits (%s, %s).\n",Name,BitMask1,BitMask2);
+    case 3: return luaL_error(L, "%s called with an unknown operation (%c).\n",Name,Operation);
+  }
+  lua_pushstring(L, BitMask);
+  free(BitMask);
+  return 1;
+}
+static int LuaBitMaskAnd(lua_State * L)
+{
+  return LuaBitMaskCombine(L, 'a', "BitMaskAnd");
+}
+static int LuaBitMaskOr(lua_State * L)
+{
+  return LuaBitMaskCombine(L, 'o', "BitMaskOr");
+}
+static int LuaBitMaskXor(lua_State * L)
+{
+  return LuaBitMaskCombine(L, 'x', "BitMaskXor");
+}
+
 /*  On stack an operator and a list of indices or a Bitmask
  *  Changes the creation to annihilation and annihilation to creation operators for those listed in the index list
  */
@@ -5713,6 +6084,7 @@ static const struct luaL_Reg global_functions[] = {
 //  {"CalculateFermi", LuaCalculateFermi},
   {"CalculateG", LuaCalculateG},            // same as TightBinding.CalculateG
   {"CalculateRho", LuaCalculateRho},
+  {"AngularMomentumOperators", LuaAngularMomentumOperators},
   {"Chop", LuaChop},
   {"Clone", Luacopy},
   {"Conjugate", Luaconjugate},
@@ -5772,6 +6144,7 @@ static const struct luaL_Reg global_functions[] = {
 	{"ReadLenaBasisFunctions",LuaReadLenaBasisFunctions},
 	{"RelToNonRelOrbitals", LuaRelToNonRelOrbitals},
   {"Rotate", Luarotate},
+  {"ShellAverage", LuaShellAverage},
   {"Statistics",LuaStatistics},
   {"TensorProduct", LuaTensorProduct},
   {"TimeEnd",LuaTimeEnd},
@@ -5788,6 +6161,9 @@ static const struct luaL_Reg global_functions[] = {
   {"ZtoKMatrix",LuaZtoKMatrix},
   {"IndexToBitMask",LuaIndexToBitMask},
   {"BitMaskToIndex",LuaBitMaskToIndex},
+  {"BitMaskAnd",LuaBitMaskAnd},
+  {"BitMaskOr",LuaBitMaskOr},
+  {"BitMaskXor",LuaBitMaskXor},
   {NULL, NULL}
 };
 

@@ -1,0 +1,311 @@
+print("--------------------------------------------------------")
+print("-- Responsefunction ChangeType to And, block           --")
+print("--------------------------------------------------------")
+
+-- The block Anderson form is one observed block with a star of bath blocks:
+--
+--   G(w) = A0 + B0^* . ( w - A1 - sum_k B_k . (w - A_{k+1})^-1 . B_k^+ )^-1 . B0^T
+--
+-- Getting there from the block tri-diagonal form means diagonalizing the chain from
+-- the second block onwards -- the bath as seen from the observed block -- and
+-- transforming the one block that couples the observed block to the chain into a row
+-- of blocks coupling it to the bath. The eigenvalues fill the bath blocks, so those
+-- come out diagonal, and B_1 . U fills the couplings. Both come from one and the same
+-- eigenbasis, which is what the moment tests below check.
+--
+-- BlockTriDiagonalMatrixToBlockAndersonMatrix carried a comment saying it does not
+-- work as intended, about the hoppings coming out mixed between the orbitals of a
+-- block and the bath blocks being reordered. Both are statements about the shape of
+-- the Anderson form, not about G: the eigensolver sorts the eigenvalues, and inside a
+-- degenerate group it picks whatever basis it likes, which for two degenerate
+-- orbitals shows up as one hopping into the other. The mixing is demonstrated at the
+-- end of this file, together with G staying right while it happens.
+
+-- largest relative difference between two block response functions on a grid, which
+-- runs over the band of a response function made by MakeBlockTri with that scale
+function MaxRelDiff(G1, G2, gamma, s)
+	s = s or 1.0
+	local worst = 0.0
+	for i = 0, 120 do
+		local w = s * (-8.0 + 16.0 * i / 120)
+		local t1, t2 = G1(w, gamma), G2(w, gamma)
+		local num, den = 0.0, 0.0
+		for a = 1, #t1 do
+			for b = 1, #t1[a] do
+				-- through Complex.Re and Complex.Im, not x.Re: an element of a block
+				-- matrix whose imaginary part is exactly zero arrives as a plain lua
+				-- number, and those functions take either
+				local xr, xi = Complex.Re(t1[a][b]), Complex.Im(t1[a][b])
+				local yr, yi = Complex.Re(t2[a][b]), Complex.Im(t2[a][b])
+				num = num + (xr - yr)^2 + (xi - yi)^2
+				den = den + xr * xr + xi * xi
+			end
+		end
+		if (den > 0) then
+			local e = math.sqrt(num / den)
+			if e > worst then worst = e end
+		end
+	end
+	return worst
+end
+
+-- element (i,j) of a block as a real and an imaginary part
+function El(M, i, j)
+	return Complex.Re(M[i][j]), Complex.Im(M[i][j])
+end
+
+-- A . M . B^+ for three blocks given as lua tables, M the unit matrix if it is nil.
+-- Returns the real and the imaginary part as two lua tables
+function AMBdag(A, M, B)
+	local n = #A
+	local Cre, Cim = {}, {}
+	for i = 1, n do
+		Cre[i], Cim[i] = {}, {}
+		for j = 1, n do
+			Cre[i][j], Cim[i][j] = 0.0, 0.0
+			for k = 1, n do
+				local ar, ai = El(A, i, k)
+				for l = 1, n do
+					local mr, mi = 0.0, 0.0
+					if M ~= nil then
+						mr, mi = El(M, k, l)
+					elseif k == l then
+						mr = 1.0
+					end
+					local br, bi = El(B, j, l)
+					local pr = ar * mr - ai * mi
+					local pi = ar * mi + ai * mr
+					Cre[i][j] = Cre[i][j] + pr * br + pi * bi
+					Cim[i][j] = Cim[i][j] + pi * br - pr * bi
+				end
+			end
+		end
+	end
+	return Cre, Cim
+end
+
+-- a block tri-diagonal response function with nb chain blocks of size bs, hermitian
+-- on the diagonal and general blocks off it, complex if cmplx. All energies scaled by
+-- s, so that the relative error can be checked to be independent of the energy scale
+function MakeBlockTri(nb, bs, cmplx, mu, s)
+	s = s or 1.0
+	local function z(re, im)
+		if cmplx then return re + im * I else return re end
+	end
+	local a, b = {}, {}
+	-- A0, the offset, and B0, the scale, are copied across untouched
+	local A0, B0 = {}, {}
+	for i = 1, bs do
+		A0[i], B0[i] = {}, {}
+		for j = 1, bs do
+			A0[i][j] = 0.0
+			B0[i][j] = (i == j) and 1.1 or z(0.05 * (i - j), 0.03 * (i - j))
+		end
+	end
+	a[1], b[1] = A0, B0
+	-- A1, the observed block, hermitian
+	local A1 = {}
+	for i = 1, bs do A1[i] = {} end
+	for i = 1, bs do
+		A1[i][i] = s * (1.3 + 0.4 * i)
+		for j = i + 1, bs do
+			A1[i][j] = s * z(0.2 * math.cos(i + j),  0.15 * math.sin(i + j))
+			A1[j][i] = s * z(0.2 * math.cos(i + j), -0.15 * math.sin(i + j))
+		end
+	end
+	a[2] = A1
+	-- the chain: nb blocks across the band, and nb couplings, the first of which
+	-- couples the observed block to the head of the chain
+	for k = 1, nb do
+		local Ak, Bk = {}, {}
+		local E = -4.0 + 8.0 * (k - 0.5) / nb
+		for i = 1, bs do Ak[i], Bk[i] = {}, {} end
+		for i = 1, bs do
+			Ak[i][i] = s * (E + 0.3 * math.cos(k + i))
+			for j = i + 1, bs do
+				Ak[i][j] = s * z(0.25 * math.sin(k + i * j),  0.2 * math.cos(k + i * j))
+				Ak[j][i] = s * z(0.25 * math.sin(k + i * j), -0.2 * math.cos(k + i * j))
+			end
+			for j = 1, bs do
+				Bk[i][j] = s * z((0.6 * math.cos(k + 2 * i + j) + 0.2) / math.sqrt(k),
+				                  0.3 * math.sin(k + i + 3 * j) / math.sqrt(k))
+			end
+		end
+		a[k + 2] = Ak
+		b[k + 1] = Bk
+	end
+	return ResponseFunction.New({a, b, mu = mu, type = "Tri", name = "chain"}), a, b
+end
+
+function Check(name, nb, bs, cmplx, mu, s)
+	s = s or 1.0
+	local GT, a, b = MakeBlockTri(nb, bs, cmplx, mu, s)
+	local GA = ResponseFunction.ChangeType(GT, "And")
+	local t = ResponseFunction.ToTable(GA)
+	local e = math.max(MaxRelDiff(GT, GA, 0.3 * s, s), MaxRelDiff(GT, GA, 0.02 * s, s))
+	-- one bath block per chain block, and mu, have to come across
+	if #(t[1]) ~= #a then
+		error("ChangeType block And: wrong number of blocks for " .. name, 1)
+	end
+	if t.mu ~= mu then
+		error("ChangeType block And: mu is not carried across for " .. name, 1)
+	end
+	-- the bath blocks hold eigenvalues, so they are diagonal and real, and the
+	-- diagonal comes out sorted, which is the reordering the old comment mentions
+	local last, sorted, offdiag = -math.huge, true, 0.0
+	for k = 3, #(t[1]) do
+		for i = 1, bs do
+			local dr, di = El(t[1][k], i, i)
+			if dr < last then sorted = false end
+			last = dr
+			offdiag = math.max(offdiag, math.abs(di))
+			for j = 1, bs do
+				if i ~= j then
+					local xr, xi = El(t[1][k], i, j)
+					offdiag = math.max(offdiag, math.sqrt(xr * xr + xi * xi))
+				end
+			end
+		end
+	end
+	if offdiag > 0.0 then
+		error("ChangeType block And: the bath blocks are not diagonal for " .. name, 1)
+	end
+	if not sorted then
+		error("ChangeType block And: the bath energies are not sorted for " .. name, 1)
+	end
+	-- The hybridization sum_k B_k (w - E_k)^-1 B_k^+ has to be the one of the chain,
+	-- B_1 (w - Hbath)^-1 B_1^+. Its first two moments are B_1 B_1^+ and B_1 A_2 B_1^+
+	-- and both are checked here: the weight alone is preserved by any unitary, while
+	-- the first moment only comes out right if the transformed coupling and the
+	-- eigenvalues belong to one and the same eigenbasis
+	local d0, d1, scale = 0.0, 0.0, 0.0
+	if nb > 0 then
+		local W0r, W0i = AMBdag(b[2], nil,  b[2])
+		local W1r, W1i = AMBdag(b[2], a[3], b[2])
+		local S0r, S0i, S1r, S1i = {}, {}, {}, {}
+		for i = 1, bs do
+			S0r[i], S0i[i], S1r[i], S1i[i] = {}, {}, {}, {}
+			for j = 1, bs do
+				S0r[i][j], S0i[i][j], S1r[i][j], S1i[i][j] = 0.0, 0.0, 0.0, 0.0
+			end
+		end
+		for k = 2, #(t[2]) do
+			local Pr, Pi = AMBdag(t[2][k], nil,         t[2][k])
+			local Qr, Qi = AMBdag(t[2][k], t[1][k + 1], t[2][k])
+			for i = 1, bs do
+				for j = 1, bs do
+					S0r[i][j], S0i[i][j] = S0r[i][j] + Pr[i][j], S0i[i][j] + Pi[i][j]
+					S1r[i][j], S1i[i][j] = S1r[i][j] + Qr[i][j], S1i[i][j] + Qi[i][j]
+				end
+			end
+		end
+		for i = 1, bs do
+			for j = 1, bs do
+				d0 = math.max(d0, math.sqrt((S0r[i][j] - W0r[i][j])^2 + (S0i[i][j] - W0i[i][j])^2))
+				d1 = math.max(d1, math.sqrt((S1r[i][j] - W1r[i][j])^2 + (S1i[i][j] - W1i[i][j])^2))
+				scale = math.max(scale, math.sqrt(W0r[i][j]^2 + W0i[i][j]^2),
+				                        math.sqrt(W1r[i][j]^2 + W1i[i][j]^2))
+			end
+		end
+		d0, d1 = d0 / scale, d1 / scale
+	end
+	print(string.format("  %-32s N=%3d bs=%d   G %9.2e   weight %9.2e   first moment %9.2e",
+	      name, nb, bs, e, d0, d1))
+	if d0 > 1E-12 then
+		error("ChangeType block And: the hybridization weight is not preserved for " .. name, 1)
+	end
+	if d1 > 1E-12 then
+		error("ChangeType block And: the first moment of the hybridization is not preserved for " .. name, 1)
+	end
+	if e > 1E-11 then
+		error("ChangeType block And does not reproduce the original function for " .. name, 1)
+	end
+end
+
+-- ---------------------------------------------------------------------------
+-- From the block tri-diagonal form
+-- ---------------------------------------------------------------------------
+-- The error is that of one dense diagonalization of the chain, a few times DBL_EPSILON
+-- relative and growing slowly with the length of the chain. It does not depend on the
+-- energy scale, which the last two lines check by scaling everything by 1E3 and 1E-3.
+print("block Tri to block And, real")
+Check("long chain",             20, 2, false,  0.0)
+Check("long chain, size 3",     20, 3, false, -1.3)
+Check("short chain",             3, 2, false,  0.0)
+Check("one chain block",         1, 2, false,  0.7)
+Check("size 1",                 10, 1, false,  0.0)
+Check("no bath at all",          0, 2, false, -1.3)
+Check("very long chain",       100, 2, false,  0.0)
+Check("large energy scale",     20, 2, false,  0.0, 1E3)
+Check("small energy scale",     20, 2, false,  0.0, 1E-3)
+
+print("block Tri to block And, complex")
+Check("long chain",             20, 2, true,   0.0)
+Check("long chain, size 3",     20, 3, true,  -1.3)
+Check("short chain",             3, 2, true,   0.0)
+Check("one chain block",         1, 2, true,   0.7)
+Check("no bath at all",          0, 2, true,  -1.3)
+Check("very long chain",       100, 2, true,   0.0)
+Check("large energy scale",     20, 2, true,   0.0, 1E3)
+
+-- and the chain that comes back out of the Anderson form is the same response
+-- function again, which needs the block Lanczos of the other direction to agree
+print("block Tri to block And and back")
+for i, c in ipairs({false, true}) do
+	local GT = MakeBlockTri(20, 2, c, 0.0)
+	local GA = ResponseFunction.ChangeType(GT, "And")
+	local GT2 = ResponseFunction.ChangeType(GA, "Tri")
+	local GA2 = ResponseFunction.ChangeType(GT2, "And")
+	local e = math.max(MaxRelDiff(GT, GT2, 0.3), MaxRelDiff(GT, GA2, 0.02))
+	print(string.format("  %-32s   max relative error %9.2e", c and "complex" or "real", e))
+	if e > 1E-10 then
+		error("block Tri to And and back does not reproduce the original function", 1)
+	end
+end
+
+-- ---------------------------------------------------------------------------
+-- The mixed hoppings of the old comment
+-- ---------------------------------------------------------------------------
+-- Two orbitals, each with its own chain, nothing coupling them. Split the two and the
+-- hoppings come out diagonal; make them degenerate and the eigensolver is free to
+-- pick any basis inside each degenerate pair, and does, so a hopping shows up from
+-- one orbital into the bath orbital of the other. G is the same either way: what
+-- enters is B_k P B_k^+ with P the projector on the degenerate group, and that does
+-- not depend on the basis picked inside it.
+function MakeTwoOrbitals(nb, split)
+	local a, b = {{{0, 0}, {0, 0}}}, {{{1, 0}, {0, 1}}}
+	a[2] = {{1.5, 0}, {0, 1.5 + split}}
+	for k = 1, nb do
+		local E = -3.0 + 6.0 * (k - 0.5) / nb
+		local v = 0.4 / math.sqrt(k)
+		a[k + 2] = {{E, 0}, {0, E + split}}
+		b[k + 1] = {{v, 0}, {0, v}}
+	end
+	return ResponseFunction.New({a, b, mu = 0, type = "Tri", name = "two"})
+end
+
+print("two orbitals that do not couple, degenerate and split")
+for i, split in ipairs({0.5, 0.0}) do
+	local GT = MakeTwoOrbitals(10, split)
+	local GA = ResponseFunction.ChangeType(GT, "And")
+	local t = ResponseFunction.ToTable(GA)
+	local mixed = 0.0
+	for k = 2, #(t[2]) do
+		mixed = math.max(mixed, math.abs(Complex.Re(t[2][k][1][2])),
+		                        math.abs(Complex.Re(t[2][k][2][1])))
+	end
+	local e = math.max(MaxRelDiff(GT, GA, 0.3), MaxRelDiff(GT, GA, 0.02))
+	print(string.format("  split %4.2f   largest hopping between the two orbitals %9.2e   G %9.2e",
+	      split, mixed, e))
+	if e > 1E-11 then
+		error("ChangeType block And does not reproduce the original function for two orbitals", 1)
+	end
+	-- split, the two orbitals stay apart; degenerate, they do mix, and that is the
+	-- whole of the old comment
+	if (split > 0.0) and (mixed > 1E-14) then
+		error("ChangeType block And mixes two orbitals that are split", 1)
+	end
+	if (split == 0.0) and (mixed < 0.01) then
+		error("ChangeType block And: expected the degenerate orbitals to mix", 1)
+	end
+end

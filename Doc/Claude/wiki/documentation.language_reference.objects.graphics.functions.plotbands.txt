@@ -1,0 +1,91 @@
+{{indexmenu_n>999}}
+====== PlotBands ======
+
+###
+//pl = Graphics.PlotBands(kpath, E, C1, ..., Options)// plots a band structure as calculated by //[[documentation:language_reference:objects:tightbinding:functions:calculatebands|TightBinding.CalculateBands()]]// and returns a graphics object, which //Graphics.ToSVG(pl)// turns into an SVG image. The bands are drawn as lines, colored by their character. //pl = Graphics.PlotBands(kpath, G, G1, ..., Options)// plots the band spectral functions //CalculateBands// returns with a self-energy, broadened, with the intensity of every point given by the spectral weight.
+###
+
+===== Input =====
+
+  * //kpath// : the path in $k$-space, the same table as given to //CalculateBands//.
+  * //E// : the band energies, a matrix with one row per $k$-point. Or //G//: a table with one response function per $k$-point, the band spectral function.
+  * //C1, ...// : (optional) the characters, one matrix of the size of //E// or one table of response functions like //G// per character. With 1 character the color of a band is $c \cdot$ //Color// $+ (1-c) \cdot$ //SecondColor//, with 3 characters the color is $(c_1, c_2, c_3)$ as red, green and blue. 2 and 4 characters are meant for a line thickness as well, which is not implemented; for the lines they are drawn as 1 and 3, for spectral functions they are refused.
+  * Options : A table of options. Possible options are:
+      * //"Frame"// : a table of options for the frame, among which //"Ymin"//, //"Ymax"// (the energy range, by default the range of the bands rounded outward), //"dYTick"// and //"YLabel"//
+      * //"NPixelX"//, //"NPixelY"// : Integers, the size of the bitmap that holds the bands. Default value 1000 by 1000
+      * //"Color"// : 32 bit integer 0xAARRGGBB, the color of the bands, and of character 1. Default value 0xFF000080 (dark blue)
+      * //"SecondColor"// : 32 bit integer 0xAARRGGBB, the color of character 0. Default value 0xFFFF0000 (red)
+      * //"Transparancy"// : Integer from 0 to 255, the opacity of //"Color"// (255 is opaque). It multiplies the alpha byte of //"Color"//, so 0x80 on an opaque color gives the alpha 0x80. In a plot of lines the alpha is stored in the bitmap, and whether it shows depends on the program that displays the SVG; in an intensity plot (see below) the color is mixed with white by it. Default value 255
+      * //"SecondTransparancy"// : Integer from 0 to 255, the same for //"SecondColor"//. Default value 255
+      * //"LineWidth"// : Real, the width of a band line as a fraction of the height of the plot. Default value 0.002
+      * //"Interpolate"// : Boolean, draw the lines between the $k$-points interpolated. Default value true
+      * //"EmptyPathWidth"// : Real, the gap between two labelled points without $k$-points between them, as a fraction of the width of the plot. Default value 0.05
+      * //"GammaL"// : Real, the Lorentzian broadening (full width at half maximum). Default value 0
+      * //"GammaG"// : Real, the Gaussian broadening (full width at half maximum). Default value 0
+      * //"Saturation"// : Real, scales the intensity, see below. Default value 1
+
+===== Output =====
+
+  * //pl// : a graphics object.
+
+===== Spectral functions =====
+
+###
+When //G// and the characters are tables of response functions, or when //"GammaL"// or //"GammaG"// is given for the matrices //E// and //C1, ...//, the band structure is drawn as an intensity plot. Every row of pixels holds the spectral function at the energy of its center, broadened by a Lorentzian of width //"GammaL"// and then by a Gaussian of width //"GammaG"//. The matrices are taken as a pole of weight 1 at every band energy, with the character as the weight of the character. The response functions can be of any single valued type; lists of poles are evaluated directly, the other types through //[[documentation:language_reference:objects:responsefunction:functions:tospectra|ResponseFunction.ToSpectra()]]//.
+###
+
+###
+The color of a pixel follows from the characters as for the lines, with $c = A_c(k,\omega) / A(k,\omega)$ the character at that point. Its intensity is $\min(1, s A(k,\omega) / A_{\mathrm{ref}})$, with $s$ the //"Saturation"// and $A_{\mathrm{ref}}$ the peak height of a pole of weight 1 with the same broadening. A band of weight 1 is therefore drawn in full color, a quasiparticle band of weight 0.3 at 30 percent, and the incoherent part of a spectral function faintly; a larger //"Saturation"// makes weak features visible. The color is mixed with white by the intensity times its alpha. Every $k$-point is drawn as a strip of pixel columns; //"Interpolate"// and //"LineWidth"// are not used. Without //"GammaL"// and //"GammaG"// each pole is put on the two pixel rows next to it, which gives lines one or two pixels wide.
+###
+
+###
+The energy range is found automatically for lists of poles, from the poles with a weight above $10^{-4}$. For other types of response functions it has to be given with //"Ymin"// and //"Ymax"// in //"Frame"//.
+###
+
+===== Example =====
+
+###
+One band on a square lattice, plotted as lines, broadened, and with a self-energy that has two broad bands of poles around $\pm 1.5$. The last plot uses a smaller bitmap, a Gaussian broadening as well and a larger saturation, which shows the incoherent weight of the satellites. See //[[documentation:language_reference:objects:tightbinding:functions:calculatebands|TightBinding.CalculateBands()]]// for an example with a character.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- one band on a square lattice
+HTB = NewTightBinding()
+HTB.Name = "square lattice"
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = { {"A", {0,0,0}, {{"s", {"0"}}}} }
+HTB.Hopping = { {"A.s","A.s",{ 1,0,0},{{-0.5}}}, {"A.s","A.s",{-1,0,0},{{-0.5}}},
+                {"A.s","A.s",{0, 1,0},{{-0.5}}}, {"A.s","A.s",{0,-1,0},{{-0.5}}} }
+kpath = { {"G",{0,0,0}}, 150, {"X",{pi,0,0}}, 150, {"M",{pi,pi,0}}, 200, {"G",{0,0,0}} }
+
+-- a self-energy with two broad bands of poles between 1 and 2 and between -2 and -1
+e, W = {0}, {}
+for i = 1, 40 do
+  e[#e+1] =  1 + (i-0.5)/40;  W[#W+1] = 0.015
+  e[#e+1] = -1 - (i-0.5)/40;  W[#W+1] = 0.015
+end
+Sigma = ResponseFunction.New({e, W, mu=0, type="ListOfPoles"})
+
+E = TightBinding.CalculateBands(HTB, kpath)
+G = TightBinding.CalculateBands(HTB, kpath, Sigma)
+
+Frame = {"Frame",{{"Ymin",-3},{"Ymax",3},{"dYTick",1},{"YLabel","Energy"}}}
+Plots = {
+  Lines     = Graphics.PlotBands(kpath, E, {Frame}),
+  Broadened = Graphics.PlotBands(kpath, E, {Frame, {"GammaL",0.04}}),
+  Sigma     = Graphics.PlotBands(kpath, G, {Frame, {"GammaL",0.04}}),
+  Saturated = Graphics.PlotBands(kpath, G, {Frame, {"GammaL",0.04}, {"GammaG",0.06}, {"Saturation",3}, {"NPixelX",500}, {"NPixelY",400}}) }
+for name, pl in pairs(Plots) do
+  file = io.open("Bands"..name..".svg", "w")
+  file:write(Graphics.ToSVG(pl, {{"RelativeSize",true}}))
+  file:close()
+end
+</code>
+
+###
+The script prints nothing; it writes the four plots to //BandsLines.svg//, //BandsBroadened.svg//, //BandsSigma.svg// and //BandsSaturated.svg//. A plot of 1000 by 1000 pixels is about 5 MB, one of 500 by 400 about 1 MB.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}

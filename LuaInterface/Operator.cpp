@@ -6,6 +6,29 @@
 
 
 
+/*  LuaCoulombShellAngularMomentum checks the two index arrays of one shell of the coulomb operator and
+ *  returns the angular momentum l of that shell. For the harmonics bases both arrays have 2l+1 entries,
+ *  for the jjz basis the first has the 2l states of j=l-1/2 and the second the 2l+2 states of j=l+1/2.
+ *  On a mismatch a Lua error is raised and the function does not return.
+ */
+static uint32_t LuaCoulombShellAngularMomentum(lua_State * L, uint32_t const ibasis, uint32_t const NUp, uint32_t const NDn)
+{
+  uint32_t l;
+  if(ibasis==4)
+  {
+    l=NUp/2;
+    if(NUp+2!=NDn) luaL_error(L, "Error in LuaOperatorNewCoulomb, 2 plus the lenght of IndexJmin (%d) is not equal to lenght of IndexJplus (%d)\n",NUp,NDn);
+    if(2*l!=NUp)   luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexJmin (%d) is not equal to 2l\n",NUp);
+  }
+  else
+  {
+    l=(NUp-1)/2;
+    if(NUp!=NDn)   luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NUp,NDn);
+    if(2*l+1!=NUp) luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NUp);
+  }
+  return l;
+}
+
 static int LuaOperatorNewCoulomb(lua_State * L)
 {
   struct
@@ -73,31 +96,18 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   {
     uint16_t *LindexUp, *LindexDn;
     double *F;
-    LindexDn = luaL_checkarray_unit16_t(L, 2, &NShell);
-    LindexUp = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-    if(Options.ibasis==4)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to Harmonics basis, but options state it is a jjz basis\n");
-    }
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    l=(NShell-1)/2;
-    if(2*l+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
+    l = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
     F = luaL_checkarray_double(L, 4, &Ntemp);
     if(Ntemp!=l+1)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of F (%d) is not equal to l+1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    //TODO: seperate Y,Z,K,P
-    CreateOperatorCoulombSingleShell(NFermion, l, LindexUp, LindexDn, F, op);
+    CreateOperatorCoulombSingleShellInBasis(NFermion, l, Options.ibasis, LindexUp, LindexDn, F, op);
     luaL_setmetatable(L, "Operator_Type");
     free(LindexUp);
     free(LindexDn);
@@ -108,36 +118,16 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB;
     double *F,*G;
-    LindexDnA = luaL_checkarray_unit16_t(L, 2, &NShell);
-    LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    LindexUpA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexDnA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-    if(Options.ibasis==4)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to Harmonics basis, but options state it is a jjz basis\n");
-    }
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    lA=(NShell-1)/2;
-    if(2*lA+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
-    LindexDnB = luaL_checkarray_unit16_t(L, 4, &NShell);
-    LindexUpB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
+    lA = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
+    LindexUpB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    LindexDnB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==false) return luaL_error(L, "Index up contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==false) return luaL_error(L, "Index dn contains a refference outside the range [0,%d]",NFermion-1);
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    lB=(NShell-1)/2;
-    if(2*lB+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
+    lB = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
     F = luaL_checkarray_double(L, 6, &Ntemp);
     if(Ntemp!=(Min(lA,lB)+1))
     {
@@ -149,8 +139,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of G (%d) is not equal to (Min(lA,lB)+1)\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    //TODO: seperate Y,Z,K,P
-    CreateOperatorCoulombTwoShellsConstantOccupation(NFermion, lA, lB, LindexUpA, LindexDnA, LindexUpB, LindexDnB, F, G, op);
+    CreateOperatorCoulombTwoShellsConstantOccupationInBasis(NFermion, lA, lB, Options.ibasis, LindexUpA, LindexDnA, LindexUpB, LindexDnB, F, G, op);
     luaL_setmetatable(L, "Operator_Type");
     free(LindexUpA);
     free(LindexDnA);
@@ -164,62 +153,26 @@ static int LuaOperatorNewCoulomb(lua_State * L)
   {
     uint16_t *LindexUpA, *LindexDnA, *LindexUpB, *LindexDnB, *LindexUpC, *LindexDnC, *LindexUpD, *LindexDnD;
     double *R;
-    LindexDnA = luaL_checkarray_unit16_t(L, 2, &NShell);
-    LindexUpA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+    LindexUpA = luaL_checkarray_unit16_t(L, 2, &NShell);
+    LindexDnA = luaL_checkarray_unit16_t(L, 3, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpA, NShell)==false) return luaL_error(L, "Index up of first shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnA, Ntemp )==false) return luaL_error(L, "Index dn of first shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(Options.ibasis==4)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, Orbitals formatted according to Harmonics basis, but options state it is a jjz basis\n");
-    }
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    lA=(NShell-1)/2;
-    if(2*lA+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For first shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
-    LindexDnB = luaL_checkarray_unit16_t(L, 4, &NShell);
-    LindexUpB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
+    lA = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
+    LindexUpB = luaL_checkarray_unit16_t(L, 4, &NShell);
+    LindexDnB = luaL_checkarray_unit16_t(L, 5, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpB, NShell)==false) return luaL_error(L, "Index up of second shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnB, Ntemp )==false) return luaL_error(L, "Index dn of second shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For second shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    lB=(NShell-1)/2;
-    if(2*lB+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For second shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
-    LindexDnC = luaL_checkarray_unit16_t(L, 6, &NShell);
-    LindexUpC = luaL_checkarray_unit16_t(L, 7, &Ntemp);
+    lB = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
+    LindexUpC = luaL_checkarray_unit16_t(L, 6, &NShell);
+    LindexDnC = luaL_checkarray_unit16_t(L, 7, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpC, NShell)==false) return luaL_error(L, "Index up of third shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnC, Ntemp )==false) return luaL_error(L, "Index dn of third shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For third shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    lC=(NShell-1)/2;
-    if(2*lC+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For third shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
-    LindexDnD = luaL_checkarray_unit16_t(L, 8, &NShell);
-    LindexUpD = luaL_checkarray_unit16_t(L, 9, &Ntemp);
+    lC = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
+    LindexUpD = luaL_checkarray_unit16_t(L, 8, &NShell);
+    LindexDnD = luaL_checkarray_unit16_t(L, 9, &Ntemp);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUpD, NShell)==false) return luaL_error(L, "Index up of forth shell contains a refference outside the range [0,%d]",NFermion-1);
     if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDnD, Ntemp )==false) return luaL_error(L, "Index dn of forth shell contains a refference outside the range [0,%d]",NFermion-1);
-    if(NShell!=Ntemp)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For forth shell lenght of IndexUp (%d) is not equal to lenght of IndexDn (%d)\n",NShell,Ntemp);
-    }
-    lD=(NShell-1)/2;
-    if(2*lD+1!=NShell)
-    {
-      return luaL_error(L, "Error in LuaOperatorNewCoulomb, For forth shell lenght of IndexUp (%d) is not equal to 2l+1\n",NShell);
-    }
+    lD = LuaCoulombShellAngularMomentum(L, Options.ibasis, NShell, Ntemp);
     if((lA+lB+lC+lD)&1)
     {
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, lA(%d)+lB(%d)+lC(%d)+lD(%d) should be even.",lA,lB,lC,lD);
@@ -230,8 +183,7 @@ static int LuaOperatorNewCoulomb(lua_State * L)
       return luaL_error(L, "Error in LuaOperatorNewCoulomb, Lenght of R (%d) is not equal to (Min(lA+lC,lB+lD)-Max(Abs(lA-lC),Abs(lB-lD)))/2+1\n",Ntemp);
     }
     op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    //TODO: seperate Y,Z,K,P
-    CreateOperatorCoulombFourShells(NFermion, lA, lB, lC, lD, LindexUpA, LindexDnA, LindexUpB, LindexDnB, LindexUpC, LindexDnC, LindexUpD, LindexDnD, R, op);
+    CreateOperatorCoulombFourShellsInBasis(NFermion, lA, lB, lC, lD, Options.ibasis, LindexUpA, LindexDnA, LindexUpB, LindexDnB, LindexUpC, LindexDnC, LindexUpD, LindexDnD, R, op);
     luaL_setmetatable(L, "Operator_Type");
     free(LindexUpA);
     free(LindexDnA);
@@ -4268,7 +4220,10 @@ static int LuaOperatorNewCF(lua_State * L)
   {
     return luaL_error(L, "Error in LuaOperatorNewCF, called with %d arguments, 3,4 or 6 expected\n",len);
   }
-  Akm=luaL_checkarray_HarmonicsExpansion(L, -1);
+  /*  Akm is the last argument before the optional list of options, which for each allowed number of
+   *  arguments sits at the absolute stack position len (len has been reduced by one if options are given)
+   */
+  Akm=luaL_checkarray_HarmonicsExpansion(L, (int)len);
   if(len==3)
   {
     for(i=0;i<Akm->N;i++)
@@ -5347,3 +5302,408 @@ static const struct luaL_Reg Operator_meta[] = {
   {"__gc", LuaOperatorDestroy},
   {NULL, NULL}
 };
+
+/*  AngularMomentumOperators(NF, IndexUp, IndexDn, {{"Basis","Y"}}) returns a table with the angular
+ *  momentum, multipole, Slater and Casimir operators of a single shell. It adds no functionality, every
+ *  operator can also be made one at a time with NewOperator, but it shortens scripts considerably.
+ *
+ *  The basis can be "Y" (spherical harmonics, the default), "Z" (tesseral harmonics), "K" (cubic
+ *  harmonics) or "jjz". For Y, Z and K the two index arrays have 2l+1 entries each. For jjz the first has
+ *  the 2l states of j=l-1/2 and the second the 2l+2 states of j=l+1/2, both ordered jz = -j ... j.
+ *
+ *  All operators are created in the spherical harmonics basis and rotated from there with one rotation
+ *  matrix, so a Slater integral F[k] keeps its meaning in every basis.
+ */
+
+static const struct
+{
+  const char *key;
+  uint32_t (*create) (uint32_t, uint32_t, uint16_t *, uint16_t *, OperatorType * const);
+} LuaAngularMomentumOrbitalOperators[] = {
+  {"Lx", &CreateOperatorLx}, {"Ly", &CreateOperatorLy}, {"Lz", &CreateOperatorLz},
+  {"Lplus", &CreateOperatorLplus}, {"Lmin", &CreateOperatorLmin}, {"Lsqr", &CreateOperatorLsqr},
+  {"Jx", &CreateOperatorJx}, {"Jy", &CreateOperatorJy}, {"Jz", &CreateOperatorJz},
+  {"Jplus", &CreateOperatorJplus}, {"Jmin", &CreateOperatorJmin}, {"Jsqr", &CreateOperatorJsqr},
+  {"Tx", &CreateOperatorTx}, {"Ty", &CreateOperatorTy}, {"Tz", &CreateOperatorTz},
+  {"Qxx", &CreateOperatorQxx}, {"Qyy", &CreateOperatorQyy}, {"Qzz", &CreateOperatorQzz},
+  {"Qxy", &CreateOperatorQxy}, {"Qxz", &CreateOperatorQxz}, {"Qyz", &CreateOperatorQyz},
+  {"ldots", &CreateOperatorldots},
+  {NULL, NULL}
+};
+
+/*  the spin operators take the number of orbitals 2l+1 where the orbital operators take l */
+static const struct
+{
+  const char *key;
+  uint32_t (*create) (uint32_t, uint32_t, uint16_t *, uint16_t *, OperatorType * const);
+} LuaAngularMomentumSpinOperators[] = {
+  {"Sx", &CreateOperatorSx}, {"Sy", &CreateOperatorSy}, {"Sz", &CreateOperatorSz},
+  {"Splus", &CreateOperatorSplus}, {"Smin", &CreateOperatorSmin}, {"Ssqr", &CreateOperatorSsqr},
+  {NULL, NULL}
+};
+
+/*  LuaAngularMomentumSetOperator rotates the operator on top of the stack with U, unless U is NULL, names
+ *  it and stores it in the table at the absolute stack position tindex under the key given. The operator
+ *  is popped off the stack.
+ */
+static void LuaAngularMomentumSetOperator(lua_State * L, int const tindex, const char * const key, MatrixType const * const U, OperatorType * const op)
+{
+  if(U!=NULL) RotateOperatorWithMatrix(*U, op);
+  strncpy(op->Name, key, MAXStrLength-1);
+  op->Name[MAXStrLength-1]='\0';
+  lua_setfield(L, tindex, key);
+}
+
+/*  LuaAngularMomentumNewOperator pushes a new operator userdata onto the stack and returns a pointer to it */
+static OperatorType * LuaAngularMomentumNewOperator(lua_State * L)
+{
+  OperatorType *op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  luaL_setmetatable(L, "Operator_Type");
+  return op;
+}
+
+/*  LuaAngularMomentumPushIndexArray pushes an array of indices as a Lua list onto the stack */
+static void LuaAngularMomentumPushIndexArray(lua_State * L, uint16_t const * const index, uint32_t const N)
+{
+  uint32_t i;
+  lua_newtable(L);
+  for(i=0;i<N;i++)
+  {
+    lua_pushnumber(L, (double)index[i]);
+    lua_rawseti(L, -2, (int)(i+1));
+  }
+}
+
+/*  LuaAngularMomentumPushCasimir stores in the table at the absolute stack position tindex the field
+ *  Casimir, a table holding the Casimir operator of each group in Racah's chain
+ *
+ *    SO(3) subset G2 subset SO(2l+1)
+ *
+ *  Each is the sum of u^(k) . u^(k) over the odd k that generate the group. G2 only exists for l = 3.
+ *  Any scaling of these operators is allowed in a fit, so for SO(3) one usually fits alpha * L^2 rather
+ *  than this operator, with L^2 = l(l+1)(2l+1) u^(1) . u^(1).
+ */
+static void LuaAngularMomentumPushCasimir(lua_State * L, int const tindex, uint32_t const NFermion, uint32_t const l, uint16_t * const Yup, uint16_t * const Ydn, MatrixType const * const Urot)
+{
+  OperatorType *op;
+  OperatorType GG;
+  uint32_t k;
+  char key[MAXStrLength];
+  lua_newtable(L);
+  if(l>0)
+  {
+    /*  SO(3), generated by u^(1) alone */
+    op = LuaAngularMomentumNewOperator(L);
+    CreateOperatorGG(NFermion, l, 1, Yup, Ydn, op);
+    if(Urot!=NULL) RotateOperatorWithMatrix(*Urot, op);
+    snprintf(op->Name, MAXStrLength, "C SO3");
+    lua_setfield(L, -2, "SO3");
+    /*  SO(2l+1), generated by u^(k) for all odd k up to 2l-1 */
+    op = LuaAngularMomentumNewOperator(L);
+    CreateOperatorGG(NFermion, l, 1, Yup, Ydn, op);
+    for(k=3;k<2*l;k+=2)
+    {
+      CreateOperatorGG(NFermion, l, k, Yup, Ydn, &GG);
+      OperatorAdd(op, GG);
+      FreeOperator(&GG);
+    }
+    if(Urot!=NULL) RotateOperatorWithMatrix(*Urot, op);
+    snprintf(key, MAXStrLength, "SO%d", 2*l+1);
+    snprintf(op->Name, MAXStrLength, "C SO%d", 2*l+1);
+    lua_setfield(L, -2, key);
+    /*  G2, generated by u^(1) and u^(5), which only closes for an f shell */
+    if(l==3)
+    {
+      op = LuaAngularMomentumNewOperator(L);
+      CreateOperatorGG(NFermion, l, 1, Yup, Ydn, op);
+      CreateOperatorGG(NFermion, l, 5, Yup, Ydn, &GG);
+      OperatorAdd(op, GG);
+      FreeOperator(&GG);
+      if(Urot!=NULL) RotateOperatorWithMatrix(*Urot, op);
+      snprintf(op->Name, MAXStrLength, "C G2");
+      lua_setfield(L, -2, "G2");
+    }
+  }
+  lua_setfield(L, tindex, "Casimir");
+}
+
+/*  LuaAngularMomentumPushCoulombJJ stores in the table at the absolute stack position tindex the field
+ *  CoulombJJ, the coulomb operator of the shell written on the jjz basis, where the two j shells carry
+ *  their own Slater integrals,
+ *
+ *    CoulombJJ.jmin.F[k]   k = 0, 2, ... 2l-2   within j = l-1/2
+ *    CoulombJJ.jplus.F[k]  k = 0, 2, ... 2l     within j = l+1/2
+ *    CoulombJJ.cross.F[k]  k = 0, 2, ... 2l-2   between the two j shells
+ *    CoulombJJ.cross.G[k]  k = 1, 3, ... 2l-1   between the two j shells
+ *
+ *  If the radial wave functions of j = l-1/2 and j = l+1/2 are the same these reduce to the F[k] of
+ *  SlaterF. If they are not, which is what one solves a Dirac equation for, this parametrization is the
+ *  more general one and SlaterF is an approximation to it.
+ */
+static void LuaAngularMomentumPushCoulombJJ(lua_State * L, int const tindex, uint32_t const NFermion, uint32_t const l, uint16_t * const Ijmin, uint16_t * const Ijplus)
+{
+  OperatorType *op;
+  uint32_t i, j;
+  double *F, *G;
+  lua_newtable(L);
+  F = (double *) calloc(l+1, sizeof(double));
+  G = (double *) calloc(l+1, sizeof(double));
+  if((F==NULL)||(G==NULL))
+  {
+    free(F); free(G);
+    lua_setfield(L, tindex, "CoulombJJ");
+    printf("Out of memory in LuaAngularMomentumPushCoulombJJ, CoulombJJ is left empty\n");
+    return;
+  }
+  /*  within j = l+1/2, kappa = -(l+1), with k = 0, 2, ... 2l */
+  lua_newtable(L);
+  lua_newtable(L);
+  for(i=0;i<=l;i++)
+  {
+    for(j=0;j<=l;j++) F[j]=0;
+    F[i]=1;
+    op = LuaAngularMomentumNewOperator(L);
+    CreateOperatorCoulombSingleRelativisticShell(NFermion, -((int)l+1), Ijplus, F, op);
+    snprintf(op->Name, MAXStrLength, "F%d jplus", 2*i);
+    lua_rawseti(L, -2, (int)(2*i));
+  }
+  lua_setfield(L, -2, "F");
+  lua_setfield(L, -2, "jplus");
+  if(l>0)
+  {
+    /*  within j = l-1/2, kappa = l, with k = 0, 2, ... 2l-2 */
+    lua_newtable(L);
+    lua_newtable(L);
+    for(i=0;i<l;i++)
+    {
+      for(j=0;j<=l;j++) F[j]=0;
+      F[i]=1;
+      op = LuaAngularMomentumNewOperator(L);
+      CreateOperatorCoulombSingleRelativisticShell(NFermion, (int)l, Ijmin, F, op);
+      snprintf(op->Name, MAXStrLength, "F%d jmin", 2*i);
+      lua_rawseti(L, -2, (int)(2*i));
+    }
+    lua_setfield(L, -2, "F");
+    lua_setfield(L, -2, "jmin");
+    /*  between the two shells, F with k = 0, 2, ... 2l-2 and G with k = 1, 3, ... 2l-1 */
+    lua_newtable(L);
+    lua_newtable(L);
+    for(i=0;i<l;i++)
+    {
+      for(j=0;j<=l;j++) { F[j]=0; G[j]=0; }
+      F[i]=1;
+      op = LuaAngularMomentumNewOperator(L);
+      CreateOperatorCoulombTwoRelativisticShellsConstantOccupation(NFermion, (int)l, -((int)l+1), Ijmin, Ijplus, F, G, op);
+      snprintf(op->Name, MAXStrLength, "F%d cross", 2*i);
+      lua_rawseti(L, -2, (int)(2*i));
+    }
+    lua_setfield(L, -2, "F");
+    lua_newtable(L);
+    for(i=0;i<l;i++)
+    {
+      for(j=0;j<=l;j++) { F[j]=0; G[j]=0; }
+      G[i]=1;
+      op = LuaAngularMomentumNewOperator(L);
+      CreateOperatorCoulombTwoRelativisticShellsConstantOccupation(NFermion, (int)l, -((int)l+1), Ijmin, Ijplus, F, G, op);
+      snprintf(op->Name, MAXStrLength, "G%d cross", 2*i+1);
+      lua_rawseti(L, -2, (int)(2*i+1));
+    }
+    lua_setfield(L, -2, "G");
+    lua_setfield(L, -2, "cross");
+  }
+  free(F);
+  free(G);
+  lua_setfield(L, tindex, "CoulombJJ");
+}
+
+static int LuaAngularMomentumOperators(lua_State * L)
+{
+  struct
+  {
+    const char *basis;
+    uint32_t ibasis;   //  0  000 SphericalHarmonicY, alternating dn,up from m=-l to m=l
+                       //  1  001 TesseralHarmonicZ,  alternating dn,up sin first, than cos
+                       //  2  010 KubicHarmonicK,     alternating dn,up order according to irep a,b,e,t
+                       //  3  011 PyramidalHarmonicP, alternating dn,up order rotating around z axis
+                       //  4  100 jjz basis,          j=l-1/2 first, than j=l+1/2 from m=-j to m=j
+  } Options;
+  LuaOptionsType LuaAngularMomentumOptions[]={
+    {"basis","char*",&(Options.basis)},
+    {NULL, NULL, NULL}};
+  OperatorType *op;
+  MatrixType U, *Urot;
+  uint32_t i, k, l, NShell, Ntemp, len, t;
+  uint16_t *LindexUp, *LindexDn;
+  uint16_t *slot[1], *Yup[1], *Ydn[1];
+  double *F;
+  uint32_t NFermion = (uint32_t)luaL_checkunsigned(L, 1);
+  len = (uint32_t)lua_gettop(L);
+  if((len<3)||(len>4)) return luaL_error(L, "AngularMomentumOperators called with %d arguments, 3 or 4 expected, NF, IndexUp, IndexDn and an optional list of options\n",len);
+  if(NFermion==0) return luaL_error(L, "Angular momentum operators acting on zero fermions are not defined");
+  LindexUp = luaL_checkarray_unit16_t(L, 2, &NShell);
+  LindexDn = luaL_checkarray_unit16_t(L, 3, &Ntemp);
+  Options.ibasis=0;
+  Options.basis="SphericalHarmonicsY";
+  if(len==4)
+  {
+    if(LuaTestOptionsList(L, -1)==false)
+    {
+      free(LindexUp); free(LindexDn);
+      return luaL_error(L, "The fourth argument of AngularMomentumOperators is optional but iff given should be a list of options\n");
+    }
+    LuaCheckOptions(L, -1, LuaAngularMomentumOptions);
+    if((strcmp(Options.basis, "SphericalHarmonicsY")==0)||(strcmp(Options.basis, "SphericalHarmonics")==0)||(strcmp(Options.basis, "BasisY")==0)||(strcmp(Options.basis, "Y")==0))
+    {
+      Options.ibasis=0;
+    }
+    else if((strcmp(Options.basis, "TesseralHarmonicsZ")==0)||(strcmp(Options.basis, "TesseralHarmonics")==0)||(strcmp(Options.basis, "BasisZ")==0)||(strcmp(Options.basis, "Z")==0))
+    {
+      Options.ibasis=1;
+    }
+    else if((strcmp(Options.basis, "KubicHarmonicsK")==0)||(strcmp(Options.basis, "KubicHarmonics")==0)||(strcmp(Options.basis, "BasisK")==0)||(strcmp(Options.basis, "K")==0)||(strcmp(Options.basis, "CubicHarmonicsK")==0)||(strcmp(Options.basis, "CubicHarmonics")==0))
+    {
+      Options.ibasis=2;
+    }
+    else if((strcmp(Options.basis, "jjz")==0)||(strcmp(Options.basis, "Basisjjz")==0)||(strcmp(Options.basis, "Basisj")==0)||(strcmp(Options.basis, "j")==0)||(strcmp(Options.basis, "J")==0))
+    {
+      Options.ibasis=4;
+    }
+    else
+    {
+      free(LindexUp); free(LindexDn);
+      return luaL_error(L, "Unrecognized value for basis %s, use Y (SphericalHarmonicsY), Z (TesseralHarmonicsZ), K (KubicHarmonicsK) or jjz\n",Options.basis);
+    }
+  }
+  else // no options given, set the basis from the length of the index arrays
+  {
+    Options.ibasis = ((NShell+2)==Ntemp) ? 4 : 0;
+  }
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexUp, NShell)==false)
+  {
+    free(LindexUp); free(LindexDn);
+    return luaL_error(L, "First index contains a refference outside the range [0,%d]",NFermion-1);
+  }
+  if(Test_uint16_t_array_in_range(0, (uint16_t)(NFermion-1), LindexDn, Ntemp )==false)
+  {
+    free(LindexUp); free(LindexDn);
+    return luaL_error(L, "Second index contains a refference outside the range [0,%d]",NFermion-1);
+  }
+  if((NShell==0)&&(Options.ibasis!=4))
+  {
+    free(LindexUp); free(LindexDn);
+    return luaL_error(L, "Error in AngularMomentumOperators, IndexUp is empty\n");
+  }
+  l = (Options.ibasis==4) ? NShell/2 : (NShell-1)/2;
+  if(Options.ibasis==4)
+  {
+    if(((NShell+2)!=Ntemp)||((2*l)!=NShell))
+    {
+      free(LindexUp); free(LindexDn);
+      return luaL_error(L, "Error in AngularMomentumOperators, on the jjz basis the first index should hold the 2l states of j=l-1/2 and the second the 2l+2 states of j=l+1/2, the lengths are %d and %d\n",NShell,Ntemp);
+    }
+  }
+  else
+  {
+    if((NShell!=Ntemp)||((2*l+1)!=NShell))
+    {
+      free(LindexUp); free(LindexDn);
+      return luaL_error(L, "Error in AngularMomentumOperators, IndexUp and IndexDn should both hold the 2l+1 orbitals of the shell, the lengths are %d and %d\n",NShell,Ntemp);
+    }
+  }
+  /*  the shell slots and, read as dn, up, dn, up, ... from m=-l to m=l, the spherical harmonics the
+   *  operators are created on before they are rotated
+   */
+  if(ShellBasisYIndicesList(1, &l, Options.ibasis, &LindexUp, &LindexDn, slot, Yup, Ydn))
+  {
+    free(LindexUp); free(LindexDn);
+    return luaL_error(L, "Out of memory in AngularMomentumOperators\n");
+  }
+  Urot=NULL;
+  if((Options.ibasis==1)||(Options.ibasis==2)||(Options.ibasis==4))
+  {
+    if(CreateBasisRotationMatrix(NFermion, 1, &l, Options.ibasis, (uint16_t const * const *)slot, &U))
+    {
+      FreeShellBasisYIndicesList(1, slot, Yup, Ydn);
+      free(LindexUp); free(LindexDn);
+      return luaL_error(L, "Could not create the basis rotation matrix in AngularMomentumOperators\n");
+    }
+    Urot=&U;
+  }
+  else if(Options.ibasis==3)
+  {
+    FreeShellBasisYIndicesList(1, slot, Yup, Ydn);
+    free(LindexUp); free(LindexDn);
+    return luaL_error(L, "The PyramidalHarmonicsP basis is not implemented\n");
+  }
+  lua_newtable(L);
+  t = (uint32_t)lua_gettop(L);
+  /*  what the shell is */
+  lua_pushnumber(L, (double)l);           lua_setfield(L, t, "l");
+  lua_pushnumber(L, (double)NFermion);    lua_setfield(L, t, "NF");
+  lua_pushstring(L, (Options.ibasis==0) ? "Y" : ((Options.ibasis==1) ? "Z" : ((Options.ibasis==2) ? "K" : "jjz")));
+  lua_setfield(L, t, "Basis");
+  lua_newtable(L);
+  LuaAngularMomentumPushIndexArray(L, LindexUp, NShell);
+  lua_setfield(L, -2, (Options.ibasis==4) ? "jmin" : "Up");
+  LuaAngularMomentumPushIndexArray(L, LindexDn, Ntemp);
+  lua_setfield(L, -2, (Options.ibasis==4) ? "jplus" : "Dn");
+  lua_setfield(L, t, "Index");
+  /*  the one and two particle angular momentum operators */
+  for(i=0;LuaAngularMomentumOrbitalOperators[i].key!=NULL;i++)
+  {
+    op = LuaAngularMomentumNewOperator(L);
+    LuaAngularMomentumOrbitalOperators[i].create(NFermion, l, Yup[0], Ydn[0], op);
+    LuaAngularMomentumSetOperator(L, (int)t, LuaAngularMomentumOrbitalOperators[i].key, Urot, op);
+  }
+  for(i=0;LuaAngularMomentumSpinOperators[i].key!=NULL;i++)
+  {
+    op = LuaAngularMomentumNewOperator(L);
+    LuaAngularMomentumSpinOperators[i].create(NFermion, 2*l+1, Yup[0], Ydn[0], op);
+    LuaAngularMomentumSetOperator(L, (int)t, LuaAngularMomentumSpinOperators[i].key, Urot, op);
+  }
+  /*  the number operator of the shell is the same in every basis */
+  op = LuaAngularMomentumNewOperator(L);
+  CreateOperatorNumberShell(NFermion, 2*(2*l+1), slot[0], op);
+  LuaAngularMomentumSetOperator(L, (int)t, "N", NULL, op);
+  /*  the coulomb operator split into its angular momentum transfer k = 0, 2, ... 2l */
+  F = (double *) calloc(l+1, sizeof(double));
+  if(F==NULL)
+  {
+    if(Urot!=NULL) FreeMatrix(&U);
+    FreeShellBasisYIndicesList(1, slot, Yup, Ydn);
+    free(LindexUp); free(LindexDn);
+    return luaL_error(L, "Out of memory in AngularMomentumOperators\n");
+  }
+  lua_newtable(L);
+  for(k=0;k<=2*l;k+=2)
+  {
+    for(i=0;i<=l;i++) F[i]=0;
+    F[k/2]=1;
+    op = LuaAngularMomentumNewOperator(L);
+    CreateOperatorCoulombSingleShell(NFermion, l, Yup[0], Ydn[0], F, op);
+    if(Urot!=NULL) RotateOperatorWithMatrix(*Urot, op);
+    snprintf(op->Name, MAXStrLength, "F%d", k);
+    lua_rawseti(L, -2, (int)k);
+  }
+  free(F);
+  lua_setfield(L, t, "SlaterF");
+  /*  Racah's unit tensors u^(k) . u^(k) and the Casimir operators built from the odd k ones */
+  lua_newtable(L);
+  for(k=0;k<=2*l;k++)
+  {
+    op = LuaAngularMomentumNewOperator(L);
+    CreateOperatorGG(NFermion, l, k, Yup[0], Ydn[0], op);
+    if(Urot!=NULL) RotateOperatorWithMatrix(*Urot, op);
+    snprintf(op->Name, MAXStrLength, "GG%d", k);
+    lua_rawseti(L, -2, (int)k);
+  }
+  lua_setfield(L, t, "GG");
+  LuaAngularMomentumPushCasimir(L, (int)t, NFermion, l, Yup[0], Ydn[0], Urot);
+  /*  the coulomb operator on the jjz basis, where the two j shells have their own Slater integrals */
+  if(Options.ibasis==4) LuaAngularMomentumPushCoulombJJ(L, (int)t, NFermion, l, LindexUp, LindexDn);
+  if(Urot!=NULL) FreeMatrix(&U);
+  FreeShellBasisYIndicesList(1, slot, Yup, Ydn);
+  free(LindexUp);
+  free(LindexDn);
+  return 1;
+}

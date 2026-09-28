@@ -143,15 +143,15 @@ static const struct luaL_Reg Simon_func[] = {
 	{"Flatten", LuaFlatten},
 	{"IsosurfaceFixedInt", LuaIsosurfaceFixedInt},
 	{"IsosurfaceFixedVal", LuaIsosurfaceFixedVal},
-	{"MatrixToOperator", LuaMatrixToOperator},
+	{"MatrixToOperator", LuaMatrixToOperator}, // moved to main library call as Matrix.ToOperator
 	{"MatrixToSparseMatrix", LuaMatrixToSparseMatrix},
-	{"MatrixTrace", LuaMatrixTrace},
+	{"MatrixTrace", LuaMatrixTrace}, // moved to main library call as Matrix.Trace !! TODO: for sparse matrices still calls functions in Simon that need to be rewritten
 	{"OrthogonalizeWithNonOrthoBasis", LuaOrthogonalizeWithNonOrthoBasis},
 	{"lsCouplingConstants", LuaLSCouplingConstants},
 	{"FileReadOrca", LuaFileReadOrca},
 	{"PrepareOperatorForEmptyOrbitals",LuaPrepareOperatorForEmptyOrbitals},
 	{"RealspaceDensity", LuaRealspaceDensity},
-	{"RemoveSpin", LuaRemoveSpin},
+	{"RemoveSpin", LuaMatrixRemoveSpin}, // moved to main library call as Matrix.RemoveSpin
 	{"SortByKappa",LuaSortByKappa},
 	{"SparseMatrixToMatrix",LuaSparseMatrixToMatrix},
 	{"test", LuaSimontest},

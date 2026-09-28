@@ -1,0 +1,438 @@
+-- CreateSpectra with a self energy given as a list of response functions and
+-- operators, i.e. CalculateGforHwithSigmaAsOperator.
+--
+-- The routine keeps the space P plus one excitation into the bath that the
+-- self energy stands for.  Every test below is built so that this truncation
+-- is exact and so that the intermediate space is invariant under H, and the
+-- answer is then compared with a calculation in which the bath is written out
+-- explicitly and restricted to one particle.  The two have to agree to
+-- machine precision -- there is no approximation left to hide behind.
+--
+-- The models: modes 0 .. NP-1 are the space P, the remaining modes are the
+-- bath.  Adding one electron to a one electron state gives two electrons, at
+-- most one of which can sit in the bath, so restricting the explicit bath to
+-- one particle is exactly P + Q1.  The channels of the self energy are all of
+-- P, so the intermediate space is the complete one electron sector of P.
+
+print("--------------------------------------------------------")
+print("-- CreateSpectra with a self energy                   --")
+print("--------------------------------------------------------")
+
+Verbosity(0)
+
+threshold = 1e-9
+
+-- the largest absolute value of a complex number, by bisection on Chop
+function Mag(z)
+  local lo, hi = 0, 1
+  while Chop(z, hi) ~= 0 do hi = hi * 2 end
+  for it = 1, 60 do
+    local mid = 0.5 * (lo + hi)
+    if Chop(z, mid) ~= 0 then lo = mid else hi = mid end
+  end
+  return hi
+end
+
+function Deviation(sa, sb)
+  local ta, tb = Spectra.ToTable(sa), Spectra.ToTable(sb)
+  if #ta ~= #tb then error("the two spectra do not have the same number of elements", 1) end
+  local d, s = 0, 0
+  for i = 1, #ta do
+    if #ta[i] ~= #tb[i] then error("the two spectra are not on the same energy grid", 1) end
+    for k = 1, #ta[i] do
+      local x = Mag(ta[i][k][2] - tb[i][k][2])
+      local y = Mag(ta[i][k][2])
+      if x > d then d = x end
+      if y > s then s = y end
+    end
+  end
+  return d, s
+end
+
+function Check(name, sa, sb)
+  local d, s = Deviation(sa, sb)
+  print(string.format("%-42s largest value %10.6f   deviation %.3e", name, s, d))
+  if d > threshold * math.max(s, 1) then
+    error("CreateSpectra with a self energy: " .. name .. " deviates by " .. d, 1)
+  end
+end
+
+-- ---------------------------------------------------------------------------
+-- a model with NP modes in P and NBath bath modes.  iH and iT switch the
+-- imaginary parts of the Hamiltonian and of the hybridization on and off.
+-- ---------------------------------------------------------------------------
+function Model(NP, NBath, iH, iT, A0on)
+  local M = {}
+  M.NF = NP + NBath
+  M.NB = 0
+  local NF = M.NF
+  local eps = {0.30, -0.20, 0.70, 0.10}
+  M.HP = NewOperator("Number", NF, {0}, {0}, {eps[1]})
+  for j = 1, NP - 1 do
+    M.HP = M.HP + NewOperator("Number", NF, {j}, {j}, {eps[j + 1]})
+  end
+  local hop = { {0, 1, 0.35 + 0.20 * iH}, {1, 2, 0.20}, {2, 3, 0.15 - 0.10 * iH}, {0, 3, 0.05} }
+  for _, h in ipairs(hop) do
+    if h[2] < NP then
+      M.HP = M.HP + NewOperator("Number", NF, {h[1], h[2]}, {h[2], h[1]}, {h[3], Conjugate(h[3])})
+    end
+  end
+  local n = {}
+  for j = 0, NP - 1 do n[j] = NewOperator("Number", NF, {j}, {j}, {1}) end
+  local U = 1.3
+  for j = 0, NP - 1 do
+    for k = j + 1, NP - 1 do
+      M.HP = M.HP + (0.4 + 0.2 * (k - j)) * U * (n[j] * n[k])
+    end
+  end
+  -- the static part of the self energy, a Hermitian NP x NP matrix on all of P
+  M.A0 = {}
+  for j = 1, NP do
+    M.A0[j] = {}
+    for k = 1, NP do M.A0[j][k] = 0 end
+  end
+  if A0on then
+    M.A0[1][1] = 0.22
+    M.A0[2][2] = -0.18
+    M.A0[1][2] = 0.13 + 0.07 * iH
+    M.A0[2][1] = 0.13 - 0.07 * iH
+  end
+  local ii, jj, vv = {}, {}, {}
+  for j = 1, NP do
+    for k = 1, NP do
+      ii[#ii + 1] = j - 1 ; jj[#jj + 1] = k - 1 ; vv[#vv + 1] = M.A0[j][k]
+    end
+  end
+  local HA0 = NewOperator("Number", NF, ii, jj, vv)
+  -- the bath, every bath mode couples to all of P
+  M.e = {2.5, -1.7, 0.9}
+  M.t = { {0.40 + 0.10 * iT, 0.25, -0.15, 0.20},
+          {0.30, -0.35 - 0.20 * iT, 0.20, 0.10},
+          {0.15, 0.22, -0.30 + 0.05 * iT, 0.18} }
+  local Hhyb = NewOperator("Number", NF, {}, {}, {})
+  local Hb = NewOperator("Number", NF, {}, {}, {})
+  for b = 1, NBath do
+    Hb = Hb + NewOperator("Number", NF, {NP + b - 1}, {NP + b - 1}, {M.e[b]})
+    for j = 1, NP do
+      Hhyb = Hhyb + NewOperator("Number", NF, {NP + b - 1, j - 1}, {j - 1, NP + b - 1},
+                                {M.t[b][j], Conjugate(M.t[b][j])})
+    end
+  end
+  M.Hfull = M.HP + HA0 + Hb + Hhyb
+  -- the self energy, one block with NBath poles and residue conj(t_j) t_k
+  local W = {}
+  for b = 1, NBath do
+    W[b] = {}
+    for j = 1, NP do
+      W[b][j] = {}
+      for k = 1, NP do W[b][j][k] = Conjugate(M.t[b][j]) * M.t[b][k] end
+    end
+  end
+  local lst = {M.A0}
+  for b = 1, NBath do lst[#lst + 1] = M.e[b] end
+  M.Sigma = ResponseFunction.New({ lst, W, mu = 0, type = "ListOfPoles", name = "Sigma" })
+  M.V = {}
+  for j = 0, NP - 1 do M.V[j + 1] = NewOperator("An", NF, j) end
+  -- one electron in P and nothing in the bath.  psi is handed to CreateSpectra
+  -- in both calculations and E0 is set by hand, so the two are comparable
+  -- without psi having to be an eigenstate of either Hamiltonian
+  local det = {}
+  local amp = {0.50, 0.60 + 0.10 * iH, 0.50, 0.35 - 0.20 * iH}
+  for j = 1, NP do
+    local d = string.rep("0", j - 1) .. "1" .. string.rep("0", NF - j)
+    det[j] = {d, amp[j]}
+  end
+  M.psi = NewWavefunction(NF, M.NB, det)
+  M.Restrictions = {NF, M.NB, {string.rep("0", NP) .. string.rep("1", NBath), 0, 1}}
+  return M
+end
+
+-- These models are small enough that the Krylov space of the block Lanczos
+-- runs out, and the residual block at exhaustion is zero in exact arithmetic
+-- and rounding error numerically.  Deflating it is the job of SingularValue,
+-- which is left at its standard value here; Epsilon, which says which
+-- determinants of a wave function we keep, is left standard as well.  Until
+-- the orthonormalization used SingularValue rather than Epsilon these
+-- comparisons needed Epsilon = 1e-6 to pass, and scattered between 1e-14 and
+-- 1e-8 depending on the machine without it.
+function Options(M, extra)
+  local o = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
+              {"Emin", -12}, {"Emax", 18}, {"NE", 500}, {"Gamma", 0.25} }
+  for _, v in ipairs(extra) do o[#o + 1] = v end
+  return o
+end
+
+-- ---------------------------------------------------------------------------
+-- 1  a self energy without weight has to give the plain resolvent of H
+-- ---------------------------------------------------------------------------
+M = Model(3, 1, 0, 0, false)
+Zero = {}
+for j = 1, 3 do Zero[j] = {} for k = 1, 3 do Zero[j][k] = 0 end end
+SZero = ResponseFunction.New({ {Zero, 2.5}, {Zero}, mu = 0, type = "ListOfPoles", name = "Sigma" })
+
+T1 = { NewOperator("Cr", M.NF, 0) }
+sSig, GAnd, sNo = CreateSpectra(M.HP, T1, M.psi, {{SZero, M.V}}, Options(M, {{"NTriFull", 40}}))
+Check("Sigma with no weight, one operator", sNo, sSig)
+
+T2 = { NewOperator("Cr", M.NF, 0), NewOperator("Cr", M.NF, 1) }
+sSig, GAnd, sNo = CreateSpectra(M.HP, T2, M.psi, {{SZero, M.V}}, Options(M, {{"NTriFull", 40}}))
+Check("Sigma with no weight, two operators", sNo, sSig)
+
+-- three transition operators of which only two are independent: the seed block
+-- of the block Lanczos deflates and b[0] is rank deficient
+T3 = { NewOperator("Cr", M.NF, 0), NewOperator("Cr", M.NF, 1),
+       NewOperator("Cr", M.NF, 0) + NewOperator("Cr", M.NF, 1) }
+sSig, GAnd, sNo = CreateSpectra(M.HP, T3, M.psi, {{SZero, M.V}}, Options(M, {{"NTriFull", 40}}))
+Check("Sigma with no weight, rank deficient seed", sNo, sSig)
+
+-- ---------------------------------------------------------------------------
+-- 2  against an explicit bath restricted to one particle
+-- ---------------------------------------------------------------------------
+function CompareWithExplicitBath(name, NP, NBath, iH, iT, A0on, NT, extra)
+  local M = Model(NP, NBath, iH, iT, A0on)
+  local T = {}
+  for j = 1, NT do T[j] = NewOperator("Cr", M.NF, j - 1) end
+  if NT > NP then T[NT] = NewOperator("Cr", M.NF, 0) + NewOperator("Cr", M.NF, 1) end
+  local sref = CreateSpectra(M.Hfull, T, M.psi, Options(M, {{"Restrictions", M.Restrictions}}))
+  local ssig = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, extra))
+  Check(name, sref, ssig)
+  return M, T, sref
+end
+
+CompareWithExplicitBath("real, one pole",              3, 1, 0, 0, false, 3, {{"NTriFull", 60}})
+CompareWithExplicitBath("real, three poles",           3, 3, 0, 0, false, 3, {{"NTriFull", 60}})
+CompareWithExplicitBath("real, three poles, static",   3, 3, 0, 0, true,  3, {{"NTriFull", 60}})
+CompareWithExplicitBath("complex, three poles, static",4, 3, I, I, true,  3, {{"NTriFull", 60}})
+CompareWithExplicitBath("rank deficient seed, static", 3, 3, 0, 0, true,  4, {{"NTriFull", 60}})
+
+-- ---------------------------------------------------------------------------
+-- 3  two self energies at once, each on its own pair of channels
+-- ---------------------------------------------------------------------------
+M = Model(4, 2, I, I, true)
+A2a = { {M.A0[1][1], M.A0[1][2]}, {M.A0[2][1], M.A0[2][2]} }
+A2b = { {0, 0}, {0, 0} }
+function Res2(b, j0)
+  local w = {}
+  for j = 1, 2 do
+    w[j] = {}
+    for k = 1, 2 do w[j][k] = Conjugate(M.t[b][j0 + j]) * M.t[b][j0 + k] end
+  end
+  return w
+end
+-- pole 1 seen from the channels 0,1 and pole 2 from the channels 2,3, with the
+-- other two hoppings of each pole removed from the explicit model as well
+MT = Model(4, 2, I, I, true)
+Hhyb = NewOperator("Number", MT.NF, {4, 0}, {0, 4}, {MT.t[1][1], Conjugate(MT.t[1][1])})
+     + NewOperator("Number", MT.NF, {4, 1}, {1, 4}, {MT.t[1][2], Conjugate(MT.t[1][2])})
+     + NewOperator("Number", MT.NF, {5, 2}, {2, 5}, {MT.t[2][3], Conjugate(MT.t[2][3])})
+     + NewOperator("Number", MT.NF, {5, 3}, {3, 5}, {MT.t[2][4], Conjugate(MT.t[2][4])})
+ii, jj, vv = {}, {}, {}
+for j = 1, 4 do for k = 1, 4 do ii[#ii+1] = j-1 ; jj[#jj+1] = k-1 ; vv[#vv+1] = MT.A0[j][k] end end
+Hfull2 = MT.HP + NewOperator("Number", MT.NF, ii, jj, vv)
+       + NewOperator("Number", MT.NF, {4, 5}, {4, 5}, {MT.e[1], MT.e[2]}) + Hhyb
+S2a = ResponseFunction.New({ {A2a, MT.e[1]}, {Res2(1, 0)}, mu = 0, type = "ListOfPoles", name = "Sa" })
+S2b = ResponseFunction.New({ {A2b, MT.e[2]}, {Res2(2, 2)}, mu = 0, type = "ListOfPoles", name = "Sb" })
+V2a = { MT.V[1], MT.V[2] }
+V2b = { MT.V[3], MT.V[4] }
+T = { NewOperator("Cr", MT.NF, 0), NewOperator("Cr", MT.NF, 1), NewOperator("Cr", MT.NF, 2) }
+sref = CreateSpectra(Hfull2, T, MT.psi, Options(MT, {{"Restrictions", MT.Restrictions}}))
+ssig = CreateSpectra(MT.HP, T, MT.psi, {{S2a, V2a}, {S2b, V2b}}, Options(MT, {{"NTriFull", 60}}))
+Check("two self energies, complex, static", sref, ssig)
+
+-- ---------------------------------------------------------------------------
+-- 4  binning the poles on a grid conserves the zeroth and the first moment of
+--    every bin, so refining the grid has to converge to the unbinned answer
+-- ---------------------------------------------------------------------------
+M = Model(4, 3, I, I, true)
+T = { NewOperator("Cr", M.NF, 0), NewOperator("Cr", M.NF, 1), NewOperator("Cr", M.NF, 2) }
+sExact = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, {{"NTriFull", 60}}))
+dprev = nil
+for _, ng in ipairs({50, 200, 800}) do
+  local g = {}
+  for i = 1, ng do g[i] = -14 + 34 * (i - 1) / (ng - 1) end
+  local sg = CreateSpectra(M.HP, T, M.psi, {{M.Sigma, M.V}}, Options(M, {{"NTriFull", 60}, {"GridPoints", g}}))
+  local d, s = Deviation(sExact, sg)
+  print(string.format("%-42s largest value %10.6f   deviation %.3e",
+        string.format("binned on %d grid points", ng), s, d))
+  if dprev ~= nil and d > 0.5 * dprev then
+    error("CreateSpectra with a self energy: refining the grid from " .. ngprev ..
+          " to " .. ng .. " points did not reduce the binning error", 1)
+  end
+  dprev = d
+  ngprev = ng
+end
+if dprev > 1e-2 then
+  error("CreateSpectra with a self energy: the binned result does not approach the unbinned one", 1)
+end
+
+-- ---------------------------------------------------------------------------
+-- 5  many poles.  Above the compiled in limit on the number of bath states the
+--    routine picks a grid by itself instead of keeping every pole
+-- ---------------------------------------------------------------------------
+NF = 4
+HPm = NewOperator("Number", NF, {0,1,2}, {0,1,2}, {0.3,-0.2,0.7})
+    + NewOperator("Number", NF, {0,1}, {1,0}, {0.35,0.35})
+    + NewOperator("Number", NF, {1,2}, {2,1}, {0.20,0.20})
+nm = {}
+for j = 0, 2 do nm[j] = NewOperator("Number", NF, {j},{j},{1}) end
+HPm = HPm + 1.3*(nm[0]*nm[1]) + 0.9*(nm[1]*nm[2])
+NPole = 2600
+lst = { {{0,0,0},{0,0,0},{0,0,0}} }
+Wm = {}
+for i = 1, NPole do
+  lst[#lst + 1] = -3 + 6 * (i - 1) / (NPole - 1)
+  local t = {0.40, 0.25, -0.15}
+  local w = {}
+  for j = 1, 3 do
+    w[j] = {}
+    for k = 1, 3 do w[j][k] = t[j] * t[k] / NPole end
+  end
+  Wm[i] = w
+end
+Sm = ResponseFunction.New({ lst, Wm, mu = 0, type = "ListOfPoles", name = "S" })
+Vm = { NewOperator("An", NF, 0), NewOperator("An", NF, 1), NewOperator("An", NF, 2) }
+Tm = { NewOperator("Cr", NF, 0), NewOperator("Cr", NF, 1) }
+psim = NewWavefunction(NF, 0, { {"1000", 0.5}, {"0100", 0.6}, {"0010", 0.62449979983984} })
+optm = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
+         {"Emin", -10}, {"Emax", 14}, {"NE", 400}, {"Gamma", 0.25}, {"NTriFull", 40} }
+sAuto = CreateSpectra(HPm, Tm, psim, {{Sm, Vm}}, optm)
+gfine = {}
+for i = 1, 4000 do gfine[i] = -8 + 16 * (i - 1) / 3999 end
+optf = {}
+for i, v in ipairs(optm) do optf[i] = v end
+optf[#optf + 1] = {"GridPoints", gfine}
+sFine = CreateSpectra(HPm, Tm, psim, {{Sm, Vm}}, optf)
+d, s = Deviation(sFine, sAuto)
+print(string.format("%-42s largest value %10.6f   deviation %.3e", "automatic grid, 7800 poles", s, d))
+if d > 0.05 * s then
+  error("CreateSpectra with a self energy: the automatically chosen grid is off by " .. d, 1)
+end
+
+-- ---------------------------------------------------------------------------
+-- 6  the one approximation in the routine.  The intermediate space is the span
+--    of V[j] |PsiBasis[a]> and is not closed under H unless the channels reach
+--    the whole sector.  Here three modes make up P and only mode 0 is a
+--    channel, so the span misses part of the N-1 sector.  The result is then
+--    no longer exact, but it still has to recover most of the self energy.
+-- ---------------------------------------------------------------------------
+NF = 5
+HPr = NewOperator("Number", NF, {0,1,2}, {0,1,2}, {0.3,-0.2,0.7})
+    + NewOperator("Number", NF, {0,1}, {1,0}, {0.35,0.35})
+    + NewOperator("Number", NF, {1,2}, {2,1}, {0.20,0.20})
+nr = {}
+for j = 0, 2 do nr[j] = NewOperator("Number", NF, {j},{j},{1}) end
+HPr = HPr + 1.3*(nr[0]*nr[1]) + 0.9*(nr[1]*nr[2])
+er = {2.5, -1.7}
+tr = {0.40, 0.30}
+Hfullr = HPr + NewOperator("Number", NF, {3,4}, {3,4}, er)
+       + NewOperator("Number", NF, {3,0}, {0,3}, {tr[1], tr[1]})
+       + NewOperator("Number", NF, {4,0}, {0,4}, {tr[2], tr[2]})
+Sr = ResponseFunction.New({ {0, er[1], er[2]}, {tr[1]*tr[1], tr[2]*tr[2]},
+                            mu = 0, type = "ListOfPoles", name = "S" })
+Vr = { NewOperator("An", NF, 0) }
+Tr = { NewOperator("Cr", NF, 0), NewOperator("Cr", NF, 1) }
+psir = NewWavefunction(NF, 0, { {"10000", 0.5}, {"01000", 0.6}, {"00100", 0.62449979983984} })
+Restrr = {NF, 0, {"00011", 0, 1}}
+optr = { {"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"E0", 0.0},
+         {"Emin", -8}, {"Emax", 12}, {"NE", 500}, {"Gamma", 0.25} }
+optrr = {} ; for i, v in ipairs(optr) do optrr[i] = v end
+optrr[#optrr + 1] = {"Restrictions", Restrr}
+optrs = {} ; for i, v in ipairs(optr) do optrs[i] = v end
+optrs[#optrs + 1] = {"NTriFull", 40}
+sExactr = CreateSpectra(Hfullr, Tr, psir, optrr)
+sSigr   = CreateSpectra(HPr, Tr, psir, {{Sr, Vr}}, optrs)
+sNor    = CreateSpectra(HPr, Tr, psir, optr)
+dSig, s = Deviation(sExactr, sSigr)
+dNo     = Deviation(sExactr, sNor)
+print(string.format("%-42s largest value %10.6f   deviation %.3e", "span not closed under H", s, dSig))
+print(string.format("%-42s largest value %10.6f   deviation %.3e", "  the same without any self energy", s, dNo))
+if dSig > 0.25 * dNo then
+  error("CreateSpectra with a self energy: Rayleigh-Ritz recovers too little of the self energy, " ..
+        dSig .. " against " .. dNo .. " without it", 1)
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+
+
+-- ---------------------------------------------------------------------------
+-- 7  Anderson impurity model
+-- ---------------------------------------------------------------------------
+::And::
+
+-- set A0 of Gval and Gcon to 0
+-- add ImpurityExtended to bitmask
+-- add IndexVal and IndexCon to Tail
+
+
+M0 = {{0,0},{0,0}}
+M1 = {{1,0},{0,1}}
+Dim=6
+Nv=2
+Nc=2
+a = {M0}
+b = {}
+for i=1,Dim do
+	a[i+1]=M0
+	b[i]=M1
+end
+G1 = ResponseFunction.New({a,b,mu=0,type="Tri", name="G1"})
+print(G1)
+
+Hloc1 = NewOperator(2,0,{{0,-0,1,-1,1}})
+print(Hloc1)
+
+
+G = ResponseFunction.ChangeType(G1,"Nat")
+
+print(G)
+
+O, BitMask, Tail = ResponseFunction.ToOperator(G,{{"Nv",Nv},{"Nc",Nc}})
+O.Chop()
+print(O)
+print(BitMask)
+print(Tail)
+
+Tail.IndexVal = {4,5}
+Tail.IndexCon = {6,7}
+
+Hloc1.NF = O.NF
+H = 0*Hloc1 + O
+
+StartRestrictions = {2*(Nv+Nc),0,{BitMask.BathVal,2*(Nv-1),2*(Nv-1)},{BitMask.BathExt,2,2},{BitMask.BathCon,0,0},{BitMask.Impurity,0,0}}
+
+print(StartRestrictions)
+
+psi = Eigensystem(H,StartRestrictions,1)
+print(psi)
+rho = DensityMatrix(psi)
+print(rho)
+
+OpCr={NewOperator(2*(Nv+Nc),0,{{ 0,1}}), NewOperator(2*(Nv+Nc),0,{{ 1,1}})}
+OpAn={NewOperator(2*(Nv+Nc),0,{{-0,1}}), NewOperator(2*(Nv+Nc),0,{{-1,1}})}
+
+Vval={}
+Vcon={}
+for i=1,2 do
+	Vval[i] = NewOperator(2*(Nv+Nc),0,{{-Tail.IndexVal[i], 1}})
+	Vcon[i] = NewOperator(2*(Nv+Nc),0,{{ Tail.IndexVal[i], 1}})
+end
+
+Sp0, Gp0 = CreateSpectra(H, OpCr, psi,{{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+Sm0, Gm0 = CreateSpectra(H, OpAn, psi,{{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+
+
+Sp, Gp = CreateSpectra(H, OpCr, psi, {{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+Sm, Gm = CreateSpectra(H, OpAn, psi, {{Tail.GvalBath,Vval},{Tail.GconBath,Vcon}}, {{"Tensor", true}, {"NTri", 200}, {"DenseBorder", 0}, {"Emin", -5}, {"Emax", 5}, {"NE", 1000}, {"Gamma", 0.1}})
+
+Gp.Chop()
+print(Gp)
+
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

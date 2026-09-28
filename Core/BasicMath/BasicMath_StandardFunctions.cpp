@@ -135,9 +135,9 @@ double FermiFunction(const double En, const double mu, const double kbT)
 {
   if ((En - mu) == 0)
     return 0.5;
-  if ((En - mu) <= -37 * kbT)
+  if ((En - mu) <= -40 * kbT)
     return 1.0;
-  if ((En - mu) >= 37 * kbT)
+  if ((En - mu) >=  40 * kbT)
     return 0.0;
   return 1.0 / (1 + exp((En - mu) / kbT));
 }

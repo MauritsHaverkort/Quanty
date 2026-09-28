@@ -1,0 +1,127 @@
+====== NewOperator ======
+
+###
+//NewOperator(name, ...)// creates one of the standard operators as described in the section on standard operators. A "Basis" option on the last position selects the one particle basis the orbitals are in, see below. //[[documentation:language_reference:functions:angularmomentumoperators|AngularMomentumOperators()]]// creates all of the standard operators of a single shell in one call.
+###
+
+###
+//NewOperator(Nf, Nb, CreationTable)// can be used to create any operator of the form:
+\begin{eqnarray}
+\nonumber  O =         && \alpha^{(0,0)}  1 \\
+\nonumber + \sum_i     && \alpha^{(1,0)}_i a^{\dagger}_i + \alpha^{(0,1)}_i a_i \\
+\nonumber + \sum_{i,j} && \alpha^{(2,0)}_{i,j} a^{\dagger}_ia^{\dagger}_j + \alpha^{(1,1)}_{i,j} a^{\dagger}_ia_j + \alpha^{(0,2)}_{i,j} a_ia_j \\
+          + \sum_{i,j,k} && ... .
+\end{eqnarray}
+The format of //CreationTable// for the above listed operator is:
+//NewOperator(Nf, Nb, { {$i_1$,$j_1$,$k_1$,$\alpha_{i,j,k}$},{$i_1$,$j_1$,$\alpha_{i,j}$},...})//
+Whereby positive indices create a particle, negative indices annihilate a particle. Index $i$ for 0 to Nf-1 label Fermions, from Nf to Nf+Nb label Bosons. $\alpha$ can be either a real or a complex number. NewOperator can take a forth element specifying options.
+###
+
+===== Input =====
+
+  * Nf : Integer
+  * Nb : Integer
+  * CreationTable : Table of tables, whereby each table is a list of orbital indices where a particle needs to be created (positive) or annihilated (negative) and a prefactor (real or complex number). Note that -0 and +0 are different.
+  * Possible options
+    * "Restrictions" A list specifying restrictions when applying the operator to a wave-function.
+    * "Name" a string specifying the name of the operator
+    * "NBitsKey" a list of integers specifying the number of bits in the key used for the hash lookup tables. Only useful when a lot of operations are done on the operators. Not used when Operator * Wavefunction is calculated.
+
+
+===== Output =====
+
+  * O : Operator
+
+===== Basis =====
+
+###
+The standard operators created by //NewOperator(name, ...)// need to know which one particle states the indices refer to. This is set by a "Basis" option on the last position. The value is one of:
+###
+
+^ value ^ basis ^ order of the indices ^
+| "Y" | spherical harmonics $Y_{l,m}$, the default | //IndexUp// and //IndexDn// both hold the $2l+1$ orbitals from $m=-l$ to $m=l$ |
+| "Z" | tesseral harmonics, the real combinations of $Y_{l,m}$ and $Y_{l,-m}$ | as for "Y", in the order of //[[documentation:language_reference:functions:ytozmatrix|YtoZMatrix()]]//, sine first, then cosine |
+| "K" | cubic harmonics, defined for $l \leq 3$ | as for "Y", in the order of //[[documentation:language_reference:functions:ytokmatrix|YtoKMatrix()]]//, by irreducible representation |
+| "jjz" | eigenstates of $j$ and $j_z$ | //IndexUp// holds the $2l$ states of $j=l-1/2$ and //IndexDn// the $2l+2$ states of $j=l+1/2$, both from $j_z=-j$ to $j_z=j$, in the order of //[[documentation:language_reference:functions:ytojjzmatrix|YtojjzMatrix()]]// |
+
+<code Quanty Example.Quanty>
+NF = 10
+IndexDn = {0,2,4,6,8}
+IndexUp = {1,3,5,7,9}
+-- Lz on the five cubic harmonics xy, yz, z2, xz, x2-y2
+OppLz = NewOperator("Lz", NF, IndexUp, IndexDn, {{"Basis","K"}})
+
+-- the same shell read as j=3/2 and j=5/2 instead
+Indexjmin  = {0,1,2,3}
+Indexjplus = {4,5,6,7,8,9}
+OppJz = NewOperator("Jz", NF, Indexjmin, Indexjplus, {{"Basis","jjz"}})
+</code>
+
+###
+If no "Basis" option is given, "jjz" is assumed when the second index list is two longer than the first and "Y" otherwise.
+###
+
+###
+All operators are created in the basis of spherical harmonics and rotated from there with the matrix
+\begin{eqnarray}
+C_{i,m} = \langle \mathrm{new}_i | Y_{l,m} \rangle,
+\end{eqnarray}
+which is what //[[documentation:language_reference:functions:ytozmatrix|YtoZMatrix()]]//, //[[documentation:language_reference:functions:ytokmatrix|YtoKMatrix()]]// and //[[documentation:language_reference:functions:ytojjzmatrix|YtojjzMatrix()]]// return, so that a one particle operator with matrix $A$ in the spherical harmonics basis has the matrix $A' = C^* A C^T$ in the new basis. This is exactly what //[[documentation:language_reference:functions:rotate|Rotate()]]// does when it is handed $C$, so
+###
+
+<code Quanty Example.Quanty>
+NewOperator("Qzz", NF, IndexUp, IndexDn, {{"Basis","Z"}})
+Rotate(NewOperator("Qzz", NF, IndexUp, IndexDn), Matrix.ToUserdata(YtoZMatrix(2)))
+</code>
+
+###
+are the same operator. The consequence worth keeping in mind is that the Slater integrals of the Coulomb operator, and the parameters of every other standard operator, keep the meaning they have in the spherical harmonics basis whichever basis is asked for. The Coulomb repulsion of a shell is still given as $F^0, F^2, \ldots$ on the jjz basis, and //[[documentation:language_reference:functions:angularmomentumoperators|AngularMomentumOperators()]]// returns the more general set with a separate $F^k$ and $G^k$ per pair of $j$ shells alongside it.
+###
+
+###
+The "P" (pyramidal harmonics) value is accepted by the option parser but is not implemented.
+###
+
+===== Example =====
+
+###
+description text
+###
+
+==== Input ====
+<code Quanty NewOperator.Quanty>
+Nf = 5
+Nb = 0
+O = NewOperator(Nf, Nb, {{             10},
+                         {0,-0,         3},
+                         {0,1,2,3,4,  1+I}},
+                {{"Name","Liberty"}})
+print(O)
+</code>
+
+==== Result ====
+<file Quanty_Output NewOperator.out>
+Operator: Liberty
+QComplex         =          2 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          5 (largest number of product of lader operators)
+NFermionic modes =          5 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   0
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          1 (number of operators of length   0)
+|  1.00000000000000E+01
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          1 (number of operators of length   2)
+C  0 A  0 |  3.00000000000000E+00
+
+Operator of Length   5
+QComplex      =          1 (Real==0 or Complex==1)
+N             =          1 (number of operators of length   5)
+C  4 C  3 C  2 C  1 C  0 |  1.00000000000000E+00  1.00000000000000E+00
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

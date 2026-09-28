@@ -785,8 +785,117 @@ collectgarbage("collect")
 
 
 
+print("--------------------------------------------------------")
+print("-- Some indexing examples                             --")
+print("--------------------------------------------------------")
 
 
+G = ResponseFunction.New({ {1.234}, {}, mu=0, type="ListOfPoles", name="G"})
+GT = ResponseFunction.ChangeType(G,"Tri")
+GA = ResponseFunction.ChangeType(G,"And")
+GN = ResponseFunction.ChangeType(G,"Nat")
+print("G with zero poles, but A0=1.234 as list of poles")
+print(G)
+print("G with zero poles, but A0=1.234 as tridiagonal matrix")
+print(GT)
+print(ResponseFunction.ToOperator(GT))
+print("G with zero poles, but A0=1.234 as Anderson matrix")
+print(GA)
+print(ResponseFunction.ToOperator(GA))
+print("G with zero poles, but A0=1.234 as natural impurity matrix")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+
+print("One pole below chemical potential")
+G = ResponseFunction.New({ {1.234,-1.0}, {1.3}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+print("One pole below above potential")
+G = ResponseFunction.New({ {1.234, 1.0}, {1.3}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+
+
+print("One matrix pole below chemical potential")
+G = ResponseFunction.New({ {{{1.234}},-1.0}, {{{1.3}}}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))[1][1]~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+print("One matrix pole below above potential")
+G = ResponseFunction.New({ {{{1.234}}, 1.0}, {{{1.3}}}, mu=0, type="ListOfPoles", name="G"})
+print("G with one pole, at positive energy as list of poles")
+print(G)
+GN = ResponseFunction.ChangeType(G,"Nat")
+print(GN)
+print(ResponseFunction.ToOperator(GN))
+if(Chop(GN(0.4,0.1)-G(0.4,0.1))[1][1]~=0) then
+	print(GN(0.4,0.1))
+	print(G(0.4,0.1))
+	error("Green's functions not the same")
+end
+
+
+print("a block list of poles with no poles at all")
+-- G(w) = a0, a constant, and every conversion has to keep it. BlockListOfPolesToBlockAnderson
+-- Matrix used to copy that offset with memcpy(B->aRe, &(A.a0Re), ...): a0Re is the pointer
+-- to the block and A is passed by value, so &(A.a0Re) is the address of that pointer on the
+-- stack and the copy took BlockSize^2 doubles from an eight byte object. G came back as
+-- whatever followed it -- 6.9e-310 and once -1.79769e+308, which is the ValueNotSet sentinel
+-- of ChangeType read as data. It reached And, and DoubleTri through it; Tri, Nat and the
+-- copy were never affected, which is why nothing caught it.
+do
+	local A0 = {{1.25, 0.5}, {0.5, -0.75}}
+	local GL = ResponseFunction.New({{A0}, {}, mu = 0, type = "ListOfPoles", name = "n0"})
+	for i, ty in ipairs({"ListOfPoles", "And", "Tri", "Nat", "DoubleTri"}) do
+		local opt = ((ty == "Nat") or (ty == "DoubleTri")) and {{"EffectivekBT", 0.025}} or {}
+		local G = ResponseFunction.ChangeType(GL, ty, opt)
+		local t = G(0.3, 0.1)
+		for x = 1, 2 do
+			for y = 1, 2 do
+				if (math.abs(Complex.Re(t[x][y]) - A0[x][y]) > 1E-14) or
+				   (math.abs(Complex.Im(t[x][y])) > 1E-14) then
+					error("a block list of poles with no poles does not stay G = a0 as " .. ty, 1)
+				end
+			end
+		end
+	end
+	print("  G = a0 survives every conversion, BlockSize 2")
+	-- and at BlockSize 1, where the same copy took exactly the pointer and no more
+	local G1 = ResponseFunction.New({{{{2.5}}}, {}, mu = 0, type = "ListOfPoles", name = "n1"})
+	for i, ty in ipairs({"ListOfPoles", "And", "Tri"}) do
+		local G = ResponseFunction.ChangeType(G1, ty)
+		if math.abs(Complex.Re(G(0.3, 0.1)[1][1]) - 2.5) > 1E-14 then
+			error("a block list of poles with no poles does not stay G = a0 as " .. ty .. " at BlockSize 1", 1)
+		end
+	end
+	print("  and at BlockSize 1")
+end
 
 collectgarbage()
 print("--------------------------------------------------------")

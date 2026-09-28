@@ -245,6 +245,11 @@ typedef struct ConvergenceSettingsType
   uint32_t NTri2;           /* number of Krylov states in single shot tri-diagonalization routines used for resonant spectra */
   double   zero;            /* smallest number different from one in convergence tests */
   double   epsilon;         /* smallest absolute prefactor of a determinant in wave-functions considered different from 0 */
+  double   SingularValue;   /* smallest singular value of a list of wave-functions considered different from 0 when orthonormalizing.
+                               Independent of epsilon: epsilon says which determinants we keep, SingularValue which
+                               directions of a list we can still resolve.  The orthonormalization goes through the overlap
+                               matrix, which squares the condition number, so the routines raise this to
+                               3*sqrt(DBL_EPSILON)*SingularValueMax whenever that is larger. */
   double   EffT;            /* effective temperature in mean-field convergence loops*/
   uint32_t NBitsKey;        /* number of bits in key */
   DeterminantRestrictionType restrictions;  /* restrictions on possible determinatns */
@@ -283,6 +288,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     100 /*NTri2*/,
     100*sqrt(DBL_EPSILON) /*zero, i.e. smallest variance to determine convergence */,
     sqrt(DBL_EPSILON)/100 /*epsilon i.e. smallest prefactor of function to keep */,
+    sqrt(DBL_EPSILON)     /*SingularValue i.e. smallest singular value of a list of functions to keep */,
     0.00008621738         /* 1K, EffT */,
     16                    /*bits in key*/,
     {0, 0, 0, 0, NULL, NULL, NULL} /*restrictions*/,
@@ -523,17 +529,22 @@ ListOfPoles;
  *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
  *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
  *
- *   avc0 = (a0val + a0con)/2
+ *   avc0 = a0val + a0con
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
  *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
+ *
+ *   The Green's function representation is
+ *   G(w) = a0 + b0 * 1/(w - avc0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bc0 * 1/(w - ac1 - bc1 (...) bc1) * bc0) * b0
+ *   G(w) = a0 + b0 * 1/(w - Gval(w) - Gcon(w) ) b0
+ *
  */
 typedef struct DoubleTriDiagonalMatrixType
 {
   char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
   double mu;                    /* border if a number belongs to val or con */
-  double Epsilon;               /* values in a range of [Ef-1/2 Epsilon , Ef+1/2 Epsilon] contribute half to val and half to con */
+  double kBT;                   /* Temperatrue (Fermi function) used to determine if a state belongs to the valence or conduction chain */
   double a0;                    /* storing a possible real shift if a continued fraction notation is used */
   double b0;                    /* storing a possilbe over-all scaling if a continued fraction notation is used */
   TriDiagonalMatrixType val;
@@ -551,7 +562,7 @@ DoubleTriDiagonalMatrixType;
  *     ( 0              | 0              | 0              | 0           | 0           | A[6][5]=bc1 | A[6][6]=ac2 | A[6][7]=bc2 )
  *     ( 0              | 0              | 0              | 0           | 0           | 0           | A[7][6]=bc2 | A[7][7]=ac3 )
  *
- *   avc0 = (a0val + a0con)/2
+ *   avc0 = a0val + a0con
  *
  *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
  *
@@ -835,11 +846,49 @@ typedef struct BlockNaturalImpurityOrbitalMatrixType
 BlockNaturalImpurityOrbitalMatrixType;
 
 
+/*
+ *     ( A[0][0]=avc0| A[0][1]=bv0 | 0           | 0           | A[0][4]=bc0 | 0           | 0           )
+ *   A=( A[1][0]=bv0 | A[1][1]=av1 | A[1][2]=bv1 | 0           | 0           | 0           | 0           )
+ *     ( 0           | A[2][1]=bv1 | A[2][2]=av2 | A[2][3]=bv2 | 0           | 0           | 0           )
+ *     ( 0           | 0           | A[3][2]=bv2 | A[3][3]=av3 | 0           | 0           | 0           )
+ *     ( A[4][0]=bc0 | 0           | 0           | 0           | A[4][4]=ac1 | A[4][5]=bc1 | 0           )
+ *     ( 0           | 0           | 0           | 0           | A[5][4]=bc1 | A[5][5]=ac2 | A[5][6]=bc2 )
+ *     ( 0           | 0           | 0           | 0           | 0           | A[6][5]=bc2 | A[6][6]=ac3 )
+ *
+ *   avc0 = a0val + a0con
+ *
+ *   (A B)[i][j] = \sum_k A[i][k] B[k][j]
+ *
+ *   Note that the block A[1;;3][1;;3] and the block A[4;;6][4;;6] are normal tri-diagonal matrices
+ *
+ *   The Green's function representation is
+ *   G(w) = a0 + b0 * 1/(w - avc0 - bv0 * 1/(w - av1 - bv1 (...) bv1) * bv0 - bc0 * 1/(w - ac1 - bc1 (...) bc1) * bc0) * b0
+ *   G(w) = a0 + b0 * 1/(w - Gval(w) - Gcon(w) ) b0
+ *
+ */
+typedef struct BlockDoubleTriDiagonalMatrixType
+{
+  char   Name[MAXStrLength];    /* A pointer to a name string that can be used to lable functions, good for printing etc. */
+  uint32_t BlockSize;          /* dimension of square matrices */
+  uint32_t QComplex;           /* matrices are complex or real */
+  double mu;                    /* border if a number belongs to val or con */
+  double kBT;                   /* Temperatrue (Fermi function) used to determine if a state belongs to the valence or conduction chain */
+  CompactMatrixType a0;         /* storing a possible real shift if a continued fraction notation is used */
+  CompactMatrixType b0;         /* storing a possilbe over-all scaling if a continued fraction notation is used */
+  BlockTriDiagonalMatrixType val;
+  BlockTriDiagonalMatrixType con;
+}
+BlockDoubleTriDiagonalMatrixType;
+
+
+
+
 /*  ResponsefunctionType defines a single type that can hold (Block) matrices of different forms
  *  l or L for (Block)ListOfPoles
  *  a or A for (Block)AndersonMatrix
  *  t or T for (Block)TridiagonalMatrix
  *  n or N for (Block)NaturalMatrix
+ *  d or D for (Block)DoubleTridiagonalMatrix
  *
  *  boolean Block is true for block matrtices, false for non-block matrices
  *
@@ -871,7 +920,7 @@ BlockNaturalImpurityOrbitalMatrixType;
 
 typedef struct ResponsefunctionType
 {
-  char type;                               // l,a,t,n or L,A,T,N
+  char type;                               // l,a,t,n,d or L,A,T,N,D
   bool Block;
   void * data;
   double *SuggestedGrid;                   // should be removed as we never used it
@@ -967,6 +1016,11 @@ AtomType;
 /*  rUnitCell contains the unit cell in Angstrom
  *  gUnitCell contains the reciprocal lattice vectors
  *  NAtoms the number of atoms within the basis
+ *  Any of the vectors in rUnitCell is allowed to be set to INFINITY indicating this direction has no periodicity
+ *  If the norm of all vectors in rUnitCell is finite we have a 3D crystal
+ *  If the norm of only two vectors in rUnitCell is finite we have a 2D slab
+ *  If the norm of only one vector in rUnitCell is finite we have a 1D chain
+ *  If the norm of all vectors in rUnitCell is INFINITY we have a molecule
  */
 typedef struct CrystalStructureType
 {

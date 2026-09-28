@@ -26,6 +26,7 @@
 #include "WaveFunctionArithmetic.h"
 #include "WaveFunctionPerturbationArithmetic.h"
 #include "ResponseFunction.h"
+#include "ResponseFunctionBathExcitations.h"
 
 
 #include "FiniteTemperatureLanczos.h"

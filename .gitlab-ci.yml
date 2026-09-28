@@ -13,26 +13,13 @@ build-job:
   variables:
    FF_POSIXLY_CORRECT_ESCAPES: "true"
   script:
-  - set -x
-  - echo "Start"
-  - source /etc/profile.d/lmod.sh
-  - export LANG=en_US.utf8
-  - export LC_ALL=en_US.utf8
-  - module load intel/2019
-  - whoami
-  - echo "$PATH"
-  - which icc || true
-  - which gcc || true
-  - icc --version || true
-  - gcc --version || true
-  - ls -l /usr/bin/gcc || true
-  - readlink -f /usr/bin/gcc || true
-  - ls -l "$(readlink -f /usr/bin/gcc)" || true
-  - file /usr/bin/gcc || true
-  - namei -l /usr/bin/gcc || true
-  - /usr/bin/gcc --version || true 
-  - echo "current working directory $(pwd) "
-  - icc LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -ipo -xhost -static -qopenmp -I"${MKLROOT}/include" -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -o Quanty.exe
+    - set -x
+    - echo "Start"
+    - export LANG=en_US.utf8
+    - export LC_ALL=en_US.utf8
+    - module load intel/2021
+    - echo "current working directory $(pwd)"
+    - icpx LuaInterface/main.cpp -D LUA_USE_LINUX -O2 -fp-model=precise -fimf-precision=high -ipo -march=core-avx2 -static-intel -qopenmp -I"${MKLROOT}/include" -Wl,--start-group "${MKLROOT}/lib/intel64/libmkl_intel_lp64.a" "${MKLROOT}/lib/intel64/libmkl_sequential.a" "${MKLROOT}/lib/intel64/libmkl_core.a" -Wl,--end-group -lpthread -lm -ldl -o Quanty.exe
   artifacts:
     paths:
     - Quanty.exe
@@ -40,30 +27,50 @@ build-job:
 
 sync_develop_to_public:
   stage: deploy
+  variables:
+    GIT_DEPTH: "0"
   script:
-  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
-  - git fetch origin develop
-  - git checkout develop
-  - git pull origin develop
-  - git remote remove public || true
-  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
-  - git push public develop:main
+    - git push "https://git:${QuantyBotDevelop}@git.quanty.org/Quanty/develop.git" "${CI_COMMIT_SHA}:refs/heads/main"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
+    - if: '$IS_PRIVATE_REPO == "true" && $CI_COMMIT_BRANCH == "develop"'
 
-    
 sync_release_to_public:
   stage: deploy
+  variables:
+    GIT_DEPTH: "0"
   script:
-  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
-  - git fetch origin master
-  - git checkout master
-  - git pull origin master
-  - git remote remove public || true
-  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
-  - git push public master:main
+    - git push "https://git:${QuantyBotRelease}@git.quanty.org/Quanty/release.git" "${CI_COMMIT_SHA}:refs/heads/main"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$IS_PRIVATE_REPO == "true" && $CI_COMMIT_BRANCH == "master"'
+
+
+
+#sync_develop_to_public:
+#  stage: deploy
+#  script:
+#  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+#  - git fetch origin develop
+#  - git checkout develop
+#  - git pull origin develop
+#  - git remote remove public || true
+#  - git remote add public https://QuantyBotDevelop:${QuantyBotDevelop}@git.quanty.org:4443/Quanty/Develop.git
+#  - git push public develop:main
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+    
+#sync_release_to_public:
+#  stage: deploy
+#  script:
+#  - if [ "$IS_PRIVATE_REPO" != "true" ]; then exit 0; fi
+#  - git fetch origin master
+#  - git checkout master
+#  - git pull origin master
+#  - git remote remove public || true
+#  - git remote add public https://QuantyBotRelease:${QuantyBotRelease}@git.quanty.org:4443/Quanty/Release.git
+#  - git push public master:main
+#  rules:
+#    - if: '$CI_COMMIT_BRANCH == "master"'
 
 
 # =========================================================================
@@ -118,6 +125,7 @@ test-jobs-matrix:
           - "GeneralEigensystem"
           - "Identity"
           - "Inverse"
+          - "LapackBug"
           - "New"
           - "NullSpace"
           - "Random"
@@ -174,15 +182,27 @@ test-jobs-Responsefunction:
           - "__index"
           - "__mul"
           - "__sub"
+          - "AddTri"
+          - "CalculateGBathFromGAndSigma"
           - "CalculateGfromG0AndSigma"
           - "CalculateHybridizationFunction"
+          - "CalculateRho"
           - "CalculateSelfEnergy"
           - "ChangeType"
+          - "ChangeTypeAndersonBlock"
+          - "ChangeTypeDoubleTri"
+          - "ChangeTypeDoubleTriBlock"
+          - "ChangeTypeFromDoubleTri"
+          - "ChangeTypeNTriMax"
           - "Chop"
           - "CreateBitMasks"
           - "Deflation"
+          - "Downfold"
+          - "DownfoldMesh"
           - "EffectiveHamiltonian"
+          - "Eigensystem"
           - "FromEffectiveHamiltonian"
+          - "GetB0"
           - "InvertEnergy"
           - "LengthZero"
           - "MergePolesInInterval"
@@ -190,6 +210,7 @@ test-jobs-Responsefunction:
           - "Pole_Reduction"
           - "ReducePoles"
           - "RemovePolesInInterval"
+          - "Rotate"
           - "ToMatrix"
           - "ToOperator"
           - "ToSpectra"
@@ -221,12 +242,22 @@ test-jobs-tightbinding:
           - "__newindex"
           - "AddSpin"
           - "CalculateBands"
+          - "CalculateBandsSelfEnergy"
+          - "CalculateBandsMesh"
           - "CalculateG"
+          - "CalculateGAgainstCreateSpectra"
+          - "CalculateGMesh"
+          - "CalculateGSigmaPerAtom"
+          - "CalculateGSigmaTypes"
+          - "CalculateMu"
           - "Chop"
           - "Copy"
           - "Derivative"
+          - "HybridizationFunction"
           - "New"
           - "PhaseTests"
+          - "ShiftOnsiteEnergy"
+          - "SlaterKoster"
           - "UnitTest"
   script:
     - export OMP_NUM_THREADS=8
@@ -246,6 +277,8 @@ test-jobs:
   parallel:
     matrix:
       - TEST_NAME:
+          - "AngularMomentumOperators"
+          - "BitMaskCombine"
           - "BitMaskToIndex"
           - "BlockBandDiagonalize"
           - "Braket"
@@ -259,6 +292,9 @@ test-jobs:
           - "CreateFluorescenceYield"
           - "CreateResonantSpectra"
           - "CreateSpectra"
+          - "CreateSpectraPoleRange"
+          - "CreateSpectraWithSelfEnergy"
+          - "CreateSpectraWithBathExcitations"
           - "CreateClusterHamiltonian"
           - "CreateAtomicIndicesDict"
           - "CreateAtomicIndicesList"
@@ -274,6 +310,7 @@ test-jobs:
           - "ioGetPut"
           - "MeanFieldGroundstate"
           - "MeanFieldOperator"
+          - "NewOperatorBasis"
           - "NewTightBinding"
           - "NewWavefunction"
           - "OperatorToHoles"
@@ -282,6 +319,8 @@ test-jobs:
           - "PartialMeanFieldOperator"
           - "PartialOperator"
           - "Rotate"
+          - "ScriptDirectory"
+          - "ShellAverage"
           - "Statistics"
           - "TensorProduct"
           - "TimeStartStopPrintSet"
@@ -297,3 +336,26 @@ test-jobs:
   dependencies:
     - build-job
 
+
+# =========================================================================
+# ===== Test what Quanty makes of its command line
+# ===== These are set in LuaInterface/main.cpp and need a command line of their
+# ===== own, so they can not run in the matrix above
+#
+
+test-jobs-commandline:
+  stage: test
+  script:
+    - export OMP_NUM_THREADS=8
+    # args holds the arguments that follow the input file
+    - ./Quanty.exe "TestScripts/Args.Quanty" 3.5 NiO -x
+    # and is nil when there are none
+    - ./Quanty.exe "TestScripts/Args.Quanty"
+    # reaching the end of the input of the interactive prompt is not an error
+    # the line is printed with a marker, since the prompt itself is written to
+    # the same line whenever lua is built without readline
+    - echo 'print("interactive prompt ran "..(1+1))' | ./Quanty.exe > interactive.log 2>&1
+    - grep -q "interactive prompt ran 2" interactive.log
+    - if grep -q "attempt to call" interactive.log ; then cat interactive.log ; exit 1 ; fi
+  dependencies:
+    - build-job

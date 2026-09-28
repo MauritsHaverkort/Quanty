@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
   TimeStampAll();
 
-  int status,result;
+  int result;
   
   lua_State *L = luaL_newstate();
   luaL_openlibs(L);
@@ -95,10 +95,9 @@ int main(int argc, char *argv[])
   if (argc < 2)
   {
     // run Quanty interactively
+    // dotty reads, executes and reports one line at a time and returns with an
+    // empty stack once the input ends, there is nothing left to call or report
     dotty(L);
-    status = lua_pcall(L, 2, 1, 0);
-    result = lua_toboolean(L, -1);  /* get result */
-    finalreport(L, status);
   }
   else
   {
@@ -108,6 +107,15 @@ int main(int argc, char *argv[])
       printf("Error while loading the script:\n%s\n\n", lua_tostring(L, -1));
       lua_close(L);
       return 1;
+    }
+    // the directory of the script, such that a script can find files next to
+    // itself independent of the directory from which Quanty was called
+    char * ScriptDirectory = MWHFileDirectory(argv[1]);
+    if (ScriptDirectory != NULL)
+    {
+      lua_pushstring(L,ScriptDirectory);
+      lua_setglobal(L,"ScriptDirectory");
+      free(ScriptDirectory);
     }
     if (argc > 2)
     {

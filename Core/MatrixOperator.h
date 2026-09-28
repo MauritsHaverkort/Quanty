@@ -1,3 +1,7 @@
+int DoubleTriDiagonalMatrixToImpurityHamiltonian(OperatorType * O, DoubleTriDiagonalMatrixType * M, bool AddSpin, uint32_t FermionShift, uint32_t NF);
+
+
+
 uint32_t TriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O, TriDiagonalMatrixType Mup, TriDiagonalMatrixType Mdn, double U, double mu);
 uint32_t AndersonMatrixToAndersonImpurityOperator(OperatorType * O, AndersonMatrixType Mup, AndersonMatrixType Mdn,double U, double mu);
 uint32_t SecondDoubleTriDiagonalMatrixToAndersonImpurityOperator(OperatorType * O,SecondDoubleTriDiagonalMatrixType Mup,SecondDoubleTriDiagonalMatrixType Mdn, double U,double mu);

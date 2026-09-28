@@ -1,0 +1,335 @@
+-- CalculateG of a tight binding model against CreateSpectra of the same model written as an
+-- operator. Both are the one particle Green's function
+--
+--   G_ij(z) = <0| a_i 1/(z - H) a_j^dag |0> = [ (z - h)^-1 ]_ij      with H = sum_ij h_ij a_i^dag a_j
+--
+-- so both must equal the resolvent of the one particle matrix h, which the script builds itself
+-- from the same hopping blocks it hands to the tight binding model.
+--
+-- The model is a molecule, not a crystal: an s, a p, a d and an f shell on four atoms at fixed,
+-- arbitrary positions in a cell much larger than the molecule, with all hopping inside the cell and
+-- Nk = {1,1,1}. Every pair of atoms is connected by Slater-Koster hopping (sp sigma up to df delta),
+-- multiplied by a Peierls phase per bond. The phases around the triangles do not add up to zero, so no
+-- change of the phases of the orbitals makes h real. The p, d and f shells get an imaginary, hermitian
+-- on-site term and all orbitals different on-site energies. Then h is complex and not symmetric, and
+-- G, G^T = G(h^*), G(-h), G with two orbitals exchanged all differ. The script checks that they do,
+-- so that each comparison below can fail.
+--
+-- The energy grid of CalculateG is set to the eigenvalues, so that every pole sits on a grid point
+-- and the grid changes nothing. Tested, at a few complex energies, against the resolvent:
+--   the operator of CreateClusterHamiltonian {"open", ...} equals Matrix.ToOperator(h),
+--   CreateSpectra from the vacuum with the 16 creation operators,
+--   CalculateG, the default route and {"Method","Mesh"},
+--   the same with a self energy, a complex a0 plus two poles with complex residues W = V V^dag that
+--   couple all atoms, against (z - h - Sigma(z))^-1 and against CreateSpectra of the operator in
+--   which the self energy is written as bath orbitals coupled by V; the self energy as a list of
+--   poles and as a chain (two different routes),
+--   Emin, Emax and NE against the same uniform grid given as EnergyGrid,
+--   the augmented propagators of {"HybridizationFunction",true}, default route and Mesh.
+-- Until 2026-09-26 every CalculateG route returned G^T; the distance to the transposed resolvent is
+-- printed next to each comparison.
+
+print("--------------------------------------------------------")
+print("-- TightBinding - CalculateG against CreateSpectra    --")
+print("--------------------------------------------------------")
+Verbosity(0)
+
+-- ===== the molecule ==================================================================
+L       = {0, 1, 2, 3}
+Name    = {"S", "P", "D", "F"}
+Shell   = {"s", "p", "d", "f"}
+Pos     = {{ 0.00,  0.00,  0.00},
+           { 1.37,  0.52, -0.41},
+           {-0.66,  1.84,  0.93},
+           { 0.48, -1.12,  1.71}}
+-- on-site energy per orbital and the imaginary on-site coupling of neighbouring orbitals
+Onsite  = {{-2.30},
+           {-0.70, -0.45, -0.95},
+           { 0.35,  0.60,  0.10,  0.85,  0.20},
+           { 1.40,  1.10,  1.65,  1.25,  1.90,  1.05,  1.55}}
+OnsiteI = {0, 0.21, -0.17, 0.13}
+-- Slater-Koster parameters {sigma, pi, delta} and the Peierls phase of each bond
+SK      = {{{1,2}, { 1.21},               0.37},
+           {{1,3}, {-0.83},              -1.21},
+           {{1,4}, { 0.47},               2.05},
+           {{2,3}, {-1.12,  0.58},        0.83},
+           {{2,4}, { 0.74, -0.36},       -0.54},
+           {{3,4}, {-0.91,  0.43, -0.22}, 1.46}}
+
+NF    = 16
+Start = {0, 1, 4, 9}    -- the index of the first orbital of each atom
+
+local function OrbitalNames(n)
+  local t = {}
+  for m = 1, n do t[m] = tostring(m) end
+  return t
+end
+
+local function Table(M, ni, nj)
+  local t = {}
+  for i = 1, ni do t[i] = {} for j = 1, nj do t[i][j] = M[i][j] end end
+  return t
+end
+
+-- the dagger of a table
+local function Dagger(M)
+  local t = {}
+  for i = 1, #M[1] do t[i] = {} for j = 1, #M do t[i][j] = Conjugate(M[j][i]) end end
+  return t
+end
+
+HTB = NewTightBinding()
+HTB.Name  = "s, p, d and f on four atoms"
+HTB.Cell  = {{20,0,0},{0,20,0},{0,0,20}}
+atoms = {}
+for a = 1, 4 do atoms[a] = {Name[a], Pos[a], {{Shell[a], OrbitalNames(2*L[a]+1)}}} end
+HTB.Atoms = atoms    -- HTB.Atoms reads back a copy, so fill a table first
+
+hop = {}
+h = {}
+for i = 1, NF do h[i] = {} for j = 1, NF do h[i][j] = 0 end end
+local function AddBlock(a, b, M)
+  local v = {Pos[b][1]-Pos[a][1], Pos[b][2]-Pos[a][2], Pos[b][3]-Pos[a][3]}
+  hop[#hop+1] = {Name[a].."."..Shell[a], Name[b].."."..Shell[b], v, M}
+  for i = 1, #M do for j = 1, #M[1] do
+    h[Start[a]+i][Start[b]+j] = h[Start[a]+i][Start[b]+j] + M[i][j]
+  end end
+end
+
+for a = 1, 4 do
+  local n, M = 2*L[a]+1, {}
+  for i = 1, n do M[i] = {} for j = 1, n do M[i][j] = 0 end M[i][i] = Onsite[a][i] end
+  for i = 1, n-1 do M[i][i+1] = OnsiteI[a]*I  M[i+1][i] = -OnsiteI[a]*I end
+  AddBlock(a, a, M)
+end
+for _, bond in ipairs(SK) do
+  local a, b = bond[1][1], bond[1][2]
+  local v = {Pos[b][1]-Pos[a][1], Pos[b][2]-Pos[a][2], Pos[b][3]-Pos[a][3]}
+  local phase = math.cos(bond[3]) + I*math.sin(bond[3])
+  local M = Table(phase * TightBinding.SlaterKosterTable(L[a], L[b], v, bond[2]), 2*L[a]+1, 2*L[b]+1)
+  AddBlock(a, b, M)
+  AddBlock(b, a, Dagger(M))    -- no automatic hermitian conjugate
+end
+HTB.Hopping = hop
+h = Matrix.New(h)
+
+-- ===== helpers =======================================================================
+local function MaxAbs(M, n)
+  local d = 0
+  for i = 1, n do for j = 1, n do d = math.max(d, Abs(M[i][j])) end end
+  return d
+end
+
+local function TransposeOf(M, n)
+  local t = {}
+  for i = 1, n do t[i] = {} for j = 1, n do t[i][j] = M[j][i] end end
+  return Matrix.New(t)
+end
+
+-- the resolvent (z - Hm)^-1 and its upper left n x n block
+local function Resolvent(Hm, N, n, w, gamma)
+  return Matrix.Sub(Matrix.Inverse((w + I*gamma/2) * Matrix.Identity(N) - Hm), n)
+end
+
+-- the energies at which G is compared; Gamma is the full width, z = w + i Gamma/2
+Energies = {-3.1, -1.7, -0.6, 0.4, 1.3, 2.6}
+Gamma    = 0.2
+
+-- the largest |Gr(w,Gamma) - Ref(w)| over the energies, relative to the largest |Ref|
+local function Distance(Gr, Ref, n)
+  local d, s = 0, 0
+  for _, w in ipairs(Energies) do
+    local R = Ref(w)
+    d = math.max(d, MaxAbs(Gr(w, Gamma) - R, n))
+    s = math.max(s, MaxAbs(R, n))
+  end
+  return d / s
+end
+
+-- the distance to the transposed resolvent is printed to tell a transposed G from other errors
+local function Compare(name, Gr, Ref, n, threshold)
+  local d  = Distance(Gr, Ref, n)
+  local dT = Distance(Gr, function(w) return TransposeOf(Ref(w), n) end, n)
+  print(string.format("%-46s %.3e (threshold %.0e, to G^T %.3e)", name, d, threshold, dT))
+  if not (d <= threshold) then error(name..": differs from the resolvent by "..d.." relative\n", 1) end
+end
+
+-- the sorted eigenvalues of Hm, padded by one on both sides: an energy grid on which every pole of
+-- G sits on a grid point, so that the grid of CalculateG changes nothing
+local function EigenGrid(Hm)
+  local e = Matrix.Eigensystem(Hm)
+  local g = {}
+  for i = 1, #e do g[i] = e[i] end
+  table.sort(g)
+  local t = {g[1] - 1}
+  for i = 1, #g do if g[i] - t[#t] > 1e-6 then t[#t+1] = g[i] end end
+  t[#t+1] = g[#g] + 1
+  return t
+end
+
+-- ===== the cases the comparisons have to tell apart =================================
+local function Ref0(w) return Resolvent(h, NF, NF, w, Gamma) end
+P = {}
+for i = 1, NF do P[i] = {} for j = 1, NF do P[i][j] = 0 end end
+for i = 1, NF do P[i][i] = 1 end
+P[2][2], P[3][3], P[2][3], P[3][2] = 0, 0, 1, 1    -- exchange two p orbitals
+P = Matrix.New(P)
+Wrong = {{"G^T",                function(w) return TransposeOf(Ref0(w), NF) end},
+         {"G(-h)",              function(w) return Resolvent(-1*h, NF, NF, w, Gamma) end},
+         {"two orbitals exchanged", function(w) return P * Ref0(w) * P end}}
+print(string.format("%-46s %.3e", "max |h - h^T|", MaxAbs(h - TransposeOf(h, NF), NF)))
+for _, c in ipairs(Wrong) do
+  local d = 0
+  for _, w in ipairs(Energies) do d = math.max(d, MaxAbs(c[2](w) - Ref0(w), NF) / MaxAbs(Ref0(w), NF)) end
+  print(string.format("%-46s %.3e", "resolvent against "..c[1], d))
+  if not (d > 1e-2) then error("the test cannot tell G from "..c[1].."\n", 1) end
+end
+
+-- ===== the operator ==================================================================
+Hop = CreateClusterHamiltonian(HTB, {"open", HTB.Atoms})
+d = MaxAbs(OperatorToMatrix(Hop - Matrix.ToOperator(h)), NF)
+print(string.format("%-46s %.3e", "operator of CreateClusterHamiltonian - Matrix.ToOperator(h)", d))
+if not (d < 1e-12) then error("the operator of the tight binding model is not sum h_ij a_i^dag a_j\n", 1) end
+
+-- ===== no self energy ================================================================
+Vacuum  = NewWavefunction(NF, 0, {{string.rep("0", NF), 1}})
+Cr      = {}
+for i = 1, NF do Cr[i] = NewOperator("Cr", NF, i-1) end
+SpecOpt = {{"Tensor",true},{"NTri",4},{"DenseBorder",0},{"Emin",-5},{"Emax",5},{"NE",100},{"Gamma",Gamma}}
+_, GSpec = CreateSpectra(Hop, Cr, Vacuum, SpecOpt)
+Compare("CreateSpectra", GSpec, Ref0, NF, 1e-10)
+
+grid = EigenGrid(h)
+Compare("CalculateG", CalculateG(HTB, {{"Nk",{1,1,1}},{"EnergyGrid",grid}}), Ref0, NF, 1e-10)
+Compare("CalculateG, Method Mesh",
+        CalculateG(HTB, {{"Nk",{1,1,1}},{"EnergyGrid",grid},{"Method","Mesh"}}), Ref0, NF, 1e-5)
+
+-- ===== a self energy =================================================================
+-- deterministic numbers in [-0.5,0.5), the same on every platform (not math.random)
+seed = 12345
+local function Random()
+  seed = (16807 * seed) % 2147483647
+  return seed / 2147483647 - 0.5
+end
+
+a0 = {}
+for i = 1, NF do a0[i] = {} for j = 1, NF do a0[i][j] = 0 end end
+for i = 1, NF do
+  a0[i][i] = 0.2*Random()
+  for j = i+1, NF do
+    a0[i][j] = 0.1*(Random() + I*Random())
+    a0[j][i] = Conjugate(a0[i][j])
+  end
+end
+a0 = Matrix.New(a0)
+-- two poles, each coupling to three bath orbitals at the same energy
+EPole = {-1.9, 1.6}
+NBath = 3
+V = {}
+for p = 1, #EPole do
+  V[p] = {}
+  for i = 1, NF do V[p][i] = {} for b = 1, NBath do V[p][i][b] = 0.4*(Random() + I*Random()) end end
+  V[p] = Matrix.New(V[p])
+end
+Sigma = ResponseFunction.New({{a0, EPole[1], EPole[2]},
+                              {V[1] * Matrix.ConjugateTranspose(V[1]), V[2] * Matrix.ConjugateTranspose(V[2])},
+                              mu=0, type="ListOfPoles"})
+
+-- h + Sigma as one hermitian matrix of the orbitals and the bath
+NExt = NF + #EPole * NBath
+HExt = {}
+for i = 1, NExt do HExt[i] = {} for j = 1, NExt do HExt[i][j] = 0 end end
+for i = 1, NF do for j = 1, NF do HExt[i][j] = h[i][j] + a0[i][j] end end
+for p = 1, #EPole do
+  for b = 1, NBath do
+    local k = NF + (p-1)*NBath + b
+    HExt[k][k] = EPole[p]
+    for i = 1, NF do
+      HExt[i][k] = V[p][i][b]
+      HExt[k][i] = Conjugate(V[p][i][b])
+    end
+  end
+end
+HExt = Matrix.New(HExt)
+local function RefSigma(w) return Resolvent(HExt, NExt, NF, w, Gamma) end
+
+-- the two forms of the reference agree
+d = 0
+for _, w in ipairs(Energies) do
+  local z = w + I*Gamma/2
+  local D = Matrix.Inverse(z * Matrix.Identity(NF) - h - Sigma(w, Gamma))
+  d = math.max(d, MaxAbs(D - RefSigma(w), NF) / MaxAbs(RefSigma(w), NF))
+end
+print(string.format("%-46s %.3e", "(z - h - Sigma)^-1 against the bath resolvent", d))
+if not (d < 1e-12) then error("the self energy is not the bath of HExt\n", 1) end
+
+-- the operator of the molecule was tested above, so the one with the bath can come from HExt
+HopExt = Matrix.ToOperator(HExt)
+VacExt = NewWavefunction(NExt, 0, {{string.rep("0", NExt), 1}})
+CrExt  = {}
+for i = 1, NF do CrExt[i] = NewOperator("Cr", NExt, i-1) end
+_, GSpec = CreateSpectra(HopExt, CrExt, VacExt, SpecOpt)
+Compare("CreateSpectra, self energy as a bath", GSpec, RefSigma, NF, 1e-10)
+
+grid = EigenGrid(HExt)
+Compare("CalculateG, self energy", CalculateG(HTB, Sigma, {{"Nk",{1,1,1}},{"EnergyGrid",grid}}), RefSigma, NF, 1e-10)
+Compare("CalculateG, self energy, Method Mesh",
+        CalculateG(HTB, Sigma, {{"Nk",{1,1,1}},{"EnergyGrid",grid},{"Method","Mesh"}}), RefSigma, NF, 1e-5)
+-- a chain is embedded in H instead of added as a list of poles, which is a different route
+SigmaTri = ResponseFunction.ChangeType(Sigma, "Tri")
+Compare("CalculateG, self energy as a chain",
+        CalculateG(HTB, SigmaTri, {{"Nk",{1,1,1}},{"EnergyGrid",grid}}), RefSigma, NF, 1e-10)
+
+-- ===== Emin, Emax and NE =============================================================
+-- a uniform grid spreads each pole over its two neighbours, so G is compared with the same grid
+-- given as EnergyGrid, which the comparisons above tested
+local function Same(name, G1, G2, n, threshold)
+  local d = Distance(G1, function(w) return G2(w, Gamma) end, n)
+  print(string.format("%-46s %.3e (threshold %.0e)", name, d, threshold))
+  if not (d <= threshold) then error(name..": differs from the same grid given as EnergyGrid by "..d.." relative\n", 1) end
+end
+e = Matrix.Eigensystem(HExt)
+for i = 1, #e do if math.abs(e[i]) > 9 then error("a pole at "..e[i].." lies outside the uniform grid\n", 1) end end
+uniform = {}
+for i = 0, 2000 do uniform[i+1] = -10 + i * 0.01 end
+Same("CalculateG, Emin, Emax and NE",
+     CalculateG(HTB, {{"Nk",{1,1,1}},{"Emin",-10},{"Emax",10},{"NE",2000}}),
+     CalculateG(HTB, {{"Nk",{1,1,1}},{"EnergyGrid",uniform}}), NF, 1e-10)
+Same("CalculateG, self energy, Emin, Emax and NE",
+     CalculateG(HTB, Sigma, {{"Nk",{1,1,1}},{"Emin",-10},{"Emax",10},{"NE",2000}}),
+     CalculateG(HTB, Sigma, {{"Nk",{1,1,1}},{"EnergyGrid",uniform}}), NF, 1e-10)
+
+-- ===== the augmented propagators of HybridizationFunction ============================
+-- per atom the propagator of the pair (c, h c), with c the orbitals of the atom and h the hopping
+-- without the self energy. With R = (z - h - Sigma(z))^-1 it is
+--   ( R_cc        (R h)_cc   )
+--   ( (h R)_cc    (h R h)_cc )
+-- What Downfold makes of it is a function of this matrix alone and tested with Downfold.
+Dim = {1, 3, 5, 7}
+local function AugRef(a, w)
+  local n, o = Dim[a], Start[a]
+  local R = RefSigma(w)
+  local Rh, hR, hRh = R * h, h * R, h * R * h
+  local t = {}
+  for i = 1, 2*n do t[i] = {} end
+  for i = 1, n do for j = 1, n do
+    t[i][j], t[i][n+j], t[n+i][j], t[n+i][n+j] = R[o+i][o+j], Rh[o+i][o+j], hR[o+i][o+j], hRh[o+i][o+j]
+  end end
+  return Matrix.New(t)
+end
+local function CheckAug(name, Aug, threshold)
+  if #Aug ~= 4 then error(name..": "..#Aug.." augmented propagators, 4 expected\n", 1) end
+  for a = 1, 4 do
+    Compare(name..", atom "..Name[a], Aug[a], function(w) return AugRef(a, w) end, 2*Dim[a], threshold)
+  end
+end
+G, Aug = CalculateG(HTB, Sigma, {{"Nk",{1,1,1}},{"EnergyGrid",grid},{"HybridizationFunction",true}})
+Compare("CalculateG with HybridizationFunction", G, RefSigma, NF, 1e-10)
+CheckAug("augmented", Aug, 1e-10)
+G, Aug = CalculateG(HTB, Sigma, {{"Nk",{1,1,1}},{"EnergyGrid",grid},{"HybridizationFunction",true},{"Method","Mesh"}})
+Compare("CalculateG with HybridizationFunction, Mesh", G, RefSigma, NF, 1e-5)
+CheckAug("augmented, Mesh", Aug, 1e-5)
+
+print("--------------------------------------------------------")
+print("-- End                                                --")
+print("--------------------------------------------------------")

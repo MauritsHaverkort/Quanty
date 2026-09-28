@@ -1,9 +1,12 @@
 void FreeBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M);
 uint32_t InitBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M);
+void AddSiteToEmptyTriDiagonalChain(TriDiagonalMatrixType * const M);
+void SetBADoubleTriDiagonalMatrixConValFromChains(BADoubleTriDiagonalMatrixType * const M);
 void SetBADoubleTriDiagonalMatrixConVal(BADoubleTriDiagonalMatrixType * const M);
 uint32_t MapSecondoubleTridiagonalMatrixToBA(SecondDoubleTriDiagonalMatrixType const A,  BADoubleTriDiagonalMatrixType * const M);
 uint32_t InitIdentityBADoubleTriDiagonalMatrix(BADoubleTriDiagonalMatrixType * const M);
 void BADoubleTriDiagonalMatrixChop(BADoubleTriDiagonalMatrixType * const M, double const epsilon);
+uint32_t BADoubleTriDiagonalMatrixTruncate(BADoubleTriDiagonalMatrixType * const M, uint32_t const Nval, uint32_t const Ncon);
 double BADoubleTriDiagonalMatrixInverse(BADoubleTriDiagonalMatrixType const M, MatrixType * const MI);
 void BADoubleTriDiagonalMatrixAdd(BADoubleTriDiagonalMatrixType * const M, BADoubleTriDiagonalMatrixType B,double alphaRe);
 void BADoubleTriDiagonalMatrixScalarMultiply(BADoubleTriDiagonalMatrixType * const M, double alphaRe);

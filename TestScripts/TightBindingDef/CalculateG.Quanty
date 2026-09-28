@@ -1,6 +1,47 @@
 -- Determine working directory (same as the directory of the input script)
 directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
 
+----------------------------
+--- Functions
+----------------------------
+-- create unifrom energy mesh in window [Emin,Emax]
+function CreateUniformEGrid(Emin, Emax, NE)
+	local EGrid = {}
+	local dE = (Emax-Emin)/NE
+	for i = 0, NE do
+		EGrid[i+1] = Emin + i*dE
+	end
+	return EGrid
+end
+
+-- generate non-uniform energy mesh: a list of n_rand random variables in range [a, b] based on normal probability distribution with center mu and standard derviation sigma
+function RandomVariate_NormalPDF(mu, sigma, a, b, n_rand)
+  local function f(m,s,y)
+  	return Exp(-(y-m)^2/(2*s^2))/(Sqrt(2*Pi)*s)
+  end
+  local fmax = f(mu,sigma,mu)
+  local rand_list = Matrix.Random({a,b},{n_rand,100000})
+  local out = {}
+  for i = 1, n_rand do
+	for j = 1, 100000 do
+		local x = rand_list[i][j]
+		if math.random() * fmax <= f(mu,sigma,x) then
+			out[i] = Copy(x)
+			break
+		end
+	end
+	if out[i] == nil then
+		error("rejection sampling did not converge -- check fmax bounds f")
+	end
+  end
+  table.sort(out)
+  return out
+end
+
+----------------------------
+--- End of Functions
+----------------------------
+
 -- this test creates plots for several local response functions of a few different tight binding Hamiltonians
 -- We furthermore add a local (k independent) self energy
    -- we compare the local response function calculated by integrating over k with a self energy to the
@@ -11,6 +52,7 @@ print("-- Begin TightBinding - CalculateG                    --")
 print("--------------------------------------------------------")
 TimeStart("All")
 
+print("Simple TB Model\n")
 TimeStart("Mini model")
 
 HTB = NewTightBinding()
@@ -27,11 +69,11 @@ print(HTB)
 
 Sigma = ResponseFunction.New({ {{{0,1},{1,0.5}},-1,3}, { {{1,0.5},{0.5,1}}, {{1,-0.5},{-0.5,2}} }, mu=0, type="ListOfPoles", name="Sigma 1"})
 
+NE = 200
 
 
-
-G0 = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",200}}))
-G  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",200}}))
+G0 = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",NE}}))
+G  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",NE}}))
 
 print(HTB(2*pi * 0/4,0,0))
 print(HTB(2*pi * 1/4,0,0))
@@ -49,10 +91,7 @@ print("G by summing over k")
 print(G)
 
 
-Grid={}
-for i=0,200 do
-	Grid[i+1] = i*0.1-10
-end
+Grid=CreateUniformEGrid(-10,10,NE)
 G1 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma,{{"EnergyGrid",Grid}}))
 G2 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0,Sigma))
 
@@ -96,12 +135,150 @@ TimeEnd("Mini model")
 TimePrint()
 --os.exit()
 
+print("Simple TB Model: check option EnergyGrid --- with G on uniform energy grid\n")
+
+TimeStart("Mini model: check EnergyGrid (uniform EGrid)")
+
+G0_grid = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"EnergyGrid",Grid}}))
+G_grid  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"EnergyGrid",Grid}}))
+
+-- compare G_grid with G evaluated at values of omega
+zero = 0*G0(1,0.1)
+for i = 1, #Grid, 5 do
+	local omega   = Grid[i]
+	if Chop(G0_grid(omega,0.1)-G0(omega,0.1),1E-12)~=zero then
+		error("Evaluated value of G_grid different than G!\n",1)
+	end
+	if Chop(G_grid(omega,0.1)-G(omega,0.1),1E-12)~=zero then
+		error("Evaluated value of G_grid different than G!\n",1)
+	end
+	local omega = Grid[i] + 0.5*20/NE
+	if Chop(G0_grid(omega,0.1)-G0(omega,0.1),1E-12)~=zero then
+		error("Evaluated value of G_grid different than G!\n",1)
+	end
+	if Chop(G_grid(omega,0.1)-G(omega,0.1),1E-12)~=zero then
+		error("Evaluated value of G_grid different than G!\n",1)
+	end
+	local omega = Grid[i] - 0.5*20/NE
+	if Chop(G0_grid(omega,0.1)-G0(omega,0.1),1E-12)~=zero then
+		error("Evaluated value of G_grid different than G!\n",1)
+	end
+	if Chop(G_grid(omega,0.1)-G(omega,0.1),1E-12)~=zero then
+		error("Evaluated value of G_grid different than G!\n",1)
+	end
+end
+
+G0Tri = ResponseFunction.ChangeType(G0_grid,"Tri")
+
+
+print("G0_grid")
+print(G0_grid)
+print("G0_grid Tridiagonal")
+print(G0Tri)
+print("G_grid by summing over k")
+print(G_grid)
+
+
+G1 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0_grid,Sigma,{{"EnergyGrid",Grid}}))
+G2 = Chop(ResponseFunction.CalculateGfromG0andSigma(G0_grid,Sigma))
+
+
+TimeStart("Plot")
+
+
+PlG  = Graphics.Plot(G_grid, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G1, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																				 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+PlG.Add(Graphics.Plot(G2, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+													               {{"LineWidth",0.002},{"LineColor",0xFF80FFFF}},
+													               {{"LineWidth",0.002},{"LineColor",0xFFFFFF80}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/PlG_SimpleModle_WithSigma_EnergyGrid_CheckUniformGrid.svg",'w')
+file:write(SVGPlG)
+file:close()
+TimeEnd("Plot")
 
 
 
 
+TimeEnd("Mini model: check EnergyGrid (uniform EGrid)")
+TimePrint()
 
 
+print("Simple TB Model with G on non-uniform energy grid")
+TimeStart("Mini model: check EnergyGrid (uniform and non-uniform EGrid)")
+
+G0 = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",NE}}))
+G  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"Emin",-10},{"Emax",10},{"NE",NE}}))
+
+EGrid = RandomVariate_NormalPDF(0,5,-10,10,NE)
+
+G0_nu = Chop(CalculateG(HTB, {{"NK",{3,1,1}},{"EnergyGrid",EGrid}}))
+G_nu  = Chop(CalculateG(HTB, Sigma, {{"NK",{3,1,1}},{"EnergyGrid",EGrid}}))
+
+
+
+
+TimeStart("Plot")
+PlG  = Graphics.Plot(G, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G_nu, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																				 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/PlG_SimpleModle_WithSigma_Uniform_vs_Nonuniform_EGrid.svg",'w')
+file:write(SVGPlG)
+file:close()
+
+PlG  = Graphics.Plot(G0, {{"PlotPoints",PlotPoints},
+														 {"LineStyle",{{},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
+																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+PlG.Add(Graphics.Plot(G0_nu, {{"PlotPoints",PlotPoints},
+													 {"LineStyle",{{},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF8080FF}},
+																				 {{"LineWidth",0.004},{"LineColor",0xFFFF8080}}}},
+													 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
+file = io.open(directory.."OutputPlots/PlG_SimpleModle_Uniform_vs_Nonuniform_EGrid.svg",'w')
+file:write(SVGPlG)
+file:close()
+TimeEnd("Plot")
+
+-- check first moment of the response functions: compare the G on uniform grid with G on non-uniform grid in the impuritry block
+
+G_u_mat  = ResponseFunction.ToMatrix(G0)
+G_nu_mat = ResponseFunction.ToMatrix(G0_nu)
+
+if not Chop(Matrix.Sub(G_u_mat,2,2)-Matrix.Sub(G_nu_mat,2,2)) == Matrix.New({{0,0},{0,0}}) then
+	error("Error: Impurity block not the same between G defeined on a uniform grid and G on non-uniform grid!\n",1)
+end
+
+G_u_mat  = ResponseFunction.ToMatrix(G)
+G_nu_mat = ResponseFunction.ToMatrix(G_nu)
+
+if not Chop(Matrix.Sub(G_u_mat,2,2)-Matrix.Sub(G_nu_mat,2,2)) == Matrix.New({{0,0},{0,0}}) then
+	error("Error: Impurity block not the same between G defeined on a uniform grid and G on non-uniform grid!\n",1)
+end
+
+TimeEnd("Mini model: check EnergyGrid (uniform and non-uniform EGrid)")
+TimePrint()
 
 print("Start by defining different model Hamiltonians ")
 
@@ -285,29 +462,77 @@ for i=1,#HTBList do
 	print("=========  "..HTBList[i].Name)
 	print("====================================================================")
 	
+	Emin      = -10
+	Emax      =  10
+	NE        =  200
+	dETick    = 2
+	PlotPoints=200
+
+	GridPoints   =CreateUniformEGrid(Emin,Emax,NE)
+	GridPoints_nu=RandomVariate_NormalPDF(0, (Emax-Emin)/4, Emin,Emax,NE)
+
 	-- calculate Gloc
 	TimeStart("kint")
-  Gloc = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
-  TimeEnd("kint")
+	Gloc         = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"Emin",Emin},{"Emax",Emax},{"NE",NE}})
+	TimeEnd("kint")
+
+	TimeStart("kint uniform grid")
+	Gloc_grid    = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"EnergyGrid",GridPoints}})
+	TimeEnd("kint uniform grid")
+	
+	TimeStart("kint non-uniform grid")
+	Gloc_grid_nu = CalculateG(HTBList[i], {{"NK",{60,60,60}},{"EnergyGrid",GridPoints_nu}})
+	TimeEnd("kint non-uniform grid")
 	
 	-- plot Gloc
-	Emin   = -10
-	Emax   =  10
-	dETick = 2
-	PlotPoints=200
 	TimeStart("Plot")
-	PlG = Graphics.Plot(Gloc,{{"PlotPoints",PlotPoints},{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+	PlG = Graphics.Plot(Gloc,{{"PlotPoints",PlotPoints},
+														    {"LineStyle",{{},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF000080}},
+																				 {{"LineWidth",0.004},{"LineColor",0xFF800000}}}},
+														{"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
+	PlG.Add(Graphics.Plot(Gloc_grid, {{"PlotPoints",PlotPoints},
+													    {"LineStyle",{{},
+																				 {{"LineWidth",0.001},{"LineColor",0xFF80FFFF}},
+																				 {{"LineWidth",0.001},{"LineColor",0xFFFFFF80}}}},
+													    {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+	PlG.Add(Graphics.Plot(Gloc_grid_nu, {{"PlotPoints",PlotPoints},
+													    {"LineStyle",{{},
+													   							 {{"LineWidth",0.0005},{"LineColor",0xFF8080FF}},
+													   							 {{"LineWidth",0.0005},{"LineColor",0xFFFF8080}}}},
+													    {"Frame",{{"Ymin",-1},{"dYTick",0.2},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}}))
+
 	SVGPlG = Graphics.ToSVG(PlG,{{"RelativeSize",true}})
 	file = io.open(directory.."OutputPlots/PlG_"..HTBList[i].Name..".svg",'w')
 	file:write(SVGPlG)
 	file:close()
 	TimeEnd("Plot")
-	GridPoints={}
-	dE = 0.1
-	for i=0,201 do
-		GridPoints[#GridPoints+1] = i*dE-10-dE/2
+
+	-- compare G_grid with G evaluated at values of omega
+	zero = 0*Gloc(1,0.1)
+	for i = 1, #GridPoints, 5 do
+		local omega   = GridPoints[i]
+		if Chop(Gloc_grid(omega,0.1)-Gloc(omega,0.1),1E-12)~=zero then
+			error("Evaluated value of G_grid different than G!\n",1)
+		end
+		local omega = GridPoints[i] + 0.5*20/NE
+		if Chop(Gloc_grid(omega,0.1)-Gloc(omega,0.1),1E-12)~=zero then
+			error("Evaluated value of G_grid different than G!\n",1)
+		end
+		local omega = GridPoints[i] - 0.5*20/NE
+		if Chop(Gloc_grid(omega,0.1)-Gloc(omega,0.1),1E-12)~=zero then
+			error("Evaluated value of G_grid different than G!\n",1)
+		end
 	end
-	
+
+	-- test option EnergyGrid by first by checking moment of the response functions: compare the G on uniform grid with G on non-uniform grid in the impuritry block
+	G_u_mat  = ResponseFunction.ToMatrix(Gloc)
+	G_nu_mat = ResponseFunction.ToMatrix(Gloc_grid_nu)
+	dim      = #Gloc(1,0.1)
+	if not Chop(Matrix.Sub(G_u_mat,dim,dim)-Matrix.Sub(G_nu_mat,dim,dim)) == Matrix.Zero(dim) then
+		error("Error: Impurity block not the same between G defeined on a uniform grid and G on non-uniform grid!\n",1)
+	end
+
 	-- loop over all defined self energies
 	for j=1,#SigmaList[i] do
 		print("====================================================================")
@@ -321,6 +546,43 @@ for i=1,#HTBList do
 		TimeStart("kint")
 		GlocS = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"Emin",-10},{"Emax",10},{"NE",200}})
 		TimeEnd("kint")
+
+		TimeStart("kint uniform grid")
+		GlocS_grid    = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"EnergyGrid",GridPoints}})
+		TimeEnd("kint uniform grid")
+	
+		TimeStart("kint non-uniform grid")
+		Gloc_grid_nu = CalculateG(HTBList[i],SigmaList[i][j], {{"NK",{60,60,60}},{"EnergyGrid",GridPoints_nu}})
+		TimeEnd("kint non-uniform grid")
+
+
+
+
+		-- compare G_grid with G evaluated at values of omega
+		zero = 0*Gloc(1,0.1)
+		for i = 1, #GridPoints, 5 do
+			local omega   = GridPoints[i]
+			if Chop(GlocS_grid(omega,0.1)-GlocS(omega,0.1),1E-12)~=zero then
+				error("Evaluated value of G_grid different than G!\n",1)
+			end
+			local omega = GridPoints[i] + 0.5*20/NE
+			if Chop(GlocS_grid(omega,0.1)-GlocS(omega,0.1),1E-12)~=zero then
+				error("Evaluated value of G_grid different than G!\n",1)
+			end
+			local omega = GridPoints[i] - 0.5*20/NE
+			if Chop(GlocS_grid(omega,0.1)-GlocS(omega,0.1),1E-12)~=zero then
+				error("Evaluated value of G_grid different than G!\n",1)
+			end
+		end
+
+	    -- test option EnergyGrid by first by checking moment of the response functions: compare the G on uniform grid with G on non-uniform grid in the impuritry block
+		G_u_mat  = ResponseFunction.ToMatrix(Gloc)
+		G_nu_mat = ResponseFunction.ToMatrix(Gloc_grid_nu)
+		dim      = #Gloc(1,0.1)
+		if not Chop(Matrix.Sub(G_u_mat,dim,dim)-Matrix.Sub(G_nu_mat,dim,dim)) == Matrix.Zero(dim) then
+			error("Error: Impurity block not the same between G defeined on a uniform grid and G on non-uniform grid!\n",1)
+		end
+
 		
 		print("Start Garbage")
 		io.flush()

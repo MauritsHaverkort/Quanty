@@ -82,6 +82,66 @@ static int LuaMatrixConjugate(lua_State * L)
   return 1;
 }
 
+
+/*
+ *
+ */
+static int LuaMatrixHermitianPart(lua_State * L)
+{
+  CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(A->Ni!=A->Nj) luaL_error(L, "HarmitianPart can only be called on square matrices");
+  if(len!=1) luaL_error(L, "Matrix.Conjugate called with %d arguments, only one expected",len);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    SquareCompactMatrixMakeHermitian(A);
+    LuaPushTable_CompactMatrixType(L, A);
+    FreeCompactMatrix(A);
+    free(A);
+  }
+  else
+  {
+    CompactMatrixType *B;
+    B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
+    CompactMatrixCopy(*A, B);
+    SquareCompactMatrixMakeHermitian(B);
+  }
+  return 1;
+}
+
+/*
+ *
+ */
+static int LuaMatrixAntiHermitianPart(lua_State * L)
+{
+  CompactMatrixType *A;
+  uint32_t len = (uint32_t)lua_gettop(L);
+  A = (CompactMatrixType *) luaL_checkCompactMatrix(L, 1);
+  if(A->Ni!=A->Nj) luaL_error(L, "AntiHarmitianPart can only be called on square matrices");
+  if(len!=1) luaL_error(L, "Matrix.Conjugate called with %d arguments, only one expected",len);
+  if (luaL_testudata(L, 1, "Matrix_Type") == NULL)
+  {
+    SquareCompactMatrixMakeAntiHermitian(A);
+    LuaPushTable_CompactMatrixType(L, A);
+    FreeCompactMatrix(A);
+    free(A);
+  }
+  else
+  {
+    CompactMatrixType *B;
+    B = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+    luaL_setmetatable(L, "Matrix_Type");
+    B->OnLuaStack=true;
+    CompactMatrixCopy(*A, B);
+    SquareCompactMatrixMakeAntiHermitian(B);
+  }
+  return 1;
+}
+
+
 /*
  *
  */
@@ -2300,6 +2360,57 @@ static int LuaMatrixAddSpin(lua_State * L)
 	return 1;
 }
 
+static int LuaMatrixRemoveSpin(lua_State *L)
+{
+  CompactMatrixType M, Mout;
+  int len = lua_gettop(L);
+  if (len != 1)
+    return luaL_error(L, "Error: LuaMatrixRemoveSpin called with %d argmuents, only 1 expected, a Matrix.", len);
+  lua_check(L, 1, M);
+  if (M.Ni % 2 != 0 || M.Nj % 2 != 0)
+    return luaL_error(L, "Error: LuaMatrixRemoveSpin called with a matrix of dimension %d times %d. Number of rows and columns must each be even.", M.Ni, M.Nj);
+  Mout = removeSpin(M);
+  Mout.OnLuaStack = M.OnLuaStack;
+  lua_push(L, Mout);
+  FreeCompactMatrix(&M);
+  FreeCompactMatrix(&Mout);
+  return 1;
+}
+
+static int LuaMatrixTrace(lua_State *L)
+{
+  CompactMatrixType *M=NULL;
+  SparseMatrixType *S=NULL;
+  uint32_t len = (uint32_t) lua_gettop(L);
+  if (len != 1) luaL_error(L, "Matrix.Trace called with %d arguments, only one expected.", len);
+  if (luaL_isType(L, 1, *M))
+  {
+    lua_check(L, 1, M);
+    if (M->Ni != M->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+    if (M->QComplex == 0)
+      lua_push(L, RealMatrixTrace(M));
+    else
+      lua_push(L, ComplexMatrixTrace(M));
+  }
+  else if (luaL_isType(L, 1, *S))
+  {
+    lua_check(L, 1, S);
+    if (S->Ni != S->Nj) return luaL_error(L, "Error: Matrix.Trace called with a non-quadratic matrix.");
+    if (S->QComplex == 0)
+      lua_push(L, RealSparseMatrixTrace(S));
+    else
+      lua_push(L, ComplexSparseMatrixTrace(S));
+  }
+  else
+  {
+    return luaL_error(L, "MatrixTrace called with an unrecognised type!");
+  }
+  return 1;
+}
+
+
+
+
 static int LuaMatrixToOperator(lua_State * L)
 {
   CompactMatrixType M;
@@ -2640,6 +2751,7 @@ static int LauMatrixNew(lua_State *L)
 
 static const struct luaL_Reg Matrix_func[] = {
 	{"AddSpin", LuaMatrixAddSpin},
+  {"AntiHermitianPart", LuaMatrixAntiHermitianPart},
   {"Conjugate", LuaMatrixConjugate},
   {"ConjugateTranspose", LuaMatrixConjugateTranspose},
   {"Diagonal", LuaMatrixDiagonal},
@@ -2647,17 +2759,19 @@ static const struct luaL_Reg Matrix_func[] = {
   {"Exp", LuaMatrixExp},
 	{"Expand", LuaMatrixExpand},
 	{"Flatten",LuaMatrixFlatten},
+  {"HermitianPart", LuaMatrixHermitianPart},
   {"Identity", LuaMatrixIdentity},
   {"Inverse", LuaMatrixInverse},
   {"New", LauMatrixNew},
   {"Random", LuaMatrixRandom},
-  {"RemoveSpin", LuaRemoveSpin},
+  {"RemoveSpin", LuaMatrixRemoveSpin},
   {"Rotate", LuaMatrixRotate},
   {"Sqrt", LuaMatrixSqrt},
 	{"Sub",LuaSubmatrix},
   {"ToOperator", LuaMatrixToOperator},
   {"ToTable", LuaMatrixToTable},
   {"ToUserdata", LuaMatrixToUserdata},
+  {"Trace", LuaMatrixTrace},
   {"Transpose", LuaMatrixTranspose},
   {"Zero", LuaMatrixZero},
   {"Eigensystem", LuaMatrixEigensystem},

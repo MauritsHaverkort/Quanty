@@ -1,0 +1,245 @@
+====== CalculateG ======
+
+###
+Function //CalculateG(HTB, Options)// calculates the local single-particle Green's function of a Tight-Binding Object //HTB//, and //CalculateG(HTB, Sigma, Options)// the same with a local self-energy $\Sigma(\omega)$:
+\begin{equation}
+G(\omega) = \frac{1}{N_k} \sum_{k} \left( \omega - H(k) - \Sigma(\omega) \right)^{-1} ,
+\end{equation}
+with the sum over a regular mesh of $N_k$ points in the Brillouin zone. The result is a response function with its poles on an energy grid.
+###
+
+===== Input =====
+
+  * //HTB// : Tight-binding object, which can be created using the function //[[documentation:language_reference:functions:NewTightBinding|NewTightBinding()]]//
+  * //Sigma// : (optional) the self-energy. Either
+      * a response function of any type (ListOfPoles, Tri, And, Nat, DoubleTri) whose block size is the number of orbitals $N_O$ of //HTB.Atoms//. A single valued response function is accepted when $N_O = 1$. Or
+      * a table with one entry per atom of the unit cell. Each entry is a response function with the dimension of that atom (all its shells), a table with one entry per shell of the atom, or the number 0 for no self-energy. All response functions have to be of the same type and have the same //mu//; they are put together into one self-energy that is block diagonal in the atoms and shells.
+  * Options : A table of options. Possible options are:
+      * //"Emin"// : Real, minimum value of the energy. Default value is -10
+      * //"Emax"// : Real, maximum value of the energy. Default value is 10
+      * //"NE"// : Positive Integer defining number of grid points on the energy axis. Default value is 2000
+      * //"EnergyGrid"// : a strictly increasing list of energies, in place of //"Emin"//, //"Emax"// and //"NE"//. The grid does not have to be uniform
+      * //"Nk"// : Table of 3 integers //{Nkx,Nky,Nkz}//. Number of k-points along x,y,z directions. Default value //{40,40,40}//
+      * //"Type"// : String, The type of output Green's function (see //[[documentation:language_reference:objects:responsefunction:functions:changetype|ResponseFunction.ChangeType()]]//). Default value is "ListOfPoles"
+      * //"HybridizationFunction"// : Boolean, also return the augmented propagator of every atom, see below. Default value is false
+      * //"Method"// : String. Left out, $G$ is calculated by diagonalisation. //"Mesh"// calculates it on the energy grid without any diagonalisation, see below
+      * //"Lambda"// : Real, at least 1, only with //"Method"// //"Mesh"//. The factor by which the distance between the points grows when the energy grid is extended. Default value is 2
+
+###
+The self-energy is added to $H(k)$ in the basis of Bloch sums in which the phase of an orbital depends only on its unit cell, $|k, i\rangle = N_k^{-1/2} \sum_{R} e^{\mathrm{i} k \cdot R} |R, i\rangle$ with $R$ the lattice vector of the cell and not the position of the atom within it. A self-energy that is block diagonal in the atoms, as the table form above always is, is the same in any choice of these phases. A response function //Sigma// can also couple orbitals of two different atoms. That coupling acts between the two atoms within the same unit cell $R$, and not between atoms of different cells.
+###
+
+===== Output =====
+
+  * G : Response Function in the Block List of Poles (If not chosen otherwise) representation $\{\{A_0, a_1, a_2,\dots,a_n\},\{ B_1,B_2, \dots, B_n \}, $ type="ListOfPoles" $\dots \}$, which corresponds to
+$$G(\omega) = A_0 + \sum_{k} \frac{B_k}{\omega-a_k+i\gamma/2}$$
+where $a_1,\dots,a_n$ are real numbers, and $A_0,B_1,\dots, B_n$ are matrices of dimensions $N_O \times N_O $, where $N_O$ is the number of orbitals in //HTB.Atoms//.
+  * Aug : (only with //"HybridizationFunction"//) a table with one response function per atom of the unit cell, see below.
+
+===== The poles on the energy grid =====
+
+###
+The poles $a_k$ of the result are the grid points $x_k$, $x_k = E_{\mathrm{min}} + k (E_{\mathrm{max}} - E_{\mathrm{min}}) / N_E$ or the points of //"EnergyGrid"//. Every pole of the exact $G$ is split over the two grid points next to it, with the weights chosen such that its spectral weight and its first moment are kept. Equivalently, the residue on grid point $x_k$ is
+\begin{equation}
+B_k = \int \mathrm{hat}_k(\omega) \, A(\omega) \, \mathrm{d}\omega , \qquad A(\omega) = -\frac{1}{\pi} \mathrm{Im} \, G(\omega + \mathrm{i} 0^{+}) ,
+\end{equation}
+with $\mathrm{hat}_k$ the piecewise linear function that is one on $x_k$ and zero on $x_{k-1}$ and $x_{k+1}$. The zeroth and first moment of $G$ are therefore exact on any grid, and the grid spacing only sets the energy resolution.
+###
+
+###
+By default the poles of $G$ are found by diagonalisation. For every $k$ the self-energy is written as a bath, $\Sigma(\omega) = A_0 + C (\omega - H_{\mathrm{bath}})^{-1} C^{\dagger}$, and the matrix with $H(k) + A_0$ in its first block and the bath coupled to it by $C$ is diagonalised. The weight of the poles that fall outside the grid is collected in one extra pole below and one above it, at their mean energy. The size of that matrix grows with the number of poles of $\Sigma$, and the cost with its cube, so a self-energy with a few hundred poles (as it comes out of a DMFT loop) makes this route slow.
+###
+
+###
+With //"Method"// //"Mesh"// nothing is diagonalised. $G(z)$ is evaluated at $z = x_j + \mathrm{i} y$, one $N_O \times N_O$ inversion per $k$, grid point and $y$, and the residues follow from its imaginary part alone:
+\begin{equation}
+B_k = - \int_0^{\infty} y \sum_{j = k-1}^{k+1} g_j \, A_y(x_j) \, \mathrm{d}y , \qquad A_y(x) = -\frac{1}{\pi} \mathrm{Im} \, G(x + \mathrm{i} y) ,
+\end{equation}
+with $g = \left( 1/h_{-}, \, -(1/h_{-} + 1/h_{+}), \, 1/h_{+} \right)$ and $h_{\pm}$ the distances from $x_k$ to its neighbours. For a single pole this is the split described above exactly, for any distance of the pole to the grid, so there is no broadening to choose. The $y$ integral is done numerically up to $100$ times the largest energy of the grid and analytically beyond, from the first three moments of $G$. The result is the same as that of the default route on the same grid to about $10^{-6}$ of the largest residue. The self-energy enters only through $\Sigma(z)$, so the cost does not depend on its number of poles.
+###
+
+###
+With //"Method"// //"Mesh"// the grid is extended at either end until all poles of $G$ lie inside it, and there are no extra poles outside it. Where the poles of $G$ can lie follows from a bound on the eigenvalues of $H(k) + \Sigma(\omega)$. The first point added below the grid is a distance $\Lambda h$ below the first grid point, with $h$ the spacing at that end of the grid, the next one $\Lambda^2 h$ below that, and so on; the same above. With //"Lambda"// $=1$ the grid is continued with its own spacing. With the default $\Lambda = 2$ a grid with spacing $0.05$ reaches $10$ further out in about $8$ points. The high energy tails of a self-energy carry little weight, and a coarse extension puts that weight on a few poles instead of on hundreds of small ones. That matters when the result is cut to a chain afterwards (//[[documentation:language_reference:objects:responsefunction:functions:changetype|ResponseFunction.ChangeType()]]// with //"NTriMax"//), which would otherwise spend its sites on those small poles. Grid points without weight are left out of the result.
+###
+
+===== The hybridization function =====
+
+###
+With //"HybridizationFunction"// set to true //CalculateG// returns as a second result one response function for every atom $a$ of the unit cell: the $2 n_a \times 2 n_a$ response function of the pair of operators $(c_a, H c_a)$, with $c_a$ the $n_a$ orbitals of atom $a$ and $H$ the tight-binding Hamiltonian,
+\begin{equation}
+\widetilde{G}_a(\omega) = \frac{1}{N_k} \sum_{k} \left( \begin{array}{cc} R & R H \\ H R & H R H \end{array} \right)_{aa} , \qquad R = \left( \omega - H(k) - \Sigma(\omega) \right)^{-1} .
+\end{equation}
+Downfolding it onto its second block with //[[documentation:language_reference:objects:responsefunction:functions:downfold|ResponseFunction.Downfold()]]// gives the hybridization function of the atom,
+\begin{equation}
+\Delta_a(\omega) = \zeta_a(\omega) - G_{aa}^{-1}(\omega) - \epsilon_a , \qquad \zeta(\omega) = \omega - \Sigma(\omega) ,
+\end{equation}
+with $\epsilon_a$ the onsite energies of the atom. The point of the construction is that $\zeta$ is never formed on its own and nothing is subtracted. Evaluating $\zeta - G^{-1}$ directly loses all accuracy where $\Sigma$ is large, which is what happens near the pole a Mott insulating self-energy has at the chemical potential. The identity holds for matrix valued self-energies as long as $\Sigma$ is block diagonal in the atoms, as the self-energy of single site DMFT is. Both methods return the augmented propagators.
+###
+
+===== Example =====
+
+###
+This example creates Tight-Binding model for 2D layer of CuO2 also known as the Emery model. //CalculateG()// Is used to calculate and plot Green's functions. Code in the example relies on the user-written function //ScalarResponseFunctionFromBlockListOfPolesResponseFunction()// that is given at the end of the page.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- define on-site energies and hopping parameters
+ed = -1
+ep1 = -3
+ep2 = ep1
+t = 1 -- tdp
+tdd = 0.1
+tpp = 0.3
+HTB = NewTightBinding()
+HTB.Name = "Emery model"
+
+HTB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+
+HTB.Atoms = {{"Cu",{0.5,0.5,0},{{"d",{"x^2y^2"}}}},
+             {"O1",{1,0.5,0},{{"p",{"x"}}}},
+             {"O2",{0.5,1,0},{{"p",{"y"}}}}}
+
+HTB.Hopping = { {"Cu.d","Cu.d",{0,0,0},{{ed}}},
+                {"O1.p","O1.p",{0,0,0},{{ep1}}},
+                {"O2.p","O2.p",{0,0,0},{{ep2}}},
+                {"Cu.d","O1.p",{0.5,0,0},{{t}}},
+                {"Cu.d","O1.p",{-0.5,0,0},{{t}}},
+                {"O1.p","Cu.d",{0.5,0,0},{{t}}},
+                {"O1.p","Cu.d",{-0.5,0,0},{{t}}},
+                {"Cu.d","O2.p",{0,0.5,0},{{t}}},
+                {"Cu.d","O2.p",{0,-0.5,0},{{t}}},
+                {"O2.p","Cu.d",{0,0.5,0},{{t}}},
+                {"O2.p","Cu.d",{0,-0.5,0},{{t}}},
+                {"Cu.d","Cu.d",{1,0,0},{{tdd}}},
+                {"Cu.d","Cu.d",{0,1,0},{{tdd}}},
+                {"Cu.d","Cu.d",{-1,0,0},{{tdd}}},
+                {"Cu.d","Cu.d",{0,-1,0},{{tdd}}},
+                {"O1.p","O2.p",{0.5,0.5,0},{{tpp}}},
+                {"O1.p","O2.p",{0.5,-0.5,0},{{tpp}}},
+                {"O1.p","O2.p",{-0.5,0.5,0},{{tpp}}},
+                {"O1.p","O2.p",{-0.5,-0.5,0},{{tpp}}},
+                {"O2.p","O1.p",{0.5,0.5,0},{{tpp}}},
+                {"O2.p","O1.p",{0.5,-0.5,0},{{tpp}}},
+                {"O2.p","O1.p",{-0.5,0.5,0},{{tpp}}},
+                {"O2.p","O1.p",{-0.5,-0.5,0},{{tpp}}}
+            }
+-- Calculate Block Greens Function
+G0Block= CalculateG(HTB,{{"NE",1e4},{"Nk",{1000,1000,1}}})
+-- Extract single orbital Green's functions for plotting
+G0_Cu = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,1,1)
+G0_O1 = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,2,2)
+G0_O2 = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,3,3)
+G0_Cu_O1 = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,1,2)
+G0_Cu_O2 = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,1,3)
+G0_O1_O2 = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,2,3)
+G0_O2_O1 = ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,3,2)
+G0_O1_Cu =  ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,2,1)
+G0_O2_Cu =  ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0Block,3,1)
+-- Plot Green's functions (Density of States)
+Emin=-12
+Emax=7
+Ymin=-4
+Ymax=3
+
+Pl  = Graphics.Plot({G0_Cu,G0_Cu_O1,G0_Cu_O2,G0_O1_Cu,G0_O1,G0_O1_O2,G0_O2_Cu,G0_O2_O1,G0_O2,["GammaG"]=0.1}, {{"Nrow",3},{"NColumn",3},{"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"Xmin",Emin},{"Xmax",Emax},{"dYTick",1},{"dXTick",2},{"FontSize",0.03},{"YFormat","%3.1f"},{"XLabel","E [t]"},{"YLabel","G"}}}})
+PlSVG = Graphics.ToSVG(Pl)
+file,err = io.open("DOS_ij.svg",'w')
+file:write(PlSVG)
+file:close()
+
+</code>
+
+==== Result ====
+Diagonal Elements of the plots below show Partial DOS of Cu,O1,O2.
+{{ :documentation:language_reference:functions:pes_ij.png?800 |}}
+
+
+==== Used functions ====
+<code Quanty function.Quanty>
+-- this function extracts G_ij response function of Block List of Poles Response Function object
+function ScalarResponseFunctionFromBlockListOfPolesResponseFunction(G0,i,j)
+    local G0T = ResponseFunction.ToTable(G0)
+    local k
+    local A0_ij = G0T[1][1][i][j]
+    local ai = G0T[1]
+    table.remove(ai,1) --remove matrix A0
+    table.insert(ai,1,A0_ij) -- add number A0_ij
+    local bw_ij = {}
+    for k=1,#G0T[2] do  -- from k=1 to NE
+        bw_ij[#bw_ij+1] = G0T[2][k][i][j]
+    end
+    G_ij = ResponseFunction.New( {ai,bw_ij,mu=0,type="ListOfPoles", name="G0"} )
+    return G_ij
+end
+</code>
+
+===== Example with a self-energy =====
+
+###
+One band on a square lattice with $t = -1/4$, so that the band runs from $-1$ to $1$, and a local self-energy of $81$ poles that form two broad bands around $\pm 1.2$, as a self-energy of a DMFT loop has them. The lattice Green's function is calculated on the grid $-3, -2.95, \dots, 3$, once by diagonalisation and once with //"Method"// //"Mesh"//, and at the end the hybridization function of the atom is compared with $\zeta - G^{-1}$.
+###
+
+==== Input ====
+<code Quanty CalculateGMesh.Quanty>
+HTB = NewTightBinding()
+HTB.Name  = "square lattice"
+HTB.Cell  = {{1,0,0},{0,1,0},{0,0,1}}
+HTB.Atoms = {{"A", {0,0,0}, {{"s", {"s"}}}}}
+HTB.Hopping = {{"A.s","A.s",{ 1,0,0},{{-0.25}}}, {"A.s","A.s",{-1,0,0},{{-0.25}}},
+               {"A.s","A.s",{ 0,1,0},{{-0.25}}}, {"A.s","A.s",{ 0,-1,0},{{-0.25}}}}
+e, W = {0}, {}
+for k = 0, 80 do
+  local x = -2 + 0.05*k
+  e[#e+1] = x
+  W[#W+1] = 0.05 * 0.3 / math.sqrt(math.pi*0.1) * (math.exp(-(x-1.2)^2/0.1) + math.exp(-(x+1.2)^2/0.1))
+end
+Sigma = ResponseFunction.New({e, W, mu = 0, type = "ListOfPoles"})
+
+Opt = {{"Nk",{50,50,1}},{"Emin",-3},{"Emax",3},{"NE",120}}
+t0 = os.clock()
+G  = CalculateG(HTB, Sigma, Opt)
+t1 = os.clock()
+GM = CalculateG(HTB, Sigma, {{"Nk",{50,50,1}},{"Emin",-3},{"Emax",3},{"NE",120},{"Method","Mesh"}})
+t2 = os.clock()
+print(string.format("default route %.2f s, Method \"Mesh\" %.2f s (CPU)", t1-t0, t2-t1))
+print("  omega    default     Mesh")
+for w = -2.5, 2.5, 0.5 do
+  print(string.format("  %5.2f   %8.5f   %8.5f", w, -Complex.Im(G(w,0.1)[1][1])/Pi, -Complex.Im(GM(w,0.1)[1][1])/Pi))
+end
+
+-- the hybridization function of the atom, from the augmented propagator of (c, H c)
+G, Aug = CalculateG(HTB, Sigma, {{"Nk",{50,50,1}},{"Emin",-3},{"Emax",3},{"NE",120},{"Method","Mesh"},
+                                 {"HybridizationFunction",true}})
+Delta = ResponseFunction.Downfold(Aug[1], Matrix.New({{0,1}}))
+w = 0.3
+zeta = w + I*0.05 - Sigma(w,0.1)        -- Sigma(w,Gamma) is Sigma at w + i Gamma/2
+print(string.format("Delta(0.3 + 0.05 i) = %.6f %+.6f i   zeta - 1/G = %.6f %+.6f i",
+      Complex.Re(Delta(w,0.1)[1][1]), Complex.Im(Delta(w,0.1)[1][1]),
+      Complex.Re(zeta - 1/G(w,0.1)[1][1]), Complex.Im(zeta - 1/G(w,0.1)[1][1])))
+</code>
+
+==== Result ====
+<code>
+default route 4.72 s, Method "Mesh" 0.25 s (CPU)
+  omega    default     Mesh
+  -2.50    0.00488    0.00488
+  -2.00    0.01957    0.01957
+  -1.50    0.27292    0.27292
+  -1.00    0.10403    0.10403
+  -0.50    0.31037    0.31037
+   0.00    0.81225    0.81225
+   0.50    0.31037    0.31037
+   1.00    0.10403    0.10403
+   1.50    0.27292    0.27292
+   2.00    0.01957    0.01957
+   2.50    0.00488    0.00488
+Delta(0.3 + 0.05 i) = 0.122238 -0.406956 i   zeta - 1/G = 0.121960 -0.407044 i
+</code>
+
+###
+The two methods give the same Green's function, the mesh method about twenty times faster; with two poles in $\Sigma$ instead of $81$ the default route would be the faster one. A few lines of progress output are left out. The two numbers of the last line are the same function on the same grid, split into poles in two different ways, and agree to that splitting.
+###
+
+===== Table of contents =====
+{{indexmenu>.#1}}

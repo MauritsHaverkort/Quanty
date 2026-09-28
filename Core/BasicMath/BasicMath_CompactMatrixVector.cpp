@@ -92,9 +92,24 @@ uint32_t ResizeCompactMatrix(CompactMatrixType * const M, uint32_t Ni, uint32_t 
   return 0;
 }
 
-/* sets all values of M to zero
- *
+/*  Set M to an empty matrix that owns no data. FreeCompactMatrix on such a matrix only calls
+ *  free(NULL), so it is safe to leave it to the lua garbage collector. Use it on a freshly
+ *  allocated CompactMatrixType before filling it in, when the filling in can fail.
  */
+uint32_t SetCompactMatrixEmpty(CompactMatrixType * const M)
+{
+  M->Name=NULL;
+  M->Ni=0;
+  M->Nj=0;
+  M->QComplex=0;
+  M->VRe=NULL;
+  M->a0=0;
+  M->b0=0;
+  M->mu=0;
+  M->OnLuaStack=false;
+  return 0;
+}
+
 uint32_t SetCompactMatrixToZero(CompactMatrixType * const M)
 {
   uint32_t i;
@@ -124,15 +139,16 @@ uint32_t CompactMatrixCopy(CompactMatrixType const A, CompactMatrixType * const 
   B->Ni=A.Ni;
   B->Nj=A.Nj;
   B->QComplex=A.QComplex;
-  B->a0=A.a0;
-  B->b0=A.b0;
-  B->mu=A.mu;
   if(InitCompactMatrix(B))
   {
     printf("InitCompactMatrix failed in CompactMatrixCopy\n");
     return 1;
   }
   strncpy(B->Name, A.Name, MAXStrLength);
+  /*  after InitCompactMatrix, which sets a0=0, b0=1 and mu=0 */
+  B->a0=A.a0;
+  B->b0=A.b0;
+  B->mu=A.mu;
   if(A.QComplex)
   {
     memcpy(B->V,A.V,A.Ni*A.Nj*sizeof(Complex16));
@@ -1489,6 +1505,73 @@ uint32_t CompactMatrixConjugateTranspose(CompactMatrixType * const M)
   return 0;
 }
 
+int SquareCompactMatrixMakeHermitian(CompactMatrixType * const M)
+{
+  if(M->Ni!=M->Nj) return 1;
+  if(M->QComplex==0)
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->VRe[j + i * M->Nj] += M->VRe[i + j * M->Nj];
+        M->VRe[j + i * M->Nj] /=  2;
+        M->VRe[i + j * M->Nj] = M->VRe[j + i * M->Nj];
+      }
+    }
+  }
+  else
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      M->V[i + i * M->Nj].Im = 0;
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->V[j + i * M->Nj].Re += M->V[i + j * M->Nj].Re;
+        M->V[j + i * M->Nj].Im -= M->V[i + j * M->Nj].Im;
+        M->V[j + i * M->Nj] /=  2;
+        M->V[i + j * M->Nj].Re = M->V[j + i * M->Nj].Re;
+        M->V[i + j * M->Nj].Im =-M->V[j + i * M->Nj].Im;
+      }
+    }
+  }
+  return 0;
+}
+
+int SquareCompactMatrixMakeAntiHermitian(CompactMatrixType * const M)
+{
+  if(M->Ni!=M->Nj) return 1;
+  if(M->QComplex==0)
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      M->VRe[i + i * M->Nj] = 0;
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->VRe[j + i * M->Nj] -= M->VRe[i + j * M->Nj];
+        M->VRe[j + i * M->Nj] /=  2;
+        M->VRe[i + j * M->Nj] =-M->VRe[j + i * M->Nj];
+      }
+    }
+  }
+  else
+  {
+    for(int i=0;i<M->Ni;i++)
+    {
+      M->V[i + i * M->Nj].Re = 0;
+      for(int j=i+1;j<M->Ni;j++)
+      {
+        M->V[j + i * M->Nj].Re -= M->V[i + j * M->Nj].Re;
+        M->V[j + i * M->Nj].Im += M->V[i + j * M->Nj].Im;
+        M->V[j + i * M->Nj] /=  2;
+        M->V[i + j * M->Nj].Re =-M->V[j + i * M->Nj].Re;
+        M->V[i + j * M->Nj].Im = M->V[j + i * M->Nj].Im;
+      }
+    }
+  }
+  return 0;
+}
+
 /* M=M^{-1}
  */
 double CompactMatrixInverse(CompactMatrixType * const M)
@@ -1687,6 +1770,45 @@ uint32_t CompactMatrixSub(CompactMatrixType * const A, CompactMatrixType const *
     }
   }
   return 0;
+}
+
+
+double RealMatrixTrace(const CompactMatrixType *M)
+{
+  double trace = 0;
+  const int N = Min(M->Ni,M->Nj);
+  for (int i = 0; i < N; ++i)
+    trace += M->VRe[i * M->Nj + i];
+  return trace;
+}
+
+Complex16 ComplexMatrixTrace(const CompactMatrixType *M)
+{
+  Complex16 trace;
+  trace.Re = 0;
+  trace.Im = 0;
+  const int N = Min(M->Ni,M->Nj);
+  for (int i = 0; i < N; ++i)
+  {
+    trace.Re += M->V[i * M->Nj + i].Re;
+    trace.Im += M->V[i * M->Nj + i].Im;
+  }
+  return trace;
+}
+
+Complex16 CompactMatrixTrace(const CompactMatrixType *M)
+{
+  if(M->QComplex==0)
+  {
+    Complex16 trace;
+    trace.Re = RealMatrixTrace(M);
+    trace.Im = 0;
+    return trace;
+  }
+  else
+  {
+    return ComplexMatrixTrace(M);
+  }
 }
 
 
@@ -2026,8 +2148,12 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
           A->V[j-NSingular*A->Nj].Re=A->V[j].Re;
           A->V[j-NSingular*A->Nj].Im=A->V[j].Im;
         }
-        /* for all vectors after vector i subtract projection on vector i */
-        for(ii=i+1+NSingular;ii<A->Ni;ii++)
+        /*  For all vectors after vector i subtract the projection on vector i.
+         *  Vector i is read at its original position ipos and the vectors not
+         *  yet treated sit at their original positions too, so the loop starts
+         *  at i+1.  Starting at i+1+NSingular skipped NSingular of them and
+         *  left them not orthogonal to vector i. */
+        for(ii=i+1;ii<A->Ni;ii++)
         {
           iipos = ii*A->Nj;
           dotRe=0;
@@ -2073,7 +2199,10 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeRow(CompactMatrixType * A, double 
       {
         norm+=Sqr(A->VRe[j]);
       }
-      if(norm<SingularValue)
+      /*  Compare the norm, not its square, so that SingularValue means the
+       *  same here as it does in the complex branch above and in
+       *  CompactMatrixSVDOrthogonalizeRow. */
+      if(sqrt(norm)<=SingularValue)
       {
         norm=0;
         NSingular++;
@@ -2707,7 +2836,6 @@ uint32_t NonHermitianEigensystemOrder(Complex16 * val, CompactMatrixType * const
 }
 
 
-//TODO: test definition of fulL and funR
 /*
  *  D=funL^*.A.funR^{T} with D a diagonal matrix with the values val on the diagonal and
  *  funL^* . funR^T = I
@@ -3370,6 +3498,62 @@ uint32_t CompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const
   return retval;
 }
 
+/*  A^{-1/2} for a hermitian positive semi definite A.
+ *
+ *  A direction with an eigenvalue of zero has no inverse. It is left at zero, the same
+ *  treatment CompactMatrixSqrt above gives it, so what comes back is the inverse on the
+ *  space A actually spans and zero on its null space. A physical caller reaches that case
+ *  when A is a spectral weight and some direction carries none of it.
+ *
+ *  The threshold is relative to the trace of |A|, as a zero eigenvalue of a matrix built
+ *  from a product does not come out as exactly zero.
+ */
+uint32_t CompactMatrixInverseSqrt(CompactMatrixType const *A, CompactMatrixType * const InvSqrtA)
+{
+  int i,j,retval=0;
+  double val[A->Ni],sumval=0;
+  CompactMatrixType fun;
+  CompactMatrixEigensystem(A, &fun, val);
+  for(j=0;j<A->Ni;j++)
+  {
+    sumval+=Abs(val[j]);
+  }
+  for(i=0;i<fun.Ni;i++)
+  {
+    if(val[i]<=1000*DBL_EPSILON*sumval)
+    {
+      if(val[i]<-1000*DBL_EPSILON*sumval)
+      {
+        printf("Negative value in CompactMatrixInverseSqrt, eigen value is %22.15E at pos %i (trace |val| = %22.15E)\n",val[i],i,sumval);
+        retval++;
+      }
+      val[i]=0;
+      if(A->QComplex==0)
+      {
+        for(j=0;j<A->Nj;j++)
+        {
+          fun.VRe[j+i*A->Nj]=0;
+        }
+      }
+      else
+      {
+        for(j=0;j<A->Nj;j++)
+        {
+          fun.V[j+i*A->Nj].Re=0;
+          fun.V[j+i*A->Nj].Im=0;
+        }
+      }
+    }
+    else
+    {
+      val[i]=1.0/sqrt(val[i]);
+    }
+  }
+  TransformDiagonalMatrixByCompactMatrixTtranATcon(val, &fun, InvSqrtA);
+  FreeCompactMatrix(&fun);
+  return retval;
+}
+
 uint32_t NonHermitianCompactMatrixSqrt(CompactMatrixType const *A, CompactMatrixType * const SqrtA)
 {
   //TODO: all
@@ -3868,7 +4052,7 @@ uint32_t HermitianCompactMatrixToBlockListOfPoles(CompactMatrixType const *A, Bl
  */
 uint32_t ResponseFunctionGetA0(ResponsefunctionType const *A, double *a0)
 {
-  if(A->Block==false) return 1;
+  if(A->Block==true) return 1;
   if((32|A->type)=='t')
   {
     *a0 = ((TriDiagonalMatrixType*)(A->data))->a[0];
@@ -3884,6 +4068,15 @@ uint32_t ResponseFunctionGetA0(ResponsefunctionType const *A, double *a0)
   else if((32|A->type)=='n')
   {
     *a0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->a0;
+  }
+  else if((32|A->type)=='d')
+  {
+    *a0 = ((DoubleTriDiagonalMatrixType*)(A->data))->a0;
+  }
+  else
+  {
+    printf("ERROR: Unrecognized type in ResponseFunctionGetA0\n");
+    return 1;
   }
   return 0;
 }
@@ -3905,6 +4098,9 @@ uint32_t BlockResponseFunctionGetBlockSize(ResponsefunctionType const *A)
     break;
     case 'n':
       return ((BlockNaturalImpurityOrbitalMatrixType*)(A->data))->BlockSize;
+    break;
+    case 'd':
+      return ((BlockDoubleTriDiagonalMatrixType*)(A->data))->BlockSize;
     break;
     default:
       return 0;
@@ -3990,6 +4186,16 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
       }
     }
   }
+  else if((32|A->type)=='d')
+  {
+    CompactMatrixCopy(((BlockDoubleTriDiagonalMatrixType*)A->data)->a0, A0);
+    A0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
+  }
+  else
+  {
+    printf("ERROR: Unrecognized type in BlockResponseFunctionGetA0\n");
+    return 1;
+  }
   return 0;
 }
 
@@ -3999,14 +4205,15 @@ uint32_t BlockResponseFunctionGetA0(ResponsefunctionType const *A, CompactMatrix
  */
 uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
 {
-  if(A->Block==false) return 1;
+  if(A->Block==true) return 1;
+  /*  if N==0 return b0 = 0 else return the value */
   if((32|A->type)=='t')
   {
-    *b0 = ((TriDiagonalMatrixType*)(A->data))->b[0];
+    *b0 = (((TriDiagonalMatrixType*)(A->data))->N == 0) ? 0 : ((TriDiagonalMatrixType*)(A->data))->b[0];
   }
   else if((32|A->type)=='a')
   {
-    *b0 = ((AndersonMatrixType*)(A->data))->b[0];
+    *b0 = (((AndersonMatrixType*)(A->data))->N == 0) ? 0 : ((AndersonMatrixType*)(A->data))->b[0];
   }
   else if((32|A->type)=='l')
   {
@@ -4020,6 +4227,15 @@ uint32_t ResponseFunctionGetB0(ResponsefunctionType const *A, double *b0)
   else if((32|A->type)=='n')
   {
     *b0 = ((BADoubleTriDiagonalMatrixType*)(A->data))->b0;
+  }
+  else if((32|A->type)=='d')
+  {
+    *b0 = ((DoubleTriDiagonalMatrixType*)(A->data))->b0;
+  }
+  else
+  {
+    printf("ERORR: Unrecognized type in ResponseFunctionGetB0\n");
+    return 1;
   }
   return 0;
 }
@@ -4064,21 +4280,91 @@ uint32_t BlockResponseFunctionGetB0(ResponsefunctionType const *A, CompactMatrix
   }
   else if((32|A->type)=='l')
   {
-    B0->QComplex=((BlockListOfPoles*)A->data)->QComplex;
-    B0->Ni=((BlockListOfPoles*)A->data)->BlockSize;
+    BlockListOfPoles const * const L=(BlockListOfPoles*)A->data;
+    CompactMatrixType SqrtB0B0;
+    uint32_t i,k,iN,NBlock;
+    B0->QComplex=L->QComplex;
+    B0->Ni=L->BlockSize;
     B0->Nj=B0->Ni;
     InitCompactMatrix(B0);
-    B0->mu=((BlockListOfPoles*)A->data)->mu;
-    //TODO: get B0 from list of poles, see transformation to tridiagonal form
+    B0->mu=L->mu;
+    /*  B0^* . B0^T is the total spectral weight, i.e. the sum of the weight of all poles.
+     *  This is the same B0 as the one created when transforming to a block tridiagonal form:
+     *  BlockListOfPolesToBlockTridiagonalMatrix creates the starting vectors psi as the square root of the weight of
+     *  each pole and CompactMatrixBlockBandDiagonalize sets b0 = psi . psi_ortho^C. As psi_ortho is created by an SVD
+     *  returning the polar factor (U V^T) this is the Hermitian positive semi definite square root of
+     *  psi . psi^C = sum_i B_i^T. (the transpose enters as the starting vectors are created with
+     *  CompactMatrixTranspose, which does not conjugate, and is needed for the convention G = A0 + B0^* G1 B0^T)
+     *  (compare the non block version in ResponseFunctionGetB0: b0 = sqrt( sum_i b_i ) )
+     */
+    NBlock=B0->Ni*B0->Nj;
+    iN=0;
+    for(k=0;k<L->N;k++)
+    {
+      if(B0->QComplex)
+      {
+        for(i=0;i<NBlock;i++) B0->V[i]  +=L->V[iN+1+i];
+      }
+      else
+      {
+        for(i=0;i<NBlock;i++) B0->VRe[i]+=L->VRe[iN+1+i];
+      }
+      iN+=1+NBlock;
+    }
+    CompactMatrixTranspose(B0);
+    /*  the weight of a pole of a physical response function is Hermitian. Non Hermitian weights, as created by the
+     *  non Hermitian eigenstates in CalculateGBathFromGandSigmaEigensystem, have no Hermitian square root
+     */
+    SquareCompactMatrixMakeHermitian(B0);
+    CompactMatrixSqrt(B0, &SqrtB0B0);
+    if(B0->QComplex)
+    {
+      memcpy(B0->V, SqrtB0B0.V, NBlock*sizeof(Complex16));
+    }
+    else
+    {
+      memcpy(B0->VRe, SqrtB0B0.VRe, NBlock*sizeof(double));
+    }
+    FreeCompactMatrix(&SqrtB0B0);
   }
   else if((32|A->type)=='n')
   {
-    B0->QComplex=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->QComplex;
-    B0->Ni=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->BlockSize;
+    BlockNaturalImpurityOrbitalMatrixType * const M=(BlockNaturalImpurityOrbitalMatrixType*)A->data;
+    CompactMatrixType T,Bcoup,B0B0,SqrtB0B0;
+    B0->QComplex=M->QComplex;
+    B0->Ni=M->BlockSize;
     B0->Nj=B0->Ni;
     InitCompactMatrix(B0);
-    B0->mu=((BlockNaturalImpurityOrbitalMatrixType*)A->data)->mu;
-    //TODO: get B0 from BlockNaturalImpurityOrbitalMatrixType, see transformation to tridiagonal form
+    B0->mu=M->mu;
+    GetTFromValandConInBlockNaturalImpurityOrbitalMatrixType(M, &T);
+    Bcoup=T;              
+    Bcoup.Ni=M->BlockSize;
+    CompactMatrixMultiply('N', 'C', &Bcoup, &Bcoup, &B0B0);
+    SquareCompactMatrixMakeHermitian(&B0B0);
+    CompactMatrixSqrt(&B0B0, &SqrtB0B0);
+    if(B0->QComplex)
+    { /* val and con can be real while the natural impurity orbital matrix is complex */
+      MakeCompactRealMatrixComplex(&SqrtB0B0);
+      memcpy(B0->V, SqrtB0B0.V, B0->Ni*B0->Nj*sizeof(Complex16));
+    }
+    else
+    {
+      MakeCompactComplexMatrixReal(&SqrtB0B0);
+      memcpy(B0->VRe, SqrtB0B0.VRe, B0->Ni*B0->Nj*sizeof(double));
+    }
+    FreeCompactMatrix(&SqrtB0B0);
+    FreeCompactMatrix(&B0B0);
+    FreeCompactMatrix(&T);
+  }
+  else if((32|A->type)=='d')
+  {
+    CompactMatrixCopy(((BlockDoubleTriDiagonalMatrixType*)A->data)->b0, B0);
+    B0->mu=((BlockDoubleTriDiagonalMatrixType*)A->data)->mu;
+  }
+  else
+  {
+    printf("ERROR in BlockResponseFunctionGetB0 unrecognized type");
+    return 1;
   }
   return 0;
 }
@@ -4102,12 +4388,12 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
       }
       return 0;
     }
-    if((32|A->type)=='a')
+    else if((32|A->type)=='a')
     { // convert block anderson matrix to compact matrix
       BlockAndersonMatrixToCompactMatrix((BlockAndersonMatrixType*)A->data, B);      
       return 0;
     }
-    if((32|A->type)=='l')
+    else if((32|A->type)=='l')
     { // convert block list of poles response function to compact matrix
       if(deflate==true)
       {
@@ -4119,7 +4405,7 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
       }
       return 0;
     }
-    if((32|A->type)=='n')
+    else if((32|A->type)=='n')
     { // convert block natural impurity matrix to compact matrix
       if(deflate==true)
       {
@@ -4130,6 +4416,17 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
         BlockNaturalImpurityOrbitalMatrixToCompactMatrix((BlockNaturalImpurityOrbitalMatrixType*)A->data, B);
       }
       return 0;
+    }
+    else if((32|A->type)=='d')
+    { // convert block double tridiagonal matrix to compact matrix
+      if(deflate==true)
+      {
+        return BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
+      }
+      else
+      {
+        return BlockDoubleTriDiagonalMatrixToCompactMatrix((BlockDoubleTriDiagonalMatrixType*)(A->data), B);
+      }
     }
   }
   else
@@ -4153,6 +4450,10 @@ uint32_t ResponseFunctionToCompactMatrix(ResponsefunctionType const * A, Compact
     { // convert natural impurity matrix to compact matrix
       BADoubleTriDiagonalMatrixTypeToCompactMatrix((BADoubleTriDiagonalMatrixType*)(A->data), B);
       return 0;
+    }
+    if((32|A->type)=='d')
+    {
+      return DoubleTriDiagonalMatrixToCompactMatrix( *((DoubleTriDiagonalMatrixType*)(A->data)), B);
     }
   }
   printf("Error: Unidentified type of response function %c in ResponseFunctionToCompactMatrix\n",A->type);
@@ -4257,6 +4558,16 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
       for(i=0;i<3*A->BlockSize;i++)
       {
         memcpy(&(B->V[i*B->Nj]), &(A->TMT.V[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(Complex16));
+      }
+      /*  TMT reaches as far as the second site of each chain, so the onsite energies of the
+       *  val chain from there on have to follow. Their couplings are filled by the two
+       *  loops after this switch, which run whichever branch was taken. */
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->V[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.a[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(Complex16));
+        }
       }
     }
     else
@@ -4379,6 +4690,16 @@ uint32_t BlockNaturalImpurityOrbitalMatrixToCompactMatrix(BlockNaturalImpurityOr
       for(i=0;i<3*A->BlockSize;i++)
       {
         memcpy(&(B->VRe[i*B->Nj]), &(A->TMT.VRe[i*A->TMT.Nj]), 3*A->BlockSize*sizeof(double));
+      }
+      /*  TMT reaches as far as the second site of each chain, so the onsite energies of the
+       *  val chain from there on have to follow. Their couplings are filled by the two
+       *  loops after this switch, which run whichever branch was taken. */
+      for(k=2;k<=A->val.N;k++)
+      {
+        for(i=0;i<A->BlockSize;i++)
+        {
+          memcpy(&(B->VRe[k*A->BlockSize*B->Nj+k*A->BlockSize+i*B->Nj]), &(A->val.aRe[k*A->BlockSize*A->BlockSize+i*A->BlockSize]), A->BlockSize*sizeof(double));
+        }
       }
     }
     else
@@ -4896,6 +5217,174 @@ uint32_t BlockTriDiagonalMatrixPartToCompactMatrix(BlockTriDiagonalMatrixType co
   return 0;
 }
 
+/*  Create the matrix whose resolvent is the Green's function represented by A: one impurity
+ *  block with a valence and a conduction chain attached to it.
+ *
+ *  The dimension is BlockSize + dim(Mval) + dim(Mcon), with Mval and Mcon the matrices that
+ *  BlockTriDiagonalMatrixToCompactMatrix[WithDeflation] returns for val and con. The impurity
+ *  block is val.a[0] + con.a[0] (both chains share this block, see StructDef.cpp).
+ *
+ *          ( Aval0+Acon0 | Bval0^* | 0     | Bcon0^* | 0     )
+ *      B = ( Bval0^T     |        Mval     | 0       | 0     )
+ *          ( 0           |                 | 0       | 0     )
+ *          ( Bcon0^T     | 0       | 0     |      Mcon       )
+ *          ( 0           | 0       | 0     |                 )
+ *
+ *  The head coupling plays the role of b0 of its chain, which enters the Green's function as
+ *  b0^* . G . b0^T and not as b0 . G . b0^+ the way the couplings inside a chain do (see
+ *  BlockTriDiagonalMatrixType in StructDef.cpp). A hermitian matrix with X in the upper right
+ *  block gives X . G . X^+, so X has to be b0^*.
+ *
+ *  A->a0 and A->b0 are the offset and the scaling of the Green's function and are not part of
+ *  this matrix. Read them with BlockResponseFunctionGetA0 and ...GetB0, so that
+ *    G(w) = A0 + B0^* [ 1/(w - B) ]_{0,0} B0^T
+ *
+ *  A dense matrix has no mixed representation, so B is real when val and con are both real
+ *  and complex otherwise. A mixed A (QComplex 2) therefore lands on QComplex 1 here, unless
+ *  it is only a0 or b0 that is complex, as those do not enter this matrix.
+ *
+ *  With deflation the first block of a chain can be smaller than BlockSize, in which case
+ *  only the first BlockSizeList[1] columns of b[0] are non-zero, so only those are copied.
+ *
+ *  B not allocated on entry.
+ */
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B, bool const deflate)
+{
+  uint32_t i,j,bs,nval1,ncon1,offset;
+  double re,im;
+  CompactMatrixType Mval, Mcon;
+  bs = A->BlockSize;
+  if (deflate)
+  {
+    if (BlockTriDiagonalMatrixToCompactMatrixWithDeflation(&(A->val), &Mval)) return 1;
+    if (BlockTriDiagonalMatrixToCompactMatrixWithDeflation(&(A->con), &Mcon))
+    {
+      FreeCompactMatrix(&Mval);
+      return 1;
+    }
+  }
+  else
+  {
+    if (BlockTriDiagonalMatrixToCompactMatrix(&(A->val), &Mval)) return 1;
+    if (BlockTriDiagonalMatrixToCompactMatrix(&(A->con), &Mcon))
+    {
+      FreeCompactMatrix(&Mval);
+      return 1;
+    }
+  }
+  /* how many orbitals the first block of each chain contributes */
+  nval1 = 0;
+  if (A->val.N != 0) nval1 = deflate ? A->val.BlockSizeList[1] : bs;
+  ncon1 = 0;
+  if (A->con.N != 0) ncon1 = deflate ? A->con.BlockSizeList[1] : bs;
+  B->QComplex = ((A->val.QComplex!=0) || (A->con.QComplex!=0)) ? 1 : 0;
+  B->Ni = bs + Mval.Ni + Mcon.Ni;
+  B->Nj = B->Ni;
+  if (InitCompactMatrix(B))
+  {
+    printf("InitCompactMatrix failed in BlockDoubleTriDiagonalMatrixToCompactMatrix\n");
+    FreeCompactMatrix(&Mval);
+    FreeCompactMatrix(&Mcon);
+    return 1;
+  }
+  strncpy(B->Name, A->Name, MAXStrLength);
+  B->Name[MAXStrLength-1]='\0';
+  B->mu = A->mu;
+  /* one chain can be real while the other is complex, promote so that both can be copied */
+  if ((B->QComplex!=0) && (Mval.QComplex==0)) MakeCompactRealMatrixComplex(&Mval);
+  if ((B->QComplex!=0) && (Mcon.QComplex==0)) MakeCompactRealMatrixComplex(&Mcon);
+  /*  the impurity block, shared by the two chains. Each chain is read according to its own
+   *  QComplex, which for a mixed A need not be the QComplex of A itself.
+   */
+  for (i = 0; i < bs; i++)
+  {
+    for (j = 0; j < bs; j++)
+    {
+      re = 0;
+      im = 0;
+      if (A->val.QComplex) { re += A->val.a[i*bs + j].Re; im += A->val.a[i*bs + j].Im; }
+      else                 { re += A->val.aRe[i*bs + j]; }
+      if (A->con.QComplex) { re += A->con.a[i*bs + j].Re; im += A->con.a[i*bs + j].Im; }
+      else                 { re += A->con.aRe[i*bs + j]; }
+      if (B->QComplex) { B->V[i*B->Nj + j].Re = re; B->V[i*B->Nj + j].Im = im; }
+      else             { B->VRe[i*B->Nj + j] = re; }
+    }
+  }
+  /* hopping impurity <-> first valence block, as b0^* in the upper right and b0^T below */
+  for (i = 0; i < bs; i++)
+  {
+    for (j = 0; j < nval1; j++)
+    {
+      if (A->val.QComplex) { re = A->val.b[i*bs + j].Re; im = A->val.b[i*bs + j].Im; }
+      else                 { re = A->val.bRe[i*bs + j];  im = 0; }
+      if (B->QComplex)
+      {
+        B->V[i*B->Nj + bs+j].Re   =  re;
+        B->V[i*B->Nj + bs+j].Im   = -im;
+        B->V[(bs+j)*B->Nj + i].Re =  re;
+        B->V[(bs+j)*B->Nj + i].Im =  im;
+      }
+      else
+      {
+        B->VRe[i*B->Nj + bs+j]   = re;
+        B->VRe[(bs+j)*B->Nj + i] = re;
+      }
+    }
+  }
+  /* hopping impurity <-> first conduction block */
+  offset = bs + Mval.Ni;
+  for (i = 0; i < bs; i++)
+  {
+    for (j = 0; j < ncon1; j++)
+    {
+      if (A->con.QComplex) { re = A->con.b[i*bs + j].Re; im = A->con.b[i*bs + j].Im; }
+      else                 { re = A->con.bRe[i*bs + j];  im = 0; }
+      if (B->QComplex)
+      {
+        B->V[i*B->Nj + offset+j].Re   =  re;
+        B->V[i*B->Nj + offset+j].Im   = -im;
+        B->V[(offset+j)*B->Nj + i].Re =  re;
+        B->V[(offset+j)*B->Nj + i].Im =  im;
+      }
+      else
+      {
+        B->VRe[i*B->Nj + offset+j]   = re;
+        B->VRe[(offset+j)*B->Nj + i] = re;
+      }
+    }
+  }
+  /* the two chains */
+  for (i = 0; i < Mval.Ni; i++)
+  {
+    for (j = 0; j < Mval.Nj; j++)
+    {
+      if (B->QComplex) B->V[(bs+i)*B->Nj + bs+j] = Mval.V[i*Mval.Nj + j];
+      else             B->VRe[(bs+i)*B->Nj + bs+j] = Mval.VRe[i*Mval.Nj + j];
+    }
+  }
+  for (i = 0; i < Mcon.Ni; i++)
+  {
+    for (j = 0; j < Mcon.Nj; j++)
+    {
+      if (B->QComplex) B->V[(offset+i)*B->Nj + offset+j] = Mcon.V[i*Mcon.Nj + j];
+      else             B->VRe[(offset+i)*B->Nj + offset+j] = Mcon.VRe[i*Mcon.Nj + j];
+    }
+  }
+  FreeCompactMatrix(&Mval);
+  FreeCompactMatrix(&Mcon);
+  return 0;
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrixWithDeflation(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
+{
+  return BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(A, B, true);
+}
+
+uint32_t BlockDoubleTriDiagonalMatrixToCompactMatrix(BlockDoubleTriDiagonalMatrixType const * A, CompactMatrixType * const B)
+{
+  return BlockDoubleTriDiagonalMatrixToCompactMatrixDeflate(A, B, false);
+}
+
 /* on input A is a Hermitian matrix, Singular Value is the smallest number larger than 0 that has numerical relavance, BlockSize is the size of the blocks and NBlockMax the maximal number of Blocks
  *  onoutput Matrix B has NBlockMax blocks (a_{0} to a_{NBlockMax+1}. b_{0} to b_{NBlockMax}
  */
@@ -5295,21 +5784,44 @@ uint32_t CompactMatrixBlockBandDiagonalize(CompactMatrixType const * const A, Co
 
 /* returns 1 if O=O^dag, zero otherwise
  * epsilon gives the accuracy
- * test if | O[i][j] - O[j][i] | > epsilon * | O[i][j] + O[j][i] |
+ * test if | O[i][j] - O[j][i] | > epsilon * ( | O[i][j] + O[j][i] | + max |O| )
+ *
+ * The max |O| in the bracket is a floor for the whole matrix. Without it the
+ * test is relative to the pair alone, and a pair that vanishes in exact
+ * arithmetic -- an element a symmetry forbids, say the spin off diagonal one
+ * of a matrix block diagonal in spin -- has a difference and a sum that are
+ * both rounding, so it is refused however small that rounding is. The floor is
+ * built from O itself, so multiplying O by a constant leaves the verdict alone
+ * and the same Hamiltonian passes in Rydberg, eV or Joule.
  */
 
 uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon)
 {
   uint32_t i,j;
+  double scale = 0;
   if(O.Ni!=O.Nj)return 0;
+  /* the largest element of O, times epsilon, is the floor added below */
+  if(O.QComplex)
+  {
+    for(i=0;i<O.Ni*O.Nj;i++)
+    {
+      if(fabs(O.V[i].Re)>scale) scale = fabs(O.V[i].Re);
+      if(fabs(O.V[i].Im)>scale) scale = fabs(O.V[i].Im);
+    }
+  }
+  else
+  {
+    for(i=0;i<O.Ni*O.Nj;i++) if(fabs(O.VRe[i])>scale) scale = fabs(O.VRe[i]);
+  }
+  scale *= epsilon;
   if(O.QComplex)
   {
     for(i=0;i<O.Ni;i++)
     {
       for(j=0;j<=i;j++)
       {
-        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>((fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re)*epsilon+DBL_MIN*100))) return 0;
-        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>((fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im)*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.V[i*O.Nj+j].Re-O.V[j*O.Nj+i].Re)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+scale+DBL_MIN*100) return 0;
+        if(fabs(O.V[i*O.Nj+j].Im+O.V[j*O.Nj+i].Im)>(fabs(O.V[i*O.Nj+j].Re+O.V[j*O.Nj+i].Re) + fabs(O.V[i*O.Nj+j].Im-O.V[j*O.Nj+i].Im))*epsilon+scale+DBL_MIN*100) return 0;
       }
     }
   }
@@ -5319,7 +5831,7 @@ uint32_t QCompactMatrixHermitian(const CompactMatrixType O, const double epsilon
     {
       for(j=0;j<i;j++)
       {
-        if(fabs(O.VRe[i*O.Nj+j]-O.VRe[j*O.Nj+i])>((fabs(O.VRe[i*O.Nj+j]+O.VRe[j*O.Nj+i])*epsilon+DBL_MIN*100))) return 0;
+        if(fabs(O.VRe[i*O.Nj+j]-O.VRe[j*O.Nj+i])>((fabs(O.VRe[i*O.Nj+j]+O.VRe[j*O.Nj+i])*epsilon+scale+DBL_MIN*100))) return 0;
       }
     }
   }
@@ -5365,7 +5877,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool p
         break;
       }
     }
-    if (printWarnings && numOfRowsInner[i] == 0) printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+    if (printWarnings && numOfRowsInner[i] == 0) VerbosityPrintf(0x10000,"\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
     numOfAllRows += numOfRowsInner[i];
   }
   for (int j = 0; j < numOfColsOuter; ++j)
@@ -5379,7 +5891,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType> > allMs, bool p
         break;
       }
     }
-    if (printWarnings && numOfColsInner[j] == 0) printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+    if (printWarnings && numOfColsInner[j] == 0) VerbosityPrintf(0x10000,"\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
     numOfAllCols += numOfColsInner[j];
   }
   for (int i = 0; i < numOfRowsOuter; ++i)
@@ -5466,7 +5978,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs, bool
         break;
       }
     }
-    if (printWarnings && numOfRowsInner[i] == 0) printf("\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
+    if (printWarnings && numOfRowsInner[i] == 0) VerbosityPrintf(0x10000,"\nWarning: Row %d of matrix is empty and will be ignored.\n",i+1);
     numOfAllRows += numOfRowsInner[i];
   }
   for (int j = 0; j < numOfColsOuter; ++j)
@@ -5480,7 +5992,7 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs, bool
         break;
       }
     }
-    if (printWarnings && numOfColsInner[j] == 0) printf("\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
+    if (printWarnings && numOfColsInner[j] == 0) VerbosityPrintf(0x10000,"\nWarning: Column %d of matrix is empty and will be ignored.\n",j+1);
     numOfAllCols += numOfColsInner[j];
   }
   for (int i = 0; i < numOfRowsOuter; ++i)
@@ -5549,6 +6061,36 @@ CompactMatrixType MatrixFlatten(vector<vector<CompactMatrixType *> > allMs)
   return MatrixFlatten(allMs, false);
 }
 
+
+CompactMatrixType removeSpin(const CompactMatrixType &M)
+{
+  CompactMatrixType out;
+  out.Ni = M.Ni / 2;
+  out.Nj = M.Nj / 2;
+  out.QComplex = M.QComplex;
+  InitCompactMatrix(&out);
+  if (out.QComplex == 0)
+  {
+    for (int i = 0; i < out.Ni; ++i)
+    {
+      for (int j = 0; j < out.Nj; ++j)
+      {
+        out.VRe[i * out.Nj + j] = M.VRe[2 * i * M.Nj + 2 * j];
+      }
+    }
+  } else
+  {
+    for (int i = 0; i < out.Ni; ++i)
+    {
+      for (int j = 0; j < out.Nj; ++j)
+      {
+        out.V[i * out.Nj + j].Re = M.V[2 * i * M.Nj + 2 * j].Re;
+        out.V[i * out.Nj + j].Im = M.V[2 * i * M.Nj + 2 * j].Im;
+      }
+    }
+  }
+  return out;
+}
 
 CompactMatrixType ExpandNumberToCompactMatrix(int size, double Re, double Im = 0)
 {

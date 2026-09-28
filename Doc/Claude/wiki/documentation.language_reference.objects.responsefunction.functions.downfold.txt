@@ -1,0 +1,219 @@
+{{indexmenu_n>999}}
+====== Downfold ======
+
+###
+//Sigma, S = ResponseFunction.Downfold(G, R)// takes a subspace of the inverse of a response function and inverts it again,
+\begin{equation}
+\Sigma(\omega) = \left( R \; G^{-1}(\omega) \; R^{\dagger} \right)^{-1} ,
+\end{equation}
+for a matrix $R$ with as many columns as $G$ has a block size and $N_{\mathrm{sub}}$ rows of full rank. $R = \left( \, 0 \;\; 1 \, \right)$ takes the lower right block of a two by two block structure. Any other $R$ takes the subspace its rows span, and the rows do not have to be orthonormal — the identity above holds for every $R$ of full row rank.
+###
+
+===== The discrete self-energy =====
+
+###
+This is the symmetric improved estimator of the self-energy, evaluated on a discrete spectral representation. Let $H = H_0 + H_1$ with $H_0$ the one-particle part and $H_1$ the interaction, and let $a_{\mathfrak{m}}$ annihilate one of the $N$ orbitals the self-energy is wanted on. Alongside them define
+\begin{equation}
+q_{\mathfrak{m}} = \left[ a_{\mathfrak{m}} , H_1 \right] ,
+\end{equation}
+and build the **augmented propagator** $\widetilde{G}(\omega)$, the $2N \times 2N$ response function of the $2N$ operators $a_{\mathfrak{m}}$ and $q_{\mathfrak{m}}$ together. Its $11$ block is the Green's function $G(\omega)$ itself and its $22$ block is what turns it into a self-energy:
+\begin{equation}
+\Sigma(\omega) - \Sigma^{\mathrm{HF}} = \left( \left[ \widetilde{G}^{-1}(\omega) \right]_{22} \right)^{-1} ,
+\end{equation}
+which is //ResponseFunction.Downfold//$(\widetilde{G}, \left( \, 0 \;\; 1 \, \right))$.
+###
+
+###
+The reason to go this way rather than through [[documentation:language_reference:objects:responsefunction:functions:calculateselfenergy|ResponseFunction.CalculateSelfEnergy]], which evaluates $\Sigma = G_0^{-1} - G^{-1}$ directly, is that the direct difference is ill-conditioned. $G_0$ and $G$ belong to two different Hamiltonians and their poles sit at different energies, so the subtraction cancels two large and nearly equal numbers and the result loses accuracy and can come out non-causal. Nothing is subtracted here. Every spectral weight that goes into the construction is Hermitian and positive semi-definite, every step is a congruence, and $\Sigma(\omega) - \Sigma^{\mathrm{HF}}$ therefore comes back causal whatever the numerical accuracy of $\widetilde{G}$ was.
+###
+
+###
+The Hartree-Fock part $\Sigma^{\mathrm{HF}}$ is **not** part of what //Downfold// returns. It is not a function of $\omega$ and it is not in the inverse of $\widetilde{G}$; it is the expectation value
+\begin{equation}
+\left( \Sigma^{\mathrm{HF}} \right)_{\mathfrak{m},\mathfrak{m}'} = \left\langle \left\{ q_{\mathfrak{m}} , a^{\dagger}_{\mathfrak{m}'} \right\} \right\rangle ,
+\end{equation}
+which is what the example below evaluates. It is also the $12$ block of the spectral weight of $\widetilde{G}$, so //ResponseFunction.ChangeType//$(\widetilde{G},$//"Dense"//$)$ gives it as $B_0^{*} B_0^{T}$ without any expectation value being taken. When the mean field of $H_1$ has already been absorbed into $H_0$ it vanishes; when it has not, it does not, and it has to be added by hand.
+###
+
+===== Input =====
+
+  * //G//: the response function to downfold. Its constant term $A_0$ has to vanish, as it does for every physical Green's function — a constant added to $G$ is not a constant added to $G^{-1}$, and the identity at the top of this page does not hold for it
+
+  * //R//: (//Matrix//) $N_{\mathrm{sub}}$ rows and as many columns as //G// has a block size, of full row rank
+
+//(Optional) Third argument, a list of options//
+
+  * SingularValue : (//real//) smallest singular value of the spectral weight of //G// that is considered different from zero. A direction below it carries no weight and is removed (//default: $1000 \, \epsilon_{\mathrm{machine}} \approx 2.2 \cdot 10^{-13}$//)
+
+  * MinimalPoleDistance : (//real//) two poles closer together than this are merged into one
+
+  * NTriMax : (//integer//) the largest chain length the result may have. Accepted only when //G// is tri-diagonal, which is the only case in which the result is a chain, and not with Method "Mesh" (//default: $\infty$//)
+
+  * Method : (//string//) left out, //Sigma// is calculated exactly as described below. //"Mesh"// returns it as poles on an energy grid, see [[#on_an_energy_grid|On an energy grid]]
+
+  * Emin, Emax, NE : (//real//, //real//, //integer//) with Method "Mesh", the grid $E_{\mathrm{min}} + k (E_{\mathrm{max}} - E_{\mathrm{min}}) / N_E$, $k = 0 \dots N_E$
+
+  * EnergyGrid : (//list of reals//) with Method "Mesh", a strictly increasing grid in place of Emin, Emax and NE. It does not have to be uniform
+
+  * Lambda : (//real//, at least 1) with Method "Mesh", the factor by which the distance between the points grows when the grid is extended (//default: 2//)
+
+===== Output =====
+
+  * //Sigma//: (//ResponseFunction//) $\left( R \, G^{-1}(\omega) \, R^{\dagger} \right)^{-1}$. It is tri-diagonal when //G// was tri-diagonal, a list of poles with Method "Mesh", and an Anderson matrix otherwise
+  * //S//: (//Matrix//) the spectral weight of //Sigma//, $\sum_i W_i = \left( R \, \widetilde{S}^{-1} R^{\dagger} \right)^{-1}$ with $\widetilde{S}$ the spectral weight of //G//. For the self-energy this is its sum rule, and comparing it with $\left\langle \{q,q^{\dagger}\} \right\rangle - \Sigma^{\mathrm{HF}} \Sigma^{\mathrm{HF}}$ is a sharp check on the whole construction
+
+###
+The representation //Sigma// comes back in is the one the construction leaves it in, and costs nothing beyond it. A tri-diagonal //G// keeps its shape: its effective Hamiltonian is a chain, the projection onto the subspace is then a block Lanczos of that chain, and nothing is diagonalised. Every other representation reaches the projection as a list of poles and //Sigma// comes back an Anderson matrix. [[documentation:language_reference:objects:responsefunction:functions:changetype|ResponseFunction.ChangeType]] turns either into the pole expansion $\Sigma(\omega) - \Sigma^{\mathrm{HF}} = \sum_i W_i / (\omega - \alpha_i)$, and pays one dense diagonalisation for it.
+###
+
+###
+//NTriMax// is where the speed is, and it exists only on the tri-diagonal route because only a chain can be cut. Without it the block Lanczos runs until the Krylov space is exhausted and the projection is exact, which for a chain of $M$ blocks of size $\widetilde{N}$ downfolded onto $N_{\mathrm{sub}}$ takes $\lceil (M-1) \widetilde{N} / N_{\mathrm{sub}} \rceil$ steps. On a chain of $100$ blocks of size $20$ downfolded onto $10$ that leaves a chain of $200$ blocks and costs about $13$ seconds; //NTriMax// $=50$ gives $52$ blocks in about a second and is already at machine precision, and //NTriMax// $=20$ gives $22$ blocks in a quarter of a second and $2 \cdot 10^{-9}$. Cutting the chain leaves //S// untouched, since the weight sits in the head coupling the cut never reaches, and keeps the low moments of $\Sigma$ while dropping the high ones, as cutting a chain always does — see [[documentation:language_reference:objects:responsefunction:functions:changetype|ResponseFunction.ChangeType]].
+###
+
+###
+A subspace that carries little spectral weight is handled without the answer running away. The spectral weight of $G$ is a Gram matrix and it goes singular whenever two of the states behind $G$ become dependent, which for the self-energy is what happens as the interaction goes to zero and the $q_{\mathfrak{m}}$ vanish. A small eigenvalue there is a large one of $\widetilde{S}^{-1}$ and so a **small** weight in //S//, and the answer goes to zero with the weight of the subspace instead of diverging. A subspace with no weight at all is deflated away and //Downfold// returns zero.
+###
+
+===== On an energy grid =====
+
+###
+With //"Method"// //"Mesh"// //Sigma// comes back as a list of poles on the grid points $x_k$. Every pole of the exact $\Sigma$ is split over the two grid points next to it such that its weight and its first moment are kept, which is the same as taking as residue on $x_k$
+\begin{equation}
+W_k = \int \mathrm{hat}_k(\omega) \, A(\omega) \, \mathrm{d}\omega , \qquad A(\omega) = -\frac{1}{\pi} \mathrm{Im} \, \Sigma(\omega + \mathrm{i} 0^{+}) ,
+\end{equation}
+with $\mathrm{hat}_k$ the piecewise linear function that is one on $x_k$ and zero on its neighbours. Nothing is diagonalised to get there. $\Sigma(z) = \left( R \, G^{-1}(z) \, R^{\dagger} \right)^{-1}$ is evaluated at $z = x_j + \mathrm{i} y$ and
+\begin{equation}
+W_k = - \int_0^{\infty} y \sum_{j = k-1}^{k+1} g_j \, A_y(x_j) \, \mathrm{d}y , \qquad A_y(x) = -\frac{1}{\pi} \mathrm{Im} \, \Sigma(x + \mathrm{i} y) ,
+\end{equation}
+with $g = \left( 1/h_{-}, \, -(1/h_{-} + 1/h_{+}), \, 1/h_{+} \right)$ and $h_{\pm}$ the distances from $x_k$ to its neighbours. For a single pole this is the split above exactly, whatever its distance to the grid, so there is no broadening to choose and only the imaginary part of $\Sigma$ enters. The $y$ integral is numerical up to $100$ times the largest energy of the grid and analytic beyond, from the first three moments of $\Sigma$, which follow from those of //G//. //G// may be of any type.
+###
+
+###
+The poles of $\Sigma$ lie within the range of the poles of //G//, and the grid is extended at either end until that range is inside it. The first point added below the grid is a distance $\Lambda h$ below the first grid point, with $h$ the spacing at that end, the next $\Lambda^2 h$ below that, and so on. With //"Lambda"// $= 1$ the grid is continued with its own spacing; with the default $\Lambda = 2$ the tails of $\Sigma$ land on a few poles, which keeps a chain cut from the result afterwards from spending its sites on them. Grid points without weight are left out. //S// is the sum rule the residues add up to.
+###
+
+###
+The method is meant for a self-energy that has many poles, where a representation with a fixed energy resolution is what is wanted anyway: the result has as many poles as the grid has points, however many //G// had.
+###
+
+===== Example =====
+
+###
+Eight fermionic modes with four electrons, a hopping over all eight of them, and a Hubbard interaction $U n_0 n_1$ between mode $0$ and mode $1$, so that the self-energy lives on the two modes $0$ and $1$ and the other six are the bath. For a finite cluster like this the self-energy is also the Dyson difference $G_0^{-1} - G^{-1}$, which is what the last block of the output compares against.
+###
+
+==== Input ====
+<code Quanty Downfold.Quanty>
+-- Eight fermionic modes with four electrons. H0 is a hopping over all eight modes and
+-- H1 = U n_0 n_1 is a Hubbard interaction between mode 0 and mode 1, so the self-energy
+-- lives on the two modes 0 and 1 and the other six are the bath.
+NF = 8
+h = Matrix.New({
+ { 0.35,-0.62, 0.18, 0.41,-0.27, 0.09, 0.33,-0.15},
+ {-0.62,-0.21, 0.54,-0.13, 0.46, 0.28,-0.37, 0.22},
+ { 0.18, 0.54, 0.77, 0.31,-0.19,-0.44, 0.12, 0.38},
+ { 0.41,-0.13, 0.31,-0.58, 0.24, 0.16, 0.49,-0.26},
+ {-0.27, 0.46,-0.19, 0.24, 1.12,-0.35, 0.21, 0.14},
+ { 0.09, 0.28,-0.44, 0.16,-0.35,-0.93, 0.29, 0.43},
+ { 0.33,-0.37, 0.12, 0.49, 0.21, 0.29, 0.66,-0.18},
+ {-0.15, 0.22, 0.38,-0.26, 0.14, 0.43,-0.18, 0.05}})
+U  = 2.5
+H0 = Matrix.ToOperator(h)
+H1 = U * NewOperator(NF,0,{{0,-0,1}}) * NewOperator(NF,0,{{1,-1,1}})
+psi = Eigensystem(H0 + H1, {NF,0,{"11111111",4,4}}, 1)
+
+-- The augmented propagator of the operators a_m and q_m = [a_m,H1], m = 0,1. Its first
+-- block is the Green's function itself and its second block is what turns it into the
+-- self-energy.
+Cr = {NewOperator(NF,0,{{ 0,1}}), NewOperator(NF,0,{{ 1,1}})}
+An = {NewOperator(NF,0,{{-0,1}}), NewOperator(NF,0,{{-1,1}})}
+Cr[3] = H1*Cr[1] - Cr[1]*H1  -- q^dag = [H1,a^dag]
+Cr[4] = H1*Cr[2] - Cr[2]*H1
+An[3] = An[1]*H1 - H1*An[1]  -- q     = [a,H1]
+An[4] = An[2]*H1 - H1*An[2]
+opt = {{"Tensor",true},{"NTri",24},{"DenseBorder",0}}
+Sp, Gp = CreateSpectra(H0+H1, Cr, psi, opt)
+Sm, Gm = CreateSpectra(H0+H1, An, psi, opt)
+Gtilde = Gp + ResponseFunction.InvertEnergy(Gm)   -- G(w) = Gp(w) - Gm(-w)^T
+
+-- The Hartree-Fock part is not part of what Downfold returns, it is an expectation value
+SigmaHF = Matrix.Zero(2)
+for i = 1, 2 do
+  for j = 1, 2 do
+    SigmaHF[i][j] = psi * (An[i+2]*Cr[j] + Cr[j]*An[i+2]) * psi
+  end
+end
+
+-- and the rest of the self-energy is the lower right block of the inverse of the augmented
+-- propagator, inverted again
+R = Matrix.New({{0,0,1,0},{0,0,0,1}})
+Sigma, S = ResponseFunction.Downfold(Gtilde, R)
+
+print("Sigma^HF = <{q,a^dag}>")
+print(SigmaHF)
+print("S, the spectral weight of Sigma - Sigma^HF")
+print(S)
+print("")
+print("  omega      Sigma_00 from Downfold        from G0^-1 - G^-1")
+for w = -4, 4, 2 do
+  local G0    = Matrix.Sub(Matrix.Inverse(Complex.New(w,0.05)*Matrix.Identity(NF) - h), 2)
+  local G     = Matrix.Sub(Gtilde(w,0.1), 2)
+  local DSR   = SigmaHF + Sigma(w,0.1)
+  local Dyson = Matrix.Inverse(G0) - Matrix.Inverse(G)
+  print(string.format("  %5.1f   %9.5f %+9.5f I   %9.5f %+9.5f I", w,
+        Complex.Re(DSR[1][1]),   Complex.Im(DSR[1][1]),
+        Complex.Re(Dyson[1][1]), Complex.Im(Dyson[1][1])))
+end
+
+-- The same self-energy as poles on the grid -4, -3.98, ... 4, taken from Gtilde off the
+-- real axis. Every pole of the exact Sigma is split over its two neighbouring grid points.
+SigmaM, SM = ResponseFunction.Downfold(Gtilde, R, {{"Method","Mesh"},{"Emin",-4},{"Emax",4},{"NE",400}})
+print("")
+print("  omega      Sigma_00 - Sigma^HF, default     Method \"Mesh\"")
+for w = -4, 4, 2 do
+  local a, b = Sigma(w,0.1)[1][1], SigmaM(w,0.1)[1][1]
+  print(string.format("  %5.1f   %9.5f %+9.5f I   %9.5f %+9.5f I", w,
+        Complex.Re(a), Complex.Im(a), Complex.Re(b), Complex.Im(b)))
+end
+</code>
+
+==== Output ====
+<code>
+Sigma^HF = <{q,a^dag}>
+{ {  1.7447 , -0.8934 } ,
+  { -0.8934 ,  0.4968 } }
+
+S, the spectral weight of Sigma - Sigma^HF
+{ {  0.5196 , -0.2309 } ,
+  { -0.2309 ,  0.1971 } }
+
+
+  omega      Sigma_00 from Downfold        from G0^-1 - G^-1
+   -4.0     1.62809  -0.02563 I     1.62809  -0.02563 I
+   -2.0     1.64598  -0.02278 I     1.64598  -0.02278 I
+    0.0     1.58150  -0.00351 I     1.58150  -0.00351 I
+    2.0     1.91711  -0.85614 I     1.91711  -0.85614 I
+    4.0     2.37928  -0.08634 I     2.37928  -0.08634 I
+
+  omega      Sigma_00 - Sigma^HF, default     Method "Mesh"
+   -4.0    -0.11661  -0.02563 I    -0.11651  -0.02576 I
+   -2.0    -0.09872  -0.02278 I    -0.09883  -0.02280 I
+    0.0    -0.16320  -0.00351 I    -0.16322  -0.00351 I
+    2.0     0.17241  -0.85614 I     0.16336  -0.86464 I
+    4.0     0.63458  -0.08634 I     0.63382  -0.08696 I
+</code>
+
+###
+The two columns agree to about $10^{-13}$, and the block above them is printed after the progress lines of the two block Lanczos runs, which are left out here. Those runs also print a handful of lines reading //Negative value in CompactMatrixSqrt, eigen value is -2.9E-18 (trace |val| = 4.4E-18)//. They come from the conversions taking the square root of the weight of a pole that is numerically zero, and a rounding-sized negative eigenvalue of a matrix that is entirely rounding is what they report. How many of them appear varies from one run to the next. They say nothing about the answer.
+###
+
+###
+The last block compares the exact self-energy with the one on the grid of spacing $0.02$, both at a broadening $\Gamma = 0.1$. They agree to the splitting of the poles over the grid, which is largest next to a sharp peak (here the one near $\omega = 2$) and falls off as the square of the grid spacing. The mesh method also prints three lines on the grid it used, left out here.
+###
+
+###
+The number of Lanczos steps matters more than it looks. Four electrons in eight modes is a space of $70$ determinants and the sectors with one electron more or less are $56$, so a block of four vectors would span them in fourteen steps if the blocks stayed four wide. They do not — the block deflates — and fourteen steps leave $\widetilde{G}$ short of exact, with the tails of $\Sigma$ moving in the fourth digit from one run to the next. Both columns of the table still agree with each other, since both are built from the same $\widetilde{G}$, but neither is then the self-energy of the model. Twenty four steps span the sector and the numbers above are reproducible.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}
