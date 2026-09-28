@@ -243,6 +243,7 @@ test-jobs-tightbinding:
           - "AddSpin"
           - "CalculateBands"
           - "CalculateBandsSelfEnergy"
+          - "CalculateBandsMesh"
           - "CalculateG"
           - "CalculateGAgainstCreateSpectra"
           - "CalculateGMesh"

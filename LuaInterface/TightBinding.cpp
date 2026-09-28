@@ -603,16 +603,66 @@ static double CharacterQuadraticForm(CompactMatrixType const * const P, double c
   return ret;
 }
 static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter);
+static int LuaCalculateBandsSelfEnergyMesh(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter, double const Emin, double const Emax, uint32_t const NE, CompactVectorType const * const GridIn, double const Lambda);
 static int LuaCalculateBands(lua_State *L)
 {
   // check (and read) the input
+  struct
+  {
+    char* Method;
+    double Lambda;
+    double Emin;
+    double Emax;
+    uint32_t NE;
+  } Options;
+  Options.Method=NULL;
+  Options.Lambda=NAN;
+  Options.Emin=NAN;
+  Options.Emax=NAN;
+  Options.NE=0;
+  CompactVectorType Grid={0,0,NULL};
   LuaOptionsType LuaCalculateBandOptions[]={
+  {"Method",     "char*",    &(Options.Method)},
+  {"Lambda",     "double",   &(Options.Lambda)},
+  {"Emin",       "double",   &(Options.Emin)},
+  {"Emax",       "double",   &(Options.Emax)},
+  {"NE",         "uint32_t", &(Options.NE)},
+  {"EnergyGrid", "Vector",   &Grid},
   {NULL, NULL, NULL}};
   int len = (int)lua_gettop(L);
+  bool Mesh=false;
   if (LuaTestOptionsList(L,-1))
   {
     LuaCheckOptions(L,-1,LuaCalculateBandOptions);
     len--;
+  }
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Mesh")!=0)
+    {
+      return luaL_error(L, "Error CalculateBands: unknown Method \"%s\"; leave it out for the default, which gives the poles where they are, or ask for \"Mesh\", which puts them on an energy grid\n", Options.Method);
+    }
+    Mesh = true;
+  }
+  if(isnan(Options.Lambda)) Options.Lambda = 2;
+  if(!(Options.Lambda >= 1))
+  {
+    return luaL_error(L, "Error CalculateBands: Lambda is %g, it has to be at least 1\n", Options.Lambda);
+  }
+  if (Grid.Ni != 0)
+  {
+    if (!isnan(Options.Emin) || !isnan(Options.Emax) || Options.NE != 0)
+      return luaL_error(L, "Error CalculateBands: option EnergyGrid cannot be combined with Emin, Emax or NE.\n");
+    if (Grid.Ni < 2) return luaL_error(L, "Error CalculateBands: option EnergyGrid needs at least 2 energies.\n");
+    if (Grid.QComplex) return luaL_error(L, "Error CalculateBands: option EnergyGrid needs a real vector.\n");
+    for (uint32_t ig=0; (ig+1)<Grid.Ni; ig++)
+    {
+      if (!(Grid.VRe[ig+1] > Grid.VRe[ig]))
+      {
+        return luaL_error(L, "Error CalculateBands: EnergyGrid must be strictly increasing, but element %d (%f) is not larger than element %d (%f).\n",
+                          (int)ig+2, Grid.VRe[ig+1], (int)ig+1, Grid.VRe[ig]);
+      }
+    }
   }
   if(len<2)
   {
@@ -715,9 +765,16 @@ static int LuaCalculateBands(lua_State *L)
   // finished reading the k-list
   if(WithSigma)
   {
-    int ret = LuaCalculateBandsSelfEnergy(L, HTB, &kList, Nktot, 3, 4, NCharacter);
+    int ret;
+    if(Mesh) ret = LuaCalculateBandsSelfEnergyMesh(L, HTB, &kList, Nktot, 3, 4, NCharacter, Options.Emin, Options.Emax, Options.NE, &Grid, Options.Lambda);
+    else     ret = LuaCalculateBandsSelfEnergy(L, HTB, &kList, Nktot, 3, 4, NCharacter);
     free(kList.Q);
     return ret;
+  }
+  if(Mesh || !isnan(Options.Emin) || !isnan(Options.Emax) || (Options.NE!=0) || (Grid.Ni!=0))
+  {
+    free(kList.Q);
+    return luaL_error(L, "Error CalculateBands: Method, Emin, Emax, NE and EnergyGrid belong to a band structure with a self energy\n");
   }
   // produce output
   // we will place these on the lua stack later by copying the pointers
@@ -1223,6 +1280,146 @@ static void LuaCharacterToMatrix(lua_State *L, int const iChar, int const n, int
  *  embedded self energy, so 64 MB is 20000 k-points of a one band model with 100 poles of
  *  Sigma, or 2000 of a ten band model with 200.                                            */
 static size_t const BandsBufferBytes = 64*1024*1024;
+
+
+/*  CalculateBands with a self energy, Method "Mesh". On stack
+ *     iSigma) a self energy in any of the forms CalculateG accepts
+ *     iChar .. iChar+NCharacter-1) the characters (0, 1 or 3)
+ *  Where the default route diagonalizes H(k) plus the embedded self energy at every k, this
+ *  one evaluates the resolvent off the real axis and takes its residues on an energy grid,
+ *  so that the cost does not grow with the number of poles of the self energy.  The poles
+ *  come out on grid points only, each exact pole split over the two that bracket it, which
+ *  is what the default route does by hand; the grid spacing is the resolution and wants to
+ *  be well below the broadening the bands are drawn with.  The grid is extended at either
+ *  end until it holds every pole, so the lists can reach beyond Emin and Emax.
+ *
+ *  We return 1 + NCharacter tables with one scalar list of poles per k-point.
+ */
+static int LuaCalculateBandsSelfEnergyMesh(lua_State *L, TightBindingDef const * const HTB, BandstructurePathType const * const kList, int const Nktot, int const iSigma, int const iChar, int const NCharacter, double const Emin, double const Emax, uint32_t const NE, CompactVectorType const * const GridIn, double const Lambda)
+{
+  int const n = HTB->NFermion;
+  int const NSet = 1+NCharacter;
+  int i, m, s, ik, Np, iTab;
+  uint32_t NGrid=0, NGridIn=0;
+  double *kall=NULL, *gin=NULL, *Grid=NULL, *W=NULL;
+  bool FreeGin=false, FreeSigma=false;
+  CompactMatrixType P[3];
+  ResponsefunctionType *Sigma=NULL, *SigmaBlock=NULL;
+  ResponsefunctionType *G;
+  ListOfPoles *LOP;
+
+  /*  the grid asked for, either as Emin, Emax and NE or as EnergyGrid  */
+  if(GridIn->Ni != 0) { gin = GridIn->VRe; NGridIn = GridIn->Ni; }
+  else
+  {
+    if(isnan(Emin) || isnan(Emax) || (NE==0))
+    {
+      return luaL_error(L, "Error CalculateBands: Method \"Mesh\" needs an energy grid, either Emin, Emax and NE or EnergyGrid\n");
+    }
+    if(!(Emax>Emin)) return luaL_error(L, "Error CalculateBands: Emax (%g) has to be above Emin (%g)\n", Emax, Emin);
+    NGridIn = NE+1;
+    gin = (double*)malloc(NGridIn*sizeof(double));
+    if(gin==NULL) return luaL_error(L, "Error CalculateBands: out of memory\n");
+    FreeGin = true;
+    for(uint32_t q=0;q<NGridIn;q++) gin[q] = Emin + (Emax-Emin)*q/((double)NE);
+  }
+
+  for(i=0;i<NCharacter;i++) LuaCharacterToMatrix(L, iChar+i, n, i, &(P[i]));
+
+  /*  the self energy as a block response function, as the mesh routine wants it  */
+  if(lua_istable(L, iSigma) && !LuaIsResponseFunctionObject(L, iSigma))
+  {
+    Sigma = LuaReadSelfEnergyPerAtom(L, iSigma, HTB);
+    FreeSigma = (Sigma!=NULL);
+  }
+  else
+  {
+    Sigma = luaL_checkResponsefunction(L, iSigma);
+    FreeSigma = ((Sigma->type&32)==0);
+    if(Sigma->Block!=true)
+    {
+      SigmaBlock = (ResponsefunctionType*)malloc(sizeof(ResponsefunctionType));
+      if(ResponseFunctionToBlockResponseFunction(Sigma, SigmaBlock))
+      {
+        luaL_error(L, "Error CalculateBands: could not copy the self energy into block form\n");
+      }
+      if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+      Sigma = SigmaBlock;
+      FreeSigma = true;
+    }
+    if(ResponseFunctionGetBlockSize(Sigma) != (uint32_t)n)
+    {
+      luaL_error(L, "Error CalculateBands: the BlockSize of the self energy (%d) and NFermion of the tight binding Hamiltonian (%d) need to be equal\n", (int)ResponseFunctionGetBlockSize(Sigma), n);
+    }
+  }
+
+  /*  the k-points of the path */
+  kall = (double*)malloc(3*(size_t)Nktot*sizeof(double));
+  if(kall==NULL) luaL_error(L, "Error CalculateBands: out of memory for %d k-points\n", Nktot);
+  ik=0;
+  for(int iq=0; iq<kList->NQ; iq++)
+  {
+    for(int jq=0; jq<=kList->Q[iq].Nq; jq++)
+    {
+      for(i=0;i<3;i++)
+      {
+        if(jq==0) kall[3*ik+i] = kList->Q[iq].q[i];
+        else      kall[3*ik+i] = kList->Q[iq].q[i] * (kList->Q[iq].Nq + 1 - jq) / (kList->Q[iq].Nq + 1) + kList->Q[iq+1].q[i] * jq / (kList->Q[iq].Nq + 1) ;
+      }
+      ik++;
+    }
+  }
+
+  if(TightBindingBandsPlusSelfEnergyOnMesh(HTB, kall, (uint32_t)Nktot, Sigma, P, (uint32_t)NCharacter, gin, NGridIn, Lambda, &Grid, &NGrid, &W))
+  {
+    free(kall); if(FreeGin) free(gin);
+    if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+    for(i=0;i<NCharacter;i++) FreeCompactMatrix(&(P[i]));
+    return luaL_error(L, "Error CalculateBands: the band spectral function on the mesh failed\n");
+  }
+
+  /*  one list of poles per k-point and per set, the grid points that carry nothing left out */
+  iTab = lua_gettop(L)+1;
+  for(s=0;s<NSet;s++) lua_createtable(L, Nktot, 0);
+  for(ik=0; ik<Nktot; ik++)
+  {
+    Np=0;
+    for(uint32_t q=0;q<NGrid;q++) if(W[(size_t)ik*(size_t)NGrid+q] > 0) Np++;
+    for(s=0;s<NSet;s++)
+    {
+      LOP = (ListOfPoles*)malloc(sizeof(ListOfPoles));
+      LOP->N = Np;
+      InitListOfPoles(LOP);
+      if(s==0) strcpy(LOP->Name, "Band spectral function");
+      else     sprintf(LOP->Name, "Band character %d", s);
+      m=0;
+      for(uint32_t q=0;q<NGrid;q++)
+      {
+        if(W[(size_t)ik*(size_t)NGrid+q] > 0)
+        {
+          LOP->a[m] = Grid[q];
+          LOP->b[m] = W[(((size_t)s*(size_t)Nktot)+(size_t)ik)*(size_t)NGrid+q];
+          m++;
+        }
+      }
+      G = (ResponsefunctionType*)lua_newuserdata(L, sizeof(ResponsefunctionType));
+      G->type = 'l';
+      G->Block = false;
+      G->data = (void*)LOP;
+      G->SuggestedGrid = NULL;
+      G->NSuggestedGridPoints = 0;
+      luaL_setmetatable(L, "ResponseFunction_Type");
+      lua_rawseti(L, iTab+s, ik+1);
+    }
+  }
+  for(s=0;s<NSet;s++) lua_pushvalue(L, iTab+s);
+
+  free(kall); free(Grid); free(W);
+  if(FreeGin) free(gin);
+  if(FreeSigma) FreeResponsefunctionIncludingOriginalPointer(Sigma);
+  for(i=0;i<NCharacter;i++) FreeCompactMatrix(&(P[i]));
+  return NSet;
+}
 
 /*  CalculateBands with a self energy. On stack
  *     iSigma) a self energy in any of the forms CalculateG accepts
