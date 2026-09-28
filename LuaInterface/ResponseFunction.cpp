@@ -456,28 +456,83 @@ static int LuaResponseFunctionToTable(lua_State *L)
   return 1;
 }
 
-/*
+/*  A number on the stack that is whole and above zero.  2 and 2.0 pass, 2.5, 0 and -1 do not,
+ *  so a mistyped fraction is refused instead of being silently truncated.
+ */
+static bool LuaTestPositiveInteger(lua_State *L, int const idx)
+{
+  double v;
+  if(!lua_isnumber(L, idx)) return false;
+  v = (double)lua_tonumber(L, idx);
+  return (v > 0) && (v == floor(v));
+}
+
+/*  On stack ResponseFunction, a number, optionally a second number, optionally an options list
  *
+ *  Method "Number" (the default) takes a positive integer and keeps that many poles, a second
+ *  integer giving the poles kept below and above the chemical potential separately.  Method
+ *  "Weight" takes a positive weight and merges away every pole lighter than that, which is an
+ *  absolute weight and not a fraction of the total; it has no two number form.  Either way
+ *  the pole with the smallest weight is merged into its neighbours first.
  */
 static int LuaReducePolesResponseFunction(lua_State *L)
 {
   ResponsefunctionType *M, MRed;
   int Nred, Nredcon=0;
+  double Wred=0;
+  bool Weight=false;
+  struct
+  {
+    const char* Method;
+  } Options;
+  Options.Method=NULL;
+  LuaOptionsType LuaReducePolesOptions[]={
+    {"Method", "char*", &(Options.Method)},
+    {NULL, NULL, NULL}};
 
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len>3) return luaL_error(L, "Error in ReducePoles: %d argument(s), 2 or 3 expected (response function, desired number of poles or ResponseFunction, desiered number of poles for val, desired number of poles for con).\n", len);
-  M = luaL_checkResponsefunction(L,1);
-  if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
-  Nred = (int)lua_tointeger(L, 2);
-  if (len==3)
+  if(LuaTestOptionsList(L,-1))
   {
-    if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
-    Nredcon = (int)lua_tointeger(L, 3);
+    LuaCheckOptions(L,-1,LuaReducePolesOptions);
+    len--;
+  }
+  if(Options.Method!=NULL)
+  {
+    if(strcicmp(Options.Method,"Weight")==0) Weight=true;
+    else if(strcicmp(Options.Method,"Number")!=0)
+    {
+      return luaL_error(L, "Error in ReducePoles: unknown Method \"%s\"; \"Number\" keeps a number of poles, \"Weight\" removes the poles lighter than a weight.\n", Options.Method);
+    }
+  }
+  if(len<2 || len>3) return luaL_error(L, "Error in ReducePoles: %d argument(s), 2 or 3 expected (response function, desired number of poles or ResponseFunction, desiered number of poles for val, desired number of poles for con).\n", len);
+  M = luaL_checkResponsefunction(L,1);
+  if(Weight)
+  {
+    if(len==3) return luaL_error(L, "Error in ReducePoles: Method \"Weight\" takes one weight, not one per side of the chemical potential.\n");
+    if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: with Method \"Weight\" the 2nd argument should be the weight below which a pole is removed.\n");
+    Wred = (double)lua_tonumber(L, 2);
+    if(!(Wred>0)) return luaL_error(L, "Error in ReducePoles: the weight is %g, with Method \"Weight\" it has to be a positive real number.\n", Wred);
+  }
+  else
+  {
+    if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
+    if(!LuaTestPositiveInteger(L, 2)) return luaL_error(L, "Error in ReducePoles: the number of poles is %g, with Method \"Number\" it has to be a positive integer.\n", (double)lua_tonumber(L, 2));
+    Nred = (int)lua_tointeger(L, 2);
+    if (len==3)
+    {
+      if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
+      if(!LuaTestPositiveInteger(L, 3)) return luaL_error(L, "Error in ReducePoles: the number of poles in the conduction band is %g, with Method \"Number\" it has to be a positive integer.\n", (double)lua_tonumber(L, 3));
+      Nredcon = (int)lua_tointeger(L, 3);
+    }
   }
   ConvertResponsefunction(M, &MRed, 'l', "Default", 0, 0, 0, 0, false, false, false);
   if(M->Block==true)
   {
-    if(len==2)
+    if(Weight)
+    {
+      ReduceBlockListOfPolesWeight((BlockListOfPoles*)(MRed.data), Wred);
+    }
+    else if(len==2)
     {
       ReduceBlockListOfPoles((BlockListOfPoles*)(MRed.data), Nred);
     }
@@ -488,7 +543,11 @@ static int LuaReducePolesResponseFunction(lua_State *L)
   }
   else
   {
-    if(len==2)
+    if(Weight)
+    {
+      ReduceListOfPolesWeightFermi((ListOfPoles*)(MRed.data), Wred, ((ListOfPoles*)(MRed.data))->mu );
+    }
+    else if(len==2)
     {
       ReduceListOfPolesNumberFermi((ListOfPoles*)(MRed.data), Nred, ((ListOfPoles*)(MRed.data))->mu );
     }

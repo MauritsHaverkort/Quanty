@@ -782,6 +782,140 @@ void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef)
   }
 }
 
+/*  Merge away every pole whose weight is below bmin, the smallest one first.  Same merge as
+ *  ReduceListOfPolesNumberFermi, only the criterion that ends the loop is the weight and not
+ *  the number of poles left.  bmin is an absolute weight, not a fraction of the total.
+ *
+ *  A pole may only go if its side of the chemical potential keeps at least one pole, so at
+ *  least two are left.  A pole that sits on Ef never goes, and neither does a neighbour of
+ *  one, which makes three.  Both are needed to keep weight on its own side of Ef: the merge
+ *  sends the weight of a pole down when the pole above it lies above Ef and up when the pole
+ *  below it lies below Ef, but a pole sitting exactly on Ef is neither, so a neighbour of it
+ *  would split its weight across Ef, and the pole on Ef would move off it and lose its
+ *  protection from there on.  The outermost pole has one neighbour only and has to give its
+ *  weight to that one, which lies on its own side of Ef exactly when a second pole on that
+ *  side is what allowed it to be removed at all.
+ *
+ *  There is no spectral weight transfered through the Fermi energy.
+ */
+void ReduceListOfPolesWeightFermi(ListOfPoles * M, double const bmin, double const Ef)
+{
+  uint32_t i, imin, Nbelow, Nabove;
+  double biminLeft, biminRight, temp;
+  OrderListOfPoles(M);
+  while (M->N > 1)
+  {
+    /*  the poles that may go: their side of Ef keeps one, and not one sitting on Ef */
+    Nbelow = 0;
+    Nabove = 0;
+    for (i = 0; i < M->N; i++)
+    {
+      if (M->a[i] < Ef) Nbelow++;
+      if (M->a[i] > Ef) Nabove++;
+    }
+    imin = M->N;
+    for (i = 0; i < M->N; i++)
+    {
+      if (M->a[i] == Ef) continue;
+      if ((i > 0) && (M->a[i - 1] == Ef)) continue;
+      if ((i + 1 < M->N) && (M->a[i + 1] == Ef)) continue;
+      if (((M->a[i] < Ef) && (Nbelow > 1)) || ((M->a[i] > Ef) && (Nabove > 1)))
+      {
+        if ((imin == M->N) || (M->b[i] < M->b[imin])) imin = i;
+      }
+    }
+    if (imin == M->N) return;
+    if (!(M->b[imin] < bmin)) return;
+    if (M->b[imin] > DBL_MIN)
+    {
+      if (imin == 0)
+      {
+        M->a[imin + 1] =
+          ((M->b[imin] / M->b[imin + 1]) * M->a[imin] + M->a[imin + 1]) / ((M->b[imin] / M->b[imin + 1]) + 1);
+        M->b[imin + 1] = M->b[imin] + M->b[imin + 1];
+      }
+      else if (imin == M->N - 1)
+      {
+        M->a[imin - 1] =
+          ((M->b[imin] / M->b[imin - 1]) * M->a[imin] + M->a[imin - 1]) / ((M->b[imin] / M->b[imin - 1]) + 1);
+        M->b[imin - 1] = M->b[imin] + M->b[imin - 1];
+      }
+      else if ((M->a[imin] > Ef) && (M->a[imin - 1] < Ef))
+      {
+        M->a[imin + 1] =
+          ((M->b[imin] / M->b[imin + 1]) * M->a[imin] + M->a[imin + 1]) / ((M->b[imin] / M->b[imin + 1]) + 1);
+        M->b[imin + 1] = M->b[imin] + M->b[imin + 1];
+      }
+      else if ((M->a[imin] < Ef) && (M->a[imin + 1] > Ef))
+      {
+        M->a[imin - 1] =
+          ((M->b[imin] / M->b[imin - 1]) * M->a[imin] + M->a[imin - 1]) / ((M->b[imin] / M->b[imin - 1]) + 1);
+        M->b[imin - 1] = M->b[imin] + M->b[imin - 1];
+      }
+      else
+      {
+        if (fabs(M->a[imin + 1] - M->a[imin - 1]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])) ||
+            (fabs(M->a[imin + 1] - M->a[imin]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])) &&
+             fabs(M->a[imin] - M->a[imin-1]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin]))))
+        {
+          biminLeft = M->b[imin] * (0.5);
+          biminRight = M->b[imin] * (0.5);
+        }
+        else if (fabs(M->a[imin + 1] - M->a[imin]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
+        {
+          biminLeft = 0;
+          biminRight = M->b[imin];
+        }
+        else if (fabs(M->a[imin] - M->a[imin - 1]) < fabs(10 * (DBL_MIN + DBL_EPSILON * M->a[imin])))
+        {
+          biminLeft = M->b[imin];
+          biminRight = 0;
+        }
+        else
+        {
+          biminLeft = M->b[imin] * ((M->a[imin + 1] - M->a[imin]) / (M->a[imin + 1] - M->a[imin - 1]));
+          biminRight = M->b[imin] * ((M->a[imin] - M->a[imin - 1]) / (M->a[imin + 1] - M->a[imin - 1]));
+        }
+        M->a[imin + 1] =
+          ((biminRight / M->b[imin + 1]) * M->a[imin] + M->a[imin + 1]) / ((biminRight / M->b[imin + 1]) + 1);
+        M->b[imin + 1] = biminRight + M->b[imin + 1];
+        M->a[imin - 1] =
+          ((biminLeft / M->b[imin - 1]) * M->a[imin] + M->a[imin - 1]) / ((biminLeft / M->b[imin - 1]) + 1);
+        M->b[imin - 1] = biminLeft + M->b[imin - 1];
+      }
+    }
+    for (i = imin; i < M->N - 1; i++)
+    {
+      M->a[i] = M->a[i + 1];
+      M->b[i] = M->b[i + 1];
+    }
+    M->N--;
+    i = imin;
+    while ((i > 1) && (M->a[i - 1] < M->a[i - 2]))
+    {
+      temp = M->a[i - 1];
+      M->a[i - 1] = M->a[i - 2];
+      M->a[i - 2] = temp;
+      temp = M->b[i - 1];
+      M->b[i - 1] = M->b[i - 2];
+      M->b[i - 2] = temp;
+      i--;
+    }
+    i = imin;
+    while ((i < M->N - 1) && (M->a[i] > M->a[i + 1]))
+    {
+      temp = M->a[i];
+      M->a[i] = M->a[i + 1];
+      M->a[i + 1] = temp;
+      temp = M->b[i];
+      M->b[i] = M->b[i + 1];
+      M->b[i + 1] = temp;
+      i++;
+    }
+  }
+}
+
+
 
 
 /*  Create a new set of poles, which has lenght N, by removing the M->N-N poles with the smallest weight

@@ -11,6 +11,7 @@ void OrderListOfPolesOld(ListOfPoles * const M);
 void MergeOnePoleWithNothers(double const *a, double *const b, uint32_t Ntot, uint32_t n);
 void ReduceListOfPolesWeigth(ListOfPoles * M, double const bmin, double const Ef);
 void ReduceListOfPolesNumberFermi(ListOfPoles * M, uint32_t N, double Ef);
+void ReduceListOfPolesWeightFermi(ListOfPoles * M, double const bmin, double const Ef);
 void ReduceListOfPolesNumber(ListOfPoles * M, uint32_t N);
 void ReduceListOfPolesMoment(ListOfPoles * M, uint32_t N);
 void ReduceListOfPolesSpacing(ListOfPoles * M, double da);

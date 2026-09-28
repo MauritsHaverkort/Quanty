@@ -1023,44 +1023,136 @@ double ListOfPolesNormFlatWeightDistanceComplex(Complex16 * b, uint32_t Ntau, do
   return retval;
 }
 
+static uint32_t ReduceBlockListOfPolesWorker(BlockListOfPoles * const A, uint32_t const N, double const bmin, bool const Weight);
+
+/*  Picks the pole that goes next: the one with the smallest weight, the trace of its residue
+ *  block.  Writes its index in iOut and returns 1, or returns 0 when the reduction is done.
+ *
+ *  Weight == false is the Number method: keep going while more than N poles are left, and
+ *  every pole may go.  Weight == true is the Weight method: keep going while the smallest
+ *  weight is below bmin, and a pole may only go if its side of the chemical potential keeps
+ *  at least one pole, which leaves at least two.  A pole sitting on mu never goes, and
+ *  neither does a neighbour of one, which makes three.  Both are needed to keep weight on its
+ *  own side of mu: the merge sends a pole down when the pole above it is above mu and up when
+ *  the pole below it is below mu, but a pole sitting exactly on mu is neither, so a neighbour
+ *  of it would split across mu and the pole on mu would move off it and lose its protection.
+ *  The outermost pole has one neighbour only and gives its weight to it, which is on its own
+ *  side of mu exactly when a second pole there is what allowed it to be removed.
+ */
+static int BlockListOfPolesNextPoleToMerge(BlockListOfPoles const * const A, uint32_t const N, double const bmin, bool const Weight, uint32_t * const iOut)
+{
+  uint32_t const Np = 1+A->BlockSize*A->BlockSize;    /* one pole: its energy and its residue */
+  double const mu = A->mu;
+  uint32_t i, Nbelow=0, Nabove=0, iSmallest=0;
+  double Normi, SmallestNorm=0, e;
+  int Found=0;
+  if(A->N<2) return 0;
+  if(!Weight && (A->N<=N)) return 0;
+  /*  real and complex, and the two methods, are separate loops: what they test does not
+   *  change from pole to pole and has no business inside the loop                          */
+  if(A->QComplex)
+  {
+    if(Weight)
+    {
+      for(i=0;i<A->N;i++)
+      {
+        e=A->V[i*Np].Re;
+        if(e<mu) Nbelow++;
+        else if(e>mu) Nabove++;
+      }
+      for(i=0;i<A->N;i++)
+      {
+        e=A->V[i*Np].Re;
+        if(e==mu) continue;
+        if((i>0) && (A->V[(i-1)*Np].Re==mu)) continue;
+        if((i+1<A->N) && (A->V[(i+1)*Np].Re==mu)) continue;
+        if(!(((e<mu)&&(Nbelow>1)) || ((e>mu)&&(Nabove>1)))) continue;
+        Normi=ListOfPolesNormFlatWeightComplex(A->V+1+i*Np, A->BlockSize, 0, 0, 0);
+        if((Found==0) || (Normi<SmallestNorm)) { SmallestNorm=Normi; iSmallest=i; Found=1; }
+      }
+    }
+    else
+    {
+      SmallestNorm=ListOfPolesNormFlatWeightComplex(A->V+1, A->BlockSize, 0, 0, 0);
+      Found=1;
+      for(i=1;i<A->N;i++)
+      {
+        Normi=ListOfPolesNormFlatWeightComplex(A->V+1+i*Np, A->BlockSize, 0, 0, 0);
+        if(Normi<SmallestNorm) { SmallestNorm=Normi; iSmallest=i; }
+      }
+    }
+  }
+  else
+  {
+    if(Weight)
+    {
+      for(i=0;i<A->N;i++)
+      {
+        e=A->VRe[i*Np];
+        if(e<mu) Nbelow++;
+        else if(e>mu) Nabove++;
+      }
+      for(i=0;i<A->N;i++)
+      {
+        e=A->VRe[i*Np];
+        if(e==mu) continue;
+        if((i>0) && (A->VRe[(i-1)*Np]==mu)) continue;
+        if((i+1<A->N) && (A->VRe[(i+1)*Np]==mu)) continue;
+        if(!(((e<mu)&&(Nbelow>1)) || ((e>mu)&&(Nabove>1)))) continue;
+        Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+i*Np, A->BlockSize, 0, 0, 0);
+        if((Found==0) || (Normi<SmallestNorm)) { SmallestNorm=Normi; iSmallest=i; Found=1; }
+      }
+    }
+    else
+    {
+      SmallestNorm=ListOfPolesNormFlatWeightReal(A->VRe+1, A->BlockSize, 0, 0, 0);
+      Found=1;
+      for(i=1;i<A->N;i++)
+      {
+        Normi=ListOfPolesNormFlatWeightReal(A->VRe+1+i*Np, A->BlockSize, 0, 0, 0);
+        if(Normi<SmallestNorm) { SmallestNorm=Normi; iSmallest=i; }
+      }
+    }
+  }
+  if(Found==0) return 0;
+  if(Weight && !(SmallestNorm<bmin)) return 0;
+  *iOut = iSmallest;
+  return 1;
+}
+
 /*  reduce the number of poles to N
  *
  */
 uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
 {
-  double const Ef = A->mu;
-  double SmallestNorm=0,Normi,Normiplus,Normimin,a,amin,aplus;
-  uint32_t iSmallestNorm=0,i;
   if(N==0) {printf("Reducing a list of poles to zero poles does not make sence\n");return 1;};
   if(A->N<=N) {return 0;}
+  return ReduceBlockListOfPolesWorker(A, N, 0, false);
+}
+
+/*  Merge away every pole whose weight is below bmin, the smallest one first.  The weight of a
+ *  pole is the trace of its residue block, and bmin is an absolute weight, not a fraction of
+ *  the total.  See BlockListOfPolesNextPoleToMerge for what is kept.
+ */
+uint32_t ReduceBlockListOfPolesWeight(BlockListOfPoles * const A, double const bmin)
+{
+  if(!(bmin>0)) {printf("Reducing a list of poles asks for a weight above zero\n");return 1;}
+  return ReduceBlockListOfPolesWorker(A, 0, bmin, true);
+}
+
+/*  the body of both: remove poles one at a time, the one with the smallest weight first,
+ *  merging it into its neighbours, for as long as BlockListOfPolesNextPoleToMerge says so
+ */
+static uint32_t ReduceBlockListOfPolesWorker(BlockListOfPoles * const A, uint32_t const N, double const bmin, bool const Weight)
+{
+  double const Ef = A->mu;
+  double Normi,Normiplus,Normimin,a,amin,aplus;
+  uint32_t iSmallestNorm=0,i;
   OrderBlockListOfPoles(A);
   if(A->QComplex)
   {
-    Complex16 *iBlock;
-    while(A->N>N)
+    while(BlockListOfPolesNextPoleToMerge(A, N, bmin, Weight, &iSmallestNorm))
     {
-      /* find smallest Norm */
-      iBlock=A->V+1;
-      a=A->V[0].Re;
-      aplus=iBlock[A->BlockSize*A->BlockSize].Re;
-      amin=2*a-aplus;
-      SmallestNorm=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-      iSmallestNorm=0;
-      for(i=1;i<A->N-1;i++)
-      {
-        iBlock+=A->BlockSize*A->BlockSize+1;
-        amin=a;
-        a=aplus;
-        aplus=iBlock[A->BlockSize*A->BlockSize].Re;
-        Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-        if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=i;}
-      }
-      iBlock+=A->BlockSize*A->BlockSize+1;
-      amin=a;
-      a=aplus;
-      aplus=2*a-amin;
-      Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-      if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=A->N-1;}
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
@@ -1172,31 +1264,8 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
   }
   else /* Real */
   {
-    double *iBlock;
-    while(A->N>N)
+    while(BlockListOfPolesNextPoleToMerge(A, N, bmin, Weight, &iSmallestNorm))
     {
-      /* find smallest Norm */
-      iBlock=A->VRe+1;
-      a=A->VRe[0];
-      aplus=iBlock[A->BlockSize*A->BlockSize];
-      amin=2*a-aplus;
-      SmallestNorm=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-      iSmallestNorm=0;
-      for(i=1;i<A->N-1;i++)
-      {
-        iBlock+=A->BlockSize*A->BlockSize+1;
-        amin=a;
-        a=aplus;
-        aplus=iBlock[A->BlockSize*A->BlockSize];
-        Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-        if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=i;}
-      }
-      iBlock+=A->BlockSize*A->BlockSize+1;
-      amin=a;
-      a=aplus;
-      aplus=2*a-amin;
-      Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-      if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=A->N-1;}
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
