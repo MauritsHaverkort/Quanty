@@ -1053,14 +1053,14 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
         a=aplus;
         aplus=iBlock[A->BlockSize*A->BlockSize].Re;
         Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-        if(Normi<SmallestNorm)iSmallestNorm=i;
+        if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=i;}
       }
       iBlock+=A->BlockSize*A->BlockSize+1;
       amin=a;
       a=aplus;
       aplus=2*a-amin;
       Normi=ListOfPolesNormFlatWeightComplex(iBlock,A->BlockSize,a,amin,aplus);
-      if(Normi<SmallestNorm)iSmallestNorm=A->N-1;
+      if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=A->N-1;}
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
@@ -1189,14 +1189,14 @@ uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N)
         a=aplus;
         aplus=iBlock[A->BlockSize*A->BlockSize];
         Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-        if(Normi<SmallestNorm)iSmallestNorm=i;
+        if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=i;}
       }
       iBlock+=A->BlockSize*A->BlockSize+1;
       amin=a;
       a=aplus;
       aplus=2*a-amin;
       Normi=ListOfPolesNormFlatWeightReal(iBlock,A->BlockSize,a,amin,aplus);
-      if(Normi<SmallestNorm)iSmallestNorm=A->N-1;
+      if(Normi<SmallestNorm){SmallestNorm=Normi;iSmallestNorm=A->N-1;}
       /* remove smallest Norm */
       if(iSmallestNorm==0)
       {
