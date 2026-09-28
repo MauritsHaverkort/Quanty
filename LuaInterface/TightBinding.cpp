@@ -1218,6 +1218,12 @@ static void LuaCharacterToMatrix(lua_State *L, int const iChar, int const n, int
   lua_pop(L,1);
 }
 
+/*  How much memory the poles of the k-points may take before CalculateBands walks the path in
+ *  blocks.  One k-point costs (1+NCharacter) N doubles, N the dimension of H(k) plus the
+ *  embedded self energy, so 64 MB is 20000 k-points of a one band model with 100 poles of
+ *  Sigma, or 2000 of a ten band model with 200.                                            */
+static size_t const BandsBufferBytes = 64*1024*1024;
+
 /*  CalculateBands with a self energy. On stack
  *     iSigma) a self energy in any of the forms CalculateG accepts
  *     iChar .. iChar+NCharacter-1) the characters (0, 1 or 3), functions of a quadratic form or matrices, see LuaCharacterToMatrix
@@ -1237,21 +1243,15 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
 {
   int const n = HTB->NFermion;
   int const NSet = 1+NCharacter;
-  int i, j, m, s, a, sh, o, ik, Np, N, iTab;
-  double k[3], phase, tr, ti, wt;
-  CompactMatrixType E, HS, T, P[3];
-  MatrixType Hcp;
+  int i, m, s, a, sh, o, ik, Np, N, iTab;
+  CompactMatrixType E, P[3];
   ResponsefunctionType *G;
   ListOfPoles *LOP;
   for(i=0;i<NCharacter;i++) LuaCharacterToMatrix(L, iChar+i, n, i, &(P[i]));
   LuaReadSelfEnergyEmbedded(L, iSigma, HTB, &E);
   N = E.Ni;
   double *rpos = (double*)malloc(3*n*sizeof(double));
-  double *val  = (double*)malloc(N*sizeof(double));
-  double *e    = (double*)malloc(N*sizeof(double));
-  double *w    = (double*)malloc(NSet*N*sizeof(double));
-  double *ur   = (double*)malloc(n*sizeof(double));
-  double *ui   = (double*)malloc(n*sizeof(double));
+  if(rpos==NULL) luaL_error(L, "Error CalculateBands: out of memory\n");
   // position of the atom of every orbital
   for(a=0;a<HTB->Cell.NAtoms;a++)
   {
@@ -1268,6 +1268,9 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
   }
   iTab = lua_gettop(L)+1;
   for(s=0;s<NSet;s++) lua_createtable(L, Nktot, 0);
+  /*  the k-points of the path, so that the loop over them can be a flat one */
+  double *kall = (double*)malloc(3*(size_t)Nktot*sizeof(double));
+  if(kall==NULL) luaL_error(L, "Error CalculateBands: out of memory for %d k-points\n", Nktot);
   ik=0;
   for(int iq=0; iq<kList->NQ; iq++)
   {
@@ -1275,55 +1278,111 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
     {
       for(i=0;i<3;i++)
       {
-        if(jq==0) k[i] = kList->Q[iq].q[i];
-        else      k[i] = kList->Q[iq].q[i] * (kList->Q[iq].Nq + 1 - jq) / (kList->Q[iq].Nq + 1) + kList->Q[iq+1].q[i] * jq / (kList->Q[iq].Nq + 1) ;
+        if(jq==0) kall[3*ik+i] = kList->Q[iq].q[i];
+        else      kall[3*ik+i] = kList->Q[iq].q[i] * (kList->Q[iq].Nq + 1 - jq) / (kList->Q[iq].Nq + 1) + kList->Q[iq+1].q[i] * jq / (kList->Q[iq].Nq + 1) ;
       }
-      CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*HTB, k, &Hcp);
-      HS.Ni=N; HS.Nj=N; HS.QComplex=(E.QComplex || Hcp.QComplex);
-      InitCompactMatrix(&HS);
-      if(HS.QComplex)
+      ik++;
+    }
+  }
+  /*  The k-points are independent and are diagonalized in parallel into a plain buffer; the
+   *  Lua objects are built from that buffer afterwards, as Lua may only be touched by one
+   *  thread.  The buffer holds KBlock k-points at a time, so that a long path with a self
+   *  energy of many poles does not ask for more memory than the calculation itself.       */
+  size_t const PerK = (size_t)(1+NSet)*(size_t)N*sizeof(double);
+  int KBlock = (int)(BandsBufferBytes/PerK);
+  if(KBlock<1) KBlock=1;
+  if(KBlock>Nktot) KBlock=Nktot;
+  double *eAll  = (double*)malloc((size_t)KBlock*(size_t)N*sizeof(double));
+  double *wAll  = (double*)malloc((size_t)NSet*(size_t)KBlock*(size_t)N*sizeof(double));
+  int    *NpAll = (int*)malloc((size_t)KBlock*sizeof(int));
+  if((eAll==NULL)||(wAll==NULL)||(NpAll==NULL))
+  {
+    free(kall); free(eAll); free(wAll); free(NpAll);
+    luaL_error(L, "Error CalculateBands: out of memory for the poles of %d k-points of dimension %d\n", KBlock, N);
+  }
+  for(int kstart=0; kstart<Nktot; kstart+=KBlock)
+  {
+    int const kend = Min(kstart+KBlock, Nktot);
+    int failed=0;
+#pragma omp parallel
+    {
+      double *valt = (double*)malloc(N*sizeof(double));
+      double *urt  = (double*)malloc(n*sizeof(double));
+      double *uit  = (double*)malloc(n*sizeof(double));
+      int ikk;
+      if((valt==NULL)||(urt==NULL)||(uit==NULL)) failed=1;
+#pragma omp for schedule(static)
+      for(ikk=kstart; ikk<kend; ikk++)
       {
-        for(i=0;i<N*N;i++)
+        int ii, jj, mm, ss, Np1, lk=ikk-kstart;
+        double tr1, ti1, phase1, wt1;
+        double const * const kk = kall+3*(size_t)ikk;
+        double * const el = eAll+(size_t)lk*(size_t)N;
+        CompactMatrixType HS1, T1;
+        MatrixType Hcp1;
+        if(failed) continue;
+        CreateHamiltonianFromTightBindingDefConstantPhaseInUnitCell(*HTB, kk, &Hcp1);
+        HS1.Ni=N; HS1.Nj=N; HS1.QComplex=(E.QComplex || Hcp1.QComplex);
+        InitCompactMatrix(&HS1);
+        if(HS1.QComplex)
         {
-          HS.V[i].Re = (E.QComplex) ? (E.V[i].Re) : (E.VRe[i]);
-          HS.V[i].Im = (E.QComplex) ? (E.V[i].Im) : (0);
-        }
-        for(i=0;i<n;i++)
-        {
-          for(j=0;j<n;j++)
+          for(ii=0;ii<N*N;ii++)
           {
-            HS.V[i*N+j].Re += Hcp.VRe[i][j];
-            if(Hcp.QComplex) HS.V[i*N+j].Im += Hcp.VIm[i][j];
+            HS1.V[ii].Re = (E.QComplex) ? (E.V[ii].Re) : (E.VRe[ii]);
+            HS1.V[ii].Im = (E.QComplex) ? (E.V[ii].Im) : (0);
+          }
+          for(ii=0;ii<n;ii++)
+          {
+            for(jj=0;jj<n;jj++)
+            {
+              HS1.V[ii*N+jj].Re += Hcp1.VRe[ii][jj];
+              if(Hcp1.QComplex) HS1.V[ii*N+jj].Im += Hcp1.VIm[ii][jj];
+            }
           }
         }
-      }
-      else
-      {
-        for(i=0;i<N*N;i++) HS.VRe[i] = E.VRe[i];
-        for(i=0;i<n;i++) for(j=0;j<n;j++) HS.VRe[i*N+j] += Hcp.VRe[i][j];
-      }
-      FreeMatrix(&Hcp);
-      CompactMatrixEigensystem(&HS, &T, val);
-      Np=0;
-      for(m=0;m<N;m++)
-      {
-        wt=0;
-        for(i=0;i<n;i++)
+        else
         {
-          tr = (T.QComplex) ? (T.V[m*T.Nj+i].Re) : (T.VRe[m*T.Nj+i]);
-          ti = (T.QComplex) ? (T.V[m*T.Nj+i].Im) : (0);
-          double *ri = rpos+3*i;
-          phase = Dot(k, ri);
-          ur[i] = tr*cos(phase) - ti*sin(phase);
-          ui[i] = tr*sin(phase) + ti*cos(phase);
-          wt += Sqr(ur[i]) + Sqr(ui[i]);
+          for(ii=0;ii<N*N;ii++) HS1.VRe[ii] = E.VRe[ii];
+          for(ii=0;ii<n;ii++) for(jj=0;jj<n;jj++) HS1.VRe[ii*N+jj] += Hcp1.VRe[ii][jj];
         }
-        if(wt < 1000*DBL_EPSILON) continue;
-        e[Np] = val[m];
-        w[Np] = wt;
-        for(s=1;s<NSet;s++) w[s*N+Np] = CharacterQuadraticForm(&(P[s-1]), ur, ui, n);
-        Np++;
+        FreeMatrix(&Hcp1);
+        CompactMatrixEigensystem(&HS1, &T1, valt);
+        Np1=0;
+        for(mm=0;mm<N;mm++)
+        {
+          wt1=0;
+          for(ii=0;ii<n;ii++)
+          {
+            tr1 = (T1.QComplex) ? (T1.V[mm*T1.Nj+ii].Re) : (T1.VRe[mm*T1.Nj+ii]);
+            ti1 = (T1.QComplex) ? (T1.V[mm*T1.Nj+ii].Im) : (0);
+            double *ri = rpos+3*ii;
+            phase1 = Dot(kk, ri);
+            urt[ii] = tr1*cos(phase1) - ti1*sin(phase1);
+            uit[ii] = tr1*sin(phase1) + ti1*cos(phase1);
+            wt1 += Sqr(urt[ii]) + Sqr(uit[ii]);
+          }
+          if(wt1 < 1000*DBL_EPSILON) continue;
+          el[Np1] = valt[mm];
+          wAll[(size_t)lk*(size_t)N+Np1] = wt1;
+          for(ss=1;ss<NSet;ss++) wAll[((size_t)ss*(size_t)KBlock+(size_t)lk)*(size_t)N+Np1] = CharacterQuadraticForm(&(P[ss-1]), urt, uit, n);
+          Np1++;
+        }
+        NpAll[lk] = Np1;
+        FreeCompactMatrix(&T1);
+        FreeCompactMatrix(&HS1);
       }
+      free(valt); free(urt); free(uit);
+    }
+    if(failed)
+    {
+      free(kall); free(eAll); free(wAll); free(NpAll);
+      luaL_error(L, "Error CalculateBands: out of memory while diagonalizing the k-points\n");
+    }
+    /*  and now, one thread, the response function of every k-point of this block */
+    for(ik=kstart; ik<kend; ik++)
+    {
+      int const lk = ik-kstart;
+      Np = NpAll[lk];
       for(s=0;s<NSet;s++)
       {
         LOP = (ListOfPoles*)malloc(sizeof(ListOfPoles));
@@ -1331,7 +1390,7 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
         InitListOfPoles(LOP);
         if(s==0) strcpy(LOP->Name, "Band spectral function");
         else     sprintf(LOP->Name, "Band character %d", s);
-        for(m=0;m<Np;m++) { LOP->a[m] = e[m]; LOP->b[m] = w[s*N+m]; }
+        for(m=0;m<Np;m++) { LOP->a[m] = eAll[(size_t)lk*(size_t)N+m]; LOP->b[m] = wAll[((size_t)s*(size_t)KBlock+(size_t)lk)*(size_t)N+m]; }
         G = (ResponsefunctionType*)lua_newuserdata(L, sizeof(ResponsefunctionType));
         G->type = 'l';
         G->Block = false;
@@ -1341,15 +1400,13 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
         luaL_setmetatable(L, "ResponseFunction_Type");
         lua_rawseti(L, iTab+s, ik+1);
       }
-      FreeCompactMatrix(&T);
-      FreeCompactMatrix(&HS);
-      ik++;
     }
   }
+  free(kall); free(eAll); free(wAll); free(NpAll);
   for(s=0;s<NSet;s++) lua_pushvalue(L, iTab+s);
   FreeCompactMatrix(&E);
   for(i=0;i<NCharacter;i++) FreeCompactMatrix(&(P[i]));
-  free(rpos); free(val); free(e); free(w); free(ur); free(ui);
+  free(rpos);
   return NSet;
 }
 
