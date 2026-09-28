@@ -751,6 +751,7 @@ void ComplexWaveFunctionNormalize(WaveFunctionType * const a)
   }
   Norm = sqrt(NormA + NormB);
   iBlok = a->NBlok - 1;
+  if(Norm<10*DBL_MIN) return;
 #pragma omp parallel for private(iElement)
   for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); iOMP++)
   {
