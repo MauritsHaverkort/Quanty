@@ -223,6 +223,160 @@ end
 
 
 
+-- Which pole is removed.  The checks above compare shapes and the value at a
+-- huge broadening, which does not notice if the wrong pole is merged away.
+-- Six poles below mu, so the Fermi case is not in play; the pole at -5 carries
+-- 400 times less weight than any other and is the one that has to go.  Merging
+-- a pole splits its weight over the two neighbours in proportion to the
+-- distance, which leaves the zeroth and the first moment untouched.
+
+Ea = {-6,  -5,   -4,  -3, -2, -1}
+Wa = {0.5, 0.001, 0.4, 1,  1,  1}
+
+function SmallestWeightAndMoments(G)
+	local T = ResponseFunction.ToTable(G)
+	local wmin, m0, m1 = math.huge, 0, 0
+	for i = 1, #T[2] do
+		local w = T[2][i]
+		if type(w) == "table" then w = w[1][1] end
+		wmin = Min(wmin, w)
+		m0 = m0 + w
+		m1 = m1 + w * T[1][i+1]
+	end
+	return #T[2], wmin, m0, m1
+end
+
+-- single valued and matrix valued (block size one), the same poles
+a, b = {0}, {}
+for i = 1, #Ea do a[i+1] = Ea[i]; b[i] = Wa[i] end
+G9 = ResponseFunction.New({a, b, mu=0, type="ListOfPoles", name="G LP smallest"})
+
+a, b = {Matrix.New({{0}})}, {}
+for i = 1, #Ea do a[i+1] = Ea[i]; b[i] = Matrix.New({{Wa[i]}}) end
+G10 = ResponseFunction.New({a, b, mu=0, type="ListOfPoles", name="G Mat LP smallest"})
+
+N0, W0, M0, M1 = SmallestWeightAndMoments(G9)
+
+for _, G in ipairs({G9, G10}) do
+	print(G.name)
+	local N, W, m0, m1 = SmallestWeightAndMoments(ResponseFunction.ReducePoles(G, 5))
+	if(N ~= 5) then
+		print(G)
+		error("ResponseFunction.ReducePoles failed: "..N.." poles left, 5 asked for",1)
+	end
+	-- 0.4 if the pole of weight 0.001 was merged away, 0.201 if the wrong one was
+	if(W < 0.3) then
+		print(G)
+		print(ResponseFunction.ReducePoles(G, 5))
+		error("ResponseFunction.ReducePoles failed: smallest weight left is "..W..
+		      ", the pole with the smallest weight was not the one removed",1)
+	end
+	if((Abs(m0 - M0) > 1E-12) or (Abs(m1 - M1) > 1E-12)) then
+		print(G)
+		error("ResponseFunction.ReducePoles failed: the moments moved by "..
+		      Abs(m0 - M0).." and "..Abs(m1 - M1),1)
+	end
+end
+
+
+-- Method "Weight" removes every pole lighter than the number given, instead of
+-- keeping a number of poles.  What has to survive: one pole below and one above
+-- the chemical potential, and a pole sitting on it, which keeps its energy and
+-- its weight.  No weight crosses the chemical potential, so the weight below it,
+-- on it and above it is the same before and after.
+
+function WeightPerSide(G, mu)
+	local T = ResponseFunction.ToTable(G)
+	local lo, at, hi, light = 0, 0, 0, math.huge
+	for i = 1, #T[2] do
+		local w = T[2][i]
+		if type(w) == "table" then w = w[1][1] end
+		local e = T[1][i+1]
+		if     e < mu then lo = lo + w
+		elseif e > mu then hi = hi + w
+		else               at = at + w end
+		light = Min(light, w)
+	end
+	return #T[2], lo, at, hi, light
+end
+
+function PoleListOfWeights(e, w, Block)
+	local a, b = {0}, {}
+	if Block then a = {Matrix.New({{0}})} end
+	for i = 1, #e do
+		a[i+1] = e[i]
+		if Block then b[i] = Matrix.New({{w[i]}}) else b[i] = w[i] end
+	end
+	return ResponseFunction.New({a, b, mu = 0, type = "ListOfPoles"})
+end
+
+-- with a pole on the chemical potential, and without one.  The light poles sit at
+-- -2 and +2, so they are not the neighbours of the pole at zero and nothing
+-- protects them
+EWithMu    = {-3, -2,   -1, 0, 1, 2,    3}
+WWithMu    = { 1,  0.01, 1, 2, 1, 0.02, 1}
+EWithoutMu = {-3, -2,   -1, 1, 2,    3}
+WWithoutMu = { 1,  0.01, 1, 1, 0.02, 1}
+
+for _, Block in ipairs({false, true}) do
+	for _, Case in ipairs({{"pole on mu", EWithMu, WWithMu, 5, 3}, {"no pole on mu", EWithoutMu, WWithoutMu, 4, 2}}) do
+		local Name, E, W, NLight, NLeast = Case[1], Case[2], Case[3], Case[4], Case[5]
+		local G = PoleListOfWeights(E, W, Block)
+		print(string.format("Weight method, %s, %s", Name, Block and "matrix valued" or "single valued"))
+		local N0, lo0, at0, hi0 = WeightPerSide(G, 0)
+
+		-- above the two light poles and below every other one
+		local N, lo, at, hi, light = WeightPerSide(ResponseFunction.ReducePoles(G, 0.05, {{"Method","Weight"}}), 0)
+		if(N ~= NLight) then
+			error("ResponseFunction.ReducePoles Method Weight failed: "..N.." poles left of "..N0..", "..NLight.." expected",1)
+		end
+		if(light < 0.05) then
+			error("ResponseFunction.ReducePoles Method Weight failed: a pole of weight "..light.." is left, lighter than the 0.05 asked for",1)
+		end
+
+		-- heavier than every pole: what is left is the least the method may keep
+		N, lo, at, hi = WeightPerSide(ResponseFunction.ReducePoles(G, 100, {{"Method","Weight"}}), 0)
+		if(N ~= NLeast) then
+			error("ResponseFunction.ReducePoles Method Weight failed: "..N.." poles left for a weight above all of them, "..NLeast.." expected",1)
+		end
+		if((Abs(lo-lo0) > 1E-12) or (Abs(at-at0) > 1E-12) or (Abs(hi-hi0) > 1E-12)) then
+			error("ResponseFunction.ReducePoles Method Weight failed: the weight below, on and above the chemical potential moved from "..
+			      lo0.." "..at0.." "..hi0.." to "..lo.." "..at.." "..hi,1)
+		end
+	end
+end
+
+-- the pole on the chemical potential keeps both its energy and its weight
+GMu = PoleListOfWeights(EWithMu, WWithMu, true)
+TMu = ResponseFunction.ToTable(ResponseFunction.ReducePoles(GMu, 100, {{"Method","Weight"}}))
+if((TMu[1][3] ~= 0) or (Abs(TMu[2][2][1][1] - 2) > 1E-12)) then
+	error("ResponseFunction.ReducePoles Method Weight failed: the pole on the chemical potential moved to "..
+	      TMu[1][3].." with weight "..TMu[2][2][1][1]..", 0 with weight 2 expected",1)
+end
+
+-- what the two methods refuse
+GErr = PoleListOfWeights(EWithMu, WWithMu, true)
+Refuse = {{"a number of poles that is not whole",  function() return ResponseFunction.ReducePoles(GErr, 2.5) end},
+          {"a negative number of poles",           function() return ResponseFunction.ReducePoles(GErr, -1) end},
+          {"zero poles",                           function() return ResponseFunction.ReducePoles(GErr, 0) end},
+          {"a negative weight",                    function() return ResponseFunction.ReducePoles(GErr, -1, {{"Method","Weight"}}) end},
+          {"a weight of zero",                     function() return ResponseFunction.ReducePoles(GErr, 0, {{"Method","Weight"}}) end},
+          {"a weight per side",                    function() return ResponseFunction.ReducePoles(GErr, 1, 1, {{"Method","Weight"}}) end},
+          {"a method that does not exist",         function() return ResponseFunction.ReducePoles(GErr, 2, {{"Method","Squeeze"}}) end},
+          {"the method spelled wrong",             function() return ResponseFunction.ReducePoles(GErr, 1, {{"Method","Weigth"}}) end}}
+for _, R in ipairs(Refuse) do
+	if(pcall(R[2]) ~= false) then
+		error("ResponseFunction.ReducePoles took "..R[1]..", it should refuse it",1)
+	end
+end
+
+-- a weight below every pole leaves the list alone, and so does Method "Number"
+-- asking for more poles than there are
+if((Chop(GErr - ResponseFunction.ReducePoles(GErr, 1E-30, {{"Method","Weight"}})) == Chop(GErr-GErr)) ~= true) then
+	error("ResponseFunction.ReducePoles Method Weight changed the list for a weight below every pole",1)
+end
+print("Weight method, what it refuses")
+
 
 collectgarbage()
 print("--------------------------------------------------------")

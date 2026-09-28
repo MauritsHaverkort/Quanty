@@ -28,6 +28,7 @@ double ListOfPolesNormFlatWeightDistanceReal(double * b, uint32_t Ntau, double a
 double ListOfPolesNormFlatWeightDistanceComplex(Complex16 * b, uint32_t Ntau, double a, double amin, double aplus);
 uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t N);
 uint32_t ReduceBlockListOfPoles(BlockListOfPoles * const A, uint32_t Nval, uint32_t Ncon);
+uint32_t ReduceBlockListOfPolesWeight(BlockListOfPoles * const A, double const bmin);
 uint32_t BlockListOfPolesPlaceOnMesh(BlockListOfPoles * const A, double const *mesh, int const NE);
 uint32_t MakeBlockListOfPolesPhysical(BlockListOfPoles * const A);
 uint32_t SubtractBlockListOfPoles(BlockListOfPoles * const A, BlockListOfPoles const * const B);
