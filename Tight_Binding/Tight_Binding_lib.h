@@ -14,6 +14,7 @@ bool QInteger(double x, double epsilon);
 int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructureType *const Cell, double epsilon);
 int SetNFermionIndexTightBindingDef(TightBindingDef * A);
 void AtomPositionCartesian(CrystalStructureType const * const Cell, int const iAtom, double r[3]);
+void SuperCellRelativePosition(CrystalStructureSuperCellType const * const SuperCell, int32_t const CellPos[3], double const Position[3], double q[3]);
 int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A);

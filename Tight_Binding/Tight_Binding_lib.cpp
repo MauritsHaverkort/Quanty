@@ -416,37 +416,35 @@ bool QInteger(double x, double epsilon)
   return true;
 }
 
+/*  Returns the index of the atom in Cell that Atom is a periodic image of, INT_MAX if there is none.
+ *  The position of Atom is cartesian, it is an atom of a cluster, which has no unit cell. The
+ *  positions of the atoms in Cell are in the units of Cell (Absolute or Relative) and converted.
+ */
 int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructureType *const Cell, double epsilon)
 {
   int i;
-  double vec[3],relvec[3];
+  double vec[3],relvec[3],r[3];
   for(i=0;i<Cell->NAtoms;i++)
   {
     if(strcmp(Atom->Name, Cell->Atom[i].Name)==0)
     { // name is equal next test if position is compatible
-      vec[0]=Atom->Position[0]-Cell->Atom[i].Position[0];
-      vec[1]=Atom->Position[1]-Cell->Atom[i].Position[1];
-      vec[2]=Atom->Position[2]-Cell->Atom[i].Position[2];
-      if(Cell->Units&8)
-      { // position in units of lattice vectors vec must be integer in all elements
-        if(QInteger(vec[0],epsilon)&&QInteger(vec[1],epsilon)&&QInteger(vec[2],epsilon)) return i;
-      }
-      else
-      { // position in absolute units
-        if((fabs(vec[0])<epsilon)&&(fabs(vec[1])<epsilon)&&(fabs(vec[2])<epsilon)) return i;
-        if(fabs(ParallelalPipedVolume(Cell->gUnitCell[0], Cell->gUnitCell[1], Cell->gUnitCell[2]))>epsilon)
+      AtomPositionCartesian(Cell, i, r);
+      vec[0]=Atom->Position[0]-r[0];
+      vec[1]=Atom->Position[1]-r[1];
+      vec[2]=Atom->Position[2]-r[2];
+      if((fabs(vec[0])<epsilon)&&(fabs(vec[1])<epsilon)&&(fabs(vec[2])<epsilon)) return i;
+      if(fabs(ParallelalPipedVolume(Cell->gUnitCell[0], Cell->gUnitCell[1], Cell->gUnitCell[2]))>epsilon)
+      { // vec must be an integer number of cell vectors
+        relvec[0]=Dot(vec,Cell->gUnitCell[0]);
+        relvec[1]=Dot(vec,Cell->gUnitCell[1]);
+        relvec[2]=Dot(vec,Cell->gUnitCell[2]);
+        if(Cell->Units&1)
         {
-          relvec[0]=Dot(vec,Cell->gUnitCell[0]);
-          relvec[1]=Dot(vec,Cell->gUnitCell[1]);
-          relvec[2]=Dot(vec,Cell->gUnitCell[2]);
-          if(Cell->Units&1)
-          {
-            relvec[0]/=(2*Pi);
-            relvec[1]/=(2*Pi);
-            relvec[2]/=(2*Pi);
-          }
-          if(QInteger(relvec[0],epsilon)&&QInteger(relvec[1],epsilon)&&QInteger(relvec[2],epsilon)) return i;
+          relvec[0]/=(2*Pi);
+          relvec[1]/=(2*Pi);
+          relvec[2]/=(2*Pi);
         }
+        if(QInteger(relvec[0],epsilon)&&QInteger(relvec[1],epsilon)&&QInteger(relvec[2],epsilon)) return i;
       }
     }
   }
@@ -692,6 +690,22 @@ void AtomPositionCartesian(CrystalStructureType const * const Cell, int const iA
     {
       if (p[j] != 0) r[i] += p[j] * Cell->rUnitCell[j][i];
     }
+  }
+}
+
+/*  With Units Relative: the position of an atom at Position (in units of the cell vectors a, b
+ *  and c) in cell CellPos of a supercell, in units of the supercell vectors A = N a. The atom is
+ *  at x = CellPos + Position in units of a, so q = x N^-1. The rows of gSuperCell, the reciprocal
+ *  vectors of N, are the columns of N^-1 (times 2 Pi with Units 2Pi).
+ */
+void SuperCellRelativePosition(CrystalStructureSuperCellType const * const SuperCell, int32_t const CellPos[3], double const Position[3], double q[3])
+{
+  int i;
+  double const x[3] = {CellPos[0] + Position[0], CellPos[1] + Position[1], CellPos[2] + Position[2]};
+  for (i = 0; i < 3; i++)
+  {
+    q[i] = Dot(x, SuperCell->gSuperCell[i]);
+    if (SuperCell->Crystal.Units & 1) q[i] /= (2 * Pi);
   }
 }
 
@@ -2218,9 +2232,16 @@ int CreateCrystalStructureFromCrystalStructureSuperCell(CrystalStructureSuperCel
     {
       strncpy(Cell->Atom[iAtomsuper].Name, SuperCell.Crystal.Atom[iAtom].Name, 32);
       Cell->Atom[iAtomsuper].AtomNumber = SuperCell.Crystal.Atom[iAtom].AtomNumber;
-      Cell->Atom[iAtomsuper].Position[0] = transvec[0] + SuperCell.Crystal.Atom[iAtom].Position[0];
-      Cell->Atom[iAtomsuper].Position[1] = transvec[1] + SuperCell.Crystal.Atom[iAtom].Position[1];
-      Cell->Atom[iAtomsuper].Position[2] = transvec[2] + SuperCell.Crystal.Atom[iAtom].Position[2];
+      if ((SuperCell.Crystal.Units & 8) == 0)
+      {
+        Cell->Atom[iAtomsuper].Position[0] = transvec[0] + SuperCell.Crystal.Atom[iAtom].Position[0];
+        Cell->Atom[iAtomsuper].Position[1] = transvec[1] + SuperCell.Crystal.Atom[iAtom].Position[1];
+        Cell->Atom[iAtomsuper].Position[2] = transvec[2] + SuperCell.Crystal.Atom[iAtom].Position[2];
+      }
+      else
+      { // in units of the supercell vectors
+        SuperCellRelativePosition(&SuperCell, SuperCell.CellPos[iCell], SuperCell.Crystal.Atom[iAtom].Position, Cell->Atom[iAtomsuper].Position);
+      }
       Cell->Atom[iAtomsuper].Nshell = SuperCell.Crystal.Atom[iAtom].Nshell;
       Cell->Atom[iAtomsuper].ShellName = (char**)malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(char*));
       Cell->Atom[iAtomsuper].shelldegeneracy = (int*)malloc(SuperCell.Crystal.Atom[iAtom].Nshell * sizeof(int));
@@ -2248,6 +2269,7 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
 {
   int    iCell, iAtom, iAtomsuper, ishell, iorb, iH, iHsuper, ia, ib, ic, atomvec[3];
   double transvec[3];
+  double r1[3], r2[3];
   /* A = N[0][0] a + N[0][1] b + N[0][2] c */
   ASuper->Cell.rUnitCell[0][0] =
     SuperCell.rSuperCell[0][0] * A.Cell.rUnitCell[0][0] + SuperCell.rSuperCell[0][1] * A.Cell.rUnitCell[1][0] +
@@ -2278,6 +2300,7 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
   ASuper->Cell.rUnitCell[2][2] =
     SuperCell.rSuperCell[2][0] * A.Cell.rUnitCell[0][2] + SuperCell.rSuperCell[2][1] * A.Cell.rUnitCell[1][2] +
     SuperCell.rSuperCell[2][2] * A.Cell.rUnitCell[2][2];
+  ASuper->Cell.Units = A.Cell.Units;
   ReciprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = SuperCell.NCell * A.Cell.NAtoms;
   ASuper->Cell.Atom = (AtomType*)malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
@@ -2297,9 +2320,16 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
     {
       strncpy(ASuper->Cell.Atom[iAtomsuper].Name, A.Cell.Atom[iAtom].Name, MAXStrLength);
       ASuper->Cell.Atom[iAtomsuper].AtomNumber = A.Cell.Atom[iAtom].AtomNumber;
-      ASuper->Cell.Atom[iAtomsuper].Position[0] = transvec[0] + A.Cell.Atom[iAtom].Position[0];
-      ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
-      ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
+      if ((A.Cell.Units & 8) == 0)
+      {
+        ASuper->Cell.Atom[iAtomsuper].Position[0] = transvec[0] + A.Cell.Atom[iAtom].Position[0];
+        ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
+        ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
+      }
+      else
+      { // in units of the supercell vectors
+        SuperCellRelativePosition(&SuperCell, SuperCell.CellPos[iCell], A.Cell.Atom[iAtom].Position, ASuper->Cell.Atom[iAtomsuper].Position);
+      }
       ASuper->Cell.Atom[iAtomsuper].Nshell = A.Cell.Atom[iAtom].Nshell;
       ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = (int*)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
       ASuper->Cell.Atom[iAtomsuper].ShellName= (char**)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell*sizeof(char*));
@@ -2403,10 +2433,13 @@ int CreateTightBindingSuperCell(TightBindingDef A, TightBindingDef * ASuper, Cry
       ASuper->H[iHsuper].Shellpos1 = A.H[iH].Shellpos1;
       ASuper->H[iHsuper].Shellpos2 = A.H[iH].Shellpos2;
       ASuper->H[iHsuper].Atompos1 = A.H[iH].Atompos1 + iCell * A.Cell.NAtoms;
-      // set Connecting Vector (redundant information, but usefull)
-      ASuper->H[iHsuper].ConnectingVector[0] = (ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos2].Position[0]-ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos1].Position[0]) + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][0] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][0] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][0] ;
-      ASuper->H[iHsuper].ConnectingVector[1] = (ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos2].Position[1]-ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos1].Position[1]) + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][1] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][1] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][1] ;
-      ASuper->H[iHsuper].ConnectingVector[2] = (ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos2].Position[2]-ASuper->Cell.Atom[ASuper->H[iHsuper].Atompos1].Position[2]) + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][2] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][2] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][2] ;
+      // set Connecting Vector (redundant information, but usefull), cartesian: r2 - r1 + TransVecs A
+      AtomPositionCartesian(&(ASuper->Cell), ASuper->H[iHsuper].Atompos1, r1);
+      AtomPositionCartesian(&(ASuper->Cell), ASuper->H[iHsuper].Atompos2, r2);
+      for (int x = 0; x < 3; x++)
+      {
+        ASuper->H[iHsuper].ConnectingVector[x] = r2[x] - r1[x] + ASuper->H[iHsuper].TransVecs[0] * ASuper->Cell.rUnitCell[0][x] + ASuper->H[iHsuper].TransVecs[1] * ASuper->Cell.rUnitCell[1][x] + ASuper->H[iHsuper].TransVecs[2] * ASuper->Cell.rUnitCell[2][x];
+      }
       MatrixCopy(&(ASuper->H[iHsuper].Hop), A.H[iH].Hop);
       iHsuper++;
     }
@@ -2429,6 +2462,7 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
   ASuper->Cell.rUnitCell[2][0] = N[2] * A.Cell.rUnitCell[2][0];
   ASuper->Cell.rUnitCell[2][1] = N[2] * A.Cell.rUnitCell[2][1];
   ASuper->Cell.rUnitCell[2][2] = N[2] * A.Cell.rUnitCell[2][2];
+  ASuper->Cell.Units = A.Cell.Units;
   ReciprocalLatticeVector(ASuper->Cell.rUnitCell, ASuper->Cell.gUnitCell,A.Cell.Units);
   ASuper->Cell.NAtoms = N[0] * N[1] * N[2] * A.Cell.NAtoms;
   ASuper->Cell.Atom = (AtomType*)malloc(ASuper->Cell.NAtoms * sizeof(AtomType));
@@ -2449,9 +2483,18 @@ int CreateTightBindingSquareSuperCell(TightBindingDef A, TightBindingDef * ASupe
         {
           strncpy(ASuper->Cell.Atom[iAtomsuper].Name, A.Cell.Atom[iAtom].Name, 32);
           ASuper->Cell.Atom[iAtomsuper].AtomNumber = A.Cell.Atom[iAtom].AtomNumber;
-          ASuper->Cell.Atom[iAtomsuper].Position[0] = transvec[0] + A.Cell.Atom[iAtom].Position[0];
-          ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
-          ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
+          if ((A.Cell.Units & 8) == 0)
+          {
+            ASuper->Cell.Atom[iAtomsuper].Position[0] = transvec[0] + A.Cell.Atom[iAtom].Position[0];
+            ASuper->Cell.Atom[iAtomsuper].Position[1] = transvec[1] + A.Cell.Atom[iAtom].Position[1];
+            ASuper->Cell.Atom[iAtomsuper].Position[2] = transvec[2] + A.Cell.Atom[iAtom].Position[2];
+          }
+          else
+          { // in units of the supercell vectors N[0] a, N[1] b and N[2] c
+            ASuper->Cell.Atom[iAtomsuper].Position[0] = (ia + A.Cell.Atom[iAtom].Position[0]) / N[0];
+            ASuper->Cell.Atom[iAtomsuper].Position[1] = (ib + A.Cell.Atom[iAtom].Position[1]) / N[1];
+            ASuper->Cell.Atom[iAtomsuper].Position[2] = (ic + A.Cell.Atom[iAtom].Position[2]) / N[2];
+          }
           ASuper->Cell.Atom[iAtomsuper].Nshell = A.Cell.Atom[iAtom].Nshell;
           ASuper->Cell.Atom[iAtomsuper].shelldegeneracy = (int*)malloc(ASuper->Cell.Atom[iAtomsuper].Nshell * sizeof(int));
           for (ishell = 0; ishell < ASuper->Cell.Atom[iAtomsuper].Nshell; ishell++)
@@ -2769,7 +2812,8 @@ int FindAllAtomsInsideSphere(const CrystalStructureType * const A, double *c, do
   B->gUnitCell[0][0]=0; B->gUnitCell[0][1]=0; B->gUnitCell[0][2]=0;
   B->gUnitCell[1][0]=0; B->gUnitCell[1][1]=0; B->gUnitCell[1][2]=0;
   B->gUnitCell[2][0]=0; B->gUnitCell[2][1]=0; B->gUnitCell[2][2]=0;
-  B->Units=A->Units;
+  // the positions found are cartesian, also when those of A are in units of its cell vectors
+  B->Units=A->Units & ~((uint32_t)8);
   B->NAtoms=0;
   B->Atom=(AtomType*)malloc(64*sizeof(AtomType));
   for(ia=Na0-Na;ia<=Na0+Na;ia++)

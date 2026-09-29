@@ -858,20 +858,15 @@ restrictions, tight binding objects, numbers so that they read back exactly
 ## Tight binding in `Relative` units
 
 `H(k)` (the four builders in `Tight_Binding/Tight_Binding_lib.cpp`), the
-connecting vector read by `LuaReadHopping` and the gauge of
-`CalculateBands` with a self energy now take the atom positions through
-`AtomPositionCartesian`, which converts positions stored in units of the cell
-vectors; `TestScripts/TightBindingDef/RelativeUnits.Quanty` checks that a
-crystal defined in `Relative` units gives the same H(k), Derivative and bands
-as in `Absolute` units. Still open, found by reading, not tested:
+connecting vector read by `LuaReadHopping`, the gauge of `CalculateBands`
+with a self energy, the supercells of `CreateClusterHamiltonian` and its open
+clusters now handle positions stored in units of the cell vectors.
+`AtomPositionCartesian` converts them; a supercell keeps the units of the
+crystal and gives its positions in units of its own cell vectors
+(`SuperCellRelativePosition`); an open cluster has no cell and its positions
+are always cartesian, as `FindAllAtomsInsideSphere` returns them.
+`TestScripts/TightBindingDef/RelativeUnits.Quanty` checks all of it against
+the same crystal in `Absolute` units. Still open:
 
-- **Supercells** (`CreateCrystalStructureFromCrystalStructureSuperCell`,
-  `CreateTightBindingSuperCell`, `CreateTightBindingSquareSuperCell`) add the
-  cartesian translation of a cell to the stored position, which in `Relative`
-  units is a fraction of the cell vectors. The supercell would also need its
-  positions in units of its own, larger, cell vectors.
-- **`CreateClusterHamiltonian`** (`LuaInterface/TightBinding.cpp`) compares and
-  sets `ConnectingVector`, which is cartesian, against differences of stored
-  positions.
 - **Setting `TB.Hopping` twice** does not free the previous list of hoppings.
 
