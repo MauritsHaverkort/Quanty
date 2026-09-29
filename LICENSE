@@ -1,14 +1,87 @@
-These codes and derived binaries are realeased under a creative commons lisence CC-BY 4.0
+# Quanty License
 
-You are free to:
+Unless otherwise noted, Quanty is dual-licensed under your choice of:
 
-Share — copy and redistribute the material in any medium or format
-Adapt — remix, transform, and build upon the material for any purpose, even commercially.
+* the Creative Commons Attribution 4.0 International License (CC BY 4.0), or
+* the MIT License.
+
+You may use, copy, modify, and distribute Quanty under the terms of either license, at your option.
+
+The full license texts are provided in:
+
+```
+LICENSE-CC-BY-4.0
+LICENSE-MIT
+```
+
+The corresponding SPDX license expression is:
+
+```
+CC-BY-4.0 OR MIT
+```
+
+Copyright (c) 1995 - 2026 Maurits W. Haverkort and Quanty contributors
+
+## Scientific citation
+
+Quanty is developed as scientific research software. If Quanty contributes to scientific work, we ask that the appropriate Quanty publications be cited.
+
+A current list of recommended publications can be found at:
+
+https://www.quanty.org/
+
+and can also be obtained by running Quanty.
+
+For users choosing the CC BY 4.0 license, citation of the appropriate Quanty scientific publications is the requested form of attribution.
+
+For users choosing the MIT License, scientific citation is strongly encouraged as normal academic practice, but is not an additional condition of the MIT License.
+
+## Creative Commons Attribution 4.0 International License (CC BY 4.0)
+
+Under CC BY 4.0, you are free to:
+
+Share — copy and redistribute the material in any medium or format, for any purpose, including commercially.
+
+Adapt — remix, transform, and build upon the material for any purpose, including commercially.
 
 Under the following terms:
 
-Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
+Attribution — You must give appropriate credit, provide a reference or link to the license, and indicate if changes were made. Attribution may be provided in any reasonable manner, but not in a way that suggests that the Quanty authors or contributors endorse you or your use.
 
-For our scientific code this means you need to site the proper papers in scientific work that is based on this code or derivatives of this code
+For scientific work, the requested and customary form of attribution is citation of the appropriate Quanty publications. If results obtained using Quanty, or software derived from Quanty, contribute to a scientific publication, please cite the publications relevant to the methods used.
 
-For a list of proper papers see www.quanty.org or run the code.
+A current list of recommended Quanty publications can be found at:
+
+https://www.quanty.org/
+
+and can also be obtained by running Quanty.
+
+Copyright and attribution notices included with Quanty should be retained when the software or substantial portions of it are redistributed.
+
+The complete and legally binding terms of the CC BY 4.0 license are contained in:
+
+LICENSE-CC-BY-4.0
+
+and are also available from Creative Commons at:
+
+https://creativecommons.org/licenses/by/4.0/
+
+## MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
