@@ -19,6 +19,7 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTconATtran(double const * const A
 uint32_t TransformComplexDiagonalMatrixByCompactMatrixTconATtran(Complex16 const *A, CompactMatrixType const * const T, CompactMatrixType  * const TconATtran);
 uint32_t TransformComplexDiagonalMatrixByCompactMatrixTLconATRtran(Complex16 const *A, CompactMatrixType const *TL, CompactMatrixType const *TR, CompactMatrixType * const TLconATRtran);
 uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMatrixType const *T, CompactMatrixType * const TdagAT);
+uint32_t CompactMatrixSelectIndependentColumns(CompactMatrixType const *T, uint32_t * const Order);
 uint32_t TransformDiagonalMatrixByCompactMatrixTtranATcon(double const *A, CompactMatrixType const *T, CompactMatrixType * const TtranATcon);
 uint32_t TransformComplexDiagonalMatrixByCompactMatrixTRtranATLcon(Complex16 const *A, CompactMatrixType const *TL, CompactMatrixType const *TR, CompactMatrixType * const TRtranATLcon);
 uint32_t CompactMatrixAddMultiply(char const TransA, char const TransB, CompactMatrixType const *A, CompactMatrixType const *B, CompactMatrixType *C, double alphaRe, double alphaIm, double betaRe, double betaIm);

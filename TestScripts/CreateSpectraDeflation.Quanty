@@ -1,0 +1,102 @@
+print("--------------------------------------------------------")
+print("--     Create Spectra, block Lanczos with deflation   --")
+print("--------------------------------------------------------")
+
+-- When a block of the block Lanczos chain is linearly dependent the orthonormalization
+-- reduces its dimension. The functions that survive have to span the whole kept space.
+-- Choosing them by their norm alone does not guarantee that: here the kept space is
+-- spanned by two directions a and b, the functions are {a, a, b, b, b}, and after
+-- projecting on the kept space the two functions with the largest norm are both a
+-- (norms 1/sqrt(2) against 1/sqrt(3)), which loses b. The spectra of the sparse block
+-- Lanczos are compared with the dense method, once with the dependence in the starting
+-- block and once in the middle of the chain.
+-- The last part checks that a deflation aligned with the functions keeps them apart:
+-- five d orbitals in Oh where only the t2g couple to a ligand. The eg deflate after the
+-- first block, and the second block is the three ligand t2g orbitals, in their order.
+
+Emin, Emax, NE, Gamma = -10, 10, 200, 0.2
+accuracy = 1E-10
+
+function MaxAbs(Spec)
+  local t = Spectra.ToTable(Spec)
+  local m = 0
+  for i=1,#t do
+    for j=1,#t[i] do
+      local v = t[i][j][2]
+      m = math.max(m, math.sqrt(Complex.Re(v)^2 + Complex.Im(v)^2))
+    end
+  end
+  return m
+end
+
+function CompareSparseDense(H, T, psi, text)
+  local D = CreateSpectra(H, T, psi, {{"Tensor", true}, {"DenseBorder", 100000}, {"Emin",Emin}, {"Emax",Emax}, {"NE",NE}, {"Gamma",Gamma}})
+  local S = CreateSpectra(H, T, psi, {{"Tensor", true}, {"DenseBorder", 0}, {"Emin",Emin}, {"Emax",Emax}, {"NE",NE}, {"Gamma",Gamma}, {"NTri", 10}})
+  local d = MaxAbs(S-D)/MaxAbs(D)
+  print(string.format("%-60s max|sparse-dense|/max|dense| = %.1e", text, d))
+  if not (d < accuracy) then
+    error("Test failed, "..text.." the sparse block spectra differ from the dense ones",1)
+  end
+end
+
+for _, QComplex in ipairs({false, true}) do
+  local phase = function(k) if QComplex then return Complex.New(math.cos(k), math.sin(k)) else return 1 end end
+
+  -- dependence in the starting block: orbitals 0 and 1 carry a and b, both coupled to a bath
+  N = 6
+  HMat = {}
+  for i=1,N do HMat[i] = {} for j=1,N do HMat[i][j] = 0 end end
+  HMat[1][1], HMat[2][2], HMat[3][3], HMat[4][4], HMat[5][5], HMat[6][6] = -1, 1, 0.5, -0.5, 2, -2
+  local function Hop(i, j, t) HMat[i][j] = HMat[i][j] + t; HMat[j][i] = HMat[j][i] + ((type(t)=="number") and t or Conjugate(t)) end
+  Hop(1, 3, 0.7*phase(1)); Hop(2, 4, 0.9*phase(2)); Hop(3, 5, 0.4); Hop(4, 6, 0.6); Hop(1, 2, 0.3*phase(3))
+  H = Matrix.ToOperator(HMat)
+  a, b = NewOperator(N,0,{{0,1}}), NewOperator(N,0,{{1,1}})
+  psi0 = NewWavefunction(N,0,{{"000000",1}})
+  CompareSparseDense(H, {a, a, b, b, b}, psi0, "starting block {a,a,b,b,b}"..(QComplex and " complex" or " real"))
+
+  -- dependence in the middle of the chain: five orbitals d0..d4, d0 and d1 couple to L0,
+  -- d2, d3 and d4 to L1, so the second block is {L0, L0, L1, L1, L1}
+  N = 9
+  HMat = {}
+  for i=1,N do HMat[i] = {} for j=1,N do HMat[i][j] = 0 end end
+  for i=1,5 do HMat[i][i] = 0 end
+  HMat[6][6], HMat[7][7], HMat[8][8], HMat[9][9] = 1.5, -1.5, 3, -3
+  Hop(1, 6, 1.0*phase(1)); Hop(2, 6, 1.0*phase(2)); Hop(3, 7, 1.0*phase(3)); Hop(4, 7, 1.0*phase(4)); Hop(5, 7, 1.0*phase(5))
+  Hop(6, 8, 0.8); Hop(7, 9, 0.5)
+  H = Matrix.ToOperator(HMat)
+  T = {}
+  for i=1,5 do T[i] = NewOperator(N,0,{{i-1,1}}) end
+  psi0 = NewWavefunction(N,0,{{"000000000",1}})
+  CompareSparseDense(H, T, psi0, "second block {L0,L0,L1,L1,L1}"..(QComplex and " complex" or " real"))
+
+  -- deflation aligned with the functions: eg d0,d1 do not couple, t2g d2,d3,d4 couple to L2,L3,L4
+  N = 8
+  HMat = {}
+  for i=1,N do HMat[i] = {} for j=1,N do HMat[i][j] = 0 end end
+  HMat[1][1], HMat[2][2] = 0.6, 0.6
+  HMat[3][3], HMat[4][4], HMat[5][5] = -0.4, -0.4, -0.4
+  HMat[6][6], HMat[7][7], HMat[8][8] = -3, -3, -3
+  for k=0,2 do Hop(3+k, 6+k, 1.2*phase(k+1)) end
+  H = Matrix.ToOperator(HMat)
+  T = {}
+  for i=1,5 do T[i] = NewOperator(N,0,{{i-1,1}}) end
+  psi0 = NewWavefunction(N,0,{{"00000000",1}})
+  CompareSparseDense(H, T, psi0, "eg deflating after the first block"..(QComplex and " complex" or " real"))
+  S, G, KrylovBasis = CreateSpectra(H, T, psi0, {{"Tensor", true}, {"DenseBorder", 0}, {"Emin",Emin}, {"Emax",Emax}, {"NE",NE}, {"Gamma",Gamma}, {"NTri", 10}, {"KrylovBasis", true}})
+  if #KrylovBasis ~= 2 or #KrylovBasis[1] ~= 5 or #KrylovBasis[2] ~= 3 then
+    error("Test failed, expected Krylov blocks of 5 and 3 functions",1)
+  end
+  -- the kept functions are the ligand t2g orbitals themselves, packed on the first positions in their order
+  for k=0,2 do
+    -- the symmetric orthonormalization keeps each residual H|d_t2g> - 0.4|d_t2g> itself, normalized
+    local L = NewOperator(N,0,{{5+k,1}}) * psi0
+    local r = L * (H * (T[3+k] * psi0))
+    local o = L * KrylovBasis[2][k+1]
+    local e = math.sqrt((Complex.Re(o) - Complex.Re(r)/1.2)^2 + (Complex.Im(o) - Complex.Im(r)/1.2)^2)
+    if not (e < accuracy) then
+      print(o)
+      error("Test failed, function "..(k+1).." of the second Krylov block is not ligand t2g orbital "..(k+1),1)
+    end
+  end
+  print("eg deflating after the first block"..(QComplex and " complex" or " real")..": second Krylov block is the ligand t2g in order")
+end
