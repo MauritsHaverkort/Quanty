@@ -830,3 +830,26 @@ go through `BlockListOfPolesToBlockTridiagonalMatrix` and are not affected. When
 writing new code against these representations, read the convention off
 `StructDef.cpp` and not off a neighbouring routine, and test it with complex
 numbers — a real response function cannot tell a conjugate from a transpose.
+
+## `io.put`: what it still can not save
+
+`io.put` (`LuaInterface/lua_extensions/get_put.cpp`) now writes response
+functions and matrices at any depth inside a table, writes numbers so that they
+read back exactly (including inf and nan), and escapes control characters in
+strings; `TestScripts/ioGetPut.Quanty` covers all of that. Still open:
+
+- **TightBinding.** `io.put` stops with an error. `Name`, `Units`, `Cell` and
+  `Atoms` read back from lua as tables that `TightBinding.New` accepts again, but
+  reading `Hopping` gives a string, not the list of hoppings. A getter for the
+  table form of `Hopping` is what is missing; the writer is then a few lines.
+- **Graphics, BitMap, Tensor, GaussianRadialFunction, InterpolatingFunction.**
+  `io.put` stops with an error naming the type. There is no constructor from data
+  to write them as. For a plot, keep the SVG.
+- **Operators with more than one restriction.** The writer closes the list of
+  restrictions after the first one (the `}}}` is inside the loop), so the file
+  does not read back. The boson part of a restriction is written as the masked
+  byte (0 to 128) instead of 0 or 1. Found by reading, not tested.
+- **Tables that contain themselves** recurse until the C stack overflows; a table
+  referenced twice is written twice and reads back as two tables.
+- **A failed `io.put` leaves a half-written file** in place of the previous one,
+  as the error is raised while writing.

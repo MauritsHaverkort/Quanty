@@ -80,3 +80,119 @@ if(test~=ResponseFunction.ToTable(GAndTable)) then
 end
 
 
+
+
+-- Response functions and matrices inside a table. The writer used to remove the
+-- file and variable name from the bottom of the lua stack, which only works when
+-- the response function or matrix is the whole variable: inside a table ToTable
+-- stopped with "expected a single argument" and a matrix segfaulted. The entries
+-- after it test that the enclosing table is still written completely.
+
+function SameResponse(G1, G2)
+  for _, w in ipairs({-2.5, -0.3, 0, 0.7, 4}) do
+    if Abs(G1(w, 0.1) - G2(w, 0.1)) > 1e-12 then return false end
+  end
+  return true
+end
+
+G2 = ResponseFunction.New({ {0.5, -1} , {0.3} , mu = 0 , type = "ListOfPoles" , name = "G2" })
+TableRF = { GLP , {G2} , a = 1 , b = "after" , c = { x = G2 } }
+io.put("ioGetPut","TableRF")
+TableRF = nil
+io.get("ioGetPut","TableRF")
+if not (SameResponse(TableRF[1], GLP) and SameResponse(TableRF[2][1], G2) and SameResponse(TableRF.c.x, G2)
+        and TableRF.a == 1 and TableRF.b == "after") then
+  error("io.get io.put for a table of response functions did not return the original table\n",1)
+end
+
+M = Matrix.New({{1/3, 2},{3, 4 + 0.1*I}})
+TableM = { T = M , n = 5 , M , "after" }
+io.put("ioGetPut","TableM")
+TableM = nil
+io.get("ioGetPut","TableM")
+for i = 1, 2 do
+  for j = 1, 2 do
+    if (TableM.T[i][j] ~= M[i][j]) or (TableM[1][i][j] ~= M[i][j]) then
+      error("io.get io.put for a table containing a matrix did not return the original matrix\n",1)
+    end
+  end
+end
+if (TableM.n ~= 5) or (TableM[2] ~= "after") then
+  error("io.get io.put for a table containing a matrix did not return the other entries\n",1)
+end
+
+-- A NaturalImpurityOrbital, whose val and con parts are response functions in
+-- table form themselves; they are written as plain tables
+
+GNat = ResponseFunction.ChangeType(ResponseFunction.New({ {-1, -0.2, 0.4, 1.5} , {0.2, 0.3, 0.1} , mu = 0 , type = "ListOfPoles" }), "Nat", {{"NTriMax",4}})
+test = Copy(GNat)
+io.put("ioGetPut","GNat")
+GNat = nil
+io.get("ioGetPut","GNat")
+if not SameResponse(test, GNat) then
+  error("io.get io.put for a NaturalImpurityOrbital response function did not return the original\n",1)
+end
+
+-- Numbers come back exactly: 17 significant digits where 15 or 16 do not
+-- suffice, no rounding of numbers close to an integer, and inf and nan
+
+Numbers = { 0.1 + 0.2 , 3*(1 + 2^-50) , 1/3 , -2.5 , 2^40 , 1e300 , 5e-324 , 1/0 , -1/0 }
+io.put("ioGetPut","Numbers")
+test = Copy(Numbers)
+Numbers = nil
+io.get("ioGetPut","Numbers")
+for i = 1, #test do
+  if Numbers[i] ~= test[i] then
+    error(string.format("io.get io.put returned %.17g for the number %.17g\n", Numbers[i], test[i]),1)
+  end
+end
+
+NotANumber = 0/0
+io.put("ioGetPut","NotANumber")
+NotANumber = nil
+io.get("ioGetPut","NotANumber")
+if NotANumber == NotANumber then
+  error("io.get io.put did not return nan for nan\n",1)
+end
+
+z = 0.1 + (1/3)*I
+io.put("ioGetPut","z")
+z = nil
+io.get("ioGetPut","z")
+if z ~= 0.1 + (1/3)*I then
+  error("io.get io.put for complex numbers did not return the original value\n",1)
+end
+
+-- the coefficients of an operator are written with 17 significant digits
+
+O = NewOperator(2, 0, {{0, -0, 1/3}, {1, -1, 0.1 + 0.2*I}})
+psi = NewWavefunction(2, 0, {{"11", 1}})
+test = psi * O * psi
+io.put("ioGetPut","O")
+O = nil
+io.get("ioGetPut","O")
+if psi * O * psi ~= test then
+  error("io.get io.put for an operator did not return the original coefficients\n",1)
+end
+
+-- Strings with control characters. A raw carriage return does not read back and
+-- "\0" followed by a digit read back as a different character
+
+Strings = { "a\rb" , "a\0" .. "1" , "tab\tquote\"backslash\\" , "new\nline" }
+io.put("ioGetPut","Strings")
+test = Copy(Strings)
+Strings = nil
+io.get("ioGetPut","Strings")
+for i = 1, #test do
+  if Strings[i] ~= test[i] then
+    error("io.get io.put did not return the original string "..i.."\n",1)
+  end
+end
+
+-- A tight binding object can not be saved yet, which has to be an error and
+-- not a file that reads back as nil
+
+TB = TightBinding.New()
+if pcall(io.put, "ioGetPut", "TB") then
+  error("io.put of a TightBinding object should fail\n",1)
+end
