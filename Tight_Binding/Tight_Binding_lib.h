@@ -13,6 +13,7 @@ int CopyAtomTypeAddSpin(const AtomType *const A, AtomType *B);
 bool QInteger(double x, double epsilon);
 int FindAtomPosModulusUnitCell(const AtomType *const Atom, const CrystalStructureType *const Cell, double epsilon);
 int SetNFermionIndexTightBindingDef(TightBindingDef * A);
+void AtomPositionCartesian(CrystalStructureType const * const Cell, int const iAtom, double r[3]);
 int CreateOneBandCubicLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandSquareLaticeTightBindingDef(TightBindingDef * A);
 int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A);

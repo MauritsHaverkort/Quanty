@@ -669,6 +669,32 @@ int CreateOneBandChainLaticeTightBindingDef(TightBindingDef * A)
   return 0;
 }
 
+/*  The position of atom iAtom in cartesian coordinates. With Units Absolute (bit 3 of
+ *  Cell->Units is 0) that is the stored position. With Units Relative the stored position is
+ *  in units of the cell vectors a, b and c, r = p0 a + p1 b + p2 c. A cell vector can be
+ *  infinite (no periodicity along it), a position 0 along it gives 0 and not 0 * inf.
+ */
+void AtomPositionCartesian(CrystalStructureType const * const Cell, int const iAtom, double r[3])
+{
+  int i, j;
+  double const * const p = Cell->Atom[iAtom].Position;
+  if ((Cell->Units & 8) == 0)
+  {
+    r[0] = p[0];
+    r[1] = p[1];
+    r[2] = p[2];
+    return;
+  }
+  for (i = 0; i < 3; i++)
+  {
+    r[i] = 0;
+    for (j = 0; j < 3; j++)
+    {
+      if (p[j] != 0) r[i] += p[j] * Cell->rUnitCell[j][i];
+    }
+  }
+}
+
 /*  given a Tight binding definition and a k vector creates a matrix
  *  representing the Hamiltonian.
  *    two atoms at different positions in the unit cell hop with a phase e^{i k x_1 - x_2}
@@ -678,6 +704,7 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
   int    iH, i, j;
   double alphaRe, alphaIm;
   double vector[3];
+  double r1[3], r2[3];
   H->Ni = A.NFermion;
   H->Nj = A.NFermion;
   H->QComplex = 0;
@@ -686,9 +713,12 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], MatrixT
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
     j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
-    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
-    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
-    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
+    // the positions in cartesian coordinates, also when they are stored in units of the cell vectors
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos1, r1);
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos2, r2);
+    vector[0] = r1[0] - r2[0];
+    vector[1] = r1[1] - r2[1];
+    vector[2] = r1[2] - r2[2];
     vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
     vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
     vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
@@ -704,6 +734,7 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], Compact
   int    iH, i, j;
   double alphaRe, alphaIm;
   double vector[3];
+  double r1[3], r2[3];
   H->Ni = A.NFermion;
   H->Nj = A.NFermion;
   H->QComplex = 0;
@@ -712,9 +743,12 @@ int CreateHamiltonianFromTightBindingDef(TightBindingDef A, double k[3], Compact
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
     j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
-    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
-    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
-    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
+    // the positions in cartesian coordinates, also when they are stored in units of the cell vectors
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos1, r1);
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos2, r2);
+    vector[0] = r1[0] - r2[0];
+    vector[1] = r1[1] - r2[1];
+    vector[2] = r1[2] - r2[2];
     vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
     vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
     vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
@@ -767,6 +801,7 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
   int    iH, i, j, isub, jsub;
   double alphaRe, alphaIm, HVRe, HVIm;
   double vector[3];
+  double r1[3], r2[3];
   uint16_t oadd[2];
   uint32_t const NBitsKey = Max(8,Min(24,floor(log(A.nH * A.nH) / log(2.0))));
   InitOperator(H);
@@ -777,9 +812,12 @@ int CreateHamiltonianOperatorFromTightBindingDef(TightBindingDef A, double k[3],
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
     j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
-    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
-    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
-    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
+    // the positions in cartesian coordinates, also when they are stored in units of the cell vectors
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos1, r1);
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos2, r2);
+    vector[0] = r1[0] - r2[0];
+    vector[1] = r1[1] - r2[1];
+    vector[2] = r1[2] - r2[2];
     vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
     vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
     vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));
@@ -829,6 +867,7 @@ int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, doub
   int    iH, i, j, isub, jsub;
   double alphaRe, alphaIm, HVRe, HVIm;
   double vector[3];
+  double r1[3], r2[3];
   uint16_t oadd[2];
   uint32_t const NBitsKey = Max(8,Min(24,floor(log(A.nH * A.nH) / log(2.0))));
   InitOperator(H);
@@ -839,9 +878,12 @@ int CreateHamiltonianOperatorFromTightBindingDefPlusSpin(TightBindingDef A, doub
   {
     i = A.FermionIndex[A.H[iH].Atompos1][A.H[iH].Shellpos1];
     j = A.FermionIndex[A.H[iH].Atompos2][A.H[iH].Shellpos2];
-    vector[0] = A.Cell.Atom[A.H[iH].Atompos1].Position[0] - A.Cell.Atom[A.H[iH].Atompos2].Position[0];
-    vector[1] = A.Cell.Atom[A.H[iH].Atompos1].Position[1] - A.Cell.Atom[A.H[iH].Atompos2].Position[1];
-    vector[2] = A.Cell.Atom[A.H[iH].Atompos1].Position[2] - A.Cell.Atom[A.H[iH].Atompos2].Position[2];
+    // the positions in cartesian coordinates, also when they are stored in units of the cell vectors
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos1, r1);
+    AtomPositionCartesian(&(A.Cell), A.H[iH].Atompos2, r2);
+    vector[0] = r1[0] - r2[0];
+    vector[1] = r1[1] - r2[1];
+    vector[2] = r1[2] - r2[2];
     vector[0] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][0] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][0] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][0] * A.H[iH].TransVecs[2]));
     vector[1] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][1] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][1] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][1] * A.H[iH].TransVecs[2]));
     vector[2] += ((A.H[iH].TransVecs[0]==0) ? (0) : (A.Cell.rUnitCell[0][2] * A.H[iH].TransVecs[0])) + ((A.H[iH].TransVecs[1]==0) ? (0) : (A.Cell.rUnitCell[1][2] * A.H[iH].TransVecs[1])) + ((A.H[iH].TransVecs[2]==0) ? (0) : (A.Cell.rUnitCell[2][2] * A.H[iH].TransVecs[2]));

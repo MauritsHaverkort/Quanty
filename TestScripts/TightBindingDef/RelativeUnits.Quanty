@@ -1,0 +1,111 @@
+-- A crystal with two atoms in an oblique cell, defined twice: once with the
+-- atom positions and hopping vectors in cartesian coordinates (Units Absolute)
+-- and once with the positions in units of the cell vectors and the hoppings as
+-- integer translations (Units Relative). The two describe the same crystal, so
+-- everything computed from them has to agree.
+--
+-- In Relative units H(k) used to add the fractional positions to the cartesian
+-- translations, which gave a wrong phase for every hopping between different
+-- atoms, and the connecting vector read from a hopping lost the offset between
+-- the two atoms (Position2 - Position2), which Derivative uses. The bands with a
+-- self energy use the positions for their gauge and have to follow H(k).
+
+Cell = {{1,0,0},{0.5,0.8,0},{0,0,2}}
+-- B at 0.175 a + 0.25 b + 0.05 c = {0.3, 0.2, 0.1}
+PosAbs = { A = {0,0,0}, B = {0.3,0.2,0.1} }
+PosRel = { A = {0,0,0}, B = {0.175,0.25,0.05} }
+
+-- {atom 1, atom 2, translation in cell vectors, hopping}
+Hop = { {"A","A",{ 0, 0, 0}, 0.1} , {"B","B",{ 0, 0, 0},-0.2} ,
+        {"A","B",{ 0, 0, 0},-0.5} , {"B","A",{ 0, 0, 0},-0.5} ,
+        {"A","B",{-1, 0, 0},-0.3} , {"B","A",{ 1, 0, 0},-0.3} ,
+        {"A","B",{ 0,-1, 0}, 0.2*I} , {"B","A",{ 0, 1, 0},-0.2*I} ,
+        {"A","A",{ 1, 0, 0}, 0.05} , {"A","A",{-1, 0, 0}, 0.05} ,
+        {"B","B",{ 0, 0, 1}, 0.07} , {"B","B",{ 0, 0,-1}, 0.07} }
+
+function Build(Relative)
+  local TB = TightBinding.New()
+  local Pos = Relative and PosRel or PosAbs
+  TB.Name = Relative and "relative" or "absolute"
+  TB.Units = {"2Pi", "Angstrom", Relative and "Relative" or "Absolute"}
+  TB.Cell = Cell
+  TB.Atoms = {{"A", Pos.A, {{"s", {"0"}}}}, {"B", Pos.B, {{"s", {"0"}}}}}
+  local list = {}
+  for i, h in ipairs(Hop) do
+    local v = h[3]
+    if not Relative then
+      -- i a + j b + k c + Pos2 - Pos1
+      v = {}
+      for x = 1, 3 do
+        v[x] = PosAbs[h[2]][x] - PosAbs[h[1]][x]
+        for c = 1, 3 do v[x] = v[x] + h[3][c]*Cell[c][x] end
+      end
+    end
+    list[i] = {h[1]..".s", h[2]..".s", v, {{h[4]}}}
+  end
+  TB.Hopping = list
+  return TB
+end
+
+TBAbs = Build(false)
+TBRel = Build(true)
+
+kList = { {0,0,0} , {0.3,-1.1,0.7} , {Pi,Pi/2,0.25} , {-2.2,0.4,3.1} }
+tol = 1e-12
+
+function MaxDiff(M1, M2)
+  local d = 0
+  for i = 1, #M1 do
+    for j = 1, #M1[i] do
+      d = math.max(d, Abs(M1[i][j] - M2[i][j]))
+    end
+  end
+  return d
+end
+
+print("H(k), absolute against relative units")
+for _, k in ipairs(kList) do
+  local d = MaxDiff(TBAbs(k), TBRel(k))
+  print(string.format("  k = {%6.3f %6.3f %6.3f}   max |H_abs - H_rel| = %.2e", k[1], k[2], k[3], d))
+  if d > tol then
+    error("H(k) of a tight binding model in Relative units differs from the same model in Absolute units\n", 1)
+  end
+end
+
+print("H(k) with AddSpin")
+for _, k in ipairs(kList) do
+  local d = MaxDiff(TBAbs(k, {{"AddSpin",true}}), TBRel(k, {{"AddSpin",true}}))
+  if d > tol then
+    error("H(k) with AddSpin of a tight binding model in Relative units differs from Absolute units\n", 1)
+  end
+end
+
+print("Derivative, which uses the connecting vector of every hopping")
+dAbs = {TightBinding.Derivative(TBAbs)}
+dRel = {TightBinding.Derivative(TBRel)}
+for x = 1, 3 do
+  for _, k in ipairs(kList) do
+    local d = MaxDiff(dAbs[x](k), dRel[x](k))
+    if d > tol then
+      error(string.format("dH/dk_%d of a tight binding model in Relative units differs from Absolute units by %.2e\n", x, d), 1)
+    end
+  end
+end
+
+print("CalculateBands with a self energy, whose gauge uses the atom positions")
+SigA = ResponseFunction.New({{0.1, -1.5, 1.7}, {0.3, 0.2}, mu=0, type="ListOfPoles"})
+SigB = ResponseFunction.New({{-0.2, 0.8}, {0.4}, mu=0, type="ListOfPoles"})
+kpath = {{"G",{0,0,0}}, 6, {"X",{Pi,0,0}}, 6, {"M",{Pi,Pi,Pi/2}}}
+GAbs = TightBinding.CalculateBands(TBAbs, kpath, {SigA, SigB})
+GRel = TightBinding.CalculateBands(TBRel, kpath, {SigA, SigB})
+for ik = 1, #GAbs do
+  for _, w in ipairs({-1.2, 0.1, 0.9}) do
+    local g1, g2 = GAbs[ik](w, 0.1), GRel[ik](w, 0.1)
+    local d = (type(g1) == "table") and MaxDiff(g1, g2) or Abs(g1 - g2)
+    if d > tol then
+      error(string.format("the bands with a self energy in Relative units differ from Absolute units by %.2e at k point %d\n", d, ik), 1)
+    end
+  end
+end
+
+print("done")

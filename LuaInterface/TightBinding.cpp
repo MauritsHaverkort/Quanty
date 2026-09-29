@@ -1449,17 +1449,19 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
   N = E.Ni;
   double *rpos = (double*)malloc(3*n*sizeof(double));
   if(rpos==NULL) luaL_error(L, "Error CalculateBands: out of memory\n");
-  // position of the atom of every orbital
+  // position of the atom of every orbital, in cartesian coordinates as H(k) uses them
   for(a=0;a<HTB->Cell.NAtoms;a++)
   {
+    double r[3];
+    AtomPositionCartesian(&(HTB->Cell), a, r);
     for(sh=0;sh<HTB->Cell.Atom[a].Nshell;sh++)
     {
       for(o=0;o<HTB->Cell.Atom[a].shelldegeneracy[sh];o++)
       {
         i = HTB->FermionIndex[a][sh]+o;
-        rpos[3*i+0] = HTB->Cell.Atom[a].Position[0];
-        rpos[3*i+1] = HTB->Cell.Atom[a].Position[1];
-        rpos[3*i+2] = HTB->Cell.Atom[a].Position[2];
+        rpos[3*i+0] = r[0];
+        rpos[3*i+1] = r[1];
+        rpos[3*i+2] = r[2];
       }
     }
   }
@@ -3342,13 +3344,18 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
       lua_pop(L,1);
     }
     lua_pop(L,1);
-    // create Connecting Vector from Trans Vec
+    // create Connecting Vector from Trans Vec, in cartesian coordinates as for absolute units:
+    // {x,y,z} = i a + j b + k c + AtomPos2 - AtomPos1
+    double r1[3], r2[3];
+    AtomPositionCartesian(Cell, H->Atompos1, r1);
+    AtomPositionCartesian(Cell, H->Atompos2, r2);
     for(i=0;i<3;i++) // i loops over x,y,z
     {
-      H->ConnectingVector[i]=0;
+      H->ConnectingVector[i] = r2[i] - r1[i];
       for(j=0;j<3;j++) // j loops over a,b,c
       {
-        H->ConnectingVector[i] += (H->TransVecs[j]+Cell->Atom[H->Atompos2].Position[j]-Cell->Atom[H->Atompos2].Position[j]) * Cell->rUnitCell[j][i];
+        // a cell vector can be infinite, where TransVecs is 0
+        if(H->TransVecs[j]!=0) H->ConnectingVector[i] += H->TransVecs[j] * Cell->rUnitCell[j][i];
       }
     }
   }
