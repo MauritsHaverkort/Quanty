@@ -291,6 +291,7 @@ test-jobs:
           - "Copy"
           - "CreateFluorescenceYield"
           - "CreateResonantSpectra"
+          - "CreateResonantSpectraTensor"
           - "CreateSpectra"
           - "CreateSpectraPoleRange"
           - "CreateSpectraDeflation"
