@@ -3370,13 +3370,58 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
 /*
  * push a Hopping definition to the Lua stack
  * format
- *          Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
- *        with H a table of tables of real or complex numbers / matrix
- *
+ *          Hopping = {{"AtomName1.ShellName1",Position1},{"AtomName2.ShellName2",Position2},Vec,H}
+ *        with H a table of tables of real or complex numbers
+ * which is the form LuaReadHopping reads. The positions tell atoms with the same name apart.
+ * Vec is made from TransVecs, which is what the Hamiltonian H(k) uses. ConnectingVector is not
+ * set by every routine that builds a tight binding object in C, and is not used here.
+ *   Absolute units: Vec = i a + j b + k c + AtomPos2 - AtomPos1
+ *   Relative units: Vec = {i, j, k}
  */
 static int LuaPushHopping(lua_State *L, CrystalStructureType const *Cell, TightBindingDefHopping const *H)
 {
-  //TODO:
+  uint32_t i,j;
+  int const Atompos[2]  = {H->Atompos1,  H->Atompos2};
+  int const Shellpos[2] = {H->Shellpos1, H->Shellpos2};
+  lua_createtable(L, 4, 0);
+  for(i=0;i<2;i++)
+  {
+    AtomType const *a = &(Cell->Atom[Atompos[i]]);
+    lua_createtable(L, 2, 0);
+    lua_pushfstring(L, "%s.%s", a->Name, a->ShellName[Shellpos[i]]);
+    lua_rawseti(L, -2, 1);
+    lua_createtable(L, 3, 0);
+    for(j=0;j<3;j++)
+    {
+      lua_pushnumber(L, a->Position[j]);
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, 2);
+    lua_rawseti(L, -2, i+1);
+  }
+  lua_createtable(L, 3, 0);
+  for(i=0;i<3;i++)
+  {
+    double v;
+    if((Cell->Units&8)==0)
+    {
+      v = Cell->Atom[H->Atompos2].Position[i] - Cell->Atom[H->Atompos1].Position[i];
+      for(j=0;j<3;j++)
+      {
+        // a cell vector can be infinite (no periodicity along it), where TransVecs is 0
+        if(H->TransVecs[j]!=0) v += H->TransVecs[j] * Cell->rUnitCell[j][i];
+      }
+    }
+    else
+    {
+      v = H->TransVecs[i];
+    }
+    lua_pushnumber(L, v);
+    lua_rawseti(L, -2, i+1);
+  }
+  lua_rawseti(L, -2, 3);
+  LuaPushTable_MatrixType(L, &(H->Hop));
+  lua_rawseti(L, -2, 4);
   return 1;
 }
 
@@ -3478,7 +3523,13 @@ static int LuaTightBindingIndex(lua_State * L)
   }
   else if (strcmp(str, "Hopping") == 0)
   {
-    //TODO: push a table to the stack with the hopping definitions as defined when reading the variable
+    // the hopping definitions in the form the Hopping setter reads
+    lua_createtable(L, a->nH, 0);
+    for(i=0;i<(uint32_t)a->nH;i++)
+    {
+      LuaPushHopping(L, &(a->Cell), &(a->H[i]));
+      lua_rawseti(L, -2, i+1);
+    }
     return 1;
   }
   else if (strcmp(str, "Hk")==0)

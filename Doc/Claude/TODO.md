@@ -834,14 +834,19 @@ numbers — a real response function cannot tell a conjugate from a transpose.
 ## `io.put`: what it still can not save
 
 `io.put` (`LuaInterface/lua_extensions/get_put.cpp`) now writes response
-functions and matrices at any depth inside a table, writes numbers so that they
-read back exactly (including inf and nan), and escapes control characters in
-strings; `TestScripts/ioGetPut.Quanty` covers all of that. Still open:
+functions and matrices at any depth inside a table, operators with their
+restrictions, tight binding objects, numbers so that they read back exactly
+(including inf and nan), and control characters in strings;
+`TestScripts/ioGetPut.Quanty` covers all of that. Still open:
 
-- **TightBinding.** `io.put` stops with an error. `Name`, `Units`, `Cell` and
-  `Atoms` read back from lua as tables that `TightBinding.New` accepts again, but
-  reading `Hopping` gives a string, not the list of hoppings. A getter for the
-  table form of `Hopping` is what is missing; the writer is then a few lines.
+- **TightBinding, where the reader limits the round trip.** An object is written
+  as the settings of `Name`, `Units`, `Cell`, `Atoms` and `Hopping`, and read back
+  by the setters, so it can not come back better than they read it. `io.put`
+  stops with an error for an atom name with a `.` (the reader splits
+  `"Atom.Shell"` at the first one) and for two shells of one atom with the same
+  name (the reader takes the first). Slabs, with one or two infinite cell
+  vectors, are refused by `LuaReadHopping` in absolute units ("input for slabs
+  not completed"), so they write but do not read back.
 - **Graphics, BitMap, Tensor, GaussianRadialFunction, InterpolatingFunction.**
   `io.put` stops with an error naming the type. There is no constructor from data
   to write them as. For a plot, keep the SVG.
@@ -849,3 +854,23 @@ strings; `TestScripts/ioGetPut.Quanty` covers all of that. Still open:
   referenced twice is written twice and reads back as two tables.
 - **A failed `io.put` leaves a half-written file** in place of the previous one,
   as the error is raised while writing.
+
+## Tight binding in `Relative` units and the `Hk` getter
+
+Found while writing `io.put` for tight binding objects, not fixed:
+
+- **`LuaReadHopping` in `Relative` units** builds `ConnectingVector` from
+  `TransVecs[j] + Position2[j] - Position2[j]`: the second position should be
+  that of atom 1, so the offset between the two atoms is lost. Only `Derivative`
+  and `Chop` with its distance option read `ConnectingVector`, so H(k) is not
+  affected, but the velocity operator of a cell with more than one atom is.
+- **`CreateHamiltonianFromTightBindingDef`** adds the difference of the atom
+  positions to `TransVecs` times the cartesian cell vectors. In `Relative` units
+  the positions are fractions of the cell vectors, so for more than one atom the
+  phase mixes the two. Together with the point above this is why `Relative`
+  units are suspect; a cell with one atom at the origin is not affected.
+- **`TB.Hk`** returns without pushing anything, so it returns the key string
+  `"Hk"`, as `TB.Hopping` did. Either implement it (the TODO in
+  `LuaTightBindingIndex` says what it should be) or raise an error.
+- **Setting `TB.Hopping` twice** does not free the previous list of hoppings.
+

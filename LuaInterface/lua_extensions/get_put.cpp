@@ -519,9 +519,55 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
     }
     if (luaL_testudata(L, narg, "TightBinding_Type") != NULL)
     {
-      //TODO: Tight binding. Name, Units, Cell and Atoms can be read from lua and written as a
-      //      table, but reading Hopping gives a string and not the list of hoppings
-      return luaL_error(L, "Error in io.put: variables of type TightBinding can not be saved (not implemented)\n");
+      // Written as a function that creates the object and sets its fields as one does by hand. The
+      // order matters: Cell and Hopping read Units, and setting Atoms removes all hoppings.
+      // Everything else (reciprocal cell, atom numbers, number and order of the orbitals) the
+      // setters derive from these. A fresh object has a zero cell, which the Cell setter refuses,
+      // so Cell, Atoms and Hopping are only written once they are set.
+      TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, narg, "TightBinding_Type");
+      const char * const Fields[] = {"Name", "Units", "Cell", "Atoms", "Hopping"};
+      bool CellSet=false;
+      uint32_t i,j,k;
+      // LuaReadHopping finds an atom and shell by "AtomName.ShellName", split at the first '.',
+      // and takes the first shell with a matching name
+      for(i=0;i<TB->Cell.NAtoms;i++)
+      {
+        if(strchr(TB->Cell.Atom[i].Name, '.')!=NULL)
+        {
+          return luaL_error(L, "Error in io.put: the TightBinding object has an atom named %s, a name with a '.' can not be read back\n", TB->Cell.Atom[i].Name);
+        }
+        for(j=0;j<(uint32_t)TB->Cell.Atom[i].Nshell;j++)
+        {
+          for(k=0;k<j;k++)
+          {
+            if(strcmp(TB->Cell.Atom[i].ShellName[j], TB->Cell.Atom[i].ShellName[k])==0)
+            {
+              return luaL_error(L, "Error in io.put: atom %s of the TightBinding object has two shells named %s, they can not be told apart when read back\n", TB->Cell.Atom[i].Name, TB->Cell.Atom[i].ShellName[j]);
+            }
+          }
+        }
+      }
+      for(i=0;i<3;i++)
+      {
+        for(j=0;j<3;j++)
+        {
+          if(TB->Cell.rUnitCell[i][j]!=0) CellSet=true;
+        }
+      }
+      fprintf(stream, "(function() local TB = TightBinding.New()\n");
+      for(i=0;i<sizeof(Fields)/sizeof(Fields[0]);i++)
+      {
+        if((i==2)&&(!CellSet)) continue;
+        if((i==3)&&(TB->Cell.NAtoms==0)) continue;
+        if((i==4)&&(TB->nH==0)) continue;
+        fprintf(stream, "  TB.%s = ", Fields[i]);
+        lua_getfield(L, narg, Fields[i]);
+        LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);
+        lua_pop(L, 1);
+        fprintf(stream, "\n");
+      }
+      fprintf(stream, "  return TB end)()");
+      return 0;
     }
     if (luaL_testudata(L, narg, "Spectra_Type") != NULL)
     {

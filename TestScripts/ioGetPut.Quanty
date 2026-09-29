@@ -189,12 +189,107 @@ for i = 1, #test do
   end
 end
 
--- A tight binding object can not be saved yet, which has to be an error and
--- not a file that reads back as nil
+-- Tight binding objects. They were written as Some_Variable_Of_TightBinding_Type
+-- and read back as nil. They are now written as the settings of Name, Units,
+-- Cell, Atoms and Hopping, and TB.Hopping returns the hoppings in the form the
+-- setter reads (it returned the string "Hopping"). The Hamiltonian H(k) has to
+-- come back exactly: the positions, cell vectors, translations and hopping
+-- matrices are all read back exactly.
 
+function SameTightBinding(TB1, TB2)
+  if (TB1.NF ~= TB2.NF) or (TB1.Name ~= TB2.Name) then return false end
+  for _, k in ipairs({ {0,0,0} , {0.3,-1.1,0.7} , {Pi,Pi/2,0.25} , {-2.2,0.4,3.1} }) do
+    local H1, H2 = TB1(k), TB2(k)
+    for i = 1, TB1.NF do
+      for j = 1, TB1.NF do
+        if H1[i][j] ~= H2[i][j] then return false end
+      end
+    end
+  end
+  return true
+end
+
+function RoundTrip(TB)
+  local test = TB
+  TBSaved = TB
+  io.put("ioGetPut", "TBSaved")
+  TBSaved = nil
+  io.get("ioGetPut", "TBSaved")
+  if not SameTightBinding(test, TBSaved) then
+    error("io.get io.put for the TightBinding object "..test.Name.." did not return the original\n",2)
+  end
+  -- the getters give back what the setters read
+  local TB2 = TightBinding.New()
+  TB2.Name = TB.Name
+  TB2.Units = TB.Units
+  TB2.Cell = TB.Cell
+  TB2.Atoms = TB.Atoms
+  TB2.Hopping = TB.Hopping
+  if not SameTightBinding(test, TB2) then
+    error("setting the fields of the TightBinding object "..test.Name.." to what its getters return changed it\n",2)
+  end
+end
+
+-- a square lattice, one atom and real hopping
 TB = TightBinding.New()
-if pcall(io.put, "ioGetPut", "TB") then
-  error("io.put of a TightBinding object should fail\n",1)
+TB.Name = "square"
+TB.Units = {"2Pi", "Angstrom", "Absolute"}
+TB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+TB.Atoms = {{"A", {0,0,0}, {{"s", {"0"}}}}}
+TB.Hopping = {{"A.s","A.s",{ 0,0,0},{{0.1}}},
+              {"A.s","A.s",{ 1,0,0},{{-0.25}}}, {"A.s","A.s",{-1,0,0},{{-0.25}}},
+              {"A.s","A.s",{ 0,1,0},{{-0.25}}}, {"A.s","A.s",{0,-1,0},{{-0.25}}}}
+RoundTrip(TB)
+
+-- two atoms with the same name in an oblique cell, two shells each, complex
+-- hopping between shells of different size. The vector is i a + j b + k c + Pos2 - Pos1
+TB = TightBinding.New()
+TB.Name = "two atoms named A"
+TB.Units = {"NoPi", "Angstrom", "Absolute"}
+TB.Cell = {{1,0,0},{0.5,0.8,0},{0,0,2}}
+TB.Atoms = {{"A", {0,0,0},       {{"s", {"0"}}, {"p", {"x","y","z"}}}},
+            {"A", {0.3,0.2,0.1}, {{"s", {"0"}}, {"p", {"x","y","z"}}}}}
+TB.Hopping = {{{"A.s",{0,0,0}}, {"A.s",{0,0,0}}, {0,0,0}, {{0.1}}},
+              {{"A.s",{0,0,0}}, {"A.p",{0.3,0.2,0.1}}, {0.3,0.2,0.1}, {{0.2, 0.3*I, -0.1}}},
+              {{"A.s",{0,0,0}}, {"A.p",{0.3,0.2,0.1}}, {1.3,0.2,0.1}, {{0.05, -0.1*I, 1/3}}},
+              {{"A.p",{0.3,0.2,0.1}}, {"A.s",{0,0,0}}, {-0.8,-1.0,-0.1}, {{0.2},{-0.3*I},{-0.1}}},
+              {{"A.p",{0,0,0}}, {"A.p",{0,0,0}}, {0,0,2}, {{0.1, 0.2*I, 0},{-0.2*I, 0.3, 0.1},{0, 0.1, 1/7}}}}
+RoundTrip(TB)
+
+-- relative units, the translation in cell vectors
+TB = TightBinding.New()
+TB.Name = "relative chain"
+TB.Units = {"2Pi", "Angstrom", "Relative"}
+TB.Cell = {{2,0,0},{0,1,0},{0,0,1}}
+TB.Atoms = {{"A", {0,0,0}, {{"s", {"0"}}}}}
+TB.Hopping = {{"A.s","A.s",{ 1,0,0},{{-0.5}}}, {"A.s","A.s",{-1,0,0},{{-0.5}}}}
+RoundTrip(TB)
+
+-- a molecule, infinite cell vectors
+TB = TightBinding.New()
+TB.Name = "molecule"
+TB.Units = {"2Pi", "Angstrom", "Absolute"}
+TB.Cell = {{1/0,0,0},{0,1/0,0},{0,0,1/0}}
+TB.Atoms = {{"A", {0,0,0}, {{"s", {"0"}}}}, {"B", {1.1,0,0}, {{"s", {"0"}}}}}
+TB.Hopping = {{"A.s","B.s",{1.1,0,0},{{-1}}}, {"B.s","A.s",{-1.1,0,0},{{-1}}}, {"B.s","B.s",{0,0,0},{{0.5}}}}
+RoundTrip(TB)
+
+-- a fresh object, with no cell, atoms or hoppings
+TBSaved = TightBinding.New()
+TBSaved.Name = "empty"
+io.put("ioGetPut", "TBSaved")
+TBSaved = nil
+io.get("ioGetPut", "TBSaved")
+if (TBSaved.Name ~= "empty") or (TBSaved.NF ~= 0) then
+  error("io.get io.put for an empty TightBinding object did not return the original\n",1)
+end
+
+-- an atom name with a '.' can not be read back and has to be an error
+TBSaved = TightBinding.New()
+TBSaved.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+TBSaved.Atoms = {{"Fe.1", {0,0,0}, {{"d", {"1","2","3","4","5"}}}}}
+if pcall(io.put, "ioGetPut", "TBSaved") then
+  error("io.put of a TightBinding object with an atom named Fe.1 should fail\n",1)
 end
 
 -- Operators with restrictions. The writer added a space after the fermions also
