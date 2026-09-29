@@ -835,9 +835,11 @@ numbers — a real response function cannot tell a conjugate from a transpose.
 
 `io.put` (`LuaInterface/lua_extensions/get_put.cpp`) now writes response
 functions and matrices at any depth inside a table, operators with their
-restrictions, tight binding objects, numbers so that they read back exactly
+restrictions, tight binding objects, graphics objects (as
+`Graphics.New(Graphics.ToTable(G))`), numbers so that they read back exactly
 (including inf and nan), and control characters in strings;
-`TestScripts/ioGetPut.Quanty` covers all of that. Still open:
+`TestScripts/ioGetPut.Quanty` covers all of that (graphics:
+`TestScripts/Plot/ToTable.Quanty`). Still open:
 
 - **TightBinding, where the reader limits the round trip.** An object is written
   as the settings of `Name`, `Units`, `Cell`, `Atoms` and `Hopping`, and read back
@@ -847,9 +849,9 @@ restrictions, tight binding objects, numbers so that they read back exactly
   name (the reader takes the first). Slabs, with one or two infinite cell
   vectors, are refused by `LuaReadHopping` in absolute units ("input for slabs
   not completed"), so they write but do not read back.
-- **Graphics, BitMap, Tensor, GaussianRadialFunction, InterpolatingFunction.**
-  `io.put` stops with an error naming the type. There is no constructor from data
-  to write them as. For a plot, keep the SVG.
+- **BitMap, Tensor, GaussianRadialFunction, InterpolatingFunction.** `io.put`
+  stops with an error naming the type. There is no constructor from data to
+  write them as.
 - **Tables that contain themselves** recurse until the C stack overflows; a table
   referenced twice is written twice and reads back as two tables.
 - **A failed `io.put` leaves a half-written file** in place of the previous one,

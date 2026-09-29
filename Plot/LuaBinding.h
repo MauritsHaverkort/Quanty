@@ -1,3 +1,6 @@
+void LuaPushTable_Graphics(lua_State *L, GraphicsType const * const G);
+void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G);
+int LuaGraphicsToTable(lua_State * L);
 int LuaNewGraphics(lua_State * L);
 int LuaAddToGraphics(lua_State * L);
 int LuaPlotGraphics(lua_State * L);

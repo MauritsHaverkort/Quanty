@@ -1,0 +1,107 @@
+print("-------------------------------------------------------")
+print("--   Graphics.ToTable, Graphics.New(Table), io.put   --")
+print("-------------------------------------------------------")
+
+-- A graphics object as a lua table and back, and through io.put and io.get.
+-- ToSVG and ToPS write every field of every element, so the object has to come
+-- back with the same SVG and PostScript, byte for byte.
+
+-- lines, curves, arcs, texts (with a font of the standard list and one that
+-- is not) and bitmaps, on a canvas that is not the default
+G = Graphics.New({{"Canvas.Size.X", 150}, {"Canvas.Size.Y", 100}, {"Canvas.Origin.X", 5}})
+G = Graphics.Add(G, {{0,0},{0.5,0.5}}, {{"Line Width",0.01},{"Color",0x123456},{"Transparancy",0x80}})
+G = Graphics.Add(G, {{0.1,0.3},{0.2,0.3},{0.2,0.4}}, {{"Close",true},{"Fill Color",0xFF0000},{"Fill Transparancy",0x40}})
+G = Graphics.Add(G, {{0.10,0.35, 0.1,0.3, 0.15,0.30},
+                     {0.15,0.30, 0.2,0.3, 0.20,0.35},
+                     {0.20,0.35, 0.2,0.4, 0.15,0.35}}, {{"Close",true},{"Color",0x00AA00}})
+G = Graphics.Add(G, {"Arc", {0.5,0.5}, 0.2})
+G = Graphics.Add(G, {"Arc", {0.6,0.2}, 0.1, 1.5*Pi, 1*Pi}, {{"Close",true},{"Fill Color",0x0000FF},{"Line Width",0.02}})
+G = Graphics.Add(G, "Some text", 0.1, 0.1)
+G = Graphics.Add(G, "rotated, centred", 0.5, 0.7, {{"Font","Verdana"},{"Angle",30},{"Alignment","c"},{"Size",0.07},{"Color",0x804020}})
+G = Graphics.Add(G, "own font", 0.8, 0.9, {{"Font","My".."Own".."Font"},{"Alignment","r"}})
+RGB = {}
+for i = 1, 70 do
+  RGB[i] = {}
+  for j = 1, 3 do RGB[i][j] = {(i*37)%256, (j*91)%256, (i*j)%256} end
+end
+G = Graphics.Add(G, {"BitMap", {0.0,0.0}, {0.2,0.2}, RGB})
+-- layers, nested: G2 holds a layer, and G is added on top of G2 as a layer of a layer
+G2 = Graphics.Add(Graphics.New(), {{0.9,0.9},{0.1,0.1}}, {{"Color",0xFF00FF}})
+G3 = Graphics.Add(Graphics.New(), "layer text", 0.3, 0.3, {{"Font","Other".."Font"}})
+G2 = G2 + G3
+GAll = G + G2
+if GAll.NLayer ~= 2 then error("GAll should have 2 layers, has "..GAll.NLayer.."\n", 1) end
+
+-- a scientific plot, with a frame, ticks and labels
+GLOP = ResponseFunction.New({{0, -1, 0.5, 2}, {0.3, 0.5, 0.2}, mu = 0, type = "ListOfPoles"})
+GPlot = Graphics.Plot(GLOP, 0.1, 0, {{"PlotPoints",200},
+          {"Frame",{{"Xmin",-3},{"Xmax",3},{"XLabel","Energy"},{"YLabel","G"},{"Font","Arial".."MT"}}}})
+
+function SameGraphics(A, B, what)
+  if Graphics.ToSVG(A) ~= Graphics.ToSVG(B) then
+    error(what..": the SVG differs\n", 2)
+  end
+  if Graphics.ToPS(A) ~= Graphics.ToPS(B) then
+    error(what..": the PostScript differs\n", 2)
+  end
+end
+
+for name, A in pairs({elements = G, layers = GAll, plot = GPlot, empty = Graphics.New()}) do
+  local T = Graphics.ToTable(A)
+  SameGraphics(A, Graphics.New(T), "Graphics.New(Graphics.ToTable) of "..name)
+  PlotSaved = A
+  io.put("ioGetPutPlot", "PlotSaved")
+  PlotSaved = nil
+  collectgarbage("collect")
+  io.get("ioGetPutPlot", "PlotSaved")
+  SameGraphics(A, PlotSaved, "io.put and io.get of "..name)
+end
+
+-- the table itself
+T = Graphics.ToTable(GAll)
+if (T.CanvasSize[1] ~= 150) or (T.CanvasSize[2] ~= 100) or (T.CanvasOrigin[1] ~= 5) then
+  error("Graphics.ToTable does not give the canvas\n", 1)
+end
+if (#T.Line ~= 2) or (#T.Curve ~= 1) or (#T.Arc ~= 2) or (#T.Text ~= 3) or (#T.BitMap ~= 1) or (#T.Layer ~= 1) or (#T.Layer[1].Layer ~= 1) then
+  error("Graphics.ToTable does not give the elements and layers of the graphics\n", 1)
+end
+if T.Text[3].Font ~= "MyOwnFont" or T.Text[2].Alignment ~= "c" then
+  error("Graphics.ToTable does not give the font and alignment of a text\n", 1)
+end
+if (#T.Line[1].Color ~= 4) or (#T.Line[2].Point ~= 3) or (#T.Line[2].Point[1] ~= 2) then
+  error("Graphics.ToTable should give a color as four bytes and points as {{x,y},...}\n", 1)
+end
+B = T.BitMap[1]
+if (B.NpointsX*B.NpointsY ~= 210) or (#B.Pixels:gsub("%s", "") ~= 8*210 + 1) or (B.Pixels:sub(-1) ~= ">") then
+  error("the Pixels of a bitmap should be 8 hexadecimal digits per pixel closed by >\n", 1)
+end
+
+-- written by hand, every field is optional
+H = Graphics.New({CanvasSize = {100,50}, Line = {{Point = {{0,0},{1,1}}}}, Text = {{String = "hi", Point = {0.5,0.5}}}})
+if (H.SizeX ~= 100) or (H.NLine ~= 1) or (H.NText ~= 1) or (H.NCurve ~= 0) then
+  error("Graphics.New with a partial table did not give the object\n", 1)
+end
+-- the options list of before still works
+O = Graphics.New({{"Canvas.Size.X", 123}})
+if O.SizeX ~= 123 then error("Graphics.New with an options list does not work any more\n", 1) end
+
+-- malformed tables are errors
+Bad = {
+  ["an unknown field"]           = {Lines = {}},
+  ["an unknown field of a line"] = {Line = {{Colour = {0,0,0,255}}}},
+  ["a color of three bytes"]     = {Line = {{Color = {0,0,0}}}},
+  ["a byte above 255"]           = {Arc = {{Color = {0,0,256,255}}}},
+  ["a point of three numbers"]   = {Arc = {{Point = {0,0,0}}}},
+  ["VL shorter than Point"]      = {Curve = {{Point = {{0,0},{1,1}}, VL = {{0,0}}, VR = {{0,0},{1,1}}}}},
+  ["an alignment of two chars"]  = {Text = {{String = "x", Alignment = "cc"}}},
+  ["too few pixels"]             = {BitMap = {{NpointsX = 2, NpointsY = 1, Pixels = "FF000000>"}}},
+  ["a pixel that is not hex"]    = {BitMap = {{NpointsX = 1, NpointsY = 1, Pixels = "FF00000G>"}}},
+  ["a layer of the wrong form"]  = {Layer = {{Line = 5}}},
+}
+for what, t in pairs(Bad) do
+  if pcall(Graphics.New, t) then
+    error("Graphics.New with "..what.." should fail\n", 1)
+  end
+end
+
+print("done")

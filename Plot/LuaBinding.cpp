@@ -1,3 +1,524 @@
+/*  Graphics objects as lua tables, used by Graphics.ToTable, Graphics.New(Table) and io.put
+ *    { CanvasSize = {x, y}, CanvasOrigin = {x, y},
+ *      Layer  = { Graphics, ... },   -- layers 1 and up in this same form; layer 0 is the object itself
+ *      Line   = { {Color=, Width=, Point=, CloseAndFill=, FillColor=}, ... },
+ *      Curve  = { {Color=, Width=, Point=, VL=, VR=, CloseAndFill=, FillColor=}, ... },
+ *      Arc    = { {Color=, Width=, R=, Point=, ThetaL=, ThetaR=, CloseAndFill=, FillColor=}, ... },
+ *      Text   = { {Color=, Point=, Angle=, Alignment=, Size=, String=, Font=}, ... },
+ *      BitMap = { {LB=, RT=, NpointsX=, NpointsY=, Pixels=}, ... } }
+ *  with the fields of the structures in Plot/StructDef.cpp. A color is the four bytes
+ *  {c0, c1, c2, c3} of the structure, a point {x, y} and a list of points {{x, y}, ...}.
+ *  Alignment is a string of one character. Pixels is a string in ASCIIHexDecode format: eight
+ *  hexadecimal digits per pixel (its uint32_t value), NpointsX * NpointsY pixels in the order of
+ *  the structure, whitespace ignored, closed by '>'.
+ *  Writing leaves out empty lists. Reading takes every field as optional, with the defaults of
+ *  InitGraphics, InitLine, etc., and refuses keys it does not know.
+ */
+
+static void LuaPushGraphicsPoint(lua_State *L, PointType const P)
+{
+  lua_createtable(L, 2, 0);
+  lua_pushnumber(L, P.X);
+  lua_rawseti(L, -2, 1);
+  lua_pushnumber(L, P.Y);
+  lua_rawseti(L, -2, 2);
+}
+
+static void LuaPushGraphicsPoints(lua_State *L, int const N, PointType const * const P)
+{
+  int i;
+  lua_createtable(L, N, 0);
+  for(i=0;i<N;i++)
+  {
+    LuaPushGraphicsPoint(L, P[i]);
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+static void LuaPushGraphicsColor(lua_State *L, uint8_t const C[4])
+{
+  int i;
+  lua_createtable(L, 4, 0);
+  for(i=0;i<4;i++)
+  {
+    lua_pushinteger(L, C[i]);
+    lua_rawseti(L, -2, i+1);
+  }
+}
+
+void LuaPushTable_Graphics(lua_State *L, GraphicsType const * const G)
+{
+  int i, j;
+  lua_createtable(L, 0, 8);
+  LuaPushGraphicsPoint(L, G->CanvasSize);
+  lua_setfield(L, -2, "CanvasSize");
+  LuaPushGraphicsPoint(L, G->CanvasOrigin);
+  lua_setfield(L, -2, "CanvasOrigin");
+  if(G->NLayer>1)
+  {
+    lua_createtable(L, G->NLayer-1, 0);
+    for(i=1;i<G->NLayer;i++)
+    {
+      LuaPushTable_Graphics(L, G->Layer[i]);
+      lua_rawseti(L, -2, i);
+    }
+    lua_setfield(L, -2, "Layer");
+  }
+  if(G->NLine>0)
+  {
+    lua_createtable(L, G->NLine, 0);
+    for(i=0;i<G->NLine;i++)
+    {
+      LineType const * const E = &(G->Line[i]);
+      lua_createtable(L, 0, 5);
+      LuaPushGraphicsColor(L, E->Color);                   lua_setfield(L, -2, "Color");
+      lua_pushnumber(L, E->Width);                         lua_setfield(L, -2, "Width");
+      LuaPushGraphicsPoints(L, E->NPoints, E->Point);      lua_setfield(L, -2, "Point");
+      lua_pushboolean(L, E->CloseAndFill);                 lua_setfield(L, -2, "CloseAndFill");
+      LuaPushGraphicsColor(L, E->FillColor);               lua_setfield(L, -2, "FillColor");
+      lua_rawseti(L, -2, i+1);
+    }
+    lua_setfield(L, -2, "Line");
+  }
+  if(G->NCurve>0)
+  {
+    lua_createtable(L, G->NCurve, 0);
+    for(i=0;i<G->NCurve;i++)
+    {
+      CurveType const * const E = &(G->Curve[i]);
+      lua_createtable(L, 0, 7);
+      LuaPushGraphicsColor(L, E->Color);                   lua_setfield(L, -2, "Color");
+      lua_pushnumber(L, E->Width);                         lua_setfield(L, -2, "Width");
+      LuaPushGraphicsPoints(L, E->NPoints, E->Point);      lua_setfield(L, -2, "Point");
+      LuaPushGraphicsPoints(L, E->NPoints, E->VL);         lua_setfield(L, -2, "VL");
+      LuaPushGraphicsPoints(L, E->NPoints, E->VR);         lua_setfield(L, -2, "VR");
+      lua_pushboolean(L, E->CloseAndFill);                 lua_setfield(L, -2, "CloseAndFill");
+      LuaPushGraphicsColor(L, E->FillColor);               lua_setfield(L, -2, "FillColor");
+      lua_rawseti(L, -2, i+1);
+    }
+    lua_setfield(L, -2, "Curve");
+  }
+  if(G->NArc>0)
+  {
+    lua_createtable(L, G->NArc, 0);
+    for(i=0;i<G->NArc;i++)
+    {
+      ArcType const * const E = &(G->Arc[i]);
+      lua_createtable(L, 0, 8);
+      LuaPushGraphicsColor(L, E->Color);                   lua_setfield(L, -2, "Color");
+      lua_pushnumber(L, E->Width);                         lua_setfield(L, -2, "Width");
+      lua_pushnumber(L, E->R);                             lua_setfield(L, -2, "R");
+      LuaPushGraphicsPoint(L, E->Point);                   lua_setfield(L, -2, "Point");
+      lua_pushnumber(L, E->ThetaL);                        lua_setfield(L, -2, "ThetaL");
+      lua_pushnumber(L, E->ThetaR);                        lua_setfield(L, -2, "ThetaR");
+      lua_pushboolean(L, E->CloseAndFill);                 lua_setfield(L, -2, "CloseAndFill");
+      LuaPushGraphicsColor(L, E->FillColor);               lua_setfield(L, -2, "FillColor");
+      lua_rawseti(L, -2, i+1);
+    }
+    lua_setfield(L, -2, "Arc");
+  }
+  if(G->NText>0)
+  {
+    lua_createtable(L, G->NText, 0);
+    for(i=0;i<G->NText;i++)
+    {
+      TextType const * const E = &(G->Text[i]);
+      lua_createtable(L, 0, 7);
+      LuaPushGraphicsColor(L, E->Color);                   lua_setfield(L, -2, "Color");
+      LuaPushGraphicsPoint(L, E->Point);                   lua_setfield(L, -2, "Point");
+      lua_pushnumber(L, E->Angle);                         lua_setfield(L, -2, "Angle");
+      lua_pushlstring(L, &(E->Alignment), 1);              lua_setfield(L, -2, "Alignment");
+      lua_pushnumber(L, E->Size);                          lua_setfield(L, -2, "Size");
+      lua_pushstring(L, (E->String==NULL)?"":E->String);   lua_setfield(L, -2, "String");
+      if(E->Font!=NULL)
+      {
+        lua_pushstring(L, E->Font);                        lua_setfield(L, -2, "Font");
+      }
+      lua_rawseti(L, -2, i+1);
+    }
+    lua_setfield(L, -2, "Text");
+  }
+  if(G->NBitMap>0)
+  {
+    lua_createtable(L, G->NBitMap, 0);
+    for(i=0;i<G->NBitMap;i++)
+    {
+      BitMapType const * const E = &(G->BitMap[i]);
+      size_t const N = (size_t)E->NpointsX * (size_t)E->NpointsY;
+      // eight digits per pixel, a line break after every 64 pixels, and the closing '>'
+      char *Hex = (char*)malloc((8*N + N/64 + 2) * sizeof(char));
+      size_t pos = 0;
+      if(Hex==NULL) luaL_error(L, "Error in Graphics.ToTable: out of memory for a bitmap of %d by %d pixels\n", E->NpointsX, E->NpointsY);
+      for(j=0;j<(int)N;j++)
+      {
+        snprintf(Hex+pos, 9, "%08X", E->Pixels[j]);
+        pos += 8;
+        if((j%64)==63) Hex[pos++] = '\n';
+      }
+      Hex[pos++] = '>';
+      lua_createtable(L, 0, 5);
+      LuaPushGraphicsPoint(L, E->LB);                      lua_setfield(L, -2, "LB");
+      LuaPushGraphicsPoint(L, E->RT);                      lua_setfield(L, -2, "RT");
+      lua_pushinteger(L, E->NpointsX);                     lua_setfield(L, -2, "NpointsX");
+      lua_pushinteger(L, E->NpointsY);                     lua_setfield(L, -2, "NpointsY");
+      lua_pushlstring(L, Hex, pos);                        lua_setfield(L, -2, "Pixels");
+      free(Hex);
+      lua_rawseti(L, -2, i+1);
+    }
+    lua_setfield(L, -2, "BitMap");
+  }
+}
+
+/*  every key of the table at narg must be one of Keys, What names the table in the message
+ */
+static void LuaCheckGraphicsKeys(lua_State *L, int narg, const char * const Keys[], int NKeys, const char *What)
+{
+  int i;
+  narg = lua_absindex(L, narg);
+  if(lua_type(L, narg)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): %s should be a table\n", What);
+  lua_pushnil(L);
+  while(lua_next(L, narg)!=0)
+  {
+    bool known=false;
+    if(lua_type(L, -2)==LUA_TSTRING)
+    {
+      for(i=0;i<NKeys;i++) if(strcmp(lua_tostring(L, -2), Keys[i])==0) known=true;
+    }
+    if(!known)
+    {
+      if(lua_type(L, -2)==LUA_TSTRING) luaL_error(L, "Error in Graphics.New(Table): unknown field %s in %s\n", lua_tostring(L, -2), What);
+      luaL_error(L, "Error in Graphics.New(Table): a key of type %s in %s, expected named fields\n", luaL_typename(L, -2), What);
+    }
+    lua_pop(L, 1);
+  }
+}
+
+static PointType LuaReadGraphicsPoint(lua_State *L, int narg, const char *What)
+{
+  PointType P;
+  narg = lua_absindex(L, narg);
+  if((lua_type(L, narg)!=LUA_TTABLE)||(lua_objlen(L, narg)!=2)) luaL_error(L, "Error in Graphics.New(Table): %s should be a point {x, y}\n", What);
+  lua_rawgeti(L, narg, 1);
+  if(lua_type(L, -1)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a point {x, y} of two numbers\n", What);
+  P.X = lua_tonumber(L, -1);
+  lua_pop(L, 1);
+  lua_rawgeti(L, narg, 2);
+  if(lua_type(L, -1)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a point {x, y} of two numbers\n", What);
+  P.Y = lua_tonumber(L, -1);
+  lua_pop(L, 1);
+  return P;
+}
+
+/*  a list of points, allocated here, NULL for an empty list
+ */
+static PointType* LuaReadGraphicsPoints(lua_State *L, int narg, int *N, const char *What)
+{
+  int i;
+  PointType *P;
+  narg = lua_absindex(L, narg);
+  if(lua_type(L, narg)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): %s should be a list of points {{x, y}, ...}\n", What);
+  *N = (int)lua_objlen(L, narg);
+  if(*N==0) return NULL;
+  P = (PointType*)malloc((*N)*sizeof(PointType));
+  if(P==NULL) luaL_error(L, "Error in Graphics.New(Table): out of memory for %d points\n", *N);
+  for(i=0;i<*N;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    P[i] = LuaReadGraphicsPoint(L, -1, What);
+    lua_pop(L, 1);
+  }
+  return P;
+}
+
+static void LuaReadGraphicsColor(lua_State *L, int narg, uint8_t C[4], const char *What)
+{
+  int i;
+  narg = lua_absindex(L, narg);
+  if((lua_type(L, narg)!=LUA_TTABLE)||(lua_objlen(L, narg)!=4)) luaL_error(L, "Error in Graphics.New(Table): %s should be a color of four bytes {c0, c1, c2, c3}\n", What);
+  for(i=0;i<4;i++)
+  {
+    double c;
+    lua_rawgeti(L, narg, i+1);
+    if(lua_type(L, -1)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a color of four bytes {c0, c1, c2, c3}\n", What);
+    c = lua_tonumber(L, -1);
+    if((c!=floor(c))||(c<0)||(c>255)) luaL_error(L, "Error in Graphics.New(Table): the bytes of %s should be whole numbers from 0 to 255, found %g\n", What, c);
+    C[i] = (uint8_t)c;
+    lua_pop(L, 1);
+  }
+}
+
+static double LuaReadGraphicsNumber(lua_State *L, int narg, const char *What)
+{
+  if(lua_type(L, narg)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a number\n", What);
+  return lua_tonumber(L, narg);
+}
+
+static bool LuaReadGraphicsBool(lua_State *L, int narg, const char *What)
+{
+  if(lua_type(L, narg)!=LUA_TBOOLEAN) luaL_error(L, "Error in Graphics.New(Table): %s should be true or false\n", What);
+  return (bool)lua_toboolean(L, narg);
+}
+
+/*  The fields of an element: lua_getfield pushes the value, the macro reads it if present and pops it
+ */
+#define GRAPHICS_FIELD(narg, Key, Read) { lua_getfield(L, narg, Key); if(!lua_isnil(L, -1)) { Read; } lua_pop(L, 1); }
+
+/*  fills G, initialised by InitGraphics, from the table at narg
+ */
+void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
+{
+  const char * const GraphicsKeys[] = {"CanvasSize", "CanvasOrigin", "Layer", "Line", "Curve", "Arc", "Text", "BitMap"};
+  const char * const LineKeys[]     = {"Color", "Width", "Point", "CloseAndFill", "FillColor"};
+  const char * const CurveKeys[]    = {"Color", "Width", "Point", "VL", "VR", "CloseAndFill", "FillColor"};
+  const char * const ArcKeys[]      = {"Color", "Width", "R", "Point", "ThetaL", "ThetaR", "CloseAndFill", "FillColor"};
+  const char * const TextKeys[]     = {"Color", "Point", "Angle", "Alignment", "Size", "String", "Font"};
+  const char * const BitMapKeys[]   = {"LB", "RT", "NpointsX", "NpointsY", "Pixels"};
+  int i, n, e;
+  narg = lua_absindex(L, narg);
+  LuaCheckGraphicsKeys(L, narg, GraphicsKeys, 8, "the graphics");
+  GRAPHICS_FIELD(narg, "CanvasSize",   G->CanvasSize   = LuaReadGraphicsPoint(L, -1, "CanvasSize"));
+  GRAPHICS_FIELD(narg, "CanvasOrigin", G->CanvasOrigin = LuaReadGraphicsPoint(L, -1, "CanvasOrigin"));
+  // the elements: each list is read element by element, and each element is added to G as soon as
+  // it is complete, so that G is a valid object whenever an error stops the reading
+  lua_getfield(L, narg, "Line");
+  if(!lua_isnil(L, -1))
+  {
+    if(lua_type(L, -1)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): Line should be a list of lines\n");
+    n = (int)lua_objlen(L, -1);
+    for(i=0;i<n;i++)
+    {
+      LineType E;
+      lua_rawgeti(L, -1, i+1);
+      e = lua_gettop(L);
+      LuaCheckGraphicsKeys(L, e, LineKeys, 5, "a line");
+      InitLine(&E);
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of a line"));
+      GRAPHICS_FIELD(e, "Width",        E.Width = LuaReadGraphicsNumber(L, -1, "the Width of a line"));
+      GRAPHICS_FIELD(e, "CloseAndFill", E.CloseAndFill = LuaReadGraphicsBool(L, -1, "CloseAndFill of a line"));
+      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, E.FillColor, "the FillColor of a line"));
+      GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoints(L, -1, &(E.NPoints), "the Point of a line"));
+      if(AddLineInherentLineMemory(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
+      lua_pop(L, 1);
+    }
+  }
+  lua_pop(L, 1);
+  lua_getfield(L, narg, "Curve");
+  if(!lua_isnil(L, -1))
+  {
+    if(lua_type(L, -1)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): Curve should be a list of curves\n");
+    n = (int)lua_objlen(L, -1);
+    for(i=0;i<n;i++)
+    {
+      CurveType E;
+      int NVL=0, NVR=0;
+      PointType *VL=NULL, *VR=NULL;
+      lua_rawgeti(L, -1, i+1);
+      e = lua_gettop(L);
+      LuaCheckGraphicsKeys(L, e, CurveKeys, 7, "a curve");
+      InitCurve(&E);
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of a curve"));
+      GRAPHICS_FIELD(e, "Width",        E.Width = LuaReadGraphicsNumber(L, -1, "the Width of a curve"));
+      GRAPHICS_FIELD(e, "CloseAndFill", E.CloseAndFill = LuaReadGraphicsBool(L, -1, "CloseAndFill of a curve"));
+      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, E.FillColor, "the FillColor of a curve"));
+      GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoints(L, -1, &(E.NPoints), "the Point of a curve"));
+      GRAPHICS_FIELD(e, "VL",           VL = LuaReadGraphicsPoints(L, -1, &NVL, "the VL of a curve"));
+      GRAPHICS_FIELD(e, "VR",           VR = LuaReadGraphicsPoints(L, -1, &NVR, "the VR of a curve"));
+      E.VL = VL;
+      E.VR = VR;
+      if((NVL!=E.NPoints)||(NVR!=E.NPoints))
+      {
+        int const NP = E.NPoints;
+        FreeCurve(&E);
+        luaL_error(L, "Error in Graphics.New(Table): a curve has %d points, but %d VL and %d VR, the three lists should have the same length\n", NP, NVL, NVR);
+      }
+      if(AddCurveInherentMemory(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
+      lua_pop(L, 1);
+    }
+  }
+  lua_pop(L, 1);
+  lua_getfield(L, narg, "Arc");
+  if(!lua_isnil(L, -1))
+  {
+    if(lua_type(L, -1)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): Arc should be a list of arcs\n");
+    n = (int)lua_objlen(L, -1);
+    for(i=0;i<n;i++)
+    {
+      ArcType E;
+      lua_rawgeti(L, -1, i+1);
+      e = lua_gettop(L);
+      LuaCheckGraphicsKeys(L, e, ArcKeys, 8, "an arc");
+      InitArc(&E);
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of an arc"));
+      GRAPHICS_FIELD(e, "Width",        E.Width = LuaReadGraphicsNumber(L, -1, "the Width of an arc"));
+      GRAPHICS_FIELD(e, "R",            E.R = LuaReadGraphicsNumber(L, -1, "the R of an arc"));
+      GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoint(L, -1, "the Point of an arc"));
+      GRAPHICS_FIELD(e, "ThetaL",       E.ThetaL = LuaReadGraphicsNumber(L, -1, "the ThetaL of an arc"));
+      GRAPHICS_FIELD(e, "ThetaR",       E.ThetaR = LuaReadGraphicsNumber(L, -1, "the ThetaR of an arc"));
+      GRAPHICS_FIELD(e, "CloseAndFill", E.CloseAndFill = LuaReadGraphicsBool(L, -1, "CloseAndFill of an arc"));
+      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, E.FillColor, "the FillColor of an arc"));
+      if(AddArc(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
+      lua_pop(L, 1);
+    }
+  }
+  lua_pop(L, 1);
+  lua_getfield(L, narg, "Text");
+  if(!lua_isnil(L, -1))
+  {
+    if(lua_type(L, -1)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): Text should be a list of texts\n");
+    n = (int)lua_objlen(L, -1);
+    for(i=0;i<n;i++)
+    {
+      TextType E;
+      lua_rawgeti(L, -1, i+1);
+      e = lua_gettop(L);
+      LuaCheckGraphicsKeys(L, e, TextKeys, 7, "a text");
+      InitText(&E);
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of a text"));
+      GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoint(L, -1, "the Point of a text"));
+      GRAPHICS_FIELD(e, "Angle",        E.Angle = LuaReadGraphicsNumber(L, -1, "the Angle of a text"));
+      GRAPHICS_FIELD(e, "Size",         E.Size = LuaReadGraphicsNumber(L, -1, "the Size of a text"));
+      lua_getfield(L, e, "Alignment");
+      if(!lua_isnil(L, -1))
+      {
+        size_t len;
+        const char *a;
+        if(lua_type(L, -1)!=LUA_TSTRING) luaL_error(L, "Error in Graphics.New(Table): the Alignment of a text should be a string of one character\n");
+        a = lua_tolstring(L, -1, &len);
+        if(len!=1) luaL_error(L, "Error in Graphics.New(Table): the Alignment of a text should be a string of one character, found \"%s\"\n", a);
+        E.Alignment = a[0];
+      }
+      lua_pop(L, 1);
+      // AddText copies the string and keeps the font through InternFont, so both may point into
+      // lua strings; they stay on the stack until the text is added
+      lua_getfield(L, e, "String");
+      if(lua_isnil(L, -1))
+      {
+        E.String = (char*)"";
+      }
+      else
+      {
+        if(lua_type(L, -1)!=LUA_TSTRING) luaL_error(L, "Error in Graphics.New(Table): the String of a text should be a string\n");
+        E.String = (char*)lua_tostring(L, -1);
+      }
+      lua_getfield(L, e, "Font");
+      if(!lua_isnil(L, -1))
+      {
+        if(lua_type(L, -1)!=LUA_TSTRING) luaL_error(L, "Error in Graphics.New(Table): the Font of a text should be a string\n");
+        E.Font = lua_tostring(L, -1);
+      }
+      if(AddText(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
+      lua_pop(L, 3);
+    }
+  }
+  lua_pop(L, 1);
+  lua_getfield(L, narg, "BitMap");
+  if(!lua_isnil(L, -1))
+  {
+    if(lua_type(L, -1)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): BitMap should be a list of bitmaps\n");
+    n = (int)lua_objlen(L, -1);
+    for(i=0;i<n;i++)
+    {
+      BitMapType E;
+      double Nx=0, Ny=0;
+      size_t len=0, k, N, j=0;
+      const char *Hex="";
+      lua_rawgeti(L, -1, i+1);
+      e = lua_gettop(L);
+      LuaCheckGraphicsKeys(L, e, BitMapKeys, 5, "a bitmap");
+      InitBitMap(&E);
+      GRAPHICS_FIELD(e, "LB",       E.LB = LuaReadGraphicsPoint(L, -1, "the LB of a bitmap"));
+      GRAPHICS_FIELD(e, "RT",       E.RT = LuaReadGraphicsPoint(L, -1, "the RT of a bitmap"));
+      GRAPHICS_FIELD(e, "NpointsX", Nx = LuaReadGraphicsNumber(L, -1, "the NpointsX of a bitmap"));
+      GRAPHICS_FIELD(e, "NpointsY", Ny = LuaReadGraphicsNumber(L, -1, "the NpointsY of a bitmap"));
+      if((Nx!=floor(Nx))||(Nx<0)||(Ny!=floor(Ny))||(Ny<0)) luaL_error(L, "Error in Graphics.New(Table): NpointsX and NpointsY of a bitmap should be whole numbers of 0 or more\n");
+      E.NpointsX = (int)Nx;
+      E.NpointsY = (int)Ny;
+      N = (size_t)E.NpointsX * (size_t)E.NpointsY;
+      lua_getfield(L, e, "Pixels");
+      if(!lua_isnil(L, -1))
+      {
+        if(lua_type(L, -1)!=LUA_TSTRING) luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap should be a string of hexadecimal digits\n");
+        Hex = lua_tolstring(L, -1, &len);
+      }
+      // ASCIIHexDecode: hexadecimal digits, whitespace ignored, '>' ends the data
+      E.Pixels = (N==0)?NULL:(uint32_t*)malloc(N*sizeof(uint32_t));
+      if((N!=0)&&(E.Pixels==NULL)) luaL_error(L, "Error in Graphics.New(Table): out of memory for a bitmap of %d by %d pixels\n", E.NpointsX, E.NpointsY);
+      for(k=0;k<N;k++) E.Pixels[k]=0;
+      for(k=0;(k<len)&&(Hex[k]!='>');k++)
+      {
+        char const c = Hex[k];
+        uint32_t d;
+        if((c==' ')||(c=='\n')||(c=='\r')||(c=='\t')||(c=='\f')) continue;
+        if((c>='0')&&(c<='9'))      d = (uint32_t)(c-'0');
+        else if((c>='A')&&(c<='F')) d = (uint32_t)(c-'A'+10);
+        else if((c>='a')&&(c<='f')) d = (uint32_t)(c-'a'+10);
+        else
+        {
+          FreeBitMap(&E);
+          return (void)luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap contain '%c', which is not a hexadecimal digit\n", c);
+        }
+        if(j>=8*N)
+        {
+          FreeBitMap(&E);
+          return (void)luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap of %d by %d contain more than %lu hexadecimal digits\n", E.NpointsX, E.NpointsY, (unsigned long)(8*N));
+        }
+        E.Pixels[j/8] = (E.Pixels[j/8]<<4) | d;
+        j++;
+      }
+      if(j!=8*N)
+      {
+        FreeBitMap(&E);
+        luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap of %d by %d should have %lu hexadecimal digits (8 per pixel), found %lu\n", E.NpointsX, E.NpointsY, (unsigned long)(8*N), (unsigned long)j);
+      }
+      if(AddBitMapInherentMemory(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
+      lua_pop(L, 2);
+    }
+  }
+  lua_pop(L, 1);
+  lua_getfield(L, narg, "Layer");
+  if(!lua_isnil(L, -1))
+  {
+    if(lua_type(L, -1)!=LUA_TTABLE) luaL_error(L, "Error in Graphics.New(Table): Layer should be a list of graphics\n");
+    n = (int)lua_objlen(L, -1);
+    for(i=0;i<n;i++)
+    {
+      GraphicsType *Layer = NewGraphics();
+      lua_rawgeti(L, -1, i+1);
+      // added before it is read, so that it is freed with G when an error stops the reading
+      if(AddLayerInherentMemory(G, Layer)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
+      LuaReadTable_Graphics(L, -1, Layer);
+      lua_pop(L, 1);
+    }
+  }
+  lua_pop(L, 1);
+}
+#undef GRAPHICS_FIELD
+
+/*  true when the table at narg has named fields, i.e. is of the form of Graphics.ToTable and not a
+ *  list of options {{"Canvas.Size.X", x}, ...}
+ */
+static bool LuaQGraphicsTable(lua_State *L, int narg)
+{
+  bool named=false;
+  narg = lua_absindex(L, narg);
+  if(lua_type(L, narg)!=LUA_TTABLE) return false;
+  lua_pushnil(L);
+  while(lua_next(L, narg)!=0)
+  {
+    if(lua_type(L, -2)==LUA_TSTRING) named=true;
+    lua_pop(L, 1);
+  }
+  return named;
+}
+
+int LuaGraphicsToTable(lua_State * L)
+{
+  if(lua_gettop(L)!=1) return luaL_error(L, "Error Graphics.ToTable expects one argument, a graphics object\n");
+  GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
+  LuaPushTable_Graphics(L, Graphics);
+  return 1;
+}
+
 int LuaNewGraphics(lua_State * L)
 {
   GraphicsType *Graphics;
@@ -5,6 +526,12 @@ int LuaNewGraphics(lua_State * L)
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
   luaL_setmetatable(L, "Graphics_Type");
   InitGraphics(Graphics);
+  if((len==1)&&LuaQGraphicsTable(L, 1))
+  {
+    // Graphics.New(Table) with a table of the form of Graphics.ToTable
+    LuaReadTable_Graphics(L, 1, Graphics);
+    return 1;
+  }
   if(len==1)
   {
     struct
@@ -1982,6 +2509,7 @@ static int LuaSVGHTMLViewer(lua_State *L)
 
 static const struct luaL_Reg Graphics_func[] = {
   {"New", LuaNewGraphics},
+  {"ToTable", LuaGraphicsToTable},
   {"Add", LuaAddToGraphicsFunction},
   {"Plot", LuaPlotGraphics},
   {"ToPS", LuaGraphicsToPS},

@@ -258,6 +258,46 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
     uint32_t i;
     size_t len;
     n = lua_tolstring(L, narg, &len);
+    // A string with line breaks is written as a long bracket [==[ ... ]==], which keeps the lines
+    // of the file as they are (the pixels of a bitmap are such a string). Lua turns \r and \r\n
+    // in a long bracket into \n, so strings with \r (or \0) are escaped as below. The number of =
+    // is the smallest for which the closing bracket occurs neither in the string nor, together
+    // with a ] that ends the string, at its end. Lua drops a line break right after the opening
+    // bracket, so one is written there and the string starts on the next line unchanged.
+    if((memchr(n, '\n', len)!=NULL)&&(memchr(n, '\r', len)==NULL)&&(memchr(n, '\0', len)==NULL))
+    {
+      uint32_t level, k;
+      for(level=0;;level++)
+      {
+        char close[64];
+        bool clash=false;
+        if(level+2>=sizeof(close)) break;
+        close[0]=']';
+        for(k=0;k<level;k++) close[k+1]='=';
+        close[level+1]=']';
+        close[level+2]='\0';
+        if(strstr(n, close)!=NULL) clash=true;
+        // the string ends in ] followed by level times =
+        if((len>=level+1)&&(n[len-level-1]==']'))
+        {
+          bool ends=true;
+          for(k=0;k<level;k++) if(n[len-level+k]!='=') ends=false;
+          if(ends) clash=true;
+        }
+        if(!clash) break;
+      }
+      if(level+2<64)
+      {
+        fputc('[', stream);
+        for(i=0;i<level;i++) fputc('=', stream);
+        fputs("[\n", stream);
+        fwrite(n, 1, len, stream);
+        fputc(']', stream);
+        for(i=0;i<level;i++) fputc('=', stream);
+        fputc(']', stream);
+        return 0;
+      }
+    }
     fputc('\"', stream);
     for(i=0;i<len;i++)
     {
@@ -569,6 +609,16 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
       fprintf(stream, " })");
       return 0;
     }
+    if (luaL_testudata(L, narg, "Graphics_Type") != NULL)
+    {
+      // the table of Graphics.ToTable, read back by Graphics.New(Table)
+      fprintf(stream,"Graphics.New(");
+      LuaPushTable_Graphics(L, (GraphicsType *) lua_touserdata(L, narg));
+      LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);
+      lua_pop(L, 1);
+      fprintf(stream,")\n");
+      return 0;
+    }
     if (luaL_testudata(L, narg, "Spectra_Type") != NULL)
     {
       SpectraTypeArray *n;
@@ -628,7 +678,7 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
     }
     {
       // types that exist, but have no ASCII representation yet
-      const char * const NotSaved[] = {"Graphics_Type", "BitMap_Type", "Tensor_Type", "GaussianRadialFunction_Type", "InterpolatingFunction_Type"};
+      const char * const NotSaved[] = {"BitMap_Type", "Tensor_Type", "GaussianRadialFunction_Type", "InterpolatingFunction_Type"};
       uint32_t i;
       for(i=0;i<sizeof(NotSaved)/sizeof(NotSaved[0]);i++)
       {

@@ -159,6 +159,7 @@ test-jobs-plot:
           - "Add"
           - "New"
           - "TextFont"
+          - "ToTable"
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/Plot/${TEST_NAME}.Quanty"
