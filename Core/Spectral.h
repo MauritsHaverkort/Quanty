@@ -2,6 +2,10 @@ int SpectrumAllocate(const SpectraType Settings, SpectraType * const G);
 void SpectrumFree(SpectraType * const G);
 void CopySpectra(const SpectraType In, SpectraType * Out);
 uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out);
+uint32_t SetSpectraArrayNE1(SpectraTypeArray * const A, const uint32_t NE1);
+uint32_t SetSpectraArrayTensorBasis(SpectraTypeArray * const A, const char * const TensorBasis);
+uint32_t ConjugateSpectraArrayTensor(SpectraTypeArray * const A);
+uint32_t TransposeSpectraArrayTensor(SpectraTypeArray * const A);
 int SpectraScalarMultiply(SpectraType * const A, double const aRe, double const aIm);
 int SpectraScalarAdd(SpectraType * const A, double const aRe, double const aIm);
 int AvverageSpectra(SpectraType * const A, SpectraType * const B);
@@ -52,3 +56,5 @@ void SplitAndersonImpurityHamiltonian(const TriDiagonalMatrixType M, const doubl
 void CalculateSelfEnergySpectralRepresentation(const SpectraType G0, const SpectraType G, SpectraType * const S,const double *const FWHM);
 void CalculateG0fromSandGSpectralRepresentation(SpectraType * const G0, const SpectraType G, const SpectraType S);
 int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[3][3], double klist[][3], SpectraType * Spectra);
+uint32_t RotateSpectra(SpectraTypeArray * const SpecNew, const SpectraTypeArray * const Spec, const CompactMatrixType * const U);
+uint32_t GetPowderTensor(SpectraTypeArray * const A, const SpectraTypeArray * const B, const uint32_t * const lvec, const uint32_t lvec_len);

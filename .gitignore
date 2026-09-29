@@ -11,4 +11,5 @@
 *.svg
 *.pdf
 *.ps
+*.dat
 build/

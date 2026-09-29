@@ -78,6 +78,7 @@ void FreeSpectraTypeArray(SpectraTypeArray * const G)
   }
   free(G->Name);
   G->NSpectra=0;
+  G->NE1=0;
 }
 
 
@@ -120,6 +121,8 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
 {
   uint32_t i;
   Out->NSpectra=In->NSpectra;
+  Out->NE1=In->NE1;
+  Out->TensorBasis=In->TensorBasis;
   Out->Spec = (SpectraType*)malloc(In->NSpectra*sizeof(SpectraType));
   if(Out->Spec==NULL){printf("malloc failed in CopySpectraArray\n");return 1;}
   for(i=0;i<In->NSpectra;i++)
@@ -134,6 +137,92 @@ uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
   Out->Name=(char*)malloc((strlen(In->Name)+1)*sizeof(char));
   if(Out->Name==NULL){printf("malloc failed in CopySpectraArray for Name\n");return 1;}
   strcpy(Out->Name, In->Name);
+  return 0;
+}
+
+uint32_t SetSpectraArrayNE1(SpectraTypeArray * const A, const uint32_t NE1)
+{
+  A->NE1 = NE1;
+  return 0;
+}
+
+uint32_t SetSpectraArrayTensorBasis(SpectraTypeArray * const A, const char * const TensorBasis)
+{
+  size_t len;
+  char *basisCopy;
+
+  if(TensorBasis == NULL)
+  {
+    printf("SetSpectraArrayTensorBasis failed: TensorBasis is NULL\n");
+    return 1;
+  }
+
+  len = strlen(TensorBasis);
+  basisCopy = (char*)malloc((len + 1) * sizeof(char));
+  if(basisCopy == NULL)
+  {
+    printf("SetSpectraArrayTensorBasis failed: allocation failed\n");
+    return 1;
+  }
+
+  strcpy(basisCopy, TensorBasis);
+  A->TensorBasis = basisCopy;
+  return 0;
+}
+
+uint32_t ConjugateSpectraArrayTensor(SpectraTypeArray * const A)
+{
+  uint32_t i, p;
+  
+  for(i = 0; i < A->NSpectra; i++)
+  {
+    for(p = 0; p <= A->Spec[i].N; p++)
+    {
+      A->Spec[i].Im[p] *= -1.0;
+    }
+  }
+  return 0;
+}
+
+uint32_t TransposeSpectraArrayTensor(SpectraTypeArray * const A)
+{
+  uint32_t p, i, j;
+  uint32_t nstate, ndimsq, Ndim;
+  uint32_t idxA, idxB;
+
+  if(A->TensorBasis == NULL)
+  {
+    printf("not a tensor object\n");
+    return 1;
+  }
+  if((A->NE1 == UINT32_MAX) || ((A->NSpectra % (A->NE1 + 1)) != 0))
+  {
+    printf("TransposeSpectraArrayTensor failed: invalid tensor dimensions\n");
+    return 1;
+  }
+
+  nstate = A->NSpectra / (A->NE1 + 1);
+  Ndim = (uint32_t)(sqrt((double)nstate) + 0.5);
+  ndimsq = Ndim * Ndim;
+  if(ndimsq != nstate)
+  {
+    printf("TransposeSpectraArrayTensor failed: tensor state dimension is not square\n");
+    return 1;
+  }
+
+  for(p = 0; p <= A->NE1; p++)
+  {
+    for(i = 0; i < Ndim; i++)
+    {
+      for(j = i + 1; j < Ndim; j++)
+      {
+        idxA = p + (A->NE1 + 1) * (i + Ndim * j);
+        idxB = p + (A->NE1 + 1) * (j + Ndim * i);
+        SwapSpectra(&(A->Spec[idxA]), &(A->Spec[idxB]));
+      }
+    }
+  }
+
   return 0;
 }
 
@@ -351,7 +440,10 @@ int AddMultipliedSpectra(SpectraType * const A, const SpectraType B, const doubl
   A->EminPole = Min(A->EminPole, B.EminPole);
   A->EmaxPole = Max(A->EmaxPole, B.EmaxPole);
   //TODO: recalculate a[0] ... a[4] and b[0] ... b[4] phase, ZeroMoment and FirstMoment */
-  A->b[0] = sqrt(Sqr(A->b[0])+alphaRe*Sqr(B.b[0]));
+  
+  //printf("Mix Spectra A.N=%i B.N=%i\n", A->N, B.N);
+  //A->b[0] = sqrt(Sqr(A->b[0])+alphaRe*Sqr(B.b[0]));
+  //printf("Mix Spectra A.b[0]=%f B.b[0]=%f\n", A->b[0], B.b[0]);
   return 0;
 }
 
@@ -373,7 +465,7 @@ int SafeAddMultipliedSpectra(SpectraType * const A, const SpectraType B, const d
     printf("Still to do: SafeAddMultipliedSpectra\n");
     printf("A.N=%i B.N=%i\n",A->N,B.N);
     printf("A.Emin=%22.15E B.Emin=%22.15E\n",A->Emin,B.Emin);
-    printf("A.Emax=%22.15E B.Emax=%22.15E\n",A->Emin,B.Emax);
+    printf("A.Emax=%22.15E B.Emax=%22.15E\n",A->Emax,B.Emax);
     return 1;
   }
 }
@@ -1879,5 +1971,417 @@ int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[
                            sin(Dot(klist[k], AtomConnect)));
     }
   }
+  return 0;
+}
+
+
+/* specA <-  U specB
+ * A not initiallized on input
+ * U is a (NSpectra/(NE1+1))*(NSpectra/(NE1+1)) dimensional matrix that defines the transformation
+ *
+ * A = U^{*} * B * U^{T}
+ * A[p]_ij= sum_kl (U_ik)^* B[p]_kl U_jl
+ *
+ * The spectra are stored as a flat array with the energy index p running fastest, followed by the basis index.
+ * For the basis index (i,j) the corresponding spectrum is stored at
+ * p + (NE1+1) * (j + U.Nj * i).
+ */
+uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * const B, const CompactMatrixType * const U)
+{
+  uint32_t p, i, j, k, l;
+  uint32_t ne1;
+  uint32_t nstate;
+  uint32_t idxA, idxB;
+  double alphaRe, alphaIm;
+  Complex16 uik, ujl;
+
+  printf("RotateSpectra: Starting rotation\n");
+  fflush(stdout); 
+  if(B->NSpectra == 0)
+  {
+    printf("RotateSpectra failed: B->NSpectra is zero\n");
+    A->NSpectra = 0;
+    A->NE1 = 0;
+    if(A->Spec != NULL)
+    {
+      for(i = 0; i < A->NSpectra; i++)
+      {
+        SpectrumFree(&(A->Spec[i]));
+      }
+      free(A->Spec);
+      A->Spec = NULL;
+    }
+    return 0;
+  }
+  ne1 = (B->NE1 != 0) ? B->NE1 : 0;
+  A->NE1 = ne1;
+
+  if((B->NSpectra % (ne1 + 1)) != 0)
+  {
+    printf("RotateSpectra failed: B->NSpectra must be divisible by (B->NE1+1)\n");
+    return 1;
+  }
+
+  nstate = B->NSpectra / (ne1 + 1);
+  if((U->Ni * U->Nj) != nstate)
+  {
+    printf("RotateSpectra failed: U.Ni*U.Nj must equal B->NSpectra/(B->NE1+1)\n");
+    return 1;
+  }
+
+
+  A->NSpectra = B->NSpectra;
+  A->TensorBasis = B->TensorBasis;
+  A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
+  
+  if(A->Spec == NULL)
+  {
+    printf("RotateSpectra failed: could not allocate spectra array\n");
+    return 1;
+  }
+
+  for(p = 0; p <= ne1; p++)
+  {
+    for(i = 0; i < U->Ni; i++)
+    {
+      for(j = 0; j < U->Nj; j++)
+      {
+        idxA = p + (ne1 + 1) * (j + U->Nj * i);
+        if(SpectrumAllocate(B->Spec[0], &(A->Spec[idxA])) != 0)
+        {
+          printf("RotateSpectra failed: SpectrumAllocate for target spectrum %u\n", idxA);
+          return 1;
+        }
+
+        for(k = 0; k < U->Ni; k++)
+        {
+          for(l = 0; l < U->Nj; l++)
+          {
+            idxB = p + (ne1 + 1) * (l + U->Nj * k);
+            if(U->QComplex)
+            {
+              uik = U->V[i * U->Nj + k];
+              ujl = U->V[j * U->Nj + l];
+              alphaRe = uik.Re * ujl.Re + uik.Im * ujl.Im;
+              alphaIm = uik.Re * ujl.Im - uik.Im * ujl.Re;
+            }
+            else
+            {
+              alphaRe = U->VRe[i * U->Nj + k] * U->VRe[j * U->Nj + l];
+              alphaIm = 0.0;
+            }
+            AddMultipliedSpectra(&(A->Spec[idxA]), B->Spec[idxB], alphaRe, alphaIm);
+          }
+        }
+      }
+    }
+  }
+  A->Name=(char*)malloc((strlen(B->Name)+1)*sizeof(char));
+  if(A->Name==NULL){printf("malloc failed in CopySpectraArray for Name\n");return 1;}
+  strcpy(A->Name, B->Name);
+  return 0;
+}
+
+
+uint32_t ContractSpectraTensor(SpectraTypeArray * const A,
+                                const SpectraTypeArray * const B,
+                                const uint32_t lene,
+                                const Complex16 * const e)
+{
+  uint32_t p, i, j, k, l, idxB;
+  uint32_t ne1 = B->NE1;
+  double alphaRe, alphaIm;
+
+  A->NE1 = ne1;
+  A->NSpectra = ne1 + 1;
+  A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
+  A->TensorBasis = B->TensorBasis;
+
+  for(p = 0; p <= ne1; p++)
+  {
+
+    if(SpectrumAllocate(B->Spec[0], &(A->Spec[p])) != 0)
+    {
+      printf("ContractSpectraTensor failed: SpectrumAllocate for result spectrum\n");
+      return 1;
+    }
+
+    for(i = 0; i < lene; i++) for(j = 0; j < lene; j++)
+    {    
+      idxB = p + (ne1 + 1) * (j + lene*i);
+    
+      //e^{*}i B_ij e_j = (e[i].Re - i e[i].Im) B_ij (e[j].Re + i e[j].Im)
+      alphaRe = e[i].Re*e[j].Re + e[i].Im*e[j].Im;
+      alphaIm = e[i].Re*e[j].Im - e[i].Im*e[j].Re;
+
+      AddMultipliedSpectra(&(A->Spec[p]), B->Spec[idxB], alphaRe, alphaIm);
+    }
+  }
+
+  A->Name=(char*)malloc((strlen(B->Name)+1)*sizeof(char));
+  if(A->Name==NULL){printf("malloc failed in CopySpectraArray for Name\n");return 1;}
+  strcpy(A->Name, B->Name);
+
+  return 0;
+}
+
+
+
+/*
+ * Compute powder average from spectral tensor
+ * 
+ * Takes a spectral tensor and computes the powder average by:
+ * 1. Computing lenTotal from lvec array
+ * 2. Validating tensor dimensions
+ * 3. Allocating spectra for each basis element
+ * 4. For each angular momentum block, computing the trace (diagonal average)
+ * 5. Filling off-diagonal elements with the trace value
+ *
+ * Input:
+ *   Bpowder: Input spectral tensor
+ *   lvec: Array of angular momentum quantum numbers for each block
+ *   lvec_len: Length of lvec array
+ *
+ * Output:
+ *   APowderTemp: Allocated and filled with powder-averaged spectra
+ *
+ * Returns: 0 on success, 1 on error
+ */
+uint32_t ComputePowderAverage(const SpectraTypeArray * const B,
+                               const uint32_t * const lvec,
+                               const uint32_t lvec_len,
+                               SpectraTypeArray * const A)
+{
+  uint32_t p, i, j, k, idxA, idxB, ne1, lenTotal, nstate;
+  double alphaRe, alphaIm;
+
+  ne1 = B->NE1;
+
+  lenTotal = 0;
+  for(k = 0; k < lvec_len; k++)
+  {
+    printf("ComputePowderAverage: lvec[%u]=%u -> block size=%u\n", k, lvec[k], (lvec[k] * 2 + 1));
+    fflush(stdout);
+    lenTotal += (lvec[k]*2+1);
+  }
+
+  nstate = B->NSpectra / (ne1 + 1);
+  if((lenTotal * lenTotal) != nstate)
+  {
+    printf("ComputePowderAverage failed: lenTotal*lenTotal must equal B->NSpectra/(B->NE1+1)\n");
+    return 1;
+  }
+
+  A->NE1 = ne1;
+  A->NSpectra = B->NSpectra;
+  A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
+
+  if(A->Spec == NULL)
+  {
+    printf("ComputePowderAverage failed: could not allocate spectra array\n");
+    return 1;
+  }
+
+  /* Allocate all spectra */
+  for(p = 0; p <= ne1; p++)
+  {
+    for(i = 0; i < lenTotal; i++) for(j = 0; j < lenTotal; j++)
+    { 
+      idxB = p + (ne1 + 1) * (j + lenTotal*i);
+      
+      if(SpectrumAllocate(B->Spec[0], &(A->Spec[idxB])) != 0)
+      {
+        printf("ComputePowderAverage failed: SpectrumAllocate for result spectrum idxB=%u\n", idxB);
+        FreeSpectraTypeArray(A);
+        return 1;
+      }
+    }
+  }
+
+  /* Compute powder average: trace each block and fill off-diagonals with trace */
+  for(p = 0; p <= ne1; p++)
+  {
+    j = 0;
+    /* Process each angular momentum block */
+    for(k = 0; k < lvec_len; k++)
+    { 
+      /* Compute trace of this block (diagonal average) */
+      for(i = 0; i < lvec[k]*2+1; i++)
+      {
+        idxB = p + (ne1 + 1) * ((j+i) + lenTotal*(j+i));
+        idxA = p + (ne1 + 1) * (j + lenTotal*j);
+
+        alphaRe = 1.0/(lvec[k]*2+1);
+        alphaIm = 0;
+
+        AddMultipliedSpectra(&(A->Spec[idxA]), B->Spec[idxB], alphaRe, alphaIm);
+      }
+      
+      /* Fill off-diagonals with the trace value */
+      for(i = 1; i < lvec[k]*2+1; i++)
+      {
+        idxB = p + (ne1 + 1) * (j + lenTotal*j);
+        idxA = p + (ne1 + 1) * ((j+i) + lenTotal*(j+i));
+
+        alphaRe = 1.0;
+        alphaIm = 0;
+        AddMultipliedSpectra(&(A->Spec[idxA]), A->Spec[idxB], alphaRe, alphaIm);
+      }
+      j += (lvec[k]*2+1);
+    }
+  }
+  return 0;
+}
+
+
+uint32_t GetPowderTensor(SpectraTypeArray * const A,
+                                const SpectraTypeArray * const B,
+                                const uint32_t * const lvec,
+                                const uint32_t lvec_len)
+{
+  uint32_t k;
+  const SpectraTypeArray *Bpowder;
+  SpectraTypeArray Brot;
+  SpectraTypeArray APowderTemp;
+  CompactMatrixType UCartToSphK;
+  CompactMatrixType UInverse;
+  uint32_t has_rotated_spec = 0;
+  uint32_t has_rotation_matrix = 0;
+
+  Bpowder = B;
+  memset(&Brot, 0, sizeof(SpectraTypeArray));
+  memset(&APowderTemp, 0, sizeof(SpectraTypeArray));
+  memset(&UCartToSphK, 0, sizeof(CompactMatrixType));
+  memset(&UInverse, 0, sizeof(CompactMatrixType));
+
+  if(B->TensorBasis != NULL)
+  {
+    if(strcmp(B->TensorBasis, "Cartesian") == 0 || strcmp(B->TensorBasis, "cartesian") == 0)
+    {
+      if(!(lvec_len == 3 && lvec[0] == 0 && lvec[1] == 1 && lvec[2] == 2))
+      {
+        printf("GetPowderTensor failed: no transformation is implemented for this coupled angular momentum\n");
+        return 1;
+      }
+
+      if(coupledCartesianToSphericalTensorK(1, 1, &UCartToSphK) != 0)
+      {
+        printf("GetPowderTensor failed: could not build Cartesian to SphericalTensorK matrix\n");
+        FreeCompactMatrix(&UCartToSphK);
+        FreeSpectraTypeArray(&Brot);
+        return 1;
+      }
+      has_rotation_matrix = 1;
+
+      if(RotateSpectra(&Brot, B, &UCartToSphK) != 0)
+      {
+        printf("GetPowderTensor failed: could not rotate Cartesian tensor to SphericalTensorK basis\n");
+        FreeCompactMatrix(&UCartToSphK);
+        FreeSpectraTypeArray(&Brot);
+        return 1;
+      }
+      has_rotated_spec = 1;
+      Bpowder = &Brot;
+    }
+    else if(strcmp(B->TensorBasis, "SphericalTensorK") == 0 || strcmp(B->TensorBasis, "SphericalTensorY") == 0 || strcmp(B->TensorBasis, "Y") == 0)
+    {
+      /* No basis rotation needed for powder averaging. */
+    }
+    printf("GetPowderTensor starting on Tensor with TensorBasis:\"%s\"\n", B->TensorBasis);
+  }
+  else
+  {
+    printf("GetPowderTensor failed: unsupported TensorBasis \"%s\"\n", B->TensorBasis);
+    return 1;
+  }
+
+  /* Compute powder average */
+  if(ComputePowderAverage(Bpowder, lvec, lvec_len, &APowderTemp) != 0)
+  {
+    printf("GetPowderTensor failed: ComputePowderAverage returned error\n");
+    if(has_rotated_spec)
+    {
+      FreeSpectraTypeArray(&Brot);
+    }
+    if(has_rotation_matrix)
+    {
+      FreeCompactMatrix(&UCartToSphK);
+    }
+    return 1;
+  }
+  APowderTemp.TensorBasis = B->TensorBasis;
+  APowderTemp.Name=(char*)malloc((strlen(B->Name)+1)*sizeof(char));
+  if(APowderTemp.Name==NULL){printf("malloc failed in CopySpectraArray for Name\n");return 1;}
+  strcpy(APowderTemp.Name, B->Name);
+  printf("GetPowderTensor: Powder average computed successfully\n");
+  fflush(stdout);
+  /* If we rotated to SphericalTensorK, rotate the powder result back to the original basis */
+  if(has_rotated_spec && strcmp(B->TensorBasis, "Cartesian") == 0 || strcmp(B->TensorBasis, "cartesian") == 0)
+  {
+    printf("GetPowderTensor: Rotating powder average result back to Cartesian basis\n");
+    
+    /* Create inverse of rotation matrix. Since the rotation matrix U is unitary,
+     * its inverse is U^{-1} = U^{†} (conjugate transpose) */
+    if(CompactMatrixCopy(UCartToSphK, &UInverse) != 0)
+    {
+      printf("GetPowderTensor: Error - could not copy rotation matrix for inverse\n");
+      if(has_rotated_spec)
+      {
+        FreeSpectraTypeArray(&Brot);
+      }
+      if(has_rotation_matrix)
+      {
+        FreeCompactMatrix(&UCartToSphK);
+      }
+      FreeSpectraTypeArray(&APowderTemp);
+      FreeCompactMatrix(&UInverse);
+      return 1;
+    }
+    CompactMatrixConjugateTranspose(&UInverse);
+    printf("GetPowderTensor: Inverse rotation matrix computed successfully\n");
+    fflush(stdout);
+
+
+    if(RotateSpectra(A, &APowderTemp, &UInverse) != 0)
+    {
+      printf("GetPowderTensor failed: could not rotate powder result back to Cartesian basis\n");
+      fflush(stdout);
+      if(has_rotated_spec)
+      {
+        FreeSpectraTypeArray(&Brot);
+      }
+      if(has_rotation_matrix)
+      {
+        FreeCompactMatrix(&UCartToSphK);
+      }
+      FreeSpectraTypeArray(&APowderTemp);
+      FreeCompactMatrix(&UInverse);
+      return 1;
+    }
+    FreeCompactMatrix(&UInverse);
+    printf("GetPowderTensor: Successfully rotated powder result back to Cartesian basis\n");
+    fflush(stdout);
+  }
+  else
+  {
+    printf("GetPowderTensor: No rotation back to original basis needed, copying powder average result\n");
+    fflush(stdout);
+    CopySpectraArray(&APowderTemp, A);
+    printf("GetPowderTensor: Successfully copied powder average result\n");
+    fflush(stdout);
+  }
+
+  if(has_rotated_spec)
+  {
+    FreeSpectraTypeArray(&Brot);
+  }
+  if(has_rotation_matrix)
+  {
+    FreeCompactMatrix(&UCartToSphK);
+  }
+  FreeSpectraTypeArray(&APowderTemp);
+  
+  printf("GetPowderTensor: Completed successfully\n");
+  fflush(stdout);
   return 0;
 }

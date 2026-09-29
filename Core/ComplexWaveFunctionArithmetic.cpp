@@ -751,6 +751,7 @@ void ComplexWaveFunctionNormalize(WaveFunctionType * const a)
   }
   Norm = sqrt(NormA + NormB);
   iBlok = a->NBlok - 1;
+  if(Norm<10*DBL_MIN) return;
 #pragma omp parallel for private(iElement)
   for (iOMP = 0; iOMP <= (int)(a->N - iBlok * BlokSize); iOMP++)
   {
@@ -1357,6 +1358,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType *
   
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
+  uint32_t Order[*Npsi];
   double SingularValueMax, Zero;
   CompactMatrixType S,SvS;
   WaveFunctionType *psilisttemp;
@@ -1454,6 +1456,15 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType *
   // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
   S.Ni-=NSingular;
   TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  // the rows of S are the kept eigenvectors; choose the functions that survive a reduction of the dimension
+  if((NSingular!=0)&&(ReduceDimension==true))
+  {
+    if(CompactMatrixSelectIndependentColumns(&S, Order))
+    {
+      printf("CompactMatrixSelectIndependentColumns failed in ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce\n");
+      return 1;
+    }
+  }
   FreeCompactMatrix(&S);
   for(i=0;i<SvS.Ni;i++)
   {
@@ -1484,14 +1495,12 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType *
   // return 0
   if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
-  // normlist = psilist[[i]]^* . psilist[[i]]
+  // keep the functions chosen above, which span the kept space, packed on the first positions in
+  // their original order, and remove the NSingular others (change Npsi)
   for(i=0;i<*Npsi;i++)
   {
-    val[2*i] = ComplexWaveFunctionCalculateNorm(psilistOrtho[i]);
-    val[2*i+1] = i;
+    val[2*i+1] = Order[i];
   }
-  // remove the NSingular states with smallest norm (change Npsi)
-  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
   psilisttemp = (WaveFunctionType*)malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
   for(i=0;i<(*Npsi-NSingular);i++)
   {
@@ -1581,6 +1590,7 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const ps
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
+  uint32_t Order[*Npsi];
   double SingularValueMax, Zero;
   CompactMatrixType S,SvS;
   WaveFunctionType *psilisttemp;
@@ -1680,6 +1690,15 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const ps
   // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
   S.Ni-=NSingular;
   TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  // the rows of S are the kept eigenvectors; choose the functions that survive a reduction of the dimension
+  if((NSingular!=0)&&(ReduceDimension==true))
+  {
+    if(CompactMatrixSelectIndependentColumns(&S, Order))
+    {
+      printf("CompactMatrixSelectIndependentColumns failed in ComplexWaveFunctionListSVDOrthogonalizeOnce\n");
+      return 1;
+    }
+  }
   FreeCompactMatrix(&S);
   for(i=0;i<SvS.Ni;i++)
   {
@@ -1714,14 +1733,12 @@ uint32_t ComplexWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const ps
   // return 0
   if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
-  // normlist = psilist[[i]]^* . psilist[[i]]
+  // keep the functions chosen above, which span the kept space, packed on the first positions in
+  // their original order, and remove the NSingular others (change Npsi)
   for(i=0;i<*Npsi;i++)
   {
-    val[2*i] = ComplexWaveFunctionCalculateNorm(psilistOrtho[i]);
-    val[2*i+1] = i;
+    val[2*i+1] = Order[i];
   }
-  // remove the NSingular states with smallest norm (change Npsi)
-  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
   psilisttemp = (WaveFunctionType*)malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
   for(i=0;i<(*Npsi-NSingular);i++)
   {

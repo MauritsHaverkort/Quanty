@@ -1423,6 +1423,16 @@ static int Luaconjugate(lua_State * L)
       {
         return LuaMatrixConjugate(L);
       }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+        if(ConjugateSpectraArrayTensor(res)) return luaL_error(L, "Error: Conjugate on spectra failed\n");
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
+      }
       return luaL_error(L, "Error: complex conjugate an object of unrecognised type\n");
     case LUA_TTABLE:
       lua_newtable(L);
@@ -1503,6 +1513,17 @@ static int Luaconjugatetranspose(lua_State * L)
       if (luaL_testudata(L, len, "Matrix_Type") != NULL)
       {
         return LuaMatrixConjugateTranspose(L);
+      }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+        if(ConjugateSpectraArrayTensor(res)) return luaL_error(L, "Error: Conjugate on spectra failed\n");
+        if(TransposeSpectraArrayTensor(res)) return luaL_error(L, "Error: Transpose on spectra failed\n");
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
       }
       return luaL_error(L, "Error: conjugate transpose of an object of unrecognised type\n");
     case LUA_TTABLE:
@@ -1634,6 +1655,16 @@ static int Luatranspose(lua_State * L)
       {
         return LuaMatrixTranspose(L);
       }
+      if (luaL_testudata(L, len, "Spectra_Type") != NULL)
+      {
+        SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
+        SpectraTypeArray *res;
+        res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
+        if(TransposeSpectraArrayTensor(res)) return luaL_error(L, "Error: Transpose on spectra failed\n");
+        luaL_setmetatable(L, "Spectra_Type");
+        return 1;
+      }
       return luaL_error(L, "Error: transpose of an object of unrecognised type\n");
     case LUA_TTABLE:
       // check if we have a table of tables of equal length, in that case we treat the table of tables as a matrix and transpose the matrix
@@ -1715,6 +1746,7 @@ static int Luarotate(lua_State *L)
   struct
   {
     double zero;
+    char * TensorBasis;
   } Options;
   Options.zero=100*DBL_EPSILON;
   MatrixType *U;
@@ -1795,6 +1827,58 @@ static int Luarotate(lua_State *L)
     }
     SetNFermionIndexTightBindingDef(RTB);
     RotateTightBinding(TB, RotMat, RTB);
+    return 1;
+  }
+  if (luaL_testudata(L, 1, "Spectra_Type") != NULL)
+  {
+    CompactMatrixType *U;
+    SpectraTypeArray *Spec;
+    SpectraTypeArray *SpecNew;
+
+    if(len<2 || len>3)
+    {
+      return luaL_error(L, "Rotate for spectra called with %d arguments, 2 or 3 expected, spectra object, rotation matrix, and optional options table\n", len);
+    }
+
+    LuaOptionsType LuaRotateSpectraOptions[]={
+      {"TensorBasis","char*",&(Options.TensorBasis)},
+      {NULL, NULL, NULL}};
+
+    U = luaL_checkCompactMatrix(L, 2);
+    Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+    printf("Rotating spectra with %d spectra and %d energy points\n", Spec->NSpectra, Spec->NE1);
+    SpecNew = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    SpecNew->NSpectra = 0;
+    SpecNew->NE1 = 0;
+    SpecNew->Spec = NULL;
+    SpecNew->Name = NULL;
+    SpecNew->TensorBasis = NULL;
+    //SpecNew->TensorDim[0] = NULL;
+    //SpecNew->TensorDim[1] = NULL;
+    luaL_setmetatable(L, "Spectra_Type");
+    
+    /* read options if provided */
+    if(len==3)
+    {
+      LuaCheckOptions(L, 3, LuaRotateSpectraOptions);
+    }
+
+    if(RotateSpectra(SpecNew, Spec, U) != 0)
+    {
+      return luaL_error(L, "Error while rotating spectra\n");
+    }
+
+    /* override TensorBasis if provided in options */
+    if(Options.TensorBasis != NULL)
+    {
+      SpecNew->TensorBasis = Options.TensorBasis;
+    }
+
+    if(U->OnLuaStack == false)
+    {
+      FreeCompactMatrix(U);
+      free(U);
+    }
     return 1;
   }
   if ((luaL_testudata(L, 1, "Matrix_Type") != NULL) || (lua_istable(L, 1)==1))
@@ -2665,7 +2749,7 @@ static int LuaCreateSpectra(lua_State *L)
       {
         luaL_warning(L, "CreateSpectra called with option Tensor->true and %d wave-functions but no energy-shift set.\nTensors can have only one shift and no different shift for each eigen-state.\nConsider using E0->0.0 in order to define a fixed shift.\nUsed the energy of the first wave-function (%f) in this case.\n(Probably does not make physical sence!)",Options.Npsi,psiEn[0]);
       }
-      /* place starting functions on same basis */
+      /*1. place starting functions on same basis */
       WaveFunctionCopy(Tpsi[0], &TpsiSameBasis[0]);
       WaveFunctionFree(&(Tpsi[0]));
       for(i=1;i<Options.NT*Options.Npsi;i++)
@@ -2678,6 +2762,7 @@ static int LuaCreateSpectra(lua_State *L)
         WaveFunctionAddConserveBasis(&(TpsiSameBasis[i]), Tpsi[i]);
         WaveFunctionFree(&(Tpsi[i]));
       }
+      /*2. BlockTriDiagonalize H in the krylov Space H^n * TpsiSameBasis */
       /* init BlockTriDiagonal Matrix */
       GTri.BlockSize = Options.NT*Options.Npsi;
       GTri.N = Options.Settings.NTri;
@@ -2997,6 +3082,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     uint32_t NT2;
     bool Tensor;
     bool DenseMethod;
+    char *TensorBasis;
   } Options;
   Options.Settings=InitConvergenceSettings();
   Options.E0=DBL_MAX;
@@ -3004,6 +3090,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Options.E02=DBL_MAX;
   Options.Tensor=false;
   Options.DenseMethod=false;
+  Options.TensorBasis=nullptr;
   ConvergenceSettingsType SettingsNow;
   SpectraTypeArray *Spec;
   SpectraType *SpecT1psi;
@@ -3015,6 +3102,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {"NTri1","uint32_t",&(Options.Settings.NTri1)},
     {"NTri2","uint32_t",&(Options.Settings.NTri2)},
     {"Tensor","bool",&(Options.Tensor)},
+    {"TensorBasis","char*",&(Options.TensorBasis)},
     {"restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
     {"restrictions2", "DeterminantRestrictionType", &(Options.Settings.restrictions2)},
     {"Restrictions1", "DeterminantRestrictionType", &(Options.Settings.restrictions1)},
@@ -3082,6 +3170,10 @@ static int LuaCreateResonantSpectra(lua_State *L)
   {
     LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
   }
+  if (Options.TensorBasis != nullptr)
+  {
+    Options.Settings.TensorBasis = Options.TensorBasis;
+  }
   if(Options.E01==DBL_MAX)Options.E01=Options.E0;
   if(Options.E02==DBL_MAX)Options.E02=Options.E0;
   
@@ -3141,6 +3233,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   Spec->Name[0]='\0';
   Spec->NSpectra=0;
   Spec->Spec=NULL;
+  Spec->NE1=Options.Settings.NE1;
   /* test if dense methods can be used */
   // at the same time create the wave-functions that define the basis sets of the dense matrices used in the dense methods
   // we need the vectors:
@@ -3272,7 +3365,17 @@ static int LuaCreateResonantSpectra(lua_State *L)
     {
       ResonantSpectraDenseTensor(&HTpsiDenseBasis,&HTHTpsiDenseBasis,*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &(Spec->Spec), Options.E01, Options.E02, &(Options.Settings));
       Spec->NSpectra=Sqr(Options.NT1*Options.NT2*Options.Npsi)*(Options.Settings.NE1+1);
-      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+      printf("Spec->NE1=%i\n",Spec->NE1);
+      if(Options.Settings.TensorBasis == nullptr)
+      {
+        fprintf(stderr, "Warning: TensorBasis not set\n");
+      }
+      else
+      {
+        Spec->TensorBasis=Options.Settings.TensorBasis;
+        printf("Using tensor basis %s for resonant spectra\n", Spec->TensorBasis);
+      }
+      //return luaL_error(L,"Tensor form for Resonant spectra not yet available");
     }
   }
   else
@@ -3280,6 +3383,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
     // use sparse methods
     if(Options.Tensor==false)
     {
+      //the function computes each T1 and psi separadetly
       for(ipsi=0;ipsi<Options.Npsi;ipsi++)
       {
         for(iT=0;iT<Options.NT1;iT++)
@@ -3304,8 +3408,21 @@ static int LuaCreateResonantSpectra(lua_State *L)
     }
     else
     {
-      //ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec[0]), Options.E01, Options.E02, &Options.Settings);
-      return luaL_error(L,"Tensor form for Resonant spectra not yet available");
+      //print that we are using the tensor method for resonant spectra
+      printf("Using tensor method for resonant spectra\n");
+      ResonantSpectraTensor(*H1, *H2, T1, Options.NT1, T2, Options.NT2, psi, Options.Npsi, &SpecTri, &(Spec->Spec), Options.E01, Options.E02, &Options.Settings);
+      Spec->NSpectra=Sqr(Options.NT1*Options.NT2*Options.Npsi)*(Options.Settings.NE1+1);//I don't get why I cannot put this line in the functions itself;
+
+      if(Options.Settings.TensorBasis == nullptr)
+      {
+        fprintf(stderr, "Warning: TensorBasis not set\n");
+      }
+      else
+      {
+        Spec->TensorBasis=Options.Settings.TensorBasis;
+        printf("Using tensor basis %s for resonant spectra\n", Spec->TensorBasis);
+      }
+      //return luaL_error(L,"Tensor form for Resonant spectra not yet available");
     }
   }
   return 1;
@@ -5794,6 +5911,54 @@ static int LuaZtoKMatrix(lua_State * L)
   return 1;
 }
 
+/*added by Michelangelo
+Transformation matrix from coupled Cartesian to spherical tensor basis. The input is two integers l1 and l2, the output is a matrix of size (2*l1+1)*(2*l2+1) x (2*l1+1)*(2*l2+1)
+for now, only l1=l2=1 is implemented, but the code can be easily extended to higher l's. 
+*/
+static int LuaCoupledCartesianToSphericalTensorKMatrix(lua_State * L)
+{
+  uint32_t len = (uint32_t) lua_gettop(L);
+  CompactMatrixType returnMat;
+
+  if (len != 2)
+    return luaL_error(L, "CoupledCartesianToSphericalTensorKMatrix called with %d arguments. 2 integers expected: l1 and l2.\n", len);
+
+  const uint32_t l1 = (uint32_t) luaL_checkinteger(L, 1);
+  const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
+
+  if (coupledCartesianToSphericalTensorK(l1, l2, &returnMat) != 0)
+    return luaL_error(L, "Failed to construct coupled Cartesian-to-spherical tensor K matrix for l1=%u and l2=%u.\n", l1, l2);
+
+  LuaPushTable_CompactMatrixType(L, &returnMat);
+  FreeCompactMatrix(&returnMat);
+  return 1;
+}
+
+
+/*added by Michelangelo
+Transformation matrix from coupled Cartesian to spherical tensor basis. The input is two integers l1 and l2, the output is a matrix of size (2*l1+1)*(2*l2+1) x (2*l1+1)*(2*l2+1)
+for now, only l1=l2=1 is implemented, but the code can be easily extended to higher l's. 
+*/
+static int LuaCoupledSphericalTensorKToSphericalTensorYMatrix(lua_State * L)
+{
+  uint32_t len = (uint32_t) lua_gettop(L);
+  CompactMatrixType returnMat;
+
+  if (len != 2)
+    return luaL_error(L, "CoupledSphericalTensorKToSphericalTensorYMatrix called with %d arguments. 2 integers expected: l1 and l2.\n", len);
+
+  const uint32_t l1 = (uint32_t) luaL_checkinteger(L, 1);
+  const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
+
+  if (coupledSphericalTensorKToSphericalTensorY(l1, l2, &returnMat) != 0)
+    return luaL_error(L, "Failed to construct coupled spherical tensor K-to-Y matrix for l1=%u and l2=%u.\n", l1, l2);
+
+  LuaPushTable_CompactMatrixType(L, &returnMat);
+  FreeCompactMatrix(&returnMat);
+  return 1;
+}
+
+
 /*  Changes a bitmask of the form 0001001010010 to NF and a list of indeces.
  *  NF the number of 0's and 1's in the string (all other characters are neglected
  *  Index a list giving the positions of the 1's in the strings. Only 0's and 1's count
@@ -5925,6 +6090,8 @@ static const struct luaL_Reg global_functions[] = {
   {"Conjugate", Luaconjugate},
   {"ConjugateTranspose", Luaconjugatetranspose},
   {"Copy", Luacopy},
+  {"CoupledCartesianToSphericalTensorKMatrix", LuaCoupledCartesianToSphericalTensorKMatrix},
+  {"CoupledSphericalTensorKToSphericalTensorYMatrix", LuaCoupledSphericalTensorKToSphericalTensorYMatrix},
 	{"CreateAtomicIndicesDict",LuaCreateAtomicIndicesDict},
 	{"CreateAtomicIndicesList",LuaCreateAtomicIndicesList},
   {"CreateSpectra", LuaCreateSpectra},

@@ -25,6 +25,9 @@ uint32_t SphericalHarmonicjjzToZ(uint32_t l, CompactMatrixType *U);
 uint32_t SphericalHarmonicKTojjz(uint32_t l, CompactMatrixType *U);
 uint32_t SphericalHarmonicjjzToK(uint32_t l, CompactMatrixType *U);
 
+uint32_t coupledSphericalTensorKToSphericalTensorY(uint32_t l1,uint32_t l2, CompactMatrixType *U);
+uint32_t coupledCartesianToSphericalTensorK(uint32_t l1,uint32_t l2, CompactMatrixType *U);
+
 
 /*  Gaus Legendre Quadratures usefull for integrating polinomials
  *  Created upto N=127 stored in order: node, weigth in compact form

@@ -267,6 +267,7 @@ typedef struct ConvergenceSettingsType
   double Emax2;
   uint32_t NE2;
   double Gamma2;
+  const char *TensorBasis;  /*If defined, whis will flag that we have a Tensor object. Depending on the basis, some functions will behave differently */
   char   const *ShiftScheme;
 }
 ConvergenceSettingsType;
@@ -274,6 +275,7 @@ ConvergenceSettingsType;
 ConvergenceSettingsType InitConvergenceSettings()
 {
   const char *ShiftScheme = "Variance";
+  const char *TensorBasis = nullptr;
   ConvergenceSettingsType ret=
   {
     1513 /*DenseBorder*/,
@@ -295,6 +297,7 @@ ConvergenceSettingsType InitConvergenceSettings()
     DBL_MAX,-DBL_MAX,1000,0 /*Energy range */,
     DBL_MAX,-DBL_MAX,1000,0 /*Energy range 1*/,
     DBL_MAX,-DBL_MAX,1000,0 /*Energy range 2*/,
+    TensorBasis,
     ShiftScheme             /* shift according to variance (options Automatic, Variance, None*/
   };
   return ret;
@@ -988,8 +991,11 @@ SpectraType;
 typedef struct SpectraTypeArray
 {
   uint32_t NSpectra;
+  uint32_t NE1;
   SpectraType *Spec;
   char *Name;
+  const char *TensorBasis;  /*If defined, whis will flag that we have a Tensor object. Depending on the basis, some functions will behave differently */
+  /*  uint32_t *TensorDim[2];  TODO: This would allow to go to beyond dipole transitions */
 }
 SpectraTypeArray;
 
