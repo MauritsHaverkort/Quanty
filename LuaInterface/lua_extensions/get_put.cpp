@@ -519,11 +519,12 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
     }
     if (luaL_testudata(L, narg, "TightBinding_Type") != NULL)
     {
-      // Written as a function that creates the object and sets its fields as one does by hand. The
-      // order matters: Cell and Hopping read Units, and setting Atoms removes all hoppings.
-      // Everything else (reciprocal cell, atom numbers, number and order of the orbitals) the
-      // setters derive from these. A fresh object has a zero cell, which the Cell setter refuses,
-      // so Cell, Atoms and Hopping are only written once they are set.
+      // Written as TightBinding.New({Name=..., Units=..., Cell=..., Atoms=..., Hopping=...}), which
+      // sets the fields through their setters in the order they need (Cell and Hopping read Units,
+      // setting Atoms removes all hoppings). Everything else (reciprocal cell, atom numbers, number
+      // and order of the orbitals) the setters derive from these. A fresh object has a zero cell,
+      // which the Cell setter refuses, so Cell, Atoms and Hopping are only written once they are set.
+      // Files written before as (function() local TB = TightBinding.New() ... end)() still read.
       TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, narg, "TightBinding_Type");
       const char * const Fields[] = {"Name", "Units", "Cell", "Atoms", "Hopping"};
       bool CellSet=false;
@@ -554,19 +555,18 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
           if(TB->Cell.rUnitCell[i][j]!=0) CellSet=true;
         }
       }
-      fprintf(stream, "(function() local TB = TightBinding.New()\n");
+      fprintf(stream, "TightBinding.New({");
       for(i=0;i<sizeof(Fields)/sizeof(Fields[0]);i++)
       {
         if((i==2)&&(!CellSet)) continue;
         if((i==3)&&(TB->Cell.NAtoms==0)) continue;
         if((i==4)&&(TB->nH==0)) continue;
-        fprintf(stream, "  TB.%s = ", Fields[i]);
+        fprintf(stream, "%s\n  %s = ", (i==0)?"":",", Fields[i]);
         lua_getfield(L, narg, Fields[i]);
         LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);
         lua_pop(L, 1);
-        fprintf(stream, "\n");
       }
-      fprintf(stream, "  return TB end)()");
+      fprintf(stream, " })");
       return 0;
     }
     if (luaL_testudata(L, narg, "Spectra_Type") != NULL)

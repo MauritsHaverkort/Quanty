@@ -190,11 +190,12 @@ for i = 1, #test do
 end
 
 -- Tight binding objects. They were written as Some_Variable_Of_TightBinding_Type
--- and read back as nil. They are now written as the settings of Name, Units,
--- Cell, Atoms and Hopping, and TB.Hopping returns the hoppings in the form the
--- setter reads (it returned the string "Hopping"). The Hamiltonian H(k) has to
--- come back exactly: the positions, cell vectors, translations and hopping
--- matrices are all read back exactly.
+-- and read back as nil. They are now written as
+-- TightBinding.New({Name=..., Units=..., Cell=..., Atoms=..., Hopping=...}), and
+-- TB.Hopping returns the hoppings in the form the setter reads (it returned the
+-- string "Hopping"). The Hamiltonian H(k) has to come back exactly: the
+-- positions, cell vectors, translations and hopping matrices are all read back
+-- exactly.
 
 function SameTightBinding(TB1, TB2)
   if (TB1.NF ~= TB2.NF) or (TB1.Name ~= TB2.Name) then return false end
@@ -227,6 +228,11 @@ function RoundTrip(TB)
   TB2.Hopping = TB.Hopping
   if not SameTightBinding(test, TB2) then
     error("setting the fields of the TightBinding object "..test.Name.." to what its getters return changed it\n",2)
+  end
+  -- and so does the constructor with a table of fields, in whatever order the table holds them
+  local TB3 = TightBinding.New({Hopping = TB.Hopping, Atoms = TB.Atoms, Cell = TB.Cell, Units = TB.Units, Name = TB.Name})
+  if not SameTightBinding(test, TB3) then
+    error("TightBinding.New with the fields of the TightBinding object "..test.Name.." does not give it back\n",2)
   end
 end
 
@@ -290,6 +296,30 @@ TBSaved.Cell = {{1,0,0},{0,1,0},{0,0,1}}
 TBSaved.Atoms = {{"Fe.1", {0,0,0}, {{"d", {"1","2","3","4","5"}}}}}
 if pcall(io.put, "ioGetPut", "TBSaved") then
   error("io.put of a TightBinding object with an atom named Fe.1 should fail\n",1)
+end
+
+-- TightBinding.New refuses a field it does not know, so that a misspelling is
+-- not ignored, and an argument that is not a table
+if pcall(TightBinding.New, {Name = "x", Hoping = {}}) then
+  error("TightBinding.New with an unknown field Hoping should fail\n",1)
+end
+if pcall(TightBinding.New, "square") then
+  error("TightBinding.New with a string argument should fail\n",1)
+end
+
+-- files written before TightBinding.New took a table still read
+f = io.open("ioGetPut/^t^b^old.Quanty", "w")
+f:write([[TBOld = (function() local TB = TightBinding.New()
+  TB.Name = "old format"
+  TB.Units = { "2Pi" , "Angstrom" , "Absolute" }
+  TB.Cell = { { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 } }
+  TB.Atoms = { { "A" , { 0 , 0 , 0 } , { { "s" , { "0" } } } } }
+  TB.Hopping = { { { "A.s" , { 0 , 0 , 0 } } , { "A.s" , { 0 , 0 , 0 } } , { 1 , 0 , 0 } , { { -0.25 } } } }
+  return TB end)()]])
+f:close()
+io.get("ioGetPut", "TBOld")
+if (TBOld.Name ~= "old format") or (Abs(TBOld({0.3,0,0})[1][1] + 0.25*Complex.New(math.cos(0.3), math.sin(0.3))) > 1e-14) then
+  error("a TightBinding object in the file format of before does not read back\n",1)
 end
 
 -- Operators with restrictions. The writer added a space after the fermions also

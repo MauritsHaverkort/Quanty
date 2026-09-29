@@ -1,19 +1,65 @@
 /*  push a new TightBinding object to the lua stack
- *  the tight binding object is empty as its properties need to be set via its ellements
+ *    TightBinding.New()       an empty object, its properties are set via its elements
+ *    TightBinding.New(Table)  with Table = {Name=..., Units=..., Cell=..., Atoms=..., Hopping=...},
+ *                             all fields optional. Each field is set as TB.Field = Table.Field
+ *                             would, in the order the setters need: Cell and Hopping read Units,
+ *                             and setting Atoms removes the hoppings. Other keys are an error.
  */
 static int LuaNewTightBinding(lua_State * L)
 {
   TightBindingDef *TB;
+  const char * const Fields[] = {"Name", "Units", "Cell", "Atoms", "Hopping"};
+  uint32_t const NFields = sizeof(Fields)/sizeof(Fields[0]);
+  uint32_t i;
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len==0)
+  if((len>1)||((len==1)&&(lua_type(L,1)!=LUA_TTABLE)))
   {
-    TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
-    InitTigthBindingDef(TB);
-    luaL_setmetatable(L, "TightBinding_Type");
+    return luaL_error(L, "Error in TightBinding.New(arg): arg should be empty or a table {Name=..., Units=..., Cell=..., Atoms=..., Hopping=...}\n");
   }
-  else
+  if(len==1)
   {
-    return luaL_error(L, "Error in NewTightBinding(arg) unrecognized arguments arg, should be empty\n");
+    // a misspelled field would otherwise be ignored without a word
+    lua_pushnil(L);
+    while(lua_next(L, 1)!=0)
+    {
+      bool known=false;
+      if(lua_type(L, -2)==LUA_TSTRING)
+      {
+        for(i=0;i<NFields;i++)
+        {
+          if(strcmp(lua_tostring(L, -2), Fields[i])==0) known=true;
+        }
+      }
+      if((!known)&&(lua_type(L, -2)==LUA_TSTRING))
+      {
+        return luaL_error(L, "Error in TightBinding.New(Table): unknown field %s, the fields are Name, Units, Cell, Atoms and Hopping\n", lua_tostring(L, -2));
+      }
+      if(!known)
+      {
+        return luaL_error(L, "Error in TightBinding.New(Table): a key of type %s, the fields are Name, Units, Cell, Atoms and Hopping\n", luaL_typename(L, -2));
+      }
+      lua_pop(L, 1);
+    }
+  }
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+  InitTigthBindingDef(TB);
+  luaL_setmetatable(L, "TightBinding_Type");
+  if(len==1)
+  {
+    for(i=0;i<NFields;i++)
+    {
+      lua_getfield(L, 1, Fields[i]);
+      if(!lua_isnil(L, -1))
+      {
+        // TB.Field = value, through the setter
+        lua_pushcfunction(L, LuaTightBindingNewIndex);
+        lua_pushvalue(L, 2);
+        lua_pushstring(L, Fields[i]);
+        lua_pushvalue(L, -4);
+        lua_call(L, 3, 0);
+      }
+      lua_pop(L, 1);
+    }
   }
   return 1;
 }
