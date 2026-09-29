@@ -3712,6 +3712,13 @@ static int LuaTightBindingNewIndex(lua_State * L)
   {
     //
     if((lua_type(L,3)!=LUA_TTABLE)) return luaL_error(L, "Error TightBinding.Hopping should be a list of hopping definitions {{def1}, {def2}, ...}\n");
+    // free the previous hoppings, as FreeTightBindingDef does (H is not set to NULL when the
+    // list is freed, so nH and not H tells whether there is one)
+    for(i=0;i<(uint32_t)a->nH;i++)
+    {
+      FreeMatrix(&(a->H[i].Hop));
+    }
+    if(a->nH!=0) free(a->H);
     a->nH = (uint32_t)lua_objlen(L, 3);
     a->H= (TightBindingDefHopping*)malloc(a->nH*sizeof(TightBindingDefHopping));
     for(i=0;i<a->nH;i++) // make sure that whne LuaReadHopping fails we can free a without addressing unassigned / random pointers

@@ -866,7 +866,5 @@ crystal and gives its positions in units of its own cell vectors
 (`SuperCellRelativePosition`); an open cluster has no cell and its positions
 are always cartesian, as `FindAllAtomsInsideSphere` returns them.
 `TestScripts/TightBindingDef/RelativeUnits.Quanty` checks all of it against
-the same crystal in `Absolute` units. Still open:
-
-- **Setting `TB.Hopping` twice** does not free the previous list of hoppings.
+the same crystal in `Absolute` units.
 
