@@ -823,6 +823,130 @@ uint32_t TransformDiagonalMatrixByCompactMatrixTdagAT(double const *A, CompactMa
 }
 
 
+/*  Chooses T.Ni of the T.Nj columns of T that are linearly independent
+ *  dimensions of input T : T.Ni by T.Nj with T.Ni <= T.Nj
+ *  output Order          : list of length T.Nj; Order[0..T.Ni-1] are the chosen columns and
+ *                          Order[T.Ni..T.Nj-1] the others, both in increasing order
+ *
+ *  Used when an orthonormalization reduces the dimension of a list of functions. The rows of T
+ *  are the kept eigenvectors of the overlap matrix, column j of T holds the coefficients of
+ *  function j in that kept space, and T^dag T is the overlap matrix of the functions projected
+ *  on the kept space. Choosing the columns by their norm alone is not enough: when the
+ *  singular directions are spread over several functions the T.Ni columns with the largest
+ *  norm can be dependent, and the dimension of the kept space would silently drop by one or
+ *  more. This routine uses pivoted Gram-Schmidt instead: take the column with the largest
+ *  norm, project it out of all other columns, take the column with the largest remaining
+ *  norm and so on. The chosen columns then span the kept space. A column that is zero, which
+ *  is what a symmetry that aligns the singular directions with single functions gives, is never
+ *  chosen, so in that case the same functions survive as with a choice by norm.
+ *
+ *  Among columns whose remaining norms agree to a relative 1E-10 the one with the lowest index
+ *  is taken, so that rounding error does not decide between functions related by symmetry.
+ */
+uint32_t CompactMatrixSelectIndependentColumns(CompactMatrixType const *T, uint32_t * const Order)
+{
+  uint32_t i,j,k,n,p;
+  double NormMax, DotRe, DotIm, *Norm, *RRe, *RIm=NULL;
+  uint32_t *Chosen;
+  if(T->Ni>T->Nj) return 1;
+  Norm   = (double*)malloc(T->Nj*sizeof(double));
+  Chosen = (uint32_t*)malloc(T->Nj*sizeof(uint32_t));
+  RRe    = (double*)malloc(T->Ni*T->Nj*sizeof(double));
+  if(T->QComplex) RIm = (double*)malloc(T->Ni*T->Nj*sizeof(double));
+  if((Norm==NULL)||(Chosen==NULL)||(RRe==NULL)||((T->QComplex)&&(RIm==NULL)))
+  {
+    printf("malloc failed in CompactMatrixSelectIndependentColumns\n");
+    return 1;
+  }
+  // copy T into the list of remaining columns R
+  for(i=0;i<T->Ni*T->Nj;i++)
+  {
+    if(T->QComplex)
+    {
+      RRe[i]=T->V[i].Re;
+      RIm[i]=T->V[i].Im;
+    }
+    else
+    {
+      RRe[i]=T->VRe[i];
+    }
+  }
+  for(j=0;j<T->Nj;j++) Chosen[j]=0;
+  for(n=0;n<T->Ni;n++)
+  {
+    // remaining norm of every column that is not chosen yet
+    NormMax=0;
+    for(j=0;j<T->Nj;j++)
+    {
+      Norm[j]=0;
+      if(Chosen[j]) continue;
+      for(k=0;k<T->Ni;k++)
+      {
+        Norm[j]+=Sqr(RRe[k*T->Nj+j]);
+        if(T->QComplex) Norm[j]+=Sqr(RIm[k*T->Nj+j]);
+      }
+      if(Norm[j]>NormMax) NormMax=Norm[j];
+    }
+    if(NormMax==0)
+    {
+      printf("Error in CompactMatrixSelectIndependentColumns, the rows of T are dependent\n");
+      free(Norm); free(Chosen); free(RRe); if(RIm!=NULL) free(RIm);
+      return 1;
+    }
+    // pivot: the lowest index whose remaining norm is the largest
+    for(p=0;p<T->Nj;p++)
+    {
+      if((Chosen[p]==0)&&(Norm[p]>=(1-1E-10)*NormMax)) break;
+    }
+    Chosen[p]=1;
+    // normalize column p and project it out of all columns not chosen yet
+    for(k=0;k<T->Ni;k++)
+    {
+      RRe[k*T->Nj+p]/=sqrt(Norm[p]);
+      if(T->QComplex) RIm[k*T->Nj+p]/=sqrt(Norm[p]);
+    }
+    for(j=0;j<T->Nj;j++)
+    {
+      if(Chosen[j]) continue;
+      // Dot = column p ^* . column j
+      DotRe=0;
+      DotIm=0;
+      for(k=0;k<T->Ni;k++)
+      {
+        DotRe+=RRe[k*T->Nj+p]*RRe[k*T->Nj+j];
+        if(T->QComplex)
+        {
+          DotRe+=RIm[k*T->Nj+p]*RIm[k*T->Nj+j];
+          DotIm+=RRe[k*T->Nj+p]*RIm[k*T->Nj+j]-RIm[k*T->Nj+p]*RRe[k*T->Nj+j];
+        }
+      }
+      // column j -= Dot * column p
+      for(k=0;k<T->Ni;k++)
+      {
+        if(T->QComplex)
+        {
+          RRe[k*T->Nj+j]-=DotRe*RRe[k*T->Nj+p]-DotIm*RIm[k*T->Nj+p];
+          RIm[k*T->Nj+j]-=DotRe*RIm[k*T->Nj+p]+DotIm*RRe[k*T->Nj+p];
+        }
+        else
+        {
+          RRe[k*T->Nj+j]-=DotRe*RRe[k*T->Nj+p];
+        }
+      }
+    }
+  }
+  // chosen columns first, then the others, both in increasing order
+  n=0;
+  for(j=0;j<T->Nj;j++) if(Chosen[j]) Order[n++]=j;
+  for(j=0;j<T->Nj;j++) if(Chosen[j]==0) Order[n++]=j;
+  free(Norm);
+  free(Chosen);
+  free(RRe);
+  if(RIm!=NULL) free(RIm);
+  return 0;
+}
+
+
 /*  Calculates T^tran A T^con
  *  dimensions of input T : T.Ni by T.Nj
  *                      A : T.Ni by T.Ni

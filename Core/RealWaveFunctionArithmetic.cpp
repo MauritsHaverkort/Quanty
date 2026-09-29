@@ -1025,6 +1025,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType * co
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
+  uint32_t Order[*Npsi];
   double SingularValueMax, Zero;
   CompactMatrixType S,SvS;
   WaveFunctionType *psilisttemp;
@@ -1112,6 +1113,15 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType * co
   // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
   S.Ni-=NSingular;
   TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  // the rows of S are the kept eigenvectors; choose the functions that survive a reduction of the dimension
+  if((NSingular!=0)&&(ReduceDimension==true))
+  {
+    if(CompactMatrixSelectIndependentColumns(&S, Order))
+    {
+      printf("CompactMatrixSelectIndependentColumns failed in RealWaveFunctionListSVDOrthogonalizeSameBasisOnce\n");
+      return 1;
+    }
+  }
   FreeCompactMatrix(&S);
   for(i=0;i<SvS.Ni;i++)
   {
@@ -1139,14 +1149,12 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType * co
   // return 0
   if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
-  // normlist = psilist[[i]]^* . psilist[[i]]
+  // keep the functions chosen above, which span the kept space, packed on the first positions in
+  // their original order, and remove the NSingular others (change Npsi)
   for(i=0;i<*Npsi;i++)
   {
-    val[2*i] = RealWaveFunctionCalculateNorm(psilistOrtho[i]);
-    val[2*i+1] = i;
+    val[2*i+1] = Order[i];
   }
-  // remove the NSingular states with smallest norm (change Npsi)
-  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
   psilisttemp = (WaveFunctionType*)malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
   for(i=0;i<(*Npsi-NSingular);i++)
   {
@@ -1157,19 +1165,6 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeSameBasisOnce(WaveFunctionType * co
     WaveFunctionFreeValues(&(psilistOrtho[(int)(val[2*i+1])]));
   }
   *Npsi-=NSingular;
-  // through a warning if Norms of the removed state are equal to norm of state kept
-  if(*Npsi!=0)
-  {
-    if((val[2*(*Npsi)-2]-val[2*(*Npsi)])<SingularValue)
-    {
-      VerbosityPrintf(0x0001, "Warning in RealWaveFunctionListSVDOrthogonalizeSameBasis\nNorm of states after first Lowdin orthonormalization are not seperated in large and small norms\nOverlap is:\n");
-      for(i=0;i<*Npsi+NSingular;i++)
-      {
-        VerbosityPrintf(0x0001, "%3g %22.15E\n",val[2*i+1],val[2*i]);
-      }
-    }
-  }
-  
   // call RealWaveFunctionListSVDOrthogonalize again
   if(RealWaveFunctionListSVDOrthogonalizeSameBasisOnce(psilisttemp, psilistOrtho, Npsi, SingularValue, false))
   {
@@ -1249,6 +1244,7 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const psili
 {
   uint32_t i,j,NSingular=0;
   double val[2*(*Npsi)];
+  uint32_t Order[*Npsi];
   double SingularValueMax, Zero;
   CompactMatrixType S,SvS;
   WaveFunctionType *psilisttemp;
@@ -1336,6 +1332,15 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const psili
   // psilist <- (S[[1;;-1-NSingular]]^+ . 1/(sqrt(val)[[1;;-1-NSingular]]) . S[[1;;-1-NSingular]]) . psilist
   S.Ni-=NSingular;
   TransformDiagonalMatrixByCompactMatrixTdagAT(val, &S, &SvS);
+  // the rows of S are the kept eigenvectors; choose the functions that survive a reduction of the dimension
+  if((NSingular!=0)&&(ReduceDimension==true))
+  {
+    if(CompactMatrixSelectIndependentColumns(&S, Order))
+    {
+      printf("CompactMatrixSelectIndependentColumns failed in RealWaveFunctionListSVDOrthogonalizeOnce\n");
+      return 1;
+    }
+  }
   FreeCompactMatrix(&S);
   for(i=0;i<SvS.Ni;i++)
   {
@@ -1367,14 +1372,12 @@ uint32_t RealWaveFunctionListSVDOrthogonalizeOnce(WaveFunctionType * const psili
   // return 0
   if((NSingular==0)||(ReduceDimension==false)) return 0;
   // singular values and reduce dimension
-  // normlist = psilist[[i]]^* . psilist[[i]]
+  // keep the functions chosen above, which span the kept space, packed on the first positions in
+  // their original order, and remove the NSingular others (change Npsi)
   for(i=0;i<*Npsi;i++)
   {
-    val[2*i] = RealWaveFunctionCalculateNorm(psilistOrtho[i]);
-    val[2*i+1] = i;
+    val[2*i+1] = Order[i];
   }
-  // remove the NSingular states with smallest norm (change Npsi)
-  qsort(val, *Npsi, 2*sizeof(double), cmpdouble);
   psilisttemp = (WaveFunctionType*)malloc((*Npsi-NSingular)*sizeof(WaveFunctionType));
   for(i=0;i<(*Npsi-NSingular);i++)
   {
