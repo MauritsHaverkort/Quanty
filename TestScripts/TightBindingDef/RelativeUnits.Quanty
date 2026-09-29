@@ -1,0 +1,203 @@
+-- A crystal with two atoms in an oblique cell, defined twice: once with the
+-- atom positions and hopping vectors in cartesian coordinates (Units Absolute)
+-- and once with the positions in units of the cell vectors and the hoppings as
+-- integer translations (Units Relative). The two describe the same crystal, so
+-- everything computed from them has to agree.
+--
+-- In Relative units H(k) used to add the fractional positions to the cartesian
+-- translations, which gave a wrong phase for every hopping between different
+-- atoms, and the connecting vector read from a hopping lost the offset between
+-- the two atoms (Position2 - Position2), which Derivative uses. The bands with a
+-- self energy use the positions for their gauge and have to follow H(k).
+
+Cell = {{1,0,0},{0.5,0.8,0},{0,0,2}}
+-- B at 0.175 a + 0.25 b + 0.05 c = {0.3, 0.2, 0.1}
+PosAbs = { A = {0,0,0}, B = {0.3,0.2,0.1} }
+PosRel = { A = {0,0,0}, B = {0.175,0.25,0.05} }
+
+-- {atom 1, atom 2, translation in cell vectors, hopping}
+Hop = { {"A","A",{ 0, 0, 0}, 0.1} , {"B","B",{ 0, 0, 0},-0.2} ,
+        {"A","B",{ 0, 0, 0},-0.5} , {"B","A",{ 0, 0, 0},-0.5} ,
+        {"A","B",{-1, 0, 0},-0.3} , {"B","A",{ 1, 0, 0},-0.3} ,
+        {"A","B",{ 0,-1, 0}, 0.2*I} , {"B","A",{ 0, 1, 0},-0.2*I} ,
+        {"A","A",{ 1, 0, 0}, 0.05} , {"A","A",{-1, 0, 0}, 0.05} ,
+        {"B","B",{ 0, 0, 1}, 0.07} , {"B","B",{ 0, 0,-1}, 0.07} }
+
+function Build(Relative)
+  local TB = TightBinding.New()
+  local Pos = Relative and PosRel or PosAbs
+  TB.Name = Relative and "relative" or "absolute"
+  TB.Units = {"2Pi", "Angstrom", Relative and "Relative" or "Absolute"}
+  TB.Cell = Cell
+  TB.Atoms = {{"A", Pos.A, {{"s", {"0"}}}}, {"B", Pos.B, {{"s", {"0"}}}}}
+  local list = {}
+  for i, h in ipairs(Hop) do
+    local v = h[3]
+    if not Relative then
+      -- i a + j b + k c + Pos2 - Pos1
+      v = {}
+      for x = 1, 3 do
+        v[x] = PosAbs[h[2]][x] - PosAbs[h[1]][x]
+        for c = 1, 3 do v[x] = v[x] + h[3][c]*Cell[c][x] end
+      end
+    end
+    list[i] = {h[1]..".s", h[2]..".s", v, {{h[4]}}}
+  end
+  TB.Hopping = list
+  return TB
+end
+
+TBAbs = Build(false)
+TBRel = Build(true)
+
+kList = { {0,0,0} , {0.3,-1.1,0.7} , {Pi,Pi/2,0.25} , {-2.2,0.4,3.1} }
+tol = 1e-12
+
+function MaxDiff(M1, M2)
+  local d = 0
+  for i = 1, #M1 do
+    for j = 1, #M1[i] do
+      d = math.max(d, Abs(M1[i][j] - M2[i][j]))
+    end
+  end
+  return d
+end
+
+print("H(k), absolute against relative units")
+for _, k in ipairs(kList) do
+  local d = MaxDiff(TBAbs(k), TBRel(k))
+  print(string.format("  k = {%6.3f %6.3f %6.3f}   max |H_abs - H_rel| = %.2e", k[1], k[2], k[3], d))
+  if d > tol then
+    error("H(k) of a tight binding model in Relative units differs from the same model in Absolute units\n", 1)
+  end
+end
+
+print("H(k) with AddSpin")
+for _, k in ipairs(kList) do
+  local d = MaxDiff(TBAbs(k, {{"AddSpin",true}}), TBRel(k, {{"AddSpin",true}}))
+  if d > tol then
+    error("H(k) with AddSpin of a tight binding model in Relative units differs from Absolute units\n", 1)
+  end
+end
+
+print("Derivative, which uses the connecting vector of every hopping")
+dAbs = {TightBinding.Derivative(TBAbs)}
+dRel = {TightBinding.Derivative(TBRel)}
+for x = 1, 3 do
+  for _, k in ipairs(kList) do
+    local d = MaxDiff(dAbs[x](k), dRel[x](k))
+    if d > tol then
+      error(string.format("dH/dk_%d of a tight binding model in Relative units differs from Absolute units by %.2e\n", x, d), 1)
+    end
+  end
+end
+
+print("CalculateBands with a self energy, whose gauge uses the atom positions")
+SigA = ResponseFunction.New({{0.1, -1.5, 1.7}, {0.3, 0.2}, mu=0, type="ListOfPoles"})
+SigB = ResponseFunction.New({{-0.2, 0.8}, {0.4}, mu=0, type="ListOfPoles"})
+kpath = {{"G",{0,0,0}}, 6, {"X",{Pi,0,0}}, 6, {"M",{Pi,Pi,Pi/2}}}
+GAbs = TightBinding.CalculateBands(TBAbs, kpath, {SigA, SigB})
+GRel = TightBinding.CalculateBands(TBRel, kpath, {SigA, SigB})
+for ik = 1, #GAbs do
+  for _, w in ipairs({-1.2, 0.1, 0.9}) do
+    local g1, g2 = GAbs[ik](w, 0.1), GRel[ik](w, 0.1)
+    local d = (type(g1) == "table") and MaxDiff(g1, g2) or Abs(g1 - g2)
+    if d > tol then
+      error(string.format("the bands with a self energy in Relative units differ from Absolute units by %.2e at k point %d\n", d, ik), 1)
+    end
+  end
+end
+
+-- Clusters. A periodic cluster is a supercell: its atom positions are given in
+-- units of its own cell vectors when the crystal uses Relative units, and it
+-- has to carry the units of the crystal (they used to be left uninitialized).
+-- An open cluster has no cell and its atom positions are always cartesian, as
+-- FindAllAtomsInsideSphere returns them.
+
+function SameUnits(U1, U2)
+  for i = 1, 3 do
+    if U1[i] ~= U2[i] then return false end
+  end
+  return true
+end
+
+-- the one particle matrix <i|O|j> of a quadratic operator
+function OneParticleMatrix(O)
+  local NF = O.NF
+  local psi = {}
+  for i = 1, NF do
+    psi[i] = NewWavefunction(NF, 0, {{string.rep("0", i-1).."1"..string.rep("0", NF-i), 1}})
+  end
+  local M = {}
+  for i = 1, NF do
+    M[i] = {}
+    for j = 1, NF do M[i][j] = psi[i] * O * psi[j] end
+  end
+  return M
+end
+
+print("periodic cluster, a 2 by 1 by 1 supercell")
+SuperCell = {"periodic", {{2,0,0},{0,1,0},{0,0,1}}}
+kCluster = {0.4, -0.9, 0.3}
+for _, TB in ipairs({TBAbs, TBRel}) do
+  local H, TBS = CreateClusterHamiltonian(TB, SuperCell, {{"ReturnTBSuperCell",true}})
+  if not SameUnits(TBS.Units, TB.Units) then
+    error("the supercell of CreateClusterHamiltonian does not have the units of the crystal ("..TB.Name..")\n", 1)
+  end
+end
+HAbs, TBSAbs = CreateClusterHamiltonian(TBAbs, SuperCell, {{"ReturnTBSuperCell",true},{"k",kCluster}})
+HRel, TBSRel = CreateClusterHamiltonian(TBRel, SuperCell, {{"ReturnTBSuperCell",true},{"k",kCluster}})
+d = MaxDiff(OneParticleMatrix(HAbs), OneParticleMatrix(HRel))
+print(string.format("  cluster Hamiltonian at k = {%g %g %g}: max difference %.2e", kCluster[1], kCluster[2], kCluster[3], d))
+if d > tol then
+  error("the periodic cluster Hamiltonian in Relative units differs from Absolute units\n", 1)
+end
+for _, k in ipairs(kList) do
+  if MaxDiff(TBSAbs(k), TBSRel(k)) > tol then
+    error("H(k) of the supercell in Relative units differs from Absolute units\n", 1)
+  end
+end
+dSAbs = {TightBinding.Derivative(TBSAbs)}
+dSRel = {TightBinding.Derivative(TBSRel)}
+for x = 1, 3 do
+  for _, k in ipairs(kList) do
+    if MaxDiff(dSAbs[x](k), dSRel[x](k)) > tol then
+      error("dH/dk of the supercell in Relative units differs from Absolute units\n", 1)
+    end
+  end
+end
+
+print("open cluster from FindAllAtomsInsideSphere")
+ClAbs = FindAllAtomsInsideSphere(TBAbs.Atoms, TBAbs.Cell, {0.1,0.1,0}, 1.25)
+ClRel = FindAllAtomsInsideSphere(TBRel.Atoms, TBRel.Cell, {0.1,0.1,0}, 1.25, {{"Units","Relative"}})
+print("  "..#ClAbs.." atoms")
+if (#ClAbs ~= #ClRel) or (#ClAbs < 4) then
+  error("FindAllAtomsInsideSphere finds "..#ClAbs.." atoms in Absolute and "..#ClRel.." in Relative units\n", 1)
+end
+for i = 1, #ClAbs do
+  for x = 1, 3 do
+    if (ClAbs[i][1] ~= ClRel[i][1]) or (Abs(ClAbs[i][2][x] - ClRel[i][2][x]) > tol) then
+      error("FindAllAtomsInsideSphere returns different atoms in Absolute and Relative units\n", 1)
+    end
+  end
+end
+HClAbs = CreateClusterHamiltonian(TBAbs, {"open", ClAbs})
+HClRel = CreateClusterHamiltonian(TBRel, {"open", ClRel})
+MAbs = OneParticleMatrix(HClAbs)
+d = MaxDiff(MAbs, OneParticleMatrix(HClRel))
+print(string.format("  open cluster Hamiltonian: max difference %.2e", d))
+if d > tol then
+  error("the open cluster Hamiltonian in Relative units differs from Absolute units\n", 1)
+end
+-- the cluster has to contain hoppings between different atoms, not only onsite terms
+nOff = 0
+for i = 1, #MAbs do
+  for j = 1, #MAbs do
+    if (i ~= j) and (Abs(MAbs[i][j]) > 0.01) then nOff = nOff + 1 end
+  end
+end
+if nOff == 0 then
+  error("the open cluster Hamiltonian has no hopping, the test does not test the connecting vectors\n", 1)
+end
+
+print("done")

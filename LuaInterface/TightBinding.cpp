@@ -1,19 +1,65 @@
 /*  push a new TightBinding object to the lua stack
- *  the tight binding object is empty as its properties need to be set via its ellements
+ *    TightBinding.New()       an empty object, its properties are set via its elements
+ *    TightBinding.New(Table)  with Table = {Name=..., Units=..., Cell=..., Atoms=..., Hopping=...},
+ *                             all fields optional. Each field is set as TB.Field = Table.Field
+ *                             would, in the order the setters need: Cell and Hopping read Units,
+ *                             and setting Atoms removes the hoppings. Other keys are an error.
  */
 static int LuaNewTightBinding(lua_State * L)
 {
   TightBindingDef *TB;
+  const char * const Fields[] = {"Name", "Units", "Cell", "Atoms", "Hopping"};
+  uint32_t const NFields = sizeof(Fields)/sizeof(Fields[0]);
+  uint32_t i;
   uint32_t len = (uint32_t)lua_gettop(L);
-  if(len==0)
+  if((len>1)||((len==1)&&(lua_type(L,1)!=LUA_TTABLE)))
   {
-    TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
-    InitTigthBindingDef(TB);
-    luaL_setmetatable(L, "TightBinding_Type");
+    return luaL_error(L, "Error in TightBinding.New(arg): arg should be empty or a table {Name=..., Units=..., Cell=..., Atoms=..., Hopping=...}\n");
   }
-  else
+  if(len==1)
   {
-    return luaL_error(L, "Error in NewTightBinding(arg) unrecognized arguments arg, should be empty\n");
+    // a misspelled field would otherwise be ignored without a word
+    lua_pushnil(L);
+    while(lua_next(L, 1)!=0)
+    {
+      bool known=false;
+      if(lua_type(L, -2)==LUA_TSTRING)
+      {
+        for(i=0;i<NFields;i++)
+        {
+          if(strcmp(lua_tostring(L, -2), Fields[i])==0) known=true;
+        }
+      }
+      if((!known)&&(lua_type(L, -2)==LUA_TSTRING))
+      {
+        return luaL_error(L, "Error in TightBinding.New(Table): unknown field %s, the fields are Name, Units, Cell, Atoms and Hopping\n", lua_tostring(L, -2));
+      }
+      if(!known)
+      {
+        return luaL_error(L, "Error in TightBinding.New(Table): a key of type %s, the fields are Name, Units, Cell, Atoms and Hopping\n", luaL_typename(L, -2));
+      }
+      lua_pop(L, 1);
+    }
+  }
+  TB = (TightBindingDef*) lua_newuserdata(L, sizeof(TightBindingDef));
+  InitTigthBindingDef(TB);
+  luaL_setmetatable(L, "TightBinding_Type");
+  if(len==1)
+  {
+    for(i=0;i<NFields;i++)
+    {
+      lua_getfield(L, 1, Fields[i]);
+      if(!lua_isnil(L, -1))
+      {
+        // TB.Field = value, through the setter
+        lua_pushcfunction(L, LuaTightBindingNewIndex);
+        lua_pushvalue(L, 2);
+        lua_pushstring(L, Fields[i]);
+        lua_pushvalue(L, -4);
+        lua_call(L, 3, 0);
+      }
+      lua_pop(L, 1);
+    }
   }
   return 1;
 }
@@ -1449,17 +1495,19 @@ static int LuaCalculateBandsSelfEnergy(lua_State *L, TightBindingDef const * con
   N = E.Ni;
   double *rpos = (double*)malloc(3*n*sizeof(double));
   if(rpos==NULL) luaL_error(L, "Error CalculateBands: out of memory\n");
-  // position of the atom of every orbital
+  // position of the atom of every orbital, in cartesian coordinates as H(k) uses them
   for(a=0;a<HTB->Cell.NAtoms;a++)
   {
+    double r[3];
+    AtomPositionCartesian(&(HTB->Cell), a, r);
     for(sh=0;sh<HTB->Cell.Atom[a].Nshell;sh++)
     {
       for(o=0;o<HTB->Cell.Atom[a].shelldegeneracy[sh];o++)
       {
         i = HTB->FermionIndex[a][sh]+o;
-        rpos[3*i+0] = HTB->Cell.Atom[a].Position[0];
-        rpos[3*i+1] = HTB->Cell.Atom[a].Position[1];
-        rpos[3*i+2] = HTB->Cell.Atom[a].Position[2];
+        rpos[3*i+0] = r[0];
+        rpos[3*i+1] = r[1];
+        rpos[3*i+2] = r[2];
       }
     }
   }
@@ -3342,13 +3390,18 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
       lua_pop(L,1);
     }
     lua_pop(L,1);
-    // create Connecting Vector from Trans Vec
+    // create Connecting Vector from Trans Vec, in cartesian coordinates as for absolute units:
+    // {x,y,z} = i a + j b + k c + AtomPos2 - AtomPos1
+    double r1[3], r2[3];
+    AtomPositionCartesian(Cell, H->Atompos1, r1);
+    AtomPositionCartesian(Cell, H->Atompos2, r2);
     for(i=0;i<3;i++) // i loops over x,y,z
     {
-      H->ConnectingVector[i]=0;
+      H->ConnectingVector[i] = r2[i] - r1[i];
       for(j=0;j<3;j++) // j loops over a,b,c
       {
-        H->ConnectingVector[i] += (H->TransVecs[j]+Cell->Atom[H->Atompos2].Position[j]-Cell->Atom[H->Atompos2].Position[j]) * Cell->rUnitCell[j][i];
+        // a cell vector can be infinite, where TransVecs is 0
+        if(H->TransVecs[j]!=0) H->ConnectingVector[i] += H->TransVecs[j] * Cell->rUnitCell[j][i];
       }
     }
   }
@@ -3370,13 +3423,58 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
 /*
  * push a Hopping definition to the Lua stack
  * format
- *          Hopping = {"AtomName1.ShellName1","AtomName2.ShellName2",Vec,H}
- *        with H a table of tables of real or complex numbers / matrix
- *
+ *          Hopping = {{"AtomName1.ShellName1",Position1},{"AtomName2.ShellName2",Position2},Vec,H}
+ *        with H a table of tables of real or complex numbers
+ * which is the form LuaReadHopping reads. The positions tell atoms with the same name apart.
+ * Vec is made from TransVecs, which is what the Hamiltonian H(k) uses. ConnectingVector is not
+ * set by every routine that builds a tight binding object in C, and is not used here.
+ *   Absolute units: Vec = i a + j b + k c + AtomPos2 - AtomPos1
+ *   Relative units: Vec = {i, j, k}
  */
 static int LuaPushHopping(lua_State *L, CrystalStructureType const *Cell, TightBindingDefHopping const *H)
 {
-  //TODO:
+  uint32_t i,j;
+  int const Atompos[2]  = {H->Atompos1,  H->Atompos2};
+  int const Shellpos[2] = {H->Shellpos1, H->Shellpos2};
+  lua_createtable(L, 4, 0);
+  for(i=0;i<2;i++)
+  {
+    AtomType const *a = &(Cell->Atom[Atompos[i]]);
+    lua_createtable(L, 2, 0);
+    lua_pushfstring(L, "%s.%s", a->Name, a->ShellName[Shellpos[i]]);
+    lua_rawseti(L, -2, 1);
+    lua_createtable(L, 3, 0);
+    for(j=0;j<3;j++)
+    {
+      lua_pushnumber(L, a->Position[j]);
+      lua_rawseti(L, -2, j+1);
+    }
+    lua_rawseti(L, -2, 2);
+    lua_rawseti(L, -2, i+1);
+  }
+  lua_createtable(L, 3, 0);
+  for(i=0;i<3;i++)
+  {
+    double v;
+    if((Cell->Units&8)==0)
+    {
+      v = Cell->Atom[H->Atompos2].Position[i] - Cell->Atom[H->Atompos1].Position[i];
+      for(j=0;j<3;j++)
+      {
+        // a cell vector can be infinite (no periodicity along it), where TransVecs is 0
+        if(H->TransVecs[j]!=0) v += H->TransVecs[j] * Cell->rUnitCell[j][i];
+      }
+    }
+    else
+    {
+      v = H->TransVecs[i];
+    }
+    lua_pushnumber(L, v);
+    lua_rawseti(L, -2, i+1);
+  }
+  lua_rawseti(L, -2, 3);
+  LuaPushTable_MatrixType(L, &(H->Hop));
+  lua_rawseti(L, -2, 4);
   return 1;
 }
 
@@ -3478,12 +3576,13 @@ static int LuaTightBindingIndex(lua_State * L)
   }
   else if (strcmp(str, "Hopping") == 0)
   {
-    //TODO: push a table to the stack with the hopping definitions as defined when reading the variable
-    return 1;
-  }
-  else if (strcmp(str, "Hk")==0)
-  {
-    //TODO: push a matrix to the stack as table representing Hk(kx,ky,kz) read options to define either constant or kx phase in the unit cell
+    // the hopping definitions in the form the Hopping setter reads
+    lua_createtable(L, a->nH, 0);
+    for(i=0;i<(uint32_t)a->nH;i++)
+    {
+      LuaPushHopping(L, &(a->Cell), &(a->H[i]));
+      lua_rawseti(L, -2, i+1);
+    }
     return 1;
   }
   else if (strcmp(str, "NF")==0)
@@ -3659,6 +3758,13 @@ static int LuaTightBindingNewIndex(lua_State * L)
   {
     //
     if((lua_type(L,3)!=LUA_TTABLE)) return luaL_error(L, "Error TightBinding.Hopping should be a list of hopping definitions {{def1}, {def2}, ...}\n");
+    // free the previous hoppings, as FreeTightBindingDef does (H is not set to NULL when the
+    // list is freed, so nH and not H tells whether there is one)
+    for(i=0;i<(uint32_t)a->nH;i++)
+    {
+      FreeMatrix(&(a->H[i].Hop));
+    }
+    if(a->nH!=0) free(a->H);
     a->nH = (uint32_t)lua_objlen(L, 3);
     a->H= (TightBindingDefHopping*)malloc(a->nH*sizeof(TightBindingDefHopping));
     for(i=0;i<a->nH;i++) // make sure that whne LuaReadHopping fails we can free a without addressing unassigned / random pointers
@@ -3674,10 +3780,6 @@ static int LuaTightBindingNewIndex(lua_State * L)
       LuaReadHopping(L, -1, &(a->Cell), &(a->H[i]));
       lua_pop(L, 1);
     }
-  }
-  else if(strcmp(str, "Hk")==0)
-  {
-    return luaL_error(L, "Error can not set Hk in a TightBinding Object\n",str);
   }
   else
   {

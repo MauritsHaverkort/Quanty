@@ -830,3 +830,43 @@ go through `BlockListOfPolesToBlockTridiagonalMatrix` and are not affected. When
 writing new code against these representations, read the convention off
 `StructDef.cpp` and not off a neighbouring routine, and test it with complex
 numbers — a real response function cannot tell a conjugate from a transpose.
+
+## `io.put`: what it still can not save
+
+`io.put` (`LuaInterface/lua_extensions/get_put.cpp`) now writes response
+functions and matrices at any depth inside a table, operators with their
+restrictions, tight binding objects, graphics objects (as
+`Graphics.New(Graphics.ToTable(G))`), numbers so that they read back exactly
+(including inf and nan), and control characters in strings;
+`TestScripts/ioGetPut.Quanty` covers all of that (graphics:
+`TestScripts/Plot/ToTable.Quanty`). Still open:
+
+- **TightBinding, where the reader limits the round trip.** An object is written
+  as the settings of `Name`, `Units`, `Cell`, `Atoms` and `Hopping`, and read back
+  by the setters, so it can not come back better than they read it. `io.put`
+  stops with an error for an atom name with a `.` (the reader splits
+  `"Atom.Shell"` at the first one) and for two shells of one atom with the same
+  name (the reader takes the first). Slabs, with one or two infinite cell
+  vectors, are refused by `LuaReadHopping` in absolute units ("input for slabs
+  not completed"), so they write but do not read back.
+- **BitMap, Tensor, GaussianRadialFunction, InterpolatingFunction.** `io.put`
+  stops with an error naming the type. There is no constructor from data to
+  write them as.
+- **Tables that contain themselves** recurse until the C stack overflows; a table
+  referenced twice is written twice and reads back as two tables.
+- **A failed `io.put` leaves a half-written file** in place of the previous one,
+  as the error is raised while writing.
+
+## Tight binding in `Relative` units
+
+`H(k)` (the four builders in `Tight_Binding/Tight_Binding_lib.cpp`), the
+connecting vector read by `LuaReadHopping`, the gauge of `CalculateBands`
+with a self energy, the supercells of `CreateClusterHamiltonian` and its open
+clusters now handle positions stored in units of the cell vectors.
+`AtomPositionCartesian` converts them; a supercell keeps the units of the
+crystal and gives its positions in units of its own cell vectors
+(`SuperCellRelativePosition`); an open cluster has no cell and its positions
+are always cartesian, as `FindAllAtomsInsideSphere` returns them.
+`TestScripts/TightBindingDef/RelativeUnits.Quanty` checks all of it against
+the same crystal in `Absolute` units.
+

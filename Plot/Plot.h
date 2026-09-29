@@ -15,6 +15,7 @@ void InitArc(ArcType* Arc);
 ArcType* NewArc();
 void FreeArc(ArcType* Arc);
 void InitText(TextType* Text);
+const char* InternFont(const char* Font);
 TextType* NewText();
 void FreeText(TextType* Text);
 void InitBitMap(BitMapType* BitMap);

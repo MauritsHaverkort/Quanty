@@ -80,3 +80,282 @@ if(test~=ResponseFunction.ToTable(GAndTable)) then
 end
 
 
+
+
+-- Response functions and matrices inside a table. The writer used to remove the
+-- file and variable name from the bottom of the lua stack, which only works when
+-- the response function or matrix is the whole variable: inside a table ToTable
+-- stopped with "expected a single argument" and a matrix segfaulted. The entries
+-- after it test that the enclosing table is still written completely.
+
+function SameResponse(G1, G2)
+  for _, w in ipairs({-2.5, -0.3, 0, 0.7, 4}) do
+    if Abs(G1(w, 0.1) - G2(w, 0.1)) > 1e-12 then return false end
+  end
+  return true
+end
+
+G2 = ResponseFunction.New({ {0.5, -1} , {0.3} , mu = 0 , type = "ListOfPoles" , name = "G2" })
+TableRF = { GLP , {G2} , a = 1 , b = "after" , c = { x = G2 } }
+io.put("ioGetPut","TableRF")
+TableRF = nil
+io.get("ioGetPut","TableRF")
+if not (SameResponse(TableRF[1], GLP) and SameResponse(TableRF[2][1], G2) and SameResponse(TableRF.c.x, G2)
+        and TableRF.a == 1 and TableRF.b == "after") then
+  error("io.get io.put for a table of response functions did not return the original table\n",1)
+end
+
+M = Matrix.New({{1/3, 2},{3, 4 + 0.1*I}})
+TableM = { T = M , n = 5 , M , "after" }
+io.put("ioGetPut","TableM")
+TableM = nil
+io.get("ioGetPut","TableM")
+for i = 1, 2 do
+  for j = 1, 2 do
+    if (TableM.T[i][j] ~= M[i][j]) or (TableM[1][i][j] ~= M[i][j]) then
+      error("io.get io.put for a table containing a matrix did not return the original matrix\n",1)
+    end
+  end
+end
+if (TableM.n ~= 5) or (TableM[2] ~= "after") then
+  error("io.get io.put for a table containing a matrix did not return the other entries\n",1)
+end
+
+-- A NaturalImpurityOrbital, whose val and con parts are response functions in
+-- table form themselves; they are written as plain tables
+
+GNat = ResponseFunction.ChangeType(ResponseFunction.New({ {-1, -0.2, 0.4, 1.5} , {0.2, 0.3, 0.1} , mu = 0 , type = "ListOfPoles" }), "Nat", {{"NTriMax",4}})
+test = Copy(GNat)
+io.put("ioGetPut","GNat")
+GNat = nil
+io.get("ioGetPut","GNat")
+if not SameResponse(test, GNat) then
+  error("io.get io.put for a NaturalImpurityOrbital response function did not return the original\n",1)
+end
+
+-- Numbers come back exactly: 17 significant digits where 15 or 16 do not
+-- suffice, no rounding of numbers close to an integer, and inf and nan
+
+Numbers = { 0.1 + 0.2 , 3*(1 + 2^-50) , 1/3 , -2.5 , 2^40 , 1e300 , 5e-324 , 1/0 , -1/0 }
+io.put("ioGetPut","Numbers")
+test = Copy(Numbers)
+Numbers = nil
+io.get("ioGetPut","Numbers")
+for i = 1, #test do
+  if Numbers[i] ~= test[i] then
+    error(string.format("io.get io.put returned %.17g for the number %.17g\n", Numbers[i], test[i]),1)
+  end
+end
+
+NotANumber = 0/0
+io.put("ioGetPut","NotANumber")
+NotANumber = nil
+io.get("ioGetPut","NotANumber")
+if NotANumber == NotANumber then
+  error("io.get io.put did not return nan for nan\n",1)
+end
+
+z = 0.1 + (1/3)*I
+io.put("ioGetPut","z")
+z = nil
+io.get("ioGetPut","z")
+if z ~= 0.1 + (1/3)*I then
+  error("io.get io.put for complex numbers did not return the original value\n",1)
+end
+
+-- the coefficients of an operator are written with 17 significant digits
+
+O = NewOperator(2, 0, {{0, -0, 1/3}, {1, -1, 0.1 + 0.2*I}})
+psi = NewWavefunction(2, 0, {{"11", 1}})
+test = psi * O * psi
+io.put("ioGetPut","O")
+O = nil
+io.get("ioGetPut","O")
+if psi * O * psi ~= test then
+  error("io.get io.put for an operator did not return the original coefficients\n",1)
+end
+
+-- Strings with control characters. A raw carriage return does not read back and
+-- "\0" followed by a digit read back as a different character
+
+Strings = { "a\rb" , "a\0" .. "1" , "tab\tquote\"backslash\\" , "new\nline" }
+io.put("ioGetPut","Strings")
+test = Copy(Strings)
+Strings = nil
+io.get("ioGetPut","Strings")
+for i = 1, #test do
+  if Strings[i] ~= test[i] then
+    error("io.get io.put did not return the original string "..i.."\n",1)
+  end
+end
+
+-- Tight binding objects. They were written as Some_Variable_Of_TightBinding_Type
+-- and read back as nil. They are now written as
+-- TightBinding.New({Name=..., Units=..., Cell=..., Atoms=..., Hopping=...}), and
+-- TB.Hopping returns the hoppings in the form the setter reads (it returned the
+-- string "Hopping"). The Hamiltonian H(k) has to come back exactly: the
+-- positions, cell vectors, translations and hopping matrices are all read back
+-- exactly.
+
+function SameTightBinding(TB1, TB2)
+  if (TB1.NF ~= TB2.NF) or (TB1.Name ~= TB2.Name) then return false end
+  for _, k in ipairs({ {0,0,0} , {0.3,-1.1,0.7} , {Pi,Pi/2,0.25} , {-2.2,0.4,3.1} }) do
+    local H1, H2 = TB1(k), TB2(k)
+    for i = 1, TB1.NF do
+      for j = 1, TB1.NF do
+        if H1[i][j] ~= H2[i][j] then return false end
+      end
+    end
+  end
+  return true
+end
+
+function RoundTrip(TB)
+  local test = TB
+  TBSaved = TB
+  io.put("ioGetPut", "TBSaved")
+  TBSaved = nil
+  io.get("ioGetPut", "TBSaved")
+  if not SameTightBinding(test, TBSaved) then
+    error("io.get io.put for the TightBinding object "..test.Name.." did not return the original\n",2)
+  end
+  -- the getters give back what the setters read
+  local TB2 = TightBinding.New()
+  TB2.Name = TB.Name
+  TB2.Units = TB.Units
+  TB2.Cell = TB.Cell
+  TB2.Atoms = TB.Atoms
+  TB2.Hopping = TB.Hopping
+  if not SameTightBinding(test, TB2) then
+    error("setting the fields of the TightBinding object "..test.Name.." to what its getters return changed it\n",2)
+  end
+  -- and so does the constructor with a table of fields, in whatever order the table holds them
+  local TB3 = TightBinding.New({Hopping = TB.Hopping, Atoms = TB.Atoms, Cell = TB.Cell, Units = TB.Units, Name = TB.Name})
+  if not SameTightBinding(test, TB3) then
+    error("TightBinding.New with the fields of the TightBinding object "..test.Name.." does not give it back\n",2)
+  end
+end
+
+-- a square lattice, one atom and real hopping
+TB = TightBinding.New()
+TB.Name = "square"
+TB.Units = {"2Pi", "Angstrom", "Absolute"}
+TB.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+TB.Atoms = {{"A", {0,0,0}, {{"s", {"0"}}}}}
+TB.Hopping = {{"A.s","A.s",{ 0,0,0},{{0.1}}},
+              {"A.s","A.s",{ 1,0,0},{{-0.25}}}, {"A.s","A.s",{-1,0,0},{{-0.25}}},
+              {"A.s","A.s",{ 0,1,0},{{-0.25}}}, {"A.s","A.s",{0,-1,0},{{-0.25}}}}
+RoundTrip(TB)
+
+-- two atoms with the same name in an oblique cell, two shells each, complex
+-- hopping between shells of different size. The vector is i a + j b + k c + Pos2 - Pos1
+TB = TightBinding.New()
+TB.Name = "two atoms named A"
+TB.Units = {"NoPi", "Angstrom", "Absolute"}
+TB.Cell = {{1,0,0},{0.5,0.8,0},{0,0,2}}
+TB.Atoms = {{"A", {0,0,0},       {{"s", {"0"}}, {"p", {"x","y","z"}}}},
+            {"A", {0.3,0.2,0.1}, {{"s", {"0"}}, {"p", {"x","y","z"}}}}}
+TB.Hopping = {{{"A.s",{0,0,0}}, {"A.s",{0,0,0}}, {0,0,0}, {{0.1}}},
+              {{"A.s",{0,0,0}}, {"A.p",{0.3,0.2,0.1}}, {0.3,0.2,0.1}, {{0.2, 0.3*I, -0.1}}},
+              {{"A.s",{0,0,0}}, {"A.p",{0.3,0.2,0.1}}, {1.3,0.2,0.1}, {{0.05, -0.1*I, 1/3}}},
+              {{"A.p",{0.3,0.2,0.1}}, {"A.s",{0,0,0}}, {-0.8,-1.0,-0.1}, {{0.2},{-0.3*I},{-0.1}}},
+              {{"A.p",{0,0,0}}, {"A.p",{0,0,0}}, {0,0,2}, {{0.1, 0.2*I, 0},{-0.2*I, 0.3, 0.1},{0, 0.1, 1/7}}}}
+RoundTrip(TB)
+
+-- relative units, the translation in cell vectors
+TB = TightBinding.New()
+TB.Name = "relative chain"
+TB.Units = {"2Pi", "Angstrom", "Relative"}
+TB.Cell = {{2,0,0},{0,1,0},{0,0,1}}
+TB.Atoms = {{"A", {0,0,0}, {{"s", {"0"}}}}}
+TB.Hopping = {{"A.s","A.s",{ 1,0,0},{{-0.5}}}, {"A.s","A.s",{-1,0,0},{{-0.5}}}}
+RoundTrip(TB)
+
+-- a molecule, infinite cell vectors
+TB = TightBinding.New()
+TB.Name = "molecule"
+TB.Units = {"2Pi", "Angstrom", "Absolute"}
+TB.Cell = {{1/0,0,0},{0,1/0,0},{0,0,1/0}}
+TB.Atoms = {{"A", {0,0,0}, {{"s", {"0"}}}}, {"B", {1.1,0,0}, {{"s", {"0"}}}}}
+TB.Hopping = {{"A.s","B.s",{1.1,0,0},{{-1}}}, {"B.s","A.s",{-1.1,0,0},{{-1}}}, {"B.s","B.s",{0,0,0},{{0.5}}}}
+RoundTrip(TB)
+
+-- a fresh object, with no cell, atoms or hoppings
+TBSaved = TightBinding.New()
+TBSaved.Name = "empty"
+io.put("ioGetPut", "TBSaved")
+TBSaved = nil
+io.get("ioGetPut", "TBSaved")
+if (TBSaved.Name ~= "empty") or (TBSaved.NF ~= 0) then
+  error("io.get io.put for an empty TightBinding object did not return the original\n",1)
+end
+
+-- an atom name with a '.' can not be read back and has to be an error
+TBSaved = TightBinding.New()
+TBSaved.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+TBSaved.Atoms = {{"Fe.1", {0,0,0}, {{"d", {"1","2","3","4","5"}}}}}
+if pcall(io.put, "ioGetPut", "TBSaved") then
+  error("io.put of a TightBinding object with an atom named Fe.1 should fail\n",1)
+end
+
+-- TightBinding.New refuses a field it does not know, so that a misspelling is
+-- not ignored, and an argument that is not a table
+if pcall(TightBinding.New, {Name = "x", Hoping = {}}) then
+  error("TightBinding.New with an unknown field Hoping should fail\n",1)
+end
+if pcall(TightBinding.New, "square") then
+  error("TightBinding.New with a string argument should fail\n",1)
+end
+
+-- files written before TightBinding.New took a table still read
+f = io.open("ioGetPut/^t^b^old.Quanty", "w")
+f:write([[TBOld = (function() local TB = TightBinding.New()
+  TB.Name = "old format"
+  TB.Units = { "2Pi" , "Angstrom" , "Absolute" }
+  TB.Cell = { { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 } }
+  TB.Atoms = { { "A" , { 0 , 0 , 0 } , { { "s" , { "0" } } } } }
+  TB.Hopping = { { { "A.s" , { 0 , 0 , 0 } } , { "A.s" , { 0 , 0 , 0 } } , { 1 , 0 , 0 } , { { -0.25 } } } }
+  return TB end)()]])
+f:close()
+io.get("ioGetPut", "TBOld")
+if (TBOld.Name ~= "old format") or (Abs(TBOld({0.3,0,0})[1][1] + 0.25*Complex.New(math.cos(0.3), math.sin(0.3))) > 1e-14) then
+  error("a TightBinding object in the file format of before does not read back\n",1)
+end
+
+-- Operators with restrictions. The writer added a space after the fermions also
+-- without bosons, which StringToDet did not accept and read as an empty
+-- determinant, closed the list of restrictions after the first one, and wrote
+-- the bosons as bits instead of two hexadecimal digits each. StringToDet now
+-- also ignores leading and trailing spaces.
+
+function SameRestrictions(R1, R2)
+  if (#R1 ~= #R2) or (R1[1] ~= R2[1]) or (R1[2] ~= R2[2]) then return false end
+  for i = 3, #R1 do
+    for k = 1, 3 do
+      if R1[i][k] ~= R2[i][k] then return false end
+    end
+  end
+  return true
+end
+
+ORes = NewOperator(4, 0, {{0, -0, 1}})
+ORes.Restrictions = {4, 0, {" 1100 ", 0, 1}}
+if ORes.Restrictions[3][1] ~= "1100" then
+  error("StringToDet did not ignore leading and trailing spaces, read "..ORes.Restrictions[3][1].."\n",1)
+end
+
+for _, R in ipairs({ {4, 0, {"1100", 0, 1}} ,
+                     {4, 0, {"1100", 0, 1}, {"0011", 1, 2}, {"1010", 2, 2}} ,
+                     {2, 2, {"10 03FF", 0, 1}, {"01 A000", 1, 1}} }) do
+  ORes = NewOperator(R[1], R[2], {{0, -0, 1}})
+  ORes.Restrictions = R
+  if not SameRestrictions(ORes.Restrictions, R) then
+    error("the restrictions of an operator do not read back as they were set\n",1)
+  end
+  io.put("ioGetPut","ORes")
+  ORes = nil
+  io.get("ioGetPut","ORes")
+  if not SameRestrictions(ORes.Restrictions, R) then
+    error("io.get io.put for an operator did not return the original restrictions\n",1)
+  end
+end

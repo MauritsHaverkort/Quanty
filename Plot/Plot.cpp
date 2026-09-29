@@ -153,8 +153,49 @@ void InitText(TextType* Text)
   Text->Point.Y=0;
   Text->Angle=0;
   Text->Alignment='l';
+  Text->Size=0.05;      // the default of Graphics.Add
   Text->String=NULL;
   Text->Font=TIMES_NEW_ROMAN;
+}
+
+/*  A text keeps a pointer to the name of its font and never frees it, and copies of a text share
+ *  the pointer. The name therefore has to live as long as the program. A name found in
+ *  AvailableFontTypes is returned as the pointer into that list; any other name is copied once
+ *  into FontNames, which is never freed, and the same copy is returned for the same name. Names
+ *  given in lua (Graphics.Add, the Font option of the plot routines) point into lua strings that
+ *  the garbage collector frees, and must go through here before a text keeps them.
+ */
+const char* InternFont(const char* Font)
+{
+  static char** FontNames=NULL;
+  static int NFontNames=0;
+  char** Temp;
+  int i;
+  if(Font==NULL) return NULL;
+  for(i=0;i<NUMBER_OF_GLOBAL_FONTS;i++)
+  {
+    if((Font==AvailableFontTypes[i])||(strcmp(Font, AvailableFontTypes[i])==0)) return AvailableFontTypes[i];
+  }
+  for(i=0;i<NFontNames;i++)
+  {
+    if(strcmp(Font, FontNames[i])==0) return FontNames[i];
+  }
+  Temp = (char**)realloc(FontNames, (NFontNames+1)*sizeof(char*));
+  if(Temp==NULL)
+  {
+    printf("Error in InternFont, malloc failed\n");
+    return TIMES_NEW_ROMAN;
+  }
+  FontNames = Temp;
+  FontNames[NFontNames] = (char*)malloc((strlen(Font)+1)*sizeof(char));
+  if(FontNames[NFontNames]==NULL)
+  {
+    printf("Error in InternFont, malloc failed\n");
+    return TIMES_NEW_ROMAN;
+  }
+  memcpy(FontNames[NFontNames], Font, (strlen(Font)+1)*sizeof(char));
+  NFontNames++;
+  return FontNames[NFontNames-1];
 }
 
 TextType* NewText()
@@ -413,6 +454,8 @@ int AddTextInherentMemory(GraphicsType* Graphics, TextType* Text)
   }
   Graphics->Text = Temp;
   Graphics->Text[Graphics->NText] = *Text;
+  // the font name may be a lua string that is freed later
+  Graphics->Text[Graphics->NText].Font = InternFont(Text->Font);
   Graphics->NText = Graphics->NText + 1;
   return 0;
 }

@@ -187,8 +187,47 @@ uint32_t LuaGetASCII(lua_State *L, const char * const DirName, const char * cons
   return luaB_dofile(L);
 }
 
-uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
+/*  Writes a double such that lua reads back the same double. Whole numbers are written without
+ *  a decimal point, all others with the fewest of 15, 16 or 17 significant digits that give the
+ *  number back (17 always do). Lua has no literal for inf and nan, they are written as expressions.
+ */
+void LuaASCIIPrintDouble(FILE * stream, double const n)
 {
+  char buf[32];
+  int digits;
+  if(isnan(n))
+  {
+    fprintf(stream,"(0/0)");
+    return;
+  }
+  if(isinf(n))
+  {
+    fprintf(stream,(n>0)?"(1/0)":"(-1/0)");
+    return;
+  }
+  if((n==floor(n))&&(n<INT32_MAX)&&(n>INT32_MIN))
+  {
+    fprintf(stream,"%d",(int32_t)n);
+    return;
+  }
+  for(digits=15;digits<=17;digits++)
+  {
+    snprintf(buf, sizeof(buf), "%.*G", digits, n);
+    if(strtod(buf, NULL)==n) break;
+  }
+  fputs(buf, stream);
+}
+
+/*  Writes the value at stack position narg as lua code that recreates it. Nothing is left on the
+ *  stack; values are found by their absolute position, so everything pushed here is popped again
+ *  before returning.
+ *  Raw is true while the content of a ResponseFunction.New(...) is written. Tables in there that
+ *  carry the ResponseFunctionMeta metatable (the val and con parts of a NaturalImpurityOrbital)
+ *  are read back as plain tables and must not be wrapped in a ResponseFunction.New(...) of their own.
+ */
+static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, bool const Raw)
+{
+  narg = lua_absindex(L, narg);
   if(lua_type(L,narg)==LUA_TNIL)
   {
     fprintf(stream, "nil");
@@ -196,17 +235,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
   }
   if(lua_type(L,narg)==LUA_TNUMBER)
   {
-    double n;
-    n = lua_tonumber(L, narg);
-    // test if integer
-    if((Abs(n)<=DBL_MIN) || ((Abs((n-round(n))/n)<10*DBL_EPSILON)&&(n<INT32_MAX)&&(n>INT32_MIN)))
-    {
-      fprintf(stream,"%d",(int32_t)round(n));
-    }
-    else
-    {
-      fprintf(stream,"%.16G",n);
-    }
+    LuaASCIIPrintDouble(stream, lua_tonumber(L, narg));
     return 0;
   }
   if(lua_type(L,narg)==LUA_TBOOLEAN)
@@ -229,32 +258,74 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     uint32_t i;
     size_t len;
     n = lua_tolstring(L, narg, &len);
+    // A string with line breaks is written as a long bracket [==[ ... ]==], which keeps the lines
+    // of the file as they are (the pixels of a bitmap are such a string). Lua turns \r and \r\n
+    // in a long bracket into \n, so strings with \r (or \0) are escaped as below. The number of =
+    // is the smallest for which the closing bracket occurs neither in the string nor, together
+    // with a ] that ends the string, at its end. Lua drops a line break right after the opening
+    // bracket, so one is written there and the string starts on the next line unchanged.
+    if((memchr(n, '\n', len)!=NULL)&&(memchr(n, '\r', len)==NULL)&&(memchr(n, '\0', len)==NULL))
+    {
+      uint32_t level, k;
+      for(level=0;;level++)
+      {
+        char close[64];
+        bool clash=false;
+        if(level+2>=sizeof(close)) break;
+        close[0]=']';
+        for(k=0;k<level;k++) close[k+1]='=';
+        close[level+1]=']';
+        close[level+2]='\0';
+        if(strstr(n, close)!=NULL) clash=true;
+        // the string ends in ] followed by level times =
+        if((len>=level+1)&&(n[len-level-1]==']'))
+        {
+          bool ends=true;
+          for(k=0;k<level;k++) if(n[len-level+k]!='=') ends=false;
+          if(ends) clash=true;
+        }
+        if(!clash) break;
+      }
+      if(level+2<64)
+      {
+        fputc('[', stream);
+        for(i=0;i<level;i++) fputc('=', stream);
+        fputs("[\n", stream);
+        fwrite(n, 1, len, stream);
+        fputc(']', stream);
+        for(i=0;i<level;i++) fputc('=', stream);
+        fputc(']', stream);
+        return 0;
+      }
+    }
     fputc('\"', stream);
     for(i=0;i<len;i++)
     {
-      if(n[i]=='\\')
+      unsigned char const c = (unsigned char) n[i];
+      if(c=='\\')
       {
         fputc('\\', stream);
         fputc('\\', stream);
       }
-      else if(n[i]=='\"')
+      else if(c=='\"')
       {
         fputc('\\', stream);
         fputc('\"', stream);
       }
-      else if(n[i]=='\n')
+      else if(c=='\n')
       {
         fputc('\\', stream);
         fputc('n', stream);
       }
-      else if(n[i]=='\0')
+      else if((c<32)||(c==127))
       {
-        fputc('\\', stream);
-        fputc('0', stream);
+        // other control characters as a three digit decimal escape. With fewer digits the
+        // characters that follow could be read as part of it ("\0" followed by "1" is "\01")
+        fprintf(stream, "\\%03u", (unsigned int) c);
       }
       else
       {
-        fputc(n[i], stream);
+        fputc(c, stream);
       }
     }
     fputc('\"', stream);
@@ -263,7 +334,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
   if(lua_type(L,narg)==LUA_TTABLE)
   {
     // check for specific meta data and then print differently
-    if (lua_getmetatable(L, narg))
+    if ((!Raw) && lua_getmetatable(L, narg))
     {
       lua_getglobal(L, "ResponseFunctionMeta");
       if(lua_rawequal(L, -1, -2)==1)
@@ -282,7 +353,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     {
       lua_rawgeti(L, narg, (int)i+1);                                    // put next element on stack
       if((i!=0)&&(lua_type(L, -1)==LUA_TTABLE)) fprintf(stream, "\n  "); // if next element is a table start on a new line
-      LuaASCIIStreamPrint(L, lua_gettop(L), stream);                     // turn next element into string
+      LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);           // turn next element into string
       lua_pop(L, 1);                                                     // remove element from stack
       if(i!=(tablelen-1)) fprintf(stream, " , ");                        // unless it is the last element print a ,
     }
@@ -291,7 +362,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     lua_pushnil(L);
     while (lua_next(L,narg)!=0)
     {
-      if((lua_type(L,-2)==LUA_TNUMBER) && (Abs((lua_tonumber(L, -2)-round(lua_tonumber(L, -2)))/lua_tonumber(L, -2))<10*DBL_EPSILON) && (0<lua_tonumber(L, -2)) && (lua_tonumber(L, -2)<=tablelen))
+      if((lua_type(L,-2)==LUA_TNUMBER) && (lua_tonumber(L, -2)==floor(lua_tonumber(L, -2))) && (0<lua_tonumber(L, -2)) && (lua_tonumber(L, -2)<=tablelen))
       {
         lua_pop(L, 1);                        // if key value is in the range [1,tablen] the value is already printed in the array part
       }
@@ -306,9 +377,9 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
           fprintf(stream," ,\n  ");                      // print a , unless it is the first element
         }
         fprintf(stream,"[ ");
-        LuaASCIIStreamPrint(L, lua_gettop(L)-1, stream); // print the key
+        LuaASCIIStreamPrintValue(L, lua_gettop(L)-1, stream, Raw); // print the key
         fprintf(stream," ] = ");
-        LuaASCIIStreamPrint(L, lua_gettop(L), stream);   // print the value
+        LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);   // print the value
         lua_pop(L, 1);                                   // pop the value
       }
     }
@@ -327,26 +398,12 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
       n = (Complex16 *) luaL_checkudata(L, narg, "Complex_Type");
       if(Abs(n->Im)<10*DBL_MIN)
       {
-        if((Abs(n->Re)<=DBL_MIN) || ((Abs((n->Re-round(n->Re))/n->Re)<10*DBL_EPSILON)&&(n->Re<INT32_MAX)&&(n->Re>INT32_MIN)))
-        {
-          fprintf(stream,"%d",(int32_t)round(n->Re));
-        }
-        else
-        {
-          fprintf(stream,"%.16G",n->Re);
-        }
+        LuaASCIIPrintDouble(stream, n->Re);
       }
       else
       {
         fprintf(stream,"( ");
-        if((Abs(n->Re)<=DBL_MIN) || ((Abs((n->Re-round(n->Re))/n->Re)<10*DBL_EPSILON)&&(n->Re<INT32_MAX)&&(n->Re>INT32_MIN)))
-        {
-          fprintf(stream,"%d",(int32_t)round(n->Re));
-        }
-        else
-        {
-          fprintf(stream,"%.16G",n->Re);
-        }
+        LuaASCIIPrintDouble(stream, n->Re);
         if(n->Im>0)
         {
           fprintf(stream," + I * ");
@@ -355,14 +412,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         {
           fprintf(stream," - I * ");
         }
-        if((Abs(n->Im)<=DBL_MIN) || ((Abs((n->Im-round(n->Im))/n->Im)<10*DBL_EPSILON)&&(n->Im<INT32_MAX)&&(n->Im>INT32_MIN)))
-        {
-          fprintf(stream,"%d",(int32_t)Abs(round(n->Im)));
-        }
-        else
-        {
-          fprintf(stream,"%.16G",Abs(n->Im));
-        }
+        LuaASCIIPrintDouble(stream, Abs(n->Im));
         fprintf(stream," )");
       }
       return 0;
@@ -393,7 +443,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
             {
               fprintf(stream," %c%4u,",(((a->l[l].o[i * l + j]) & CrAnMask) ? ' ' : '-'),(a->l[l].o[i*l+j]&NotCrAnMask));
             }
-            fprintf(stream,"%22.15E ",a->l[l].V[i].Re);
+            fprintf(stream,"%23.16E ",a->l[l].V[i].Re);
             if(a->l[l].V[i].Im<0)
             {
               fprintf(stream,"- I *");
@@ -402,7 +452,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
             {
               fprintf(stream,"+ I *");
             }
-            fprintf(stream,"%22.15E }",Abs(a->l[l].V[i].Im));
+            fprintf(stream,"%23.16E }",Abs(a->l[l].V[i].Im));
           }
         }
         else
@@ -422,13 +472,13 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
             {
               fprintf(stream,"%c%4u,",(((a->l[l].o[i * l + j]) & CrAnMask) ? ' ' : '-'),(a->l[l].o[i*l+j]&NotCrAnMask));
             }
-            fprintf(stream,"%22.15E }",a->l[l].VRe[i]);
+            fprintf(stream,"%23.16E }",a->l[l].VRe[i]);
           }
         }
       }
       fprintf(stream, "},\n{{\"Name\",");
       lua_pushstring(L, a->Name);
-      LuaASCIIStreamPrint(L, -1, stream);
+      LuaASCIIStreamPrintValue(L, -1, stream, Raw);
       lua_pop(L, 1);
       fprintf(stream,"},{\"NBitsKey\",{");
       if(a->MaxLength>=1) fprintf(stream, "%d",a->l[1].NBitsKey);
@@ -442,18 +492,12 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         fprintf(stream, ", {\"Restrictions\",{ %d, %d",a->NFermion,a->NBoson);
         for(i=0;i<a->Res.N;i++)
         {
-          fprintf(stream,", {\"");
-          for(j=0;j<a->NFermion;j++)
-          {
-            fprintf(stream,"%c",(((a->Res.Determinant[i][j>>3])&(128>>(j&7)))?'1':'0'));
-          }
-          fprintf(stream," ");
-          for(j=a->NFermion;j<a->NFermion+a->NBoson;j++)
-          {
-            fprintf(stream,"%1u",(a->Res.Determinant[i][j>>3])&(128>>(j&7)));
-          }
-          fprintf(stream,"\",%u,%u}}}",a->Res.Min[i],a->Res.Max[i]);
+          char *det;
+          det = DetToString(a->NFermion, a->NBoson, a->Res.Determinant[i]);
+          fprintf(stream,", {\"%s\",%u,%u}",det,a->Res.Min[i],a->Res.Max[i]);
+          free(det);
         }
+        fprintf(stream,"}}");
       }
       fprintf(stream,"})");
       return 0;
@@ -476,7 +520,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
           {
             fprintf(stream, " %2.2X", a->Determinant[BlokElementDet(i, a->NWord, j)]);
           }
-          fprintf(stream, "\",%22.15E",a->ValueRe[BlokElement(i)]);
+          fprintf(stream, "\",%23.16E",a->ValueRe[BlokElement(i)]);
           if(a->ValueIm[BlokElement(i)]<0)
           {
             fprintf(stream," - I * ");
@@ -485,7 +529,7 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
           {
             fprintf(stream," + I * ");
           }
-          fprintf(stream, "%22.15E}",Abs(a->ValueIm[BlokElement(i)]));
+          fprintf(stream, "%23.16E}",Abs(a->ValueIm[BlokElement(i)]));
           if(i!=a->N) fprintf(stream, ",\n");
         }
       }
@@ -502,21 +546,77 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
           {
             fprintf(stream, " %2.2X", a->Determinant[BlokElementDet(i, a->NWord, j)]);
           }
-          fprintf(stream, "\",%22.15E}",a->ValueRe[BlokElement(i)]);
+          fprintf(stream, "\",%23.16E}",a->ValueRe[BlokElement(i)]);
           if(i!=a->N) fprintf(stream, ",\n");
         }
       }
       fprintf(stream, "},\n{{\"Name\",");
       lua_pushstring(L, a->Name);
-      LuaASCIIStreamPrint(L, -1, stream);
+      LuaASCIIStreamPrintValue(L, -1, stream, Raw);
       lua_pop(L, 1);
       fprintf(stream,"},{\"NBitsKey\",%d}})",a->NBitsKey);
       return 0;
     }
     if (luaL_testudata(L, narg, "TightBinding_Type") != NULL)
     {
-      //TODO: Tight binding
-      fprintf(stream,"Some_Variable_Of_TightBinding_Type");
+      // Written as TightBinding.New({Name=..., Units=..., Cell=..., Atoms=..., Hopping=...}), which
+      // sets the fields through their setters in the order they need (Cell and Hopping read Units,
+      // setting Atoms removes all hoppings). Everything else (reciprocal cell, atom numbers, number
+      // and order of the orbitals) the setters derive from these. A fresh object has a zero cell,
+      // which the Cell setter refuses, so Cell, Atoms and Hopping are only written once they are set.
+      // Files written before as (function() local TB = TightBinding.New() ... end)() still read.
+      TightBindingDef *TB = (TightBindingDef *) luaL_checkudata(L, narg, "TightBinding_Type");
+      const char * const Fields[] = {"Name", "Units", "Cell", "Atoms", "Hopping"};
+      bool CellSet=false;
+      uint32_t i,j,k;
+      // LuaReadHopping finds an atom and shell by "AtomName.ShellName", split at the first '.',
+      // and takes the first shell with a matching name
+      for(i=0;i<TB->Cell.NAtoms;i++)
+      {
+        if(strchr(TB->Cell.Atom[i].Name, '.')!=NULL)
+        {
+          return luaL_error(L, "Error in io.put: the TightBinding object has an atom named %s, a name with a '.' can not be read back\n", TB->Cell.Atom[i].Name);
+        }
+        for(j=0;j<(uint32_t)TB->Cell.Atom[i].Nshell;j++)
+        {
+          for(k=0;k<j;k++)
+          {
+            if(strcmp(TB->Cell.Atom[i].ShellName[j], TB->Cell.Atom[i].ShellName[k])==0)
+            {
+              return luaL_error(L, "Error in io.put: atom %s of the TightBinding object has two shells named %s, they can not be told apart when read back\n", TB->Cell.Atom[i].Name, TB->Cell.Atom[i].ShellName[j]);
+            }
+          }
+        }
+      }
+      for(i=0;i<3;i++)
+      {
+        for(j=0;j<3;j++)
+        {
+          if(TB->Cell.rUnitCell[i][j]!=0) CellSet=true;
+        }
+      }
+      fprintf(stream, "TightBinding.New({");
+      for(i=0;i<sizeof(Fields)/sizeof(Fields[0]);i++)
+      {
+        if((i==2)&&(!CellSet)) continue;
+        if((i==3)&&(TB->Cell.NAtoms==0)) continue;
+        if((i==4)&&(TB->nH==0)) continue;
+        fprintf(stream, "%s\n  %s = ", (i==0)?"":",", Fields[i]);
+        lua_getfield(L, narg, Fields[i]);
+        LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);
+        lua_pop(L, 1);
+      }
+      fprintf(stream, " })");
+      return 0;
+    }
+    if (luaL_testudata(L, narg, "Graphics_Type") != NULL)
+    {
+      // the table of Graphics.ToTable, read back by Graphics.New(Table)
+      fprintf(stream,"Graphics.New(");
+      LuaPushTable_Graphics(L, (GraphicsType *) lua_touserdata(L, narg));
+      LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);
+      lua_pop(L, 1);
+      fprintf(stream,")\n");
       return 0;
     }
     if (luaL_testudata(L, narg, "Spectra_Type") != NULL)
@@ -531,16 +631,16 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
         fprintf(stream,"{");
         for(j=0;j<=n->Spec[i].N;j++)
         {
-          fprintf(stream,"{%22.15E,%22.15E %c I * %22.15E},",n->Spec[i].Emin+j*n->Spec[i].dE,n->Spec[i].Re[j],(n->Spec[i].Im[j]<0)?'-':'+',Abs(n->Spec[i].Im[j]));
+          fprintf(stream,"{%23.16E,%23.16E %c I * %23.16E},",n->Spec[i].Emin+j*n->Spec[i].dE,n->Spec[i].Re[j],(n->Spec[i].Im[j]<0)?'-':'+',Abs(n->Spec[i].Im[j]));
         }
         if(strcmp("", n->Spec[i].Name)!=0)
         {
           fprintf(stream,"[\"Name\"]=\"%s\",",n->Spec[i].Name);
         }
-        fprintf(stream,"[\"EminPole\"]=%22.15E,",n->Spec[i].EminPole);
-        fprintf(stream,"[\"EmaxPole\"]=%22.15E,",n->Spec[i].EmaxPole);
-        fprintf(stream,"[\"Gamma\"]=%22.15E,",n->Spec[i].Gamma);
-        fprintf(stream,"[\"Integral\"]=%22.15E}",Sqr(n->Spec[i].b[0]));
+        fprintf(stream,"[\"EminPole\"]=%23.16E,",n->Spec[i].EminPole);
+        fprintf(stream,"[\"EmaxPole\"]=%23.16E,",n->Spec[i].EmaxPole);
+        fprintf(stream,"[\"Gamma\"]=%23.16E,",n->Spec[i].Gamma);
+        fprintf(stream,"[\"Integral\"]=%23.16E}",Sqr(n->Spec[i].b[0]));
       }
       fprintf(stream,"})");
       return 0;
@@ -549,28 +649,44 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     {
       ExportResponseFunction:
       fprintf(stream,"ResponseFunction.New(");
-      // turn the response funciton in a table
-      lua_remove(L, 1);
-      lua_remove(L, 1);
-      LuaResponseFunctionToTable(L);
+      // turn the response function in a table, which ends up on top of the stack. It is called
+      // with a copy of the value as its only argument, as ToTable reads position 1 and wants
+      // nothing else on the stack; the value can be deep inside a table
+      lua_pushcfunction(L, LuaResponseFunctionToTable);
+      lua_pushvalue(L, narg);
+      lua_call(L, 1, 1);
       lua_pushnil(L);
-      lua_setmetatable(L, 2);
-      LuaASCIIStreamPrint(L, 2, stream);
+      lua_setmetatable(L, -2);
+      LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, true);
+      lua_pop(L, 1);
       fprintf(stream,")\n");
       return 0;
     }
     if (luaL_testudata(L, narg, "Matrix_Type") != NULL)
     {
       fprintf(stream,"Matrix.New(");
-      // turn the matrix in a table
-      lua_remove(L, 1);
-      lua_remove(L, 1);
-      LuaMatrixToTable(L);
+      // turn the matrix in a table, on top of the stack, as for the response function above
+      lua_pushcfunction(L, LuaMatrixToTable);
+      lua_pushvalue(L, narg);
+      lua_call(L, 1, 1);
       lua_pushnil(L);
-      lua_setmetatable(L, 2);
-      LuaASCIIStreamPrint(L, 2, stream);
+      lua_setmetatable(L, -2);
+      LuaASCIIStreamPrintValue(L, lua_gettop(L), stream, Raw);
+      lua_pop(L, 1);
       fprintf(stream,")\n");
       return 0;
+    }
+    {
+      // types that exist, but have no ASCII representation yet
+      const char * const NotSaved[] = {"BitMap_Type", "Tensor_Type", "GaussianRadialFunction_Type", "InterpolatingFunction_Type"};
+      uint32_t i;
+      for(i=0;i<sizeof(NotSaved)/sizeof(NotSaved[0]);i++)
+      {
+        if (luaL_testudata(L, narg, NotSaved[i]) != NULL)
+        {
+          return luaL_error(L, "Error in io.put: variables of type %s can not be saved (not implemented)\n", NotSaved[i]);
+        }
+      }
     }
     return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of user data\n");
   }
@@ -583,6 +699,11 @@ uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
     return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of light user data\n");
   }
   return luaL_error(L, "Error in LuaASCIIStreamPrint unrecognized type of data\n");
+}
+
+uint32_t LuaASCIIStreamPrint(lua_State *L, int narg, FILE * stream)
+{
+  return LuaASCIIStreamPrintValue(L, narg, stream, false);
 }
 
 uint32_t LuaPutASCII(lua_State *L, const char * const DirName, const char * const VariableName)
