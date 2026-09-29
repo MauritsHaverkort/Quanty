@@ -1,0 +1,60 @@
+print("-------------------------------------------------------")
+print("--          Graphics.Add text with a font            --")
+print("-------------------------------------------------------")
+
+-- A text keeps a pointer to the name of its font. The name given as the option
+-- Font is a lua string, and the text used to point into it: once the garbage
+-- collector freed the string, ToSVG wrote whatever the memory held by then as
+-- the font name. The name is now copied (or, for the fonts of the standard
+-- list, replaced by the entry in that list) when the text is added.
+--
+-- The names are built at run time, so that they are not constants of the
+-- script that live as long as it, and many strings of the same length are
+-- allocated after the collection, so that the memory of the freed names is
+-- reused.
+
+function MakeFont(base, i)
+  return base..string.format("%04d", i)
+end
+
+pl = Graphics.New()
+NText = 20
+for i = 1, NText do
+  pl = Graphics.Add(pl, "text "..i, 0.1, i/(NText+1), {{"Font", MakeFont("MyFont", i)}})
+end
+-- a font of the standard list, given as a string built at run time
+pl = Graphics.Add(pl, "standard", 0.5, 0.5, {{"Font", "Georg".."ia"}})
+
+for round = 1, 5 do
+  collectgarbage("collect")
+  local junk = {}
+  for i = 1, 20000 do junk[i] = MakeFont("XxXxXx", i) end
+  junk = nil
+end
+collectgarbage("collect")
+
+SVG = Graphics.ToSVG(pl)
+for i = 1, NText do
+  local font = MakeFont("MyFont", i)
+  if not SVG:find('font%-family="'..font..'"') then
+    print(SVG)
+    error("the font "..font.." of text "..i.." is not in the SVG, the text points to freed memory\n", 1)
+  end
+end
+if not SVG:find('font%-family="Georgia"') then
+  print(SVG)
+  error("the font Georgia is not in the SVG\n", 1)
+end
+
+-- the same name twice is one copy, and copies of the graphics keep the fonts
+pl2 = Graphics.Add(Graphics.New(), "a", 0.1, 0.1, {{"Font", MakeFont("MyFont", 1)}})
+pl3 = pl + pl2
+collectgarbage("collect")
+SVG3 = Graphics.ToSVG(pl3)
+local _, count = SVG3:gsub('font%-family="MyFont0001"', "")
+if count ~= 2 then
+  print(SVG3)
+  error("the combined graphics should contain the font MyFont0001 twice, found "..count.."\n", 1)
+end
+
+print("done")
