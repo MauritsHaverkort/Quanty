@@ -1939,11 +1939,12 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
         for (i = 0; i < len[p]; ++i) {
             lua_rawgeti(L, arg, (int)i + 1);
 
-            if (luaL_testudata(L, -1, "Complex_Type") == NULL) {
+            if ((lua_type(L, -1) != LUA_TNUMBER) &&
+                (luaL_testudata(L, -1, "Complex_Type") == NULL)) {
                 return luaL_error(
                     L,
                     "Error in .ContractWithPolarization: "
-                    "element %d of arg_%d must be Complex_Type",
+                    "element %d of arg_%d must be a number or Complex_Type",
                     (int)i + 1,
                     arg
                 );
@@ -2015,11 +2016,15 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
 
             lua_rawgeti(L, arg, (int)i + 1);
 
-            z = (Complex16 *)luaL_checkudata(
-                L, -1, "Complex_Type"
-            );
-
-            polarization[p][i] = *z;
+            if (lua_type(L, -1) == LUA_TNUMBER) {
+                polarization[p][i].Re = lua_tonumber(L, -1);
+                polarization[p][i].Im = 0;
+            } else {
+                z = (Complex16 *)luaL_checkudata(
+                    L, -1, "Complex_Type"
+                );
+                polarization[p][i] = *z;
+            }
             lua_pop(L, 1);
         }
     }
