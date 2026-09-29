@@ -3532,11 +3532,6 @@ static int LuaTightBindingIndex(lua_State * L)
     }
     return 1;
   }
-  else if (strcmp(str, "Hk")==0)
-  {
-    //TODO: push a matrix to the stack as table representing Hk(kx,ky,kz) read options to define either constant or kx phase in the unit cell
-    return 1;
-  }
   else if (strcmp(str, "NF")==0)
   {
     lua_pushinteger(L, a->NFermion);
@@ -3725,10 +3720,6 @@ static int LuaTightBindingNewIndex(lua_State * L)
       LuaReadHopping(L, -1, &(a->Cell), &(a->H[i]));
       lua_pop(L, 1);
     }
-  }
-  else if(strcmp(str, "Hk")==0)
-  {
-    return luaL_error(L, "Error can not set Hk in a TightBinding Object\n",str);
   }
   else
   {

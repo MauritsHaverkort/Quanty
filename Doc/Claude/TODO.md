@@ -855,7 +855,7 @@ restrictions, tight binding objects, numbers so that they read back exactly
 - **A failed `io.put` leaves a half-written file** in place of the previous one,
   as the error is raised while writing.
 
-## Tight binding in `Relative` units and the `Hk` getter
+## Tight binding in `Relative` units
 
 Found while writing `io.put` for tight binding objects, not fixed:
 
@@ -869,8 +869,5 @@ Found while writing `io.put` for tight binding objects, not fixed:
   the positions are fractions of the cell vectors, so for more than one atom the
   phase mixes the two. Together with the point above this is why `Relative`
   units are suspect; a cell with one atom at the origin is not affected.
-- **`TB.Hk`** returns without pushing anything, so it returns the key string
-  `"Hk"`, as `TB.Hopping` did. Either implement it (the TODO in
-  `LuaTightBindingIndex` says what it should be) or raise an error.
 - **Setting `TB.Hopping` twice** does not free the previous list of hoppings.
 
