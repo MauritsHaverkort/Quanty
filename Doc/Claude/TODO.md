@@ -845,10 +845,6 @@ strings; `TestScripts/ioGetPut.Quanty` covers all of that. Still open:
 - **Graphics, BitMap, Tensor, GaussianRadialFunction, InterpolatingFunction.**
   `io.put` stops with an error naming the type. There is no constructor from data
   to write them as. For a plot, keep the SVG.
-- **Operators with more than one restriction.** The writer closes the list of
-  restrictions after the first one (the `}}}` is inside the loop), so the file
-  does not read back. The boson part of a restriction is written as the masked
-  byte (0 to 128) instead of 0 or 1. Found by reading, not tested.
 - **Tables that contain themselves** recurse until the C stack overflows; a table
   referenced twice is written twice and reads back as two tables.
 - **A failed `io.put` leaves a half-written file** in place of the previous one,

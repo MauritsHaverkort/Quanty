@@ -73,6 +73,11 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char const 
     Boson[1]=s[NFermion+nspaces+2*i+1];
     det[NWord-NBoson+i]=(uint8_t)strtol(Boson, endptr, 16);
   }
+  // trailing spaces are ignored, as leading spaces and spaces in between are
+  while ((NFermion+2*NBoson+nspaces<strlens) && (s[NFermion+2*NBoson+nspaces]==' '))
+  {
+    nspaces++;
+  }
   if(strlens != (NFermion+2*NBoson+nspaces))
   {
     printf("Error in String to Determinant, more elements in determinant then Fermions + Bosons\n");
@@ -84,44 +89,32 @@ uint8_t *StringToDet(uint32_t const NFermion, uint32_t const NBoson, char const 
 /*
  *
  */
+/*  The determinant as StringToDet reads it: a 1 or 0 for each fermion and, when there are
+ *  bosons, a space followed by two hexadecimal digits for each boson, "0110 03FF".
+ *  The bosons are the last NBoson bytes of the determinant, after the fermion bytes.
+ */
 char *DetToString(uint32_t const NFermion, uint32_t const NBoson, uint8_t * det)
 {
   char *ret;
-  int z;
   uint32_t i,pos=0;
   uint32_t NWord=NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
-  ret = (char*)malloc((NFermion+NBoson+2)*sizeof(char));
-  //ret[0]='"';
-  //pos++;
-  for(i=0;i<NWord-NBoson;i++)
+  ret = (char*)malloc((NFermion+((NBoson==0)?0:1+2*NBoson)+1)*sizeof(char));
+  for(i=0;i<NFermion;i++)
   {
-    for(z=128;z>0;z>>=1)
-    {
-      ret[pos]=((det[i]&z)==z) ? '1' : '0';
-      if (pos >= NFermion+NBoson) break;
-      pos++;
-    }
+    ret[pos]=(det[i>>3]&(128>>(i&7))) ? '1' : '0';
+    pos++;
   }
-  if(NBoson==0)
-  {
-    pos=NFermion;
-    //ret[pos]='"';
-    //pos++;
-    ret[pos]='\0';
-  }
-  else
+  if(NBoson!=0)
   {
     ret[pos]=' ';
     pos++;
     for(i=0;i<NBoson;i++)
     {
-      sprintf(ret+pos,"%02X",det[NWord-NBoson+i]);
+      snprintf(ret+pos,3,"%02X",det[NWord-NBoson+i]);
+      pos+=2;
     }
-    pos+=2;
-    //ret[pos]='"';
-    //pos++;
-    ret[pos]='\0';
   }
+  ret[pos]='\0';
   return ret;
 }
 

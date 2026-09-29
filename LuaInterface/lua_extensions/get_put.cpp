@@ -452,18 +452,12 @@ static uint32_t LuaASCIIStreamPrintValue(lua_State *L, int narg, FILE * stream, 
         fprintf(stream, ", {\"Restrictions\",{ %d, %d",a->NFermion,a->NBoson);
         for(i=0;i<a->Res.N;i++)
         {
-          fprintf(stream,", {\"");
-          for(j=0;j<a->NFermion;j++)
-          {
-            fprintf(stream,"%c",(((a->Res.Determinant[i][j>>3])&(128>>(j&7)))?'1':'0'));
-          }
-          fprintf(stream," ");
-          for(j=a->NFermion;j<a->NFermion+a->NBoson;j++)
-          {
-            fprintf(stream,"%1u",(a->Res.Determinant[i][j>>3])&(128>>(j&7)));
-          }
-          fprintf(stream,"\",%u,%u}}}",a->Res.Min[i],a->Res.Max[i]);
+          char *det;
+          det = DetToString(a->NFermion, a->NBoson, a->Res.Determinant[i]);
+          fprintf(stream,", {\"%s\",%u,%u}",det,a->Res.Min[i],a->Res.Max[i]);
+          free(det);
         }
+        fprintf(stream,"}}");
       }
       fprintf(stream,"})");
       return 0;
