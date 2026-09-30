@@ -1112,6 +1112,15 @@ int LuaAddToGraphics(lua_State * L)
   return 0;
 }
 
+// Graphics.Plot draws spectrum Start, Start+Step, Start+2*Step, ... up to Stop
+// (counting from 1 and including Stop) out of N spectra. Returns how many these are.
+static int NumberOfSelectedSpectra(int N, int Start, int Stop, int Step)
+{
+  if(Stop>N) Stop=N;
+  if(Stop<Start) return 0;
+  return (Stop-Start)/Step+1;
+}
+
 int LuaPlotGraphics(lua_State * L)
 {
   //First element on stack is either a
@@ -1126,11 +1135,12 @@ int LuaPlotGraphics(lua_State * L)
   GraphicsType* Graphics;
   const char* ScaleFormat = "%.0f";
   const char* EmptyString = "";
-  SpectraTypeArray *a,aa;
+  SpectraTypeArray *a,aa,View;
   aa.NSpectra=0;
   aa.Spec=NULL;
   aa.Name=NULL;
   a=&aa;
+  View.Spec=NULL; // the selected spectra, sharing their data with the spectra they are taken from
   uint32_t len = (uint32_t) lua_gettop(L);
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
   luaL_setmetatable(L, "Graphics_Type");
@@ -1143,6 +1153,9 @@ int LuaPlotGraphics(lua_State * L)
     double   WaterfallOffset;
     double   WaterfallShift;
     
+    int      SpectraStart;
+    int      SpectraStop;
+    int      SpectraStep;
     int      Nrow;
     int      Ncolumn;
     int      PlotPoints;
@@ -1227,6 +1240,9 @@ int LuaPlotGraphics(lua_State * L)
   Options.Scale=1;
   Options.WaterfallOffset=0;
   Options.WaterfallShift=0;
+  Options.SpectraStart=1;
+  Options.SpectraStop=INT_MAX;
+  Options.SpectraStep=1;
   LuaOptionsType LuaGraphicsOptions[]={
     {"Frame","FramePlotOptions",&(Options.Frame)},
     {"Axis", "FramePlotOptions",&(Options.Frame)},
@@ -1243,12 +1259,17 @@ int LuaPlotGraphics(lua_State * L)
     {"WaterfallOffset","double",&(Options.WaterfallOffset)},
     {"WaterfallShift","double",&(Options.WaterfallShift)},
     {"WatterfallShift","double",&(Options.WaterfallShift)}, // old spelling, kept for existing scripts
+    {"SpectraStart","int",&(Options.SpectraStart)},
+    {"SpectraStop","int",&(Options.SpectraStop)},
+    {"SpectraStep","int",&(Options.SpectraStep)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, len))
   {
     LuaCheckOptions(L, len, LuaGraphicsOptions);
     len=len-1;
   }
+  if((Options.SpectraStart<1)||(Options.SpectraStep<1)) return luaL_error(L, "Graphics.Plot: SpectraStart and SpectraStep should be 1 or larger, not %d and %d\n",Options.SpectraStart,Options.SpectraStep);
+  bool const SelectSpectra = (Options.SpectraStart!=1)||(Options.SpectraStep!=1)||(Options.SpectraStop!=INT_MAX);
   // select the type of graph to plot
   if(lua_type(L,1)==LUA_TTABLE)
   {
@@ -1293,12 +1314,16 @@ int LuaPlotGraphics(lua_State * L)
     if(Emin==-INFINITY) Emin=-1;
     if(Emax== INFINITY) Emax= 1;
     int NE=Options.PlotPoints;
-    a->NSpectra = (uint32_t)lua_objlen(L, 1);
+    int const NTable = (int)lua_objlen(L, 1);
+    a->NSpectra = NumberOfSelectedSpectra(NTable, Options.SpectraStart, Options.SpectraStop, Options.SpectraStep);
+    if(a->NSpectra==0) return luaL_error(L, "Graphics.Plot: no spectra to plot, the table has %d elements and SpectraStart is %d, SpectraStop %d\n",NTable,Options.SpectraStart,(Options.SpectraStop<NTable)?Options.SpectraStop:NTable);
     a->Spec = (SpectraType*)malloc(a->NSpectra*sizeof(SpectraType));
     a->Name=NULL;
-    for(i=0;i<a->NSpectra;i++)
+    for(int k=0;k<a->NSpectra;k++)
     {
       // read element i of the table and see if we can convert it to a spectrum
+      // only the selected elements are read, spectrum k of the plot is element i of the table
+      i = Options.SpectraStart - 1 + k * Options.SpectraStep;
       lua_rawgeti(L, 1, i+1);
       // a list of if then else that goes throught the options
       if(lua_type(L,-1)==LUA_TTABLE)
@@ -1316,7 +1341,7 @@ int LuaPlotGraphics(lua_State * L)
             A = luaL_checkResponsefunction(L,-1);
             ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
             free(Spec.Name);
-            a->Spec[i]=Spec.Spec[0];
+            a->Spec[k]=Spec.Spec[0];
             FreeResponsefunctionIncludingOriginalPointer(A);
           }
           else
@@ -1338,8 +1363,8 @@ int LuaPlotGraphics(lua_State * L)
           SpectraTypeArray *Spec;
           Spec = (SpectraTypeArray *) luaL_checkudata(L, -1, "Spectra_Type");
           if(Spec->NSpectra!=1) return luaL_error(L, "A table of spectra can only contain spectra objects with 1 spectrum. At position %d we found %d spectra\n",i+1,Spec->NSpectra);
-          SpectrumAllocate(Spec->Spec[0], &(a->Spec[i]));
-          CopySpectra(Spec->Spec[0], &(a->Spec[i]));
+          SpectrumAllocate(Spec->Spec[0], &(a->Spec[k]));
+          CopySpectra(Spec->Spec[0], &(a->Spec[k]));
         }
         else if (luaL_testudata(L, -1, "GaussianRadialFunction_Type") != NULL)
         {
@@ -1359,7 +1384,7 @@ int LuaPlotGraphics(lua_State * L)
           A = luaL_checkResponsefunction(L,-1);
           ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
           free(Spec.Name);
-          a->Spec[i]=Spec.Spec[0];
+          a->Spec[k]=Spec.Spec[0];
         }
       }
       else
@@ -1375,6 +1400,17 @@ int LuaPlotGraphics(lua_State * L)
     if (luaL_testudata(L, 1, "Spectra_Type") != NULL)
     {
       a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
+      labelSelectSpectra:
+      if(SelectSpectra)
+      {
+        // copy the headers of the selected spectra, not their data
+        View.NSpectra = NumberOfSelectedSpectra(a->NSpectra, Options.SpectraStart, Options.SpectraStop, Options.SpectraStep);
+        if(View.NSpectra==0) return luaL_error(L, "Graphics.Plot: no spectra to plot, there are %d spectra and SpectraStart is %d, SpectraStop %d\n",a->NSpectra,Options.SpectraStart,(Options.SpectraStop<(int)a->NSpectra)?Options.SpectraStop:(int)a->NSpectra);
+        View.Spec = (SpectraType*)malloc(View.NSpectra*sizeof(SpectraType));
+        for(int k=0;k<View.NSpectra;k++) View.Spec[k] = a->Spec[Options.SpectraStart - 1 + k * Options.SpectraStep];
+        View.Name = NULL;
+        a = &View;
+      }
       labelSpectraTypeArrayPlot:
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = a->Spec[0].Emin;
       if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X = a->Spec[0].Emax;
@@ -1553,6 +1589,14 @@ int LuaPlotGraphics(lua_State * L)
       }
       ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
       
+      if(SelectSpectra)
+      {
+        // plot the selected elements as a list of spectra in one graph; aa is freed at the end
+        FreeResponsefunction(A);
+        aa = Spec;
+        a = &aa;
+        goto labelSelectSpectra;
+      }
       if(A->Block==false)
       {
         // make a single graph with possible multiple spectra
@@ -1665,6 +1709,7 @@ int LuaPlotGraphics(lua_State * L)
     return luaL_error(L, "called Graphics.Plot with unkown first variable\n");
   }
   free(Options.Style.Line);
+  free(View.Spec);
   FreeSpectraTypeArray(&aa);
   return 1;
 }

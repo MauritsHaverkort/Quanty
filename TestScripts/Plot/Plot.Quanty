@@ -86,4 +86,68 @@ if math.abs((b1-Y0) - (-2.5*(a1-Y0) + 3*YUnit)) > 1E-10 or
   error("Graphics.Plot Scale/WaterfallOffset/WaterfallShift: "..(a1-Y0)/YUnit.." "..(b1-Y0)/YUnit.." "..(b2-Y0)/YUnit.." "..(c2-Y0)/YUnit.."\n", 1)
 end
 
+-- SpectraStart, SpectraStop and SpectraStep plot spectrum Start, Start+Step, ... up to Stop
+print("SpectraStart, SpectraStop and SpectraStep")
+-- the last n lines of a plot are its n curves
+function Curves(pl, n)
+  local L = Graphics.ToTable(pl).Line
+  local c = {}
+  for k = #L-n+1, #L do c[#c+1] = L[k].Point end
+  return c, #L
+end
+function SameCurves(A, B)
+  if #A ~= #B then return false end
+  for k = 1, #A do
+    if #A[k] ~= #B[k] then return false end
+    for p = 1, #A[k] do
+      if A[k][p][1] ~= B[k][p][1] or A[k][p][2] ~= B[k][p][2] then return false end
+    end
+  end
+  return true
+end
+-- spectrum j is the constant j, so the height of a curve tells which spectrum it is
+SpecTable = {}
+for j = 1, 7 do SpecTable[j] = {{-3, j}, {0, j}, {3, j}} end
+S = Spectra.FromTable(SpecTable)
+Sj = {}
+for j = 1, 7 do Sj[j] = Spectra.FromTable({SpecTable[j]}) end
+Opt = {{"plotIm",false}, {"Frame",Frame}}
+function With(o) local r = {} for _, x in ipairs(Opt) do r[#r+1] = x end for _, x in ipairs(o) do r[#r+1] = x end return r end
+Selections = { { {{"SpectraStart",2},{"SpectraStep",2},{"SpectraStop",6}}, {2,4,6} },
+               { {{"SpectraStart",3},{"SpectraStep",3}},                    {3,6}   },
+               { {{"SpectraStep",2},{"SpectraStop",5}},                     {1,3,5} },
+               { {{"SpectraStart",7}},                                      {7}     },
+               { {{"SpectraStop",30}},                                      {1,2,3,4,5,6,7} } }
+for _, sel in ipairs(Selections) do
+  local kept = {}
+  for _, j in ipairs(sel[2]) do kept[#kept+1] = Sj[j] end
+  local expected = Curves(Graphics.Plot(kept, Opt), #kept)
+  -- a Spectra object holding all seven, a table of seven Spectra objects
+  if not SameCurves(Curves(Graphics.Plot(S,  With(sel[1])), #kept), expected) or
+     not SameCurves(Curves(Graphics.Plot(Sj, With(sel[1])), #kept), expected) then
+    error("Graphics.Plot selecting spectra "..table.concat(sel[2]," ").." failed\n", 1)
+  end
+  for k, c in ipairs(expected) do
+    if math.abs((c[1][2]-Y0)/YUnit - sel[2][k]) > 1E-10 then error("Graphics.Plot plotted the wrong spectrum\n", 1) end
+  end
+end
+-- a table of response functions: only the selected ones are converted
+Gj = {}
+for j = 1, 5 do Gj[j] = ResponseFunction.New({ {0, -2+j*0.6} , {0.3*j} , mu = 0 , type = "ListOfPoles" }) end
+Gj.GammaL = 0.2
+Expected = Curves(Graphics.Plot({Gj[2], Gj[4], GammaL=0.2}, {{"plotRe",false}, {"Frame",Frame}}), 2)
+if not SameCurves(Curves(Graphics.Plot(Gj, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStart",2}, {"SpectraStep",2}}), 2), Expected) then
+  error("Graphics.Plot selecting from a table of response functions failed\n", 1)
+end
+-- a block response function with a selection is drawn as a list of spectra in one graph
+GB = ResponseFunction.New({{Matrix.New({{0.2, 0.1},{0.1,-0.1}}), -1.8, 2.2},
+                           {Matrix.New({{0.4, 0.1},{0.1, 0.3}}), Matrix.New({{0.2,-0.05},{-0.05,0.5}})},
+                           mu=0, type="ListOfPoles"})
+All, NAll = Curves(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStop",4}}), 4)
+Diag, NDiag = Curves(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStep",3}}), 2)
+Last = Curves(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStart",4}}), 1)
+if NAll - NDiag ~= 2 or not SameCurves(Diag, {All[1], All[4]}) or not SameCurves(Last, {All[4]}) then
+  error("Graphics.Plot selecting from a block response function failed\n", 1)
+end
+
 print("Graphics.Plot tests passed")
