@@ -160,6 +160,7 @@ test-jobs-plot:
       - TEST_NAME:
           - "Add"
           - "New"
+          - "Plot"
           - "TextFont"
           - "ToTable"
   script:

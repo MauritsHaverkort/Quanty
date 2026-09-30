@@ -1306,16 +1306,6 @@ int LuaPlotGraphics(lua_State * L)
             SpectraTypeArray Spec;
             A = luaL_checkResponsefunction(L,-1);
             ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
-            if(Options.WatterfallShift!=0)
-            {
-              for(int j=0;j<Spec.NSpectra;j++)
-              {
-                for(int k=0;k<Spec.Spec[j].N;k++)
-                {
-                  Spec.Spec[j].Re[k]+=i*Options.WatterfallShift;
-                }
-              }
-            }
             free(Spec.Name);
             a->Spec[i]=Spec.Spec[0];
             FreeResponsefunctionIncludingOriginalPointer(A);
@@ -1519,7 +1509,7 @@ int LuaPlotGraphics(lua_State * L)
       A = luaL_checkResponsefunction(L,1);
       if(len>1) GammaL=(double)luaL_checknumber(L, 2);
       if(len>2) GammaG=(double)luaL_checknumber(L, 3);
-      if(len>3) NE=(int)luaL_checkinteger(L, 3);
+      if(len>3) NE=(int)luaL_checkinteger(L, 4);
       if(len>4) return luaL_error(L, "For plotting a response function I expect the first argument to be a response function and the 2nd, 3rd and 4th are optional the Lorentzian and Gaussian broadingings and the number of points in the spectrum.\n In this case I got %d argumens\n",len);
       
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = -1;

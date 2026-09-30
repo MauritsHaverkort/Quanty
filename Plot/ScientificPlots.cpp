@@ -419,7 +419,7 @@ int PlotAllButDataToGraphics(GraphicsType* Graphics, FramePlotOptions *FPO)
   TextType Text;
   AddPlotAxisToGraphics(Graphics,FPO->PlotRange,FPO->Margins,FPO->LineColor,FPO->LineWidth, FPO->XAxis, FPO->YAxis);
   AddXTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstXTick, FPO->dXTick, 0.01 * sqrt(2), FPO->NMinorXTick);
-  AddYTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstYTick, FPO->dYTick, 0.01          , FPO->NMinorXTick);
+  AddYTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstYTick, FPO->dYTick, 0.01          , FPO->NMinorYTick);
   AddXTicksLabelToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->FontSize, FPO->Font, FPO->FirstXTick, FPO->dXTick, FPO->PlotXScaleFormat);
   AddYTicksLabelToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->FontSize, FPO->Font, FPO->FirstYTick, FPO->dYTick, FPO->PlotYScaleFormat);
   InitText(&Text);
@@ -513,7 +513,7 @@ int PlotAllButDataToBandGraphics(GraphicsType* Graphics, FramePlotOptions *FPO, 
 {
   TextType Text;
   AddPlotAxisToGraphics(Graphics,FPO->PlotRange,FPO->Margins,FPO->LineColor,FPO->LineWidth, FPO->XAxis, FPO->YAxis);
-  AddYTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstYTick, FPO->dYTick, 0.01          , FPO->NMinorXTick);
+  AddYTicksToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->LineWidth, FPO->LineColor, 0.5, FPO->FirstYTick, FPO->dYTick, 0.01          , FPO->NMinorYTick);
   AddYTicksLabelToGraphics(Graphics, FPO->PlotRange, FPO->Margins, FPO->LineColor, FPO->FontSize, FPO->Font, FPO->FirstYTick, FPO->dYTick, FPO->PlotYScaleFormat);
   InitText(&Text);
   Text.String = FPO->XLabel;
