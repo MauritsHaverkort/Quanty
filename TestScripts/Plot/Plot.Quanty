@@ -258,4 +258,30 @@ end
 Graphics.Plot(Gj, {{"ColorMap",true}, {"Frame",Frame}, {"NPixelX",20}, {"NPixelY",20}})
 Graphics.Plot(GB, 0.2, {{"ColorMap",true}, {"Frame",Frame}, {"NPixelX",20}, {"NPixelY",20}})
 
+-- a waterfall plot without Ymin or Ymax takes its y range from the base lines and the plotted
+-- points, with 5% margin, and puts its y ticks on multiples of dYTick
+print("Automatic y range of a waterfall plot")
+MB, MT = 0.08*math.sqrt(2), 0.01*math.sqrt(2)
+-- where the value y lies on the canvas for the y range Ymin to Ymax
+function CanvasY(y, Ymin, Ymax) return MB + (1-MB-MT) * (y-Ymin) / (Ymax-Ymin) end
+-- the five spectra 0.2*j at base line j-1: from 0 (base line of the first) to 5 (the last), plotted -0.25 to 5.25
+WF = Graphics.ToTable(Graphics.Plot(SFive, {{"plotRe",false}, {"WaterfallShift",1}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+First = WF.Line[#WF.Line-4].Point[1][2]
+Last  = WF.Line[#WF.Line].Point[1][2]
+if math.abs(First - CanvasY(0.2, -0.25, 5.25)) > 1E-10 or math.abs(Last - CanvasY(5, -0.25, 5.25)) > 1E-10 then
+  error("Graphics.Plot waterfall y range: curves at "..First.." and "..Last.."\n", 1)
+end
+Labels = {}
+for _, t in ipairs(WF.Text) do if t.Alignment == "r" then Labels[#Labels+1] = t.String end end
+if table.concat(Labels, " ") ~= "0 1 2 3 4 5" then error("Graphics.Plot waterfall y tick labels: "..table.concat(Labels, " ").."\n", 1) end
+-- a given bound is kept, only the other one is chosen
+WF = Graphics.ToTable(Graphics.Plot(SFive, {{"plotRe",false}, {"WaterfallShift",1}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymax",10}}}}))
+if math.abs(WF.Line[#WF.Line].Point[1][2] - CanvasY(5, -0.25, 10)) > 1E-10 then error("Graphics.Plot waterfall with only Ymax given failed\n", 1) end
+-- with resonant energies: base lines 0.5 to 4.5, the highest point 4.5 + 1.0
+WF = Graphics.ToTable(Graphics.Plot(SMap, {{"plotRe",false}, {"UseResonantEnergy",true}, {"WaterfallOffset",0.5}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+if math.abs(WF.Line[#WF.Line].Point[1][2] - CanvasY(5.5, 0.5-0.25, 5.5+0.25)) > 1E-10 then error("Graphics.Plot waterfall y range with resonant energies failed\n", 1) end
+-- without a waterfall the default y range stays -1 to 1
+WF = Graphics.ToTable(Graphics.Plot(SFive, {{"plotRe",false}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+if math.abs(WF.Line[#WF.Line-4].Point[1][2] - CanvasY(0.2, -1, 1)) > 1E-10 then error("Graphics.Plot changed the default y range of a plot without a shift\n", 1) end
+
 print("Graphics.Plot tests passed")

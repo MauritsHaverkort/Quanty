@@ -1198,6 +1198,7 @@ int LuaPlotGraphics(lua_State * L)
   a=&aa;
   View.Spec=NULL; // the selected spectra, sharing their data with the spectra they are taken from
   double *YPos=NULL; // the heights of the spectra in a waterfall plot or a colour map
+  bool AutoYRange=false; // the y range was chosen from the data, the y ticks then lie on multiples of dYTick
   uint32_t len = (uint32_t) lua_gettop(L);
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
   luaL_setmetatable(L, "Graphics_Type");
@@ -1539,15 +1540,51 @@ int LuaPlotGraphics(lua_State * L)
         double const Highest    = Increasing ? YPos[NS-1]      : YPos[0];
         double const LowestGap  = Increasing ? YPos[1]-YPos[0] : YPos[NS-2]-YPos[NS-1];
         double const HighestGap = Increasing ? YPos[NS-1]-YPos[NS-2] : YPos[0]-YPos[1];
-        if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = Lowest  - LowestGap/2;
-        if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y = Highest + HighestGap/2;
+        if(Options.Frame.PlotRange[0].Y==-INFINITY) { Options.Frame.PlotRange[0].Y = Lowest  - LowestGap/2;  AutoYRange=true; }
+        if(Options.Frame.PlotRange[1].Y== INFINITY) { Options.Frame.PlotRange[1].Y = Highest + HighestGap/2; AutoYRange=true; }
       }
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = a->Spec[0].Emin;
       if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X = a->Spec[0].Emax;
+      if( (!Options.ColorMap) && ( (Options.WaterfallShift!=0) || (Options.WaterfallOffset!=0) || Options.UseResonantEnergy )
+          && ( (Options.Frame.PlotRange[0].Y==-INFINITY) || (Options.Frame.PlotRange[1].Y==INFINITY) ) )
+      {
+        // the y range of a waterfall plot covers the base lines and all plotted points inside the x range,
+        // with a margin of 5% of that range
+        double const YScale = (Options.Negate?-1:1)*Options.Scale;
+        double Low=INFINITY, High=-INFINITY;
+        for(i=0;i<a->NSpectra;i++)
+        {
+          SpectraType const * const S = &(a->Spec[i]);
+          if(YPos[i]<Low)  Low =YPos[i];
+          if(YPos[i]>High) High=YPos[i];
+          for(int k=0;k<=(int)S->N;k++)
+          {
+            double const x = (S->N==0) ? S->Emin : ( k * S->Emax + (S->N-k) * S->Emin ) / S->N;
+            if((x<Options.Frame.PlotRange[0].X)||(x>Options.Frame.PlotRange[1].X)) continue;
+            double const v[2] = {YScale*S->Re[k] + YPos[i], YScale*S->Im[k] + YPos[i]};
+            bool   const Plotted[2] = {Options.PlotRe, Options.PlotIm};
+            for(int p=0;p<2;p++)
+            {
+              if(!Plotted[p]) continue;
+              if(v[p]<Low)  Low =v[p];
+              if(v[p]>High) High=v[p];
+            }
+          }
+        }
+        double Margin = 0.05*(High-Low);
+        if(!(Margin>0)) Margin = 0.5;
+        if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = Low  - Margin;
+        if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y = High + Margin;
+        AutoYRange=true;
+      }
       if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
       if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y =  1;
       if(Options.Frame.FirstXTick==-INFINITY) Options.Frame.FirstXTick = Options.Frame.PlotRange[0].X;
-      if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
+      if(Options.Frame.FirstYTick==-INFINITY)
+      {
+        if(AutoYRange && (Options.Frame.dYTick>0)) Options.Frame.FirstYTick = ceil(Options.Frame.PlotRange[0].Y/Options.Frame.dYTick) * Options.Frame.dYTick;
+        else                                       Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
+      }
       
       if(Options.ColorMap)
       {
