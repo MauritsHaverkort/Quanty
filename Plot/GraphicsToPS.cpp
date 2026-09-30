@@ -36,10 +36,10 @@ int AddLineToPS(DynamicString *Buff, LineType *Line, int X0, int Y0, double scal
 {
   int i;
   if(Line->NPoints<2) return 0;
-  if((Line->CloseAndFill) && (Line->FillColor[3] !=0) )
+  if((Line->CloseAndFill) && (ColorVisible(Line->FillColor)) )
   {
     sprintfAdd(Buff, "%d %d %.4f %.4f %.4f %d L\n",(int)round(X0 + scaleX * Line->Point[0].X),(int)round(Y0 + scaleY * Line->Point[0].Y),
-                                                   (double)Line->FillColor[0]/255., (double)Line->FillColor[1]/255., (double)Line->FillColor[2]/255.,0);
+                                                   (double)ColorRed(Line->FillColor)/255., (double)ColorGreen(Line->FillColor)/255., (double)ColorBlue(Line->FillColor)/255.,0);
     for(i=1;i<Line->NPoints;i++)
     {
       sprintfAdd(Buff, "%d %d l\n",(int)round(X0 + scaleX * Line->Point[i].X),(int)round(Y0 + scaleY * Line->Point[i].Y));
@@ -48,14 +48,14 @@ int AddLineToPS(DynamicString *Buff, LineType *Line, int X0, int Y0, double scal
     sprintfAdd(Buff, "gsave\n");
     sprintfAdd(Buff, "fill\n");
     sprintfAdd(Buff, "grestore\n");
-    sprintfAdd(Buff, "%.4f %.4f %.4f setrgbcolor\n", (double)Line->Color[0]/255., (double)Line->Color[1]/255., (double)Line->Color[2]/255. );
+    sprintfAdd(Buff, "%.4f %.4f %.4f setrgbcolor\n", (double)ColorRed(Line->Color)/255., (double)ColorGreen(Line->Color)/255., (double)ColorBlue(Line->Color)/255. );
     sprintfAdd(Buff, "%d setlinewidth\n",Max(1,(int)round(Line->Width * scaleV) ));
     sprintfAdd(Buff, "stroke\n");
   }
   else
   {
     sprintfAdd(Buff, "%d %d %.4f %.4f %.4f %d L\n",(int)round(X0 + scaleX * Line->Point[0].X),(int)round(Y0 + scaleY * Line->Point[0].Y),
-               (double)Line->Color[0]/255., (double)Line->Color[1]/255., (double)Line->Color[2]/255., Max(1,(int)round(Line->Width * scaleV) ) );
+               (double)ColorRed(Line->Color)/255., (double)ColorGreen(Line->Color)/255., (double)ColorBlue(Line->Color)/255., Max(1,(int)round(Line->Width * scaleV) ) );
     for(i=1;i<Line->NPoints;i++)
     {
       sprintfAdd(Buff, "%d %d l\n",(int)round(X0 + scaleX * Line->Point[i].X),(int)round(Y0 + scaleY * Line->Point[i].Y));
@@ -75,10 +75,10 @@ int AddCurveToPS(DynamicString *Buff, CurveType *Curve, int X0, int Y0, double s
 {
   int i;
   if(Curve->NPoints<2) return 0;
-  if((Curve->CloseAndFill) && (Curve->FillColor[3] !=0) )
+  if((Curve->CloseAndFill) && (ColorVisible(Curve->FillColor)) )
   {
     sprintfAdd(Buff, "%d %d %.4f %.4f %.4f %d L\n",(int)round(X0 + scaleX * Curve->Point[0].X),(int)round(Y0 + scaleY * Curve->Point[0].Y),
-                                             (double)Curve->FillColor[0]/255., (double)Curve->FillColor[1]/255., (double)Curve->FillColor[2]/255., 0 );
+                                             (double)ColorRed(Curve->FillColor)/255., (double)ColorGreen(Curve->FillColor)/255., (double)ColorBlue(Curve->FillColor)/255., 0 );
     for(i=1;i<Curve->NPoints;i++)
     {
       sprintfAdd(Buff, "%d %d %d %d %d %d c\n",(int)round(X0 + scaleX * Curve->VR[i-1].X),(int)round(Y0 + scaleY * Curve->VR[i-1].Y)
@@ -92,14 +92,14 @@ int AddCurveToPS(DynamicString *Buff, CurveType *Curve, int X0, int Y0, double s
     sprintfAdd(Buff, "closepath\n");
     sprintfAdd(Buff, "fill\n");
     sprintfAdd(Buff, "grestore\n");
-    sprintfAdd(Buff, "%.4f %.4f %.4f setrgbcolor\n", (double)Curve->Color[0]/255., (double)Curve->Color[1]/255., (double)Curve->Color[2]/255. );
+    sprintfAdd(Buff, "%.4f %.4f %.4f setrgbcolor\n", (double)ColorRed(Curve->Color)/255., (double)ColorGreen(Curve->Color)/255., (double)ColorBlue(Curve->Color)/255. );
     sprintfAdd(Buff, "%d setlinewidth\n",Max(1,(int)round(Curve->Width * scaleV) ));
     sprintfAdd(Buff, "stroke\n");
   }
   else
   {
     sprintfAdd(Buff, "%d %d %.4f %.4f %.4f %d L\n",(int)round(X0 + scaleX * Curve->Point[0].X),(int)round(Y0 + scaleY * Curve->Point[0].Y),
-               (double)Curve->Color[0]/255., (double)Curve->Color[1]/255., (double)Curve->Color[2]/255., Max(1,(int)round(Curve->Width * scaleV) ) );
+               (double)ColorRed(Curve->Color)/255., (double)ColorGreen(Curve->Color)/255., (double)ColorBlue(Curve->Color)/255., Max(1,(int)round(Curve->Width * scaleV) ) );
     for(i=1;i<Curve->NPoints;i++)
     {
       sprintfAdd(Buff, "%d %d %d %d %d %d c\n",(int)round(X0 + scaleX * Curve->VR[i-1].X),(int)round(Y0 + scaleY * Curve->VR[i-1].Y)
@@ -120,11 +120,11 @@ int AddCurveToPS(DynamicString *Buff, CurveType *Curve, int X0, int Y0, double s
 
 int AddArcToPS(DynamicString *Buff, ArcType *Arc, int X0, int Y0, double scaleX, double scaleY, double scaleV)
 {
-  if((Arc->CloseAndFill)&&(Arc->FillColor[3] !=0))
+  if((Arc->CloseAndFill)&&(ColorVisible(Arc->FillColor)))
   {
     sprintfAdd(Buff, "%d %d %d %d %d %.4f %.4f %.4f %d a\n", (int)round(X0 + scaleX * Arc->Point.X),(int)round(Y0 + scaleY * Arc->Point.Y)
                                                            , (int)round(scaleV * Arc->R), (int)round(Arc->ThetaR * 360/(2*Pi)), (int)round(Arc->ThetaL * 360/(2*Pi))
-                                                           , ((double)Arc->FillColor[0])/255., ((double)Arc->FillColor[1])/255.,((double)Arc->FillColor[2])/255., 0 );
+                                                           , ((double)ColorRed(Arc->FillColor))/255., ((double)ColorGreen(Arc->FillColor))/255.,((double)ColorBlue(Arc->FillColor))/255., 0 );
     if(Arc->ThetaL-Arc->ThetaR < 1.99 * Pi)
     {
       sprintfAdd(Buff, "%d %d l\n",(int)round(X0 + scaleX * Arc->Point.X),(int)round(Y0 + scaleY * Arc->Point.Y));
@@ -133,7 +133,7 @@ int AddArcToPS(DynamicString *Buff, ArcType *Arc, int X0, int Y0, double scaleX,
     sprintfAdd(Buff, "gsave\n");
     sprintfAdd(Buff, "fill\n");
     sprintfAdd(Buff, "grestore\n");
-    sprintfAdd(Buff, "%.4f %.4f %.4f setrgbcolor\n", ((double)Arc->Color[0])/255., ((double)Arc->Color[1])/255., ((double)Arc->Color[2])/255. );
+    sprintfAdd(Buff, "%.4f %.4f %.4f setrgbcolor\n", ((double)ColorRed(Arc->Color))/255., ((double)ColorGreen(Arc->Color))/255., ((double)ColorBlue(Arc->Color))/255. );
     sprintfAdd(Buff, "%d setlinewidth\n",Max(1,(int)round(Arc->Width * scaleV) ));
     sprintfAdd(Buff, "stroke\n");
     
@@ -142,7 +142,7 @@ int AddArcToPS(DynamicString *Buff, ArcType *Arc, int X0, int Y0, double scaleX,
   {
     sprintfAdd(Buff, "%d %d %d %d %d %.4f %.4f %.4f %d a\n", (int)round(X0 + scaleX * Arc->Point.X),(int)round(Y0 + scaleY * Arc->Point.Y)
                                                            , (int)round(scaleV * Arc->R), (int)round(Arc->ThetaR * 360/(2*Pi)), (int)round(Arc->ThetaL * 360/(2*Pi))
-                                                           , ((double)Arc->Color[0])/255., ((double)Arc->Color[1])/255.,((double)Arc->Color[2])/255., Max(1,(int)round(Arc->Width * scaleV) ) );
+                                                           , ((double)ColorRed(Arc->Color))/255., ((double)ColorGreen(Arc->Color))/255.,((double)ColorBlue(Arc->Color))/255., Max(1,(int)round(Arc->Width * scaleV) ) );
     if(Arc->CloseAndFill)
     {
       if(Arc->ThetaL-Arc->ThetaR < 1.99 * Pi)
@@ -186,9 +186,9 @@ int AddBitMapToPS(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doubl
 
 int AddTextToPS(DynamicString *Buff, TextType *Text, int X0, int Y0, double scaleX, double scaleY, double scaleV)
 {
-  if(Text->Color[3]==0) return 0;
+  if(!ColorVisible(Text->Color)) return 0;
   sprintfAdd(Buff, "gsave\n");
-  sprintfAdd(Buff, "%.4f %.4f %.4f %d /%s %d %d %d f\n", ((double)Text->Color[0])/255., ((double)Text->Color[1])/255., ((double)Text->Color[2])/255.,
+  sprintfAdd(Buff, "%.4f %.4f %.4f %d /%s %d %d %d f\n", ((double)ColorRed(Text->Color))/255., ((double)ColorGreen(Text->Color))/255., ((double)ColorBlue(Text->Color))/255.,
                                                          (int)round(scaleV * Text->Size), Text->Font, (int)round(Text->Angle*180/Pi),
                                                          (int)round(X0 + scaleX * Text->Point.X),(int)round(Y0 + scaleY * Text->Point.Y) );
   sprintfAdd(Buff,"(%s) ",Text->String);

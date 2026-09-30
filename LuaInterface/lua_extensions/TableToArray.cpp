@@ -4356,7 +4356,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             {"YLMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[0].Y)},
             {"YRMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[1].Y)},
             {"LineWidth","double",&(((FramePlotOptions*)Options[j].variable)->LineWidth)},
-            {"Color","uint32_t",&(((FramePlotOptions*)Options[j].variable)->LineColor[0])},
+            {"Color","uint32_t",&(((FramePlotOptions*)Options[j].variable)->LineColor)}, // 0xAARRGGBB, AA the transparency
             {"FontSize","double",&(((FramePlotOptions*)Options[j].variable)->FontSize)},
             {"Font","char*",&(((FramePlotOptions*)Options[j].variable)->Font)},
             {"XLabel","char*",&(((FramePlotOptions*)Options[j].variable)->XLabel)},
@@ -4421,9 +4421,9 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             lua_pop(L, 1);
             // get the value
             LuaLinePlotOptions[0].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineWidth);
-            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineColor[0]);
+            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineColor);
             LuaLinePlotOptions[2].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointSize);
-            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointColor[0]);
+            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointColor);
             LuaCheckOptions(L, -1, LuaLinePlotOptions);
             // pop
             lua_pop(L, 1);

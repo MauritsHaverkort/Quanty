@@ -48,7 +48,7 @@ int BitMapToBinaryString(BitMapType *BitMap, DynamicString *A)
       k++;
       str[k]=(unsigned char)( BitMap->Pixels[j+i*BitMap->NpointsX]>>16 );
       k++;
-      str[k]=(unsigned char)( BitMap->Pixels[j+i*BitMap->NpointsX]>>24 );
+      str[k]=(unsigned char)( 255 - ColorTransparency(BitMap->Pixels[j+i*BitMap->NpointsX]) ); // the BMP stores the opacity
       k++;
     }
   }
@@ -80,7 +80,7 @@ int MakeBitMatWhiteTransparent(BitMapType *BitMap)
 {
   for(int i=0;i<BitMap->NpointsX*BitMap->NpointsY;i++)
   {
-    BitMap->Pixels[i] = 0x00FFFFFF;
+    BitMap->Pixels[i] = 0xFFFFFFFF; // white, fully transparent
   }
   
   return 0;

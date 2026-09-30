@@ -17,10 +17,10 @@ pl3 = Graphics.Add(pl2 , {{0.1,0.3},{0.2,0.3},{0.2,0.4}},{{"Close",true}})
 pl4 = Graphics.Add(pl3 , {{0.2,0.1},{0.5,0.2}},{{"Line Width",0.05}})
 pl5 = Graphics.Add(pl4 , {{0.6,0.8},{0.2,0.8},{0.3,0.2}},{{"Close",true},
 									                                        {"Fill Color",0xFF0000},
-									                                        {"Fill Transparancy",0x80}})
+									                                        {"Fill Transparancy",0x7F}})
 pl6 = Graphics.Add(pl5 , {{0.0,0.3},{0.9,0.2}},{{"Line Width",0.05},
 									                              {"Color",0x0000FF},
-									                              {"Transparancy",0xA0}})
+									                              {"Transparancy",0x5F}})
 
 SVGpl = Graphics.ToSVG(pl6,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/Add_line_function.svg",'w')
@@ -56,10 +56,10 @@ pl5 = Graphics.Add(pl4 , {{0.5,0.8, 0.6,0.8, 0.5,0.8},
 									        {0.4,0.7, 0.2,0.8, 0.4,0.7},
 									        {0.2,0.1, 0.3,0.2, 0.2,0.1}},{{"Close",true},
 																												{"Fill Color",0xFF0000},
-																												{"Fill Transparancy",0x80}})
+																												{"Fill Transparancy",0x7F}})
 pl6 = Graphics.Add(pl5 , {{0,0, 0.0,0.3, 0.1,0.8},{0.7,0.6,0.9,0.2,0,0}},{{"Line Width",0.05},
 																								{"Color",0x0000FF},
-																								{"Transparancy",0xA0}})
+																								{"Transparancy",0x5F}})
 
 SVGpl = Graphics.ToSVG(pl6,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/Add_curve_function.svg",'w')
@@ -88,16 +88,16 @@ pl2 = Graphics.Add(pl  , {"Arc", {0.5,0.5}, 0.2})
 pl3 = Graphics.Add(pl2 , {"Arc", {0.2,0.2}, 0.1, 0.5*pi,2*pi})
 pl4 = Graphics.Add(pl3 , {"Arc", {0.6,0.2}, 0.1, 1.5*pi,1*pi},{{"Close",true},
 									                                             {"Fill Color",0xFF0000},
-																			                         {"Fill Transparancy",0x80},
+																			                         {"Fill Transparancy",0x7F},
 									                                             {"Line Width",0.05},
 									                                             {"Color",0x0000FF},
-																	                             {"Transparancy",0xA0}})
+																	                             {"Transparancy",0x5F}})
 pl5 = Graphics.Add(pl4 , {"Arc", {0.7,0.7}, 0.4},{{"Close",true},
 																									{"Fill Color",0x00FF00},
-																									{"Fill Transparancy",0x80}})
+																									{"Fill Transparancy",0x7F}})
 pl6 = Graphics.Add(pl5 , {"Arc", {0.1,0.4}, 0.4},{{"Close",true},
 																									{"Fill Color",0xFFFF00},
-																									{"Fill Transparancy",0xC0}})
+																									{"Fill Transparancy",0x3F}})
 
 SVGpl = Graphics.ToSVG(pl6,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/Add_arc_function.svg",'w')
@@ -129,7 +129,7 @@ pl3 = Graphics.Add(pl2 , "Some more text", 0.2,0.2,{{"Angle",pi/4},
 pl4 = Graphics.Add(pl3 , "Quanty", 0.3,0.3,{{"Line Width",0.05},
 																						{"Color",0x800000},
 									                          {"Font","Arial-Black"}})
-pl5 = Graphics.Add(pl4 , "Oh and some more text", 0.4,0.4,{{"Transparancy",0xA0},
+pl5 = Graphics.Add(pl4 , "Oh and some more text", 0.4,0.4,{{"Transparancy",0x5F},
 									                                         {"Font","Verdana"}})
 pl6 = Graphics.Add(pl5 , "Never enough text", 0.8,0.7,{{"Font","ArialMT"},{"Alignment","l"}})
 pl7 = Graphics.Add(pl6 , "Never enough text", 0.8,0.8,{{"Font","ArialMT"},{"Alignment","c"}})
@@ -229,10 +229,10 @@ pl.Add({{0.1,0.3},{0.2,0.3},{0.2,0.4}},{{"Close",true}})
 pl.Add({{0.2,0.1},{0.5,0.2}},{{"Line Width",0.05}})
 pl.Add({{0.6,0.8},{0.2,0.8},{0.3,0.2}},{{"Close",true},
 																													{"Fill Color",0xFF0000},
-																													{"Fill Transparancy",0x80}})
+																													{"Fill Transparancy",0x7F}})
 pl.Add({{0.0,0.3},{0.9,0.2}},{{"Line Width",0.05},
 																								{"Color",0x0000FF},
-																								{"Transparancy",0xA0}})
+																								{"Transparancy",0x5F}})
 
 SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/Add_line_method.svg",'w')
@@ -268,10 +268,10 @@ pl.Add({{0.5,0.8, 0.6,0.8, 0.5,0.8},
 													{0.4,0.7, 0.2,0.8, 0.4,0.7},
 													{0.2,0.1, 0.3,0.2, 0.2,0.1}},{{"Close",true},
 																												{"Fill Color",0xFF0000},
-																												{"Fill Transparancy",0x80}})
+																												{"Fill Transparancy",0x7F}})
 pl.Add({{0,0, 0.0,0.3, 0.1,0.8},{0.7,0.6,0.9,0.2,0,0}},{{"Line Width",0.05},
 																								{"Color",0x0000FF},
-																								{"Transparancy",0xA0}})
+																								{"Transparancy",0x5F}})
 
 SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/Add_curve_method.svg",'w')
@@ -300,16 +300,16 @@ pl.Add({"Arc", {0.5,0.5}, 0.2})
 pl.Add({"Arc", {0.2,0.2}, 0.1, 0.5*pi,2*pi})
 pl.Add( {"Arc", {0.6,0.2}, 0.1, 1.5*pi,1*pi},{{"Close",true},
 																															 {"Fill Color",0xFF0000},
-																															 {"Fill Transparancy",0x80},
+																															 {"Fill Transparancy",0x7F},
 																															 {"Line Width",0.05},
 																															 {"Color",0x0000FF},
-																															 {"Transparancy",0xA0}})
+																															 {"Transparancy",0x5F}})
 pl.Add({"Arc", {0.7,0.7}, 0.4},{{"Close",true},
 																									{"Fill Color",0x00FF00},
-																									{"Fill Transparancy",0x80}})
+																									{"Fill Transparancy",0x7F}})
 pl.Add({"Arc", {0.1,0.4}, 0.4},{{"Close",true},
 																									{"Fill Color",0xFFFF00},
-																									{"Fill Transparancy",0xC0}})
+																									{"Fill Transparancy",0x3F}})
 
 SVGpl = Graphics.ToSVG(pl,{{"RelativeSize",true}})
 file = io.open(directory.."OutputPlots/Add_arc_method.svg",'w')
@@ -341,7 +341,7 @@ pl.Add("Some more text", 0.2,0.2,{{"Angle",pi/4},
 pl.Add( "Quanty", 0.3,0.3,{{"Line Width",0.05},
 																						{"Color",0x800000},
 																						{"Font","Arial-Black"}})
-pl.Add( "Oh and some more text", 0.4,0.4,{{"Transparancy",0xA0},
+pl.Add( "Oh and some more text", 0.4,0.4,{{"Transparancy",0x5F},
 																													 {"Font","Verdana"}})
 pl.Add( "Never enough text", 0.8,0.7,{{"Font","ArialMT"},{"Alignment","l"}})
 pl.Add( "Never enough text", 0.8,0.8,{{"Font","ArialMT"},{"Alignment","c"}})
@@ -426,9 +426,9 @@ end
 
 print("Add bitmap: values are clipped to 0 to 255")
 
--- negative values are black (0), not white; above 255 is 255
-Clip = Graphics.ToTable(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, {{-5, 0, 128, 300}, {{-1,300,7}, {1,2,3,-9}, {-3}, {400}}}})).BitMap[1].Pixels
-if Clip ~= "FF000000FF000000FF808080FFFFFFFFFF00FF0700010203FF000000FFFFFFFF>" then
+-- negative values are 0 (black, or opaque), not 255; above 255 is 255
+Clip = Graphics.ToTable(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, {{-5, 0, 128, 300}, {{-1,300,7}, {1,2,3,264}, {-3}, {400}}}})).BitMap[1].Pixels
+if Clip ~= "00000000000000000080808000FFFFFF0000FF07FF0102030000000000FFFFFF>" then
 	print(Clip)
 	error("Graphics.Add clipping of bitmap values failed\n", 1)
 end
@@ -436,16 +436,16 @@ end
 print("Add bitmap: transparent colour")
 
 function BitMapPixels(pl) return Graphics.ToTable(pl).BitMap[1].Pixels end
-Pixels = {{{255,0,0}, {0,0,255}}, {0, {255,0,0,200}}}
--- the red pixels become transparent, whatever their own alpha; the others stay as they are
+Pixels = {{{255,0,0}, {0,0,255}}, {0, {255,0,0,55}}}
+-- the red pixels become transparent, whatever their own transparency; the others stay as they are
 T = BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, Pixels, {255,0,0}}))
-if T ~= "00FF0000FF0000FFFF00000000FF0000>" then error("Graphics.Add transparent colour failed: "..T.."\n", 1) end
--- with an alpha in the transparent colour the red pixels get that alpha
-T = BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, Pixels, {255,0,0,128}}))
-if T ~= "80FF0000FF0000FFFF00000080FF0000>" then error("Graphics.Add transparent colour with alpha failed: "..T.."\n", 1) end
+if T ~= "FFFF0000000000FF00000000FFFF0000>" then error("Graphics.Add transparent colour failed: "..T.."\n", 1) end
+-- with a transparency in the transparent colour the red pixels get that transparency
+T = BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, Pixels, {255,0,0,127}}))
+if T ~= "7FFF0000000000FF000000007FFF0000>" then error("Graphics.Add transparent colour with alpha failed: "..T.."\n", 1) end
 -- a grey transparent colour
 T = BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, Pixels, 0}))
-if T ~= "FFFF0000FF0000FF00000000C8FF0000>" then error("Graphics.Add grey transparent colour failed: "..T.."\n", 1) end
+if T ~= "00FF0000000000FFFF00000037FF0000>" then error("Graphics.Add grey transparent colour failed: "..T.."\n", 1) end
 
 print("Add bitmap: colour function and matrices")
 
@@ -454,7 +454,7 @@ F1 = function(re, im) return re, 0, 1-re end
 Real = {{0, 0.2, 0.4}, {0.6, 0.8, 1}}
 G = Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, F1, Real})
 T = Graphics.ToTable(G).BitMap[1]
-if T.Pixels ~= "FF0000FFFF3300CCFF660099FF990066FFCC0033FFFF0000>" or T.NpointsX ~= 3 or T.NpointsY ~= 2 then
+if T.Pixels ~= "000000FF003300CC006600990099006600CC003300FF0000>" or T.NpointsX ~= 3 or T.NpointsY ~= 2 then
 	error("Graphics.Add colour function failed: "..T.Pixels.."\n", 1)
 end
 -- a Matrix object gives the same, and these bitmaps are drawn with hard pixels
@@ -464,11 +464,11 @@ if BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, F1, Matrix
 end
 -- a complex matrix hands on the imaginary part, values outside 0 to 1 are clipped
 T = BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, function(re, im) return re, im, 0 end, {{0.2+0.4*I, -1+2*I}}}))
-if T ~= "FF336600FF00FF00>" then error("Graphics.Add colour function with a complex matrix failed: "..T.."\n", 1) end
+if T ~= "003366000000FF00>" then error("Graphics.Add colour function with a complex matrix failed: "..T.."\n", 1) end
 -- several matrices: the function gets Re and Im of each
 T = BitMapPixels(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, function(r1, i1, r2, i2, r3, i3) return r1, r2+i2, r3 end,
                                                {{1, 0}}, {{0.2*I, 0.4}}, Matrix.New({{0, 0.6}})}))
-if T ~= "FFFF3300FF006699>" then error("Graphics.Add colour function with three matrices failed: "..T.."\n", 1) end
+if T ~= "00FF330000006699>" then error("Graphics.Add colour function with three matrices failed: "..T.."\n", 1) end
 -- the option Pixelated overrides the default of either form
 if Graphics.ToTable(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, F1, Real}, {{"Pixelated",false}})).BitMap[1].Pixelated
    or not Graphics.ToTable(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, Pixels}, {{"Pixelated",true}})).BitMap[1].Pixelated

@@ -6,11 +6,11 @@
  *      Arc    = { {Color=, Width=, R=, Point=, ThetaL=, ThetaR=, CloseAndFill=, FillColor=}, ... },
  *      Text   = { {Color=, Point=, Angle=, Alignment=, Size=, String=, Font=}, ... },
  *      BitMap = { {LB=, RT=, NpointsX=, NpointsY=, Pixels=, Pixelated=}, ... } }
- *  with the fields of the structures in Plot/StructDef.cpp. A color is the four bytes
- *  {c0, c1, c2, c3} of the structure, a point {x, y} and a list of points {{x, y}, ...}.
- *  Alignment is a string of one character. Pixels is a string in ASCIIHexDecode format: eight
- *  hexadecimal digits per pixel (its uint32_t value), NpointsX * NpointsY pixels in the order of
- *  the structure, whitespace ignored, closed by '>'.
+ *  with the fields of the structures in Plot/StructDef.cpp. A color is the number 0xAARRGGBB,
+ *  AA the transparency (00 opaque, FF fully transparent), a point {x, y} and a list of points
+ *  {{x, y}, ...}. Alignment is a string of one character. Pixels is a string in ASCIIHexDecode
+ *  format: eight hexadecimal digits per pixel (its uint32_t value 0xAARRGGBB), NpointsX * NpointsY
+ *  pixels in the order of the structure, whitespace ignored, closed by '>'.
  *  Writing leaves out empty lists. Reading takes every field as optional, with the defaults of
  *  InitGraphics, InitLine, etc., and refuses keys it does not know.
  */
@@ -35,15 +35,9 @@ static void LuaPushGraphicsPoints(lua_State *L, int const N, PointType const * c
   }
 }
 
-static void LuaPushGraphicsColor(lua_State *L, uint8_t const C[4])
+static void LuaPushGraphicsColor(lua_State *L, uint32_t const C)
 {
-  int i;
-  lua_createtable(L, 4, 0);
-  for(i=0;i<4;i++)
-  {
-    lua_pushinteger(L, C[i]);
-    lua_rawseti(L, -2, i+1);
-  }
+  lua_pushinteger(L, (lua_Integer)C);
 }
 
 void LuaPushTable_Graphics(lua_State *L, GraphicsType const * const G)
@@ -231,21 +225,14 @@ static PointType* LuaReadGraphicsPoints(lua_State *L, int narg, int *N, const ch
   return P;
 }
 
-static void LuaReadGraphicsColor(lua_State *L, int narg, uint8_t C[4], const char *What)
+static void LuaReadGraphicsColor(lua_State *L, int narg, uint32_t *C, const char *What)
 {
-  int i;
+  double c;
   narg = lua_absindex(L, narg);
-  if((lua_type(L, narg)!=LUA_TTABLE)||(lua_objlen(L, narg)!=4)) luaL_error(L, "Error in Graphics.New(Table): %s should be a color of four bytes {c0, c1, c2, c3}\n", What);
-  for(i=0;i<4;i++)
-  {
-    double c;
-    lua_rawgeti(L, narg, i+1);
-    if(lua_type(L, -1)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a color of four bytes {c0, c1, c2, c3}\n", What);
-    c = lua_tonumber(L, -1);
-    if((c!=floor(c))||(c<0)||(c>255)) luaL_error(L, "Error in Graphics.New(Table): the bytes of %s should be whole numbers from 0 to 255, found %g\n", What, c);
-    C[i] = (uint8_t)c;
-    lua_pop(L, 1);
-  }
+  if(lua_type(L, narg)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a color 0xAARRGGBB\n", What);
+  c = lua_tonumber(L, narg);
+  if((c!=floor(c))||(c<0)||(c>4294967295.0)) luaL_error(L, "Error in Graphics.New(Table): %s should be a color 0xAARRGGBB, a whole number from 0 to 0xFFFFFFFF, found %g\n", What, c);
+  *C = (uint32_t)c;
 }
 
 static double LuaReadGraphicsNumber(lua_State *L, int narg, const char *What)
@@ -293,10 +280,10 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       e = lua_gettop(L);
       LuaCheckGraphicsKeys(L, e, LineKeys, 5, "a line");
       InitLine(&E);
-      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of a line"));
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, &E.Color, "the Color of a line"));
       GRAPHICS_FIELD(e, "Width",        E.Width = LuaReadGraphicsNumber(L, -1, "the Width of a line"));
       GRAPHICS_FIELD(e, "CloseAndFill", E.CloseAndFill = LuaReadGraphicsBool(L, -1, "CloseAndFill of a line"));
-      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, E.FillColor, "the FillColor of a line"));
+      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, &E.FillColor, "the FillColor of a line"));
       GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoints(L, -1, &(E.NPoints), "the Point of a line"));
       if(AddLineInherentLineMemory(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
       lua_pop(L, 1);
@@ -317,10 +304,10 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       e = lua_gettop(L);
       LuaCheckGraphicsKeys(L, e, CurveKeys, 7, "a curve");
       InitCurve(&E);
-      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of a curve"));
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, &E.Color, "the Color of a curve"));
       GRAPHICS_FIELD(e, "Width",        E.Width = LuaReadGraphicsNumber(L, -1, "the Width of a curve"));
       GRAPHICS_FIELD(e, "CloseAndFill", E.CloseAndFill = LuaReadGraphicsBool(L, -1, "CloseAndFill of a curve"));
-      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, E.FillColor, "the FillColor of a curve"));
+      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, &E.FillColor, "the FillColor of a curve"));
       GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoints(L, -1, &(E.NPoints), "the Point of a curve"));
       GRAPHICS_FIELD(e, "VL",           VL = LuaReadGraphicsPoints(L, -1, &NVL, "the VL of a curve"));
       GRAPHICS_FIELD(e, "VR",           VR = LuaReadGraphicsPoints(L, -1, &NVR, "the VR of a curve"));
@@ -349,14 +336,14 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       e = lua_gettop(L);
       LuaCheckGraphicsKeys(L, e, ArcKeys, 8, "an arc");
       InitArc(&E);
-      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of an arc"));
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, &E.Color, "the Color of an arc"));
       GRAPHICS_FIELD(e, "Width",        E.Width = LuaReadGraphicsNumber(L, -1, "the Width of an arc"));
       GRAPHICS_FIELD(e, "R",            E.R = LuaReadGraphicsNumber(L, -1, "the R of an arc"));
       GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoint(L, -1, "the Point of an arc"));
       GRAPHICS_FIELD(e, "ThetaL",       E.ThetaL = LuaReadGraphicsNumber(L, -1, "the ThetaL of an arc"));
       GRAPHICS_FIELD(e, "ThetaR",       E.ThetaR = LuaReadGraphicsNumber(L, -1, "the ThetaR of an arc"));
       GRAPHICS_FIELD(e, "CloseAndFill", E.CloseAndFill = LuaReadGraphicsBool(L, -1, "CloseAndFill of an arc"));
-      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, E.FillColor, "the FillColor of an arc"));
+      GRAPHICS_FIELD(e, "FillColor",    LuaReadGraphicsColor(L, -1, &E.FillColor, "the FillColor of an arc"));
       if(AddArc(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
       lua_pop(L, 1);
     }
@@ -374,7 +361,7 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       e = lua_gettop(L);
       LuaCheckGraphicsKeys(L, e, TextKeys, 7, "a text");
       InitText(&E);
-      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, E.Color, "the Color of a text"));
+      GRAPHICS_FIELD(e, "Color",        LuaReadGraphicsColor(L, -1, &E.Color, "the Color of a text"));
       GRAPHICS_FIELD(e, "Point",        E.Point = LuaReadGraphicsPoint(L, -1, "the Point of a text"));
       GRAPHICS_FIELD(e, "Angle",        E.Angle = LuaReadGraphicsNumber(L, -1, "the Angle of a text"));
       GRAPHICS_FIELD(e, "Size",         E.Size = LuaReadGraphicsNumber(L, -1, "the Size of a text"));
@@ -636,11 +623,12 @@ static void LuaColorFunction(double Re, double Im, void *Context, double RGB[3])
   LuaCallColorFunction((LuaColorFunctionContext*)Context, 2, Arg, RGB);
 }
 
-// One pixel of a bitmap for Graphics.Add, at narg: grey, {grey}, {r,g,b} or {r,g,b,alpha},
-// each from 0 to 255 and clipped to that range. Returns 0xAARRGGBB.
+// One pixel of a bitmap for Graphics.Add, at narg: grey, {grey}, {r,g,b} or {r,g,b,t},
+// each from 0 to 255 and clipped to that range, t the transparency (0 opaque, 255 fully
+// transparent, 0 if left out). Returns 0xAARRGGBB with AA = t.
 static uint32_t LuaReadBitMapPixel(lua_State *L, int narg)
 {
-  lua_Integer c[4] = {0, 0, 0, 255}; // red, green, blue, alpha; signed, so that negative values are clipped to 0
+  lua_Integer c[4] = {0, 0, 0, 0}; // red, green, blue, transparency; signed, so that negative values are clipped to 0
   narg = lua_absindex(L, narg);
   if(lua_type(L, narg)==LUA_TTABLE)
   {
@@ -659,7 +647,7 @@ static uint32_t LuaReadBitMapPixel(lua_State *L, int narg)
     c[0] = c[1] = c[2] = luaL_checkinteger(L, narg);
   }
   uint32_t Pixel = 0;
-  int const Order[4] = {3, 0, 1, 2}; // alpha, red, green, blue
+  int const Order[4] = {3, 0, 1, 2}; // transparency, red, green, blue
   for(int k=0;k<4;k++)
   {
     lua_Integer v = c[Order[k]];
@@ -682,10 +670,12 @@ int LuaAddToGraphics(lua_State * L)
   GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
   struct
   {
-    uint32_t RGB;
-    uint8_t  alpha;
+    uint32_t RGB;       // 0xAARRGGBB, AA the transparency
+    uint8_t  alpha;     // an opacity, 255 opaque (kept for old scripts)
+    uint8_t  Transparency; // 0 opaque, 255 fully transparent
     uint32_t FillRGB;
     uint8_t  Fillalpha;
+    uint8_t  FillTransparency;
     double   LineWidth;
     double   FontSize;
     const char* Alignment;
@@ -696,10 +686,12 @@ int LuaAddToGraphics(lua_State * L)
   } Options;
   static_assert(sizeof(bool)==1, "the option Pixelated of Graphics.Add is read as a bool into a uint8_t");
   char defaultAlignment = 'l';
-  Options.RGB=0xFF000000;
-  Options.FillRGB=0xFF000000;
+  Options.RGB=0x00000000;     // opaque black
+  Options.FillRGB=0x00000000;
   Options.alpha=0xFF;
   Options.Fillalpha=0xFF;
+  Options.Transparency=0;
+  Options.FillTransparency=0;
   Options.LineWidth=0.001;
   Options.FontSize=0.05;
   Options.Alignment=&defaultAlignment;
@@ -709,9 +701,9 @@ int LuaAddToGraphics(lua_State * L)
   Options.Pixelated=2;
   LuaOptionsType LuaAddGraphicsOptions[]={
     {"alpha","uint8_t",&(Options.alpha)},
-    {"Transparancy","uint8_t",&(Options.alpha)},
+    {"Transparancy","uint8_t",&(Options.Transparency)},
     {"Fill alpha","uint8_t",&(Options.Fillalpha)},
-    {"Fill Transparancy","uint8_t",&(Options.Fillalpha)},
+    {"Fill Transparancy","uint8_t",&(Options.FillTransparency)},
     {"Color","uint32_t",&(Options.RGB)},
     {"Fill Color","uint32_t",&(Options.FillRGB)},
     {"Close","bool",&(Options.Close)},
@@ -726,9 +718,10 @@ int LuaAddToGraphics(lua_State * L)
   {
     len=len-1;
     LuaCheckOptions(L, -1, LuaAddGraphicsOptions);
-    Options.RGB     = (Options.RGB & 0xFFFFFF) + (Options.alpha<<24);
-    Options.FillRGB = (Options.FillRGB & 0xFFFFFF) + (Options.Fillalpha<<24);
   }
+  // the transparency AA of the colour, the option Transparancy and the opacity alpha together
+  Options.RGB     = ColorCombine(Options.RGB,     Options.Transparency,     Options.alpha);
+  Options.FillRGB = ColorCombine(Options.FillRGB, Options.FillTransparency, Options.Fillalpha);
   while (len>1)
   {
     switch (lua_type(L,2))
@@ -759,10 +752,7 @@ int LuaAddToGraphics(lua_State * L)
         text.String = (char*)lua_tostring(L, 2);
         text.Point.X = (double)luaL_checknumber(L,3);
         text.Point.Y = (double)luaL_checknumber(L,4);
-        text.Color[3] = (uint8_t)(Options.RGB >> 24);
-        text.Color[0] = (uint8_t)(Options.RGB >> 16);
-        text.Color[1] = (uint8_t)(Options.RGB >> 8);
-        text.Color[2] = (uint8_t)Options.RGB;
+        text.Color = Options.RGB;
         text.Angle    = Options.Angle;
         text.Alignment = Options.Alignment[0];
         text.Size = Options.FontSize;
@@ -786,16 +776,10 @@ int LuaAddToGraphics(lua_State * L)
             if( strcmp((char*)lua_tostring(L, -1), "Arc")==0 )
             {
               ArcType Arc;
-              Arc.Color[3] = (uint8_t)(Options.RGB >> 24);
-              Arc.Color[0] = (uint8_t)(Options.RGB >> 16);
-              Arc.Color[1] = (uint8_t)(Options.RGB >> 8);
-              Arc.Color[2] = (uint8_t)Options.RGB;
+              Arc.Color = Options.RGB;
               Arc.Width        = Options.LineWidth;
               Arc.CloseAndFill = Options.Close;
-              Arc.FillColor[3] = (uint8_t)(Options.FillRGB >> 24);
-              Arc.FillColor[0] = (uint8_t)(Options.FillRGB >> 16);
-              Arc.FillColor[1] = (uint8_t)(Options.FillRGB >> 8);
-              Arc.FillColor[2] = (uint8_t)Options.FillRGB;
+              Arc.FillColor = Options.FillRGB;
               Arc.ThetaR=0;
               Arc.ThetaL=2*Pi;
               lua_pop(L, 1);
@@ -910,11 +894,12 @@ int LuaAddToGraphics(lua_State * L)
                 {
                   lua_rawgeti(L, 2, 5);
                   uint32_t const Key   = LuaReadBitMapPixel(L, -1);
-                  uint32_t const Alpha = ((lua_type(L,-1)==LUA_TTABLE)&&(lua_objlen(L,-1)==4)) ? (Key & 0xFF000000) : 0;
+                  // the transparency of TransparentColor if it has one, else fully transparent
+                  uint32_t const Transparency = ((lua_type(L,-1)==LUA_TTABLE)&&(lua_objlen(L,-1)==4)) ? (Key & 0xFF000000) : 0xFF000000;
                   lua_pop(L, 1);
                   for(int k=0;k<BitMap.NpointsX*BitMap.NpointsY;k++)
                   {
-                    if(((BitMap.Pixels[k] ^ Key) & 0x00FFFFFF) == 0) BitMap.Pixels[k] = (BitMap.Pixels[k] & 0x00FFFFFF) | Alpha;
+                    if(((BitMap.Pixels[k] ^ Key) & 0x00FFFFFF) == 0) BitMap.Pixels[k] = (BitMap.Pixels[k] & 0x00FFFFFF) | Transparency;
                   }
                 }
               }
@@ -998,14 +983,8 @@ int LuaAddToGraphics(lua_State * L)
               {
                 lua_pop(L, 1);
                 LineType Line;
-                Line.Color[3] = (uint8_t)(Options.RGB >> 24);
-                Line.Color[0] = (uint8_t)(Options.RGB >> 16);
-                Line.Color[1] = (uint8_t)(Options.RGB >> 8);
-                Line.Color[2] = (uint8_t)Options.RGB;
-                Line.FillColor[3] = (uint8_t)(Options.FillRGB >> 24);
-                Line.FillColor[0] = (uint8_t)(Options.FillRGB >> 16);
-                Line.FillColor[1] = (uint8_t)(Options.FillRGB >> 8);
-                Line.FillColor[2] = (uint8_t)Options.FillRGB;
+                Line.Color = Options.RGB;
+                Line.FillColor = Options.FillRGB;
                 Line.Width=Options.LineWidth;
                 Line.CloseAndFill=Options.Close;
                 Line.NPoints=Tablelen;
@@ -1031,14 +1010,8 @@ int LuaAddToGraphics(lua_State * L)
               {
                 lua_pop(L, 1);
                 CurveType Curve;
-                Curve.Color[3] = (uint8_t)(Options.RGB >> 24);
-                Curve.Color[0] = (uint8_t)(Options.RGB >> 16);
-                Curve.Color[1] = (uint8_t)(Options.RGB >> 8);
-                Curve.Color[2] = (uint8_t)Options.RGB;
-                Curve.FillColor[3] = (uint8_t)(Options.FillRGB >> 24);
-                Curve.FillColor[0] = (uint8_t)(Options.FillRGB >> 16);
-                Curve.FillColor[1] = (uint8_t)(Options.FillRGB >> 8);
-                Curve.FillColor[2] = (uint8_t)Options.FillRGB;
+                Curve.Color = Options.RGB;
+                Curve.FillColor = Options.FillRGB;
                 Curve.Width=Options.LineWidth;
                 Curve.CloseAndFill=Options.Close;
                 Curve.NPoints=Tablelen;
@@ -1286,10 +1259,7 @@ int LuaPlotGraphics(lua_State * L)
   Options.Frame.Margins[1].X=0.01;
   Options.Frame.Margins[1].Y=0.01*sqrt(2.0);
   Options.Frame.LineWidth=0.001;
-  Options.Frame.LineColor[0]=0;
-  Options.Frame.LineColor[1]=0;
-  Options.Frame.LineColor[2]=0;
-  Options.Frame.LineColor[3]=0xFF;
+  Options.Frame.LineColor = 0x00000000;
   Options.Frame.FontSize=0.04;
   Options.Frame.Font=TIMES_NEW_ROMAN;
   Options.Frame.XLabel=(char*)EmptyString;
@@ -1309,35 +1279,17 @@ int LuaPlotGraphics(lua_State * L)
   Options.Style.NAllocLine=3;
   Options.Style.Line = (LinePlotOptions*)malloc(sizeof(LinePlotOptions)*Options.Style.NAllocLine);
   Options.Style.Line[0].LineWidth=0.002;
-  Options.Style.Line[0].LineColor[0]=0;
-  Options.Style.Line[0].LineColor[1]=0;
-  Options.Style.Line[0].LineColor[2]=0;
-  Options.Style.Line[0].LineColor[3]=0xFF;
+  Options.Style.Line[0].LineColor = 0x00000000;
   Options.Style.Line[0].PointSize=0;
-  Options.Style.Line[0].PointColor[0]=0;
-  Options.Style.Line[0].PointColor[1]=0;
-  Options.Style.Line[0].PointColor[2]=0;
-  Options.Style.Line[0].PointColor[3]=0xFF;
+  Options.Style.Line[0].PointColor = 0x00000000;
   Options.Style.Line[1].LineWidth=0.002;
-  Options.Style.Line[1].LineColor[0]=0xFF;
-  Options.Style.Line[1].LineColor[1]=0;
-  Options.Style.Line[1].LineColor[2]=0;
-  Options.Style.Line[1].LineColor[3]=0xFF;
+  Options.Style.Line[1].LineColor = 0x00FF0000;
   Options.Style.Line[1].PointSize=0;
-  Options.Style.Line[1].PointColor[0]=0xFF;
-  Options.Style.Line[1].PointColor[1]=0;
-  Options.Style.Line[1].PointColor[2]=0;
-  Options.Style.Line[1].PointColor[3]=0xFF;
+  Options.Style.Line[1].PointColor = 0x00FF0000;
   Options.Style.Line[2].LineWidth=0.002;
-  Options.Style.Line[2].LineColor[0]=0;
-  Options.Style.Line[2].LineColor[1]=0;
-  Options.Style.Line[2].LineColor[2]=0xFF;
-  Options.Style.Line[2].LineColor[3]=0xFF;
+  Options.Style.Line[2].LineColor = 0x000000FF;
   Options.Style.Line[2].PointSize=0;
-  Options.Style.Line[2].PointColor[0]=0;
-  Options.Style.Line[2].PointColor[1]=0;
-  Options.Style.Line[2].PointColor[2]=0xFF;
-  Options.Style.Line[2].PointColor[3]=0xFF;
+  Options.Style.Line[2].PointColor = 0x000000FF;
   
   Options.PlotIm=true;
   Options.PlotRe=true;
@@ -1348,7 +1300,7 @@ int LuaPlotGraphics(lua_State * L)
   Options.NPixelX=600;
   Options.NPixelY=600;
   Options.ColorFunction=LUA_NOREF;
-  Options.Color=0xFF000000;
+  Options.Color=0x00000000; // opaque black
   Options.Saturation=1;
   Options.Nrow=1;
   Options.Ncolumn=1;
@@ -1650,9 +1602,9 @@ int LuaPlotGraphics(lua_State * L)
         if(Options.ColorFunction==LUA_NOREF)
         {
           BuiltInColorContext Context;
-          Context.RGB[0] = (double)( Options.Color        & 0xFF) / 255; // Color is 0xAABBGGRR
-          Context.RGB[1] = (double)((Options.Color >>  8) & 0xFF) / 255;
-          Context.RGB[2] = (double)((Options.Color >> 16) & 0xFF) / 255;
+          Context.RGB[0] = (double)ColorRed(Options.Color)   / 255; // Color is 0xAARRGGBB
+          Context.RGB[1] = (double)ColorGreen(Options.Color) / 255;
+          Context.RGB[2] = (double)ColorBlue(Options.Color)  / 255;
           Context.Saturation = Options.Saturation;
           Context.UseRe = (Options.PlotIm==false) && (Options.PlotRe==true);
           if(PlotSpectraTypeArrayToColorMap(Graphics, a, YPos, &(Options.Frame), YScale, Options.NPixelX, Options.NPixelY, Options.Interpolate, BuiltInColorFunction, &Context)) return luaL_error(L, "Graphics.Plot: making the colour map failed\n");
@@ -1689,18 +1641,18 @@ int LuaPlotGraphics(lua_State * L)
             LPORe[0] = Options.Style.Line[0];
             LPOIm[0] = Options.Style.Line[0];
             LPORe[0].LineWidth=0;
-            LPORe[0].LineColor[3]=0;
+            LPORe[0].LineColor = ColorWithTransparency(LPORe[0].LineColor, 0xFF);
             LPORe[0].PointSize=0;
-            LPORe[0].PointColor[3]=0;
+            LPORe[0].PointColor = ColorWithTransparency(LPORe[0].PointColor, 0xFF);
           }
           else if((Options.PlotIm==false) && (Options.PlotRe==true))
           {
             LPORe[0] = Options.Style.Line[0];
             LPOIm[0] = Options.Style.Line[0];
             LPOIm[0].LineWidth=0;
-            LPOIm[0].LineColor[3]=0;
+            LPOIm[0].LineColor = ColorWithTransparency(LPOIm[0].LineColor, 0xFF);
             LPOIm[0].PointSize=0;
-            LPOIm[0].PointColor[3]=0;
+            LPOIm[0].PointColor = ColorWithTransparency(LPOIm[0].PointColor, 0xFF);
           }
           else if((Options.PlotIm==true) && (Options.PlotRe==true))
           {
@@ -1721,9 +1673,9 @@ int LuaPlotGraphics(lua_State * L)
               LPORe[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPOIm[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPORe[i].LineWidth=0;
-              LPORe[i].LineColor[3]=0;
+              LPORe[i].LineColor = ColorWithTransparency(LPORe[i].LineColor, 0xFF);
               LPORe[i].PointSize=0;
-              LPORe[i].PointColor[3]=0;
+              LPORe[i].PointColor = ColorWithTransparency(LPORe[i].PointColor, 0xFF);
             }
           }
           else if((Options.PlotIm==false) && (Options.PlotRe==true))
@@ -1733,9 +1685,9 @@ int LuaPlotGraphics(lua_State * L)
               LPORe[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPOIm[i] = Options.Style.Line[(i%(Options.Style.NAllocLine))];
               LPOIm[i].LineWidth=0;
-              LPOIm[i].LineColor[3]=0;
+              LPOIm[i].LineColor = ColorWithTransparency(LPOIm[i].LineColor, 0xFF);
               LPOIm[i].PointSize=0;
-              LPOIm[i].PointColor[3]=0;
+              LPOIm[i].PointColor = ColorWithTransparency(LPOIm[i].PointColor, 0xFF);
             }
           }
           else if((Options.PlotIm==true) && (Options.PlotRe==true))
@@ -1765,18 +1717,18 @@ int LuaPlotGraphics(lua_State * L)
           LPORe = Options.Style.Line[0];
           LPOIm = Options.Style.Line[0];
           LPORe.LineWidth=0;
-          LPORe.LineColor[3]=0;
+          LPORe.LineColor = ColorWithTransparency(LPORe.LineColor, 0xFF);
           LPORe.PointSize=0;
-          LPORe.PointColor[3]=0;
+          LPORe.PointColor = ColorWithTransparency(LPORe.PointColor, 0xFF);
         }
         else if((Options.PlotIm==false) && (Options.PlotRe==true))
         {
           LPORe = Options.Style.Line[0];
           LPOIm = Options.Style.Line[0];
           LPOIm.LineWidth=0;
-          LPOIm.LineColor[3]=0;
+          LPOIm.LineColor = ColorWithTransparency(LPOIm.LineColor, 0xFF);
           LPOIm.PointSize=0;
-          LPOIm.PointColor[3]=0;
+          LPOIm.PointColor = ColorWithTransparency(LPOIm.PointColor, 0xFF);
         }
         else if((Options.PlotIm==true) && (Options.PlotRe==true))
         {
@@ -1867,18 +1819,18 @@ int LuaPlotGraphics(lua_State * L)
           LPORe[0] = Options.Style.Line[0];
           LPOIm[0] = Options.Style.Line[0];
           LPORe[0].LineWidth=0;
-          LPORe[0].LineColor[3]=0;
+          LPORe[0].LineColor = ColorWithTransparency(LPORe[0].LineColor, 0xFF);
           LPORe[0].PointSize=0;
-          LPORe[0].PointColor[3]=0;
+          LPORe[0].PointColor = ColorWithTransparency(LPORe[0].PointColor, 0xFF);
         }
         else if((Options.PlotIm==false) && (Options.PlotRe==true))
         {
           LPORe[0] = Options.Style.Line[0];
           LPOIm[0] = Options.Style.Line[0];
           LPOIm[0].LineWidth=0;
-          LPOIm[0].LineColor[3]=0;
+          LPOIm[0].LineColor = ColorWithTransparency(LPOIm[0].LineColor, 0xFF);
           LPOIm[0].PointSize=0;
-          LPOIm[0].PointColor[3]=0;
+          LPOIm[0].PointColor = ColorWithTransparency(LPOIm[0].PointColor, 0xFF);
         }
         else if((Options.PlotIm==true) && (Options.PlotRe==true))
         {
@@ -1928,18 +1880,18 @@ int LuaPlotGraphics(lua_State * L)
           LPORe = Options.Style.Line[0];
           LPOIm = Options.Style.Line[0];
           LPORe.LineWidth=0;
-          LPORe.LineColor[3]=0;
+          LPORe.LineColor = ColorWithTransparency(LPORe.LineColor, 0xFF);
           LPORe.PointSize=0;
-          LPORe.PointColor[3]=0;
+          LPORe.PointColor = ColorWithTransparency(LPORe.PointColor, 0xFF);
         }
         else if((Options.PlotIm==false) && (Options.PlotRe==true))
         {
           LPORe = Options.Style.Line[0];
           LPOIm = Options.Style.Line[0];
           LPOIm.LineWidth=0;
-          LPOIm.LineColor[3]=0;
+          LPOIm.LineColor = ColorWithTransparency(LPOIm.LineColor, 0xFF);
           LPOIm.PointSize=0;
-          LPOIm.PointColor[3]=0;
+          LPOIm.PointColor = ColorWithTransparency(LPOIm.PointColor, 0xFF);
         }
         else if((Options.PlotIm==true) && (Options.PlotRe==true))
         {
@@ -2151,7 +2103,7 @@ int LuaNewBitMap(lua_State * L)
 {
   int i;
   BitMapType *BitMap;
-  uint32_t fillcolor=0xFFFFFFFF;
+  uint32_t fillcolor=0x00FFFFFF; // opaque white
   uint32_t len = (uint32_t) lua_gettop(L);
   BitMap = (BitMapType*) lua_newuserdata(L, sizeof(BitMapType));
   luaL_setmetatable(L, "BitMap_Type");
@@ -2186,7 +2138,8 @@ int LuaNewBitMap(lua_State * L)
       Options.color=0xFFFFFF;
       Options.alpha=0xFF;
       LuaCheckOptions(L, -2, LuaNewGraphicsOptions);
-      fillcolor = ( (Options.color & 0xFFFFFF) + (Options.alpha<<24) );
+      // the colour 0xAARRGGBB with the opacity alpha (255 opaque) on top of its transparency AA
+      fillcolor = ColorCombine(Options.color, 0, Options.alpha);
       BitMap->RT.X=Options.CanvasSizeX;
       BitMap->RT.Y=Options.CanvasSizeY;
       BitMap->LB.X=Options.CanvasOriginX;
@@ -2256,11 +2209,12 @@ int LuaBitMapSetPixel(lua_State *L)
   int j = (int) luaL_checkinteger(L, 3);
   if(j>BitMap->NpointsY) return luaL_error(L, "Error: can not index row %d from %d available\n",j, BitMap->NpointsY);
   uint32_t rgb = (uint32_t) luaL_checkinteger(L, 4);
-  BitMap->Pixels[(i-1) + (j-1)*BitMap->NpointsX] = ( (BitMap->Pixels[(i-1) + (j-1) * BitMap->NpointsX]) & 0xFF000000 ) + ( rgb & 0xFFFFFF );
+  // the colour 0xAARRGGBB, AA the transparency, and with a fifth argument an opacity alpha (255 opaque) on top
+  BitMap->Pixels[(i-1) + (j-1)*BitMap->NpointsX] = rgb;
   if(len==5)
   {
     uint8_t alpha = (uint8_t) luaL_checkinteger(L, 5);
-    BitMap->Pixels[(i-1) + (j-1)*BitMap->NpointsX] = ( (BitMap->Pixels[(i-1) + (j-1) * BitMap->NpointsX]) & 0xFFFFFF ) + ( alpha << 24 );
+    BitMap->Pixels[(i-1) + (j-1)*BitMap->NpointsX] = ColorCombine(rgb, 0, alpha);
   }
   return 0;
 }
@@ -2389,7 +2343,7 @@ static void LuaBandSpectraCheckAndRange(lua_State *L, int len, int Nktot, double
  *  the peak height of a pole of weight 1, so a band of weight 1 is drawn in full color.
  */
 static void LuaBandSpectraToBitMap(lua_State *L, int len, CompactMatrixType const *BandEnergies, BandstructurePathType *kList, int Nktot, BitMapType *BandPlot, double Emin, double Emax,
-                                   double GammaL, double GammaG, double Saturation, uint8_t *LineColor, uint8_t *SecondLineColor, double ZeroDistance)
+                                   double GammaL, double GammaG, double Saturation, uint32_t LineColor, uint32_t SecondLineColor, double ZeroDistance)
 {
   int const NSet = len-1;
   int const NY = BandPlot->NpointsY;
@@ -2502,10 +2456,10 @@ static int LuaPlotBands(lua_State *L)
   Options.NPixel[0]=1000;
   Options.NPixel[1]=1000;
   Options.EmptyPathWidth = 0.05;
-  Options.LineColor = 0xFF000080;
-  Options.LineTransparancy = 0xFF;
-  Options.SecondLineColor = 0xFFFF0000;
-  Options.SecondLineTransparancy = 0xFF;
+  Options.LineColor = 0x00000080;       // 0xAARRGGBB, AA the transparency: opaque dark blue
+  Options.LineTransparancy = 0;
+  Options.SecondLineColor = 0x00FF0000; // opaque red
+  Options.SecondLineTransparancy = 0;
   Options.LineWidth = 0.002;
   Options.Frame.PlotRange[0].X=0;
   Options.Frame.PlotRange[0].Y=-INFINITY;
@@ -2516,10 +2470,7 @@ static int LuaPlotBands(lua_State *L)
   Options.Frame.Margins[1].X=0.01;
   Options.Frame.Margins[1].Y=0.01*sqrt(2.0);
   Options.Frame.LineWidth=0.001;
-  Options.Frame.LineColor[0]=0;
-  Options.Frame.LineColor[1]=0;
-  Options.Frame.LineColor[2]=0;
-  Options.Frame.LineColor[3]=0xFF;
+  Options.Frame.LineColor = 0x00000000;
   Options.Frame.FontSize=0.04;
   Options.Frame.Font=TIMES_NEW_ROMAN;
   Options.Frame.XLabel=(char*)EmptyString;
@@ -2560,11 +2511,11 @@ static int LuaPlotBands(lua_State *L)
   if (LuaTestOptionsList(L,-1))
   {
     LuaCheckOptions(L,-1,LuaPlotBandOptions);
-    // Transparancy is an opacity (255 opaque) that multiplies the alpha byte of the color
-    Options.LineColor       = (Options.LineColor & 0x00FFFFFF)       + ((((Options.LineColor>>24) * (uint32_t)Options.LineTransparancy + 127) / 255)<<24);
-    Options.SecondLineColor = (Options.SecondLineColor & 0x00FFFFFF) + ((((Options.SecondLineColor>>24) * (uint32_t)Options.SecondLineTransparancy + 127) / 255)<<24);
     len--;
   }
+  // Transparancy (0 opaque, 255 fully transparent) on top of the transparency AA of the color
+  Options.LineColor       = ColorCombine(Options.LineColor,       Options.LineTransparancy,       255);
+  Options.SecondLineColor = ColorCombine(Options.SecondLineColor, Options.SecondLineTransparancy, 255);
   if(len<2)
   {
     return luaL_error(L, "Error PlotBands: called with %d arguments (excluding options), minimal 2 expected (k-path, and Band Energies).\n",len);
@@ -2685,8 +2636,8 @@ static int LuaPlotBands(lua_State *L)
   }
   if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
   // set color
-  uint8_t LineColor[4] = {(uint8_t)(Options.LineColor>>16),(uint8_t)(Options.LineColor>>8),(uint8_t)(Options.LineColor),(uint8_t)(Options.LineColor>>24)};
-  uint8_t SecondLineColor[4] = {(uint8_t)(Options.SecondLineColor>>16),(uint8_t)(Options.SecondLineColor>>8),(uint8_t)(Options.SecondLineColor),(uint8_t)(Options.SecondLineColor>>24)};
+  uint32_t const LineColor       = Options.LineColor;       // 0xAARRGGBB, AA the transparency
+  uint32_t const SecondLineColor = Options.SecondLineColor;
   // allocate the bitmap
   BitMapType BandPlot;
   InitBitMap(&BandPlot);

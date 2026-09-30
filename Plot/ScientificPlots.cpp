@@ -1,17 +1,17 @@
 
 
-int AddXTicksToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double LineWidth, uint8_t *MinorColor, double MinorScaling, double TickStart, double dTick, double TickSize, int NMinorTicks)
+int AddXTicksToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint32_t Color, double LineWidth, uint32_t MinorColor, double MinorScaling, double TickStart, double dTick, double TickSize, int NMinorTicks)
 {
-  if((LineWidth==0) || (TickSize==0) || ( (Color[3]==0) && (MinorColor[3]==0) ) ) return 0;
+  if((LineWidth==0) || (TickSize==0) || ( (!ColorVisible(Color)) && (!ColorVisible(MinorColor)) ) ) return 0;
   double Mval,Xval;
   int i;
   double const Scale = (1-Margins[0].X-Margins[1].X) / (PlotRange[1].X - PlotRange[0].X);
   LineType Line, MLine;
   InitLine(&Line,2);
   InitLine(&MLine,2);
-  Line.Color[0] = Color[0]; Line.Color[1] = Color[1]; Line.Color[2] = Color[2]; Line.Color[3] = Color[3];
+  Line.Color = Color;
   Line.Width = LineWidth;
-  MLine.Color[0] = MinorColor[0]; MLine.Color[1] = MinorColor[1]; MLine.Color[2] = MinorColor[2]; MLine.Color[3] = MinorColor[3];
+  MLine.Color = MinorColor;
   MLine.Width = LineWidth * MinorScaling;
   
   Line.Point[0].Y = Margins[0].Y;
@@ -68,18 +68,18 @@ int AddXTicksToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType 
 }
 
 
-int AddYTicksToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double LineWidth, uint8_t *MinorColor, double MinorScaling, double TickStart, double dTick, double TickSize, int NMinorTicks)
+int AddYTicksToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint32_t Color, double LineWidth, uint32_t MinorColor, double MinorScaling, double TickStart, double dTick, double TickSize, int NMinorTicks)
 {
-  if((LineWidth==0) || (TickSize==0) || ( (Color[3]==0) && (MinorColor[3]==0) ) ) return 0;
+  if((LineWidth==0) || (TickSize==0) || ( (!ColorVisible(Color)) && (!ColorVisible(MinorColor)) ) ) return 0;
   double Mval,Yval;
   int i;
   double const Scale = (1-Margins[0].Y-Margins[1].Y) / (PlotRange[1].Y - PlotRange[0].Y);
   LineType Line, MLine;
   InitLine(&Line,2);
   InitLine(&MLine,2);
-  Line.Color[0] = Color[0]; Line.Color[1] = Color[1]; Line.Color[2] = Color[2]; Line.Color[3] = Color[3];
+  Line.Color = Color;
   Line.Width = LineWidth;
-  MLine.Color[0] = MinorColor[0]; MLine.Color[1] = MinorColor[1]; MLine.Color[2] = MinorColor[2]; MLine.Color[3] = MinorColor[3];
+  MLine.Color = MinorColor;
   MLine.Width = LineWidth * MinorScaling;
   
   Line.Point[0].X = Margins[0].X;
@@ -135,15 +135,15 @@ int AddYTicksToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType 
   return 0;
 }
 
-int AddXTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double TextSize, const char* TextFont, double TickStart, double dTick, const char* format)
+int AddXTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint32_t Color, double TextSize, const char* TextFont, double TickStart, double dTick, const char* format)
 {
-  if((TextSize==0) || (Color[3]==0) || (TextFont==NULL) ) return 0;
+  if((TextSize==0) || (!ColorVisible(Color)) || (TextFont==NULL) ) return 0;
   double Xval;
   double const Scale = (1-Margins[0].X-Margins[1].X) / (PlotRange[1].X - PlotRange[0].X);
   char String[1024];
   TextType Text;
   InitText(&Text);
-  Text.Color[0] = Color[0]; Text.Color[1] = Color[1]; Text.Color[2] = Color[2]; Text.Color[3] = Color[3];
+  Text.Color = Color;
   Text.Size=TextSize;
   Text.String = String;
   Text.Point.Y = Margins[0].Y-TextSize;
@@ -162,15 +162,15 @@ int AddXTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
   return 0;
 }
 
-int AddYTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double TextSize, const char* TextFont, double TickStart, double dTick, const char* format)
+int AddYTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint32_t Color, double TextSize, const char* TextFont, double TickStart, double dTick, const char* format)
 {
-  if((TextSize==0) || (Color[3]==0) || (TextFont==NULL) ) return 0;
+  if((TextSize==0) || (!ColorVisible(Color)) || (TextFont==NULL) ) return 0;
   double Yval;
   double const Scale = (1-Margins[0].Y-Margins[1].Y) / (PlotRange[1].Y - PlotRange[0].Y);
   char String[1024];
   TextType Text;
   InitText(&Text);
-  Text.Color[0] = Color[0]; Text.Color[1] = Color[1]; Text.Color[2] = Color[2]; Text.Color[3] = Color[3];
+  Text.Color = Color;
   Text.Size=TextSize;
   Text.String = String;
   Text.Point.X = Margins[0].X-0.1*TextSize;
@@ -191,7 +191,7 @@ int AddYTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
 
 int AddXLabelToGraphics(GraphicsType* Graphics, PointType *Margins, TextType *Text)
 {
-  if((Text->Size==0) || (Text->Color[3]==0) || (Text->Font==NULL) ) return 0;
+  if((Text->Size==0) || (!ColorVisible(Text->Color)) || (Text->Font==NULL) ) return 0;
   double shiftX, shiftY;
   shiftY = 0.4*Text->Size;
   shiftX = (1+Margins[0].X - Margins[1].X)/2;
@@ -205,7 +205,7 @@ int AddXLabelToGraphics(GraphicsType* Graphics, PointType *Margins, TextType *Te
 
 int AddYLabelToGraphics(GraphicsType* Graphics, PointType *Margins, TextType *Text)
 {
-  if((Text->Size==0) || (Text->Color[3]==0) || (Text->Font==NULL) ) return 0;
+  if((Text->Size==0) || (!ColorVisible(Text->Color)) || (Text->Font==NULL) ) return 0;
   double shiftX, shiftY;
   shiftX = 0.8*Text->Size;
   shiftY = (1+Margins[0].Y - Margins[1].Y)/2;
@@ -226,16 +226,13 @@ int AddYLabelToGraphics(GraphicsType* Graphics, PointType *Margins, TextType *Te
 // LineWidth width in fraction of canvas size (sqrt(Xsize*Ysize)
 // LineColor RBGalpha color def
 //
-int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint8_t *Color, double Width, double XAxis, double YAxis )
+int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, uint32_t Color, double Width, double XAxis, double YAxis )
 {
-  if((Width==0) || (Color[3]==0) ) return 0;
+  if((Width==0) || (!ColorVisible(Color)) ) return 0;
   LineType Line;
   if( InitLine(&Line, 4) ) return 1;
-  Line.Color[0] = Color[0];
-  Line.Color[1] = Color[1];
-  Line.Color[2] = Color[2];
-  Line.Color[3] = Color[3];
-  Line.FillColor[3] = 0; // no filling while filling fully transparent.
+  Line.Color = Color;
+  Line.FillColor = 0xFF000000; // no filling while filling fully transparent.
   Line.CloseAndFill = true;
   Line.Width = Width;
   Line.Point[0].X = Margins[0].X;
@@ -250,11 +247,8 @@ int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointTyp
   if( (XAxis > PlotRange[0].Y) && (XAxis < PlotRange[1].Y) )
   {
     if( InitLine(&Line, 2) ) return 1;
-    Line.Color[0] = Color[0];
-    Line.Color[1] = Color[1];
-    Line.Color[2] = Color[2];
-    Line.Color[3] = Color[3];
-    Line.FillColor[3] = 0; // no filling while filling fully transparent.
+    Line.Color = Color;
+    Line.FillColor = 0xFF000000; // no filling while filling fully transparent.
     Line.CloseAndFill = false;
     Line.Width = Width;
     Line.Point[0].X = Margins[0].X;
@@ -266,11 +260,8 @@ int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointTyp
   if( (YAxis > PlotRange[0].X) && (YAxis < PlotRange[1].X) )
   {
     if( InitLine(&Line, 2) ) return 1;
-    Line.Color[0] = Color[0];
-    Line.Color[1] = Color[1];
-    Line.Color[2] = Color[2];
-    Line.Color[3] = Color[3];
-    Line.FillColor[3] = 0; // no filling while filling fully transparent.
+    Line.Color = Color;
+    Line.FillColor = 0xFF000000; // no filling while filling fully transparent.
     Line.CloseAndFill = false;
     Line.Width = Width;
     Line.Point[0].X = Margins[0].X + (1-Margins[1].X-Margins[0].X) * ( YAxis - PlotRange[0].X) / (PlotRange[1].X - PlotRange[0].X);
@@ -294,9 +285,9 @@ void FindBoundaryPoint(PointType *Boundary, PointType *In, PointType *Out, Point
   OnBoundary->Y = alpha * Out->Y + (1-alpha) * In->Y;
 }
 
-int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, PointType *Data, int NPoints, double LineWidth, uint8_t *LineColor, double PointSize, uint8_t *PointColor)
+int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, PointType *Data, int NPoints, double LineWidth, uint32_t LineColor, double PointSize, uint32_t PointColor)
 {
-  if( ( (LineWidth==0) || (LineColor[3]==0) ) && ( (PointSize==0) || (PointColor[3]==0) ) ) return 0;
+  if( ( (LineWidth==0) || (!ColorVisible(LineColor)) ) && ( (PointSize==0) || (!ColorVisible(PointColor)) ) ) return 0;
   LineType Line;
   ArcType Arc;
   int i;
@@ -306,9 +297,9 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
   Scale.Y = (1-Margins[0].Y-Margins[1].Y) / (PlotRange[1].Y - PlotRange[0].Y);
   Ofset.X = Margins[0].X - PlotRange[0].X * Scale.X;
   Ofset.Y = Margins[0].Y - PlotRange[0].Y * Scale.Y;
-  if((LineWidth!=0) && (LineColor[3]!=0))
+  if((LineWidth!=0) && (ColorVisible(LineColor)))
   {
-    Line.Color[0] = LineColor[0]; Line.Color[1] = LineColor[1]; Line.Color[2] = LineColor[2]; Line.Color[3] = LineColor[3];
+    Line.Color = LineColor;
     Line.Width = LineWidth;
     Line.NPoints = NPoints;
     Line.Point = (PointType*)malloc(NPoints * sizeof(PointType));
@@ -365,10 +356,10 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
     }
     FreeLine(&Line);
   }
-  if((PointSize!=0) && (PointColor[3]!=0))
+  if((PointSize!=0) && (ColorVisible(PointColor)))
   {
-    Arc.Color[0] = PointColor[0]; Arc.Color[1] = PointColor[1]; Arc.Color[2] = PointColor[2]; Arc.Color[3] = PointColor[3];
-    Arc.FillColor[0] = PointColor[0]; Arc.FillColor[1] = PointColor[1]; Arc.FillColor[2] = PointColor[2]; Arc.FillColor[3] = PointColor[3];
+    Arc.Color = PointColor;
+    Arc.FillColor = PointColor;
     Arc.CloseAndFill = true;
     Arc.ThetaR = 0;
     Arc.ThetaL = 2*Pi;
@@ -388,7 +379,7 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
 }
 
 // Data->N+1 values at the energies X, or on the even mesh from Data->Emin to Data->Emax if X is NULL
-int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint8_t *LineColorRe, double PointSizeRe, uint8_t *PointColorRe, double LineWidthIm, uint8_t *LineColorIm, double PointSizeIm, uint8_t *PointColorIm, double YScale, double YShift, double const *X)
+int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint32_t LineColorRe, double PointSizeRe, uint32_t PointColorRe, double LineWidthIm, uint32_t LineColorIm, double PointSizeIm, uint32_t PointColorIm, double YScale, double YShift, double const *X)
 {
   PointType *DataPoints;
   int NPoints=Data->N+1;
@@ -438,10 +429,7 @@ int PlotAllButDataToGraphics(GraphicsType* Graphics, FramePlotOptions *FPO)
   Text.Alignment='c';
   Text.Font=FPO->Font;
   Text.Size=FPO->FontSize;
-  Text.Color[0]=FPO->LineColor[0];
-  Text.Color[1]=FPO->LineColor[1];
-  Text.Color[2]=FPO->LineColor[2];
-  Text.Color[3]=FPO->LineColor[3];
+  Text.Color = FPO->LineColor;
   AddXLabelToGraphics(Graphics, FPO->Margins, &Text);
   Text.String = FPO->YLabel;
   Text.Angle=0.5*Pi;
@@ -455,7 +443,7 @@ int AddVerticleLinesForSpecialkPoints(GraphicsType* Graphics, FramePlotOptions *
   String[1]='\0';
   TextType Text;
   InitText(&Text);
-  Text.Color[0] = FPO->LineColor[0]; Text.Color[1] = FPO->LineColor[1]; Text.Color[2] = FPO->LineColor[2]; Text.Color[3] = FPO->LineColor[3];
+  Text.Color = FPO->LineColor;
   Text.Size=FPO->FontSize;
   Text.String = String;
   Text.Point.Y = FPO->Margins[0].Y-FPO->FontSize;
@@ -465,11 +453,8 @@ int AddVerticleLinesForSpecialkPoints(GraphicsType* Graphics, FramePlotOptions *
   
   LineType Line;
   if( InitLine(&Line, 2) ) return 1;
-  Line.Color[0] = FPO->LineColor[0];
-  Line.Color[1] = FPO->LineColor[1];
-  Line.Color[2] = FPO->LineColor[2];
-  Line.Color[3] = FPO->LineColor[3];
-  Line.FillColor[3] = 0; // no filling while filling fully transparent.
+  Line.Color = FPO->LineColor;
+  Line.FillColor = 0xFF000000; // no filling while filling fully transparent.
   Line.CloseAndFill = false;
   Line.Width = FPO->LineWidth;
   Line.Point[0].Y = FPO->Margins[0].Y;
@@ -534,10 +519,7 @@ int PlotAllButDataToBandGraphics(GraphicsType* Graphics, FramePlotOptions *FPO, 
   Text.Alignment='c';
   Text.Font=FPO->Font;
   Text.Size=FPO->FontSize;
-  Text.Color[0]=FPO->LineColor[0];
-  Text.Color[1]=FPO->LineColor[1];
-  Text.Color[2]=FPO->LineColor[2];
-  Text.Color[3]=FPO->LineColor[3];
+  Text.Color = FPO->LineColor;
   AddXLabelToGraphics(Graphics, FPO->Margins, &Text);
   Text.String = FPO->YLabel;
   Text.Angle=0.5*Pi;
@@ -587,10 +569,10 @@ int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Dat
 // gives the red, green and blue, each between 0 and 1, of the value Re + I Im
 typedef void (*ColorFunctionType)(double Re, double Im, void *Context, double RGB[3]);
 
-// an opaque pixel 0xAARRGGBB from red, green and blue between 0 and 1, clipped to that range
+// an opaque pixel 0x00RRGGBB from red, green and blue between 0 and 1, clipped to that range
 uint32_t RGBToPixel(double const RGB[3])
 {
-  uint32_t Pixel = 0xFF;
+  uint32_t Pixel = 0x00; // the transparency, opaque
   for(int c=0;c<3;c++)
   {
     double v = RGB[c];
@@ -608,7 +590,7 @@ uint32_t RGBToPixel(double const RGB[3])
  *    Interpolate  - linear interpolation in energy and between neighbouring spectra, otherwise the nearest
  *                   point, with the boundary between two spectra half way between them
  *    Color        - the colour of a value, Context is handed on to it
- *  Pixels without data are transparent white. Row 0 of the pixels is the top of the map.
+ *  Pixels without data are transparent white (0xFFFFFFFF). Row 0 of the pixels is the top of the map.
  */
 int SpectraTypeArrayToColorMap(BitMapType *Map, SpectraTypeArray const *Data, double const *YPos, PointType const *PlotRange, double YScale, bool Interpolate, ColorFunctionType Color, void *Context)
 {
@@ -694,7 +676,7 @@ int SpectraTypeArrayToColorMap(BitMapType *Map, SpectraTypeArray const *Data, do
     }
     for(int ix=0;ix<NX;ix++)
     {
-      uint32_t Pixel = 0x00FFFFFF;
+      uint32_t Pixel = 0xFFFFFFFF; // white, fully transparent
       if(s0>=0)
       {
         double re, im;
@@ -817,10 +799,7 @@ int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray
   Text.Alignment='c';
   Text.Font=FPO->Font;
   Text.Size=FPO->FontSize;
-  Text.Color[0]=FPO->LineColor[0];
-  Text.Color[1]=FPO->LineColor[1];
-  Text.Color[2]=FPO->LineColor[2];
-  Text.Color[3]=FPO->LineColor[3];
+  Text.Color = FPO->LineColor;
   AddXLabelToGraphics(Graphics, FPO->Margins, &Text);
   Text.String = FPO->YLabel;
   Text.Angle=0.5*Pi;
@@ -844,16 +823,13 @@ int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray
  *    LineColor        - RGB alpha color used for the lines
  *    ZeroDistance     - If there are zero k-points between two adjacent points in the kPath we add an aditional distance in ratio of the bitmap width, rounded to integer pixels
  */
-int ConvertBandEnergiesToBitMap(CompactMatrixType* BandEnergies, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint8_t *LineColor, double ZeroDistance)
+int ConvertBandEnergiesToBitMap(CompactMatrixType* BandEnergies, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint32_t LineColor, double ZeroDistance)
 {
   if(Emax < Emin) { printf("ERROR in ConvertBandEnergiesToBitMap, Emax < Emin\n"); return 1;}
   if(LineWidth<0) { printf("ERROR in ConvertBandEnergiesToBitMap, LineWidth < 0\n"); return 1;}
   if(ZeroDistance<0) { printf("ERROR in ConvertBandEnergiesToBitMap, ZeroDistance < 0\n"); return 1;}
   MakeBitMatWhiteTransparent(BandPlot);
-  uint32_t PixelColor=LineColor[3]; // alpha channel
-  PixelColor = (PixelColor<<8) + LineColor[0]; //Red
-  PixelColor = (PixelColor<<8) + LineColor[1]; //Green
-  PixelColor = (PixelColor<<8) + LineColor[2]; //Blue
+  uint32_t const PixelColor = LineColor; // a pixel has the form of a colour, 0xAARRGGBB
   double LengthKPath = 0;
   int    NKPointsInPath=kPath->NQ;
   int    NZeroDistance = 0;
@@ -919,16 +895,13 @@ int ConvertBandEnergiesToBitMap(CompactMatrixType* BandEnergies, BandstructurePa
   }
   return 0;
 }
-int ConvertBandEnergiesToBitMapInterpolate(CompactMatrixType* BandEnergies, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint8_t *LineColor, double ZeroDistance)
+int ConvertBandEnergiesToBitMapInterpolate(CompactMatrixType* BandEnergies, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint32_t LineColor, double ZeroDistance)
 {
  if(Emax < Emin) { printf("ERROR in ConvertBandEnergiesToBitMap, Emax < Emin\n"); return 1;}
  if(LineWidth<0) { printf("ERROR in ConvertBandEnergiesToBitMap, LineWidth < 0\n"); return 1;}
  if(ZeroDistance<0) { printf("ERROR in ConvertBandEnergiesToBitMap, ZeroDistance < 0\n"); return 1;}
  MakeBitMatWhiteTransparent(BandPlot);
- uint32_t PixelColor=LineColor[3]; // alpha channel
- PixelColor = (PixelColor<<8) + LineColor[0]; //Red
- PixelColor = (PixelColor<<8) + LineColor[1]; //Green
- PixelColor = (PixelColor<<8) + LineColor[2]; //Blue
+ uint32_t const PixelColor = LineColor; // a pixel has the form of a colour, 0xAARRGGBB
  double LengthKPath = 0;
  int    NKPointsInPath=kPath->NQ;
  int    NZeroDistance = 0;
@@ -1047,7 +1020,7 @@ int ConvertBandEnergiesToBitMapInterpolate(CompactMatrixType* BandEnergies, Band
  *         color is character*LineColor + (1-character)*SecondLineColor
  *    ZeroDistance     - If there are zero k-points between two adjacent points in the kPath we add an aditional distance in ratio of the bitmap width, rounded to integer pixels
  */
-int ConvertBandEnergiesToBitMapBW(CompactMatrixType* BandEnergies, CompactMatrixType* BandCharacter, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint8_t *LineColor, uint8_t *SecondLineColor, double ZeroDistance)
+int ConvertBandEnergiesToBitMapBW(CompactMatrixType* BandEnergies, CompactMatrixType* BandCharacter, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint32_t LineColor, uint32_t SecondLineColor, double ZeroDistance)
 {
   if(Emax < Emin) { printf("ERROR in ConvertBandEnergiesToBitMap, Emax < Emin\n"); return 1;}
   if(LineWidth<0) { printf("ERROR in ConvertBandEnergiesToBitMap, LineWidth < 0\n"); return 1;}
@@ -1106,22 +1079,22 @@ int ConvertBandEnergiesToBitMapBW(CompactMatrixType* BandEnergies, CompactMatrix
       for(int iE=0;iE<BandEnergies->Nj;iE++)
       {
         // alpha channel
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[3] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[3];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * (255-ColorTransparency(LineColor)) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * (255-ColorTransparency(SecondLineColor)); // the opacity
         if(col<0) col=0;
         if(col>255) col=255;
-        PixelColor=(uint32_t)col;
+        PixelColor=255-(uint32_t)col; // the transparency
         //Red
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[0] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[0];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * ColorRed(LineColor) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * ColorRed(SecondLineColor);
         if(col<0) col=0;
         if(col>255) col=255;
         PixelColor = (PixelColor<<8) + (uint32_t)col;
         //Green
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[1] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[1];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * ColorGreen(LineColor) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * ColorGreen(SecondLineColor);
         if(col<0) col=0;
         if(col>255) col=255;
         PixelColor = (PixelColor<<8) + (uint32_t)col;
         // Blue
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[2] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[2];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * ColorBlue(LineColor) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * ColorBlue(SecondLineColor);
         if(col<0) col=0;
         if(col>255) col=255;
         PixelColor = (PixelColor<<8) + (uint32_t)col;
@@ -1142,7 +1115,7 @@ int ConvertBandEnergiesToBitMapBW(CompactMatrixType* BandEnergies, CompactMatrix
   }
   return 0;
 }
-int ConvertBandEnergiesToBitMapBWInterpolate(CompactMatrixType* BandEnergies, CompactMatrixType* BandCharacter, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint8_t *LineColor, uint8_t *SecondLineColor, double ZeroDistance)
+int ConvertBandEnergiesToBitMapBWInterpolate(CompactMatrixType* BandEnergies, CompactMatrixType* BandCharacter, BandstructurePathType *kPath, BitMapType *BandPlot, double Emin, double Emax, double LineWidth, uint32_t LineColor, uint32_t SecondLineColor, double ZeroDistance)
 {
   if(Emax < Emin) { printf("ERROR in ConvertBandEnergiesToBitMap, Emax < Emin\n"); return 1;}
   if(LineWidth<0) { printf("ERROR in ConvertBandEnergiesToBitMap, LineWidth < 0\n"); return 1;}
@@ -1208,22 +1181,22 @@ int ConvertBandEnergiesToBitMapBWInterpolate(CompactMatrixType* BandEnergies, Co
       for(int iE=0;iE<BandEnergies->Nj;iE++)
       {
         // alpha channel
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[3] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[3];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * (255-ColorTransparency(LineColor)) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * (255-ColorTransparency(SecondLineColor)); // the opacity
         if(col<0) col=0;
         if(col>255) col=255;
-        PixelColor=(uint32_t)col;
+        PixelColor=255-(uint32_t)col; // the transparency
         //Red
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[0] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[0];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * ColorRed(LineColor) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * ColorRed(SecondLineColor);
         if(col<0) col=0;
         if(col>255) col=255;
         PixelColor = (PixelColor<<8) + (uint32_t)col;
         //Green
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[1] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[1];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * ColorGreen(LineColor) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * ColorGreen(SecondLineColor);
         if(col<0) col=0;
         if(col>255) col=255;
         PixelColor = (PixelColor<<8) + (uint32_t)col;
         // Blue
-        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * LineColor[2] + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * SecondLineColor[2];
+        col = BandCharacter->VRe[ik*BandCharacter->Nj + iE] * ColorBlue(LineColor) + (1-BandCharacter->VRe[ik*BandCharacter->Nj + iE]) * ColorBlue(SecondLineColor);
         if(col<0) col=0;
         if(col>255) col=255;
         PixelColor = (PixelColor<<8) + (uint32_t)col;
@@ -1351,8 +1324,8 @@ int ConvertBandEnergiesToBitMapRGB(CompactMatrixType* BandEnergies, CompactMatri
       }
       for(int iE=0;iE<BandEnergies->Nj;iE++)
       {
-        // alpha channel
-        PixelColor=0xFF;
+        // the transparency, opaque
+        PixelColor=0x00;
         //Red
         col = BandCharacterR->VRe[ik*BandCharacterR->Nj + iE] * 256;
         if(col<0) col=0;
@@ -1454,8 +1427,8 @@ int ConvertBandEnergiesToBitMapRGBInterpolate(CompactMatrixType* BandEnergies, C
       }
       for(int iE=0;iE<BandEnergies->Nj;iE++)
       {
-        // alpha channel
-        PixelColor=0xFF;
+        // the transparency, opaque
+        PixelColor=0x00;
         //Red
         col = BandCharacterR->VRe[ik*BandCharacterR->Nj + iE] * 256;
         if(col<0) col=0;
@@ -1533,7 +1506,7 @@ int ConvertBandEnergiesToBitMapRGBInterpolate(CompactMatrixType* BandEnergies, C
  *  by the opacity and written opaque, pixels without weight stay white and transparent. Every k-point
  *  gets a strip of pixel columns, as in ConvertBandEnergiesToBitMap.
  */
-int ConvertBandSpectraToBitMap(double const *A, int NSet, int Nk, BandstructurePathType *kPath, BitMapType *BandPlot, uint8_t *LineColor, uint8_t *SecondLineColor, double Scale, double ZeroDistance)
+int ConvertBandSpectraToBitMap(double const *A, int NSet, int Nk, BandstructurePathType *kPath, BitMapType *BandPlot, uint32_t LineColor, uint32_t SecondLineColor, double Scale, double ZeroDistance)
 {
   if(ZeroDistance<0) { printf("ERROR in ConvertBandSpectraToBitMap, ZeroDistance < 0\n"); return 1;}
   if(!(NSet==1 || NSet==2 || NSet==4)) { printf("ERROR in ConvertBandSpectraToBitMap, NSet (%d) should be 1, 2 or 4\n", NSet); return 1;}
@@ -1591,20 +1564,26 @@ int ConvertBandSpectraToBitMap(double const *A, int NSet, int Nk, BandstructureP
         alpha = Scale * tot;
         if(!(alpha>0))
         {
-          Column[ip] = 0x00FFFFFF;
+          Column[ip] = 0xFFFFFFFF; // white, fully transparent
           continue;
         }
         if(alpha>1) alpha=1;
         if(NSet==1)
         {
-          for(int ch=0;ch<4;ch++) col[ch] = LineColor[ch];
+          col[0] = ColorRed(LineColor);
+          col[1] = ColorGreen(LineColor);
+          col[2] = ColorBlue(LineColor);
+          col[3] = 255 - ColorTransparency(LineColor); // the opacity
         }
         else if(NSet==2)
         {
           c = A[(Nk+ik)*NY+ip] / tot;
           if(c<0) c=0;
           if(c>1) c=1;
-          for(int ch=0;ch<4;ch++) col[ch] = c * LineColor[ch] + (1-c) * SecondLineColor[ch];
+          col[0] = c * ColorRed(LineColor)   + (1-c) * ColorRed(SecondLineColor);
+          col[1] = c * ColorGreen(LineColor) + (1-c) * ColorGreen(SecondLineColor);
+          col[2] = c * ColorBlue(LineColor)  + (1-c) * ColorBlue(SecondLineColor);
+          col[3] = c * (255 - ColorTransparency(LineColor)) + (1-c) * (255 - ColorTransparency(SecondLineColor)); // the opacity
         }
         else
         {
@@ -1616,9 +1595,9 @@ int ConvertBandSpectraToBitMap(double const *A, int NSet, int Nk, BandstructureP
           }
           col[3] = 255;
         }
-        // blend with white by the opacity of the pixel times the alpha channel of the color
+        // blend with white by the opacity of the pixel times the opacity of the color; the pixel is opaque
         alpha *= col[3] / 255;
-        Column[ip] = 0xFF;
+        Column[ip] = 0x00;
         for(int ch=0;ch<3;ch++)
         {
           c = 255 - alpha * (255 - col[ch]);

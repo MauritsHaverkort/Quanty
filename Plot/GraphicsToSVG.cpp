@@ -21,25 +21,25 @@ int AddLineToSVG(DynamicString *Buff, LineType *Line, int X0, int Y0, double sca
   int i;
   if(Line->NPoints<2) return 0;
   sprintfAdd(Buff, "<path ");
-  if((Line->CloseAndFill) && (Line->FillColor[3] !=0) )
+  if((Line->CloseAndFill) && (ColorVisible(Line->FillColor)) )
   {
-    if( Line->FillColor[3]==Line->Color[3] )
+    if( ColorTransparency(Line->FillColor)==ColorTransparency(Line->Color) )
     {
-      sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Line->FillColor[3]/255.);
+      sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Line->FillColor));
     }
     else
     {
-      sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",(double)Line->FillColor[3]/255.);
-      sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",(double)Line->Color[3]/255.);
+      sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",ColorOpacity(Line->FillColor));
+      sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",ColorOpacity(Line->Color));
     }
-    sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",Line->FillColor[0],Line->FillColor[1],Line->FillColor[2]);
+    sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",ColorRed(Line->FillColor),ColorGreen(Line->FillColor),ColorBlue(Line->FillColor));
   }
   else
   {
     sprintfAdd(Buff, "fill=\"none\" ");
-    sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Line->Color[3]/255.);
+    sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Line->Color));
   }
-  sprintfAdd(Buff, "stroke=\"#%02x%02x%02x\" ",Line->Color[0],Line->Color[1],Line->Color[2]);
+  sprintfAdd(Buff, "stroke=\"#%02x%02x%02x\" ",ColorRed(Line->Color),ColorGreen(Line->Color),ColorBlue(Line->Color));
   sprintfAdd(Buff, "stroke-width=\"%d\" ",Max(1,(int)round(Line->Width * scaleV) ));
   sprintfAdd(Buff, "d=\"M %d %d ",(int)round(X0 + scaleX * Line->Point[0].X),(int)round(Y0 + scaleY * Line->Point[0].Y) );
   for(i=1;i<Line->NPoints;i++)
@@ -60,25 +60,25 @@ int AddCurveToSVG(DynamicString *Buff, CurveType *Curve, int X0, int Y0, double 
   int i;
   if(Curve->NPoints<2) return 0;
   sprintfAdd(Buff, "<path ");
-  if((Curve->CloseAndFill) && (Curve->FillColor[3] !=0) )
+  if((Curve->CloseAndFill) && (ColorVisible(Curve->FillColor)) )
   {
-    if( Curve->FillColor[3]==Curve->Color[3] )
+    if( ColorTransparency(Curve->FillColor)==ColorTransparency(Curve->Color) )
     {
-      sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Curve->FillColor[3]/255.);
+      sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Curve->FillColor));
     }
     else
     {
-      sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",(double)Curve->FillColor[3]/255.);
-      sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",(double)Curve->Color[3]/255.);
+      sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",ColorOpacity(Curve->FillColor));
+      sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",ColorOpacity(Curve->Color));
     }
-    sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",Curve->FillColor[0],Curve->FillColor[1],Curve->FillColor[2]);
+    sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",ColorRed(Curve->FillColor),ColorGreen(Curve->FillColor),ColorBlue(Curve->FillColor));
   }
   else
   {
     sprintfAdd(Buff, "fill=\"none\" ");
-    sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Curve->Color[3]/255.);
+    sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Curve->Color));
   }
-  sprintfAdd(Buff, "stroke=\"#%02x%02x%02x\" ",Curve->Color[0],Curve->Color[1],Curve->Color[2]);
+  sprintfAdd(Buff, "stroke=\"#%02x%02x%02x\" ",ColorRed(Curve->Color),ColorGreen(Curve->Color),ColorBlue(Curve->Color));
   sprintfAdd(Buff, "stroke-width=\"%d\" ",Max(1,(int)round(Curve->Width * scaleV) ));
   sprintfAdd(Buff, "d=\"M %d %d ",(int)round(X0 + scaleX * Curve->Point[0].X),(int)round(Y0 + scaleY * Curve->Point[0].Y) );
   for(i=1;i<Curve->NPoints;i++)
@@ -102,24 +102,24 @@ int AddArcToSVG(DynamicString *Buff, ArcType *Arc, int X0, int Y0, double scaleX
   if(Arc->ThetaL-Arc->ThetaR > 1.99 * Pi)
   {
     sprintfAdd(Buff, "<circle cx=\"%d\" cy=\"%d\" r=\"%d\" ",(int)round(X0 + scaleX * Arc->Point.X),(int)round(Y0 + scaleY * Arc->Point.Y), (int)round(scaleV * Arc->R));
-    sprintfAdd(Buff, "stroke-width=\"%d\" stroke=\"#%02x%02x%02x\" ",Max(1,(int)round(Arc->Width * scaleV) ), Arc->Color[0], Arc->Color[1],Arc->Color[2] );
-    if((Arc->CloseAndFill)&&(Arc->FillColor[3] !=0))
+    sprintfAdd(Buff, "stroke-width=\"%d\" stroke=\"#%02x%02x%02x\" ",Max(1,(int)round(Arc->Width * scaleV) ), ColorRed(Arc->Color), ColorGreen(Arc->Color),ColorBlue(Arc->Color) );
+    if((Arc->CloseAndFill)&&(ColorVisible(Arc->FillColor)))
     {
-      if( Arc->FillColor[3]==Arc->Color[3] )
+      if( ColorTransparency(Arc->FillColor)==ColorTransparency(Arc->Color) )
       {
-        sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Arc->FillColor[3]/255.);
+        sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Arc->FillColor));
       }
       else
       {
-        sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",(double)Arc->FillColor[3]/255.);
-        sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",(double)Arc->Color[3]/255.);
+        sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",ColorOpacity(Arc->FillColor));
+        sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",ColorOpacity(Arc->Color));
       }
-      sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",Arc->FillColor[0],Arc->FillColor[1],Arc->FillColor[2]);
+      sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",ColorRed(Arc->FillColor),ColorGreen(Arc->FillColor),ColorBlue(Arc->FillColor));
     }
     else
     {
       sprintfAdd(Buff, "fill=\"none\" ");
-      sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Arc->Color[3]/255.);
+      sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Arc->Color));
     }
     sprintfAdd(Buff,"/>\n");
   }
@@ -144,25 +144,25 @@ int AddArcToSVG(DynamicString *Buff, ArcType *Arc, int X0, int Y0, double scaleX
     {
       sprintfAdd(Buff, "\" ",(int)round(X0 + scaleX * Arc->Point.X),(int)round(Y0 + scaleY * Arc->Point.Y));
     }
-    if((Arc->CloseAndFill)&&(Arc->FillColor[3] !=0))
+    if((Arc->CloseAndFill)&&(ColorVisible(Arc->FillColor)))
     {
-      if( Arc->FillColor[3]==Arc->Color[3] )
+      if( ColorTransparency(Arc->FillColor)==ColorTransparency(Arc->Color) )
       {
-        sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Arc->FillColor[3]/255.);
+        sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Arc->FillColor));
       }
       else
       {
-        sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",(double)Arc->FillColor[3]/255.);
-        sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",(double)Arc->Color[3]/255.);
+        sprintfAdd(Buff, "fill-opacity=\"%.5f\" ",ColorOpacity(Arc->FillColor));
+        sprintfAdd(Buff, "stroke-opacity=\"%.5f\" ",ColorOpacity(Arc->Color));
       }
-      sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",Arc->FillColor[0],Arc->FillColor[1],Arc->FillColor[2]);
+      sprintfAdd(Buff, "fill=\"#%02x%02x%02x\" ",ColorRed(Arc->FillColor),ColorGreen(Arc->FillColor),ColorBlue(Arc->FillColor));
     }
     else
     {
       sprintfAdd(Buff, "fill=\"none\" ");
-      sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Arc->Color[3]/255.);
+      sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Arc->Color));
     }
-    sprintfAdd(Buff, "stroke=\"#%02x%02x%02x\" ",Arc->Color[0],Arc->Color[1],Arc->Color[2]);
+    sprintfAdd(Buff, "stroke=\"#%02x%02x%02x\" ",ColorRed(Arc->Color),ColorGreen(Arc->Color),ColorBlue(Arc->Color));
     sprintfAdd(Buff, "stroke-width=\"%d\" ",Max(1,(int)round(Arc->Width * scaleV) ));
     sprintfAdd(Buff,"/>\n");
   }
@@ -185,12 +185,12 @@ int AddBitMapToSVG(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doub
 
 int AddTextToSVG(DynamicString *Buff, TextType *Text, int X0, int Y0, double scaleX, double scaleY, double scaleV)
 {
-  if(Text->Color[3]==0) return 0;
+  if(!ColorVisible(Text->Color)) return 0;
   sprintfAdd(Buff, "<text x=\"%d\" y=\"%d\" ",(int)round(X0 + scaleX * Text->Point.X),(int)round(Y0 + scaleY * Text->Point.Y));
   if((int)round(Text->Angle*180/Pi) != 0 ) sprintfAdd(Buff, "transform=\"rotate(%d %d,%d)\" ",(int)round(-Text->Angle*180/Pi),(int)round(X0 + scaleX * Text->Point.X),(int)round(Y0 + scaleY * Text->Point.Y));
-  sprintfAdd(Buff, "opacity=\"%.5f\" ",(double)Text->Color[3]/255.);
+  sprintfAdd(Buff, "opacity=\"%.5f\" ",ColorOpacity(Text->Color));
   sprintfAdd(Buff, "font-family=\"%s\" ",Text->Font);
-  sprintfAdd(Buff,"style=\"stroke:none; fill:#%02x%02x%02x; font-size: %dpx; ",Text->Color[0],Text->Color[1],Text->Color[2],(int)round(scaleV * Text->Size));
+  sprintfAdd(Buff,"style=\"stroke:none; fill:#%02x%02x%02x; font-size: %dpx; ",ColorRed(Text->Color),ColorGreen(Text->Color),ColorBlue(Text->Color),(int)round(scaleV * Text->Size));
   switch(Text->Alignment)
   {
     case 'l':

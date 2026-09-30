@@ -109,14 +109,14 @@ YRange=10
 
 PlG1 = Graphics.Plot({SpecA,SpecAmB,SpecBmA,SpecB,Spec2AmB,Spec2BmA}, {{"NRow",2},{"NColumn",3},{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.008},{"LineColor",0xFF000080}},
-																					 {{"LineWidth",0.008},{"LineColor",0xFF800000}}}},
+																					 {{"LineWidth",0.008},{"LineColor",0x00800000}},
+																					 {{"LineWidth",0.008},{"LineColor",0x00000080}}}},
 														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG2 = Graphics.Plot({SpecAM,SpecAMmBM,SpecBMmAM,SpecBM,Spec2AMmBM,Spec2BMmAM}, {{"NRow",2},{"NColumn",3},{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF0080FF}},
-																					 {{"LineWidth",0.004},{"LineColor",0xFFFF8000}}}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00FF8000}},
+																					 {{"LineWidth",0.004},{"LineColor",0x000080FF}}}},
 														 {"Frame",{{"Ymin",-YRange},{"Ymax",YRange},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 PlG = Graphics.Add(PlG1,PlG2)
 

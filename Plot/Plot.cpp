@@ -10,18 +10,12 @@
 
 void InitLine(LineType* Line)
 {
-  Line->Color[0]=0;
-  Line->Color[1]=0;
-  Line->Color[2]=0;
-  Line->Color[3]=0xFF;
+  Line->Color=0x00000000; // opaque black
   Line->Width=0.001;
   Line->NPoints=0;
   Line->Point=NULL;
   Line->CloseAndFill=false;
-  Line->FillColor[0]=0;
-  Line->FillColor[1]=0;
-  Line->FillColor[2]=0;
-  Line->FillColor[3]=0xFF;
+  Line->FillColor=0x00000000; // opaque black
 }
 
 int InitLine(LineType* Line, int NPoints)
@@ -59,20 +53,14 @@ void FreeLine(LineType* Line)
 
 void InitCurve(CurveType* Curve)
 {
-  Curve->Color[0]=0;
-  Curve->Color[1]=0;
-  Curve->Color[2]=0;
-  Curve->Color[3]=0xFF;
+  Curve->Color=0x00000000; // opaque black
   Curve->Width=0.001;
   Curve->NPoints=0;
   Curve->Point=NULL;
   Curve->VL=NULL;
   Curve->VR=NULL;
   Curve->CloseAndFill=false;
-  Curve->FillColor[0]=0;
-  Curve->FillColor[1]=0;
-  Curve->FillColor[2]=0;
-  Curve->FillColor[3]=0xFF;
+  Curve->FillColor=0x00000000; // opaque black
 }
 
 int InitCurve(CurveType* Curve, int NPoints)
@@ -114,10 +102,7 @@ void FreeCurve(CurveType* Curve)
 
 void InitArc(ArcType* Arc)
 {
-  Arc->Color[0]=0;
-  Arc->Color[1]=0;
-  Arc->Color[2]=0;
-  Arc->Color[3]=0xFF;
+  Arc->Color=0x00000000; // opaque black
   Arc->Width=0.001;
   Arc->R=1;
   Arc->Point.X=0;
@@ -125,10 +110,7 @@ void InitArc(ArcType* Arc)
   Arc->ThetaR=0;
   Arc->ThetaL=2*Pi;
   Arc->CloseAndFill=false;
-  Arc->FillColor[0]=0;
-  Arc->FillColor[1]=0;
-  Arc->FillColor[2]=0;
-  Arc->FillColor[3]=0xFF;
+  Arc->FillColor=0x00000000; // opaque black
 }
 
 ArcType* NewArc()
@@ -145,10 +127,7 @@ void FreeArc(ArcType* Arc)
 
 void InitText(TextType* Text)
 {
-  Text->Color[0]=0;
-  Text->Color[1]=0;
-  Text->Color[2]=0;
-  Text->Color[3]=0xFF;
+  Text->Color=0x00000000; // opaque black
   Text->Point.X=0;
   Text->Point.Y=0;
   Text->Angle=0;
@@ -303,18 +282,13 @@ int AddLineInherentPointMemory(GraphicsType* Graphics, uint8_t R, uint8_t G, uin
     return 1;
   }
   Graphics->Line = Temp;
-  Graphics->Line[Graphics->NLine].Color[0]     = R;
-  Graphics->Line[Graphics->NLine].Color[1]     = G;
-  Graphics->Line[Graphics->NLine].Color[2]     = B;
-  Graphics->Line[Graphics->NLine].Color[3]     = alpha; //0xFF full collor 0x0 full transparant
+  // alpha and alphaF are opacities, 0xFF full colour and 0x0 fully transparent
+  Graphics->Line[Graphics->NLine].Color        = ((uint32_t)(255-alpha)<<24) | ((uint32_t)R<<16) | ((uint32_t)G<<8) | (uint32_t)B;
   Graphics->Line[Graphics->NLine].Width        = Width;
   Graphics->Line[Graphics->NLine].NPoints      = NPoints;
   Graphics->Line[Graphics->NLine].Point        = Points;
   Graphics->Line[Graphics->NLine].CloseAndFill = CloseAndFill;
-  Graphics->Line[Graphics->NLine].FillColor[0] = RF;
-  Graphics->Line[Graphics->NLine].FillColor[1] = GF;
-  Graphics->Line[Graphics->NLine].FillColor[2] = BF;
-  Graphics->Line[Graphics->NLine].FillColor[3] = alphaF; //0xFF full collor 0x0 full transparant
+  Graphics->Line[Graphics->NLine].FillColor    = ((uint32_t)(255-alphaF)<<24) | ((uint32_t)RF<<16) | ((uint32_t)GF<<8) | (uint32_t)BF;
   
   Graphics->NLine = Graphics->NLine + 1;
   return 0;
