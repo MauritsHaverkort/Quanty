@@ -557,20 +557,24 @@ int PlotSpectraTypeToGraphics(GraphicsType* Graphics, SpectraType *Data, LinePlo
   return 0;
 }
 
-int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double WaterfallOffset, double WaterfallShift)
+int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double WaterfallOffset, double WaterfallShift, bool UseResonantEnergy)
 {
+  double YShift;
   int i;
   PlotAllButDataToGraphics(Graphics, FPO);
   for(i=0;i<Data->NSpectra;i++)
   {
-    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, WaterfallOffset + i*WaterfallShift);
+    // a waterfall plot, spectrum i is either shifted by i*WaterfallShift or to its resonant energy
+    if(UseResonantEnergy) YShift = WaterfallOffset + Data->Spec[i].ResonantEnergy;
+    else                  YShift = WaterfallOffset + i*WaterfallShift;
+    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, YShift);
   }
   return 0;
 }
 
 int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double ScaleOffDiagonal, double ShiftOffDiagonal)
 {
-  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,0,0);
+  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,0,0,false);
   int i;
   FramePlotOptions FPOInset;
   // plot graphs to layer 1 to NXPlots * NYPlots

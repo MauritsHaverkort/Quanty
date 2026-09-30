@@ -1166,6 +1166,7 @@ int LuaPlotGraphics(lua_State * L)
     bool     PlotIm;
     bool     PlotRe;
     bool     Negate;
+    bool     UseResonantEnergy;
   } Options;
   Options.Frame.PlotRange[0].X=-INFINITY;
   Options.Frame.PlotRange[0].Y=-INFINITY;
@@ -1232,6 +1233,7 @@ int LuaPlotGraphics(lua_State * L)
   Options.PlotIm=true;
   Options.PlotRe=true;
   Options.Negate=false;
+  Options.UseResonantEnergy=false;
   Options.Nrow=1;
   Options.Ncolumn=1;
   Options.PlotPoints=600;
@@ -1262,6 +1264,7 @@ int LuaPlotGraphics(lua_State * L)
     {"SpectraStart","int",&(Options.SpectraStart)},
     {"SpectraStop","int",&(Options.SpectraStop)},
     {"SpectraStep","int",&(Options.SpectraStep)},
+    {"UseResonantEnergy","bool",&(Options.UseResonantEnergy)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, len))
   {
@@ -1269,6 +1272,13 @@ int LuaPlotGraphics(lua_State * L)
     len=len-1;
   }
   if((Options.SpectraStart<1)||(Options.SpectraStep<1)) return luaL_error(L, "Graphics.Plot: SpectraStart and SpectraStep should be 1 or larger, not %d and %d\n",Options.SpectraStart,Options.SpectraStep);
+  if(Options.UseResonantEnergy)
+  {
+    // spectrum i is drawn at WaterfallOffset + its resonant energy, which only the spectra in a Spectra object have
+    if(luaL_testudata(L, 1, "Spectra_Type") == NULL) return luaL_error(L, "Graphics.Plot: UseResonantEnergy needs a Spectra object as first argument, as made by CreateResonantSpectra\n");
+    if(Options.WaterfallShift!=0) return luaL_error(L, "Graphics.Plot: UseResonantEnergy places each spectrum at WaterfallOffset + its resonant energy, it can not be combined with WaterfallShift\n");
+    if((Options.Nrow!=1)||(Options.Ncolumn!=1)) return luaL_error(L, "Graphics.Plot: UseResonantEnergy makes a waterfall plot, it can not be combined with Nrow and Ncolumn\n");
+  }
   bool const SelectSpectra = (Options.SpectraStart!=1)||(Options.SpectraStep!=1)||(Options.SpectraStop!=INT_MAX);
   // select the type of graph to plot
   if(lua_type(L,1)==LUA_TTABLE)
@@ -1493,7 +1503,14 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift);
+        if(Options.UseResonantEnergy)
+        {
+          for(i=0;i<a->NSpectra;i++)
+          {
+            if(isnan(a->Spec[i].ResonantEnergy)) return luaL_error(L, "Graphics.Plot: UseResonantEnergy is set, but plotted spectrum %d has no resonant energy\n",i+1);
+          }
+        }
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift, Options.UseResonantEnergy);
         free(LPORe);
         free(LPOIm);
       }
@@ -1629,7 +1646,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift);
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift, false);
         free(LPORe);
         free(LPOIm);
       }

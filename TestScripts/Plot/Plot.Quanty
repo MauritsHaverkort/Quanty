@@ -150,4 +150,28 @@ if NAll - NDiag ~= 2 or not SameCurves(Diag, {All[1], All[4]}) or not SameCurves
   error("Graphics.Plot selecting from a block response function failed\n", 1)
 end
 
+-- UseResonantEnergy draws spectrum k of a Spectra object at WaterfallOffset + its resonant energy
+print("UseResonantEnergy")
+ERes = {-6, -5.5, -2.3, 1, 4.25}
+ResTable = {}
+for j = 1, #ERes do ResTable[j] = {{-3, j}, {0, j}, {3, j}, ResonantEnergy = ERes[j]} end
+SRes = Spectra.FromTable(ResTable)
+for _, sel in ipairs({ {{}, {1,2,3,4,5}}, {{{"SpectraStart",2},{"SpectraStep",2}}, {2,4}} }) do
+  local o = With({{"UseResonantEnergy",true}, {"WaterfallOffset",0.5}, {"Scale",0.5}})
+  for _, x in ipairs(sel[1]) do o[#o+1] = x end
+  local c = Curves(Graphics.Plot(SRes, o), #sel[2])
+  for k, j in ipairs(sel[2]) do
+    if math.abs((c[k][1][2]-Y0)/YUnit - (0.5 + ERes[j] + 0.5*j)) > 1E-10 then
+      error("Graphics.Plot UseResonantEnergy drew spectrum "..j.." at "..(c[k][1][2]-Y0)/YUnit.."\n", 1)
+    end
+  end
+end
+-- only for a Spectra object whose spectra have a resonant energy, and only as a waterfall
+Wrong = { {ResTable[1], {}}, {S, {}}, {SRes, {{"WaterfallShift",1}}}, {SRes, {{"Nrow",5}}}, {GUser, {}} }
+for k, w in ipairs(Wrong) do
+  local o = With({{"UseResonantEnergy",true}})
+  for _, x in ipairs(w[2]) do o[#o+1] = x end
+  if pcall(Graphics.Plot, w[1], o) then error("Graphics.Plot accepted UseResonantEnergy in case "..k.."\n", 1) end
+end
+
 print("Graphics.Plot tests passed")
