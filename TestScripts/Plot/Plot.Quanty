@@ -1,0 +1,345 @@
+print("-------------------------------------------------------")
+print("--                   Graphics.Plot                   --")
+print("-------------------------------------------------------")
+
+-- The same response function once as userdata and once as a table with the
+-- ResponseFunctionMeta metatable. Graphics.Plot converts the two in different places.
+GUser  = ResponseFunction.New({ {0.5, -1} , {0.3} , mu = 0 , type = "ListOfPoles" })
+GTable = setmetatable({ {0.5, -1} , {0.3} , mu = 0 , type = "ListOfPoles" }, ResponseFunctionMeta)
+
+Frame = {{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}
+-- height of one unit on the y axis, as a fraction of the canvas (default margins)
+YUnit = (1 - 0.08*math.sqrt(2) - 0.01*math.sqrt(2)) / 20
+
+-- the offset between neighbouring curves must be WatterfallShift, for the real and
+-- for the imaginary part and for both forms of the response function
+print("WatterfallShift")
+for _, G in ipairs({GUser, GTable}) do
+  for _, part in ipairs({"plotRe", "plotIm"}) do
+    local other = (part=="plotRe") and "plotIm" or "plotRe"
+    local T = Graphics.ToTable(Graphics.Plot({G, G, G, GammaL=0.2},
+                {{"WatterfallShift", 1.5}, {"Frame", Frame}, {"PlotPoints", 7}, {other, false}}))
+    local n = #T.Line
+    for k = n-1, n do
+      local dy = T.Line[k].Point[1][2] - T.Line[k-1].Point[1][2]
+      if math.abs(dy - 1.5*YUnit) > 1E-10 then
+        error("Graphics.Plot WatterfallShift failed for "..type(G).." with "..part..": offset "..dy/YUnit.." instead of 1.5\n", 1)
+      end
+    end
+  end
+end
+
+-- Graphics.Plot(G, GammaL, GammaG, NE): the fourth argument is the number of points
+print("Number of points for a response function")
+T = Graphics.ToTable(Graphics.Plot(GUser, 0.1, 0, 50, {{"plotRe",false}, {"Frame",Frame}}))
+if #T.Line[#T.Line].Point ~= 51 then
+  error("Graphics.Plot with NE=50 gave a curve of "..#T.Line[#T.Line].Point.." points instead of 51\n", 1)
+end
+
+-- NMinorXTick and NMinorYTick set the minor ticks of their own axis
+-- ticks are drawn on both sides of the frame: 6 x intervals and 4 y intervals
+print("NMinorXTick and NMinorYTick")
+function NLines(nx, ny)
+  local F = {{"dYTick",5}, {"NMinorXTick",nx}, {"NMinorYTick",ny}}
+  for _, o in ipairs(Frame) do table.insert(F, o) end
+  return #Graphics.ToTable(Graphics.Plot(GUser, 0.1, {{"plotRe",false}, {"Frame",F}})).Line
+end
+N = NLines(9, 9)
+if N - NLines(9, 0) ~= 4*9*2 or N - NLines(0, 9) ~= 6*9*2 then
+  error("Graphics.Plot minor ticks: "..N.." "..NLines(9,0).." "..NLines(0,9).." lines\n", 1)
+end
+
+-- XTicks=false and YTicks=false remove the ticks and tick labels of that axis, nothing else
+-- with dYTick=5: 3 major and 4*9 minor y ticks per side, 3 y tick labels
+print("XTicks and YTicks")
+function Counts(xt, yt)
+  local F = {{"dYTick",5}, {"XTicks",xt}, {"YTicks",yt}}
+  for _, o in ipairs(Frame) do table.insert(F, o) end
+  local T = Graphics.ToTable(Graphics.Plot(GUser, 0.1, {{"plotRe",false}, {"Frame",F}}))
+  return #T.Line, #T.Text
+end
+NL, NT = Counts(true, true)
+NLy, NTy = Counts(true, false)
+NLx, NTx = Counts(false, true)
+if NL-NLy ~= 2*(3+4*9) or NT-NTy ~= 3 or NL-NLx ~= 2*(5+6*9) or NT-NTx ~= 5 then
+  error("Graphics.Plot XTicks/YTicks: lines "..NL.." "..NLy.." "..NLx.." texts "..NT.." "..NTy.." "..NTx.."\n", 1)
+end
+
+-- Scale multiplies the data (after Negate), WaterfallOffset moves the first spectrum,
+-- WaterfallShift the ones after it; WatterfallShift is the old spelling of WaterfallShift
+print("Scale, WaterfallOffset and WaterfallShift")
+function FirstY(opt)
+  table.insert(opt, {"Frame", Frame})
+  table.insert(opt, {"PlotPoints", 7})
+  table.insert(opt, {"plotRe", false})
+  local T = Graphics.ToTable(Graphics.Plot({GUser, GUser, GammaL=0.2}, opt))
+  local n = #T.Line
+  return T.Line[n-1].Point[1][2], T.Line[n].Point[1][2]
+end
+Y0 = 0.08*math.sqrt(2) + 10*YUnit   -- where y = 0 lies on the canvas
+a1, a2 = FirstY({})
+b1, b2 = FirstY({{"Scale",2.5}, {"Negate",true}, {"WaterfallOffset",3}, {"WaterfallShift",1.5}})
+c1, c2 = FirstY({{"Scale",2.5}, {"Negate",true}, {"WaterfallOffset",3}, {"WatterfallShift",1.5}})
+if math.abs((b1-Y0) - (-2.5*(a1-Y0) + 3*YUnit)) > 1E-10 or
+   math.abs((b2-Y0) - (-2.5*(a2-Y0) + 4.5*YUnit)) > 1E-10 or
+   c1 ~= b1 or c2 ~= b2 then
+  error("Graphics.Plot Scale/WaterfallOffset/WaterfallShift: "..(a1-Y0)/YUnit.." "..(b1-Y0)/YUnit.." "..(b2-Y0)/YUnit.." "..(c2-Y0)/YUnit.."\n", 1)
+end
+
+-- SpectraStart, SpectraStop and SpectraStep plot spectrum Start, Start+Step, ... up to Stop
+print("SpectraStart, SpectraStop and SpectraStep")
+-- the last n lines of a plot are its n curves
+function Curves(pl, n)
+  local L = Graphics.ToTable(pl).Line
+  local c = {}
+  for k = #L-n+1, #L do c[#c+1] = L[k].Point end
+  return c, #L
+end
+function SameCurves(A, B)
+  if #A ~= #B then return false end
+  for k = 1, #A do
+    if #A[k] ~= #B[k] then return false end
+    for p = 1, #A[k] do
+      if A[k][p][1] ~= B[k][p][1] or A[k][p][2] ~= B[k][p][2] then return false end
+    end
+  end
+  return true
+end
+-- spectrum j is the constant j, so the height of a curve tells which spectrum it is
+SpecTable = {}
+for j = 1, 7 do SpecTable[j] = {{-3, j}, {0, j}, {3, j}} end
+S = Spectra.FromTable(SpecTable)
+Sj = {}
+for j = 1, 7 do Sj[j] = Spectra.FromTable({SpecTable[j]}) end
+Opt = {{"plotIm",false}, {"Frame",Frame}}
+function With(o) local r = {} for _, x in ipairs(Opt) do r[#r+1] = x end for _, x in ipairs(o) do r[#r+1] = x end return r end
+Selections = { { {{"SpectraStart",2},{"SpectraStep",2},{"SpectraStop",6}}, {2,4,6} },
+               { {{"SpectraStart",3},{"SpectraStep",3}},                    {3,6}   },
+               { {{"SpectraStep",2},{"SpectraStop",5}},                     {1,3,5} },
+               { {{"SpectraStart",7}},                                      {7}     },
+               { {{"SpectraStop",30}},                                      {1,2,3,4,5,6,7} } }
+for _, sel in ipairs(Selections) do
+  local kept = {}
+  for _, j in ipairs(sel[2]) do kept[#kept+1] = Sj[j] end
+  local expected = Curves(Graphics.Plot(kept, Opt), #kept)
+  -- a Spectra object holding all seven, a table of seven Spectra objects
+  if not SameCurves(Curves(Graphics.Plot(S,  With(sel[1])), #kept), expected) or
+     not SameCurves(Curves(Graphics.Plot(Sj, With(sel[1])), #kept), expected) then
+    error("Graphics.Plot selecting spectra "..table.concat(sel[2]," ").." failed\n", 1)
+  end
+  for k, c in ipairs(expected) do
+    if math.abs((c[1][2]-Y0)/YUnit - sel[2][k]) > 1E-10 then error("Graphics.Plot plotted the wrong spectrum\n", 1) end
+  end
+end
+-- a table of response functions: only the selected ones are converted
+Gj = {}
+for j = 1, 5 do Gj[j] = ResponseFunction.New({ {0, -2+j*0.6} , {0.3*j} , mu = 0 , type = "ListOfPoles" }) end
+Gj.GammaL = 0.2
+Expected = Curves(Graphics.Plot({Gj[2], Gj[4], GammaL=0.2}, {{"plotRe",false}, {"Frame",Frame}}), 2)
+if not SameCurves(Curves(Graphics.Plot(Gj, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStart",2}, {"SpectraStep",2}}), 2), Expected) then
+  error("Graphics.Plot selecting from a table of response functions failed\n", 1)
+end
+-- a block response function with a selection is drawn as a list of spectra in one graph
+GB = ResponseFunction.New({{Matrix.New({{0.2, 0.1},{0.1,-0.1}}), -1.8, 2.2},
+                           {Matrix.New({{0.4, 0.1},{0.1, 0.3}}), Matrix.New({{0.2,-0.05},{-0.05,0.5}})},
+                           mu=0, type="ListOfPoles"})
+All, NAll = Curves(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStop",4}}), 4)
+Diag, NDiag = Curves(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStep",3}}), 2)
+Last = Curves(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",Frame}, {"SpectraStart",4}}), 1)
+if NAll - NDiag ~= 2 or not SameCurves(Diag, {All[1], All[4]}) or not SameCurves(Last, {All[4]}) then
+  error("Graphics.Plot selecting from a block response function failed\n", 1)
+end
+
+-- UseResonantEnergy draws spectrum k of a Spectra object at WaterfallOffset + its resonant energy
+print("UseResonantEnergy")
+ERes = {-6, -5.5, -2.3, 1, 4.25}
+ResTable = {}
+for j = 1, #ERes do ResTable[j] = {{-3, j}, {0, j}, {3, j}, ResonantEnergy = ERes[j]} end
+SRes = Spectra.FromTable(ResTable)
+for _, sel in ipairs({ {{}, {1,2,3,4,5}}, {{{"SpectraStart",2},{"SpectraStep",2}}, {2,4}} }) do
+  local o = With({{"UseResonantEnergy",true}, {"WaterfallOffset",0.5}, {"Scale",0.5}})
+  for _, x in ipairs(sel[1]) do o[#o+1] = x end
+  local c = Curves(Graphics.Plot(SRes, o), #sel[2])
+  for k, j in ipairs(sel[2]) do
+    if math.abs((c[k][1][2]-Y0)/YUnit - (0.5 + ERes[j] + 0.5*j)) > 1E-10 then
+      error("Graphics.Plot UseResonantEnergy drew spectrum "..j.." at "..(c[k][1][2]-Y0)/YUnit.."\n", 1)
+    end
+  end
+end
+-- only for a Spectra object whose spectra have a resonant energy, and only as a waterfall
+Wrong = { {ResTable[1], {}}, {S, {}}, {SRes, {{"WaterfallShift",1}}}, {SRes, {{"Nrow",5}}}, {GUser, {}} }
+for k, w in ipairs(Wrong) do
+  local o = With({{"UseResonantEnergy",true}})
+  for _, x in ipairs(w[2]) do o[#o+1] = x end
+  if pcall(Graphics.Plot, w[1], o) then error("Graphics.Plot accepted UseResonantEnergy in case "..k.."\n", 1) end
+end
+
+-- ColorMap: the spectra as a colour map instead of curves
+print("ColorMap")
+-- pixel (ix, iy) of the first bitmap, counted from 0, row 0 at the top, as 0xAARRGGBB (AA the transparency)
+function Pixel(pl, ix, iy)
+  local B = Graphics.ToTable(pl).BitMap[1]
+  local Hex = B.Pixels:gsub("[\n>]", "")
+  local k = iy*B.NpointsX + ix
+  return tonumber(Hex:sub(8*k+1, 8*k+8), 16)
+end
+-- an opaque pixel 0x00RRGGBB (AA, the transparency, 00)
+function RGB(r, g, b) return math.floor(255*r+0.5)*0x10000 + math.floor(255*g+0.5)*0x100 + math.floor(255*b+0.5) end
+-- four spectra of constant Im at uneven heights 0, 1, 3, 4
+Values = {0.2, 0.5, 0.8, 1.0}
+Heights = {0, 1, 3, 4}
+MapTable = {}
+for j = 1, 4 do MapTable[j] = {{-3, Values[j]*I}, {0, Values[j]*I}, {3, Values[j]*I}, ResonantEnergy = Heights[j]} end
+SMap = Spectra.FromTable(MapTable)
+Colour = function(re, im) return im, 0, 1-im end
+MapFrame = {{"Xmin",-3},{"Xmax",3},{"Ymin",-0.5},{"Ymax",4.5}}
+function MapOpt(o)
+  local r = {{"ColorMap",true}, {"UseResonantEnergy",true}, {"ColorFunction",Colour}, {"Frame",MapFrame}, {"NPixelX",4}, {"NPixelY",10}}
+  for _, x in ipairs(o) do r[#r+1] = x end
+  return r
+end
+-- nearest spectrum: the boundaries lie half way, at 0.5, 2 and 3.5
+Near = Graphics.Plot(SMap, MapOpt({{"Interpolate",false}}))
+Lin  = Graphics.Plot(SMap, MapOpt({}))
+for iy = 0, 9 do
+  local y = 4.5 - (iy+0.5)*0.5
+  local j = (y<0.5) and 1 or (y<2) and 2 or (y<3.5) and 3 or 4
+  if Pixel(Near, 1, iy) ~= RGB(Values[j], 0, 1-Values[j]) then
+    error(string.format("Graphics.Plot ColorMap without interpolation at y=%g: %08X instead of %08X\n", y, Pixel(Near,1,iy), RGB(Values[j],0,1-Values[j])), 1)
+  end
+  -- linear between neighbouring spectra, no data below 0 and above 4
+  local expected = 0xFFFFFFFF   -- white, fully transparent
+  if y>=0 and y<=4 then
+    local k = (y<1) and 1 or (y<3) and 2 or 3
+    local w = (y-Heights[k]) / (Heights[k+1]-Heights[k])
+    local v = (1-w)*Values[k] + w*Values[k+1]
+    expected = RGB(v, 0, 1-v)
+  end
+  if Pixel(Lin, 2, iy) ~= expected then
+    error(string.format("Graphics.Plot ColorMap with interpolation at y=%g: %08X instead of %08X\n", y, Pixel(Lin,2,iy), expected), 1)
+  end
+end
+-- Scale and Negate change the value handed to the colour function
+if Pixel(Graphics.Plot(SMap, MapOpt({{"Interpolate",false}, {"Scale",-0.5}, {"Negate",true}})), 0, 9) ~= RGB(0.1, 0, 0.9) then
+  error("Graphics.Plot ColorMap with Scale and Negate failed\n", 1)
+end
+-- the built-in scale: white to Color (0xAARRGGBB, here red) as Saturation times Im goes from 0 to 1
+if Pixel(Graphics.Plot(SMap, {{"ColorMap",true}, {"UseResonantEnergy",true}, {"Frame",MapFrame}, {"NPixelX",4}, {"NPixelY",10},
+                              {"Interpolate",false}, {"Color",0xFF0000}, {"Saturation",1.25}}), 0, 6) ~= RGB(1, 0.375, 0.375) then
+  error("Graphics.Plot ColorMap with the built-in colour scale failed\n", 1)
+end
+-- without a shift the spectra lie at their number and the y range covers them all
+Five = {}
+for j = 1, 5 do Five[j] = {{-3, 0.2*j*I}, {3, 0.2*j*I}} end
+SFive = Spectra.FromTable(Five)
+-- spectra 2 and 4 at heights 2 and 4, the map from 1 to 5, the top two rows spectrum 4
+P = Graphics.Plot(SFive, {{"ColorMap",true}, {"ColorFunction",Colour}, {"Interpolate",false}, {"NPixelX",2}, {"NPixelY",4},
+                          {"SpectraStart",2}, {"SpectraStep",2}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}})
+if Pixel(P, 0, 0) ~= RGB(0.8, 0, 0.2) or Pixel(P, 0, 1) ~= RGB(0.8, 0, 0.2) or Pixel(P, 0, 2) ~= RGB(0.4, 0, 0.6) or Pixel(P, 0, 3) ~= RGB(0.4, 0, 0.6) then
+  error("Graphics.Plot ColorMap by spectrum number failed\n", 1)
+end
+-- Interpolate=false draws hard pixels, also after Graphics.ToTable and Graphics.New
+if not Graphics.ToTable(Near).BitMap[1].Pixelated or Graphics.ToTable(Lin).BitMap[1].Pixelated
+   or not string.find(Graphics.ToSVG(Near), "image-rendering:pixelated", 1, true)
+   or string.find(Graphics.ToSVG(Lin), "image-rendering", 1, true)
+   or Graphics.ToSVG(Graphics.New(Graphics.ToTable(Near))) ~= Graphics.ToSVG(Near) then
+  error("Graphics.Plot ColorMap Pixelated failed\n", 1)
+end
+-- errors: the message of the ColorFunction itself, wrong return values, one spectrum,
+-- heights that are not monotonic, a grid, and a ColorFunction that is not a function
+ok, msg = pcall(Graphics.Plot, SMap, MapOpt({{"ColorFunction", function(re, im) error("my own colour error") end}}))
+if ok or not string.find(msg, "my own colour error", 1, true) then error("Graphics.Plot lost the error of the ColorFunction: "..tostring(msg).."\n", 1) end
+ok, msg = pcall(Graphics.Plot, SMap, MapOpt({{"ColorFunction", function(re, im) return im end}}))
+if ok or not string.find(msg, "three numbers", 1, true) then error("Graphics.Plot accepted a ColorFunction returning one number\n", 1) end
+Folded = Spectra.FromTable({MapTable[1], MapTable[3], MapTable[2]})
+for k, w in ipairs({ {SMap, {{"SpectraStop",1}}}, {Folded, {}}, {SMap, {{"Nrow",2},{"Ncolumn",2}}}, {SMap, {{"ColorFunction",3}}} }) do
+  if pcall(Graphics.Plot, w[1], MapOpt(w[2])) then error("Graphics.Plot accepted a wrong colour map in case "..k.."\n", 1) end
+end
+-- a table of response functions and a block response function also make a map
+Graphics.Plot(Gj, {{"ColorMap",true}, {"Frame",Frame}, {"NPixelX",20}, {"NPixelY",20}})
+Graphics.Plot(GB, 0.2, {{"ColorMap",true}, {"Frame",Frame}, {"NPixelX",20}, {"NPixelY",20}})
+
+-- a waterfall plot without Ymin or Ymax takes its y range from the base lines and the plotted
+-- points, with 5% margin, and puts its y ticks on multiples of dYTick
+print("Automatic y range of a waterfall plot")
+MB, MT = 0.08*math.sqrt(2), 0.01*math.sqrt(2)
+-- where the value y lies on the canvas for the y range Ymin to Ymax
+function CanvasY(y, Ymin, Ymax) return MB + (1-MB-MT) * (y-Ymin) / (Ymax-Ymin) end
+-- the five spectra 0.2*j at base line j-1: from 0 (base line of the first) to 5 (the last), plotted -0.25 to 5.25
+WF = Graphics.ToTable(Graphics.Plot(SFive, {{"plotRe",false}, {"WaterfallShift",1}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+First = WF.Line[#WF.Line-4].Point[1][2]
+Last  = WF.Line[#WF.Line].Point[1][2]
+if math.abs(First - CanvasY(0.2, -0.25, 5.25)) > 1E-10 or math.abs(Last - CanvasY(5, -0.25, 5.25)) > 1E-10 then
+  error("Graphics.Plot waterfall y range: curves at "..First.." and "..Last.."\n", 1)
+end
+Labels = {}
+for _, t in ipairs(WF.Text) do if t.Alignment == "r" then Labels[#Labels+1] = t.String end end
+if table.concat(Labels, " ") ~= "0 1 2 3 4 5" then error("Graphics.Plot waterfall y tick labels: "..table.concat(Labels, " ").."\n", 1) end
+-- a given bound is kept, only the other one is chosen
+WF = Graphics.ToTable(Graphics.Plot(SFive, {{"plotRe",false}, {"WaterfallShift",1}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymax",10}}}}))
+if math.abs(WF.Line[#WF.Line].Point[1][2] - CanvasY(5, -0.25, 10)) > 1E-10 then error("Graphics.Plot waterfall with only Ymax given failed\n", 1) end
+-- with resonant energies: base lines 0.5 to 4.5, the highest point 4.5 + 1.0
+WF = Graphics.ToTable(Graphics.Plot(SMap, {{"plotRe",false}, {"UseResonantEnergy",true}, {"WaterfallOffset",0.5}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+if math.abs(WF.Line[#WF.Line].Point[1][2] - CanvasY(5.5, 0.5-0.25, 5.5+0.25)) > 1E-10 then error("Graphics.Plot waterfall y range with resonant energies failed\n", 1) end
+-- without a waterfall the default y range stays -1 to 1
+WF = Graphics.ToTable(Graphics.Plot(SFive, {{"plotRe",false}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+if math.abs(WF.Line[#WF.Line-4].Point[1][2] - CanvasY(0.2, -1, 1)) > 1E-10 then error("Graphics.Plot changed the default y range of a plot without a shift\n", 1) end
+
+-- lists of points {{x1,y1}, {x2,y2}, ...} on any mesh, with y real or complex
+print("Lists of points")
+ML, MR = 0.08, 0.01
+function CanvasX(x, Xmin, Xmax) return ML + (1-ML-MR) * (x-Xmin) / (Xmax-Xmin) end
+Uneven = {{-2, 1}, {-1.5, 3}, {0.1, -2}, {2.5, 4}}
+function CheckPoints(P, Points, Xmin, Xmax, Ymin, Ymax, Value, What)
+  if #P ~= #Points then error("Graphics.Plot "..What..": "..#P.." points instead of "..#Points.."\n", 1) end
+  for k = 1, #Points do
+    if math.abs(P[k][1] - CanvasX(Points[k][1], Xmin, Xmax)) > 1E-10 or math.abs(P[k][2] - CanvasY(Value(Points[k][2]), Ymin, Ymax)) > 1E-10 then
+      error("Graphics.Plot "..What..": point "..k.." at "..P[k][1]..", "..P[k][2].."\n", 1)
+    end
+  end
+end
+-- real values are the real part; the drawn points lie at the given x, the frame from -3 to 3
+T = Graphics.ToTable(Graphics.Plot(Uneven, {{"plotIm",false}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}}}))
+CheckPoints(T.Line[#T.Line].Point, Uneven, -3, 3, -10, 10, function(y) return y end, "real list of points")
+-- without Xmin and Xmax the x range runs from the smallest to the largest x
+T = Graphics.ToTable(Graphics.Plot(Uneven, {{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}}))
+CheckPoints(T.Line[#T.Line].Point, Uneven, -2, 2.5, -10, 10, function(y) return y end, "default x range of a list of points")
+-- complex values, minus the imaginary part, scaled
+ComplexPoints = {{-2, 1-1*I}, {-1.5, 2-3*I}, {0.1, 2*I}, {2.5, -4*I}}
+T = Graphics.ToTable(Graphics.Plot(ComplexPoints, {{"plotRe",false}, {"Negate",true}, {"Scale",2}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}}}))
+CheckPoints(T.Line[#T.Line].Point, {{-2,1}, {-1.5,3}, {0.1,-2}, {2.5,4}}, -3, 3, -10, 10, function(y) return 2*y end, "complex list of points")
+-- dots at the points
+T = Graphics.ToTable(Graphics.Plot(Uneven, {{"plotIm",false}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}},
+                                            {"LineStyle",{ {{"LineWidth",0}, {"PointSize",0.01}} }}}))
+if #T.Arc ~= 4 or math.abs(T.Arc[3].Point[1] - CanvasX(0.1, -3, 3)) > 1E-10 then error("Graphics.Plot dots of a list of points failed\n", 1) end
+-- a list with a spectrum and a list of points, shifted as a waterfall; the second curve is the points
+T = Graphics.ToTable(Graphics.Plot({Sj[1], Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}}}))
+CheckPoints(T.Line[#T.Line].Point, Uneven, -3, 3, -10, 10, function(y) return y+2 end, "list of points in a waterfall")
+-- the selection counts the curves of the list
+T = Graphics.ToTable(Graphics.Plot({Sj[1], Uneven, Sj[2]}, {{"plotIm",false}, {"SpectraStart",2}, {"SpectraStop",2}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}}}))
+CheckPoints(T.Line[#T.Line].Point, Uneven, -3, 3, -10, 10, function(y) return y end, "selected list of points")
+-- the automatic y range of a waterfall covers the points: from -2 to 4+1, with 5% margin
+T = Graphics.ToTable(Graphics.Plot({Uneven, Uneven}, {{"plotIm",false}, {"WaterfallShift",1}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+CheckPoints(T.Line[#T.Line].Point, Uneven, -3, 3, -2-0.35, 5+0.35, function(y) return y+1 end, "automatic y range of lists of points")
+-- errors: a colour map and a grid need an even mesh, and malformed points
+for k, w in ipairs({ {{Uneven, Uneven}, {{"ColorMap",true}}}, {{Uneven}, {{"Nrow",1},{"Ncolumn",2}}},
+                     {{{-1, 2}, {0, "a"}}, {}}, {{{-1, 2}, {0}}, {}}, {{{-1, 2}, {"x", 1}}, {}} }) do
+  if pcall(Graphics.Plot, w[1], w[2]) then error("Graphics.Plot accepted a wrong list of points in case "..k.."\n", 1) end
+end
+
+-- a block response function as a colour map or a waterfall gets the automatic y range as well;
+-- plotted as a grid it keeps -1 to 1
+print("Automatic y range of a block response function")
+function YLabels(pl)
+  local L = {}
+  for _, t in ipairs(Graphics.ToTable(pl).Text) do if t.Alignment == "r" then L[#L+1] = t.String end end
+  return table.concat(L, " ")
+end
+A = YLabels(Graphics.Plot(GB, 0.2, {{"ColorMap",true}, {"NPixelX",10}, {"NPixelY",10}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+B = YLabels(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Negate",true}, {"SpectraStep",3}, {"WaterfallShift",2}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+C = YLabels(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+if A ~= "1 2 3 4" or B == "0" or C ~= "0 0" then
+  error("Graphics.Plot y range of a block response function: map "..A..", waterfall "..B..", grid "..C.."\n", 1)
+end
+
+print("Graphics.Plot tests passed")

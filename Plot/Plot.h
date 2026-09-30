@@ -39,6 +39,7 @@ int AddBitMap(GraphicsType *Graphics, BitMapType * BitMap);
 int CopyGraphics(GraphicsType *Graphics, GraphicsType *Copy);
 int AddLayerInherentMemory(GraphicsType *Graphics, GraphicsType *Layer);
 int AddLayer(GraphicsType *Graphics, GraphicsType *Layer);
+int RotateGraphics(GraphicsType *G, double Angle, PointType Center);
 
 
 

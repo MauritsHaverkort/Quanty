@@ -4,39 +4,58 @@ typedef struct PointType
   double Y;
 } PointType;
 
+// A colour is stored as 0xAARRGGBB: red, green and blue, and AA the transparency, 00 fully
+// opaque and FF fully transparent. A colour written as 0xRRGGBB is therefore opaque.
+// Lua gives colours in the same form, so they are stored as they are given.
+static inline uint32_t ColorRed(uint32_t c)          { return (c >> 16) & 0xFF; }
+static inline uint32_t ColorGreen(uint32_t c)        { return (c >>  8) & 0xFF; }
+static inline uint32_t ColorBlue(uint32_t c)         { return  c        & 0xFF; }
+static inline uint32_t ColorTransparency(uint32_t c) { return (c >> 24) & 0xFF; }
+static inline double   ColorOpacity(uint32_t c)      { return (double)(255 - ColorTransparency(c)) / 255; }
+static inline bool     ColorVisible(uint32_t c)      { return ColorTransparency(c) != 0xFF; }
+// the colour c with the transparency T (0 to 255)
+static inline uint32_t ColorWithTransparency(uint32_t c, uint32_t T) { return (c & 0x00FFFFFF) | ((T & 0xFF) << 24); }
+// the colour c seen through a transparency T and with an opacity Alpha (both 0 to 255) on top of
+// its own transparency: the opacities multiply
+static inline uint32_t ColorCombine(uint32_t c, uint32_t T, uint32_t Alpha)
+{
+  double const Opacity = (255.0 - ColorTransparency(c)) * (255.0 - T) * Alpha / (255.0 * 255.0); // 0 to 255
+  return ColorWithTransparency(c, 255 - (uint32_t)round(Opacity));
+}
+
 
 typedef struct LineType
 {
-  uint8_t Color[4];     // RGB alpha
+  uint32_t Color;       // 0xAARRGGBB, AA the transparency
   double Width;         // Width of the line in fractions of CanvasSize sqrt(x*y)
   int NPoints;          // Allocation size of Point is NPoints
   PointType* Point;     // positions of the points in fractions of the Canvas
   bool CloseAndFill;    // filling
-  uint8_t FillColor[4]; // RGB alpha. If alpha = 0 we do close but add no filling.
+  uint32_t FillColor;   // 0xAARRGGBB. If fully transparent we do close but add no filling.
 } LineType;
 
 typedef struct CurveType
 {
-  uint8_t Color[4];     // RGB alpha
+  uint32_t Color;       // 0xAARRGGBB, AA the transparency
   double Width;         // Width of the line in percentage of CanvasSize sqrt(x*y)
   int NPoints;          // Allocation size of Point is NPoints
   PointType* Point;     // positions of the points in fractions of the Canvas
   PointType* VL;        // Left  velocity (Bezier) of the points in fractions of the Canvas
   PointType* VR;        // Right velocity (Bezier) of the points in fractions of the Canvas
   bool CloseAndFill;    // filling
-  uint8_t FillColor[4]; // RGB alpha. If alpha = 0 we do close but add no filling.
+  uint32_t FillColor;   // 0xAARRGGBB. If fully transparent we do close but add no filling.
 } CurveType;
 
 typedef struct ArcType
 {
-  uint8_t Color[4];     // RGB alpha
+  uint32_t Color;       // 0xAARRGGBB, AA the transparency
   double Width;         // Width of the line in percentage of CanvasSize
   double R;             // Radius in fractions of the Canvas sqrt(x*y)
   PointType Point;      // positions of the center in fractions of the Canvas
   double ThetaL;        // Starting theta -- arc is drawn clockwise x is horizontal, y vertical theta 0 is x running anti clockwise units radians
   double ThetaR;        // End theta of arc
   bool CloseAndFill;    // filling, via origin
-  uint8_t FillColor[4]; // RGB alpha.  If alpha = 0 we do close but add no filling.
+  uint32_t FillColor;   // 0xAARRGGBB. If fully transparent we do close but add no filling.
 } ArcType;
 
 // for fonts we depend on the fonts installed on the users computer
@@ -77,7 +96,7 @@ const char* AvailableFontTypes[] = { "ArialMT",
 
 typedef struct TextType
 {
-  uint8_t Color[4]; //RGB alpha
+  uint32_t Color;   // 0xAARRGGBB, AA the transparency
   PointType Point;  // Position of the string in percentage of CanvasSize
   double Angle;
   char Alignment;   // c (center) l (left) r (right)
@@ -92,7 +111,9 @@ typedef struct BitMapType
   PointType RT;              // right top position in fraction of the canvas
   int NpointsX;              // number of pixels in the x direction
   int NpointsY;              // number of pixels in the y direction
-  uint32_t *Pixels;          // pixels in format alphaRGB of size NpointsX * NpointsY
+  uint32_t *Pixels;          // pixels 0xAARRGGBB, AA the transparency, NpointsX * NpointsY of them, row 0 at the top
+  bool Pixelated;            // draw each pixel as a square, without smoothing between pixels where the format allows it
+  double Angle;              // the rectangle LB-RT is drawn turned by Angle (radians, counterclockwise) about its centre, in mm
 } BitMapType;
 
 
@@ -128,9 +149,9 @@ typedef struct GraphicsType
 typedef struct LinePlotOptions
 {
   double   LineWidth;
-  uint8_t  LineColor[4];
+  uint32_t LineColor;   // 0xAARRGGBB, AA the transparency
   double   PointSize;
-  uint8_t  PointColor[4];
+  uint32_t PointColor;  // 0xAARRGGBB, AA the transparency
 } LinePlotOptions;
 
 typedef struct LinePlotOptionsArray
@@ -145,7 +166,7 @@ typedef struct FramePlotOptions
   PointType PlotRange[2];
   PointType Margins[2];
   double   LineWidth;
-  uint8_t  LineColor[4];
+  uint32_t LineColor;   // 0xAARRGGBB, AA the transparency
   double   FontSize;
   const char* Font;
   char*    XLabel;
@@ -160,4 +181,6 @@ typedef struct FramePlotOptions
   char*    PlotYScaleFormat;
   double   XAxis;
   double   YAxis;
+  bool     XTicks;   // draw the ticks and tick labels of the x axis
+  bool     YTicks;   // draw the ticks and tick labels of the y axis
 } FramePlotOptions;

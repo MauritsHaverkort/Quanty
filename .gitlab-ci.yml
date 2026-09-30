@@ -160,6 +160,8 @@ test-jobs-plot:
       - TEST_NAME:
           - "Add"
           - "New"
+          - "Plot"
+          - "Rotate"
           - "TextFont"
           - "ToTable"
   script:
@@ -315,6 +317,7 @@ test-jobs:
           - "IndexToBitMask"
           - "Inverse"
           - "ioGetPut"
+          - "ioMkdir"
           - "MeanFieldGroundstate"
           - "MeanFieldOperator"
           - "NewOperatorBasis"

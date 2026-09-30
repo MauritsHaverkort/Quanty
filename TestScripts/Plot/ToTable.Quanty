@@ -9,8 +9,8 @@ print("-------------------------------------------------------")
 -- lines, curves, arcs, texts (with a font of the standard list and one that
 -- is not) and bitmaps, on a canvas that is not the default
 G = Graphics.New({{"Canvas.Size.X", 150}, {"Canvas.Size.Y", 100}, {"Canvas.Origin.X", 5}})
-G = Graphics.Add(G, {{0,0},{0.5,0.5}}, {{"Line Width",0.01},{"Color",0x123456},{"Transparancy",0x80}})
-G = Graphics.Add(G, {{0.1,0.3},{0.2,0.3},{0.2,0.4}}, {{"Close",true},{"Fill Color",0xFF0000},{"Fill Transparancy",0x40}})
+G = Graphics.Add(G, {{0,0},{0.5,0.5}}, {{"Line Width",0.01},{"Color",0x123456},{"Transparancy",0x7F}})
+G = Graphics.Add(G, {{0.1,0.3},{0.2,0.3},{0.2,0.4}}, {{"Close",true},{"Fill Color",0xFF0000},{"Fill Transparancy",0xBF}})
 G = Graphics.Add(G, {{0.10,0.35, 0.1,0.3, 0.15,0.30},
                      {0.15,0.30, 0.2,0.3, 0.20,0.35},
                      {0.20,0.35, 0.2,0.4, 0.15,0.35}}, {{"Close",true},{"Color",0x00AA00}})
@@ -68,8 +68,9 @@ end
 if T.Text[3].Font ~= "MyOwnFont" or T.Text[2].Alignment ~= "c" then
   error("Graphics.ToTable does not give the font and alignment of a text\n", 1)
 end
-if (#T.Line[1].Color ~= 4) or (#T.Line[2].Point ~= 3) or (#T.Line[2].Point[1] ~= 2) then
-  error("Graphics.ToTable should give a color as four bytes and points as {{x,y},...}\n", 1)
+-- a color is the number 0xAARRGGBB, AA the transparency: Transparancy 0x7F on 0x123456, and 0xBF on 0xFF0000
+if (T.Line[1].Color ~= 0x7F123456) or (T.Line[2].FillColor ~= 0xBFFF0000) or (#T.Line[2].Point ~= 3) or (#T.Line[2].Point[1] ~= 2) then
+  error("Graphics.ToTable should give a color as the number 0xAARRGGBB and points as {{x,y},...}\n", 1)
 end
 B = T.BitMap[1]
 if (B.NpointsX*B.NpointsY ~= 210) or (#B.Pixels:gsub("%s", "") ~= 8*210 + 1) or (B.Pixels:sub(-1) ~= ">") then
@@ -89,8 +90,8 @@ if O.SizeX ~= 123 then error("Graphics.New with an options list does not work an
 Bad = {
   ["an unknown field"]           = {Lines = {}},
   ["an unknown field of a line"] = {Line = {{Colour = {0,0,0,255}}}},
-  ["a color of three bytes"]     = {Line = {{Color = {0,0,0}}}},
-  ["a byte above 255"]           = {Arc = {{Color = {0,0,256,255}}}},
+  ["a color as a table"]         = {Line = {{Color = {0,0,0,255}}}},
+  ["a color above 0xFFFFFFFF"]   = {Arc = {{Color = 0x100000000}}},
   ["a point of three numbers"]   = {Arc = {{Point = {0,0,0}}}},
   ["VL shorter than Point"]      = {Curve = {{Point = {{0,0},{1,1}}, VL = {{0,0}}, VR = {{0,0},{1,1}}}}},
   ["an alignment of two chars"]  = {Text = {{String = "x", Alignment = "cc"}}},

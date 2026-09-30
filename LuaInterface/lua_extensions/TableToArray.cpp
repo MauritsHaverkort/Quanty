@@ -203,11 +203,29 @@ LUA_API const char *lua_pushstring (lua_State *L, const string str)
 	return lua_pushstring(L,str.c_str());
 }
 
+// a list of (complex) numbers as a vector; a single number or complex number is a vector of length 1
 CompactVectorType luaL_checkVector(lua_State *L, int narg)
 {
   uint32_t i;
   CompactVectorType buff;
-  buff.V=luaL_checkarray_complex16(L, narg, &(buff.Ni));
+  if((lua_type(L, narg)==LUA_TNUMBER)||(luaL_testudata(L, narg, "Complex_Type")!=NULL))
+  {
+    buff.Ni=1;
+    buff.V=(Complex16*)malloc(sizeof(Complex16));
+    if(lua_type(L, narg)==LUA_TNUMBER)
+    {
+      buff.V[0].Re=(double)lua_tonumber(L, narg);
+      buff.V[0].Im=0;
+    }
+    else
+    {
+      buff.V[0]=*(Complex16 *)luaL_checkudata(L, narg, "Complex_Type");
+    }
+  }
+  else
+  {
+    buff.V=luaL_checkarray_complex16(L, narg, &(buff.Ni));
+  }
   buff.QComplex=0;
   for(i=0;i<buff.Ni;i++)
   {
@@ -3955,7 +3973,7 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
       lua_pushstring(L, M->Spec[i].Name);
       lua_setfield(L, -2, "Name");
     }
-    if(M->Spec[i].ResonantEnergy!=NAN)
+    if(!isnan(M->Spec[i].ResonantEnergy))
     {
       lua_pushnumber(L, M->Spec[i].ResonantEnergy);
       lua_setfield(L,-2,"ResonantEnergy");
@@ -4331,6 +4349,15 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
           }
           *(CompactVectorType*)Options[j].variable=*(CompactVectorType*)LuaReturnVariableType(L, -1, Options[j].type);
         }
+        else if(strcmp(Options[j].type, "function") == 0)
+        {
+          // a Lua function has no C form; keep it in the registry and store the key (an int, LUA_NOREF if not set)
+          // the caller releases it with luaL_unref(L, LUA_REGISTRYINDEX, key)
+          if(lua_type(L, -1)!=LUA_TFUNCTION) return luaL_error(L, "Error option \"%s\" should be a function\n", Options[j].name);
+          if(*(int*)Options[j].variable != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, *(int*)Options[j].variable);
+          lua_pushvalue(L, -1); // luaL_ref pops the function, the value is popped once more below
+          *(int*)Options[j].variable = luaL_ref(L, LUA_REGISTRYINDEX);
+        }
         else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
         {
           *(DeterminantRestrictionType*)Options[j].variable=*(DeterminantRestrictionType*)LuaReturnVariableType(L, -1, Options[j].type);
@@ -4347,7 +4374,7 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             {"YLMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[0].Y)},
             {"YRMargin","double",&(((FramePlotOptions*)Options[j].variable)->Margins[1].Y)},
             {"LineWidth","double",&(((FramePlotOptions*)Options[j].variable)->LineWidth)},
-            {"Color","uint32_t",&(((FramePlotOptions*)Options[j].variable)->LineColor[0])},
+            {"Color","uint32_t",&(((FramePlotOptions*)Options[j].variable)->LineColor)}, // 0xAARRGGBB, AA the transparency
             {"FontSize","double",&(((FramePlotOptions*)Options[j].variable)->FontSize)},
             {"Font","char*",&(((FramePlotOptions*)Options[j].variable)->Font)},
             {"XLabel","char*",&(((FramePlotOptions*)Options[j].variable)->XLabel)},
@@ -4362,6 +4389,8 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             {"YFormat","char*",&(((FramePlotOptions*)Options[j].variable)->PlotYScaleFormat)},
             {"XAxis","double",&(((FramePlotOptions*)Options[j].variable)->XAxis)},
             {"YAxis","double",&(((FramePlotOptions*)Options[j].variable)->YAxis)},
+            {"XTicks","bool",&(((FramePlotOptions*)Options[j].variable)->XTicks)},
+            {"YTicks","bool",&(((FramePlotOptions*)Options[j].variable)->YTicks)},
             {NULL, NULL, NULL}};
           
           LuaCheckOptions(L, -1, LuaFramePlotOptions);
@@ -4380,6 +4409,8 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             if (lua_isnumber(L,-1)==0) return luaL_error(L, "Error Options array for line types should only have integer keys\n");
             lua_pushvalue(L, -1);
             k = (int)luaL_checkinteger(L, -1);
+            // style k is stored in Line[k-1]; a number below 1 would write before the array
+            if(k<1) return luaL_error(L, "Error the styles of LineStyle are numbered from 1, not %d; a list {style1, style2, ...} numbers them so\n", k);
             if(k>((LinePlotOptionsArray*)Options[j].variable)->NAllocLine) ((LinePlotOptionsArray*)Options[j].variable)->NAllocLine = k;
             lua_pop(L, 1);
           }
@@ -4410,9 +4441,9 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             lua_pop(L, 1);
             // get the value
             LuaLinePlotOptions[0].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineWidth);
-            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineColor[0]);
+            LuaLinePlotOptions[1].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].LineColor);
             LuaLinePlotOptions[2].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointSize);
-            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointColor[0]);
+            LuaLinePlotOptions[3].variable = &(((LinePlotOptionsArray*)Options[j].variable)->Line[k-1].PointColor);
             LuaCheckOptions(L, -1, LuaLinePlotOptions);
             // pop
             lua_pop(L, 1);

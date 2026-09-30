@@ -34,26 +34,26 @@ Ymax = 15
 
 PlG1 = Graphics.Plot(GLP,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF000080}},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF800000}}}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00800000}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00000080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG2 = Graphics.Plot(GTri,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.008},{"LineColor",0xFF0000FF}},
-																					 {{"LineWidth",0.008},{"LineColor",0xFFFF0000}}}},
+																					 {{"LineWidth",0.008},{"LineColor",0x00FF0000}},
+																					 {{"LineWidth",0.008},{"LineColor",0x000000FF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG3 = Graphics.Plot(GAnd,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF008080}},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF808000}}}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00808000}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00008080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG4 = Graphics.Plot(GNat,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.002},{"LineColor",0xFF00FFFF}},
-																					 {{"LineWidth",0.002},{"LineColor",0xFFFFFF00}}}},
+																					 {{"LineWidth",0.002},{"LineColor",0x00FFFF00}},
+																					 {{"LineWidth",0.002},{"LineColor",0x0000FFFF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 
@@ -113,26 +113,26 @@ Ymax = 15
 
 PlG1 = Graphics.Plot(GLP,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF000080}},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF800000}}}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00800000}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00000080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG2 = Graphics.Plot(GTri,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.008},{"LineColor",0xFF0000FF}},
-																					 {{"LineWidth",0.008},{"LineColor",0xFFFF0000}}}},
+																					 {{"LineWidth",0.008},{"LineColor",0x00FF0000}},
+																					 {{"LineWidth",0.008},{"LineColor",0x000000FF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG3 = Graphics.Plot(GAnd,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF008080}},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF808000}}}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00808000}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00008080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG4 = Graphics.Plot(GNat,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.002},{"LineColor",0xFF00FFFF}},
-																					 {{"LineWidth",0.002},{"LineColor",0xFFFFFF00}}}},
+																					 {{"LineWidth",0.002},{"LineColor",0x00FFFF00}},
+																					 {{"LineWidth",0.002},{"LineColor",0x0000FFFF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 
@@ -214,26 +214,26 @@ Ymax = 15
 
 PlG1 = Graphics.Plot(GLP,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF000080}},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF800000}}}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00800000}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00000080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG2 = Graphics.Plot(GTri,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.008},{"LineColor",0xFF0000FF}},
-																					 {{"LineWidth",0.008},{"LineColor",0xFFFF0000}}}},
+																					 {{"LineWidth",0.008},{"LineColor",0x00FF0000}},
+																					 {{"LineWidth",0.008},{"LineColor",0x000000FF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG3 = Graphics.Plot(GAnd,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF008080}},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF808000}}}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00808000}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00008080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG4 = Graphics.Plot(GNat,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.002},{"LineColor",0xFF00FFFF}},
-																					 {{"LineWidth",0.002},{"LineColor",0xFFFFFF00}}}},
+																					 {{"LineWidth",0.002},{"LineColor",0x00FFFF00}},
+																					 {{"LineWidth",0.002},{"LineColor",0x0000FFFF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 
@@ -293,26 +293,26 @@ Ymax = 15
 
 PlG1 = Graphics.Plot(GLP,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF000080}},
-																					 {{"LineWidth",0.016},{"LineColor",0xFF800000}}}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00800000}},
+																					 {{"LineWidth",0.016},{"LineColor",0x00000080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG2 = Graphics.Plot(GTri,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.008},{"LineColor",0xFF0000FF}},
-																					 {{"LineWidth",0.008},{"LineColor",0xFFFF0000}}}},
+																					 {{"LineWidth",0.008},{"LineColor",0x00FF0000}},
+																					 {{"LineWidth",0.008},{"LineColor",0x000000FF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG3 = Graphics.Plot(GAnd,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF008080}},
-																					 {{"LineWidth",0.004},{"LineColor",0xFF808000}}}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00808000}},
+																					 {{"LineWidth",0.004},{"LineColor",0x00008080}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 PlG4 = Graphics.Plot(GNat,0.0,0.5, {{"PlotPoints",PlotPoints},
 														 {"LineStyle",{{},
-																					 {{"LineWidth",0.002},{"LineColor",0xFF00FFFF}},
-																					 {{"LineWidth",0.002},{"LineColor",0xFFFFFF00}}}},
+																					 {{"LineWidth",0.002},{"LineColor",0x00FFFF00}},
+																					 {{"LineWidth",0.002},{"LineColor",0x0000FFFF}}}},
 														 {"Frame",{{"Ymin",Ymin},{"Ymax",Ymax},{"dYTick",dYtick},{"Xmin",Emin},{"Xmax",Emax},{"dXTick",dETick},{"XLabel","Energy [t]"},{"YLabel","Intensity"}}}})
 
 

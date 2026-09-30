@@ -203,19 +203,21 @@ for i = 1, #pl do
   if not (#svg > 100000 and #svg < 400000) then error("PlotBands "..i.." gave an SVG of "..#svg.." bytes\n") end
 end
 print("PlotBands: spectral functions with 0, 1 and 3 characters, broadened matrices, chains")
--- Transparancy and SecondTransparancy multiply the alpha byte of Color and SecondColor (0x80 * 0x80 / 255 = 0x40)
+-- Colours are 0xAARRGGBB with AA the transparency (00 opaque, FF fully transparent). Transparancy and
+-- SecondTransparancy (0 opaque) come on top of it, the opacities multiply: (255-0x7F) (255-0x7F) / 255 = 64,
+-- a transparency of 255 - 64 = 0xBF
 function SVG(o) return Graphics.ToSVG(Graphics.PlotBands(kpath, G, gA, o), {{"RelativeSize",true}}) end
 base = {{"GammaL",0.1},{"NPixelX",60},{"NPixelY",50}}
 function With(extra) local o = {} for _, x in ipairs(base) do o[#o+1] = x end for _, x in ipairs(extra) do o[#o+1] = x end return o end
 for name, pair in pairs({
-    ["Transparancy on an opaque Color"]            = {{{"Color",0xFF000080},{"Transparancy",0x80}}, {{"Color",0x80000080}}},
-    ["Transparancy on a Color with alpha"]         = {{{"Color",0x80000080},{"Transparancy",0x80}}, {{"Color",0x40000080}}},
-    ["SecondTransparancy on a SecondColor"]        = {{{"SecondColor",0x80FF0000},{"SecondTransparancy",0x80}}, {{"SecondColor",0x40FF0000}}},
-    ["the default Transparancy keeps Color alpha"] = {{{"Color",0x80000080}}, {{"Color",0x80000080},{"Transparancy",0xFF}}} }) do
+    ["Transparancy on an opaque Color"]                   = {{{"Color",0x000080},{"Transparancy",0x7F}}, {{"Color",0x7F000080}}},
+    ["Transparancy on a Color with a transparency"]       = {{{"Color",0x7F000080},{"Transparancy",0x7F}}, {{"Color",0xBF000080}}},
+    ["SecondTransparancy on a SecondColor"]               = {{{"SecondColor",0x7FFF0000},{"SecondTransparancy",0x7F}}, {{"SecondColor",0xBFFF0000}}},
+    ["the default Transparancy keeps the Color"]          = {{{"Color",0x7F000080}}, {{"Color",0x7F000080},{"Transparancy",0x00}}} }) do
   if SVG(With(pair[1])) ~= SVG(With(pair[2])) then error("PlotBands: "..name.." does not give the expected color\n", 1) end
   print("PlotBands: "..name)
 end
-if SVG(With({{"Color",0xFF000080}})) == SVG(With({{"Color",0x40000080}})) then error("PlotBands: the alpha of Color has no effect\n", 1) end
+if SVG(With({{"Color",0x000080}})) == SVG(With({{"Color",0xBF000080}})) then error("PlotBands: the transparency of Color has no effect\n", 1) end
 for name, f in pairs({
     ["two characters"]                         = function() return Graphics.PlotBands(kpath, G, gA, gb, opt) end,
     ["a table of the wrong length"]            = function() return Graphics.PlotBands(kpath, {G[1]}, opt) end,
