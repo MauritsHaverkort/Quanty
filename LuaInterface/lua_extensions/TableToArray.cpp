@@ -3955,7 +3955,7 @@ void LuaPushTable_SpectraTypeArray(lua_State* L, SpectraTypeArray const * const 
       lua_pushstring(L, M->Spec[i].Name);
       lua_setfield(L, -2, "Name");
     }
-    if(M->Spec[i].ResonantEnergy!=NAN)
+    if(!isnan(M->Spec[i].ResonantEnergy))
     {
       lua_pushnumber(L, M->Spec[i].ResonantEnergy);
       lua_setfield(L,-2,"ResonantEnergy");
