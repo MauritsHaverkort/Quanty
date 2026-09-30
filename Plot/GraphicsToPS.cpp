@@ -165,6 +165,12 @@ int AddBitMapToPS(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doubl
   BX0 = ( -X0 - BitMap->LB.X * scaleX ) * BscaleX;
   BY0 = ( -Y0 - BitMap->LB.Y * scaleY ) * BscaleY;
   sprintfAdd(Buff,"gsave\n");
+  if(BitMap->Angle!=0)
+  {
+    // turned about the centre of the rectangle
+    double const cx = X0 + scaleX * (BitMap->LB.X+BitMap->RT.X)/2, cy = Y0 + scaleY * (BitMap->LB.Y+BitMap->RT.Y)/2;
+    sprintfAdd(Buff,"%.2f %.2f translate %.4f rotate %.2f %.2f translate\n", cx, cy, BitMap->Angle*180/Pi, -cx, -cy);
+  }
   sprintfAdd(Buff,"%d %d 8\n",BitMap->NpointsX,BitMap->NpointsY);
   sprintfAdd(Buff,"[%.6f 0 0 %.6f %.6f %.6f]\n",BscaleX, BscaleY, BX0, BY0);
   sprintfAdd(Buff,"currentfile /ASCIIHexDecode filter\n");

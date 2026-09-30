@@ -5,7 +5,7 @@
  *      Curve  = { {Color=, Width=, Point=, VL=, VR=, CloseAndFill=, FillColor=}, ... },
  *      Arc    = { {Color=, Width=, R=, Point=, ThetaL=, ThetaR=, CloseAndFill=, FillColor=}, ... },
  *      Text   = { {Color=, Point=, Angle=, Alignment=, Size=, String=, Font=}, ... },
- *      BitMap = { {LB=, RT=, NpointsX=, NpointsY=, Pixels=, Pixelated=}, ... } }
+ *      BitMap = { {LB=, RT=, NpointsX=, NpointsY=, Pixels=, Pixelated=, Angle=}, ... } }
  *  with the fields of the structures in Plot/StructDef.cpp. A color is the number 0xAARRGGBB,
  *  AA the transparency (00 opaque, FF fully transparent), a point {x, y} and a list of points
  *  {{x, y}, ...}. Alignment is a string of one character. Pixels is a string in ASCIIHexDecode
@@ -157,6 +157,7 @@ void LuaPushTable_Graphics(lua_State *L, GraphicsType const * const G)
       lua_pushinteger(L, E->NpointsY);                     lua_setfield(L, -2, "NpointsY");
       lua_pushlstring(L, Hex, pos);                        lua_setfield(L, -2, "Pixels");
       if(E->Pixelated) { lua_pushboolean(L, true);         lua_setfield(L, -2, "Pixelated"); }
+      if(E->Angle!=0)  { lua_pushnumber(L, E->Angle);      lua_setfield(L, -2, "Angle"); }
       free(Hex);
       lua_rawseti(L, -2, i+1);
     }
@@ -260,7 +261,7 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
   const char * const CurveKeys[]    = {"Color", "Width", "Point", "VL", "VR", "CloseAndFill", "FillColor"};
   const char * const ArcKeys[]      = {"Color", "Width", "R", "Point", "ThetaL", "ThetaR", "CloseAndFill", "FillColor"};
   const char * const TextKeys[]     = {"Color", "Point", "Angle", "Alignment", "Size", "String", "Font"};
-  const char * const BitMapKeys[]   = {"LB", "RT", "NpointsX", "NpointsY", "Pixels", "Pixelated"};
+  const char * const BitMapKeys[]   = {"LB", "RT", "NpointsX", "NpointsY", "Pixels", "Pixelated", "Angle"};
   int i, n, e;
   narg = lua_absindex(L, narg);
   LuaCheckGraphicsKeys(L, narg, GraphicsKeys, 8, "the graphics");
@@ -412,13 +413,14 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       const char *Hex="";
       lua_rawgeti(L, -1, i+1);
       e = lua_gettop(L);
-      LuaCheckGraphicsKeys(L, e, BitMapKeys, 6, "a bitmap");
+      LuaCheckGraphicsKeys(L, e, BitMapKeys, 7, "a bitmap");
       InitBitMap(&E);
       GRAPHICS_FIELD(e, "LB",       E.LB = LuaReadGraphicsPoint(L, -1, "the LB of a bitmap"));
       GRAPHICS_FIELD(e, "RT",       E.RT = LuaReadGraphicsPoint(L, -1, "the RT of a bitmap"));
       GRAPHICS_FIELD(e, "NpointsX", Nx = LuaReadGraphicsNumber(L, -1, "the NpointsX of a bitmap"));
       GRAPHICS_FIELD(e, "NpointsY", Ny = LuaReadGraphicsNumber(L, -1, "the NpointsY of a bitmap"));
       GRAPHICS_FIELD(e, "Pixelated", E.Pixelated = LuaReadGraphicsBool(L, -1, "Pixelated of a bitmap"));
+      GRAPHICS_FIELD(e, "Angle",    E.Angle = LuaReadGraphicsNumber(L, -1, "the Angle of a bitmap"));
       if((Nx!=floor(Nx))||(Nx<0)||(Ny!=floor(Ny))||(Ny<0)) luaL_error(L, "Error in Graphics.New(Table): NpointsX and NpointsY of a bitmap should be whole numbers of 0 or more\n");
       E.NpointsX = (int)Nx;
       E.NpointsY = (int)Ny;
@@ -582,6 +584,83 @@ int LuaAddToGraphicsFunction(lua_State *L)
   return 1;
 }
 
+/*  G.Rotate(Angle [, Options]) turns the graphics G, or one of its layers with all layers in it, by
+ *  Angle (radians, counterclockwise) about a point. Everything keeps its size and shape in mm; the
+ *  canvas of each layer becomes the bounding box of the rotated canvas. Options:
+ *    {"Layer", n} or {"Layer", {n1, n2, ...}}  the layer to rotate, as for Graphics.Add; 0 (the
+ *                                               default) is the whole graphics
+ *    {"Center", {x, y}}                         the point to rotate about, in fractions of that
+ *                                               layer (default {0.5, 0.5}, its middle)
+ *  On the stack: 1 the graphics, 2 the angle, 3 the options (if given).
+ */
+static GraphicsType *LuaSelectLayer(lua_State *L, GraphicsType *G, CompactVectorType *Layer, const char *Caller);
+
+int LuaRotateGraphics(lua_State *L)
+{
+  int len = lua_gettop(L);
+  GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
+  struct
+  {
+    CompactVectorType Layer;
+    CompactVectorType Center;
+  } Options;
+  Options.Layer.Ni=0;   Options.Layer.QComplex=0;   Options.Layer.VRe=NULL;
+  Options.Center.Ni=0;  Options.Center.QComplex=0;  Options.Center.VRe=NULL;
+  LuaOptionsType LuaRotateGraphicsOptions[]={
+    {"Layer","Vector",&(Options.Layer)},
+    {"Center","Vector",&(Options.Center)},
+    {NULL, NULL, NULL}};
+  if((len==3)&&LuaTestOptionsList(L, 3))
+  {
+    LuaCheckOptions(L, 3, LuaRotateGraphicsOptions);
+    len--;
+  }
+  if(len!=2) return luaL_error(L, "Error in Graphics.Rotate: expected a graphics, an angle and possibly options, not %d arguments\n", lua_gettop(L));
+  if(lua_type(L, 2)!=LUA_TNUMBER) return luaL_error(L, "Error in Graphics.Rotate: the angle should be a number (radians, counterclockwise)\n");
+  double const Angle = lua_tonumber(L, 2);
+  if(!isfinite(Angle)) return luaL_error(L, "Error in Graphics.Rotate: the angle should be a finite number\n");
+  PointType Center = {0.5, 0.5};
+  if(Options.Center.Ni!=0)
+  {
+    bool const ok = (Options.Center.Ni==2) && (!Options.Center.QComplex);
+    if(ok) { Center.X = Options.Center.VRe[0]; Center.Y = Options.Center.VRe[1]; }
+    free(Options.Center.VRe);
+    if(!ok)
+    {
+      free(Options.Layer.VRe);
+      return luaL_error(L, "Error in Graphics.Rotate: option Center should be a point {x, y} of two real numbers, in fractions of the layer\n");
+    }
+  }
+  Graphics = LuaSelectLayer(L, Graphics, &(Options.Layer), "Graphics.Rotate");
+  // the centre in mm, on the page
+  Center.X = Graphics->CanvasOrigin.X + Center.X * Graphics->CanvasSize.X;
+  Center.Y = Graphics->CanvasOrigin.Y + Center.Y * Graphics->CanvasSize.Y;
+  if(RotateGraphics(Graphics, Angle, Center)) return luaL_error(L, "Error in Graphics.Rotate: a layer has a canvas of size 0 (or less) and can not be rotated\n");
+  return 0;
+}
+
+// G.Rotate(Angle, Options) rotates G itself
+int LuaRotateGraphicsMethod(lua_State *L)
+{
+  lua_pushvalue(L, lua_upvalueindex(1));
+  lua_insert(L, 1);
+  LuaRotateGraphics(L);
+  return 0;
+}
+
+// Graphics.Rotate(G, Angle, Options) returns a rotated copy of G
+int LuaRotateGraphicsFunction(lua_State *L)
+{
+  GraphicsType *GraphicsOld = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
+  GraphicsType *Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
+  luaL_setmetatable(L, "Graphics_Type");
+  CopyGraphics(GraphicsOld, Graphics);
+  lua_replace(L, 1);
+  LuaRotateGraphics(L);
+  lua_pushvalue(L, 1);
+  return 1;
+}
+
 // A Lua colour function, kept in the registry under the key Ref, that returns red, green and
 // blue between 0 and 1. After the first failing call Status is not LUA_OK, the error message
 // is on the stack and further calls do nothing.
@@ -658,6 +737,39 @@ static uint32_t LuaReadBitMapPixel(lua_State *L, int narg)
   return Pixel;
 }
 
+// The option Layer of Graphics.Add and Graphics.Rotate: n is layer n of G (0 G itself, 1 the first
+// layer added to it, -1 the last one), a list {n1, n2, ...} layer n2 of layer n1 and so on, and an
+// empty list G itself. Frees the vector Layer, also before an error.
+static GraphicsType *LuaSelectLayer(lua_State *L, GraphicsType *G, CompactVectorType *Layer, const char *Caller)
+{
+  if(Layer->Ni==0) return G;
+  for(int i=0;i<(int)Layer->Ni;i++)
+  {
+    double v = Layer->QComplex ? Layer->V[i].Re : Layer->VRe[i];
+    if((Layer->QComplex)||(v!=floor(v)))
+    {
+      free(Layer->VRe); // VRe and V share their memory
+      Layer->Ni=0;
+      luaL_error(L, "Error in %s: option Layer should be a whole number or a list of whole numbers\n", Caller);
+    }
+    // the range is checked on the double, a cast of a double out of the range of int is undefined
+    double n = (v<0) ? v + G->NLayer : v;
+    if(!((n>=0)&&(n<G->NLayer)))
+    {
+      char Number[32]; // luaL_error knows no %g
+      snprintf(Number, sizeof(Number), "%g", v);
+      free(Layer->VRe);
+      Layer->Ni=0;
+      luaL_error(L, "Error in %s: option Layer, entry %d: there is no layer %s, the layers are 0 (the graphics itself) to %d, or -1 (the last one) to -%d\n",
+                 Caller, i+1, Number, G->NLayer-1, G->NLayer);
+    }
+    G = G->Layer[(int)n];
+  }
+  free(Layer->VRe);
+  Layer->Ni=0;
+  return G;
+}
+
 /*   On stack at position 1 we have a graphics object
  *   On position -1 we can have options
  *   On position 2 to 2+m we have a definition of a new object that should be added to the graphics object
@@ -726,30 +838,7 @@ int LuaAddToGraphics(lua_State * L)
   }
   // the option Layer: n adds to layer n (0 the graphics itself, 1 the first layer added to it,
   // -1 the last one, drawn on top), a list {n1, n2, ...} to layer n2 of layer n1 and so on
-  if(Options.Layer.Ni!=0)
-  {
-    for(i=0;i<(int)Options.Layer.Ni;i++)
-    {
-      double v = Options.Layer.QComplex ? Options.Layer.V[i].Re : Options.Layer.VRe[i];
-      if((Options.Layer.QComplex)||(v!=floor(v)))
-      {
-        free(Options.Layer.VRe); // VRe and V share their memory
-        return luaL_error(L, "Error in Graphics.Add: option Layer should be a whole number or a list of whole numbers\n");
-      }
-      // the range is checked on the double, a cast of a double out of the range of int is undefined
-      double n = (v<0) ? v + Graphics->NLayer : v;
-      if(!((n>=0)&&(n<Graphics->NLayer)))
-      {
-        char Number[32]; // luaL_error knows no %g
-        snprintf(Number, sizeof(Number), "%g", v);
-        free(Options.Layer.VRe);
-        return luaL_error(L, "Error in Graphics.Add: option Layer, entry %d: there is no layer %s, the layers are 0 (the graphics itself) to %d, or -1 (the last one) to -%d\n",
-                          i+1, Number, Graphics->NLayer-1, Graphics->NLayer);
-      }
-      Graphics = Graphics->Layer[(int)n];
-    }
-    free(Options.Layer.VRe);
-  }
+  Graphics = LuaSelectLayer(L, Graphics, &(Options.Layer), "Graphics.Add");
   // the transparency AA of the colour, the option Transparancy and the opacity alpha together
   Options.RGB     = ColorCombine(Options.RGB,     Options.Transparency,     Options.alpha);
   Options.FillRGB = ColorCombine(Options.FillRGB, Options.FillTransparency, Options.Fillalpha);
@@ -2086,6 +2175,12 @@ int LuaGraphicsIndex(lua_State * L)
     lua_pushcclosure(L, LuaAddToGraphicsMethod,1);
     return 1;
   }
+  if (strcmp(str, "Rotate") == 0)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushcclosure(L, LuaRotateGraphicsMethod,1);
+    return 1;
+  }
   return luaL_error(L, "Error index %s not found in Graphics Object\n",str);
 }
 
@@ -2835,6 +2930,7 @@ static const struct luaL_Reg Graphics_func[] = {
   {"New", LuaNewGraphics},
   {"ToTable", LuaGraphicsToTable},
   {"Add", LuaAddToGraphicsFunction},
+  {"Rotate", LuaRotateGraphicsFunction},
   {"Plot", LuaPlotGraphics},
   {"ToPS", LuaGraphicsToPS},
   {"ToSVG", LuaGraphicsToSVG},

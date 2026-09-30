@@ -161,6 +161,7 @@ test-jobs-plot:
           - "Add"
           - "New"
           - "Plot"
+          - "Rotate"
           - "TextFont"
           - "ToTable"
   script:

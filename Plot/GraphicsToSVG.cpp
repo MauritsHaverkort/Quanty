@@ -173,11 +173,18 @@ int AddBitMapToSVG(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doub
 {
   
   DynamicString A64;
+  char Rotate[128] = "";
   BitMapToBase64String(BitMap, &A64);
-  sprintfAdd(Buff,1024+(int)A64.length,"<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" preserveAspectRatio=\"none\"%s xlink:href=\"data:image/bmp;base64,%s\"/>\n",
+  if(BitMap->Angle!=0)
+  {
+    // turned about the centre of the rectangle; the y axis of svg points down, so the angle is minus
+    snprintf(Rotate, sizeof(Rotate), " transform=\"rotate(%.4f %.2f %.2f)\"", -BitMap->Angle*180/Pi,
+             X0 + scaleX * (BitMap->LB.X+BitMap->RT.X)/2, Y0 + scaleY * (BitMap->LB.Y+BitMap->RT.Y)/2);
+  }
+  sprintfAdd(Buff,1024+(int)A64.length,"<image x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" preserveAspectRatio=\"none\"%s%s xlink:href=\"data:image/bmp;base64,%s\"/>\n",
              (int)round(X0 + scaleX * BitMap->LB.X),(int)round(Y0 + scaleY * BitMap->RT.Y),
              (int)round(scaleX * (BitMap->RT.X-BitMap->LB.X)),(int)round(-scaleY * (BitMap->RT.Y - BitMap->LB.Y)),
-             BitMap->Pixelated ? " style=\"image-rendering:pixelated\"" : "",
+             BitMap->Pixelated ? " style=\"image-rendering:pixelated\"" : "", Rotate,
              A64.str);
   FreeDynamicString(&A64);
   return 0;

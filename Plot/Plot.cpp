@@ -199,6 +199,7 @@ void InitBitMap(BitMapType* BitMap)
   BitMap->NpointsY=0;
   BitMap->Pixels=NULL;
   BitMap->Pixelated=false;
+  BitMap->Angle=0;
 }
 
 BitMapType* NewBitMap()
@@ -542,4 +543,201 @@ int AddLayer(GraphicsType *Graphics, GraphicsType *Layer)
   if( CopyGraphics(Layer, Copy) ) return 1;
   if( AddLayerInherentMemory(Graphics, Copy) ) return 1;
   return 0;
+}
+
+
+/*  Rotation of a graphics with all its layers by Angle (radians, counterclockwise) about the point
+ *  Center (mm, in the absolute coordinates of the page). Everything keeps its size and shape in mm.
+ *  The canvas of each layer becomes the bounding box of its rotated canvas, and all positions are
+ *  given anew as fractions of it; widths, sizes of text and radii, fractions of sqrt(width*height),
+ *  are scaled such that they keep their size in mm.
+ *  A bitmap is turned by a multiple of 90 degrees by moving its pixels; by any other angle it keeps
+ *  its pixels and gets the angle in BitMap.Angle, about the centre of its rectangle.
+ */
+typedef struct RotationType
+{
+  double Angle;      // radians, counterclockwise
+  int    Quarter;    // Angle is Quarter times 90 degrees, 0 to 3; -1 for any other angle
+  double c, s;       // cos and sin of Angle, exact for multiples of 90 degrees
+  PointType Center;  // mm
+} RotationType;
+
+// an angle reduced to the interval -pi to pi
+static double ReduceAngle(double a)
+{
+  return a - 2*Pi*floor((a+Pi)/(2*Pi));
+}
+
+// the point P (mm) rotated about the centre
+static PointType RotatePointMM(RotationType const *R, PointType P)
+{
+  PointType Q;
+  double x = P.X - R->Center.X, y = P.Y - R->Center.Y;
+  Q.X = R->Center.X + R->c * x - R->s * y;
+  Q.Y = R->Center.Y + R->s * x + R->c * y;
+  return Q;
+}
+
+// a point in fractions of the canvas O, W, H rotated, in fractions of the canvas On, Wn, Hn
+static void RotateFraction(RotationType const *R, PointType *P, PointType O, PointType S, PointType On, PointType Sn)
+{
+  PointType mm;
+  mm.X = O.X + P->X * S.X;
+  mm.Y = O.Y + P->Y * S.Y;
+  mm = RotatePointMM(R, mm);
+  P->X = (mm.X - On.X) / Sn.X;
+  P->Y = (mm.Y - On.Y) / Sn.Y;
+}
+
+// the pixels of a bitmap turned by Quarter times 90 degrees counterclockwise; row 0 is at the top
+static int RotateBitMapPixels(BitMapType *B, int Quarter)
+{
+  int NX = B->NpointsX, NY = B->NpointsY;
+  int NXn = (Quarter%2) ? NY : NX, NYn = (Quarter%2) ? NX : NY;
+  if(Quarter==0) return 0;
+  uint32_t *P = (uint32_t*)malloc((size_t)NX * (size_t)NY * sizeof(uint32_t));
+  if((P==NULL)&&(NX*NY!=0)) { printf("Error in RotateGraphics, malloc failed\n"); return 1; }
+  for(int r=0;r<NYn;r++)
+  {
+    for(int c=0;c<NXn;c++)
+    {
+      int co, ro; // the pixel of the old bitmap that goes to column c and row r
+      if(Quarter==1)      { co = NX-1-r; ro = c;      }
+      else if(Quarter==2) { co = NX-1-c; ro = NY-1-r; }
+      else                { co = r;      ro = NY-1-c; }
+      P[r*NXn+c] = B->Pixels[ro*NX+co];
+    }
+  }
+  free(B->Pixels);
+  B->Pixels = P;
+  B->NpointsX = NXn;
+  B->NpointsY = NYn;
+  return 0;
+}
+
+// are all canvases in G of a size larger than 0, such that G can be rotated
+static bool Rotatable(GraphicsType const *G)
+{
+  if(!((G->CanvasSize.X>0)&&(G->CanvasSize.Y>0))) return false;
+  for(int i=1;i<G->NLayer;i++) if(!Rotatable(G->Layer[i])) return false;
+  return true;
+}
+
+static int RotateLayer(GraphicsType *G, RotationType const *R)
+{
+  int i, j;
+  PointType O = G->CanvasOrigin, S = G->CanvasSize, On, Sn;
+  // the bounding box of the rotated canvas; for a multiple of 90 degrees its size is exact
+  PointType Corner[4] = {{O.X, O.Y}, {O.X+S.X, O.Y}, {O.X, O.Y+S.Y}, {O.X+S.X, O.Y+S.Y}};
+  PointType Upper;
+  for(i=0;i<4;i++)
+  {
+    PointType Q = RotatePointMM(R, Corner[i]);
+    if((i==0)||(Q.X<On.X))    On.X    = Q.X;
+    if((i==0)||(Q.Y<On.Y))    On.Y    = Q.Y;
+    if((i==0)||(Q.X>Upper.X)) Upper.X = Q.X;
+    if((i==0)||(Q.Y>Upper.Y)) Upper.Y = Q.Y;
+  }
+  if(R->Quarter>=0)
+  {
+    Sn.X = (R->Quarter%2) ? S.Y : S.X;
+    Sn.Y = (R->Quarter%2) ? S.X : S.Y;
+  }
+  else
+  {
+    Sn.X = Upper.X - On.X;
+    Sn.Y = Upper.Y - On.Y;
+  }
+  double const f = (R->Quarter>=0) ? 1.0 : sqrt((S.X*S.Y)/(Sn.X*Sn.Y));
+  for(i=0;i<G->NLine;i++)
+  {
+    for(j=0;j<G->Line[i].NPoints;j++) RotateFraction(R, &(G->Line[i].Point[j]), O, S, On, Sn);
+    G->Line[i].Width *= f;
+  }
+  for(i=0;i<G->NCurve;i++)
+  {
+    for(j=0;j<G->Curve[i].NPoints;j++)
+    {
+      RotateFraction(R, &(G->Curve[i].Point[j]), O, S, On, Sn);
+      RotateFraction(R, &(G->Curve[i].VL[j]),    O, S, On, Sn);
+      RotateFraction(R, &(G->Curve[i].VR[j]),    O, S, On, Sn);
+    }
+    G->Curve[i].Width *= f;
+  }
+  for(i=0;i<G->NArc;i++)
+  {
+    ArcType *A = &(G->Arc[i]);
+    RotateFraction(R, &(A->Point), O, S, On, Sn);
+    A->R     *= f;
+    A->Width *= f;
+    // both ends turn by Angle and are reduced by the same whole turns, which keeps the arc
+    A->ThetaR += R->Angle;
+    A->ThetaL += R->Angle;
+    double const Turns = 2*Pi*floor((A->ThetaR+Pi)/(2*Pi));
+    A->ThetaR -= Turns;
+    A->ThetaL -= Turns;
+  }
+  for(i=0;i<G->NText;i++)
+  {
+    RotateFraction(R, &(G->Text[i].Point), O, S, On, Sn);
+    G->Text[i].Size *= f;
+    G->Text[i].Angle = ReduceAngle(G->Text[i].Angle + R->Angle);
+  }
+  for(i=0;i<G->NBitMap;i++)
+  {
+    BitMapType *B = &(G->BitMap[i]);
+    if((R->Quarter>=0)&&(B->Angle==0))
+    {
+      // the rotated rectangle is again a rectangle along the axes
+      PointType LB = B->LB, RT = B->RT;
+      RotateFraction(R, &LB, O, S, On, Sn);
+      RotateFraction(R, &RT, O, S, On, Sn);
+      B->LB.X = Min(LB.X, RT.X);  B->RT.X = Max(LB.X, RT.X);
+      B->LB.Y = Min(LB.Y, RT.Y);  B->RT.Y = Max(LB.Y, RT.Y);
+      if(RotateBitMapPixels(B, R->Quarter)) return 1;
+    }
+    else
+    {
+      // the centre moves, the rectangle keeps its size in mm and turns about the centre
+      PointType M = {(B->LB.X+B->RT.X)/2, (B->LB.Y+B->RT.Y)/2};
+      double const hx = (B->RT.X-B->LB.X)*S.X/2, hy = (B->RT.Y-B->LB.Y)*S.Y/2;
+      RotateFraction(R, &M, O, S, On, Sn);
+      B->LB.X = M.X - hx/Sn.X;  B->RT.X = M.X + hx/Sn.X;
+      B->LB.Y = M.Y - hy/Sn.Y;  B->RT.Y = M.Y + hy/Sn.Y;
+      B->Angle = ReduceAngle(B->Angle + R->Angle);
+    }
+  }
+  G->CanvasOrigin = On;
+  G->CanvasSize   = Sn;
+  for(i=1;i<G->NLayer;i++)
+  {
+    if(RotateLayer(G->Layer[i], R)) return 1;
+  }
+  return 0;
+}
+
+int RotateGraphics(GraphicsType *G, double Angle, PointType Center)
+{
+  RotationType R;
+  if(!Rotatable(G)) return 1; // checked before anything changes
+  R.Angle  = Angle;
+  R.Center = Center;
+  // a multiple of 90 degrees gets exact values of cos and sin, so that four turns give the same graphics
+  double const q = Angle / (Pi/2);
+  if(Abs(q-round(q)) < 1E-12)
+  {
+    double m = fmod(round(q), 4.0); // exact, also for large q, where a cast to int is undefined
+    if(m<0) m += 4;
+    R.Quarter = (int)m;
+    double const cq[4] = {1, 0, -1, 0}, sq[4] = {0, 1, 0, -1};
+    R.c = cq[R.Quarter];
+    R.s = sq[R.Quarter];
+  }
+  else
+  {
+    R.Quarter = -1;
+    R.c = cos(Angle);
+    R.s = sin(Angle);
+  }
+  return RotateLayer(G, &R);
 }

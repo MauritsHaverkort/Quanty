@@ -1,0 +1,173 @@
+print("-------------------------------------------------------")
+print("--                 Graphics.Rotate                   --")
+print("-------------------------------------------------------")
+
+-- A graphics with every kind of element and a layer, rotated. Everything must keep its size and
+-- shape in mm: each point, in mm on the page, is the old one rotated about the centre; widths,
+-- sizes of text and radii (fractions of sqrt(width*height) of their canvas) keep their size in mm.
+-- The canvas of each layer is the bounding box of the rotated canvas.
+-- Tested: four turns of 90 degrees and one of 360 degrees give the same svg and ps; a turn of 90
+-- degrees by hand, with the pixels of the bitmap; a turn of 30 degrees, where the bitmap gets an
+-- angle, also through Graphics.ToTable and Graphics.New; a turn and back; the options Layer and
+-- Center; the method and the function form; the input that is refused.
+
+T0 = { CanvasSize = {150, 100}, CanvasOrigin = {5, 7},
+       Line   = { {Color = 0, Width = 0.003, Point = {{0.1,0.2}, {0.4,0.3}, {0.7,0.9}}} },
+       Curve  = { {Color = 0x00FF0000, Width = 0.002, Point = {{0.2,0.2}, {0.8,0.6}}, VL = {{0.1,0.1}, {0.7,0.5}}, VR = {{0.3,0.4}, {0.9,0.8}}} },
+       Arc    = { {Color = 0x000000FF, Width = 0.002, R = 0.05, Point = {0.6,0.3}, ThetaR = 0.2, ThetaL = 1.5} },
+       Text   = { {Color = 0, Point = {0.3,0.7}, Angle = 0.1, Alignment = "c", Size = 0.04, String = "text"} },
+       BitMap = { {LB = {0.5,0.5}, RT = {0.6,0.8}, NpointsX = 2, NpointsY = 3,
+                   Pixels = "00000001 00000002 00000003 00000004 00000005 00000006>"} },
+       Layer  = { {CanvasSize = {40, 30}, CanvasOrigin = {60, 40},
+                   Line = { {Color = 0, Width = 0.01, Point = {{0,0}, {1,1}, {0.3,0.8}}} }} } }
+G = Graphics.New(T0)
+
+function Fail(what) error("Graphics.Rotate: "..what.."\n", 2) end
+function Same(A, B) return Graphics.ToSVG(A) == Graphics.ToSVG(B) and Graphics.ToPS(A) == Graphics.ToPS(B) end
+-- a point {x, y} of the layer T in mm, and a point in mm rotated by a about C
+function MM(T, p) return {T.CanvasOrigin[1] + p[1]*T.CanvasSize[1], T.CanvasOrigin[2] + p[2]*T.CanvasSize[2]} end
+function Rot(p, C, a)
+  local x, y = p[1]-C[1], p[2]-C[2]
+  return {C[1] + math.cos(a)*x - math.sin(a)*y, C[2] + math.sin(a)*x + math.cos(a)*y}
+end
+function Scale(T) return math.sqrt(T.CanvasSize[1]*T.CanvasSize[2]) end
+-- the difference of an angle from a multiple of 2 pi
+function AngleOff(d) return math.abs(d - 2*math.pi*math.floor(d/(2*math.pi) + 0.5)) end
+-- the pixels of a bitmap of Graphics.ToTable as a list of numbers
+function Pixels(B)
+  local P = {}
+  for h in B.Pixels:gsub("%s", ""):gmatch("%x%x%x%x%x%x%x%x") do P[#P+1] = tonumber(h, 16) end
+  return table.concat(P, " ")
+end
+
+-- the largest deviation, in mm, between the layer T rotated by a about C and the layer R; without
+-- NoCanvas also of the canvas of R from the bounding box of the rotated canvas of T
+function Deviation(T, R, C, a, NoCanvas)
+  local d = 0
+  local function Point(p, q) local r, s = Rot(MM(T, p), C, a), MM(R, q) d = math.max(d, math.abs(r[1]-s[1]), math.abs(r[2]-s[2])) end
+  local function Length(x, y) d = math.max(d, math.abs(x*Scale(T) - y*Scale(R))) end
+  -- the canvas is the bounding box of the rotated canvas
+  local xs, ys = {}, {}
+  for _, c in ipairs({{0,0}, {1,0}, {0,1}, {1,1}}) do local r = Rot(MM(T, c), C, a) xs[#xs+1] = r[1] ys[#ys+1] = r[2] end
+  if not NoCanvas then d = math.max(d, math.abs(R.CanvasOrigin[1] - math.min(table.unpack(xs))), math.abs(R.CanvasOrigin[2] - math.min(table.unpack(ys))),
+                  math.abs(R.CanvasOrigin[1] + R.CanvasSize[1] - math.max(table.unpack(xs))),
+                  math.abs(R.CanvasOrigin[2] + R.CanvasSize[2] - math.max(table.unpack(ys)))) end
+  for i, L in ipairs(T.Line or {}) do
+    for j, p in ipairs(L.Point) do Point(p, R.Line[i].Point[j]) end
+    Length(L.Width, R.Line[i].Width)
+  end
+  for i, L in ipairs(T.Curve or {}) do
+    for j = 1, #L.Point do Point(L.Point[j], R.Curve[i].Point[j]) Point(L.VL[j], R.Curve[i].VL[j]) Point(L.VR[j], R.Curve[i].VR[j]) end
+    Length(L.Width, R.Curve[i].Width)
+  end
+  for i, A in ipairs(T.Arc or {}) do
+    Point(A.Point, R.Arc[i].Point)
+    Length(A.R, R.Arc[i].R)
+    Length(A.Width, R.Arc[i].Width)
+    d = math.max(d, AngleOff(R.Arc[i].ThetaR - A.ThetaR - a), AngleOff(R.Arc[i].ThetaL - A.ThetaL - a),
+                    math.abs((R.Arc[i].ThetaL - R.Arc[i].ThetaR) - (A.ThetaL - A.ThetaR)))
+  end
+  for i, t in ipairs(T.Text or {}) do
+    Point(t.Point, R.Text[i].Point)
+    Length(t.Size, R.Text[i].Size)
+    d = math.max(d, AngleOff(R.Text[i].Angle - t.Angle - a))
+  end
+  for i, L in ipairs(T.Layer or {}) do d = math.max(d, Deviation(L, R.Layer[i], C, a, NoCanvas)) end
+  return d
+end
+
+-- the centre of G, in mm
+C0 = {5 + 75, 7 + 50}
+
+-- (1) four turns of 90 degrees, four of -90 degrees and one of 360 degrees give the same graphics
+print("Rotate: four turns of 90 degrees")
+R = G
+for k = 1, 4 do R = Graphics.Rotate(R, Pi/2) end
+if not Same(R, G) then Fail("four turns of 90 degrees do not give the same svg and ps") end
+R = G
+for k = 1, 4 do R = Graphics.Rotate(R, -Pi/2) end
+if not Same(R, G) then Fail("four turns of -90 degrees do not give the same svg and ps") end
+if not Same(Graphics.Rotate(G, 2*Pi), G) then Fail("a turn of 360 degrees does not give the same svg and ps") end
+
+-- (2) a turn of 90 degrees: the canvas 100 by 150 mm, about the centre (80, 57), the bitmap 3 by 2
+-- pixels, its right column now its top row
+print("Rotate: 90 degrees")
+T = Graphics.ToTable(Graphics.Rotate(G, Pi/2))
+if T.CanvasSize[1] ~= 100 or T.CanvasSize[2] ~= 150 or math.abs(T.CanvasOrigin[1]-30) > 1e-12 or math.abs(T.CanvasOrigin[2]+18) > 1e-12 then
+  Fail("the canvas after 90 degrees is "..T.CanvasSize[1].." by "..T.CanvasSize[2].." at "..T.CanvasOrigin[1]..", "..T.CanvasOrigin[2])
+end
+d = Deviation(T0, T, C0, Pi/2)
+if d > 1e-9 then Fail("90 degrees: deviation "..d) end
+B = T.BitMap[1]
+if B.NpointsX ~= 3 or B.NpointsY ~= 2 or Pixels(B) ~= "2 4 6 1 3 5" or B.Angle then Fail("the bitmap after 90 degrees: "..Pixels(B)) end
+-- its rectangle is the rotated one: the old one is 15 by 30 mm at (80, 57) to (95, 87)
+LB, RT = MM(T, B.LB), MM(T, B.RT)
+for k, v in ipairs({LB[1] - (80-30), LB[2] - 57, RT[1] - 80, RT[2] - (57+15)}) do
+  if math.abs(v) > 1e-9 then Fail("the rectangle of the bitmap after 90 degrees") end
+end
+-- a half turn and three quarter turns move the pixels as well
+if Pixels(Graphics.ToTable(Graphics.Rotate(G, Pi)).BitMap[1]) ~= "6 5 4 3 2 1" then Fail("the pixels after 180 degrees") end
+if Pixels(Graphics.ToTable(Graphics.Rotate(G, -Pi/2)).BitMap[1]) ~= "5 3 1 6 4 2" then Fail("the pixels after -90 degrees") end
+
+-- (3) a turn of 30 degrees: the canvas is the bounding box, the bitmap keeps its pixels and its size
+-- in mm and gets the angle, about its centre; the angle survives ToTable and New and is written to
+-- the svg and the ps
+print("Rotate: 30 degrees")
+R30 = Graphics.Rotate(G, Pi/6)
+T = Graphics.ToTable(R30)
+c, s = math.cos(Pi/6), math.sin(Pi/6)
+if math.abs(T.CanvasSize[1] - (150*c + 100*s)) > 1e-9 or math.abs(T.CanvasSize[2] - (150*s + 100*c)) > 1e-9 then Fail("the canvas after 30 degrees") end
+d = Deviation(T0, T, C0, Pi/6)
+if d > 1e-9 then Fail("30 degrees: deviation "..d) end
+B = T.BitMap[1]
+M = MM(T, {(B.LB[1]+B.RT[1])/2, (B.LB[2]+B.RT[2])/2})
+M0 = Rot(MM(T0, {0.55, 0.65}), C0, Pi/6)
+if B.NpointsX ~= 2 or Pixels(B) ~= "1 2 3 4 5 6" or math.abs(B.Angle - Pi/6) > 1e-12
+   or math.abs(M[1]-M0[1]) > 1e-9 or math.abs(M[2]-M0[2]) > 1e-9
+   or math.abs((B.RT[1]-B.LB[1])*T.CanvasSize[1] - 15) > 1e-9 or math.abs((B.RT[2]-B.LB[2])*T.CanvasSize[2] - 30) > 1e-9 then
+  Fail("the bitmap after 30 degrees")
+end
+if not Same(Graphics.New(T), R30) then Fail("the angle of a bitmap is lost by Graphics.ToTable and Graphics.New") end
+if not Graphics.ToSVG(R30):find('transform="rotate(-30.0000', 1, true) then Fail("the svg of a turned bitmap has no rotation") end
+if not Graphics.ToPS(R30):find(' 30.0000 rotate ', 1, true) then Fail("the ps of a turned bitmap has no rotation") end
+-- and back: the same points; the canvas is the bounding box of the bounding box, larger than before
+d = Deviation(T0, Graphics.ToTable(Graphics.Rotate(R30, -Pi/6)), C0, 0, true)
+if d > 1e-9 then Fail("30 degrees and back: deviation "..d) end
+
+-- (4) the option Layer turns one layer about its own middle; the rest stays as it was
+print("Rotate: options Layer and Center")
+T = Graphics.ToTable(Graphics.Rotate(G, Pi/2, {{"Layer",1}}))
+d = Deviation(T0.Layer[1], T.Layer[1], {80, 55}, Pi/2)
+if d > 1e-9 or math.abs(T.Layer[1].CanvasOrigin[1]-65) > 1e-12 or math.abs(T.Layer[1].CanvasOrigin[2]-35) > 1e-12 then Fail("option Layer: deviation "..d) end
+T.Layer = nil
+T1 = {}
+for k, v in pairs(T0) do T1[k] = v end
+T1.Layer = nil
+if not Same(Graphics.New(T), Graphics.New(T1)) then Fail("option Layer changed the graphics itself") end
+-- Center {0, 0} turns about the lower left corner
+T = Graphics.ToTable(Graphics.Rotate(G, Pi/2, {{"Center",{0,0}}}))
+d = Deviation(T0, T, {5, 7}, Pi/2)
+if d > 1e-9 or math.abs(T.CanvasOrigin[1]+95) > 1e-12 or math.abs(T.CanvasOrigin[2]-7) > 1e-12 then Fail("option Center: deviation "..d) end
+
+-- (5) G.Rotate turns G itself, Graphics.Rotate returns a turned copy and leaves G as it is
+print("Rotate: method and function")
+G2 = Graphics.New(T0)
+G2.Rotate(Pi/6)
+if not Same(G2, R30) then Fail("G.Rotate and Graphics.Rotate differ") end
+if not Same(G, Graphics.New(T0)) then Fail("Graphics.Rotate changed its input") end
+
+-- (6) refused: an angle that is not a finite number, a wrong Center or Layer, too many arguments, and a
+-- canvas of size 0, which leaves the graphics as it was
+print("Rotate: refused input")
+for k, w in ipairs({ {"a"}, {0/0}, {1/0}, {1, {{"Center",{1}}}}, {1, {{"Center",{0, I}}}}, {1, {{"Layer",2}}}, {1, {{"Size",2}}}, {1, 2} }) do
+  if pcall(Graphics.Rotate, G, table.unpack(w)) then Fail("accepted wrong input in case "..k) end
+end
+T2 = {}
+for k, v in pairs(T0) do T2[k] = v end
+T2.Layer = { {CanvasSize = {0, 30}, CanvasOrigin = {60, 40}} }
+Z = Graphics.New(T2)
+ok, msg = pcall(Z.Rotate, 1)
+if ok or not string.find(msg, "canvas of size 0", 1, true) then Fail("a canvas of size 0 was rotated: "..tostring(msg)) end
+if not Same(Z, Graphics.New(T2)) then Fail("a refused rotation changed the graphics") end
+
+print("Graphics.Rotate tests passed")

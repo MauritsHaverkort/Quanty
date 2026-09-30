@@ -113,6 +113,7 @@ typedef struct BitMapType
   int NpointsY;              // number of pixels in the y direction
   uint32_t *Pixels;          // pixels 0xAARRGGBB, AA the transparency, NpointsX * NpointsY of them, row 0 at the top
   bool Pixelated;            // draw each pixel as a square, without smoothing between pixels where the format allows it
+  double Angle;              // the rectangle LB-RT is drawn turned by Angle (radians, counterclockwise) about its centre, in mm
 } BitMapType;
 
 
