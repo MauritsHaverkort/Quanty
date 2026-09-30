@@ -387,7 +387,8 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
   return 0;
 }
 
-int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint8_t *LineColorRe, double PointSizeRe, uint8_t *PointColorRe, double LineWidthIm, uint8_t *LineColorIm, double PointSizeIm, uint8_t *PointColorIm, double YScale, double YShift)
+// Data->N+1 values at the energies X, or on the even mesh from Data->Emin to Data->Emax if X is NULL
+int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint8_t *LineColorRe, double PointSizeRe, uint8_t *PointColorRe, double LineWidthIm, uint8_t *LineColorIm, double PointSizeIm, uint8_t *PointColorIm, double YScale, double YShift, double const *X)
 {
   PointType *DataPoints;
   int NPoints=Data->N+1;
@@ -400,7 +401,9 @@ int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
   }
   for(i=0;i<NPoints;i++)
   {
-    DataPoints[i].X = i * Data->Emax / (NPoints-1) + (NPoints-i-1) * Data->Emin / (NPoints-1);
+    if(X!=NULL)         DataPoints[i].X = X[i];
+    else if(NPoints==1) DataPoints[i].X = Data->Emin;
+    else                DataPoints[i].X = i * Data->Emax / (NPoints-1) + (NPoints-i-1) * Data->Emin / (NPoints-1);
     DataPoints[i].Y = YScale * Data->Re[i] + YShift;
   }
   AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NPoints, LineWidthRe, LineColorRe, PointSizeRe, PointColorRe);
@@ -553,7 +556,7 @@ int PlotPointsToGraphics(GraphicsType* Graphics, PointType *Data, int NPoints, L
 int PlotSpectraTypeToGraphics(GraphicsType* Graphics, SpectraType *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale)
 {
   PlotAllButDataToGraphics(Graphics, FPO);
-  AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, LPORe->LineWidth, LPORe->LineColor, LPORe->PointSize, LPORe->PointColor, LPOIm->LineWidth, LPOIm->LineColor, LPOIm->PointSize, LPOIm->PointColor, YScale, 0);
+  AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, LPORe->LineWidth, LPORe->LineColor, LPORe->PointSize, LPORe->PointColor, LPOIm->LineWidth, LPOIm->LineColor, LPOIm->PointSize, LPOIm->PointColor, YScale, 0, NULL);
   return 0;
 }
 
@@ -568,14 +571,15 @@ void WaterfallPositions(SpectraTypeArray const *Data, double WaterfallOffset, do
   }
 }
 
-// spectrum i is drawn shifted up by YPos[i], or not shifted if YPos is NULL
-int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double const *YPos)
+// spectrum i is drawn shifted up by YPos[i], or not shifted if YPos is NULL; its values are at the
+// energies X[i], or on its even mesh if X or X[i] is NULL
+int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double const *YPos, double * const *X)
 {
   int i;
   PlotAllButDataToGraphics(Graphics, FPO);
   for(i=0;i<Data->NSpectra;i++)
   {
-    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, (YPos==NULL)?0:YPos[i]);
+    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, (YPos==NULL)?0:YPos[i], (X==NULL)?NULL:X[i]);
   }
   return 0;
 }
@@ -734,7 +738,7 @@ int PlotSpectraTypeArrayToColorMap(GraphicsType* Graphics, SpectraTypeArray cons
 
 int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double ScaleOffDiagonal, double ShiftOffDiagonal)
 {
-  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,NULL);
+  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,NULL,NULL);
   int i;
   FramePlotOptions FPOInset;
   // plot graphs to layer 1 to NXPlots * NYPlots

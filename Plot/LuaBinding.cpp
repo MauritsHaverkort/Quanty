@@ -1133,6 +1133,73 @@ static int NumberOfSelectedSpectra(int N, int Start, int Stop, int Step)
   return (Stop-Start)/Step+1;
 }
 
+// Graphics.Plot: is the value at narg a list of points {{x1,y1}, {x2,y2}, ...}? A list of curves
+// has Spectra objects, response functions or lists of points as elements; a response function
+// in table form has a metatable.
+static bool LuaIsPointList(lua_State *L, int narg)
+{
+  bool Is = false;
+  narg = lua_absindex(L, narg);
+  if(lua_type(L, narg)!=LUA_TTABLE) return false;
+  if(lua_getmetatable(L, narg))
+  {
+    lua_pop(L, 1);
+    return false;
+  }
+  lua_rawgeti(L, narg, 1);
+  if((lua_type(L, -1)==LUA_TTABLE)&&(lua_objlen(L, -1)==2))
+  {
+    lua_rawgeti(L, -1, 1);
+    Is = (lua_type(L, -1)==LUA_TNUMBER);
+    lua_pop(L, 1);
+  }
+  lua_pop(L, 1);
+  return Is;
+}
+
+// Graphics.Plot: reads the list of points {{x1,y1}, {x2,y2}, ...} at narg, with y a real or a
+// complex number, into the spectrum S (the y values in Re and Im, Emin and Emax the smallest and
+// the largest x) and its energies *X. The points may lie on any mesh and are drawn in their order.
+// Curve is the number of the curve, for error messages.
+static void LuaReadPointList(lua_State *L, int narg, SpectraType *S, double **X, int Curve)
+{
+  narg = lua_absindex(L, narg);
+  int const N = (int)lua_objlen(L, narg);
+  memset(S, 0, sizeof(SpectraType));
+  S->ResonantEnergy = NAN;
+  S->Emin =  INFINITY;
+  S->Emax = -INFINITY;
+  S->N  = N-1;
+  S->Re = (double*)malloc(N*sizeof(double));
+  S->Im = (double*)malloc(N*sizeof(double));
+  *X    = (double*)malloc(N*sizeof(double));
+  for(int i=0;i<N;i++)
+  {
+    lua_rawgeti(L, narg, i+1);
+    if((lua_type(L, -1)!=LUA_TTABLE)||(lua_objlen(L, -1)!=2)) luaL_error(L, "Graphics.Plot: point %d of curve %d should be {x, y}\n", i+1, Curve);
+    lua_rawgeti(L, -1, 1);
+    if(lua_type(L, -1)!=LUA_TNUMBER) luaL_error(L, "Graphics.Plot: the x of point %d of curve %d should be a number\n", i+1, Curve);
+    (*X)[i] = (double)lua_tonumber(L, -1);
+    lua_pop(L, 1);
+    lua_rawgeti(L, -1, 2);
+    if(lua_type(L, -1)==LUA_TNUMBER)
+    {
+      S->Re[i] = (double)lua_tonumber(L, -1);
+      S->Im[i] = 0;
+    }
+    else if(luaL_testudata(L, -1, "Complex_Type")!=NULL)
+    {
+      Complex16 const * const z = (Complex16*)lua_touserdata(L, -1);
+      S->Re[i] = z->Re;
+      S->Im[i] = z->Im;
+    }
+    else luaL_error(L, "Graphics.Plot: the y of point %d of curve %d should be a real or a complex number\n", i+1, Curve);
+    lua_pop(L, 2);
+    if((*X)[i]<S->Emin) S->Emin = (*X)[i];
+    if((*X)[i]>S->Emax) S->Emax = (*X)[i];
+  }
+}
+
 // The colour of a colour map made by Graphics.Plot without a ColorFunction:
 // white to RGB as Saturation times the value (Im, or Re) goes from 0 to 1
 typedef struct BuiltInColorContext
@@ -1172,6 +1239,8 @@ int LuaPlotGraphics(lua_State * L)
   a=&aa;
   View.Spec=NULL; // the selected spectra, sharing their data with the spectra they are taken from
   double *YPos=NULL; // the heights of the spectra in a waterfall plot or a colour map
+  double **PointX=NULL; // for curves given as lists of points their x values, NULL for spectra on an even mesh
+  int NPointX=0;
   bool AutoYRange=false; // the y range was chosen from the data, the y ticks then lie on multiples of dYTick
   uint32_t len = (uint32_t) lua_gettop(L);
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
@@ -1383,7 +1452,9 @@ int LuaPlotGraphics(lua_State * L)
     if(Emin==-INFINITY) Emin=-1;
     if(Emax== INFINITY) Emax= 1;
     int NE=Options.PlotPoints;
-    int const NTable = (int)lua_objlen(L, 1);
+    // a single list of points {{x1,y1}, ...} is plotted as a list with one curve
+    bool const OnePointList = LuaIsPointList(L, 1);
+    int const NTable = OnePointList ? 1 : (int)lua_objlen(L, 1);
     a->NSpectra = NumberOfSelectedSpectra(NTable, Options.SpectraStart, Options.SpectraStop, Options.SpectraStep);
     if(a->NSpectra==0) return luaL_error(L, "Graphics.Plot: no spectra to plot, the table has %d elements and SpectraStart is %d, SpectraStop %d\n",NTable,Options.SpectraStart,(Options.SpectraStop<NTable)?Options.SpectraStop:NTable);
     a->Spec = (SpectraType*)malloc(a->NSpectra*sizeof(SpectraType));
@@ -1393,7 +1464,8 @@ int LuaPlotGraphics(lua_State * L)
       // read element i of the table and see if we can convert it to a spectrum
       // only the selected elements are read, spectrum k of the plot is element i of the table
       i = Options.SpectraStart - 1 + k * Options.SpectraStep;
-      lua_rawgeti(L, 1, i+1);
+      if(OnePointList) lua_pushvalue(L, 1);
+      else             lua_rawgeti(L, 1, i+1);
       // a list of if then else that goes throught the options
       if(lua_type(L,-1)==LUA_TTABLE)
       {
@@ -1419,9 +1491,19 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Found a table to plot, but on position %d there is an object I can not convert to a spectrum\n",i+1);
           }
         }
+        else if(LuaIsPointList(L, -1))
+        {
+          // a list of points on any mesh
+          if(PointX==NULL)
+          {
+            NPointX = (int)a->NSpectra;
+            PointX = (double**)calloc(NPointX, sizeof(double*));
+          }
+          LuaReadPointList(L, -1, &(a->Spec[k]), &(PointX[k]), i+1);
+        }
         else // we found a table without meta data. We can not convert this to a spectra
         {
-          return luaL_error(L, "Found a table to plot, but on position %d there is an object I can not convert to a spectrum\n",i+1);
+          return luaL_error(L, "Found a table to plot, but on position %d there is an object I can not convert to a spectrum or a list of points {{x1,y1}, {x2,y2}, ...}\n",i+1);
         }
       }
       else if (lua_type(L,-1)==LUA_TUSERDATA)
@@ -1481,6 +1563,8 @@ int LuaPlotGraphics(lua_State * L)
         a = &View;
       }
       labelSpectraTypeArrayPlot:
+      if((PointX!=NULL)&&Options.ColorMap) return luaL_error(L, "Graphics.Plot: a colour map needs spectra on an even energy mesh, not lists of points\n");
+      if((PointX!=NULL)&&((Options.Nrow!=1)||(Options.Ncolumn!=1))) return luaL_error(L, "Graphics.Plot: lists of points can not be plotted with Nrow and Ncolumn\n");
       // the heights of the spectra in a waterfall plot or a colour map
       YPos = (double*)malloc(a->NSpectra*sizeof(double));
       if(Options.UseResonantEnergy)
@@ -1533,7 +1617,7 @@ int LuaPlotGraphics(lua_State * L)
           if(YPos[i]>High) High=YPos[i];
           for(int k=0;k<=(int)S->N;k++)
           {
-            double const x = (S->N==0) ? S->Emin : ( k * S->Emax + (S->N-k) * S->Emin ) / S->N;
+            double const x = ((PointX!=NULL)&&(PointX[i]!=NULL)) ? PointX[i][k] : (S->N==0) ? S->Emin : ( k * S->Emax + (S->N-k) * S->Emin ) / S->N;
             if((x<Options.Frame.PlotRange[0].X)||(x>Options.Frame.PlotRange[1].X)) continue;
             double const v[2] = {YScale*S->Re[k] + YPos[i], YScale*S->Im[k] + YPos[i]};
             bool   const Plotted[2] = {Options.PlotRe, Options.PlotIm};
@@ -1667,7 +1751,7 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos);
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos, PointX);
         free(LPORe);
         free(LPOIm);
       }
@@ -1803,7 +1887,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset)); // one spectrum
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset), NULL); // one spectrum
         free(LPORe);
         free(LPOIm);
       }
@@ -1885,6 +1969,8 @@ int LuaPlotGraphics(lua_State * L)
   free(Options.Style.Line);
   free(View.Spec);
   free(YPos);
+  for(i=0;i<NPointX;i++) free(PointX[i]);
+  free(PointX);
   luaL_unref(L, LUA_REGISTRYINDEX, Options.ColorFunction);
   FreeSpectraTypeArray(&aa);
   return 1;
