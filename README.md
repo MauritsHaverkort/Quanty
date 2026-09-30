@@ -49,6 +49,13 @@ lipo -create Quanty-x86_64 Quanty-arm64 -output Quanty
 
 Do not use -ffast-math or -Ofast, they change the order of summations, flush small numbers to zero and break the tests for NaN, and thereby the numerical accuracy. Do not use -march=native for a binary that should run on other computers. -flto gains nothing, as Quanty is compiled as a single file. The number of threads is set with the environment variable OMP_NUM_THREADS.
 
+CMakeLists.txt does all of the above on macOS by itself (new lapack, static libomp from Homebrew, readline, -O3, macOS 13.3):
+
+cmake -S . -B build
+cmake --build build
+
+For a universal binary add -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DOpenMP_libomp_LIBRARY=<path to a universal libomp.a> to the first command.
+
 
 ================== C v.s. C++                                      =======================
 
