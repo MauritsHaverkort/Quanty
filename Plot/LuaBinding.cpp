@@ -2089,6 +2089,33 @@ int LuaGraphicsIndex(lua_State * L)
   return luaL_error(L, "Error index %s not found in Graphics Object\n",str);
 }
 
+// The layers of a graphics have their own origin and size in the absolute coordinates of the
+// page. Moving a graphics moves all layers in it by the same distance, and scaling it scales
+// them about its origin O by the factors f, so that its layers stay where they are on it.
+static void MoveLayers(GraphicsType *G, double dX, double dY)
+{
+  for(int i=1;i<G->NLayer;i++)
+  {
+    G->Layer[i]->CanvasOrigin.X += dX;
+    G->Layer[i]->CanvasOrigin.Y += dY;
+    MoveLayers(G->Layer[i], dX, dY);
+  }
+}
+
+static void ScaleLayers(GraphicsType *G, PointType O, double fX, double fY)
+{
+  for(int i=1;i<G->NLayer;i++)
+  {
+    G->Layer[i]->CanvasOrigin.X = O.X + fX * (G->Layer[i]->CanvasOrigin.X - O.X);
+    G->Layer[i]->CanvasOrigin.Y = O.Y + fY * (G->Layer[i]->CanvasOrigin.Y - O.Y);
+    G->Layer[i]->CanvasSize.X  *= fX;
+    G->Layer[i]->CanvasSize.Y  *= fY;
+    ScaleLayers(G->Layer[i], O, fX, fY);
+  }
+}
+
+// setting SizeX, SizeY, OriginX or OriginY resizes or moves the graphics with all its layers;
+// a size of 0 has no scale factor, then only the graphics itself gets the new size
 int LuaGraphicsNewIndex(lua_State * L)
 {
   GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
@@ -2097,24 +2124,28 @@ int LuaGraphicsNewIndex(lua_State * L)
   if(strcmp(str, "SizeX")==0)
   {
     a = (double)luaL_checknumber(L, 3);
+    if(Graphics->CanvasSize.X!=0) ScaleLayers(Graphics, Graphics->CanvasOrigin, a/Graphics->CanvasSize.X, 1);
     Graphics->CanvasSize.X = a;
     return 0;
   }
   if(strcmp(str, "SizeY")==0)
   {
     a = (double)luaL_checknumber(L, 3);
+    if(Graphics->CanvasSize.Y!=0) ScaleLayers(Graphics, Graphics->CanvasOrigin, 1, a/Graphics->CanvasSize.Y);
     Graphics->CanvasSize.Y = a;
     return 0;
   }
   if(strcmp(str, "OriginX")==0)
   {
     a = (double)luaL_checknumber(L, 3);
+    MoveLayers(Graphics, a-Graphics->CanvasOrigin.X, 0);
     Graphics->CanvasOrigin.X = a;
     return 0;
   }
   if(strcmp(str, "OriginY")==0)
   {
     a = (double)luaL_checknumber(L, 3);
+    MoveLayers(Graphics, 0, a-Graphics->CanvasOrigin.Y);
     Graphics->CanvasOrigin.Y = a;
     return 0;
   }

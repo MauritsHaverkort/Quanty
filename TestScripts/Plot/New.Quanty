@@ -22,6 +22,31 @@ print(pl.OriginX)
 print(pl.OriginY)
 
 
+-- moving a graphics moves its layers with it, and resizing it resizes them about its origin; the
+-- layers have their own origin and size in the absolute coordinates of the page
+Page  = Graphics.New({{"Canvas.Size.X",200}, {"Canvas.Size.Y",100}})
+Inner = Graphics.New({{"Canvas.Size.X",50}, {"Canvas.Size.Y",40}, {"Canvas.Origin.X",20}, {"Canvas.Origin.Y",10}})
+Inner.Add(Graphics.New({{"Canvas.Size.X",10}, {"Canvas.Size.Y",10}, {"Canvas.Origin.X",30}, {"Canvas.Origin.Y",20}}))
+Page.Add(Inner)
+function Layers(G)
+  local T = Graphics.ToTable(G)
+  local L1, L2 = T.Layer[1], T.Layer[1].Layer[1]
+  return {T.CanvasOrigin[1], T.CanvasOrigin[2], L1.CanvasOrigin[1], L1.CanvasOrigin[2], L1.CanvasSize[1], L1.CanvasSize[2],
+          L2.CanvasOrigin[1], L2.CanvasOrigin[2], L2.CanvasSize[1], L2.CanvasSize[2]}
+end
+function Check(G, Expected, what)
+  local V = Layers(G)
+  for k = 1, #Expected do
+    if math.abs(V[k]-Expected[k]) > 1e-12 then error("Graphics "..what..": got "..table.concat(V, " ").."\n", 2) end
+  end
+end
+Page.OriginX, Page.OriginY = 5, -3
+Check(Page, {5,-3, 25,7, 50,40, 35,17, 10,10}, "OriginX and OriginY do not move the layers")
+Page.SizeX = 400   -- twice as wide, about x = 5
+Check(Page, {5,-3, 45,7, 100,40, 65,17, 20,10}, "SizeX does not scale the layers")
+Page.SizeY = 50    -- half as high, about y = -3
+Check(Page, {5,-3, 45,2, 100,20, 65,7, 20,5}, "SizeY does not scale the layers")
+
 pl = nil
 collectgarbage()
 collectgarbage()
