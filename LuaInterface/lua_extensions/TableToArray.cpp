@@ -4391,6 +4391,8 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             if (lua_isnumber(L,-1)==0) return luaL_error(L, "Error Options array for line types should only have integer keys\n");
             lua_pushvalue(L, -1);
             k = (int)luaL_checkinteger(L, -1);
+            // style k is stored in Line[k-1]; a number below 1 would write before the array
+            if(k<1) return luaL_error(L, "Error the styles of LineStyle are numbered from 1, not %d; a list {style1, style2, ...} numbers them so\n", k);
             if(k>((LinePlotOptionsArray*)Options[j].variable)->NAllocLine) ((LinePlotOptionsArray*)Options[j].variable)->NAllocLine = k;
             lua_pop(L, 1);
           }
