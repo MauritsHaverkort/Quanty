@@ -604,7 +604,7 @@ int LuaAddToGraphics(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
   int i,j;
-  uint32_t val;
+  lua_Integer val; // signed, so that negative values are clipped to 0
   GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
   struct
   {
@@ -825,7 +825,7 @@ int LuaAddToGraphics(lua_State * L)
                         case 1: // BW
                         {
                           lua_rawgeti(L, -1, 1);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           if(val<0)
                           {
                             val=0;
@@ -844,7 +844,7 @@ int LuaAddToGraphics(lua_State * L)
                           BitMap.Pixels[i+j*BitMap.NpointsX] = 0xFF;
 
                           lua_rawgeti(L, -1, 1);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -857,7 +857,7 @@ int LuaAddToGraphics(lua_State * L)
                           BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
 
                           lua_rawgeti(L, -1, 2);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -871,7 +871,7 @@ int LuaAddToGraphics(lua_State * L)
                           BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
                           
                           lua_rawgeti(L, -1, 3);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -887,7 +887,7 @@ int LuaAddToGraphics(lua_State * L)
                         case 4: //RGBalpha
                         {
                           lua_rawgeti(L, -1, 4);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -900,7 +900,7 @@ int LuaAddToGraphics(lua_State * L)
                           BitMap.Pixels[i+j*BitMap.NpointsX] = val;
                           
                           lua_rawgeti(L, -1, 1);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -913,7 +913,7 @@ int LuaAddToGraphics(lua_State * L)
                           BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
                           
                           lua_rawgeti(L, -1, 2);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -926,7 +926,7 @@ int LuaAddToGraphics(lua_State * L)
                           BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
                           
                           lua_rawgeti(L, -1, 3);
-                          val = (uint32_t)luaL_checkinteger(L,-1);
+                          val = luaL_checkinteger(L,-1);
                           lua_pop(L, 1);
                           if(val<0)
                           {
@@ -949,7 +949,7 @@ int LuaAddToGraphics(lua_State * L)
                     }
                     else
                     {
-                      val = (uint32_t)luaL_checkinteger(L,-1);
+                      val = luaL_checkinteger(L,-1);
                       if(val<0)
                       {
                         val=0;
@@ -968,7 +968,7 @@ int LuaAddToGraphics(lua_State * L)
               }
               else
               { // length = 5 and position 4 is not a talbe, collorfun matrix input option
-                
+                return luaL_error(L, "Error: the fourth element of a BitMap should be a table of pixels; the form {\"BitMap\", {px,py}, {px,py}, ColorFunction, Matrix} is not implemented yet\n");
               }
               AddBitMapInherentMemory(Graphics, &BitMap);
               lua_remove(L,2);

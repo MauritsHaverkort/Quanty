@@ -423,3 +423,12 @@ if not(SVGpl==SVGExpected) then
 	error("Plot.Add failed\n", 1)
 end
 
+
+print("Add bitmap: values are clipped to 0 to 255")
+
+-- negative values are black (0), not white; above 255 is 255
+Clip = Graphics.ToTable(Graphics.Add(Graphics.New(), {"BitMap", {0,0}, {1,1}, {{-5, 0, 128, 300}, {{-1,300,7}, {1,2,3,-9}, {-3}, {400}}}})).BitMap[1].Pixels
+if Clip ~= "FF000000FF000000FF808080FFFFFFFFFF00FF0700010203FF000000FFFFFFFF>" then
+	print(Clip)
+	error("Graphics.Add clipping of bitmap values failed\n", 1)
+end
