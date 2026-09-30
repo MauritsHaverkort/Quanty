@@ -1815,12 +1815,10 @@ int LuaPlotGraphics(lua_State * L)
       if(len>3) NE=(int)luaL_checkinteger(L, 4);
       if(len>4) return luaL_error(L, "For plotting a response function I expect the first argument to be a response function and the 2nd, 3rd and 4th are optional the Lorentzian and Gaussian broadingings and the number of points in the spectrum.\n In this case I got %d argumens\n",len);
       
+      // the energies at which the response function is evaluated; the y range and the ticks
+      // follow below, after the jump to the plot of a list of spectra
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = -1;
       if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X =  1;
-      if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
-      if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y =  1;
-      if(Options.Frame.FirstXTick==-INFINITY) Options.Frame.FirstXTick = Options.Frame.PlotRange[0].X;
-      if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
       
       if(Options.Nrow!=1) return luaL_error(L, "Invalid option Nrow when plotting response functions\n");
       if(Options.Ncolumn!=1) return luaL_error(L, "Invalid option Ncolumn when plotting response functions\n");
@@ -1855,6 +1853,10 @@ int LuaPlotGraphics(lua_State * L)
         a = &aa;
         goto labelSelectSpectra;
       }
+      if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
+      if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y =  1;
+      if(Options.Frame.FirstXTick==-INFINITY) Options.Frame.FirstXTick = Options.Frame.PlotRange[0].X;
+      if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
       if(A->Block==false)
       {
         // make a single graph with possible multiple spectra

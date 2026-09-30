@@ -326,4 +326,19 @@ for k, w in ipairs({ {{Uneven, Uneven}, {{"ColorMap",true}}}, {{Uneven}, {{"Nrow
   if pcall(Graphics.Plot, w[1], w[2]) then error("Graphics.Plot accepted a wrong list of points in case "..k.."\n", 1) end
 end
 
+-- a block response function as a colour map or a waterfall gets the automatic y range as well;
+-- plotted as a grid it keeps -1 to 1
+print("Automatic y range of a block response function")
+function YLabels(pl)
+  local L = {}
+  for _, t in ipairs(Graphics.ToTable(pl).Text) do if t.Alignment == "r" then L[#L+1] = t.String end end
+  return table.concat(L, " ")
+end
+A = YLabels(Graphics.Plot(GB, 0.2, {{"ColorMap",true}, {"NPixelX",10}, {"NPixelY",10}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+B = YLabels(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Negate",true}, {"SpectraStep",3}, {"WaterfallShift",2}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+C = YLabels(Graphics.Plot(GB, 0.2, {{"plotRe",false}, {"Frame",{{"Xmin",-3},{"Xmax",3}}}}))
+if A ~= "1 2 3 4" or B == "0" or C ~= "0 0" then
+  error("Graphics.Plot y range of a block response function: map "..A..", waterfall "..B..", grid "..C.."\n", 1)
+end
+
 print("Graphics.Plot tests passed")
