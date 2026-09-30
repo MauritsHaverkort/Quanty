@@ -596,6 +596,16 @@ static int io_get(lua_State *L)
   return 0;
 }
 
+// io.mkdir(Path) makes a directory and the directories above it, see LuaMkdir in lua_extensions/get_put.cpp
+static int io_mkdir(lua_State *L)
+{
+  size_t Length;
+  if(lua_gettop(L)!=1) return luaL_error(L, "Error: io.mkdir should be called with one argument, the name of the directory, not with %d\n", lua_gettop(L));
+  if(lua_type(L, 1)!=LUA_TSTRING) return luaL_error(L, "Error: the argument of io.mkdir should be a string, the name of the directory\n");
+  const char *Path = lua_tolstring(L, 1, &Length);
+  return LuaMkdir(L, Path, Length);
+}
+
 static int io_put(lua_State *L)
 {
   const char *FileName,*VariableName,*FileType;
@@ -639,6 +649,7 @@ static const luaL_Reg iolib[] = {
   {"write", io_write},
   {"get", io_get},
   {"put", io_put},
+  {"mkdir", io_mkdir},
   {NULL, NULL}
 };
 

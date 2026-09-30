@@ -317,6 +317,7 @@ test-jobs:
           - "IndexToBitMask"
           - "Inverse"
           - "ioGetPut"
+          - "ioMkdir"
           - "MeanFieldGroundstate"
           - "MeanFieldOperator"
           - "NewOperatorBasis"

@@ -55,6 +55,89 @@ uint32_t LuaGet(lua_State *L, const char * const FileName, const char * const Va
   return 0;
 }
 
+/*  io.mkdir(Path): makes the directory Path and all directories above it that do not exist yet
+ *  (as mkdir -p), with the permissions 0777 less the umask of the user. Pushes true if Path was
+ *  made, false if it existed already as a directory (nothing is done then), and raises a Lua error
+ *  if it can not be made: the name holds a character that is not printable ASCII, the name or a
+ *  part of it is a file, or the system refuses (no permission, ...). The path is relative to the
+ *  directory Quanty is started from, as for io.open; on Windows '\\' separates directories as
+ *  well as '/'.
+ *  returns the number of values pushed, 1
+ */
+static bool IsDirectory(const char * const Path)
+{
+  struct stat info;
+  return (stat(Path, &info)==0) && (info.st_mode & S_IFDIR);
+}
+
+// make the one directory Path, whose parent exists; an error names Path and the full name Full
+static void MakeOneDirectory(lua_State *L, const char * const Path, const char * const Full)
+{
+  struct stat info;
+  if(stat(Path, &info)==0)
+  {
+    if(info.st_mode & S_IFDIR) return;
+    luaL_error(L, "Error in io.mkdir(\"%s\"): %s exists and is not a directory\n", Full, Path);
+  }
+#if defined(_WIN32)
+  int const r = mkdir(Path);
+#else
+  int const r = mkdir(Path, 0777);
+#endif
+  int const e = errno; // before stat can change it
+  // another program may have made it in the mean time
+  if((r!=0) && !((e==EEXIST) && IsDirectory(Path)))
+  {
+    luaL_error(L, "Error in io.mkdir(\"%s\"): can not make the directory %s: %s\n", Full, Path, strerror(e));
+  }
+}
+
+int LuaMkdir(lua_State *L, const char * const Path, size_t Length)
+{
+  if(Length==0) return luaL_error(L, "Error in io.mkdir: the name of the directory is empty\n");
+  for(size_t i=0;i<Length;i++)
+  {
+    unsigned char const c = (unsigned char)Path[i];
+    if((c<0x20)||(c>0x7E))
+    {
+      char Byte[8]; // luaL_error knows no %X
+      snprintf(Byte, sizeof(Byte), "0x%02X", (unsigned int)c);
+      return luaL_error(L, "Error in io.mkdir(\"%s\"): the name of a directory may only hold printable ASCII characters, character %d is not (byte %s)\n", Path, (int)i+1, Byte);
+    }
+  }
+  if(IsDirectory(Path))
+  {
+    lua_pushboolean(L, false);
+    return 1;
+  }
+  // make the directories one after the other, at each separator; a leading separator (an absolute
+  // path) and separators that follow each other are no directory of their own. The copy of the
+  // name is a userdata, which Lua frees also after an error.
+  char *Part = (char*)lua_newuserdata(L, Length+1);
+  memcpy(Part, Path, Length+1);
+  for(size_t i=1;i<Length;i++)
+  {
+#if defined(_WIN32)
+    bool const Separator = (Part[i]=='/')||(Part[i]=='\\');
+    bool const Drive     = (i==2) && (Part[1]==':'); // "C:" itself is no directory to make
+    bool const Double    = (Part[i-1]=='/')||(Part[i-1]=='\\');
+#else
+    bool const Separator = (Part[i]=='/');
+    bool const Drive     = false;
+    bool const Double    = (Part[i-1]=='/');
+#endif
+    if(!Separator || Drive || Double) continue;
+    char const Keep = Part[i];
+    Part[i] = '\0';
+    MakeOneDirectory(L, Part, Path);
+    Part[i] = Keep;
+  }
+  MakeOneDirectory(L, Path, Path);
+  lua_pop(L, 1);
+  lua_pushboolean(L, true);
+  return 1;
+}
+
 /*
  *  puts the global variable with name VariableName
  *  and adds it to the file at FileName

@@ -1,0 +1,62 @@
+print("-------------------------------------------------------")
+print("--                    io.mkdir                       --")
+print("-------------------------------------------------------")
+
+-- io.mkdir(Path) makes the directory Path and the directories above it that do not exist yet. It
+-- returns true if it made Path and false if Path was a directory already, and raises an error if
+-- Path can not be made. Only printable ASCII is accepted in the name.
+-- Tested: a new directory and the same again, nested directories, a trailing and a double '/',
+-- a file in the way (as the directory and as a directory above it), names that are not printable
+-- ASCII (also when only a part of the path is not, which must make nothing), and wrong arguments.
+-- Everything happens below a new name from os.tmpname and is removed at the end.
+
+function Fail(what) error("io.mkdir: "..what.."\n", 2) end
+function Exists(p) local f = io.open(p.."/probe", "w") if f then f:close() os.remove(p.."/probe") return true end return false end
+function Refused(msgpart, ...)
+  local ok, msg = pcall(io.mkdir, ...)
+  if ok then Fail("accepted "..tostring((...))) end
+  if msgpart and not string.find(msg, msgpart, 1, true) then Fail("wrong error for "..tostring((...))..": "..msg) end
+end
+
+R = os.tmpname()
+os.remove(R)
+
+-- a new directory, and again
+if io.mkdir(R) ~= true then Fail("did not return true for a new directory") end
+if not Exists(R) then Fail("did not make "..R) end
+if io.mkdir(R) ~= false then Fail("did not return false for an existing directory") end
+
+-- nested directories, all made at once; the ones above exist afterwards
+if io.mkdir(R.."/a/b/c") ~= true or not Exists(R.."/a/b/c") then Fail("did not make nested directories") end
+if io.mkdir(R.."/a") ~= false or io.mkdir(R.."/a/b") ~= false or io.mkdir(R.."/a/b/c/") ~= false then Fail("nested directories were not found") end
+-- a trailing '/' and a double '/'
+if io.mkdir(R.."/d/") ~= true or not Exists(R.."/d") then Fail("a name with a trailing / failed") end
+if io.mkdir(R.."/e//f") ~= true or io.mkdir(R.."/e/f") ~= false then Fail("a name with // failed") end
+
+-- a file in the way: as the directory itself and as a directory above it
+file = assert(io.open(R.."/file", "w"))
+file:write("x")
+file:close()
+Refused("exists and is not a directory", R.."/file")
+Refused("exists and is not a directory", R.."/file/sub")
+
+-- not printable ASCII: nothing is made, also not the part before it
+Refused("printable ASCII", R.."/Ausgabe_\xC3\xA4")
+Refused("printable ASCII", R.."/g/\xC3\xA4/h")
+Refused("printable ASCII", R.."/tab\there")
+Refused("printable ASCII", R.."/zero\0byte")
+Refused("printable ASCII", R.."/del\x7F")
+if Exists(R.."/g") or Exists(R.."/Ausgabe_\xC3\xA4") or Exists(R.."/zero") then Fail("made a directory for a name that is not ASCII") end
+
+-- wrong arguments
+Refused("empty", "")
+Refused("should be a string", 5)
+Refused("one argument")
+Refused("one argument", R.."/x", R.."/y")
+
+-- clean up, the deepest first
+os.remove(R.."/file")
+for _, d in ipairs({"/a/b/c", "/a/b", "/a", "/d", "/e/f", "/e", ""}) do
+  if not os.remove(R..d) then Fail("could not remove "..R..d) end
+end
+print("io.mkdir tests passed")
