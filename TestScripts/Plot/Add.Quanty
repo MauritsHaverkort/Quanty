@@ -522,14 +522,17 @@ S = Spectra.FromTable({{{0,0},{1,1}}, {{0,1},{1,0}}})
 Grid = Graphics.Plot(S, {{"Nrow",1}, {"Ncolumn",2}, {"plotIm",false}})
 Grid.Add("panel 2", 0.5, 0.5, {{"Layer",2}})
 if Grid.NLayer ~= 3 or Strings(Graphics.ToTable(Grid).Layer[2]) ~= "panel 2" then error("Graphics.Add option Layer in a grid plot failed\n", 1) end
--- errors: a layer that does not exist (at the first or a later level), no whole number, not a
--- number, an empty list and a list that is too long
+-- an empty list goes down no level: the graphics itself
+G = Graphics.New() + Graphics.New()
+G.Add("empty", 0, 0, {{"Layer",{}}})
+if Strings(Graphics.ToTable(G)) ~= "empty" then error("Graphics.Add option Layer {} failed\n", 1) end
+-- errors: a layer that does not exist (at the first or a later level, or far out of range), no
+-- whole number, a complex number and not a number
 G = Graphics.New() + Graphics.New()
 ok, msg = pcall(G.Add, "x", 0, 0, {{"Layer",2}})
 if ok or not string.find(msg, "there is no layer 2, the layers are 0 (the graphics itself) to 1, or -1 (the last one) to -2", 1, true) then
 	error("Graphics.Add option Layer: wrong error for a missing layer: "..tostring(msg).."\n", 1)
 end
-Long = {} for k = 1, 17 do Long[k] = 0 end
-for k, l in ipairs({-3, {1, 1}, {0, 2}, 0.5, "a", {1, "a"}, {}, Long}) do
+for k, l in ipairs({-3, {1, 1}, {0, 2}, 1E30, -1E30, 0.5, I, {0, 1+I}, "a", {1, "a"}}) do
 	if pcall(G.Add, "x", 0, 0, {{"Layer",l}}) then error("Graphics.Add accepted a wrong Layer in case "..k.."\n", 1) end
 end

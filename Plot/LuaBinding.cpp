@@ -683,7 +683,7 @@ int LuaAddToGraphics(lua_State * L)
     const char* Font;
     bool     Close;
     uint8_t  Pixelated; // 2 if not given, else 0 or 1 as LuaCheckOptions writes a bool
-    LuaOptionPathType Layer; // the layer to add to, N=0 for the graphics itself
+    CompactVectorType Layer; // the layer to add to, Ni=0 for the graphics itself
   } Options;
   static_assert(sizeof(bool)==1, "the option Pixelated of Graphics.Add is read as a bool into a uint8_t");
   char defaultAlignment = 'l';
@@ -700,7 +700,9 @@ int LuaAddToGraphics(lua_State * L)
   Options.Font=TIMES_NEW_ROMAN;
   Options.Close=false;
   Options.Pixelated=2;
-  Options.Layer.N=0;
+  Options.Layer.Ni=0;
+  Options.Layer.QComplex=0;
+  Options.Layer.VRe=NULL;
   LuaOptionsType LuaAddGraphicsOptions[]={
     {"alpha","uint8_t",&(Options.alpha)},
     {"Transparancy","uint8_t",&(Options.Transparency)},
@@ -715,7 +717,7 @@ int LuaAddToGraphics(lua_State * L)
     {"Angle","double",&(Options.Angle)},
     {"Font","char*",&(Options.Font)},
     {"Pixelated","bool",&(Options.Pixelated)},
-    {"Layer","path",&(Options.Layer)},
+    {"Layer","Vector",&(Options.Layer)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, -1))
   {
@@ -724,16 +726,29 @@ int LuaAddToGraphics(lua_State * L)
   }
   // the option Layer: n adds to layer n (0 the graphics itself, 1 the first layer added to it,
   // -1 the last one, drawn on top), a list {n1, n2, ...} to layer n2 of layer n1 and so on
-  for(i=0;i<Options.Layer.N;i++)
+  if(Options.Layer.Ni!=0)
   {
-    int n = Options.Layer.Index[i];
-    if(n<0) n += Graphics->NLayer;
-    if((n<0)||(n>=Graphics->NLayer))
+    for(i=0;i<(int)Options.Layer.Ni;i++)
     {
-      return luaL_error(L, "Error in Graphics.Add: option Layer, entry %d: there is no layer %d, the layers are 0 (the graphics itself) to %d, or -1 (the last one) to -%d\n",
-                        i+1, Options.Layer.Index[i], Graphics->NLayer-1, Graphics->NLayer);
+      double v = Options.Layer.QComplex ? Options.Layer.V[i].Re : Options.Layer.VRe[i];
+      if((Options.Layer.QComplex)||(v!=floor(v)))
+      {
+        free(Options.Layer.VRe); // VRe and V share their memory
+        return luaL_error(L, "Error in Graphics.Add: option Layer should be a whole number or a list of whole numbers\n");
+      }
+      // the range is checked on the double, a cast of a double out of the range of int is undefined
+      double n = (v<0) ? v + Graphics->NLayer : v;
+      if(!((n>=0)&&(n<Graphics->NLayer)))
+      {
+        char Number[32]; // luaL_error knows no %g
+        snprintf(Number, sizeof(Number), "%g", v);
+        free(Options.Layer.VRe);
+        return luaL_error(L, "Error in Graphics.Add: option Layer, entry %d: there is no layer %s, the layers are 0 (the graphics itself) to %d, or -1 (the last one) to -%d\n",
+                          i+1, Number, Graphics->NLayer-1, Graphics->NLayer);
+      }
+      Graphics = Graphics->Layer[(int)n];
     }
-    Graphics = Graphics->Layer[n];
+    free(Options.Layer.VRe);
   }
   // the transparency AA of the colour, the option Transparancy and the opacity alpha together
   Options.RGB     = ColorCombine(Options.RGB,     Options.Transparency,     Options.alpha);

@@ -203,11 +203,29 @@ LUA_API const char *lua_pushstring (lua_State *L, const string str)
 	return lua_pushstring(L,str.c_str());
 }
 
+// a list of (complex) numbers as a vector; a single number or complex number is a vector of length 1
 CompactVectorType luaL_checkVector(lua_State *L, int narg)
 {
   uint32_t i;
   CompactVectorType buff;
-  buff.V=luaL_checkarray_complex16(L, narg, &(buff.Ni));
+  if((lua_type(L, narg)==LUA_TNUMBER)||(luaL_testudata(L, narg, "Complex_Type")!=NULL))
+  {
+    buff.Ni=1;
+    buff.V=(Complex16*)malloc(sizeof(Complex16));
+    if(lua_type(L, narg)==LUA_TNUMBER)
+    {
+      buff.V[0].Re=(double)lua_tonumber(L, narg);
+      buff.V[0].Im=0;
+    }
+    else
+    {
+      buff.V[0]=*(Complex16 *)luaL_checkudata(L, narg, "Complex_Type");
+    }
+  }
+  else
+  {
+    buff.V=luaL_checkarray_complex16(L, narg, &(buff.Ni));
+  }
   buff.QComplex=0;
   for(i=0;i<buff.Ni;i++)
   {
@@ -4339,25 +4357,6 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
           if(*(int*)Options[j].variable != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, *(int*)Options[j].variable);
           lua_pushvalue(L, -1); // luaL_ref pops the function, the value is popped once more below
           *(int*)Options[j].variable = luaL_ref(L, LUA_REGISTRYINDEX);
-        }
-        else if(strcmp(Options[j].type, "path") == 0)
-        {
-          // a number n or a list of numbers {n1, n2, ...}, stored in a LuaOptionPathType
-          LuaOptionPathType *Path = (LuaOptionPathType*)Options[j].variable;
-          int k, NIndex = 1;
-          if(lua_type(L, -1)==LUA_TTABLE) NIndex = (int)lua_objlen(L, -1);
-          else if(lua_type(L, -1)!=LUA_TNUMBER) return luaL_error(L, "Error option \"%s\" should be a number or a list of numbers\n", Options[j].name);
-          if((NIndex<1)||(NIndex>LUA_OPTION_PATH_MAX)) return luaL_error(L, "Error option \"%s\" should be a list of 1 to %d numbers, not of %d\n", Options[j].name, LUA_OPTION_PATH_MAX, NIndex);
-          for(k=0;k<NIndex;k++)
-          {
-            if(lua_type(L, -1)==LUA_TTABLE) lua_rawgeti(L, -1, k+1);
-            else lua_pushvalue(L, -1);
-            double v = lua_tonumber(L, -1);
-            if((lua_type(L, -1)!=LUA_TNUMBER)||(v!=floor(v))) return luaL_error(L, "Error option \"%s\" should hold whole numbers\n", Options[j].name);
-            Path->Index[k] = (int)v;
-            lua_pop(L, 1);
-          }
-          Path->N = NIndex;
         }
         else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
         {
