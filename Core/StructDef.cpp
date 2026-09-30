@@ -941,6 +941,16 @@ typedef struct LuaOptionsType
 }
 LuaOptionsType;
 
+// the value of an option of type "path": a number n or a list of numbers {n1, n2, ...}, for
+// example a layer of a Graphics object and a layer in that layer. N is the number of entries.
+#define LUA_OPTION_PATH_MAX 16
+typedef struct LuaOptionPathType
+{
+  int N;
+  int Index[LUA_OPTION_PATH_MAX];
+}
+LuaOptionPathType;
+
 
 
 
