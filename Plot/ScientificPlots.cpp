@@ -583,6 +583,20 @@ int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Dat
 // gives the red, green and blue, each between 0 and 1, of the value Re + I Im
 typedef void (*ColorFunctionType)(double Re, double Im, void *Context, double RGB[3]);
 
+// an opaque pixel 0xAARRGGBB from red, green and blue between 0 and 1, clipped to that range
+uint32_t RGBToPixel(double const RGB[3])
+{
+  uint32_t Pixel = 0xFF;
+  for(int c=0;c<3;c++)
+  {
+    double v = RGB[c];
+    if(!(v>0)) v=0;
+    if(v>1) v=1;
+    Pixel = (Pixel<<8) + (uint32_t)round(255*v);
+  }
+  return Pixel;
+}
+
 /*  Fills the pixels of a colour map of the spectra in Data
  *    Map          - NpointsX and NpointsY set and Pixels allocated; the map covers PlotRange
  *    Data, YPos   - spectrum i lies at height YPos[i]; at least two spectra, YPos strictly increasing or decreasing
@@ -687,14 +701,7 @@ int SpectraTypeArrayToColorMap(BitMapType *Map, SpectraTypeArray const *Data, do
         {
           double RGB[3] = {1,1,1};
           Color(re, im, Context, RGB);
-          Pixel = 0xFF;
-          for(int c=0;c<3;c++)
-          {
-            double v = RGB[c];
-            if(!(v>0)) v=0;
-            if(v>1) v=1;
-            Pixel = (Pixel<<8) + (uint32_t)round(255*v);
-          }
+          Pixel = RGBToPixel(RGB);
         }
       }
       Map->Pixels[iy*NX+ix] = Pixel;

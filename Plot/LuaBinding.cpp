@@ -595,6 +595,81 @@ int LuaAddToGraphicsFunction(lua_State *L)
   return 1;
 }
 
+// A Lua colour function, kept in the registry under the key Ref, that returns red, green and
+// blue between 0 and 1. After the first failing call Status is not LUA_OK, the error message
+// is on the stack and further calls do nothing.
+typedef struct LuaColorFunctionContext
+{
+  lua_State *L;
+  int        Ref;
+  int        Status;
+  const char *Caller; // the name of the Lua function, for error messages
+} LuaColorFunctionContext;
+
+// calls the colour function with the NArg numbers in Arg
+static void LuaCallColorFunction(LuaColorFunctionContext * const C, int NArg, double const *Arg, double RGB[3])
+{
+  if(C->Status!=LUA_OK) return;
+  lua_rawgeti(C->L, LUA_REGISTRYINDEX, C->Ref);
+  for(int a=0;a<NArg;a++) lua_pushnumber(C->L, Arg[a]);
+  C->Status = lua_pcall(C->L, NArg, 3, 0);
+  if(C->Status!=LUA_OK) return;
+  for(int c=0;c<3;c++)
+  {
+    int isnum;
+    RGB[c] = (double)lua_tonumberx(C->L, c-3, &isnum);
+    if(!isnum)
+    {
+      lua_pop(C->L, 3);
+      lua_pushfstring(C->L, "%s: the ColorFunction should return three numbers, red, green and blue between 0 and 1", C->Caller);
+      C->Status = LUA_ERRRUN;
+      return;
+    }
+  }
+  lua_pop(C->L, 3);
+}
+
+// The colour of a colour map made by Graphics.Plot with a ColorFunction f(Re, Im)
+static void LuaColorFunction(double Re, double Im, void *Context, double RGB[3])
+{
+  double const Arg[2] = {Re, Im};
+  LuaCallColorFunction((LuaColorFunctionContext*)Context, 2, Arg, RGB);
+}
+
+// One pixel of a bitmap for Graphics.Add, at narg: grey, {grey}, {r,g,b} or {r,g,b,alpha},
+// each from 0 to 255 and clipped to that range. Returns 0xAARRGGBB.
+static uint32_t LuaReadBitMapPixel(lua_State *L, int narg)
+{
+  lua_Integer c[4] = {0, 0, 0, 255}; // red, green, blue, alpha; signed, so that negative values are clipped to 0
+  narg = lua_absindex(L, narg);
+  if(lua_type(L, narg)==LUA_TTABLE)
+  {
+    int const n = (int)lua_objlen(L, narg);
+    if(!((n==1)||(n==3)||(n==4))) return (uint32_t)luaL_error(L, "ERROR; A pixel in a bitmap should have length 1 (BW), 3 (RGB) or 4 (RGBalpha)\n");
+    for(int k=0;k<n;k++)
+    {
+      lua_rawgeti(L, narg, k+1);
+      c[k] = luaL_checkinteger(L, -1);
+      lua_pop(L, 1);
+    }
+    if(n==1) c[1] = c[2] = c[0];
+  }
+  else
+  {
+    c[0] = c[1] = c[2] = luaL_checkinteger(L, narg);
+  }
+  uint32_t Pixel = 0;
+  int const Order[4] = {3, 0, 1, 2}; // alpha, red, green, blue
+  for(int k=0;k<4;k++)
+  {
+    lua_Integer v = c[Order[k]];
+    if(v<0) v=0;
+    if(v>255) v=255;
+    Pixel = (Pixel<<8) + (uint32_t)v;
+  }
+  return Pixel;
+}
+
 /*   On stack at position 1 we have a graphics object
  *   On position -1 we can have options
  *   On position 2 to 2+m we have a definition of a new object that should be added to the graphics object
@@ -604,7 +679,6 @@ int LuaAddToGraphics(lua_State * L)
 {
   uint32_t len = (uint32_t)lua_gettop(L);
   int i,j;
-  lua_Integer val; // signed, so that negative values are clipped to 0
   GraphicsType *Graphics = (GraphicsType *) luaL_checkudata(L, 1, "Graphics_Type");
   struct
   {
@@ -618,7 +692,9 @@ int LuaAddToGraphics(lua_State * L)
     double   Angle;
     const char* Font;
     bool     Close;
+    uint8_t  Pixelated; // 2 if not given, else 0 or 1 as LuaCheckOptions writes a bool
   } Options;
+  static_assert(sizeof(bool)==1, "the option Pixelated of Graphics.Add is read as a bool into a uint8_t");
   char defaultAlignment = 'l';
   Options.RGB=0xFF000000;
   Options.FillRGB=0xFF000000;
@@ -630,6 +706,7 @@ int LuaAddToGraphics(lua_State * L)
   Options.Angle=0;
   Options.Font=TIMES_NEW_ROMAN;
   Options.Close=false;
+  Options.Pixelated=2;
   LuaOptionsType LuaAddGraphicsOptions[]={
     {"alpha","uint8_t",&(Options.alpha)},
     {"Transparancy","uint8_t",&(Options.alpha)},
@@ -643,6 +720,7 @@ int LuaAddToGraphics(lua_State * L)
     {"Alignment","char*",&(Options.Alignment)},
     {"Angle","double",&(Options.Angle)},
     {"Font","char*",&(Options.Font)},
+    {"Pixelated","bool",&(Options.Pixelated)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, -1))
   {
@@ -774,16 +852,19 @@ int LuaAddToGraphics(lua_State * L)
             }
             else if ( (strcmp((char*)lua_tostring(L, -1), "BitMap")==0 ) || (strcmp((char*)lua_tostring(L, -1), "Bitmap")==0 ) )
             {
+              // Format {"BitMap", {px,py}, {px,py}, Pixels}
+              //     or {"BitMap", {px,py}, {px,py}, Pixels, TransparentColor}
+              //     or {"BitMap", {px,py}, {px,py}, ColorFunction, Matrix1, Matrix2, ...}
+              // Pixels is a table of rows, the first row at the top, of pixels grey, {grey}, {r,g,b} or {r,g,b,alpha}, 0 to 255.
+              // The pixels with the red, green and blue of TransparentColor (given as a pixel) become transparent,
+              // or get the alpha of TransparentColor if it has one.
+              // ColorFunction(Re M1[i][j], Im M1[i][j], Re M2[i][j], Im M2[i][j], ...) gives the red, green and blue,
+              // 0 to 1, of the pixel in row i and column j; these bitmaps are drawn with hard pixels.
+              const char * const Formats = "{\"BitMap\", {px,py}, {px,py}, Pixels}, {\"BitMap\", {px,py}, {px,py}, Pixels, TransparentColor} or {\"BitMap\", {px,py}, {px,py}, ColorFunction, Matrix, ...}";
               BitMapType BitMap;
               InitBitMap(&BitMap);
               lua_pop(L, 1);
-              if( !( (Tablelen==4) || (Tablelen==5) ) )
-              {
-                return luaL_error(L, "Error: Input for BitMap should either be {\"BitMap\", {px,py}, {px,py}, Array_uint8_t*4} or {\"BitMap\", {px,py}, {px,py}, Array_uint8_t*4, {Transparant color uint8_t*4}} or {\"BitMap\", {px,py}, {px,py}, ColorFunction, Matrix} \n");
-              }
-              // Format {"BitMap", {px,py}, {px,py}, Array_uint8_t*4}
-              //     or {"BitMap", {px,py}, {px,py}, Array_uint8_t*4, {Transparent_Color_uint8_t*4}}
-              //     or {"BitMap", {px,py}, {px,py}, Colorfunction, Matrix}
+              if(Tablelen<4) return luaL_error(L, "Error: Input for BitMap should be %s\n", Formats);
               lua_rawgeti(L, 2, 2);
               if(lua_type(L,-1) != LUA_TTABLE) return luaL_error(L, "Error: First element of a BitMap should be a point defining its left bottom point given as a list of two numbers\n");
               if(lua_objlen(L, -1) != 2) return luaL_error(L, "Error: First element of a BitMap should be a point defining its left bottom point given as a list of two numbers\n");
@@ -805,6 +886,7 @@ int LuaAddToGraphics(lua_State * L)
               lua_rawgeti(L, 2, 4);
               if(lua_type(L,-1) == LUA_TTABLE)
               {
+                if(Tablelen>5) return luaL_error(L, "Error: Input for BitMap should be %s\n", Formats);
                 BitMap.NpointsY = (int)lua_objlen(L, -1);
                 lua_rawgeti(L, -1, 1);
                 if(lua_type(L,-1) != LUA_TTABLE) return luaL_error(L, "Error: Bitmap should be a matrix, i.e. a table of tables\n");
@@ -818,158 +900,85 @@ int LuaAddToGraphics(lua_State * L)
                   for(i=0;i<BitMap.NpointsX ;i++)
                   {
                     lua_rawgeti(L, -1, i+1);
-                    if(lua_type(L,-1) == LUA_TTABLE)
-                    {
-                      switch (lua_objlen(L, -1))
-                      {
-                        case 1: // BW
-                        {
-                          lua_rawgeti(L, -1, 1);
-                          val = luaL_checkinteger(L,-1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = 0xFF000000 + (val) + (val<<8) + (val<<16);
-                          lua_pop(L, 1);
-                          break;
-                        }
-                        case 3: //RGB
-                        {
-                          
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = 0xFF;
-
-                          lua_rawgeti(L, -1, 1);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-
-                          lua_rawgeti(L, -1, 2);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-                          
-                          lua_rawgeti(L, -1, 3);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-                          break;
-                        }
-                        case 4: //RGBalpha
-                        {
-                          lua_rawgeti(L, -1, 4);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = val;
-                          
-                          lua_rawgeti(L, -1, 1);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-                          
-                          lua_rawgeti(L, -1, 2);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-                          
-                          lua_rawgeti(L, -1, 3);
-                          val = luaL_checkinteger(L,-1);
-                          lua_pop(L, 1);
-                          if(val<0)
-                          {
-                            val=0;
-                          }
-                          if(val>255)
-                          {
-                            val=255;
-                          }
-                          BitMap.Pixels[i+j*BitMap.NpointsX] = ( BitMap.Pixels[i+j*BitMap.NpointsX]<<8 ) + val;
-
-                          break;
-                        }
-                        default:
-                        {
-                          return luaL_error(L, "ERROR; A pixel in a bitmap should have length 1 (BW), 3 (RGB) or 4 (RGBalpha)\n");
-                          break;
-                        }
-                      }
-                    }
-                    else
-                    {
-                      val = luaL_checkinteger(L,-1);
-                      if(val<0)
-                      {
-                        val=0;
-                      }
-                      if(val>255)
-                      {
-                        val=255;
-                      }
-                      BitMap.Pixels[i+j*BitMap.NpointsX] = 0xFF000000 + (val) + (val<<8) + (val<<16);
-                    }
+                    BitMap.Pixels[i+j*BitMap.NpointsX] = LuaReadBitMapPixel(L, -1);
                     lua_pop(L, 1);
                   }
                   lua_pop(L, 1);
                 }
                 lua_pop(L, 1);
+                if(Tablelen==5)
+                {
+                  lua_rawgeti(L, 2, 5);
+                  uint32_t const Key   = LuaReadBitMapPixel(L, -1);
+                  uint32_t const Alpha = ((lua_type(L,-1)==LUA_TTABLE)&&(lua_objlen(L,-1)==4)) ? (Key & 0xFF000000) : 0;
+                  lua_pop(L, 1);
+                  for(int k=0;k<BitMap.NpointsX*BitMap.NpointsY;k++)
+                  {
+                    if(((BitMap.Pixels[k] ^ Key) & 0x00FFFFFF) == 0) BitMap.Pixels[k] = (BitMap.Pixels[k] & 0x00FFFFFF) | Alpha;
+                  }
+                }
+              }
+              else if(lua_type(L,-1) == LUA_TFUNCTION)
+              {
+                int const NM = (int)Tablelen - 4;
+                if(NM<1) return luaL_error(L, "Error: a BitMap with a ColorFunction needs at least one matrix; input for BitMap should be %s\n", Formats);
+                LuaColorFunctionContext Context;
+                Context.L = L;
+                Context.Status = LUA_OK;
+                Context.Caller = "Graphics.Add";
+                Context.Ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops the function
+                CompactMatrixType **M = (CompactMatrixType**)malloc(NM*sizeof(CompactMatrixType*));
+                for(int m=0;m<NM;m++)
+                {
+                  lua_rawgeti(L, 2, 5+m);
+                  M[m] = luaL_checkCompactMatrix(L, lua_gettop(L));
+                  lua_pop(L, 1); // a Matrix object stays alive, the table at position 2 holds it
+                  if((M[m]->Ni!=M[0]->Ni)||(M[m]->Nj!=M[0]->Nj)) return luaL_error(L, "Error: the matrices of a BitMap should all have the same size, matrix 1 is %d by %d and matrix %d is %d by %d\n", (int)M[0]->Ni, (int)M[0]->Nj, m+1, (int)M[m]->Ni, (int)M[m]->Nj);
+                }
+                if((M[0]->Ni==0)||(M[0]->Nj==0)) return luaL_error(L, "Error: the matrices of a BitMap should not be empty\n");
+                BitMap.NpointsY = (int)M[0]->Ni;
+                BitMap.NpointsX = (int)M[0]->Nj;
+                BitMap.Pixels = (uint32_t*)malloc((size_t)BitMap.NpointsX * BitMap.NpointsY * sizeof(uint32_t));
+                BitMap.Pixelated = true;
+                double *Arg = (double*)malloc(2*NM*sizeof(double));
+                for(j=0;(j<BitMap.NpointsY)&&(Context.Status==LUA_OK);j++)
+                {
+                  for(i=0;i<BitMap.NpointsX;i++)
+                  {
+                    for(int m=0;m<NM;m++)
+                    {
+                      size_t const k = (size_t)j * M[m]->Nj + i;
+                      if(M[m]->QComplex) { Arg[2*m] = M[m]->V[k].Re; Arg[2*m+1] = M[m]->V[k].Im; }
+                      else               { Arg[2*m] = M[m]->VRe[k];  Arg[2*m+1] = 0; }
+                    }
+                    double RGB[3] = {1,1,1};
+                    LuaCallColorFunction(&Context, 2*NM, Arg, RGB);
+                    BitMap.Pixels[i+j*BitMap.NpointsX] = RGBToPixel(RGB);
+                  }
+                }
+                free(Arg);
+                for(int m=0;m<NM;m++)
+                {
+                  if(!M[m]->OnLuaStack)
+                  {
+                    FreeCompactMatrix(M[m]);
+                    free(M[m]);
+                  }
+                }
+                free(M);
+                luaL_unref(L, LUA_REGISTRYINDEX, Context.Ref);
+                if(Context.Status!=LUA_OK)
+                {
+                  // the error message of the ColorFunction is on the top of the stack
+                  free(BitMap.Pixels);
+                  return lua_error(L);
+                }
               }
               else
-              { // length = 5 and position 4 is not a talbe, collorfun matrix input option
-                return luaL_error(L, "Error: the fourth element of a BitMap should be a table of pixels; the form {\"BitMap\", {px,py}, {px,py}, ColorFunction, Matrix} is not implemented yet\n");
+              {
+                return luaL_error(L, "Error: the fourth element of a BitMap should be a table of pixels or a ColorFunction; input for BitMap should be %s\n", Formats);
               }
+              if(Options.Pixelated!=2) BitMap.Pixelated = (Options.Pixelated==1);
               AddBitMapInherentMemory(Graphics, &BitMap);
               lua_remove(L,2);
               len--;
@@ -1140,41 +1149,6 @@ static void BuiltInColorFunction(double Re, double Im, void *Context, double RGB
   if(!(v>0)) v=0;
   if(v>1) v=1;
   for(int c=0;c<3;c++) RGB[c] = 1 - v * (1 - C->RGB[c]);
-}
-
-// The colour of a colour map made by Graphics.Plot with a ColorFunction, the Lua function
-// f(Re, Im) that returns red, green and blue between 0 and 1. The function is kept in the
-// registry under the key Ref. After the first failing call Status is not LUA_OK, the error
-// message is on the stack and the remaining pixels are skipped.
-typedef struct LuaColorFunctionContext
-{
-  lua_State *L;
-  int        Ref;
-  int        Status;
-} LuaColorFunctionContext;
-
-static void LuaColorFunction(double Re, double Im, void *Context, double RGB[3])
-{
-  LuaColorFunctionContext * const C = (LuaColorFunctionContext*)Context;
-  if(C->Status!=LUA_OK) return;
-  lua_rawgeti(C->L, LUA_REGISTRYINDEX, C->Ref);
-  lua_pushnumber(C->L, Re);
-  lua_pushnumber(C->L, Im);
-  C->Status = lua_pcall(C->L, 2, 3, 0);
-  if(C->Status!=LUA_OK) return;
-  for(int c=0;c<3;c++)
-  {
-    int isnum;
-    RGB[c] = (double)lua_tonumberx(C->L, c-3, &isnum);
-    if(!isnum)
-    {
-      lua_pop(C->L, 3);
-      lua_pushfstring(C->L, "Graphics.Plot: the ColorFunction should return three numbers, red, green and blue between 0 and 1, for Re=%f and Im=%f it did not", Re, Im);
-      C->Status = LUA_ERRRUN;
-      return;
-    }
-  }
-  lua_pop(C->L, 3);
 }
 
 int LuaPlotGraphics(lua_State * L)
@@ -1605,6 +1579,7 @@ int LuaPlotGraphics(lua_State * L)
           Context.L = L;
           Context.Ref = Options.ColorFunction;
           Context.Status = LUA_OK;
+          Context.Caller = "Graphics.Plot";
           if(PlotSpectraTypeArrayToColorMap(Graphics, a, YPos, &(Options.Frame), YScale, Options.NPixelX, Options.NPixelY, Options.Interpolate, LuaColorFunction, &Context)) return luaL_error(L, "Graphics.Plot: making the colour map failed\n");
           if(Context.Status!=LUA_OK)
           {
