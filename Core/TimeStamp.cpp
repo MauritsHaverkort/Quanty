@@ -19,13 +19,14 @@
                        printf("====    Marius Retegan, Martin Brass, Simon Heinze,      ====\n");\
                        printf("====    Charles Cardot, Michelangelo Tagliavini,         ====\n");\
                        printf("====    Sina Shokri, Kai Arnold, Paul Hill,              ====\n");\
-                       printf("====    Kevin Ackermann, Aleksandrs Zacinskis            ====\n");\
-                       printf("====    (cc) 1995 - 2024 code and binaries released      ====\n");\
-                       printf("====    under creative commons CC-BY lisence             ====\n");\
+                       printf("====    Kevin Ackermann, Aleksandrs Zacinskis,           ====\n");\
+                       printf("====    Sarah Goerlitz,                                  ====\n");\
+                       printf("====    (cc) 1995 - 2026 code and binaries released      ====\n");\
+                       printf("====    under creative commons CC-BY 4.0 or MIT lisence  ====\n");\
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
-                       printf("====    Version 0.81 beta                                ====\n");\
+                       printf("====    Version 0.9.0 pre release                        ====\n");\
                        printf("====            compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
                        printf("=============================================================\n");\
                        printf("====    When used in scientific publications please cite ====\n");\
@@ -35,7 +36,9 @@
                        printf("====    Phys. Rev. B 90, 085102 (2014)                   ====\n");\
                        printf("====    Euro Phys. Lett. 108, 57004 (2014)               ====\n");\
                        printf("====    J. of Phys.: Conf. Series 712, 012001 (2016)     ====\n");\
+                       printf("====    Phys. Rev. B 100, 115134 (2019)                  ====\n");\
                        printf("====    New Journal of Physics 22 (9), 093018 (2020)     ====\n");\
+                       printf("====    Phys. Rev. B 113, 195122 (2026)                  ====\n");\
                        printf("=============================================================\n");\
                        time_t MWHrawtime;\
                        struct tm * MWHtimeinfo;\
