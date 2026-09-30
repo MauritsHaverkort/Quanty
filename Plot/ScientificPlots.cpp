@@ -557,24 +557,177 @@ int PlotSpectraTypeToGraphics(GraphicsType* Graphics, SpectraType *Data, LinePlo
   return 0;
 }
 
-int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double WaterfallOffset, double WaterfallShift, bool UseResonantEnergy)
+// The height of spectrum i in a waterfall plot or a colour map: WaterfallOffset plus
+// i*WaterfallShift, or plus its resonant energy
+void WaterfallPositions(SpectraTypeArray const *Data, double WaterfallOffset, double WaterfallShift, bool UseResonantEnergy, double *YPos)
 {
-  double YShift;
+  for(int i=0;i<(int)Data->NSpectra;i++)
+  {
+    if(UseResonantEnergy) YPos[i] = WaterfallOffset + Data->Spec[i].ResonantEnergy;
+    else                  YPos[i] = WaterfallOffset + i*WaterfallShift;
+  }
+}
+
+// spectrum i is drawn shifted up by YPos[i], or not shifted if YPos is NULL
+int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double const *YPos)
+{
   int i;
   PlotAllButDataToGraphics(Graphics, FPO);
   for(i=0;i<Data->NSpectra;i++)
   {
-    // a waterfall plot, spectrum i is either shifted by i*WaterfallShift or to its resonant energy
-    if(UseResonantEnergy) YShift = WaterfallOffset + Data->Spec[i].ResonantEnergy;
-    else                  YShift = WaterfallOffset + i*WaterfallShift;
-    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, YShift);
+    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, (YPos==NULL)?0:YPos[i]);
   }
+  return 0;
+}
+
+// gives the red, green and blue, each between 0 and 1, of the value Re + I Im
+typedef void (*ColorFunctionType)(double Re, double Im, void *Context, double RGB[3]);
+
+/*  Fills the pixels of a colour map of the spectra in Data
+ *    Map          - NpointsX and NpointsY set and Pixels allocated; the map covers PlotRange
+ *    Data, YPos   - spectrum i lies at height YPos[i]; at least two spectra, YPos strictly increasing or decreasing
+ *    YScale       - the spectra are multiplied by YScale before they are coloured
+ *    Interpolate  - linear interpolation in energy and between neighbouring spectra, otherwise the nearest
+ *                   point, with the boundary between two spectra half way between them
+ *    Color        - the colour of a value, Context is handed on to it
+ *  Pixels without data are transparent white. Row 0 of the pixels is the top of the map.
+ */
+int SpectraTypeArrayToColorMap(BitMapType *Map, SpectraTypeArray const *Data, double const *YPos, PointType const *PlotRange, double YScale, bool Interpolate, ColorFunctionType Color, void *Context)
+{
+  int const NX = Map->NpointsX;
+  int const NY = Map->NpointsY;
+  int const NS = (int)Data->NSpectra;
+  if(NS<2) { printf("ERROR in SpectraTypeArrayToColorMap, a colour map needs at least two spectra\n"); return 1;}
+  // the spectra in the order of increasing height
+  bool const Increasing = YPos[NS-1] > YPos[0];
+  int    *Order = (int*)malloc(NS*sizeof(int));
+  double *Y     = (double*)malloc(NS*sizeof(double));
+  double *Re    = (double*)malloc((size_t)NS*NX*sizeof(double));
+  double *Im    = (double*)malloc((size_t)NS*NX*sizeof(double));
+  if((Order==NULL)||(Y==NULL)||(Re==NULL)||(Im==NULL))
+  {
+    printf("ERROR in SpectraTypeArrayToColorMap, malloc failed\n");
+    free(Order); free(Y); free(Re); free(Im);
+    return 1;
+  }
+  for(int s=0;s<NS;s++)
+  {
+    Order[s] = Increasing ? s : NS-1-s;
+    Y[s] = YPos[Order[s]];
+  }
+  // each spectrum on the centres of the pixel columns, NAN outside its energy range
+  for(int s=0;s<NS;s++)
+  {
+    SpectraType const * const S = &(Data->Spec[Order[s]]);
+    int const N = (int)S->N;
+    for(int ix=0;ix<NX;ix++)
+    {
+      double const x = PlotRange[0].X + (ix+0.5) * (PlotRange[1].X-PlotRange[0].X) / NX;
+      double const t = (N==0) ? 0 : (x - S->Emin) * N / (S->Emax - S->Emin);
+      double re=NAN, im=NAN;
+      if(Interpolate)
+      {
+        if((t>=0)&&(t<=N))
+        {
+          int k = (int)floor(t);
+          if(k>=N) k=N-1;
+          double const w = t-k;
+          if(N==0)      { re = S->Re[0]; im = S->Im[0]; }
+          else if(w==0) { re = S->Re[k]; im = S->Im[k]; }
+          else          { re = (1-w)*S->Re[k] + w*S->Re[k+1]; im = (1-w)*S->Im[k] + w*S->Im[k+1]; }
+        }
+      }
+      else
+      {
+        int const k = (int)floor(t+0.5);
+        if((k>=0)&&(k<=N)) { re = S->Re[k]; im = S->Im[k]; }
+      }
+      Re[s*NX+ix] = YScale * re;
+      Im[s*NX+ix] = YScale * im;
+    }
+  }
+  // the rows, from the top down
+  for(int iy=0;iy<NY;iy++)
+  {
+    double const y = PlotRange[1].Y - (iy+0.5) * (PlotRange[1].Y-PlotRange[0].Y) / NY;
+    int s0=-1, s1=-1;
+    double w=0;   // weight of spectrum s1
+    if(Interpolate)
+    {
+      if((y>=Y[0])&&(y<=Y[NS-1]))
+      {
+        s0=0;
+        while((s0<NS-2)&&(y>Y[s0+1])) s0++;
+        s1 = s0+1;
+        w = (y-Y[s0]) / (Y[s1]-Y[s0]);
+      }
+    }
+    else
+    {
+      // spectrum s covers the heights from half way to its lower neighbour to half way to its upper neighbour
+      double const Bottom = Y[0]    - (Y[1]-Y[0]) / 2;
+      double const Top    = Y[NS-1] + (Y[NS-1]-Y[NS-2]) / 2;
+      if((y>=Bottom)&&(y<=Top))
+      {
+        s0=0;
+        while((s0<NS-1)&&(y>(Y[s0]+Y[s0+1])/2)) s0++;
+        s1=s0;
+      }
+    }
+    for(int ix=0;ix<NX;ix++)
+    {
+      uint32_t Pixel = 0x00FFFFFF;
+      if(s0>=0)
+      {
+        double re, im;
+        if(w==0)      { re = Re[s0*NX+ix]; im = Im[s0*NX+ix]; }
+        else if(w==1) { re = Re[s1*NX+ix]; im = Im[s1*NX+ix]; }
+        else          { re = (1-w)*Re[s0*NX+ix] + w*Re[s1*NX+ix]; im = (1-w)*Im[s0*NX+ix] + w*Im[s1*NX+ix]; }
+        if(!(isnan(re)||isnan(im)))
+        {
+          double RGB[3] = {1,1,1};
+          Color(re, im, Context, RGB);
+          Pixel = 0xFF;
+          for(int c=0;c<3;c++)
+          {
+            double v = RGB[c];
+            if(!(v>0)) v=0;
+            if(v>1) v=1;
+            Pixel = (Pixel<<8) + (uint32_t)round(255*v);
+          }
+        }
+      }
+      Map->Pixels[iy*NX+ix] = Pixel;
+    }
+  }
+  free(Order); free(Y); free(Re); free(Im);
+  return 0;
+}
+
+// A colour map of the spectra in Data inside the frame FPO; see SpectraTypeArrayToColorMap
+// The graphics takes the pixels, so they are freed with it.
+int PlotSpectraTypeArrayToColorMap(GraphicsType* Graphics, SpectraTypeArray const *Data, double const *YPos, FramePlotOptions *FPO, double YScale, int NPixelX, int NPixelY, bool Interpolate, ColorFunctionType Color, void *Context)
+{
+  BitMapType Map;
+  InitBitMap(&Map);
+  Map.LB.X = FPO->Margins[0].X;
+  Map.LB.Y = FPO->Margins[0].Y;
+  Map.RT.X = 1 - FPO->Margins[1].X;
+  Map.RT.Y = 1 - FPO->Margins[1].Y;
+  Map.NpointsX = NPixelX;
+  Map.NpointsY = NPixelY;
+  Map.Pixelated = !Interpolate;
+  Map.Pixels = (uint32_t*)malloc((size_t)NPixelX*NPixelY*sizeof(uint32_t));
+  if(Map.Pixels==NULL) { printf("ERROR in PlotSpectraTypeArrayToColorMap, malloc failed\n"); return 1;}
+  if(SpectraTypeArrayToColorMap(&Map, Data, YPos, FPO->PlotRange, YScale, Interpolate, Color, Context)) { free(Map.Pixels); return 1;}
+  if(AddBitMapInherentMemory(Graphics, &Map)) { free(Map.Pixels); return 1;}
+  PlotAllButDataToGraphics(Graphics, FPO);
   return 0;
 }
 
 int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double ScaleOffDiagonal, double ShiftOffDiagonal)
 {
-  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,0,0,false);
+  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,NULL);
   int i;
   FramePlotOptions FPOInset;
   // plot graphs to layer 1 to NXPlots * NYPlots

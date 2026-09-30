@@ -219,6 +219,7 @@ void InitBitMap(BitMapType* BitMap)
   BitMap->NpointsX=0;
   BitMap->NpointsY=0;
   BitMap->Pixels=NULL;
+  BitMap->Pixelated=false;
 }
 
 BitMapType* NewBitMap()

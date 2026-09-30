@@ -4331,6 +4331,15 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
           }
           *(CompactVectorType*)Options[j].variable=*(CompactVectorType*)LuaReturnVariableType(L, -1, Options[j].type);
         }
+        else if(strcmp(Options[j].type, "function") == 0)
+        {
+          // a Lua function has no C form; keep it in the registry and store the key (an int, LUA_NOREF if not set)
+          // the caller releases it with luaL_unref(L, LUA_REGISTRYINDEX, key)
+          if(lua_type(L, -1)!=LUA_TFUNCTION) return luaL_error(L, "Error option \"%s\" should be a function\n", Options[j].name);
+          if(*(int*)Options[j].variable != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, *(int*)Options[j].variable);
+          lua_pushvalue(L, -1); // luaL_ref pops the function, the value is popped once more below
+          *(int*)Options[j].variable = luaL_ref(L, LUA_REGISTRYINDEX);
+        }
         else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
         {
           *(DeterminantRestrictionType*)Options[j].variable=*(DeterminantRestrictionType*)LuaReturnVariableType(L, -1, Options[j].type);

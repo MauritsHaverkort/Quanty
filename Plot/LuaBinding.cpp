@@ -5,7 +5,7 @@
  *      Curve  = { {Color=, Width=, Point=, VL=, VR=, CloseAndFill=, FillColor=}, ... },
  *      Arc    = { {Color=, Width=, R=, Point=, ThetaL=, ThetaR=, CloseAndFill=, FillColor=}, ... },
  *      Text   = { {Color=, Point=, Angle=, Alignment=, Size=, String=, Font=}, ... },
- *      BitMap = { {LB=, RT=, NpointsX=, NpointsY=, Pixels=}, ... } }
+ *      BitMap = { {LB=, RT=, NpointsX=, NpointsY=, Pixels=, Pixelated=}, ... } }
  *  with the fields of the structures in Plot/StructDef.cpp. A color is the four bytes
  *  {c0, c1, c2, c3} of the structure, a point {x, y} and a list of points {{x, y}, ...}.
  *  Alignment is a string of one character. Pixels is a string in ASCIIHexDecode format: eight
@@ -162,6 +162,7 @@ void LuaPushTable_Graphics(lua_State *L, GraphicsType const * const G)
       lua_pushinteger(L, E->NpointsX);                     lua_setfield(L, -2, "NpointsX");
       lua_pushinteger(L, E->NpointsY);                     lua_setfield(L, -2, "NpointsY");
       lua_pushlstring(L, Hex, pos);                        lua_setfield(L, -2, "Pixels");
+      if(E->Pixelated) { lua_pushboolean(L, true);         lua_setfield(L, -2, "Pixelated"); }
       free(Hex);
       lua_rawseti(L, -2, i+1);
     }
@@ -272,7 +273,7 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
   const char * const CurveKeys[]    = {"Color", "Width", "Point", "VL", "VR", "CloseAndFill", "FillColor"};
   const char * const ArcKeys[]      = {"Color", "Width", "R", "Point", "ThetaL", "ThetaR", "CloseAndFill", "FillColor"};
   const char * const TextKeys[]     = {"Color", "Point", "Angle", "Alignment", "Size", "String", "Font"};
-  const char * const BitMapKeys[]   = {"LB", "RT", "NpointsX", "NpointsY", "Pixels"};
+  const char * const BitMapKeys[]   = {"LB", "RT", "NpointsX", "NpointsY", "Pixels", "Pixelated"};
   int i, n, e;
   narg = lua_absindex(L, narg);
   LuaCheckGraphicsKeys(L, narg, GraphicsKeys, 8, "the graphics");
@@ -424,12 +425,13 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       const char *Hex="";
       lua_rawgeti(L, -1, i+1);
       e = lua_gettop(L);
-      LuaCheckGraphicsKeys(L, e, BitMapKeys, 5, "a bitmap");
+      LuaCheckGraphicsKeys(L, e, BitMapKeys, 6, "a bitmap");
       InitBitMap(&E);
       GRAPHICS_FIELD(e, "LB",       E.LB = LuaReadGraphicsPoint(L, -1, "the LB of a bitmap"));
       GRAPHICS_FIELD(e, "RT",       E.RT = LuaReadGraphicsPoint(L, -1, "the RT of a bitmap"));
       GRAPHICS_FIELD(e, "NpointsX", Nx = LuaReadGraphicsNumber(L, -1, "the NpointsX of a bitmap"));
       GRAPHICS_FIELD(e, "NpointsY", Ny = LuaReadGraphicsNumber(L, -1, "the NpointsY of a bitmap"));
+      GRAPHICS_FIELD(e, "Pixelated", E.Pixelated = LuaReadGraphicsBool(L, -1, "Pixelated of a bitmap"));
       if((Nx!=floor(Nx))||(Nx<0)||(Ny!=floor(Ny))||(Ny<0)) luaL_error(L, "Error in Graphics.New(Table): NpointsX and NpointsY of a bitmap should be whole numbers of 0 or more\n");
       E.NpointsX = (int)Nx;
       E.NpointsY = (int)Ny;
@@ -773,6 +775,7 @@ int LuaAddToGraphics(lua_State * L)
             else if ( (strcmp((char*)lua_tostring(L, -1), "BitMap")==0 ) || (strcmp((char*)lua_tostring(L, -1), "Bitmap")==0 ) )
             {
               BitMapType BitMap;
+              InitBitMap(&BitMap);
               lua_pop(L, 1);
               if( !( (Tablelen==4) || (Tablelen==5) ) )
               {
@@ -1121,6 +1124,59 @@ static int NumberOfSelectedSpectra(int N, int Start, int Stop, int Step)
   return (Stop-Start)/Step+1;
 }
 
+// The colour of a colour map made by Graphics.Plot without a ColorFunction:
+// white to RGB as Saturation times the value (Im, or Re) goes from 0 to 1
+typedef struct BuiltInColorContext
+{
+  double RGB[3];
+  double Saturation;
+  bool   UseRe;
+} BuiltInColorContext;
+
+static void BuiltInColorFunction(double Re, double Im, void *Context, double RGB[3])
+{
+  BuiltInColorContext const * const C = (BuiltInColorContext*)Context;
+  double v = C->Saturation * (C->UseRe ? Re : Im);
+  if(!(v>0)) v=0;
+  if(v>1) v=1;
+  for(int c=0;c<3;c++) RGB[c] = 1 - v * (1 - C->RGB[c]);
+}
+
+// The colour of a colour map made by Graphics.Plot with a ColorFunction, the Lua function
+// f(Re, Im) that returns red, green and blue between 0 and 1. The function is kept in the
+// registry under the key Ref. After the first failing call Status is not LUA_OK, the error
+// message is on the stack and the remaining pixels are skipped.
+typedef struct LuaColorFunctionContext
+{
+  lua_State *L;
+  int        Ref;
+  int        Status;
+} LuaColorFunctionContext;
+
+static void LuaColorFunction(double Re, double Im, void *Context, double RGB[3])
+{
+  LuaColorFunctionContext * const C = (LuaColorFunctionContext*)Context;
+  if(C->Status!=LUA_OK) return;
+  lua_rawgeti(C->L, LUA_REGISTRYINDEX, C->Ref);
+  lua_pushnumber(C->L, Re);
+  lua_pushnumber(C->L, Im);
+  C->Status = lua_pcall(C->L, 2, 3, 0);
+  if(C->Status!=LUA_OK) return;
+  for(int c=0;c<3;c++)
+  {
+    int isnum;
+    RGB[c] = (double)lua_tonumberx(C->L, c-3, &isnum);
+    if(!isnum)
+    {
+      lua_pop(C->L, 3);
+      lua_pushfstring(C->L, "Graphics.Plot: the ColorFunction should return three numbers, red, green and blue between 0 and 1, for Re=%f and Im=%f it did not", Re, Im);
+      C->Status = LUA_ERRRUN;
+      return;
+    }
+  }
+  lua_pop(C->L, 3);
+}
+
 int LuaPlotGraphics(lua_State * L)
 {
   //First element on stack is either a
@@ -1141,6 +1197,7 @@ int LuaPlotGraphics(lua_State * L)
   aa.Name=NULL;
   a=&aa;
   View.Spec=NULL; // the selected spectra, sharing their data with the spectra they are taken from
+  double *YPos=NULL; // the heights of the spectra in a waterfall plot or a colour map
   uint32_t len = (uint32_t) lua_gettop(L);
   Graphics = (GraphicsType*) lua_newuserdata(L, sizeof(GraphicsType));
   luaL_setmetatable(L, "Graphics_Type");
@@ -1167,6 +1224,14 @@ int LuaPlotGraphics(lua_State * L)
     bool     PlotRe;
     bool     Negate;
     bool     UseResonantEnergy;
+    
+    bool     ColorMap;
+    bool     Interpolate;
+    int      NPixelX;
+    int      NPixelY;
+    int      ColorFunction; // registry key of a Lua function, LUA_NOREF if not given
+    uint32_t Color;
+    double   Saturation;
   } Options;
   Options.Frame.PlotRange[0].X=-INFINITY;
   Options.Frame.PlotRange[0].Y=-INFINITY;
@@ -1234,6 +1299,13 @@ int LuaPlotGraphics(lua_State * L)
   Options.PlotRe=true;
   Options.Negate=false;
   Options.UseResonantEnergy=false;
+  Options.ColorMap=false;
+  Options.Interpolate=true;
+  Options.NPixelX=600;
+  Options.NPixelY=600;
+  Options.ColorFunction=LUA_NOREF;
+  Options.Color=0xFF000000;
+  Options.Saturation=1;
   Options.Nrow=1;
   Options.Ncolumn=1;
   Options.PlotPoints=600;
@@ -1265,6 +1337,13 @@ int LuaPlotGraphics(lua_State * L)
     {"SpectraStop","int",&(Options.SpectraStop)},
     {"SpectraStep","int",&(Options.SpectraStep)},
     {"UseResonantEnergy","bool",&(Options.UseResonantEnergy)},
+    {"ColorMap","bool",&(Options.ColorMap)},
+    {"Interpolate","bool",&(Options.Interpolate)},
+    {"NPixelX","int",&(Options.NPixelX)},
+    {"NPixelY","int",&(Options.NPixelY)},
+    {"ColorFunction","function",&(Options.ColorFunction)},
+    {"Color","uint32_t",&(Options.Color)},
+    {"Saturation","double",&(Options.Saturation)},
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, len))
   {
@@ -1278,6 +1357,11 @@ int LuaPlotGraphics(lua_State * L)
     if(luaL_testudata(L, 1, "Spectra_Type") == NULL) return luaL_error(L, "Graphics.Plot: UseResonantEnergy needs a Spectra object as first argument, as made by CreateResonantSpectra\n");
     if(Options.WaterfallShift!=0) return luaL_error(L, "Graphics.Plot: UseResonantEnergy places each spectrum at WaterfallOffset + its resonant energy, it can not be combined with WaterfallShift\n");
     if((Options.Nrow!=1)||(Options.Ncolumn!=1)) return luaL_error(L, "Graphics.Plot: UseResonantEnergy makes a waterfall plot, it can not be combined with Nrow and Ncolumn\n");
+  }
+  if(Options.ColorMap)
+  {
+    if((Options.Nrow!=1)||(Options.Ncolumn!=1)) return luaL_error(L, "Graphics.Plot: ColorMap draws all spectra in one graph, it can not be combined with Nrow and Ncolumn\n");
+    if((Options.NPixelX<1)||(Options.NPixelY<1)) return luaL_error(L, "Graphics.Plot: NPixelX and NPixelY should be 1 or larger, not %d and %d\n",Options.NPixelX,Options.NPixelY);
   }
   bool const SelectSpectra = (Options.SpectraStart!=1)||(Options.SpectraStep!=1)||(Options.SpectraStop!=INT_MAX);
   // select the type of graph to plot
@@ -1422,6 +1506,42 @@ int LuaPlotGraphics(lua_State * L)
         a = &View;
       }
       labelSpectraTypeArrayPlot:
+      // the heights of the spectra in a waterfall plot or a colour map
+      YPos = (double*)malloc(a->NSpectra*sizeof(double));
+      if(Options.UseResonantEnergy)
+      {
+        for(i=0;i<a->NSpectra;i++)
+        {
+          if(isnan(a->Spec[i].ResonantEnergy)) return luaL_error(L, "Graphics.Plot: UseResonantEnergy is set, but plotted spectrum %d has no resonant energy\n",i+1);
+        }
+        WaterfallPositions(a, Options.WaterfallOffset, 0, true, YPos);
+      }
+      else if(Options.ColorMap && (Options.WaterfallShift==0))
+      {
+        // without a shift the spectra of a colour map lie at their number in the input, counted from 1
+        WaterfallPositions(a, Options.WaterfallOffset + Options.SpectraStart, Options.SpectraStep, false, YPos);
+      }
+      else
+      {
+        WaterfallPositions(a, Options.WaterfallOffset, Options.WaterfallShift, false, YPos);
+      }
+      if(Options.ColorMap)
+      {
+        int const NS = (int)a->NSpectra;
+        if(NS<2) return luaL_error(L, "Graphics.Plot: a colour map needs at least two spectra, there is %d\n", NS);
+        bool const Increasing = YPos[1] > YPos[0];
+        for(i=1;i<NS;i++)
+        {
+          if( Increasing ? !(YPos[i]>YPos[i-1]) : !(YPos[i]<YPos[i-1]) ) return luaL_error(L, "Graphics.Plot: the spectra of a colour map should lie at strictly increasing or decreasing heights, plotted spectrum %d lies at %g and spectrum %d at %g\n", i, YPos[i-1], i+1, YPos[i]);
+        }
+        // by default the map shows all spectra, the outer ones with half the distance to their neighbour
+        double const Lowest     = Increasing ? YPos[0]         : YPos[NS-1];
+        double const Highest    = Increasing ? YPos[NS-1]      : YPos[0];
+        double const LowestGap  = Increasing ? YPos[1]-YPos[0] : YPos[NS-2]-YPos[NS-1];
+        double const HighestGap = Increasing ? YPos[NS-1]-YPos[NS-2] : YPos[0]-YPos[1];
+        if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = Lowest  - LowestGap/2;
+        if(Options.Frame.PlotRange[1].Y== INFINITY) Options.Frame.PlotRange[1].Y = Highest + HighestGap/2;
+      }
       if(Options.Frame.PlotRange[0].X==-INFINITY) Options.Frame.PlotRange[0].X = a->Spec[0].Emin;
       if(Options.Frame.PlotRange[1].X== INFINITY) Options.Frame.PlotRange[1].X = a->Spec[0].Emax;
       if(Options.Frame.PlotRange[0].Y==-INFINITY) Options.Frame.PlotRange[0].Y = -1;
@@ -1429,7 +1549,39 @@ int LuaPlotGraphics(lua_State * L)
       if(Options.Frame.FirstXTick==-INFINITY) Options.Frame.FirstXTick = Options.Frame.PlotRange[0].X;
       if(Options.Frame.FirstYTick==-INFINITY) Options.Frame.FirstYTick = Options.Frame.PlotRange[0].Y;
       
-      if((Options.Nrow==1)&&(Options.Ncolumn==1))
+      if(Options.ColorMap)
+      {
+        double const YScale = (Options.Negate?-1:1)*Options.Scale;
+        if(Options.ColorFunction==LUA_NOREF)
+        {
+          BuiltInColorContext Context;
+          Context.RGB[0] = (double)( Options.Color        & 0xFF) / 255; // Color is 0xAABBGGRR
+          Context.RGB[1] = (double)((Options.Color >>  8) & 0xFF) / 255;
+          Context.RGB[2] = (double)((Options.Color >> 16) & 0xFF) / 255;
+          Context.Saturation = Options.Saturation;
+          Context.UseRe = (Options.PlotIm==false) && (Options.PlotRe==true);
+          if(PlotSpectraTypeArrayToColorMap(Graphics, a, YPos, &(Options.Frame), YScale, Options.NPixelX, Options.NPixelY, Options.Interpolate, BuiltInColorFunction, &Context)) return luaL_error(L, "Graphics.Plot: making the colour map failed\n");
+        }
+        else
+        {
+          LuaColorFunctionContext Context;
+          Context.L = L;
+          Context.Ref = Options.ColorFunction;
+          Context.Status = LUA_OK;
+          if(PlotSpectraTypeArrayToColorMap(Graphics, a, YPos, &(Options.Frame), YScale, Options.NPixelX, Options.NPixelY, Options.Interpolate, LuaColorFunction, &Context)) return luaL_error(L, "Graphics.Plot: making the colour map failed\n");
+          if(Context.Status!=LUA_OK)
+          {
+            // the error message of the ColorFunction is on the top of the stack; the pixels belong to Graphics
+            luaL_unref(L, LUA_REGISTRYINDEX, Options.ColorFunction);
+            free(Options.Style.Line);
+            free(View.Spec);
+            free(YPos);
+            FreeSpectraTypeArray(&aa);
+            return lua_error(L);
+          }
+        }
+      }
+      else if((Options.Nrow==1)&&(Options.Ncolumn==1))
       {
         // make a single graph with possible multiple spectra
         LinePlotOptions *LPORe = (LinePlotOptions*) malloc(sizeof(LinePlotOptions) * a->NSpectra);
@@ -1503,14 +1655,7 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        if(Options.UseResonantEnergy)
-        {
-          for(i=0;i<a->NSpectra;i++)
-          {
-            if(isnan(a->Spec[i].ResonantEnergy)) return luaL_error(L, "Graphics.Plot: UseResonantEnergy is set, but plotted spectrum %d has no resonant energy\n",i+1);
-          }
-        }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift, Options.UseResonantEnergy);
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos);
         free(LPORe);
         free(LPOIm);
       }
@@ -1606,9 +1751,9 @@ int LuaPlotGraphics(lua_State * L)
       }
       ResponseFunctionToSpectra(A, &Spec, 0, Emin, Emax, GammaG, GammaL, NE);
       
-      if(SelectSpectra)
+      if(SelectSpectra || Options.ColorMap)
       {
-        // plot the selected elements as a list of spectra in one graph; aa is freed at the end
+        // plot the (selected) elements as a list of spectra in one graph; aa is freed at the end
         FreeResponsefunction(A);
         aa = Spec;
         a = &aa;
@@ -1646,7 +1791,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift, false);
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset)); // one spectrum
         free(LPORe);
         free(LPOIm);
       }
@@ -1727,6 +1872,8 @@ int LuaPlotGraphics(lua_State * L)
   }
   free(Options.Style.Line);
   free(View.Spec);
+  free(YPos);
+  luaL_unref(L, LUA_REGISTRYINDEX, Options.ColorFunction);
   FreeSpectraTypeArray(&aa);
   return 1;
 }
@@ -2442,6 +2589,7 @@ static int LuaPlotBands(lua_State *L)
   uint8_t SecondLineColor[4] = {(uint8_t)(Options.SecondLineColor>>16),(uint8_t)(Options.SecondLineColor>>8),(uint8_t)(Options.SecondLineColor),(uint8_t)(Options.SecondLineColor>>24)};
   // allocate the bitmap
   BitMapType BandPlot;
+  InitBitMap(&BandPlot);
   BandPlot.LB.X=Options.Frame.Margins[0].X;
   BandPlot.LB.Y=Options.Frame.Margins[0].Y;
   BandPlot.RT.X=1-Options.Frame.Margins[1].X;
