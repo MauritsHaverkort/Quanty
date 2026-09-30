@@ -49,4 +49,41 @@ if N - NLines(9, 0) ~= 4*9*2 or N - NLines(0, 9) ~= 6*9*2 then
   error("Graphics.Plot minor ticks: "..N.." "..NLines(9,0).." "..NLines(0,9).." lines\n", 1)
 end
 
+-- XTicks=false and YTicks=false remove the ticks and tick labels of that axis, nothing else
+-- with dYTick=5: 3 major and 4*9 minor y ticks per side, 3 y tick labels
+print("XTicks and YTicks")
+function Counts(xt, yt)
+  local F = {{"dYTick",5}, {"XTicks",xt}, {"YTicks",yt}}
+  for _, o in ipairs(Frame) do table.insert(F, o) end
+  local T = Graphics.ToTable(Graphics.Plot(GUser, 0.1, {{"plotRe",false}, {"Frame",F}}))
+  return #T.Line, #T.Text
+end
+NL, NT = Counts(true, true)
+NLy, NTy = Counts(true, false)
+NLx, NTx = Counts(false, true)
+if NL-NLy ~= 2*(3+4*9) or NT-NTy ~= 3 or NL-NLx ~= 2*(5+6*9) or NT-NTx ~= 5 then
+  error("Graphics.Plot XTicks/YTicks: lines "..NL.." "..NLy.." "..NLx.." texts "..NT.." "..NTy.." "..NTx.."\n", 1)
+end
+
+-- Scale multiplies the data (after Negate), WaterfallOffset moves the first spectrum,
+-- WaterfallShift the ones after it; WatterfallShift is the old spelling of WaterfallShift
+print("Scale, WaterfallOffset and WaterfallShift")
+function FirstY(opt)
+  table.insert(opt, {"Frame", Frame})
+  table.insert(opt, {"PlotPoints", 7})
+  table.insert(opt, {"plotRe", false})
+  local T = Graphics.ToTable(Graphics.Plot({GUser, GUser, GammaL=0.2}, opt))
+  local n = #T.Line
+  return T.Line[n-1].Point[1][2], T.Line[n].Point[1][2]
+end
+Y0 = 0.08*math.sqrt(2) + 10*YUnit   -- where y = 0 lies on the canvas
+a1, a2 = FirstY({})
+b1, b2 = FirstY({{"Scale",2.5}, {"Negate",true}, {"WaterfallOffset",3}, {"WaterfallShift",1.5}})
+c1, c2 = FirstY({{"Scale",2.5}, {"Negate",true}, {"WaterfallOffset",3}, {"WatterfallShift",1.5}})
+if math.abs((b1-Y0) - (-2.5*(a1-Y0) + 3*YUnit)) > 1E-10 or
+   math.abs((b2-Y0) - (-2.5*(a2-Y0) + 4.5*YUnit)) > 1E-10 or
+   c1 ~= b1 or c2 ~= b2 then
+  error("Graphics.Plot Scale/WaterfallOffset/WaterfallShift: "..(a1-Y0)/YUnit.." "..(b1-Y0)/YUnit.." "..(b2-Y0)/YUnit.." "..(c2-Y0)/YUnit.."\n", 1)
+end
+
 print("Graphics.Plot tests passed")

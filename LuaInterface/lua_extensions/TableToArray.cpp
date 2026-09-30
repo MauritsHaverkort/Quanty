@@ -4362,6 +4362,8 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
             {"YFormat","char*",&(((FramePlotOptions*)Options[j].variable)->PlotYScaleFormat)},
             {"XAxis","double",&(((FramePlotOptions*)Options[j].variable)->XAxis)},
             {"YAxis","double",&(((FramePlotOptions*)Options[j].variable)->YAxis)},
+            {"XTicks","bool",&(((FramePlotOptions*)Options[j].variable)->XTicks)},
+            {"YTicks","bool",&(((FramePlotOptions*)Options[j].variable)->YTicks)},
             {NULL, NULL, NULL}};
           
           LuaCheckOptions(L, -1, LuaFramePlotOptions);

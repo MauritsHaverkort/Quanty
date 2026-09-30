@@ -160,4 +160,6 @@ typedef struct FramePlotOptions
   char*    PlotYScaleFormat;
   double   XAxis;
   double   YAxis;
+  bool     XTicks;   // draw the ticks and tick labels of the x axis
+  bool     YTicks;   // draw the ticks and tick labels of the y axis
 } FramePlotOptions;

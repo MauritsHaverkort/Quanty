@@ -1139,7 +1139,9 @@ int LuaPlotGraphics(lua_State * L)
   {
     double   ScaleOffDiagonal;
     double   ShiftOffDiagonal;
-    double   WatterfallShift;
+    double   Scale;
+    double   WaterfallOffset;
+    double   WaterfallShift;
     
     int      Nrow;
     int      Ncolumn;
@@ -1179,6 +1181,8 @@ int LuaPlotGraphics(lua_State * L)
   Options.Frame.PlotYScaleFormat=(char*)ScaleFormat;
   Options.Frame.XAxis=0;
   Options.Frame.YAxis=0;
+  Options.Frame.XTicks=true;
+  Options.Frame.YTicks=true;
   Options.Style.NAllocLine=3;
   Options.Style.Line = (LinePlotOptions*)malloc(sizeof(LinePlotOptions)*Options.Style.NAllocLine);
   Options.Style.Line[0].LineWidth=0.002;
@@ -1220,7 +1224,9 @@ int LuaPlotGraphics(lua_State * L)
   Options.PlotPoints=600;
   Options.ScaleOffDiagonal=1;
   Options.ShiftOffDiagonal=0;
-  Options.WatterfallShift=0;
+  Options.Scale=1;
+  Options.WaterfallOffset=0;
+  Options.WaterfallShift=0;
   LuaOptionsType LuaGraphicsOptions[]={
     {"Frame","FramePlotOptions",&(Options.Frame)},
     {"Axis", "FramePlotOptions",&(Options.Frame)},
@@ -1233,7 +1239,10 @@ int LuaPlotGraphics(lua_State * L)
     {"PlotPoints","int",&(Options.PlotPoints)},
     {"ScaleOffDiagonal","double",&(Options.ScaleOffDiagonal)},
     {"ShiftOffDiagonal","double",&(Options.ShiftOffDiagonal)},
-    {"WatterfallShift", "double",&(Options.WatterfallShift)},
+    {"Scale","double",&(Options.Scale)},
+    {"WaterfallOffset","double",&(Options.WaterfallOffset)},
+    {"WaterfallShift","double",&(Options.WaterfallShift)},
+    {"WatterfallShift","double",&(Options.WaterfallShift)}, // old spelling, kept for existing scripts
     {NULL, NULL, NULL}};
   if(LuaTestOptionsList(L, len))
   {
@@ -1448,7 +1457,7 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), Options.Negate, Options.WatterfallShift);
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift);
         free(LPORe);
         free(LPOIm);
       }
@@ -1484,7 +1493,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Ncolumn, Options.Nrow, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
+        PlotSpectraTypeArrayToGraphicsArray(Graphics, a, Options.Ncolumn, Options.Nrow, &LPORe, &LPOIm, &(Options.Frame),  (Options.Negate?-1:1)*Options.Scale, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
       }
     }
     else if (luaL_testudata(L, 1, "GaussianRadialFunction_Type") != NULL)
@@ -1576,7 +1585,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), Options.Negate, Options.WatterfallShift);
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, Options.WaterfallOffset, Options.WaterfallShift);
         free(LPORe);
         free(LPOIm);
       }
@@ -1637,7 +1646,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphicsArray(Graphics, &Spec, Options.Nrow, Options.Ncolumn, &LPORe, &LPOIm, &(Options.Frame),  Options.Negate, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
+        PlotSpectraTypeArrayToGraphicsArray(Graphics, &Spec, Options.Nrow, Options.Ncolumn, &LPORe, &LPOIm, &(Options.Frame),  (Options.Negate?-1:1)*Options.Scale, Options.ScaleOffDiagonal, Options.ShiftOffDiagonal);
       }
       FreeResponsefunction(A);
       FreeSpectraTypeArray(&Spec);
@@ -2216,6 +2225,8 @@ static int LuaPlotBands(lua_State *L)
   Options.Frame.PlotYScaleFormat=(char*)ScaleFormat;
   Options.Frame.XAxis=-INFINITY;
   Options.Frame.YAxis=-INFINITY;
+  Options.Frame.XTicks=true;
+  Options.Frame.YTicks=true;
   Options.Interpolate = true;
   Options.GammaL = 0;
   Options.GammaG = 0;
