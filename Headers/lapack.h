@@ -1,5 +1,9 @@
 #ifdef BLASunderscore
+#ifdef ACCELERATE_NEW_LAPACK
+#define FORTRAN_WRAPPER(x) x ## $NEWLAPACK
+#else
 #define FORTRAN_WRAPPER(x) x ## _
+#endif
 
 #define dlamch FORTRAN_WRAPPER(dlamch)
 #define dlamc3 FORTRAN_WRAPPER(dlamc3)

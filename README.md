@@ -35,6 +35,27 @@ g++ LuaInterface/main.cpp -D LUA_USE_LINUX -DBLASunderscore -O3 -fopenmp -flto -
 
 Note the use of the BLASunderscore macro here, that Quanty exposes to use different conventions of blas and lapack libraries.
 
+On macOS blas and lapack come from Apple's Accelerate framework. Accelerate contains two lapack versions. The old one (lapack 3.2.1, the default) has bugs; for example zheev returns wrong eigenvectors for a Hermitian matrix of dimension 130 or more whose last rows and columns are zero (see TestScripts/Matrix/LapackBug.Quanty). Compile with -DACCELERATE_NEW_LAPACK to use the new lapack instead. This requires macOS 13.3 or newer. Do not use ACCELERATE_LAPACK_ILP64, Quanty passes 32 bit integers to blas and lapack.
+
+Apple's clang does not come with openmp. Install libomp (for example with Homebrew: brew install libomp) and link the static library, such that the binary does not depend on Homebrew on the computer it runs on. The Homebrew path is /usr/local/opt/libomp on Intel Macs and /opt/homebrew/opt/libomp on Apple silicon.
+
+A possible command on macOS is:
+
+clang++ LuaInterface/main.cpp -D LUA_USE_MACOSX -DBLASunderscore -DACCELERATE_NEW_LAPACK -O3 -mmacosx-version-min=13.3 -Xclang -fopenmp -I/usr/local/opt/libomp/include -o Quanty -framework Accelerate -lreadline /usr/local/opt/libomp/lib/libomp.a
+
+A universal binary, that runs on Intel and Apple silicon Macs, is made by compiling the command above twice, once with -arch x86_64 -o Quanty-x86_64 and once with -arch arm64 -o Quanty-arm64 (each needs a libomp.a for that architecture), and joining the two with
+
+lipo -create Quanty-x86_64 Quanty-arm64 -output Quanty
+
+Do not use -ffast-math or -Ofast, they change the order of summations, flush small numbers to zero and break the tests for NaN, and thereby the numerical accuracy. Do not use -march=native for a binary that should run on other computers. -flto gains nothing, as Quanty is compiled as a single file. The number of threads is set with the environment variable OMP_NUM_THREADS.
+
+CMakeLists.txt does all of the above on macOS by itself (new lapack, static libomp from Homebrew, readline, -O3, macOS 13.3):
+
+cmake -S . -B build
+cmake --build build
+
+For a universal binary add -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DOpenMP_libomp_LIBRARY=<path to a universal libomp.a> to the first command.
+
 
 ================== C v.s. C++                                      =======================
 

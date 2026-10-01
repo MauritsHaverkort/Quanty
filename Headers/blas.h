@@ -1,6 +1,10 @@
 
 #ifdef BLASunderscore
+#ifdef ACCELERATE_NEW_LAPACK
+#define FORTRAN_WRAPPER(x) x ## $NEWLAPACK
+#else
 #define FORTRAN_WRAPPER(x) x ## _
+#endif
 
 #define caxpy FORTRAN_WRAPPER(caxpy)
 #define ccopy FORTRAN_WRAPPER(ccopy)
