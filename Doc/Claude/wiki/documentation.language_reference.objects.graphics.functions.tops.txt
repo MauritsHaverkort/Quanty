@@ -18,7 +18,7 @@ The coordinates of the PostScript file are in units of 1/10 point, so that zoomi
 ###
 
 ###
-PostScript has no transparency. Every color is drawn opaque, whatever its transparency //AA// in //0xAARRGGBB//, also a fully transparent line (//AA// = FF); only fully transparent texts and fills are left out. A shade that should let a curve show through must therefore be put below the curve, as a layer under the plot. The bitmaps of color maps are drawn opaque as well. Texts are written in the font given by its PostScript name, and only the letters of ASCII are written correctly: write //"Delta"// rather than the Greek letter.
+PostScript files do not handle transparency correctly. Use svg files for plots with transparent colors, or put a shade that should let a curve show through below the curve, as a layer under the plot. Texts are written in the font given by its PostScript name, and only the letters of ASCII are written correctly: write //"Delta"// rather than the Greek letter.
 ###
 
 ===== Example =====

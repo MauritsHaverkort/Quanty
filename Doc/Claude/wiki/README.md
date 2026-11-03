@@ -645,9 +645,10 @@ frame per second, looping, Play restarts); they were not clicked through.
 
 - **PostScript draws fully transparent lines.** A line, curve or arc with
   `AA` = FF is written opaque to the ps file; texts and fills with `AA` = FF
-  are left out (`ColorVisible` in `GraphicsToPS.cpp`). Documented as is; a
-  two-line fix would skip invisible strokes the same way. Graphics.Plot is
-  not affected: it leaves hidden curves out of the Graphics object.
+  are left out (`ColorVisible` in `GraphicsToPS.cpp`). Graphics.Plot is not
+  affected: it leaves hidden curves out of the Graphics object. Maurits
+  decided to leave the code; the pages say only that PostScript files do not
+  handle transparency correctly, and to use svg for transparent colors.
 - The factor ten in size (1/10 point units, A4 is 8427 by 5959 pt) is
   documented on both pages, not changed (known since the 07_Export tutorial).
 - The film player shows the files in the order the browser lists them and

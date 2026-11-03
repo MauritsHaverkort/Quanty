@@ -18,7 +18,7 @@ A Graphics object can hold other Graphics objects as layers. //G1 + G2// is a ne
 ===== Colors =====
 
 ###
-A color is a 32 bit integer //0xAARRGGBB//: the transparency //AA// and the red, green and blue //RR//, //GG// and //BB//, each two hexadecimal digits from 00 to FF. //AA// = 00 is opaque and //AA// = FF fully transparent, so a color written //0xRRGGBB// is opaque: //0xFF0000// is red, //0x00A000// green, //0x0000FF// blue, //0x000000// black and //0x80FF0000// a half transparent red. All functions of Graphics use this form. PostScript has no transparency; in a PostScript file every color is opaque.
+A color is a 32 bit integer //0xAARRGGBB//: the transparency //AA// and the red, green and blue //RR//, //GG// and //BB//, each two hexadecimal digits from 00 to FF. //AA// = 00 is opaque and //AA// = FF fully transparent, so a color written //0xRRGGBB// is opaque: //0xFF0000// is red, //0x00A000// green, //0x0000FF// blue, //0x000000// black and //0x80FF0000// a half transparent red. All functions of Graphics use this form. PostScript files do not handle transparency correctly; use svg files for plots with transparent colors.
 ###
 
 ===== Text =====
