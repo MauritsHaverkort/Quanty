@@ -1,0 +1,62 @@
+{{indexmenu_n>999}}
+====== ToSVG ======
+
+###
+//SVG = Graphics.ToSVG(pl, Options)// returns the text of an svg file of the [[documentation:language_reference:objects:graphics:start|Graphics object]] //pl//, a string that can be written to a file. An svg file can be opened in any web browser and in drawing programs such as Inkscape, to edit it or to turn it into a pdf.
+###
+
+===== Input =====
+
+  * //pl// : a Graphics object, for example made by //[[documentation:language_reference:objects:graphics:functions:plot|Graphics.Plot()]]//.
+  * Options : (optional) A table of options. Possible options are:
+      * //"RelativeSize"// : Boolean, the svg fills the window it is shown in, for example that of a web browser, instead of having a fixed size. The plot is stretched to the shape of the window. Default value false
+
+===== Output =====
+
+  * //SVG// : a string, the text of the svg file.
+
+###
+The coordinates of the svg file are in units of 1/10 point, so that zooming in keeps the plot sharp. Without //"RelativeSize"// the file therefore has a size of ten times the page in points: the A4 page of //Graphics.Plot//, 297 mm by 210 mm, becomes an image of 8427 by 5959 pixels, which a browser shows at that size. Use //"RelativeSize"// for viewing, or give the size you want when you put the file in a document.
+###
+
+###
+Transparent colors (see [[documentation:language_reference:objects:graphics:start#colors|colors]]) are written as the opacity of each element. The bitmaps of color maps are embedded in the file. Texts are written with the PostScript name of their font, for example //"TimesNewRomanPSMT"//; a web browser that does not know that name shows the text in a font of its own.
+###
+
+===== Example =====
+
+###
+A density of states, written as an svg file that fills the browser window. The two lines of output show the size of an svg file with and without //"RelativeSize"//.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the density of states of three levels, broadened by 0.2 eV
+G = ResponseFunction.New({ {0, -2, 0.5, 3}, {0.3, 0.5, 0.2}, mu = 0, type = "ListOfPoles" })
+pl = Graphics.Plot(G/Pi, 0.2, {{"plotRe",false}, {"Negate",true},
+                   {"Frame",{{"Xmin",-4}, {"Xmax",4}, {"Ymin",-0.1}, {"Ymax",1.8}, {"FirstYTick",0}, {"dYTick",0.5}, {"YFormat","%.1f"},
+                             {"XLabel","energy (eV)"}, {"YLabel","density of states"}, {"XLMargin",0.1}, {"YAxis",-10}}}})
+
+-- an svg file of a fixed size, and one that fills the window it is shown in
+SVG = Graphics.ToSVG(pl)
+SVGRelative = Graphics.ToSVG(pl, {{"RelativeSize",true}})
+print(string.match(SVG, '<svg width="[^"]*" height="[^"]*"'))
+print(string.match(SVGRelative, '<svg width="[^"]*" height="[^"]*"'))
+
+file = io.open("DOS.svg", "w")
+file:write(SVGRelative)
+file:close()
+</code>
+
+==== Result ====
+<file Quanty_Output>
+<svg width="8427" height="5959"
+<svg width="100%" height="100%"
+</file>
+
+###
+The script writes //DOS.svg//. See //[[documentation:language_reference:objects:graphics:functions:svghtmlviewer|Graphics.SVGHTMLViewer()]]// for a web page to look at svg files.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}

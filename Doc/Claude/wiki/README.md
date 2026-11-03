@@ -617,3 +617,39 @@ ranges, the line style rules and the colors were measured on the branch build
 - The PlotBands draft of batch 8 predates the color convention of
   30 September (cf4544a2): its defaults (0xFF000080) and its description of
   `Transparancy` as an opacity are out of date. Revise it before pasting.
+
+
+## Batch 10 — Graphics: ToSVG, ToPS and SVGHTMLViewer
+
+Drafted 3 November 2026: the three functions that write a Graphics object out.
+
+### New pages
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.graphics.functions.tosvg.txt` | `documentation:language_reference:objects:graphics:functions:tosvg` |
+| `documentation.language_reference.objects.graphics.functions.tops.txt` | `documentation:language_reference:objects:graphics:functions:tops` |
+| `documentation.language_reference.objects.graphics.functions.svghtmlviewer.txt` | `documentation:language_reference:objects:graphics:functions:svghtmlviewer` |
+
+No images; the plots are the same as on the start page of batch 9.
+
+### Checked
+
+The three examples were copied out of the drafts and run on the branch build;
+the output blocks are that output. The PostScript file was turned into a pdf
+with Ghostscript (`-dEPSCrop`) and looked at. The descriptions of the two web
+pages are read from their source in `Plot/GraphicsToSVG.cpp` (buttons, one
+frame per second, looping, Play restarts); they were not clicked through.
+
+### Found along the way
+
+- **PostScript draws fully transparent lines.** A line, curve or arc with
+  `AA` = FF is written opaque to the ps file; texts and fills with `AA` = FF
+  are left out (`ColorVisible` in `GraphicsToPS.cpp`). Documented as is; a
+  two-line fix would skip invisible strokes the same way. Graphics.Plot is
+  not affected: it leaves hidden curves out of the Graphics object.
+- The factor ten in size (1/10 point units, A4 is 8427 by 5959 pt) is
+  documented on both pages, not changed (known since the 07_Export tutorial).
+- The film player shows the files in the order the browser lists them and
+  does not sort them itself; the page tells users to number with a fixed
+  number of digits.
