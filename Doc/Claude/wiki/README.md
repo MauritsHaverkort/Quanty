@@ -556,3 +556,64 @@ laptop with one orbital.
   are set. `SecondTransparancy` was read but never used. Both now multiply the
   alpha byte of their color, which is the old result whenever either is 255.
   Both are documented on the PlotBands page.
+
+
+## Batch 9 — Graphics: the section, and Graphics.Plot
+
+Drafted 3 November 2026. There was no Graphics section on the site at all;
+this batch starts it. Later batches are to add ToSVG and ToPS, Add, New,
+ToTable, Rotate, SVGHTMLViewer, the properties, a revised PlotBands page and
+the BitMap object.
+
+### New pages
+
+| file | page |
+|---|---|
+| `documentation.language_reference.objects.graphics.start.txt` | `documentation:language_reference:objects:graphics:start` |
+| `documentation.language_reference.objects.graphics.functions.start.txt` | `documentation:language_reference:objects:graphics:functions:start` |
+| `documentation.language_reference.objects.graphics.functions.plot.txt` | `documentation:language_reference:objects:graphics:functions:plot` |
+
+The start pages follow those of Spectra and TightBinding. The Plot page
+documents every option of `Graphics.Plot` on the `Claude` branch, including
+`LineStyleCycle` (38db1d0d), which the 0.9 binary does not have yet.
+
+### Images
+
+The pages show seven PNG images, in `media/` next to this file (untracked; not committed).
+Upload them with the media manager into the namespace the page names:
+
+| file | namespace |
+|---|---|
+| `dos.png` | `documentation:language_reference:objects:graphics` |
+| `plot_1_default.png` … `plot_6_color_map.png` | `documentation:language_reference:objects:graphics:functions` |
+
+They are the svg files the examples write, drawn by Firefox at 1000 by 707
+pixels.
+
+### Line-level edit
+
+`documentation:language_reference:objects:start`, first paragraph:
+
+    The objects included are Complex numbers, Operators, Wavefunctions, Spectra, and TightBinding definitions.
+
+becomes
+
+    The objects included are Complex numbers, Operators, Wavefunctions, Spectra, TightBinding definitions, and Graphics.
+
+### Checked
+
+Both examples were copied out of the drafts and run on the branch build; the
+output block is that output. Every plot was looked at. The default plot
+ranges, the line style rules and the colors were measured on the branch build
+(SVG strokes and `Graphics.ToTable`), not taken from the source alone.
+
+### Found along the way
+
+- In a list that holds both a Spectra object and a response function, and no
+  `Xmin`/`Xmax`, the frame covers the spectrum but the response function is
+  evaluated from -1 to 1 only. Documented on the Plot page, not changed.
+- The line widths are fractions of sqrt(width * height) of the page; the
+  99_Plots tutorial 01_Spectra says "a fraction of the height of the plot".
+- The PlotBands draft of batch 8 predates the color convention of
+  30 September (cf4544a2): its defaults (0xFF000080) and its description of
+  `Transparancy` as an opacity are out of date. Revise it before pasting.
