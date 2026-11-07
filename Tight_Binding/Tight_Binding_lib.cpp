@@ -1265,37 +1265,38 @@ int TightBindingDetermineMu(TightBindingDef const * const A, int Nk[3], double n
   double *val;
   const double tol = 1E-14;
   const int maxIter = 200;
-  int i;
-  size_t N;
+  size_t N, Nocc, Nempty;
   const size_t Ntot = (size_t)(Nk[0]*Nk[1]*Nk[2]*A->NFermion);
   val = (double*)malloc(sizeof(double)*Nk[0]*Nk[1]*Nk[2]*A->NFermion);
   TightBindingEigenValues(A, Nk, val);
   *Emin = val[0];
   *Emax = val[Nk[0]*Nk[1]*Nk[2]*A->NFermion-1];
   *mu = ChemicalPotential(val, Ntot, nd * (Nk[0]*Nk[1]*Nk[2]), kBT, tol, maxIter);
+  // N states are occupied: val[N-1] is the highest occupied state and val[N] the lowest empty one
   N=floorl( nd * (Nk[0]*Nk[1]*Nk[2]) * (1+DBL_EPSILON));
-  if(N+1<Ntot)
+  if((N>0)&&(N<Ntot))
   {
-    *gap = val[N+1] - val[N];
+    *gap = val[N] - val[N-1];
   }
   else
   {
     *gap=INFINITY;
   }
-  if(N>=Ntot)
+  if((N==0)||(N>Ntot))
   {
     *NStateEF=0;
     *NoccEF=0;
   }
   else
   {
-    i=1;
-    while( (N>i) && (val[N] - val[N-i] < tol)) i++;
-    *NStateEF=i;
-    *NoccEF=i;
-    i=1;
-    while( (N+i<Ntot) && (val[N+i] - val[N] < tol)) i++;
-    *NStateEF+=(i-1);
+    // the degenerate level of the highest occupied state val[N-1]:
+    // NoccEF of its states are occupied, NStateEF states in all
+    Nocc=1;
+    while( (Nocc<N) && (val[N-1] - val[N-1-Nocc] < tol)) Nocc++;
+    Nempty=0;
+    while( (N+Nempty<Ntot) && (val[N+Nempty] - val[N-1] < tol)) Nempty++;
+    *NoccEF=(int)Nocc;
+    *NStateEF=(int)(Nocc+Nempty);
   }
   free(val);
   return 0;
