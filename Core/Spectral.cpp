@@ -117,6 +117,20 @@ void CopySpectra(const SpectraType In, SpectraType * Out)
   }
 }
 
+/* A new SpectraTypeArray, as made by lua_newuserdata, holds whatever was in that memory.
+ * Set every field: no spectra, no incident energies (NE1 0) and not a tensor (TensorBasis
+ * NULL), until the caller fills it in. Then an error before that point frees nothing it does
+ * not own, and fields the caller does not set do not hold garbage.
+ */
+void InitSpectraTypeArray(SpectraTypeArray * const A)
+{
+  A->NSpectra = 0;
+  A->NE1 = 0;
+  A->Spec = NULL;
+  A->Name = NULL;
+  A->TensorBasis = NULL;
+}
+
 uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
 {
   uint32_t i;

@@ -1,6 +1,7 @@
 int SpectrumAllocate(const SpectraType Settings, SpectraType * const G);
 void SpectrumFree(SpectraType * const G);
 void CopySpectra(const SpectraType In, SpectraType * Out);
+void InitSpectraTypeArray(SpectraTypeArray * const A);
 uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out);
 uint32_t SetSpectraArrayNE1(SpectraTypeArray * const A, const uint32_t NE1);
 uint32_t SetSpectraArrayTensorBasis(SpectraTypeArray * const A, const char * const TensorBasis);

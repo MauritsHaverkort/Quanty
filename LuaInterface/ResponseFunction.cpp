@@ -4689,6 +4689,7 @@ static int LuaResponseFunctionToSpectra(lua_State *L)
     LuaCheckOptions(L, -1, LuaOptions);
   }
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(Spec);
   luaL_setmetatable(L, "Spectra_Type");
   /*  Set the fresh user data to an empty array before it is filled. If the call below fails we
    *  leave through a lua error and the garbage collector still runs FreeSpectraTypeArray on

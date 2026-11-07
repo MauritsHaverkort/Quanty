@@ -21,6 +21,7 @@ static int LuaSpectraBroaden(lua_State * L)
   if(!((lua_type(L,1)==LUA_TUSERDATA)&&(luaL_testudata(L, 1, "Spectra_Type") != NULL))) return luaL_error(L, "Error Spectra.Broaden first element should be of spectra type\n");
   a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   CopySpectraArray(a, res);
   luaL_setmetatable(L, "Spectra_Type");
   if(lua_type(L,2)==LUA_TNUMBER)
@@ -226,6 +227,7 @@ static int LuaSpectraShift(lua_State * L)
   {
     shift=luaL_checknumber(L, 2);
     res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    InitSpectraTypeArray(res);
     CopySpectraArray(a, res);
     for(i=0;i<res->NSpectra;i++)
     {
@@ -247,6 +249,7 @@ static int LuaSpectraShift(lua_State * L)
   {
     if(a->NSpectra!=lua_objlen(L,2)) return luaL_error(L, "Error Spectra.Shift Table with shifts is of length %d, but there are %d spectra\n",lua_objlen(L,2),a->NSpectra);
     res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    InitSpectraTypeArray(res);
     CopySpectraArray(a, res);
     for(i=0;i<res->NSpectra;i++)
     {
@@ -341,6 +344,7 @@ static int LuaTableToSpectra(lua_State * L)
   if(lua_gettop(L)!=1) return luaL_error(L, "Error Spectra.FromTable called with %d arguments, 1 argument (a table) expected\n",lua_gettop(L));
   luaL_checktype(L, 1, LUA_TTABLE);
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   luaL_setmetatable(L, "Spectra_Type");
   res->NSpectra = 0;
   res->Spec= (SpectraType*)malloc(lua_objlen(L, 1)*sizeof(SpectraType));
@@ -486,6 +490,7 @@ static int LuaSpectraMultiplyByEnergy(lua_State * L)
   if(!((lua_type(L,1)==LUA_TUSERDATA)&&(luaL_testudata(L, 1, "Spectra_Type") != NULL))) return luaL_error(L, "Error Spectra.MultiplyByEnergy first element should be of spectra type\n");
   a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   CopySpectraArray(a, res);
   for(i=0;i<res->NSpectra;i++)
   {
@@ -529,6 +534,7 @@ static int LuaSpectraSum(lua_State * L)
   if(!((lua_type(L,1)==LUA_TUSERDATA)&&(luaL_testudata(L, 1, "Spectra_Type") != NULL))) return luaL_error(L, "Error Spectra.Sum first element should be of spectra type\n");
   a = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   luaL_setmetatable(L, "Spectra_Type");
   res->Name=(char*)malloc(2*sizeof(char));
   res->Name[0]='\0';
@@ -615,6 +621,7 @@ static int LuaSpectraSumMethod(lua_State * L)
   SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   uint32_t len = (uint32_t)lua_gettop(L);
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   luaL_setmetatable(L, "Spectra_Type");
   res->Name=(char*)malloc(2*sizeof(char));
   res->Name[0]='\0';
@@ -720,6 +727,7 @@ static int LuaSpectraElement(lua_State * L)
         return luaL_error(L, "Error: no element %d in spectra array with %d elements\n",i,a->NSpectra);
       }
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(res);
       res->NSpectra = 1;
       res->Name=(char*)malloc(sizeof(char)*(1+strlen(a->Spec[i-1].Name)));
       if(res->Name==NULL){return luaL_error(L, "Error: malloc failed for name of spectrum\n");}
@@ -768,6 +776,7 @@ static int LuaSpectraElement(lua_State * L)
       uint32_t i,j;
       SpectraTypeArray *res;
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(res);
       res->Name=(char*)malloc(2*sizeof(char));
       res->Name[0]='\0';
       res->NSpectra = (uint32_t) lua_objlen(L, len);
@@ -834,6 +843,7 @@ static int LuaSpectraElementMethod(lua_State * L)
           return luaL_error(L, "Error: no element %d in spectra array with %d elements\n",i,a->NSpectra);
         }
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         res->Name=(char*)malloc(2*sizeof(char));
         res->Name[0]='\0';
         res->NSpectra = 1;
@@ -881,6 +891,7 @@ static int LuaSpectraElementMethod(lua_State * L)
         uint32_t i,j;
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         res->Name=(char*)malloc(2*sizeof(char));
         res->Name[0]='\0';
         res->NSpectra = (uint32_t) lua_objlen(L, len);
@@ -984,6 +995,7 @@ static int LuaSpectraAdd(lua_State * L)
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(res);
       if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
       for(i=0;i<res->NSpectra;i++)
       {
@@ -1047,6 +1059,7 @@ static int LuaSpectraAdd(lua_State * L)
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          InitSpectraTypeArray(res);
           if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
@@ -1075,6 +1088,7 @@ static int LuaSpectraAdd(lua_State * L)
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
@@ -1106,6 +1120,7 @@ static int LuaSpectraAdd(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Adding two sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
 
             if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
@@ -1169,6 +1184,7 @@ static int LuaSpectraSub(lua_State * L)
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(res);
       if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
       for(i=0;i<res->NSpectra;i++)
       {
@@ -1237,6 +1253,7 @@ static int LuaSpectraSub(lua_State * L)
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          InitSpectraTypeArray(res);
           if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
@@ -1265,6 +1282,7 @@ static int LuaSpectraSub(lua_State * L)
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
@@ -1296,6 +1314,7 @@ static int LuaSpectraSub(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Subtracting to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
@@ -1358,6 +1377,7 @@ static int LuaSpectraMul(lua_State * L)
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(res);
       if(CopySpectraArray(b, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
       for(i=0;i<res->NSpectra;i++)
       {
@@ -1417,6 +1437,7 @@ static int LuaSpectraMul(lua_State * L)
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          InitSpectraTypeArray(res);
           if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
@@ -1441,6 +1462,7 @@ static int LuaSpectraMul(lua_State * L)
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
@@ -1467,6 +1489,7 @@ static int LuaSpectraMul(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Multiplying to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             res->Name=(char*)malloc(2*sizeof(char));
             res->Name[0]='\0';
             res->NSpectra = a->NSpectra;
@@ -1550,6 +1573,7 @@ static int LuaSpectraDiv(lua_State * L)
       a = luaL_checknumber(L, 1);
       b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
       res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(res);
       res->Name=(char*)malloc(2*sizeof(char));
       res->Name[0]='\0';
       res->NSpectra = b->NSpectra;
@@ -1622,6 +1646,7 @@ static int LuaSpectraDiv(lua_State * L)
           if(b==0) return luaL_error(L, "Error: spectra divided by zero\n");
           b=1/b;
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          InitSpectraTypeArray(res);
           if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
           for(i=0;i<res->NSpectra;i++)
           {
@@ -1646,6 +1671,7 @@ static int LuaSpectraDiv(lua_State * L)
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
             for(i=0;i<res->NSpectra;i++)
             {
@@ -1672,6 +1698,7 @@ static int LuaSpectraDiv(lua_State * L)
             b = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
             if(a->NSpectra!=b->NSpectra) return luaL_error(L, "Error: Dividing to sets of spectra with different number of elements (%d) + (%d)\n",a->NSpectra,b->NSpectra);
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             res->NSpectra = a->NSpectra;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
@@ -1800,6 +1827,7 @@ static int LuaSpectraPow(lua_State * L)
           SpectraTypeArray *res;
           b = luaL_checknumber(L, len);
           res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          InitSpectraTypeArray(res);
           res->NSpectra = a->NSpectra;
           res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
           for(i=0;i<res->NSpectra;i++)
@@ -1836,6 +1864,7 @@ static int LuaSpectraPow(lua_State * L)
             SpectraTypeArray *res;
             b = (Complex16 *) luaL_checkudata(L, len, "Complex_Type");
             res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+            InitSpectraTypeArray(res);
             res->NSpectra = a->NSpectra;
             res->Spec = (SpectraType*)malloc(res->NSpectra * sizeof(SpectraType));
             for(i=0;i<res->NSpectra;i++)
@@ -1911,6 +1940,7 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
     
     //output spectral array
     res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    InitSpectraTypeArray(res);
     luaL_setmetatable(L, "Spectra_Type");
     
     printf("ContractWithPolarization: args=%d NSpectra=%u NE1=%u TensorBasis=%s\n",
@@ -2179,6 +2209,7 @@ static int LuaSpectraGetPowderTensorMethod(lua_State *L)
 
   //output spectral array
   res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   luaL_setmetatable(L, "Spectra_Type");
   
 
@@ -2217,6 +2248,7 @@ static int LuaSpectraConjugateMethod(lua_State *L)
 {
   SpectraTypeArray *spec = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   SpectraTypeArray *res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   luaL_setmetatable(L, "Spectra_Type");
   if(CopySpectraArray(spec, res) != 0)
   {
@@ -2233,6 +2265,7 @@ static int LuaSpectraTransposeMethod(lua_State *L)
 {
   SpectraTypeArray *spec = (SpectraTypeArray *) luaL_checkudata(L, lua_upvalueindex(1), "Spectra_Type");
   SpectraTypeArray *res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(res);
   luaL_setmetatable(L, "Spectra_Type");
   if(CopySpectraArray(spec, res) != 0)
   {

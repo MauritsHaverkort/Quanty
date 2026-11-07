@@ -540,6 +540,7 @@ static int LuaCalculateDOS(lua_State *L)
   }
 
   DOS = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(DOS);
   luaL_setmetatable(L, "Spectra_Type");
   DOS->Name=(char*)malloc(4*sizeof(char));
   DOS->Name[0]='D';
