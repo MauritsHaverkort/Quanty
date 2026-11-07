@@ -353,7 +353,7 @@ static int LuaOperatorNewAtomicUBSpline (lua_State *L)
     lua_pop(L,1);
     Nindices = (uint32_t)lua_objlen(L,2);
     indices = (uint16_t **) malloc(Nindices * sizeof(uint16_t *));
-    if(!indices) return luaL_error(L,"malloc failed at indices in LuaOperatorNewFullCoulomb. size = %u\n",Nindices);
+    if(!indices) return luaL_error(L,"malloc failed at indices in LuaOperatorNewFullCoulomb. size = %f\n",(double)Nindices);
     for(uint32_t i = 0; i < Nindices; i++ )
     {
       lua_rawgeti(L, 2, i+1);
@@ -405,7 +405,7 @@ static int LuaOperatorNewAtomicUBSpline (lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error in : Expected 3 or 4 parameters, not %i", len);
+    return luaL_error(L, "Error in : Expected 3 or 4 parameters, not %d", len);
   }
   luaL_setmetatable(L,"Operator_Type");
   for(uint32_t i = 0; i < Nindices; i++ )

@@ -232,7 +232,7 @@ static void LuaReadGraphicsColor(lua_State *L, int narg, uint32_t *C, const char
   narg = lua_absindex(L, narg);
   if(lua_type(L, narg)!=LUA_TNUMBER) luaL_error(L, "Error in Graphics.New(Table): %s should be a color 0xAARRGGBB\n", What);
   c = lua_tonumber(L, narg);
-  if((c!=floor(c))||(c<0)||(c>4294967295.0)) luaL_error(L, "Error in Graphics.New(Table): %s should be a color 0xAARRGGBB, a whole number from 0 to 0xFFFFFFFF, found %g\n", What, c);
+  if((c!=floor(c))||(c<0)||(c>4294967295.0)) luaL_error(L, "Error in Graphics.New(Table): %s should be a color 0xAARRGGBB, a whole number from 0 to 0xFFFFFFFF, found %f\n", What, c);
   *C = (uint32_t)c;
 }
 
@@ -451,7 +451,7 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
         if(j>=8*N)
         {
           FreeBitMap(&E);
-          return (void)luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap of %d by %d contain more than %lu hexadecimal digits\n", E.NpointsX, E.NpointsY, (unsigned long)(8*N));
+          return (void)luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap of %d by %d contain more than %f hexadecimal digits\n", E.NpointsX, E.NpointsY, (double)(8*N));
         }
         E.Pixels[j/8] = (E.Pixels[j/8]<<4) | d;
         j++;
@@ -459,7 +459,7 @@ void LuaReadTable_Graphics(lua_State *L, int narg, GraphicsType *G)
       if(j!=8*N)
       {
         FreeBitMap(&E);
-        luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap of %d by %d should have %lu hexadecimal digits (8 per pixel), found %lu\n", E.NpointsX, E.NpointsY, (unsigned long)(8*N), (unsigned long)j);
+        luaL_error(L, "Error in Graphics.New(Table): the Pixels of a bitmap of %d by %d should have %f hexadecimal digits (8 per pixel), found %f\n", E.NpointsX, E.NpointsY, (double)(8*N), (double)j);
       }
       if(AddBitMapInherentMemory(G, &E)) luaL_error(L, "Error in Graphics.New(Table): out of memory\n");
       lua_pop(L, 2);
@@ -1669,7 +1669,7 @@ int LuaPlotGraphics(lua_State * L)
         bool const Increasing = YPos[1] > YPos[0];
         for(i=1;i<NS;i++)
         {
-          if( Increasing ? !(YPos[i]>YPos[i-1]) : !(YPos[i]<YPos[i-1]) ) return luaL_error(L, "Graphics.Plot: the spectra of a colour map should lie at strictly increasing or decreasing heights, plotted spectrum %d lies at %g and spectrum %d at %g\n", i, YPos[i-1], i+1, YPos[i]);
+          if( Increasing ? !(YPos[i]>YPos[i-1]) : !(YPos[i]<YPos[i-1]) ) return luaL_error(L, "Graphics.Plot: the spectra of a colour map should lie at strictly increasing or decreasing heights, plotted spectrum %d lies at %f and spectrum %d at %f\n", i, YPos[i-1], i+1, YPos[i]);
         }
         // by default the map shows all spectra, the outer ones with half the distance to their neighbour
         double const Lowest     = Increasing ? YPos[0]         : YPos[NS-1];

@@ -5927,7 +5927,7 @@ static int LuaCoupledCartesianToSphericalTensorKMatrix(lua_State * L)
   const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
 
   if (coupledCartesianToSphericalTensorK(l1, l2, &returnMat) != 0)
-    return luaL_error(L, "Failed to construct coupled Cartesian-to-spherical tensor K matrix for l1=%u and l2=%u.\n", l1, l2);
+    return luaL_error(L, "Failed to construct coupled Cartesian-to-spherical tensor K matrix for l1=%d and l2=%d.\n", l1, l2);
 
   LuaPushTable_CompactMatrixType(L, &returnMat);
   FreeCompactMatrix(&returnMat);
@@ -5951,7 +5951,7 @@ static int LuaCoupledSphericalTensorKToSphericalTensorYMatrix(lua_State * L)
   const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
 
   if (coupledSphericalTensorKToSphericalTensorY(l1, l2, &returnMat) != 0)
-    return luaL_error(L, "Failed to construct coupled spherical tensor K-to-Y matrix for l1=%u and l2=%u.\n", l1, l2);
+    return luaL_error(L, "Failed to construct coupled spherical tensor K-to-Y matrix for l1=%d and l2=%d.\n", l1, l2);
 
   LuaPushTable_CompactMatrixType(L, &returnMat);
   FreeCompactMatrix(&returnMat);

@@ -1980,14 +1980,14 @@ static int LuaContractSpectraTensorWithPolarizationMethod(lua_State *L)
         return luaL_error(
             L,
             "Error in .ContractWithPolarization: "
-            "tensor has %llu components, expected "
-            "(%llu * %llu)^2 = %llu",
-            (unsigned long long)(
+            "tensor has %f components, expected "
+            "(%f * %f)^2 = %f",
+            (double)(
                 spec->NSpectra / (spec->NE1 + 1)
             ),
-            (unsigned long long)len[0],
-            (unsigned long long)len[1],
-            (unsigned long long)expected
+            (double)len[0],
+            (double)len[1],
+            (double)expected
         );
     }
 
@@ -2198,7 +2198,7 @@ static int LuaSpectraGetPowderTensorMethod(lua_State *L)
   }
   else
   {
-    return luaL_error(L, "Error Spectra.GetPowderTensor: sqrt(nstate) must be 9 or 15 (nstate=%u)\n", nstate);
+    return luaL_error(L, "Error Spectra.GetPowderTensor: sqrt(nstate) must be 9 or 15 (nstate=%d)\n", nstate);
   }
 
 

@@ -693,7 +693,7 @@ static int LuaCalculateBands(lua_State *L)
   if(isnan(Options.Lambda)) Options.Lambda = 2;
   if(!(Options.Lambda >= 1))
   {
-    return luaL_error(L, "Error CalculateBands: Lambda is %g, it has to be at least 1\n", Options.Lambda);
+    return luaL_error(L, "Error CalculateBands: Lambda is %f, it has to be at least 1\n", Options.Lambda);
   }
   if (Grid.Ni != 0)
   {
@@ -1315,7 +1315,7 @@ static void LuaCharacterToMatrix(lua_State *L, int const iChar, int const n, int
     if(fabs(diff) > 1E-10*scale)
     {
       luaL_error(L, "Error CalculateBands: with a self energy character function %d must be a quadratic form, character(psi) = sum_ij psi_i^* P_ij psi_j, "
-                    "as only then Tr[P A(k,w)] is its spectral function. It differs from one by %g on a test vector.\n", c+1, diff);
+                    "as only then Tr[P A(k,w)] is its spectral function. It differs from one by %f on a test vector.\n", c+1, diff);
     }
   }
   lua_pop(L,1);
@@ -1362,7 +1362,7 @@ static int LuaCalculateBandsSelfEnergyMesh(lua_State *L, TightBindingDef const *
     {
       return luaL_error(L, "Error CalculateBands: Method \"Mesh\" needs an energy grid, either Emin, Emax and NE or EnergyGrid\n");
     }
-    if(!(Emax>Emin)) return luaL_error(L, "Error CalculateBands: Emax (%g) has to be above Emin (%g)\n", Emax, Emin);
+    if(!(Emax>Emin)) return luaL_error(L, "Error CalculateBands: Emax (%f) has to be above Emin (%f)\n", Emax, Emin);
     NGridIn = NE+1;
     gin = (double*)malloc(NGridIn*sizeof(double));
     if(gin==NULL) return luaL_error(L, "Error CalculateBands: out of memory\n");
@@ -1737,7 +1737,7 @@ static int LuaCalculateG(lua_State *L)
   if(isnan(Options.Lambda)) Options.Lambda = 2;
   if(!(Options.Lambda >= 1))
   {
-    return luaL_error(L, "Error CalculateG: Lambda is %g, it has to be at least 1\n", Options.Lambda);
+    return luaL_error(L, "Error CalculateG: Lambda is %f, it has to be at least 1\n", Options.Lambda);
   }
   if (Grid.Ni != 0)
   {
@@ -2813,7 +2813,7 @@ static int LuaCreateClusterHamiltonian(lua_State *L)
       }
       else
       {
-        return luaL_error(L, "Number of Fermions in tight binding Hamiltonian (%i) not equal to number of Fermions in additional operator (%i)\n",H->NFermion,AditionalOperator->NFermion);
+        return luaL_error(L, "Number of Fermions in tight binding Hamiltonian (%d) not equal to number of Fermions in additional operator (%d)\n",H->NFermion,AditionalOperator->NFermion);
       }
     }
     for(i=0;i<ClusterDef->Cell.NAtoms;i++)
@@ -3364,7 +3364,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
           // j = Cross[c,a] . r / (Cross[a,b].c)
           // k = Cross[a,b] . r / (Cross[a,b].c)
           CellVolume=ParallelalPipedVolume(Cell->rUnitCell[0], Cell->rUnitCell[1], Cell->rUnitCell[2]);
-          if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%d %d %d}\n    b={%d %d %d}\n    c={%d %d %2d}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
+          if(fabs(CellVolume)<100*sqrt(DBL_MIN)) return luaL_error(L, "ReadHopping called with a cell defined that has a zero volume:\n    a={%f %f %f}\n    b={%f %f %f}\n    c={%f %f %f}\n",Cell->rUnitCell[0][0],Cell->rUnitCell[0][1],Cell->rUnitCell[0][2],Cell->rUnitCell[1][0],Cell->rUnitCell[1][1],Cell->rUnitCell[1][2],Cell->rUnitCell[2][0],Cell->rUnitCell[2][1],Cell->rUnitCell[2][2]);
           r[0]=H->ConnectingVector[0]+Cell->Atom[H->Atompos1].Position[0]-Cell->Atom[H->Atompos2].Position[0];
           r[1]=H->ConnectingVector[1]+Cell->Atom[H->Atompos1].Position[1]-Cell->Atom[H->Atompos2].Position[1];
           r[2]=H->ConnectingVector[2]+Cell->Atom[H->Atompos1].Position[2]-Cell->Atom[H->Atompos2].Position[2];
@@ -3386,7 +3386,7 @@ static int LuaReadHopping(lua_State *L, int narg, CrystalStructureType *Cell, Ti
       lua_rawgeti(L, -1, i+1);
       buff=(double)luaL_checknumber(L, -1);
       H->TransVecs[i]=(int)buff;
-      if(fabs(buff-H->TransVecs[i])>100*DBL_EPSILON) return luaL_error(L, "Units for atom positions is set to Relative, i.e. all vectors must be given in units of a,b and c.\nReadHopping expects a table of the form {ai,bi,ci} for the vector defining the connection between atom %s and atom %s\nWith ai, bi and ci being integers, found %d\n",AtomShell1,AtomShell2,buff);
+      if(fabs(buff-H->TransVecs[i])>100*DBL_EPSILON) return luaL_error(L, "Units for atom positions is set to Relative, i.e. all vectors must be given in units of a,b and c.\nReadHopping expects a table of the form {ai,bi,ci} for the vector defining the connection between atom %s and atom %s\nWith ai, bi and ci being integers, found %f\n",AtomShell1,AtomShell2,buff);
       lua_pop(L,1);
     }
     lua_pop(L,1);

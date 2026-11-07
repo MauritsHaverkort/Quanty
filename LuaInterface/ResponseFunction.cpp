@@ -511,17 +511,17 @@ static int LuaReducePolesResponseFunction(lua_State *L)
     if(len==3) return luaL_error(L, "Error in ReducePoles: Method \"Weight\" takes one weight, not one per side of the chemical potential.\n");
     if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: with Method \"Weight\" the 2nd argument should be the weight below which a pole is removed.\n");
     Wred = (double)lua_tonumber(L, 2);
-    if(!(Wred>0)) return luaL_error(L, "Error in ReducePoles: the weight is %g, with Method \"Weight\" it has to be a positive real number.\n", Wred);
+    if(!(Wred>0)) return luaL_error(L, "Error in ReducePoles: the weight is %f, with Method \"Weight\" it has to be a positive real number.\n", Wred);
   }
   else
   {
     if(!lua_isnumber(L, 2)) return luaL_error(L, "Error in ReducePoles: 2nd argument should be the desired number of poles.\n");
-    if(!LuaTestPositiveInteger(L, 2)) return luaL_error(L, "Error in ReducePoles: the number of poles is %g, with Method \"Number\" it has to be a positive integer.\n", (double)lua_tonumber(L, 2));
+    if(!LuaTestPositiveInteger(L, 2)) return luaL_error(L, "Error in ReducePoles: the number of poles is %f, with Method \"Number\" it has to be a positive integer.\n", (double)lua_tonumber(L, 2));
     Nred = (int)lua_tointeger(L, 2);
     if (len==3)
     {
       if(!lua_isnumber(L, 3)) return luaL_error(L, "Error in ReducePoles: 3rd argument should be the desired number of poles in the conduction band.\n");
-      if(!LuaTestPositiveInteger(L, 3)) return luaL_error(L, "Error in ReducePoles: the number of poles in the conduction band is %g, with Method \"Number\" it has to be a positive integer.\n", (double)lua_tonumber(L, 3));
+      if(!LuaTestPositiveInteger(L, 3)) return luaL_error(L, "Error in ReducePoles: the number of poles in the conduction band is %f, with Method \"Number\" it has to be a positive integer.\n", (double)lua_tonumber(L, 3));
       Nredcon = (int)lua_tointeger(L, 3);
     }
   }
@@ -1241,7 +1241,7 @@ static int LuaResponseFunctionDownfold(lua_State *L)
     if(Options.Lambda==ValueNotSet) Options.Lambda = 2;
     if(!(Options.Lambda>=1))
     {
-      return luaL_error(L, "Error in ResponseFunction.Downfold(). Lambda is %g, it has to be at least 1\n", Options.Lambda);
+      return luaL_error(L, "Error in ResponseFunction.Downfold(). Lambda is %f, it has to be at least 1\n", Options.Lambda);
     }
     bool uniform = (Options.NE!=0)||(Options.Emin!=ValueNotSet)||(Options.Emax!=ValueNotSet);
     if(Options.NTriMax!=NTriMaxNoLimit)
@@ -1261,7 +1261,7 @@ static int LuaResponseFunctionDownfold(lua_State *L)
       uint32_t k;
       if((Options.NE==0)||(Options.Emin==ValueNotSet)||(Options.Emax==ValueNotSet)||!(Options.Emax>Options.Emin))
       {
-        return luaL_error(L, "Error in ResponseFunction.Downfold(). A uniform grid needs Emin < Emax and NE > 0 (got %g, %g, %u)\n", Options.Emin, Options.Emax, Options.NE);
+        return luaL_error(L, "Error in ResponseFunction.Downfold(). A uniform grid needs Emin < Emax and NE > 0 (got %f, %f, %d)\n", Options.Emin, Options.Emax, Options.NE);
       }
       Grid.Ni=Options.NE+1;
       Grid.QComplex=0;
