@@ -1647,8 +1647,13 @@ uint32_t RealMappedDetToWaveFunction(WaveFunctionType * const A, uint8_t *Det, M
     RealOperatorAddLader(&O, oadd, 1, 0.0);
   }
   
-  for(i=0;i<A->NFermion;i++)
+  /* Det is a^dag_{i1} a^dag_{i2} ... a^dag_{iN} |0> with i1 < i2 < ... < iN (see OperatorCr).
+   * Each rotated creation operator acts from the left, so apply them highest index first.
+   * Lowest index first gives the reversed product, (-1)^(N(N-1)/2) times the rotated state.
+   */
+  for(i=A->NFermion;i>0;)
   {
+    i--;
     /* test if Fermion i is occupied */
     if(Det[i >> 3] & (128 >> (i & 7)))
     {
