@@ -246,11 +246,10 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 {
   int i, j, k, l, iatom, ihtb, ish, jsh, indwan, indsh, diffQ;
   int Nwandef=FPLO.Wannier.Nwandef;
-  int Nshell, *Norb, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart;
+  int Nshell, *Norb, *ShellInd, **ShellOfSite, *OrbInd, **NVecShell, **NHopStart, *NVecShellMax;
   char **SiteName, **ShellName;
   double ***HopVec, **SitePos;
   vector < vector<uint32_t> > HopVecJVals; //for freeing the memory in the end.
-  const int NhopMax=2048;
   double AtomPositionAccuracy = 0.001;
 
   strncpy(HTB->Name, FPLO.Compound, 15);
@@ -342,6 +341,16 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
 		lastShell = FPLO.Wannier.Orbital[i][1];
 	}
 
+  // The number of distinct vectors connecting shell i to shell j is at most the number of
+  // hoppings of all Wannier pairs in these shells, NVecShellMax[i*Nshell+j].
+  NVecShellMax = (int*)calloc(Nshell*Nshell, sizeof(int));
+  for(i=0;i<Nwandef;i++)
+  {
+    for(j=0;j<Nwandef;j++)
+    {
+      NVecShellMax[ShellInd[i]*Nshell+ShellInd[j]] += FPLO.Wannier.Nhop[i*Nwandef+j];
+    }
+  }
   NVecShell = (int**)malloc(Nshell*sizeof(int*));
   HopVec    = (double***)malloc(Nshell*Nshell*sizeof(double**));
   for(i=0;i<Nshell;i++)
@@ -349,10 +358,11 @@ uint32_t TightBindingDefFromDresdenFPLO(DresdenFPLO FPLO, TightBindingDef *HTB)
     NVecShell[i] = (int*)calloc(Nshell, sizeof(int));
     for(j=0;j<Nshell;j++)
     {
-      HopVec[i*Nshell+j] = (double**)malloc(NhopMax*sizeof(double*));
+      HopVec[i*Nshell+j] = (double**)malloc(NVecShellMax[i*Nshell+j]*sizeof(double*));
       HopVecJVals.push_back(vector<uint32_t>());
     }
   }
+  free(NVecShellMax);
 
   // Determine the unique translational vectors for each shell.
   // The vectors will be used to label the HTB list.
