@@ -1846,7 +1846,6 @@ static int Luarotate(lua_State *L)
 
     U = luaL_checkCompactMatrix(L, 2);
     Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
-    printf("Rotating spectra with %d spectra and %d energy points\n", Spec->NSpectra, Spec->NE1);
     SpecNew = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
     SpecNew->NSpectra = 0;
     SpecNew->NE1 = 0;
