@@ -169,6 +169,7 @@ static int LuaCreateResonantSpectrum(lua_State *L)
   }
   /* allocate spectra and a pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(Spec);
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=0;
   Spec->Spec=NULL;

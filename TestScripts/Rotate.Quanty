@@ -242,7 +242,63 @@ if Chop(resH - expectedOpp, threshold) ~= 0*expectedOpp then
     error("Result of rotation not equal to the expected value\n",1)
 end
 
+print("-----------------------------------------------------------------------")
+print("--                  Rotation of Wavefunction: the phase              --")
+print("-----------------------------------------------------------------------")
+-- A determinant is a^dag_{i1} a^dag_{i2} ... a^dag_{iN} |0> with i1 < i2 < ... < iN. Up to
+-- version 0.9 Rotate built the rotated determinant in the reverse order and returned
+-- (-1)^(N(N-1)/2) times the rotated state. That is a global phase at fixed N, but it changes
+-- the relative phase of the parts of a state with different particle number, it breaks
+-- Rotate(Rotate(psi,A),B) = Rotate(psi,B A), and it breaks Rotate(O psi) = Rotate(O) Rotate(psi)
+-- for every operator O that changes the number of particles.
 
+local function MatMul(A, B)
+  local C = {}
+  for i=1,#A do
+    C[i] = {}
+    for j=1,#B[1] do
+      local s = 0
+      for k=1,#B do s = s + A[i][k]*B[k][j] end
+      C[i][j] = s
+    end
+  end
+  return C
+end
+-- the norm of the difference of two wave functions
+local function Distance(a, b)
+  local d = a - b
+  return math.sqrt(math.abs(Complex.Re(d*d)))
+end
+
+-- the identity keeps every determinant, for every number of particles
+Id = Matrix.Identity(10)
+for N=0,10 do
+  psi = NewWavefunction(10, 0, {{string.rep("1",N)..string.rep("0",10-N), 1}})
+  overlap = psi*Rotate(psi, Id)
+  if Chop(overlap - 1, threshold) ~= 0 then
+    error("Rotate with the identity gives "..tostring(overlap).." times psi for N = "..N.."\n",1)
+  end
+end
+
+-- superpositions of 2, 3 and 4 particles, real and complex, with real and complex rotations
+-- (the four routes RRR, CRC, CCR and CCC in the code)
+psiR = NewWavefunction(10, 0, {{"1100000000", 0.4}, {"0100100001", -0.3}, {"1010010000", 0.5},
+                               {"0011000110", 0.6}, {"1000000011", 0.2}, {"0101000001", -0.3}})
+psiC = NewWavefunction(10, 0, {{"1100000000", 0.4*I}, {"0100100001", -0.3}, {"1010010000", 0.5+0.1*I},
+                               {"0011000110", 0.6}, {"1000000011", 0.2-0.2*I}, {"0101000001", -0.3*I}})
+CrOpp = NewOperator("Cr", 10, 3)
+for _, psi in ipairs({psiR, psiC}) do
+  for _, U in ipairs({rotateMatRS, rotateMatCS}) do
+    -- Rotate(c^dag psi) = Rotate(c^dag) Rotate(psi): relative sign (-1)^N up to version 0.9
+    if Distance(Rotate(CrOpp*psi, U), Rotate(CrOpp, U)*Rotate(psi, U)) > threshold then
+      error("Rotate(c^dag psi) is not Rotate(c^dag) Rotate(psi)\n",1)
+    end
+    -- two rotations after each other are one rotation with the product matrix
+    if Distance(Rotate(Rotate(psi, U), rotateMatCS), Rotate(psi, MatMul(rotateMatCS, U))) > threshold then
+      error("Rotate(Rotate(psi,A),B) is not Rotate(psi,B A)\n",1)
+    end
+  end
+end
 
 print("---------------------------------------------------")
 print("--                  End of Rotate                --")

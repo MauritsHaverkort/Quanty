@@ -117,6 +117,20 @@ void CopySpectra(const SpectraType In, SpectraType * Out)
   }
 }
 
+/* A new SpectraTypeArray, as made by lua_newuserdata, holds whatever was in that memory.
+ * Set every field: no spectra, no incident energies (NE1 0) and not a tensor (TensorBasis
+ * NULL), until the caller fills it in. Then an error before that point frees nothing it does
+ * not own, and fields the caller does not set do not hold garbage.
+ */
+void InitSpectraTypeArray(SpectraTypeArray * const A)
+{
+  A->NSpectra = 0;
+  A->NE1 = 0;
+  A->Spec = NULL;
+  A->Name = NULL;
+  A->TensorBasis = NULL;
+}
+
 uint32_t CopySpectraArray(SpectraTypeArray *In, SpectraTypeArray *Out)
 {
   uint32_t i;
@@ -1977,14 +1991,16 @@ int SiteFourierTransform(uint32_t Natom, int32_t AtomPos[][3], int32_t UnitCell[
 
 /* specA <-  U specB
  * A not initiallized on input
- * U is a (NSpectra/(NE1+1))*(NSpectra/(NE1+1)) dimensional matrix that defines the transformation
+ * U is a U.Ni x U.Nj matrix that defines the transformation, it need not be square.
+ * B is a U.Nj x U.Nj tensor of spectra, A becomes a U.Ni x U.Ni tensor of spectra.
  *
  * A = U^{*} * B * U^{T}
  * A[p]_ij= sum_kl (U_ik)^* B[p]_kl U_jl
  *
  * The spectra are stored as a flat array with the energy index p running fastest, followed by the basis index.
- * For the basis index (i,j) the corresponding spectrum is stored at
- * p + (NE1+1) * (j + U.Nj * i).
+ * For the basis index (i,j) of an N x N tensor the corresponding spectrum is stored at
+ * p + (NE1+1) * (j + N * i).
+ * The rotation does not mix incident energies p, so A[p]_ij has the ResonantEnergy of B[p]_00.
  */
 uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * const B, const CompactMatrixType * const U)
 {
@@ -1995,8 +2011,6 @@ uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * cons
   double alphaRe, alphaIm;
   Complex16 uik, ujl;
 
-  printf("RotateSpectra: Starting rotation\n");
-  fflush(stdout); 
   if(B->NSpectra == 0)
   {
     printf("RotateSpectra failed: B->NSpectra is zero\n");
@@ -2023,14 +2037,14 @@ uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * cons
   }
 
   nstate = B->NSpectra / (ne1 + 1);
-  if((U->Ni * U->Nj) != nstate)
+  if((U->Nj * U->Nj) != nstate)
   {
-    printf("RotateSpectra failed: U.Ni*U.Nj must equal B->NSpectra/(B->NE1+1)\n");
+    printf("RotateSpectra failed: U.Nj*U.Nj must equal B->NSpectra/(B->NE1+1)\n");
     return 1;
   }
 
 
-  A->NSpectra = B->NSpectra;
+  A->NSpectra = (ne1 + 1) * U->Ni * U->Ni;
   A->TensorBasis = B->TensorBasis;
   A->Spec = (SpectraType*)calloc(A->NSpectra, sizeof(SpectraType));
   
@@ -2044,16 +2058,16 @@ uint32_t RotateSpectra(SpectraTypeArray * const A, const SpectraTypeArray * cons
   {
     for(i = 0; i < U->Ni; i++)
     {
-      for(j = 0; j < U->Nj; j++)
+      for(j = 0; j < U->Ni; j++)
       {
-        idxA = p + (ne1 + 1) * (j + U->Nj * i);
-        if(SpectrumAllocate(B->Spec[0], &(A->Spec[idxA])) != 0)
+        idxA = p + (ne1 + 1) * (j + U->Ni * i);
+        if(SpectrumAllocate(B->Spec[p], &(A->Spec[idxA])) != 0)
         {
           printf("RotateSpectra failed: SpectrumAllocate for target spectrum %u\n", idxA);
           return 1;
         }
 
-        for(k = 0; k < U->Ni; k++)
+        for(k = 0; k < U->Nj; k++)
         {
           for(l = 0; l < U->Nj; l++)
           {
@@ -2100,7 +2114,7 @@ uint32_t ContractSpectraTensor(SpectraTypeArray * const A,
   for(p = 0; p <= ne1; p++)
   {
 
-    if(SpectrumAllocate(B->Spec[0], &(A->Spec[p])) != 0)
+    if(SpectrumAllocate(B->Spec[p], &(A->Spec[p])) != 0)
     {
       printf("ContractSpectraTensor failed: SpectrumAllocate for result spectrum\n");
       return 1;
@@ -2160,8 +2174,6 @@ uint32_t ComputePowderAverage(const SpectraTypeArray * const B,
   lenTotal = 0;
   for(k = 0; k < lvec_len; k++)
   {
-    printf("ComputePowderAverage: lvec[%u]=%u -> block size=%u\n", k, lvec[k], (lvec[k] * 2 + 1));
-    fflush(stdout);
     lenTotal += (lvec[k]*2+1);
   }
 
@@ -2189,7 +2201,7 @@ uint32_t ComputePowderAverage(const SpectraTypeArray * const B,
     { 
       idxB = p + (ne1 + 1) * (j + lenTotal*i);
       
-      if(SpectrumAllocate(B->Spec[0], &(A->Spec[idxB])) != 0)
+      if(SpectrumAllocate(B->Spec[p], &(A->Spec[idxB])) != 0)
       {
         printf("ComputePowderAverage failed: SpectrumAllocate for result spectrum idxB=%u\n", idxB);
         FreeSpectraTypeArray(A);

@@ -184,8 +184,11 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         if(strstr(ReadLine, "name") != NULL)
         {
-          O->Wannier.Name[i] = (char*)malloc(16*sizeof(char));
           Nphrase = SplitStringToArray(phrase, ReadLine, " :\n");
+          // the name is phrase[1] .. phrase[Nphrase-1] joined by single spaces
+          size_t NameLength = 0;
+          for(j=1;j<Nphrase;j++) NameLength += strlen(phrase[j]) + 1;
+          O->Wannier.Name[i] = (char*)malloc(NameLength*sizeof(char));
           strcpy(O->Wannier.Name[i], phrase[1]);
           for(j=2;j<Nphrase;j++)
             strcat(strcat(O->Wannier.Name[i], " "), phrase[j]);
@@ -285,7 +288,7 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
       {
         if(strncmp(ReadLine, "spin", 4)==0)
         {
-          if(++i>Nwandef*Nwandef)
+          if(++i>=Nwandef*Nwandef)
           {
             printf("\nError: The length of hoppings is not compatible with the number of Wannier orbitals.\n");
             return 1;
@@ -321,7 +324,8 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
 					}
 
           ihop = ihop+1;
-          if(ihop > NhopMax)
+          O->Wannier.Nhop[i] = ihop;
+          if(ihop == NhopMax)
           {
 						NhopMax *= 2;
 						O->Wannier.HopVec[i] = (double**) realloc(O->Wannier.HopVec[i], NhopMax * sizeof(double*));
@@ -333,10 +337,6 @@ uint32_t StreamReadDresdenFPLO(DresdenFPLO * O, FILE * stream)
 							return 1;
 						}
 					}
-          else
-          {
-            O->Wannier.Nhop[i] = ihop;
-          }
           for (uint32_t p = 0; p < Nphrase; ++p) free(phrase[p]);
         }
       }

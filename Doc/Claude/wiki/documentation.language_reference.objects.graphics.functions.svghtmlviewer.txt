@@ -1,0 +1,60 @@
+{{indexmenu_n>999}}
+====== SVGHTMLViewer ======
+
+###
+//Viewer, Player = Graphics.SVGHTMLViewer()// returns the text of two web pages to look at svg files, as written by //[[documentation:language_reference:objects:graphics:functions:tosvg|Graphics.ToSVG()]]//. Write them to files and open them in a web browser; they need no internet connection.
+###
+
+===== Input =====
+
+###
+No input.
+###
+
+===== Output =====
+
+  * //Viewer// : a string, a web page that shows one svg file. A button of the page chooses the file. Further buttons set the background to black, grey or white, and switch between stretching the plot to the window and keeping its shape.
+  * //Player// : a string, a web page that shows several svg files one after the other, a film. Choose all files at once with the button of the page and press //Play//. The page shows one file per second, in the order in which the browser lists the chosen files, and starts again after the last one; pressing //Play// again starts from the first file.
+
+###
+The browser usually lists the files sorted by name. Give the files of a film names that sort in the right order, with the same number of digits: //Film_02.svg// comes before //Film_10.svg//, //Film_2.svg// does not.
+###
+
+===== Example =====
+
+###
+The two web pages and a film of 13 frames: two levels that split by $\Delta$ from 0 to 3 eV.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the two web pages: a viewer for one svg file and a player for a series of them
+Viewer, Player = Graphics.SVGHTMLViewer()
+file = io.open("Viewer.html", "w")
+file:write(Viewer)
+file:close()
+file = io.open("Player.html", "w")
+file:write(Player)
+file:close()
+
+-- a film for the player: two levels that split by Delta from 0 to 3 eV, one svg file per Delta.
+-- The numbers in the names have two digits, so that the files sort in the right order.
+for k = 0, 12 do
+  local Delta = 0.25*k
+  local G = ResponseFunction.New({ {0, -0.4*Delta, 0.6*Delta}, {0.4, 0.6}, mu = 0, type = "ListOfPoles" })
+  local pl = Graphics.Plot(G/Pi, 0.2, 0, 501, {{"plotRe",false}, {"Negate",true},
+                           {"Frame",{{"Xmin",-2}, {"Xmax",3}, {"Ymin",-0.1}, {"Ymax",3.4}, {"FirstYTick",0}, {"dYTick",1},
+                                     {"XLabel","energy (eV)"}, {"YLabel","density of states"}, {"XLMargin",0.1}, {"YAxis",-10}}}})
+  pl.Add(string.format("Delta = %.2f eV", Delta), 0.95, 0.9, {{"Size",0.04}, {"Alignment","r"}})
+  file = io.open(string.format("Film_%02d.svg", k), "w")
+  file:write(Graphics.ToSVG(pl, {{"RelativeSize",true}}))
+  file:close()
+end
+</code>
+
+###
+The script prints nothing. It writes //Viewer.html//, //Player.html// and the 13 files //Film_00.svg// to //Film_12.svg//. Open //Player.html// in a browser, choose the 13 svg files and press //Play//.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}

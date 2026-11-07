@@ -12,7 +12,9 @@ print("--------------------------------------------------------")
 -- 1. The tensor against the 81 ordinary resonant spectra of the nine combinations
 --    x, y, z, x+y, y+z, z+x, x+iy, y+iz, z+ix of the in- and outgoing operator, combined
 --    with Spectra.Sum into the Cartesian tensor and into the spherical tensor K basis.
--- 2. Rotations of the tensor and the powder average.
+-- 2. Rotations of the tensor, also by a non-square matrix, and the powder average. The
+--    rotated, averaged and contracted spectra keep the resonant energy of each incident
+--    energy (Rotate gave all of them the first one up to version 0.9).
 -- 3. The spectrum for a pair of polarization vectors, calculated directly, against the
 --    contraction of the tensor, for high symmetry and for pseudo random real and complex
 --    directions.
@@ -43,6 +45,19 @@ function Check(text, A, B, Scale)
   local d = MaxAbs(A-B)/(Scale or MaxAbs(B))
   print(string.format("%-78s %.1e", text, d))
   if not (d < accuracy) then
+    error("Test failed: "..text, 1)
+  end
+end
+
+-- every spectrum of S has the resonant energy of its incident energy p, the spectrum index
+-- running over p fastest, as in the tensor X it came from
+function CheckResonantEnergy(text, S, X)
+  local R, RX = S.ResonantEnergy, X.ResonantEnergy
+  local d = 0
+  if #R % (NE1+1) ~= 0 then error("Test failed: "..text.." ("..#R.." spectra)", 1) end
+  for i=1,#R do d = math.max(d, math.abs(R[i] - RX[(i-1) % (NE1+1) + 1])) end
+  print(string.format("%-78s %.1e", text, d))
+  if not (d < 1E-12) then
     error("Test failed: "..text, 1)
   end
 end
@@ -216,6 +231,22 @@ for A=1,9 do for B=1,9 do
 end end
 SumPowderNE1 = PerIncidentEnergy(SumPowder)
 
+-- a non-square rotation: rows 5 to 9 of the spherical tensor K matrix, the rank K = 2
+-- components, give the 5 by 5 block A,B = 5..9 of the 9 by 9 tensor in the K basis
+URank2 = {}
+for Ap=5,9 do
+  URank2[Ap-4] = {}
+  for A=1,9 do URank2[Ap-4][A] = UCartToSphK[Ap][A] end
+end
+SumRank2Block = {}
+for Ap=5,9 do for Bp=5,9 do
+  local c = 5*(Ap-5)+Bp-4
+  SumRank2Block[c] = {}
+  for r=1,81 do SumRank2Block[c][r] = 0 end
+  SumRank2Block[c][9*(Ap-1)+Bp] = 1
+end end
+SumRank2BlockNE1 = PerIncidentEnergy(SumRank2Block)
+
 ----------------------------------------------------------------------------------------
 -- polarization vectors, high symmetry and pseudo random, test k uses in = k and out = k+1
 ----------------------------------------------------------------------------------------
@@ -262,6 +293,18 @@ for _, Sym in ipairs(Symmetries) do
     local PowderK = XK.GetPowderTensor()
     Check(label.."powder average in spherical K = sum over each rank K",  PowderK, Spectra.Sum(XK, table.unpack(SumPowderNE1)))
     Check(label.."powder average in Cartesian = in spherical K rotated back", X.GetPowderTensor(), Rotate(PowderK, ConjugateTranspose(UCartToSphK), {{"TensorBasis","cartesian"}}))
+    local XRank2 = Rotate(X, Conjugate(URank2))
+    Check(label.."non-square rotation (5x9) = rank 2 block of the spherical K tensor", XRank2, Spectra.Sum(XK, table.unpack(SumRank2BlockNE1)))
+
+    -- resonant energies, the tensor itself against the incident energies asked for
+    local RX, d = X.ResonantEnergy, 0
+    for p=1,NE1+1 do d = math.max(d, math.abs(RX[p] - (E01 + (p-1)*dE1/NE1))) end
+    if not (d < 1E-12) then error("Test failed: "..label.."resonant energies of the tensor", 1) end
+    CheckResonantEnergy(label.."resonant energy of the tensor",                          X, X)
+    CheckResonantEnergy(label.."resonant energy after Rotate",                           XK, X)
+    CheckResonantEnergy(label.."resonant energy after a non-square Rotate",              XRank2, X)
+    CheckResonantEnergy(label.."resonant energy after GetPowderTensor",                  PowderK, X)
+    CheckResonantEnergy(label.."resonant energy after ContractSpectraTensorWithPolarization", X.ContractSpectraTensorWithPolarization({1,0,0},{0,1,0}), X)
 
     -- 3. direct spectra for pairs of polarization vectors against the contracted tensor
     for k=1,#Polarizations do

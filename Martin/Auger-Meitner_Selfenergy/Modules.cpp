@@ -537,7 +537,7 @@ static int LuaCreateAugerMeitnerU(lua_State *L)
 	numberofArgs = (uint32_t)lua_gettop(L);
 	if (numberofArgs != 4)
 	{
-		return luaL_error(L,"error in LuaCreateAugerMeitnerU: expected 4, got %u",numberofArgs);
+		return luaL_error(L,"error in LuaCreateAugerMeitnerU: expected 4, got %d",numberofArgs);
 	}
 	lua_check(L,1,NF);
 	if (!lua_istable(L,4)) // if last argument is not a table, then we are in the relavtivistic case

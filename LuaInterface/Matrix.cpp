@@ -674,7 +674,7 @@ static int LuaMatrixIdentity(lua_State * L)
   }
   if(!((len==1)||(len==2)))
   {
-    return luaL_error(L,"Matrix Identity called with %d arguments, 1 or 2 arguments expected\n");
+    return luaL_error(L,"Matrix Identity called with %d arguments, 1 or 2 arguments expected\n",len);
   }
   if(Userdata==true)
   {
@@ -721,7 +721,7 @@ static int LuaMatrixDiagonal(lua_State * L)
   }
   if(!((len==1)||(len==2)))
   {
-    return luaL_error(L,"Matrix Diagonal called with %d arguments, 1 or 2 arguments expected\n");
+    return luaL_error(L,"Matrix Diagonal called with %d arguments, 1 or 2 arguments expected\n",len);
   }
   if(Userdata==true)
   {
@@ -1136,7 +1136,7 @@ static int LuaMatrixMul(lua_State * L)
         }
         default:
         {
-          return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",lua_type(L,1));
+          return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",luaL_typename(L,2));
         }
       }
     }
@@ -1286,7 +1286,7 @@ static int LuaMatrixDiv(lua_State * L)
           }
           default:
           {
-            return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",lua_type(L,1));
+            return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",luaL_typename(L,2));
           }
         }
       }
@@ -1366,7 +1366,7 @@ static int LuaMatrixDiv(lua_State * L)
         }
         default:
         {
-          return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",lua_type(L,1));
+          return luaL_error(L,"Unrecognized type (%s) at position two of multiplication \n",luaL_typename(L,2));
         }
       }
     }
@@ -2291,7 +2291,7 @@ static int LuaMatrixFlatten(lua_State * L)
         }
 				else
         {
-					return luaL_error(L, "MatrixFlatten called with entry %d. Matrix or 0 expected.\n", luaL_checknumber(L, -1));
+					return luaL_error(L, "MatrixFlatten called with entry %f. Matrix or 0 expected.\n", luaL_checknumber(L, -1));
         }
 			}
       else

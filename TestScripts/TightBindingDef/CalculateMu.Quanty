@@ -31,6 +31,42 @@ collectgarbage()
 collectgarbage()
 collectgarbage()
 
+-- The gap is lowest empty minus highest occupied state; NStateEF is the number of states in
+-- the degenerate level of the highest occupied state and NoccEF how many of them are occupied.
+-- Up to version 0.9 all three were taken one state too high (the gap was the spacing of the
+-- two lowest empty states). Two orbitals per cell, 40 k-points, one electron per cell, so 40
+-- occupied states out of 80.
+function TwoLevel(e1, e2, t)
+  local H = NewTightBinding()
+  H.Cell = {{1,0,0},{0,1,0},{0,0,1}}
+  H.Atoms = {{"A",{0,0,0},{{"p",{"a","b"}}}}}
+  H.Hopping = {{"A.p","A.p",{0,0, 0},{{e1,0},{0,e2}}},
+               {"A.p","A.p",{0,0, 1},{{t,0},{0,t}}},
+               {"A.p","A.p",{0,0,-1},{{t,0},{0,t}}}}
+  return H
+end
+Cases = {
+  -- flat levels at -1 and +1: an insulator, the whole lower level occupied
+  {"flat levels -1 and +1",        TwoLevel(-1, 1, 0),    2, 40, 40},
+  -- two degenerate flat levels: half of one level of 80 states occupied
+  {"degenerate flat levels at 0",  TwoLevel( 0, 0, 0),    0, 80, 40},
+  -- bands -2 + 2t cos(k) and 2 + 2t cos(k): gap 2*2 - 4|t|, the top of the lower band is
+  -- the single k-point k = pi
+  {"bands -+2 + 2t cos(k), t=-0.5", TwoLevel(-2, 2, -0.5), 2,  1,  1},
+}
+for _, c in ipairs(Cases) do
+  mu, EbandMin, EbandMax, gapEf, NstateEf, NoccEf = TightBinding.CalculateMu(c[2],{{"n",1},{"kBT",0},{"Nk",{1,1,40}}})
+  print(c[1], mu, gapEf, NstateEf, NoccEf)
+  if math.abs(gapEf - c[3]) > 1E-12 then error("The wrong gap for "..c[1].."\n",1) end
+  if NstateEf ~= c[4] then error("The wrong number of states at the Fermi energy for "..c[1].."\n",1) end
+  if NoccEf ~= c[5] then error("The wrong number of occupied states at the Fermi energy for "..c[1].."\n",1) end
+end
+
+collectgarbage()
+collectgarbage()
+collectgarbage()
+collectgarbage()
+
 function RocksaltTightBinding(TM, Ligand, pds, pdp, pps, ppp, edeg, edt2g, ep)
 	-- We use a generic distance of 2A between the TM and Ligand atom:
 		-- this is ok for most plotting programs and atoms to render resonable atomic sphere sized

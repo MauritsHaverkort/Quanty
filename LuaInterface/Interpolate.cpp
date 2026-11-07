@@ -601,7 +601,7 @@ static int LuaInterpolationIntegrate(lua_State * L)
 	}
 	else
 	{
-		return luaL_error(L,"error in InterpolatingFunction.Integrate, expected 1 or 3 arguments, got %u\n",len);
+		return luaL_error(L,"error in InterpolatingFunction.Integrate, expected 1 or 3 arguments, got %d\n",len);
 	}
 	lua_push(L,value);
 	return 1;

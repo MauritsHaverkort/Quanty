@@ -482,7 +482,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 	psi = luaL_checkarray_double(L,2);
 	if (H.size() != psi.size())
 	{
-		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %u and dim(psi) = %u\n",(uint32_t)H.size(),(uint32_t)psi.size());
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",(int)H.size(),(int)psi.size());
 	}
 	luaL_checktype(L, 3, LUA_TTABLE);
 	uint32_t lenSigma = (uint32_t)lua_objlen(L,3);
@@ -495,7 +495,7 @@ static int LuaPlotSpectrumWithSelfEnergy(lua_State *L)
 	}
 	if (((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize != (uint32_t)H.size())
 	{
-		return luaL_error(L,"PlotSpectrumWithSelfEnergy: self energy and Hamiltonian do not have the same dimensions - dim(H) = %u and dim(Sigma) = %d\n",(uint32_t)H.size(),((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize);
+		return luaL_error(L,"PlotSpectrumWithSelfEnergy: self energy and Hamiltonian do not have the same dimensions - dim(H) = %d and dim(Sigma) = %d\n",(int)H.size(),((BlockTriDiagonalMatrixType*)SigmaRes[0]->data)->BlockSize);
 	}
 	gH   = luaL_checknumber(L,4);
 	gS   = luaL_checknumber(L,5);
@@ -568,7 +568,7 @@ static int LuaEvaluateSelfEnergy(lua_State *L)
 		lua_check(L,7,energyshift);
 		if (energyshift.size() != SigmaRes.size())
 		{
-			return luaL_error(L,"LuaEvaluateSelfEnergy: %u = energyshift.size() != SigmaRes.size() = %u \n",(uint32_t)energyshift.size() , (uint32_t)SigmaRes.size());
+			return luaL_error(L,"LuaEvaluateSelfEnergy: %d = energyshift.size() != SigmaRes.size() = %d \n",(int)energyshift.size() , (int)SigmaRes.size());
 		}
 		for (uint32_t i = 0; i < lenW; i++)
 		{
@@ -659,7 +659,7 @@ static int LuaCalcSpectrumWithSelfEnergy(lua_State *L)
 	psi = luaL_checkarray_double(L,2);
 	if (H.size() != psi.size())
 	{
-		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %u and dim(psi) = %u\n",(uint32_t)H.size(),(uint32_t)psi.size());
+		return luaL_error(L,"CalcSpectrumWithSelfEnergy: Hamiltonian and ground state do not have the same dimensions - dim(H) = %d and dim(psi) = %d\n",(int)H.size(),(int)psi.size());
 	}
 	lua_check(L,3,Sigma);
 
@@ -1254,7 +1254,7 @@ static int LuaRelativisticDipoleOperator(lua_State *L)
 	size_t Norbitals = G.size();
 	if (Norbitals != F.size() || Norbitals != energies.size() || Norbitals != indToK.size() || Norbitals != indices.size())
 	{
-		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: Objects of unequal lenght: G : %lu\n F : %lu\n energies : %lu\n indices: %lu\n indices[kappas] : %lu\n",Norbitals ,F.size(),energies.size(),indices.size(),indToK.size());
+		return luaL_error(L,"Error in LuaRelativisticDipoleOperator: Objects of unequal lenght: G : %d\n F : %d\n energies : %d\n indices: %d\n indices[kappas] : %d\n",(int)Norbitals ,(int)F.size(),(int)energies.size(),(int)indices.size(),(int)indToK.size());
 	}
 
 	OperatorType *op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
@@ -1437,6 +1437,7 @@ static int LuaCreateResonantSpectraSE(lua_State *L)
   }
   /* allocate spectra and a pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(Spec);
   luaL_setmetatable(L, "Spectra_Type");
   Spec->Name=(char*)malloc(sizeof(char));
   Spec->Name[0]='\0';

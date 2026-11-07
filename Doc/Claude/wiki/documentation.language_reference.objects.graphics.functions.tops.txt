@@ -1,0 +1,57 @@
+{{indexmenu_n>999}}
+====== ToPS ======
+
+###
+//PS = Graphics.ToPS(pl)// returns the text of an encapsulated PostScript (eps) file of the [[documentation:language_reference:objects:graphics:start|Graphics object]] //pl//, a string that can be written to a file. A PostScript file can be included in LaTeX, printed, or turned into a pdf, for example with //ps2pdf -dEPSCrop//.
+###
+
+===== Input =====
+
+  * //pl// : a Graphics object, for example made by //[[documentation:language_reference:objects:graphics:functions:plot|Graphics.Plot()]]//.
+
+===== Output =====
+
+  * //PS// : a string, the text of the PostScript file.
+
+###
+The coordinates of the PostScript file are in units of 1/10 point, so that zooming in keeps the plot sharp. The bounding box is therefore ten times the page: the A4 page of //Graphics.Plot//, 297 mm by 210 mm, has a bounding box of 8427 by 5959 points, 2.97 m by 2.10 m. Give the size you want when you include the file, for example //\includegraphics[width=8cm]{DOS.ps}// in LaTeX (with //latex// and //dvips//; for //pdflatex// turn it into a pdf first), or scale the pdf when you print it.
+###
+
+###
+PostScript files do not handle transparency correctly. Use svg files for plots with transparent colors, or put a shade that should let a curve show through below the curve, as a layer under the plot. Texts are written in the font given by its PostScript name, and only the letters of ASCII are written correctly: write //"Delta"// rather than the Greek letter.
+###
+
+===== Example =====
+
+###
+A density of states, written as a PostScript file. The output is the bounding box of the file.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the density of states of three levels, broadened by 0.2 eV
+G = ResponseFunction.New({ {0, -2, 0.5, 3}, {0.3, 0.5, 0.2}, mu = 0, type = "ListOfPoles" })
+pl = Graphics.Plot(G/Pi, 0.2, {{"plotRe",false}, {"Negate",true},
+                   {"Frame",{{"Xmin",-4}, {"Xmax",4}, {"Ymin",-0.1}, {"Ymax",1.8}, {"FirstYTick",0}, {"dYTick",0.5}, {"YFormat","%.1f"},
+                             {"XLabel","energy (eV)"}, {"YLabel","density of states"}, {"XLMargin",0.1}, {"YAxis",-10}}}})
+
+-- the plot as an encapsulated PostScript file
+PS = Graphics.ToPS(pl)
+print(string.match(PS, "%%%%BoundingBox:[^\n]*"))
+
+file = io.open("DOS.ps", "w")
+file:write(PS)
+file:close()
+</code>
+
+==== Result ====
+<file Quanty_Output>
+%%BoundingBox: 0 0 8427 5959
+</file>
+
+###
+The script writes //DOS.ps//. //ps2pdf -dEPSCrop DOS.ps// turns it into //DOS.pdf//.
+###
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}

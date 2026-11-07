@@ -657,11 +657,11 @@ static int LuaWavefunctionExpand(lua_State * L)
   psilist = (WaveFunctionType*)malloc((1<<Ndet)*sizeof(WaveFunctionType));
   if(psilist==NULL)
   {
-    luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for % determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
+    luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for %d determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
   }
   if(WaveFunctionExpand(psi, index, Ndet, psilist))
   {
-    luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for % determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
+    luaL_error(L, "Error in Expand(psi,index). Out off memory when expanding a function with %d determinants for %d determinants into %d seperate functions\n",psi->N,Ndet,(1<<Ndet));
   }
   LuaPushTable_WaveFunctionType(L, psilist, (1<<Ndet));
   free(psilist);

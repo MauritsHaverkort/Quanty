@@ -342,4 +342,34 @@ if A ~= "1 2 3 4" or B == "0" or C ~= "0 0" then
   error("Graphics.Plot y range of a block response function: map "..A..", waterfall "..B..", grid "..C.."\n", 1)
 end
 
+-- LineStyleCycle: a list of spectra cycles through the first LineStyleCycle styles, by default through all
+-- (at least 3: black, red, blue); one spectrum keeps style 1, or styles 2 and 3 for Re and Im
+print("LineStyleCycle")
+local Lists = {}
+for k = 1, 5 do Lists[k] = {{-1, k}, {0, 2*k}, {1, k}} end
+local Orange, Green = {{"LineColor",0xFF8000}}, {{"LineColor",0x00A000}}
+local function CurveColours(Data, Opt, NCurve)
+  local T = Graphics.ToTable(Graphics.Plot(Data, Opt))
+  local c = {}
+  for k = #T.Line - NCurve + 1, #T.Line do c[#c+1] = string.format("%06X", T.Line[k].Color) end
+  return table.concat(c, " ")
+end
+local LineFrame = {"Frame", {{"Xmin",-1},{"Xmax",1},{"Ymin",-10},{"Ymax",10}}}
+for k, w in ipairs({
+    {Lists, {{"plotIm",false}}, 5, "000000 FF0000 0000FF 000000 FF0000"},
+    {Lists, {{"plotIm",false}, {"LineStyle",{Orange, Green}}}, 5, "FF8000 00A000 0000FF FF8000 00A000"},
+    {Lists, {{"plotIm",false}, {"LineStyle",{Orange, Green}}, {"LineStyleCycle",2}}, 5, "FF8000 00A000 FF8000 00A000 FF8000"},
+    {Lists, {{"plotIm",false}, {"LineStyle",{[2]=Green}}}, 5, "000000 00A000 0000FF 000000 00A000"},
+    {Lists, {{"plotIm",false}, {"LineStyleCycle",1}}, 5, "000000 000000 000000 000000 000000"},
+    {{Lists[1], Lists[2]}, {{"LineStyle",{Orange, Green}}, {"LineStyleCycle",2}}, 4, "FF8000 00A000 FF8000 00A000"},
+    {Lists[1], {{"LineStyle",{Orange, Green}}, {"LineStyleCycle",2}}, 2, "00A000 0000FF"} }) do
+  local Opt = {LineFrame}
+  for _, o in ipairs(w[2]) do Opt[#Opt+1] = o end
+  local c = CurveColours(w[1], Opt, w[3])
+  if c ~= w[4] then error("Graphics.Plot LineStyleCycle case "..k..": colours "..c.." instead of "..w[4].."\n", 1) end
+end
+for k, n in ipairs({-1, 4}) do
+  if pcall(Graphics.Plot, Lists, {LineFrame, {"LineStyleCycle",n}}) then error("Graphics.Plot accepted LineStyleCycle "..n.." with 3 styles\n", 1) end
+end
+
 print("Graphics.Plot tests passed")

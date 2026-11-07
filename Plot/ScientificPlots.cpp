@@ -276,10 +276,20 @@ int AddPlotAxisToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointTyp
 void FindBoundaryPoint(PointType *Boundary, PointType *In, PointType *Out, PointType *OnBoundary)
 {
   double alpha,alphax,alphay;
-  alphax = ( Boundary[0].X - In->X ) / (Out->X - In->X);
-  if ( alphax < 0 ) alphax = ( Boundary[1].X - In->X ) / (Out->X - In->X);
-  alphay = ( Boundary[0].Y - In->Y ) / (Out->Y - In->Y);
-  if ( alphay < 0 ) alphay = ( Boundary[1].Y - In->Y ) / (Out->Y - In->Y);
+  // a segment that does not move along x (or y) crosses no boundary in that
+  // direction; dividing would give 0/0 = NaN for In on that boundary
+  alphax = INFINITY;
+  if ( Out->X != In->X )
+  {
+    alphax = ( Boundary[0].X - In->X ) / (Out->X - In->X);
+    if ( alphax < 0 ) alphax = ( Boundary[1].X - In->X ) / (Out->X - In->X);
+  }
+  alphay = INFINITY;
+  if ( Out->Y != In->Y )
+  {
+    alphay = ( Boundary[0].Y - In->Y ) / (Out->Y - In->Y);
+    if ( alphay < 0 ) alphay = ( Boundary[1].Y - In->Y ) / (Out->Y - In->Y);
+  }
   alpha = Min(alphax, alphay);
   OnBoundary->X = alpha * Out->X + (1-alpha) * In->X;
   OnBoundary->Y = alpha * Out->Y + (1-alpha) * In->Y;

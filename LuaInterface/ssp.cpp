@@ -1066,6 +1066,7 @@ static int Luacopy(lua_State * L)
         SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         CopySpectraArray(a, res);
         luaL_setmetatable(L, "Spectra_Type");
         return 1;
@@ -1237,6 +1238,7 @@ static int LuaChop(lua_State * L)
         SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         CopySpectraArray(a, res);
         ChopSpectraArray(res,epsilon);
         luaL_setmetatable(L, "Spectra_Type");
@@ -1428,6 +1430,7 @@ static int Luaconjugate(lua_State * L)
         SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
         if(ConjugateSpectraArrayTensor(res)) return luaL_error(L, "Error: Conjugate on spectra failed\n");
         luaL_setmetatable(L, "Spectra_Type");
@@ -1519,6 +1522,7 @@ static int Luaconjugatetranspose(lua_State * L)
         SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
         if(ConjugateSpectraArrayTensor(res)) return luaL_error(L, "Error: Conjugate on spectra failed\n");
         if(TransposeSpectraArrayTensor(res)) return luaL_error(L, "Error: Transpose on spectra failed\n");
@@ -1660,6 +1664,7 @@ static int Luatranspose(lua_State * L)
         SpectraTypeArray *a = (SpectraTypeArray *) luaL_checkudata(L, len, "Spectra_Type");
         SpectraTypeArray *res;
         res = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(res);
         if(CopySpectraArray(a, res)) return luaL_error(L, "Error: not enough memory to allocate new spectra\n");
         if(TransposeSpectraArrayTensor(res)) return luaL_error(L, "Error: Transpose on spectra failed\n");
         luaL_setmetatable(L, "Spectra_Type");
@@ -1846,8 +1851,8 @@ static int Luarotate(lua_State *L)
 
     U = luaL_checkCompactMatrix(L, 2);
     Spec = (SpectraTypeArray *) luaL_checkudata(L, 1, "Spectra_Type");
-    printf("Rotating spectra with %d spectra and %d energy points\n", Spec->NSpectra, Spec->NE1);
     SpecNew = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+    InitSpectraTypeArray(SpecNew);
     SpecNew->NSpectra = 0;
     SpecNew->NE1 = 0;
     SpecNew->Spec = NULL;
@@ -2420,6 +2425,7 @@ static int LuaCreateSpectra(lua_State *L)
       if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Options.Settings.Emax-Options.Settings.Emin)/((double)Options.Settings.NE);
       /* transform list of poles form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(Spec);
       luaL_setmetatable(L, "Spectra_Type");
       Spec->Name=(char*)malloc(sizeof(char));
       Spec->Name[0]='\0';
@@ -2505,6 +2511,7 @@ static int LuaCreateSpectra(lua_State *L)
       ShiftBlockListOfPoles(&SpecLP, -psiEn[0]);
       /* transform list of poles form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(Spec);
       luaL_setmetatable(L, "Spectra_Type");
       Spec->Name=(char*)malloc(sizeof(char));
       Spec->Name[0]='\0';
@@ -2674,6 +2681,7 @@ static int LuaCreateSpectra(lua_State *L)
       
       /* transform tridiagonal form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(Spec);
       luaL_setmetatable(L, "Spectra_Type");
       Spec->Name=(char*)malloc(sizeof(char));
       Spec->Name[0]='\0';
@@ -2924,6 +2932,7 @@ static int LuaCreateSpectra(lua_State *L)
           }
           /* the poles are already measured from the ground state energy */
           Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+          InitSpectraTypeArray(Spec);
           luaL_setmetatable(L, "Spectra_Type");
           Spec->Name=(char*)malloc(sizeof(char));
           Spec->Name[0]='\0';
@@ -2956,6 +2965,7 @@ static int LuaCreateSpectra(lua_State *L)
         }
         /* Transform the spectrum with self energy from Anderson form to a spectra type array and push to stack */
         Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+        InitSpectraTypeArray(Spec);
         luaL_setmetatable(L, "Spectra_Type");
         Spec->Name=(char*)malloc(sizeof(char));
         Spec->Name[0]='\0';
@@ -2980,6 +2990,7 @@ static int LuaCreateSpectra(lua_State *L)
       }
       /* transform tridiagonal form to spectral form and push to stack */
       Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+      InitSpectraTypeArray(Spec);
       luaL_setmetatable(L, "Spectra_Type");
       Spec->Name=(char*)malloc(sizeof(char));
       Spec->Name[0]='\0';
@@ -3228,6 +3239,7 @@ static int LuaCreateResonantSpectra(lua_State *L)
   }
   /* allocate spectra and a pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(Spec);
   luaL_setmetatable(L, "Spectra_Type");
   Spec->Name=(char*)malloc(sizeof(char));
   Spec->Name[0]='\0';
@@ -3506,6 +3518,7 @@ static int LuaCreateFluorescenceYield(lua_State *L)
   }
   /* allocate spectra and and pointer to return matrix on lua stack */
   Spec = (SpectraTypeArray *) lua_newuserdata(L, sizeof(SpectraTypeArray));
+  InitSpectraTypeArray(Spec);
   luaL_setmetatable(L, "Spectra_Type");
   Spec->NSpectra=Options.NT1*Options.NT2*Options.Npsi;
   Spec->Spec= (SpectraType*)malloc(Spec->NSpectra*sizeof(SpectraType));
@@ -5927,7 +5940,7 @@ static int LuaCoupledCartesianToSphericalTensorKMatrix(lua_State * L)
   const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
 
   if (coupledCartesianToSphericalTensorK(l1, l2, &returnMat) != 0)
-    return luaL_error(L, "Failed to construct coupled Cartesian-to-spherical tensor K matrix for l1=%u and l2=%u.\n", l1, l2);
+    return luaL_error(L, "Failed to construct coupled Cartesian-to-spherical tensor K matrix for l1=%d and l2=%d.\n", l1, l2);
 
   LuaPushTable_CompactMatrixType(L, &returnMat);
   FreeCompactMatrix(&returnMat);
@@ -5951,7 +5964,7 @@ static int LuaCoupledSphericalTensorKToSphericalTensorYMatrix(lua_State * L)
   const uint32_t l2 = (uint32_t) luaL_checkinteger(L, 2);
 
   if (coupledSphericalTensorKToSphericalTensorY(l1, l2, &returnMat) != 0)
-    return luaL_error(L, "Failed to construct coupled spherical tensor K-to-Y matrix for l1=%u and l2=%u.\n", l1, l2);
+    return luaL_error(L, "Failed to construct coupled spherical tensor K-to-Y matrix for l1=%d and l2=%d.\n", l1, l2);
 
   LuaPushTable_CompactMatrixType(L, &returnMat);
   FreeCompactMatrix(&returnMat);
