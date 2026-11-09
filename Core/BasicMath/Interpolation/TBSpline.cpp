@@ -50,15 +50,18 @@ void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v
 	{
 		x[i] = knots[i+n];
 	}
-	std::vector<double> B = std::vector<double>(N*N);
-	BSplineCollocationMatrix(&knots[0], (uint32_t) knots.size(), n, &u[0], N, &B[0]);
+	// the coefficients solve the banded collocation system
+	uint32_t kl, ku, ldab;
+	double *AB;
+	BSplineCollocationBand(&knots[0], (uint32_t) knots.size(), n, &u[0], N, &kl, &ku, &ldab, &AB);
 	uint32_t NRHS = 1;
 	vector<int> IPIV = vector<int>(N);
 	int info = 0;
-	dgesv(&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(y[0]),&N,&info);
+	dgbsv(&N,&kl,&ku,&NRHS,AB,&ldab,&(IPIV[0]),&(y[0]),&N,&info);
+	free(AB);
 	if (info)
 	{
-		printf("Error TBSpline.Create: dgesv info = %i\n",info);
+		printf("Error TBSpline.Create: dgbsv info = %i\n",info);
 	}
 	type = "BSpline";
 }

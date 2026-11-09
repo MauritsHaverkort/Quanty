@@ -257,6 +257,51 @@ int BSplineCollocationMatrix(const double *knot, uint32_t nKnot, uint32_t degree
   return 0;
 }
 
+/* The collocation matrix of BSplineCollocationMatrix in LAPACK general band storage, as
+ * dgbsv and dgbtrf want it: B_j(t_i) at AB[(kl+ku+i-j) + j*ldab], ldab = 2*kl+ku+1, the
+ * first kl rows left free for the LU factors. kl and ku, the numbers of sub- and
+ * superdiagonals, follow from the points (degree or less for knot averaging). Solving
+ * with it costs O(nt degree^2) instead of O(nt^3) for the dense matrix. Allocates *AB
+ * (the caller frees it). Returns 0, or 1 for a mismatch of nKnot and nt. */
+int BSplineCollocationBand(const double *knot, uint32_t nKnot, uint32_t degree, const double *t, uint32_t nt,
+                           uint32_t *kl, uint32_t *ku, uint32_t *ldab, double **AB)
+{
+  double val[BSplineMaxDegree+1], *ab;
+  uint32_t i, j, mu, l = 0, u = 0, ld;
+  int64_t col;
+  if (nKnot != nt + degree + 1 || degree > BSplineMaxDegree) return 1;
+  for (i = 0; i < nt; i++)
+  {
+    mu = BSplineFindInterval(t[i], knot, nKnot);
+    if (mu >= nKnot) continue;
+    for (j = 0; j <= degree; j++)
+    {
+      col = (int64_t) mu - degree + j;
+      if (col < 0 || col >= nt) continue;
+      if (col < i && i - col > l) l = (uint32_t)(i - col);
+      if (col > i && col - i > u) u = (uint32_t)(col - i);
+    }
+  }
+  ld = 2*l + u + 1;
+  ab = (double *) calloc((size_t) ld*nt, sizeof(double));
+  for (i = 0; i < nt; i++)
+  {
+    mu = BSplineFindInterval(t[i], knot, nKnot);
+    if (mu >= nKnot) continue;
+    BSplineValues(t[i], mu, knot, nKnot, degree, 0, val);
+    for (j = 0; j <= degree; j++)
+    {
+      col = (int64_t) mu - degree + j;
+      if (col >= 0 && col < nt) ab[(l + u + i - col) + col*ld] = val[j];
+    }
+  }
+  *kl = l;
+  *ku = u;
+  *ldab = ld;
+  *AB = ab;
+  return 0;
+}
+
 /* Knots for radial functions after Froese Fischer: degree+1 knots at 0, then m+1 steps
  * of h = 2^-m, then a geometric grid r -> r(1+h) while h r < hMax, then steps of hMax up
  * to rMax, and the last knot degree+1 times; everything divided by Z. Allocates *knot

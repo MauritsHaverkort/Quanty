@@ -37,6 +37,9 @@ int BSplineKnotsAveraged(const double *t, uint32_t nt, uint32_t degree, double *
 
 int BSplineCollocationMatrix(const double *knot, uint32_t nKnot, uint32_t degree, const double *t, uint32_t nt, double *B);
 
+int BSplineCollocationBand(const double *knot, uint32_t nKnot, uint32_t degree, const double *t, uint32_t nt,
+                           uint32_t *kl, uint32_t *ku, uint32_t *ldab, double **AB);
+
 int BSplineKnotsFischer(int m, double hMax, double rMax, double Z, uint32_t degree, double **knot, uint32_t *nKnot);
 
 #endif /* CORE_BASICMATH_INTERPOLATION_BSPLINE_H_ */

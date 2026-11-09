@@ -390,7 +390,9 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 
 	splinesG = vector<Interpolation::CubicSpline*>(Norbitals);
 
-	vector<double> knots, B;
+	vector<double> knots;
+	uint32_t kl = 0, ku = 0, ldab = 1;
+	double *AB = NULL;  // banded collocation matrix and its LU factors, for Method BSpline
 	char TRANS = 'N';
 	uint32_t NRHS = 1;
 	uint32_t N = (uint32_t) x.size();
@@ -399,12 +401,11 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	if (strcmp(Options.Method,"BSpline")==0)
 	{
 		knots = vector<double>(N + Options.degree + 1);
-		B = vector<double>(N*N);
 		if (BSplineKnotsAveraged(&x[0], N, Options.degree, &knots[0]) != 0)
 			return luaL_error(L,"Error in ReadFPLOBasisFunctions: B-spline of degree %d needs at least %d points\n",(int)Options.degree,(int)Options.degree+1);
-		BSplineCollocationMatrix(&knots[0], (uint32_t) knots.size(), Options.degree, &x[0], N, &B[0]);
-		dgetrf(&N,&N,&(B[0]),&N,&(IPIV[0]),&info);
-		if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrf info = %d\n",info);
+		BSplineCollocationBand(&knots[0], (uint32_t) knots.size(), Options.degree, &x[0], N, &kl, &ku, &ldab, &AB);
+		dgbtrf(&N,&N,&kl,&ku,AB,&ldab,&(IPIV[0]),&info);
+		if (info) printf("Error LuaReadFPLOBasisFunctions: dgbtrf info = %d\n",info);
 		lua_createtable(L,Norbitals,0);
 		for (uint32_t i = 0; i < Norbitals; i++)
 		{
@@ -412,8 +413,8 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 			if (funsG.find(charTostring) != funsG.end())
 			{
 				void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
-				dgetrs(&TRANS,&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(funsG[charTostring][0]),&N,&info);
-				if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrs info = %d\n",info);
+				dgbtrs(&TRANS,&N,&kl,&ku,&NRHS,AB,&ldab,&(IPIV[0]),&(funsG[charTostring][0]),&N,&info);
+				if (info) printf("Error LuaReadFPLOBasisFunctions: dgbtrs info = %d\n",info);
 				new(memory) BSpline::TBSpline(x,knots,funsG[charTostring],Options.degree);
 				luaL_setmetatable(L, "InterpolatingFunction_Type");
 				lua_rawseti(L,-2,i+1);
@@ -458,6 +459,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		file2.open(name2);
 		if(!file2.is_open())
 		{
+			free(AB);
 			return luaL_error(L,"Error Could not open file: %s\n", name2);
 		}
 
@@ -473,6 +475,7 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
       }
       if(name == "empty")
       {
+        free(AB);
         return luaL_error(L,"Error in ReadFPLOBasisFunctions: wrong file format for small part in header\n");
       }
       if(Options.Dirac==true)
@@ -500,8 +503,8 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 				if (funsG.find(charTostring) != funsG.end())
 				{
 					void* memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
-					dgetrs(&TRANS,&N,&NRHS,&(B[0]),&N,&(IPIV[0]),&(funsF[charTostring][0]),&N,&info);
-					if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrs info = %d\n",info);
+					dgbtrs(&TRANS,&N,&kl,&ku,&NRHS,AB,&ldab,&(IPIV[0]),&(funsF[charTostring][0]),&N,&info);
+					if (info) printf("Error LuaReadFPLOBasisFunctions: dgbtrs info = %d\n",info);
 					new(memory) BSpline::TBSpline(x,knots,funsF[charTostring],Options.degree);
 					luaL_setmetatable(L, "InterpolatingFunction_Type");
 					lua_rawseti(L,-2,i+1);
@@ -539,8 +542,10 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 		}
 		LuaPushArray_double(L,&x[0],(int)x.size());
 		free(orbitalNames);
+		free(AB);
 		return 3;
 	}
+	free(AB);
 	LuaPushArray_double(L,&x[0],(int)x.size());
 	free(orbitalNames);
 	return 2;

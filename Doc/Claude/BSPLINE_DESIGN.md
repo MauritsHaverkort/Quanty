@@ -103,7 +103,7 @@ int BSplineMatrixBanded(const double *knot, uint32_t nKnot, uint32_t degree,
 | `EvalDerivative` | `BSplineEvaluateDerivative` | same |
 | `Derivative(idx,…)` | `BSplineDerivative` | coefficient differencing on the interval of t; `idx` was unused |
 | `deBoor` | `BSplineDeBoor` | unchanged |
-| `GenerateGrid`, `GetKnotMatrix` | `BSplineKnotsAveraged`, `BSplineCollocationMatrix` | collocation matrix in band storage (0.7) |
+| `GenerateGrid`, `GetKnotMatrix` | `BSplineKnotsAveraged`, `BSplineCollocationMatrix`, `BSplineCollocationBand` | `TBSpline::Create` and `ReadFPLOBasisFunctions` solve the banded system (`dgbsv`, `dgbtrf`/`dgbtrs`) instead of the dense one |
 | `GenerateFisherGrid` | `BSplineKnotsFischer` | declared in the header |
 | `Overlap`, `OverlapMatrix`, `Components` | kept in an `#if 0` block as `…Old` | no callers; `BSplineMatrixBanded` replaces them, a projection is written when needed |
 | `CalculateCellIntegrals`, commented-out `OverlapMatrix` | removed | stubs, no callers |
