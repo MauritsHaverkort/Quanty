@@ -28,7 +28,6 @@ using std::map;
 #include "DiracHamiltonian.h"
 
 #include "functions_martin.h"
-#include "Math/Quad.h"
 
 
 

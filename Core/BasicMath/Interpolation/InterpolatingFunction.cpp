@@ -4,7 +4,6 @@
  *  Created on: Sep 8, 2018
  *      Author: brass
  */
-//#include "../../../Martin/Math/Quad.h"
 
 namespace Interpolation {
 

@@ -48,6 +48,7 @@
 //#include "BasicMath_InterpolatingFunction.cpp"
 //#include "BasicMath_Spline.cpp"
 
+#include "Interpolation/GaussLegendre.cpp"
 #include "Interpolation/CubicSpline.cpp"
 #include "Interpolation/CubicHermiteSpline.cpp"
 #include "Interpolation/InterpolatingFunction.cpp"

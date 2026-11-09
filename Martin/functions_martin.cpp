@@ -15,7 +15,6 @@
 #include "AuxFunctions.cpp"
 #include "ResonantSpectraSelfEnergy.cpp"
 #include "Continuum-Diagonal-Method.cpp"
-#include "Math/Quad.cpp"
 //#include "Math/BSpline.cpp"
 #include "ReduceOperator.cpp"
 #include "Auger-Meitner_Selfenergy/Modules.cpp"

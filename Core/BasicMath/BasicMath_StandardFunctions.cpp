@@ -6479,38 +6479,3 @@ uint32_t coupledCartesianToSphericalTensorK(uint32_t l1,uint32_t l2, CompactMatr
 
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*  returns a pointer to an array of length 2*n contaning the n
- *  Quadrature nodes and weights
- *  GaussLegendreQuadratureCompact defined in BasicMath_StandardFunctions.h
- */
-const double *GaussLegendreQuadrature(int n)
-{
-  return &(GaussLegendreQuadratureCompact[n*(n-1)]);
-}
-const double *GaussLegendreQuadratureNode(int n, int i)
-{
- return &(GaussLegendreQuadratureCompact[n*(n-1)+(2*i)]);
-}
-const double *GaussLegendreQuadratureWeight(int n, int i)
-{
- return &(GaussLegendreQuadratureCompact[n*(n-1)+(2*i+1)]);
-}
-
