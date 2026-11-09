@@ -125,11 +125,11 @@ project.
 
 ## 6. Verification
 
-- **Before any change:** `TestScripts/BSpline/` with `InterpolatingFunction.BSpline`
+- **Before any change:** `TestScripts/BSpline/` (since moved to
+  `TestScripts/InterpolatingFunction/BSplineEvaluate` and `BSplineAtomicOperators`) with `InterpolatingFunction.BSpline`
   on analytic functions (values and derivatives 0–3, both end points, repeated knots,
   degree 1–9). Record the reference output with the unmodified binary. Register the
-  scripts in `.gitlab-ci.yml` in a new job `test-jobs-bspline`, built like the
-  `test-jobs-math` job.
+  scripts in `.gitlab-ci.yml`; they now run in `test-jobs-interpolatingfunction`.
 - **At an interior knot** the old code computes the value (`deBoor`) on the interval to
   the left. The derivatives (`Derivative` → `EvalDerivative`) come from the half-open
   degree-0 splines [x_i, x_i+1), which is the interval to the right. Only the

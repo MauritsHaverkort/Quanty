@@ -14,11 +14,11 @@
  *  replaced by de Boor's algorithm (2026). Every array must reproduce to 1e-12 times its
  *  largest element.
  *
- *  To record the reference again:  Quanty TestScripts/BSpline/AtomicOperators.Quanty record
+ *  To record the reference again:  Quanty TestScripts/InterpolatingFunction/BSplineAtomicOperators.Quanty record
  ]]
 
 local record = (args ~= nil) and (args[1] == "record")
-local referenceFile = ScriptDirectory .. "AtomicOperators.reference"
+local referenceFile = ScriptDirectory .. "BSplineAtomicOperators.reference"
 local tol = 1e-12
 
 -- radial grid, dense near the nucleus
@@ -104,7 +104,7 @@ end
 
 if record then
   local file = io.open(referenceFile, "w")
-  file:write("-- reference values for AtomicOperators.Quanty, recorded with \"Quanty AtomicOperators.Quanty record\"\n")
+  file:write("-- reference values for BSplineAtomicOperators.Quanty, recorded with \"Quanty BSplineAtomicOperators.Quanty record\"\n")
   file:write("return {\n")
   for _, name in ipairs(order) do
     file:write(string.format("[%q] = {", name))

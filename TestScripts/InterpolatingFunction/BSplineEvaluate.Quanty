@@ -18,11 +18,11 @@
  *  by up to (degree/h)^k. With the same coefficients, old and new code agree to 2e-15
  *  for every derivative.
  *
- *  To record the reference again:  Quanty TestScripts/BSpline/Evaluate.Quanty record
+ *  To record the reference again:  Quanty TestScripts/InterpolatingFunction/BSplineEvaluate.Quanty record
  ]]
 
 local record = (args ~= nil) and (args[1] == "record")
-local referenceFile = ScriptDirectory .. "Evaluate.reference"
+local referenceFile = ScriptDirectory .. "BSplineEvaluate.reference"
 local tol = 1e-12
 
 -- the data sets: name, grid x, function
@@ -133,7 +133,7 @@ end
 
 if record then
   local file = io.open(referenceFile, "w")
-  file:write("-- reference values for Evaluate.Quanty, recorded with \"Quanty Evaluate.Quanty record\"\n")
+  file:write("-- reference values for BSplineEvaluate.Quanty, recorded with \"Quanty BSplineEvaluate.Quanty record\"\n")
   file:write("return {\n")
   for _, name in ipairs(order) do
     file:write(string.format("[%q] = {", name))
