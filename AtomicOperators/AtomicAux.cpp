@@ -398,8 +398,11 @@ static int LuaReadFPLOBasisFunctions(lua_State *L)
 	int info = 0;
 	if (strcmp(Options.Method,"BSpline")==0)
 	{
-		BSpline::GenerateGrid(x,knots,Options.degree);
-		BSpline::GetKnotMatrix(knots,Options.degree,x,B);
+		knots = vector<double>(N + Options.degree + 1);
+		B = vector<double>(N*N);
+		if (BSplineKnotsAveraged(&x[0], N, Options.degree, &knots[0]) != 0)
+			return luaL_error(L,"Error in ReadFPLOBasisFunctions: B-spline of degree %d needs at least %d points\n",(int)Options.degree,(int)Options.degree+1);
+		BSplineCollocationMatrix(&knots[0], (uint32_t) knots.size(), Options.degree, &x[0], N, &B[0]);
 		dgetrf(&N,&N,&(B[0]),&N,&(IPIV[0]),&info);
 		if (info) printf("Error LuaReadFPLOBasisFunctions: dgetrf info = %d\n",info);
 		lua_createtable(L,Norbitals,0);

@@ -9,8 +9,14 @@
  *
  *  The reference was recorded with the recursive B-spline code of Martin Brass, before
  *  it was replaced by de Boor's algorithm (2026). The integrals were recorded again once
- *  Integrate took enough Gauss points to be exact for a B-spline. Every array must
- *  reproduce to 1e-12 times its largest element.
+ *  Integrate took enough Gauss points to be exact for a B-spline.
+ *
+ *  Every array must reproduce to 1e-12 times its largest element, the k-th derivative
+ *  to 1e-12 * 10^k. The coefficients solve the collocation system, which is badly
+ *  conditioned at high degree: a different rounding (another LAPACK, or the change of
+ *  algorithm) moves them by up to 2e-14 relative, and the k-th derivative amplifies that
+ *  by up to (degree/h)^k. With the same coefficients, old and new code agree to 2e-15
+ *  for every derivative.
  *
  *  To record the reference again:  Quanty TestScripts/BSpline/Evaluate.Quanty record
  ]]
@@ -157,11 +163,13 @@ for _, name in ipairs(order) do
     failed = failed + 1
   else
     local scale = math.max(maxabs(ref), 1e-300)
+    local k = tonumber(string.match(name, "derivative (%d+)$")) or 0
+    local tolArray = tol * 10^k
     local worst = 0
     local bad = false
     for i = 1, #ref do
       local d = math.abs(new[i] - ref[i])
-      if not (d <= tol*scale) then
+      if not (d <= tolArray*scale) then
         bad = true
         if d == d then worst = math.max(worst, d/scale) end
       end

@@ -1,50 +1,42 @@
 /*
  * BSpline.h
  *
- *  Created on: Sep 10, 2019
- *      Author: brass
- */
-
-#ifndef MARTIN_MATH_BSPLINE_H_
-#define MARTIN_MATH_BSPLINE_H_
-
-/*
- * BSpline.cpp
+ * B-splines in plain C. See BSpline.cpp and Doc/Claude/BSPLINE_DESIGN.md.
  *
- *  Created on: Apr 24, 2019
- *      Author: brass
+ * Conventions:
+ *  - degree, not order (order = degree + 1), as Lua "Degree";
+ *  - knot[0 .. nKnot-1] non-decreasing; there are nKnot - degree - 1 basis functions,
+ *    B_i has support [knot[i], knot[i+degree+1]];
+ *  - a point on an interior knot belongs to the interval to its right, the last knot to
+ *    the last non-empty interval;
+ *  - outside [knot[0], knot[nKnot-1]] every basis function, and every derivative, is 0.
+ *
+ * Martin Brass (2019) wrote the first version in C++ (namespace BSpline). Rewritten in
+ * 2026 with plain arrays and de Boor's algorithm; the class TBSpline stays in TBSpline.h.
  */
 
+#ifndef CORE_BASICMATH_INTERPOLATION_BSPLINE_H_
+#define CORE_BASICMATH_INTERPOLATION_BSPLINE_H_
 
+#define BSplineMaxDegree 30
 
-namespace BSpline
-{
+uint32_t BSplineFindInterval(double t, const double *knot, uint32_t nKnot);
 
-double Evaluate(uint32_t i, uint32_t n, const vector<double> &x, double t);
+int BSplineValues(double t, uint32_t interval, const double *knot, uint32_t nKnot, uint32_t degree,
+                  uint32_t nDeriv, double *val);
 
-double EvalDerivative(uint32_t i, uint32_t n, const vector<double> &x,  double t, uint32_t k);
+double BSplineEvaluate(uint32_t i, uint32_t degree, const double *knot, uint32_t nKnot, double t);
 
-double Derivative(uint32_t idx, double t, const vector<double> &x, uint32_t n, const vector<double> &c, uint32_t k);
+double BSplineEvaluateDerivative(uint32_t i, uint32_t degree, const double *knot, uint32_t nKnot, double t, uint32_t k);
 
-double deBoor(uint32_t idx, double t, const vector<double> &x, uint32_t n, const vector<double> &c);
+double BSplineDerivative(double t, const double *knot, uint32_t nKnot, uint32_t degree, const double *c, uint32_t k);
 
-void GenerateGrid(const std::vector<double> &t,std::vector<double> &x, uint32_t n);
+double BSplineDeBoor(uint32_t idx, double t, const double *knot, uint32_t degree, const double *c);
 
-void GetKnotMatrix(const std::vector<double> &x, const uint32_t n, const std::vector<double> &t, std::vector<double> &B);
+int BSplineKnotsAveraged(const double *t, uint32_t nt, uint32_t degree, double *knot);
 
-void CalculateCellIntegrals(const vector<double> &x, uint32_t ks,uint32_t k, vector<double> &OffDiagInts1, vector<double> &OffDiagInts2, vector<double> &DiagInts);
+int BSplineCollocationMatrix(const double *knot, uint32_t nKnot, uint32_t degree, const double *t, uint32_t nt, double *B);
 
-double Overlap(uint32_t i, uint32_t j, uint32_t ks, const vector<double> &x);
+int BSplineKnotsFischer(int m, double hMax, double rMax, double Z, uint32_t degree, double **knot, uint32_t *nKnot);
 
-void OverlapMatrix(uint32_t ks, vector<double> x, vector<double> &S);
-
-void Components(const vector<Interpolation::InterpolatingFunction*> &funs, uint32_t ks, const vector<double> &x, vector<double> &S, vector<double> &c);
-
-} // end of namespace BSpline
-
-
-
-
-
-
-#endif /* MARTIN_MATH_BSPLINE_H_ */
+#endif /* CORE_BASICMATH_INTERPOLATION_BSPLINE_H_ */

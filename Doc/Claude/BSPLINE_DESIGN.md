@@ -40,7 +40,7 @@ arrays, return 0 on success and 1 on error, no printing inside the core. The cal
 allocates what it can size; where the core allocates (`double **`), the caller frees.
 
 ```c
-uint32_t BSplineFindInterval(double t, const double *knot, uint32_t nKnot, uint32_t degree);
+uint32_t BSplineFindInterval(double t, const double *knot, uint32_t nKnot);
 int BSplineValues(double t, uint32_t interval, const double *knot, uint32_t degree,
                   uint32_t nDeriv, double *val);     /* val[(nDeriv+1)*(degree+1)] */
 int BSplineKnotsExponential(uint32_t degree, uint32_t nInterval, double r1, double rMax,
@@ -54,12 +54,24 @@ int BSplineMatrixBanded(const double *knot, uint32_t nKnot, uint32_t degree,
 
 - **`BSplineFindInterval`**: binary search for μ with `knot[μ] ≤ t < knot[μ+1]`. At
   `t == knot[last]` it returns the last non-empty interval, which is the convention of
-  the present `Evaluate`.
-- **`BSplineValues`**: de Boor's `bsplvd`. The triangular recurrence gives the
-  degree+1 nonzero splines `B[μ-degree … μ]` at `t`. Derivatives come from the same
-  table by differencing the coefficients. Cost O(degree²) per point, against
-  O(2^degree) per spline for the present recursion. Only convex combinations enter the
-  values, so the routine is stable for repeated knots too.
+  the present `Evaluate`. It needs no degree; it returns `nKnot` outside the knots.
+- Beyond either end the knot vector is continued with copies of its end knots
+  (`BSplineKnot`). That changes none of the existing basis functions and makes the
+  routines work for knot vectors that are not clamped.
+- **`BSplineValues`**: de Boor's triangular recurrence gives the degree+1 nonzero
+  splines `B[μ-degree … μ]` at `t`; derivatives as in Piegl and Tiller, algorithm A2.3.
+  Cost O(degree²) per point, against O(2^degree) per spline for the old recursion.
+- **`BSplineDerivative`** (a spline, sum c_i B_i): the k-th derivative is a spline of
+  degree − k whose coefficients are differences of the c (de Boor's `bvalue`). Summing
+  c_i B_i⁽ᵏ⁾ instead cancels terms of order (degree/h)ᵏ.
+- **Accuracy, measured** against the old recursion evaluated in 80-bit long double
+  (degree 1–9, random, repeated and unclamped knots, all knots and both ends, 3.9
+  million values): the spline agrees with the old code to 1.7e-15 for derivatives
+  0–3. Single basis functions: derivative 3 has an error of 8.4e-13 (new) against
+  7.7e-12 (old), relative to its largest value; that level is inherent to third
+  derivatives on uneven repeated knots. The plan's "old vs new < 1e-13" therefore holds
+  for splines but not for third derivatives of single basis functions, where the old
+  code is the less accurate one.
 - **`BSplineQuadratureSetup`**: on every non-empty knot interval, nQ Gauss–Legendre
   points from the table. Exact for polynomials of degree 2nQ−1 on each interval, so
   nQ = degree + 1 integrates a product of two splines exactly.
@@ -86,12 +98,11 @@ int BSplineMatrixBanded(const double *knot, uint32_t nKnot, uint32_t degree,
 |---|---|---|
 | `Evaluate(i,n,x,t)` | `BSplineEvaluate` | FindInterval + Values, 0 outside the support |
 | `EvalDerivative` | `BSplineEvaluateDerivative` | same |
-| `Derivative(idx,…)` | `BSplineDerivative` | sum over the degree+1 nonzero splines only |
+| `Derivative(idx,…)` | `BSplineDerivative` | coefficient differencing on the interval of t; `idx` was unused |
 | `deBoor` | `BSplineDeBoor` | unchanged |
 | `GenerateGrid`, `GetKnotMatrix` | `BSplineKnotsAveraged`, `BSplineCollocationMatrix` | collocation matrix in band storage (0.7) |
 | `GenerateFisherGrid` | `BSplineKnotsFischer` | declared in the header |
-| `Overlap`, `OverlapMatrix` | via `BSplineMatrixBanded` | |
-| `Components` | `BSplineProjection` | debug prints removed |
+| `Overlap`, `OverlapMatrix`, `Components` | kept in an `#if 0` block as `…Old` | no callers; `BSplineMatrixBanded` replaces them, a projection is written when needed |
 | `CalculateCellIntegrals`, commented-out `OverlapMatrix` | removed | stubs, no callers |
 
 The arguments become plain arrays. There are 17 live call sites in 3 files: 2 in
@@ -128,9 +139,12 @@ project.
   a B-spline. This is a separate commit after the quadrature move, which re-records
   only the integrals.
 - **Old vs new kernels:** a C harness in the scratchpad, not in the repository. It
-  compiles `EvaluateOld`/`EvalDerivativeOld` against the new code and requires a
-  maximum relative difference < 1e-13 for degree 1–9, random and repeated knots, and
-  both ends.
+  compiles `EvaluateOld`/`EvalDerivativeOld` (`-DBSPLINE_COMPILE_OLD`) next to the new
+  code; results in "Accuracy, measured" above.
+- **Tolerances of the Lua test:** the coefficients solve the collocation system, which
+  is badly conditioned at high degree. Old and new code (or two LAPACKs) give
+  coefficients that differ by up to 4e-14, and the k-th derivative amplifies that. The
+  test therefore allows 1e-12 × 10ᵏ for the k-th derivative; the margin is 13× or more.
 - `TestScripts/Math/GaussLegendreQuadrature.Quanty` unchanged.
 
 ## 7. Commit order on `Claude`

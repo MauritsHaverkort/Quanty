@@ -1962,9 +1962,11 @@ static int LuaBSpline(lua_State *L)
 {
 	vector<double> x, t, B;
 	lua_check(L,1,t);
-	BSpline::GenerateGrid(t,x,3);
-	//printf("%f\n",BSpline::Evaluate(5,3,x,1));
-	BSpline::GetKnotMatrix(x,3,t,B);
+	x = vector<double>(t.size() + 3 + 1);
+	B = vector<double>(t.size()*t.size());
+	if (BSplineKnotsAveraged(&t[0], (uint32_t) t.size(), 3, &x[0]) != 0)
+		return luaL_error(L,"Error in Martin.BSpline: needs at least 4 points\n");
+	BSplineCollocationMatrix(&x[0], (uint32_t) x.size(), 3, &t[0], (uint32_t) t.size(), &B[0]);
 	lua_push(L,B);
 	/*
 	lua_check(L,2,c);
@@ -2379,7 +2381,13 @@ static int LuaHartreeFock(lua_State *L)
 	int l;
 	lua_check(L,4,l);
 	//HartreeFock::CreateGrid(Nknots,n,R,powGrid,x);
-	BSpline::GenerateFisherGrid(3,0.375,20,1,n,x);
+	{
+		double *knot;
+		uint32_t nKnot;
+		BSplineKnotsFischer(3,0.375,20,1,n,&knot,&nKnot);
+		x.assign(knot, knot + nKnot);
+		free(knot);
+	}
 	uint32_t Nspline = (uint32_t) x.size()-n-1;
 	uint32_t dim = Nspline-2;
 	HartreeFock::CreateOverlapMatrix(x,n,S);
@@ -2724,7 +2732,13 @@ static int LuaHartreeFockSC(lua_State *L)
 	lua_check(L,3,lMax);
 	lua_check(L,4,R);
 	lua_check(L,5,NSCmax);
-	BSpline::GenerateFisherGrid(3,0.375,R,Z,n,x);
+	{
+		double *knot;
+		uint32_t nKnot;
+		BSplineKnotsFischer(3,0.375,R,Z,n,&knot,&nKnot);
+		x.assign(knot, knot + nKnot);
+		free(knot);
+	}
 	uint32_t Nsplines = (uint32_t) x.size() - n-1;
 	uint32_t dim = Nsplines-2;
 	vector<vector<double> > eigVal = vector<vector<double> >(lMax+1);

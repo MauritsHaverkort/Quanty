@@ -25,7 +25,7 @@ double OverlapMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x
 		Quad::GaussianQuadratureWeights(n+1,u,w,a,b); //Bi*Bj is polynomial of deg 2n, hence  gauss quad 2(n+1) - 1 > 2n is exact
 		for (int l = 0; l < n+1; l++)
 		{
-			integral += BSpline::Evaluate(i,n,x,u[l])*BSpline::Evaluate(j,n,x,u[l]) * w[l];
+			integral += BSplineEvaluate(i,n,&x[0],(uint32_t)x.size(),u[l])*BSplineEvaluate(j,n,&x[0],(uint32_t)x.size(),u[l]) * w[l];
 		}
 	}
 	return integral;
@@ -107,7 +107,7 @@ double PotentialMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> 
 		Quad::GaussianQuadratureWeights(Nknots,u,w,a,b); //Bi*Bj is polynomial of deg 2n, hence  gauss quad 2(n+1) - 1 > 2n is exact
 		for (int idx = 0; idx < Nknots; idx++)
 		{
-			integral += BSpline::Evaluate(i,n,x,u[idx])*BSpline::Evaluate(j,n,x,u[idx]) * w[idx] *(l*(l+1)/u[idx]/u[idx]/2 - Z/u[idx]);
+			integral += BSplineEvaluate(i,n,&x[0],(uint32_t)x.size(),u[idx])*BSplineEvaluate(j,n,&x[0],(uint32_t)x.size(),u[idx]) * w[idx] *(l*(l+1)/u[idx]/u[idx]/2 - Z/u[idx]);
 		}
 	}
 	return integral;
@@ -191,7 +191,7 @@ void PutBSplinesOnQuadGrid(const vector<double> &x, uint32_t n,uint32_t Nweights
 
 			for (uint32_t idx = 0; idx < (uint32_t) u.size(); idx++)
 			{
-				BSval[iv*ks*Nweights + (i-lowerIdx)*Nweights + idx] = BSpline::Evaluate(i,n,x,u[idx]);
+				BSval[iv*ks*Nweights + (i-lowerIdx)*Nweights + idx] = BSplineEvaluate(i,n,&x[0],(uint32_t)x.size(),u[idx]);
 
 			}
 
@@ -221,8 +221,8 @@ void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<
 				rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] = 0;
 				for (uint32_t idx = 0; idx < (uint32_t) u.size(); idx++)
 				{
-					rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],k) * w[idx] * BSpline::Evaluate(i,n,x,u[idx])* BSpline::Evaluate(j,n,x,u[idx]);
-					rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],-k-1) * w[idx] * BSpline::Evaluate(i,n,x,u[idx])* BSpline::Evaluate(j,n,x,u[idx]);
+					rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],k) * w[idx] * BSplineEvaluate(i,n,&x[0],(uint32_t)x.size(),u[idx])* BSplineEvaluate(j,n,&x[0],(uint32_t)x.size(),u[idx]);
+					rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx] += std::pow(u[idx],-k-1) * w[idx] * BSplineEvaluate(i,n,&x[0],(uint32_t)x.size(),u[idx])* BSplineEvaluate(j,n,&x[0],(uint32_t)x.size(),u[idx]);
 				}
 				rk1[iv*ks*ks + (j-lowerIdx)*ks +i-lowerIdx] = rk1[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx];
 				rk2[iv*ks*ks + (j-lowerIdx)*ks +i-lowerIdx] = rk2[iv*ks*ks + (i-lowerIdx)*ks +j-lowerIdx];
@@ -294,9 +294,9 @@ void CalcDiagSlaterInts(const vector<double> &x, vector<double> &rkD, int k, uin
 							double I2 = 0;
 							for (uint32_t idx2 = 0; idx2 < u2.size(); idx2++)
 							{
-								I2 += w2[idx2] * std::pow(u2[idx2],k) * BSpline::Evaluate(j1,n,x,u2[idx2])* BSpline::Evaluate(j2,n,x,u2[idx2]);
+								I2 += w2[idx2] * std::pow(u2[idx2],k) * BSplineEvaluate(j1,n,&x[0],(uint32_t)x.size(),u2[idx2])* BSplineEvaluate(j2,n,&x[0],(uint32_t)x.size(),u2[idx2]);
 							}
-							Itot += I2 * w1[idx1] * std::pow(u1[idx1],-k-1) * BSpline::Evaluate(i1,n,x,u1[idx1])* BSpline::Evaluate(i2,n,x,u1[idx1]);
+							Itot += I2 * w1[idx1] * std::pow(u1[idx1],-k-1) * BSplineEvaluate(i1,n,&x[0],(uint32_t)x.size(),u1[idx1])* BSplineEvaluate(i2,n,&x[0],(uint32_t)x.size(),u1[idx1]);
 						}
 						rkD[iv*ks4 +(i1-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i2-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
 						rkD[iv*ks4 +(i2-lowerIdx)*ks3 + (j1-lowerIdx)*ks2 + (i1-lowerIdx)*ks +(j2-lowerIdx)] = Itot;
@@ -337,7 +337,7 @@ void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uin
 			{
 				for (uint32_t idx2 = 0; idx2 < u2.size(); idx2++)
 				{
-					BSval2[(i1-lowerIdx)* Nweights + idx2] = BSpline::Evaluate(i1,n,x,u2[idx2]);
+					BSval2[(i1-lowerIdx)* Nweights + idx2] = BSplineEvaluate(i1,n,&x[0],(uint32_t)x.size(),u2[idx2]);
 				}
 			}
 			for (uint32_t i1 = lowerIdx; i1 <= Min(iv,Nspline-1); i1++)
@@ -1496,7 +1496,13 @@ static int LuaAtomicHartreeFock(lua_State *L)
 	Options.scale = Z;
 	Options.R = 15 * Options.scale;
 	if (len == 2) LuaCheckOptions(L, -1, LuaCreateResonantSpectraOptions);
-	BSpline::GenerateFisherGrid(Options.m,Options.hMax,Options.R,Options.scale,Options.n,x);
+	{
+		double *knot;
+		uint32_t nKnot;
+		BSplineKnotsFischer(Options.m,Options.hMax,Options.R,Options.scale,Options.n,&knot,&nKnot);
+		x.assign(knot, knot + nKnot);
+		free(knot);
+	}
 	uint32_t Nsplines = (uint32_t) x.size() - Options.n-1;
 	uint32_t dim = Nsplines-2;
 	vector<vector<double> > eigVal = vector<vector<double> >(Options.lMax+1);

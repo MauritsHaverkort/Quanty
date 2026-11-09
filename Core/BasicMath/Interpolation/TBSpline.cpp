@@ -29,18 +29,29 @@ TBSpline::TBSpline(const std::vector<double> &u,const std::vector<double> &k,con
 
 void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v,uint32_t n)
 {
+	uint32_t N = (uint32_t) u.size();
 	y = v;
 	degree = n;
-	GenerateGrid(u,knots,n);
+	knots = std::vector<double>(N + n + 1);
+	int error = BSplineKnotsAveraged(&u[0], N, n, &knots[0]);
+	if (error == 1)
+	{
+		printf("Error BSpline: Interpolation with n = 0 not implemented\n");
+		return;
+	}
+	if (error == 2)
+	{
+		printf("Error BSpline: number of points = %u < %u = n+1\n", N, n+1);
+		return;
+	}
 	uint32_t nx = (uint32_t) knots.size()-2*n;
 	x = std::vector<double>(nx);
 	for (uint32_t i = 0; i < nx; i++)
 	{
 		x[i] = knots[i+n];
 	}
-	std::vector<double> B;
-	GetKnotMatrix(knots,n,u,B);
-	uint32_t N = (uint32_t) u.size();
+	std::vector<double> B = std::vector<double>(N*N);
+	BSplineCollocationMatrix(&knots[0], (uint32_t) knots.size(), n, &u[0], N, &B[0]);
 	uint32_t NRHS = 1;
 	vector<int> IPIV = vector<int>(N);
 	int info = 0;
@@ -52,21 +63,13 @@ void TBSpline::Create(const std::vector<double> &u, const std::vector<double> &v
 	type = "BSpline";
 }
 
+// The spline at t; 0 outside the knots
 double TBSpline::operator()(double t)
 {
-	uint32_t idx = degree;
-	uint32_t N = (uint32_t) knots.size();
-	if ( t < knots[0] || t > knots[N-1])
-	{
-		printf("Error in TBSpline(): %E is out of range\n",t);
-		return NAN;
-	}
-	while ( idx < N-1 && t > knots[idx+1])
-	{
-		idx++;
-	}
-	return deBoor(idx,t,knots,degree,y);
+	return BSplineDerivative(t, &knots[0], (uint32_t) knots.size(), degree, &y[0], 0);
 }
+
+// The k-th derivative of the spline at t; 0 outside the knots
 double TBSpline::operator()(double t, unsigned int k)
 {
 	if (k > degree)
@@ -74,41 +77,19 @@ double TBSpline::operator()(double t, unsigned int k)
 		printf("Warning: you just took a derivative that is higher than the degree of the interpolating function.\n This clearly is zero and I will return zero, but I'm wondering if this result ismeaningfull...\n");
 		return 0;
 	}
-	uint32_t idx = degree;
-	uint32_t N = (uint32_t) knots.size();
-	if ( t < knots[0] || t > knots[N-1])
-	{
-		printf("Error in TBSpline(): %E is out of range\n",t);
-		return NAN;
-	}
-	while ( idx < N-1 && t > knots[idx+1])
-	{
-		idx++;
-	}
-	return Derivative(idx,t,knots,degree,y,k);
+	return BSplineDerivative(t, &knots[0], (uint32_t) knots.size(), degree, &y[0], k);
 }
+
 std::vector<double> TBSpline::operator()(const std::vector<double> &t)
 {
 	std::vector<double> val = std::vector<double>(t.size());
-	uint32_t i = degree;
 	for (uint32_t j = 0; j < (uint32_t) t.size(); j++)
 	{
-		while (i < (uint32_t) knots.size()-1 && t[j] > knots[i+1])
-		{
-			i++;
-		}
-
-		val[j] = deBoor(i,t[j],knots,degree,y);;
-		if(j < (uint32_t) t.size()-1) //TODO improve that
-		{
-			if (t[j+1] < t[j])
-			{
-				i = 1;
-			}
-		}
+		val[j] = BSplineDerivative(t[j], &knots[0], (uint32_t) knots.size(), degree, &y[0], 0);
 	}
 	return val;
 }
+
 std::vector<double> TBSpline::operator()(const std::vector<double> &t, unsigned int k)
 {
 	std::vector<double> val = std::vector<double>(t.size());
@@ -117,22 +98,9 @@ std::vector<double> TBSpline::operator()(const std::vector<double> &t, unsigned 
 		printf("Warning: you just took a derivative that is higher than the degree of the interpolating function.\nThis clearly is zero and I will return zero, but I'm wondering if this result is meaningfull...\n");
 		return val;
 	}
-	uint32_t i = degree;
 	for (uint32_t j = 0; j < (uint32_t) t.size(); j++)
 	{
-		while (i < (uint32_t) knots.size()-1 && t[j] > knots[i+1])
-		{
-			i++;
-		}
-
-		val[j] = Derivative(i,t[j],knots,degree,y,k);
-		if(j < (uint32_t) t.size()-1) //TODO improve that
-		{
-			if (t[j+1] < t[j])
-			{
-				i = 1;
-			}
-		}
+		val[j] = BSplineDerivative(t[j], &knots[0], (uint32_t) knots.size(), degree, &y[0], k);
 	}
 	return val;
 }
