@@ -1,0 +1,53 @@
+--[[
+ *  GetMultipoleIntegral(k, f1, f2, N) = int f1(r) f2(r) r^k dr, with N Gauss-Legendre
+ *  points on every interval of the grid of f1. GetSlaterIntegrals for cubic splines
+ *  uses the same quadrature (3 points per interval).
+ *
+ *  Tested:
+ *  - A cubic spline through linear data is linear, so for f = r the integrand r^(2+k)
+ *    is a polynomial on every interval, which N points integrate exactly when
+ *    2+k <= 2N-1. Until 2026 the nodes and weights were stored to 6 digits, which gave
+ *    errors of 1e-7 here; they now come from the 34-digit table.
+ *  - F0(1s,1s) of hydrogen is 5/8. GetSlaterIntegrals on a cubic spline converges as h^2
+ *    (CreateWeights is a first-order rule); a grid 4 times finer must reduce the error by
+ *    16. With the 6-digit quadrature a constant error of 6e-7 spoiled this (factor 10.5
+ *    between 200 and 800 points).
+ ]]
+
+print("===========================================")
+print("GetMultipoleIntegral of polynomials is exact")
+
+local f = InterpolatingFunction.Spline({0, 0.25, 0.5, 0.75, 1}, {0, 0.25, 0.5, 0.75, 1})
+for N = 2, 12 do
+  for k = 0, 2*N-3 do
+    local I = GetMultipoleIntegral(k, f, f, N)
+    if not (math.abs(I - 1/(3+k)) < 1e-14) then
+      error(string.format("GetMultipoleIntegral(%d, r, r, %d) = %.17g, expected 1/%d", k, N, I, 3+k), 1)
+    end
+  end
+end
+print("passed")
+
+print("===========================================")
+print("F0(1s,1s) of hydrogen converges as h^2")
+
+local function F0(n)
+  local x, y = {}, {}
+  for i = 0, n do x[i+1] = 40*(i/n)^2; y[i+1] = 2*x[i+1]*math.exp(-x[i+1]) end
+  local S = GetSlaterIntegrals({"1s"}, {InterpolatingFunction.Spline(x, y)})
+  local value = nil
+  local function find(t)
+    for _, v in pairs(t) do
+      if type(v) == "table" then find(v)
+      elseif type(v) == "number" and math.abs(v - 0.625) < 0.01 then value = v end
+    end
+  end
+  find(S)
+  return value
+end
+local e1, e2 = F0(200) - 0.625, F0(800) - 0.625
+print(string.format("error with 200 points %.3e, with 800 points %.3e, ratio %.2f", e1, e2, e1/e2))
+if not (e1/e2 > 15 and e1/e2 < 17) then
+  error("F0(1s,1s) does not converge as h^2", 1)
+end
+print("passed")
