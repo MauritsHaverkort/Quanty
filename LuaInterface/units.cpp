@@ -98,6 +98,27 @@ static int RegisterPhysicalConstants(lua_State *L)
   return 1;
 }
 
+/* Reads PhysicalConstants.<Name>.value from the Lua global table, so that a value
+ * changed in a script reaches the C kernels, which take constants as arguments.
+ * Raises a Lua error if it is not a number; there is no silent fall back to the
+ * compiled value. */
+static double LuaGetPhysicalConstant(lua_State *L, const char *Name)
+{
+  double value;
+  lua_getglobal(L, "PhysicalConstants");
+  if(!lua_istable(L, -1))
+    luaL_error(L, "PhysicalConstants is not a table, so PhysicalConstants.%s.value cannot be read", Name);
+  lua_getfield(L, -1, Name);
+  if(!lua_istable(L, -1))
+    luaL_error(L, "PhysicalConstants.%s is not a table with a field value", Name);
+  lua_getfield(L, -1, "value");
+  if(lua_type(L, -1) != LUA_TNUMBER)
+    luaL_error(L, "PhysicalConstants.%s.value is not a number", Name);
+  value = lua_tonumber(L, -1);
+  lua_pop(L, 3);
+  return value;
+}
+
 static int EnergyUnitsNewIndex (lua_State *L)
 {
   char *buff;

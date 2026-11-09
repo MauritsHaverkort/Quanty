@@ -1,0 +1,185 @@
+--[[
+ *  Regression test for B-spline interpolation, InterpolatingFunction.BSpline(x, y, degree).
+ *
+ *  Analytic functions are interpolated for degree 1 to 9. Recorded are the knots and
+ *  coefficients (f.x, f.y), the function and its derivatives k = 0 .. min(3, degree)
+ *  at both end points, at every knot, half way between knots and at quasi-random points
+ *  (no math.random, its sequence differs between macOS and Linux), and the integrals.
+ *  Evaluating on a table of points must give the same values as one point at a time.
+ *
+ *  The reference was recorded with the recursive B-spline code of Martin Brass, before
+ *  it was replaced by de Boor's algorithm (2026). The integrals were recorded again once
+ *  Integrate took enough Gauss points to be exact for a B-spline.
+ *
+ *  Every array must reproduce to 1e-12 times its largest element, the k-th derivative
+ *  to 1e-12 * 10^k. The coefficients solve the collocation system, which is badly
+ *  conditioned at high degree: a different rounding (another LAPACK, or the change of
+ *  algorithm) moves them by up to 2e-14 relative, and the k-th derivative amplifies that
+ *  by up to (degree/h)^k. With the same coefficients, old and new code agree to 2e-15
+ *  for every derivative.
+ *
+ *  To record the reference again:  Quanty TestScripts/InterpolatingFunction/BSplineEvaluate.Quanty record
+ ]]
+
+local record = (args ~= nil) and (args[1] == "record")
+local referenceFile = ScriptDirectory .. "BSplineEvaluate.reference"
+local tol = 1e-12
+
+-- the data sets: name, grid x, function
+local function uniform(a, b, n)
+  local x = {}
+  for i = 0, n-1 do x[i+1] = a + (b-a)*i/(n-1) end
+  return x
+end
+local function quadratic(a, b, n)
+  local x = {}
+  for i = 0, n-1 do x[i+1] = a + (b-a)*(i/(n-1))^2 end
+  return x
+end
+local function clustered(a, b, n)
+  -- points cluster at both ends of the interval
+  local x = {}
+  for i = 0, n-1 do x[i+1] = a + (b-a)*(1 - math.cos(math.pi*i/(n-1)))/2 end
+  return x
+end
+
+local sets = {
+  {name = "sin uniform",          x = uniform(0, 3, 25),    f = function(t) return math.sin(t) end},
+  {name = "r^2 exp(-r) quadratic", x = quadratic(0, 20, 40), f = function(t) return t^2*math.exp(-t) end},
+  {name = "1/(1+t^2) clustered",   x = clustered(-2, 3, 30), f = function(t) return 1/(1+t^2) end},
+}
+
+-- points where the functions are evaluated
+local function points(knots)
+  local a, b = knots[1], knots[#knots]
+  local t = {}
+  for i = 1, #knots do t[#t+1] = knots[i] end
+  for i = 1, #knots-1 do t[#t+1] = (knots[i] + knots[i+1])/2 end
+  for i = 1, 20 do
+    local u = (i*0.6180339887498949) % 1
+    t[#t+1] = a + (b-a)*u
+  end
+  table.sort(t)
+  return t
+end
+
+-- collect every recorded array under a name
+local result = {}
+local order = {}
+local function store(name, values)
+  result[name] = values
+  order[#order+1] = name
+end
+
+for _, set in ipairs(sets) do
+  local y = {}
+  for i = 1, #set.x do y[i] = set.f(set.x[i]) end
+  for degree = 1, 9 do
+    local f = InterpolatingFunction.BSpline(set.x, y, degree)
+    local prefix = set.name .. " degree " .. degree
+    local knots = f.x
+    store(prefix .. " knots", knots)
+    store(prefix .. " coefficients", f.y)
+    local t = points(knots)
+    for k = 0, math.min(3, degree) do
+      local v = {}
+      for i = 1, #t do
+        if k == 0 then v[i] = f(t[i]) else v[i] = f(t[i], k) end
+      end
+      store(prefix .. " derivative " .. k, v)
+      -- a table of points gives the same values as one point at a time
+      local w
+      if k == 0 then w = f(t) else w = f(t, k) end
+      local scale = 0
+      for i = 1, #v do scale = math.max(scale, math.abs(v[i])) end
+      for i = 1, #v do
+        if not (math.abs(w[i] - v[i]) <= tol*scale) then
+          error(string.format("%s derivative %d: f(table) differs from f(t) at t = %.17g", prefix, k, t[i]), 1)
+        end
+      end
+    end
+    local a, b = knots[1], knots[#knots]
+    store(prefix .. " integrals", {
+      InterpolatingFunction.Integrate(f),
+      InterpolatingFunction.Integrate(f, a + 0.3*(b-a), a + 0.8*(b-a)),
+    })
+  end
+end
+
+-- the integral of an interpolated function is as accurate as the interpolation:
+-- sin on 25 points with degree 9 is accurate to 3e-12, so its integral must be too
+do
+  local x = uniform(0, 3, 25)
+  local y = {}
+  for i = 1, #x do y[i] = math.sin(x[i]) end
+  local f = InterpolatingFunction.BSpline(x, y, 9)
+  local I = InterpolatingFunction.Integrate(f)
+  print(string.format("integral of sin on [0,3], degree 9: %.15f, error %.2e", I, I - (1 - math.cos(3))))
+  if not (math.abs(I - (1 - math.cos(3))) < 1e-11) then
+    error("the integral of a B-spline is less accurate than the B-spline", 1)
+  end
+  I = InterpolatingFunction.Integrate(f, 0.5, 2.5)
+  if not (math.abs(I - (math.cos(0.5) - math.cos(2.5))) < 1e-11) then
+    error("the integral of a B-spline over [a,b] is less accurate than the B-spline", 1)
+  end
+end
+
+-- write or compare
+local function maxabs(v)
+  local m = 0
+  for i = 1, #v do m = math.max(m, math.abs(v[i])) end
+  return m
+end
+
+if record then
+  local file = io.open(referenceFile, "w")
+  file:write("-- reference values for BSplineEvaluate.Quanty, recorded with \"Quanty BSplineEvaluate.Quanty record\"\n")
+  file:write("return {\n")
+  for _, name in ipairs(order) do
+    file:write(string.format("[%q] = {", name))
+    for i, value in ipairs(result[name]) do
+      if value ~= value then error("NaN in " .. name, 1) end
+      file:write(string.format("%.17g", value), i < #result[name] and "," or "")
+    end
+    file:write("},\n")
+  end
+  file:write("}\n")
+  file:close()
+  print("recorded " .. #order .. " arrays in " .. referenceFile)
+  return
+end
+
+local reference = dofile(referenceFile)
+local failed = 0
+local nArrays = 0
+for _, name in ipairs(order) do
+  local ref, new = reference[name], result[name]
+  nArrays = nArrays + 1
+  if ref == nil then
+    print("no reference for " .. name)
+    failed = failed + 1
+  elseif #ref ~= #new then
+    print(string.format("%s: %d values, reference has %d", name, #new, #ref))
+    failed = failed + 1
+  else
+    local scale = math.max(maxabs(ref), 1e-300)
+    local k = tonumber(string.match(name, "derivative (%d+)$")) or 0
+    local tolArray = tol * 10^k
+    local worst = 0
+    local bad = false
+    for i = 1, #ref do
+      local d = math.abs(new[i] - ref[i])
+      if not (d <= tolArray*scale) then
+        bad = true
+        if d == d then worst = math.max(worst, d/scale) end
+      end
+    end
+    if bad then
+      print(string.format("%s: relative difference %.3e", name, worst))
+      failed = failed + 1
+    end
+  end
+end
+print(string.format("%d arrays compared, %d differ", nArrays, failed))
+if failed > 0 then error("B-spline values differ from the reference", 1) end
+print("passed")

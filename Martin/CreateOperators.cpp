@@ -198,7 +198,7 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
 }
 
 uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFuns, double **basisfuns, double **derivfuns, const double *x, uint32_t NGridpoints,
-		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, OperatorType *op)
+		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, double c, OperatorType *op)
 {
 	double **diracElements, **dualfuns;
 
@@ -214,7 +214,7 @@ uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFu
 
 	for ( n = 0; n < Ngroups; n++)
 	{
-		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z);
+		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z,c);
 		//PrintMartix2(diracElements,groups[n].n);
 
 		for ( i = 0; i < groups[n].n; i++)

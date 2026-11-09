@@ -25,7 +25,7 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
                                                uint32_t NIntegrals,uint16_t **indices, OperatorType *op);
 
 uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFuns, double **basisfuns, double **derivfuns, const double *x, uint32_t NGridpoints,
-		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, OperatorType *op);
+		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, double c, OperatorType *op);
 
 double* CreateBaseForContinuum( uint32_t NBasisFuns,double **basisfuns,double **derivfuns,double *x,uint32_t NGridpoints,SKappaGroup group,uint32_t Ncont,
                                                                 double **contfuns, double w);

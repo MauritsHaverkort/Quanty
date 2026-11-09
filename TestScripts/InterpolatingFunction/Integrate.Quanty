@@ -1,0 +1,94 @@
+--[[
+ *  Integrals of interpolating functions:
+ *    InterpolatingFunction.Integrate(f)          over the whole grid
+ *    InterpolatingFunction.Integrate(f, a, b)    from a to b; a > b gives the negative;
+ *                                                outside the grid is an error
+ *    GetMultipoleBesselIntegral(q, k, f1, f2, N) int f1 f2 j_k(q r) dr, N points per interval
+ *  (GetMultipoleIntegral has its own test, TestScripts/GetMultipoleIntegral.Quanty.)
+ *
+ *  Integrate is exact for the interpolating function itself, so it must reproduce the
+ *  integral of every polynomial that the interpolation reproduces exactly.
+ ]]
+
+local function tabulate(f, points)
+  local y = {}
+  for i = 1, #points do y[i] = f(points[i]) end
+  return y
+end
+
+local x = {0, 0.3, 0.7, 1.2, 1.5, 2.1, 2.6, 3}
+local cub  = function(s) return 1 + s - 2*s^2 + 0.5*s^3 end
+local dcub = function(s) return 1 - 4*s + 1.5*s^2 end
+local Icub = function(a, b)
+  local P = function(s) return s + s^2/2 - 2*s^3/3 + s^4/8 end
+  return P(b) - P(a)
+end
+
+local function checkIntegrals(name, f, I, tol)
+  local cases = {{0, 3}, {0.5, 2.5}, {0.3, 2.6}, {1.2, 1.2}, {2.9, 0.1}, {0.31, 0.69}}
+  local whole = InterpolatingFunction.Integrate(f)
+  if not (math.abs(whole - I(0, 3)) < tol) then
+    error(string.format("%s: Integrate(f) = %.17g, expected %.17g", name, whole, I(0, 3)), 2)
+  end
+  for _, c in ipairs(cases) do
+    local v = InterpolatingFunction.Integrate(f, c[1], c[2])
+    if not (math.abs(v - I(c[1], c[2])) < tol) then
+      error(string.format("%s: Integrate(f, %g, %g) = %.17g, expected %.17g", name, c[1], c[2], v, I(c[1], c[2])), 2)
+    end
+  end
+  if pcall(InterpolatingFunction.Integrate, f, -1, 1) then
+    error(name .. ": Integrate with a limit outside the grid did not raise an error", 2)
+  end
+end
+
+print("===========================================")
+print("Integrate is exact for exactly represented polynomials")
+checkIntegrals("Spline with end slopes, cubic", InterpolatingFunction.Spline(x, tabulate(cub, x), dcub(0), dcub(3)), Icub, 1e-13)
+checkIntegrals("HermiteCSpline with slopes, cubic", InterpolatingFunction.HermiteCSpline(x, tabulate(cub, x), tabulate(dcub, x)), Icub, 1e-13)
+local lin = function(s) return 2 - 0.5*s end
+local Ilin = function(a, b) return 2*(b - a) - 0.25*(b^2 - a^2) end
+checkIntegrals("Spline, line", InterpolatingFunction.Spline(x, tabulate(lin, x)), Ilin, 1e-14)
+checkIntegrals("HermiteCSpline, line", InterpolatingFunction.HermiteCSpline(x, tabulate(lin, x)), Ilin, 1e-14)
+for degree = 1, 9 do
+  local p = function(s) local v = 0 for j = 0, degree do v = v + (-0.6)^j*s^j end return v end
+  local I = function(a, b) local v = 0 for j = 0, degree do v = v + (-0.6)^j*(b^(j+1) - a^(j+1))/(j+1) end return v end
+  local xs = {}
+  for i = 0, degree + 5 do xs[#xs+1] = 3*(i/(degree+5))^1.2 end
+  checkIntegrals("BSpline degree " .. degree, InterpolatingFunction.BSpline(xs, tabulate(p, xs), degree), I, 1e-11)
+end
+print("passed")
+
+print("===========================================")
+print("Integrate is linear")
+local f = InterpolatingFunction.Spline(x, tabulate(function(s) return math.exp(-s) end, x))
+local g = InterpolatingFunction.Spline(x, tabulate(function(s) return math.cos(s) end, x))
+-- on the same grid f+g interpolates f(x)+g(x), which is the sum of the two splines
+local If, Ig, Ifg = InterpolatingFunction.Integrate(f), InterpolatingFunction.Integrate(g), InterpolatingFunction.Integrate(f + g)
+if not (math.abs(Ifg - (If + Ig)) < 1e-14) then error("Integrate(f+g) differs from Integrate(f) + Integrate(g)", 1) end
+if not (math.abs(InterpolatingFunction.Integrate(-f) + If) < 1e-15) then error("Integrate(-f) differs from -Integrate(f)", 1) end
+-- the integral over [0,3] is the sum of the integrals over [0,1.3] and [1.3,3]
+local split = InterpolatingFunction.Integrate(f, 0, 1.3) + InterpolatingFunction.Integrate(f, 1.3, 3)
+if not (math.abs(split - If) < 1e-14) then error("Integrate over [0,1.3] and [1.3,3] differs from over [0,3]", 1) end
+-- B-splines on the same knots add their coefficients, so their integrals add
+local Bf = InterpolatingFunction.BSpline(x, tabulate(function(s) return math.exp(-s) end, x), 5)
+local Bg = InterpolatingFunction.BSpline(x, tabulate(function(s) return math.cos(s) end, x), 5)
+local IBf, IBg = InterpolatingFunction.Integrate(Bf), InterpolatingFunction.Integrate(Bg)
+if not (math.abs(InterpolatingFunction.Integrate(Bf + Bg) - (IBf + IBg)) < 1e-14) then error("Integrate(f+g) of B-splines differs from the sum", 1) end
+if not (math.abs(InterpolatingFunction.Integrate(-Bf) + IBf) < 1e-15) then error("Integrate(-f) of a B-spline differs from -Integrate(f)", 1) end
+print("passed")
+
+print("===========================================")
+print("GetMultipoleBesselIntegral")
+-- f = r is exact; int_0^1 r^2 j_k(q r) dr in closed form for k = 0 and 1
+local r = InterpolatingFunction.Spline({0, 0.25, 0.5, 0.75, 1}, {0, 0.25, 0.5, 0.75, 1})
+local q = 1.3
+local exact = {
+  [0] = (math.sin(q) - q*math.cos(q))/q^3,
+  [1] = (2 - 2*math.cos(q) - q*math.sin(q))/q^3,
+}
+for k = 0, 1 do
+  local v = GetMultipoleBesselIntegral(q, k, r, r, 12)
+  print(string.format("k = %d: %.16f, error %.2e", k, v, v - exact[k]))
+  if not (math.abs(v - exact[k]) < 1e-14) then error("GetMultipoleBesselIntegral differs from the closed form for k = " .. k, 1) end
+end
+print("passed")

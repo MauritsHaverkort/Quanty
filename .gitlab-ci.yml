@@ -1,6 +1,7 @@
 stages:
   - build
   - test_math
+  - test_interpolatingfunction
   - test_matrix
   - test_plot
   - test_responsefunction
@@ -90,6 +91,30 @@ test-jobs-math:
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/Math/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test interpolating functions: constructors, evaluation, arithmetic, integrals,
+# ===== and the atomic operators built from B-splines
+# ===== These functions are registered in Interpolate.cpp and ssp.cpp
+# ===== The code lives in Core/BasicMath/Interpolation
+#
+
+test-jobs-interpolatingfunction:
+  stage: test_interpolatingfunction
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "Arithmetic"
+          - "BSplineAtomicOperators"
+          - "BSplineEvaluate"
+          - "Create"
+          - "Integrate"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/InterpolatingFunction/${TEST_NAME}.Quanty"
   dependencies:
     - build-job
 
@@ -314,6 +339,7 @@ test-jobs:
           - "ExpandToBasis"
           - "FileReadDresdenFPLO"
           - "FindAllAtomsInsideSphere"
+          - "GetMultipoleIntegral"
           - "IndexToBitMask"
           - "Inverse"
           - "ioGetPut"
@@ -328,6 +354,7 @@ test-jobs:
           - "Orthonormalize"
           - "PartialMeanFieldOperator"
           - "PartialOperator"
+          - "PhysicalConstants"
           - "Rotate"
           - "ScriptDirectory"
           - "ShellAverage"

@@ -4,7 +4,6 @@
  *  Created on: Sep 8, 2018
  *      Author: brass
  */
-//#include "../../../Martin/Math/Quad.h"
 
 namespace Interpolation {
 
@@ -158,9 +157,21 @@ bool operator==(InterpolatingFunction &f,InterpolatingFunction &g)
     return true;
 }
 
+/* Gauss points per interval of f.x that integrate f exactly. Two suffice for the
+ * cubic splines; a B-spline of degree d needs (d+2)/2, at least 2. */
+static uint32_t IntegrationPoints(InterpolatingFunction &f)
+{
+	if (f.type == "BSpline")
+	{
+		uint32_t degree = ((BSpline::TBSpline &) f).degree;
+		return std::max((uint32_t) 2, (degree + 2)/2);
+	}
+	return 2;
+}
+
 double Integrate(InterpolatingFunction &f)
 {
-	uint32_t N = 2;
+	uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	vector<double> x,w,y;
 	for (uint32_t i = 0; i < (uint32_t) f.x.size()-1; i++)
@@ -178,7 +189,7 @@ double Integrate(InterpolatingFunction &f)
 
 double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 {
-	uint32_t N = 2;
+	uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	vector<double> x,w,y;
 	Quad::GaussianQuadratureWeights(N,x,w,f.x[idx],f.x[idx+1]);
@@ -192,7 +203,7 @@ double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 
 double Integrate(InterpolatingFunction &f, double a, double b)
 {
-	const uint32_t N = 2;
+	const uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	double sign = 1;
 	uint32_t i = 0;
@@ -222,27 +233,38 @@ double Integrate(InterpolatingFunction &f, double a, double b)
 	return sign*val;
 }
 
+/* The interval i = 1 .. n-1 of the grid x[0] < .. < x[n-1] with x[i-1] <= t <= x[i];
+ * a grid point belongs to the interval on its left. 0 when t lies outside the grid, is
+ * NaN, or the grid has fewer than 2 points. Binary search. */
+uint32_t GridInterval(const std::vector<double> &x, double t)
+{
+	uint32_t n = (uint32_t) x.size(), lo = 1, hi, mid;
+	if (n < 2 || !(t >= x[0]) || !(t <= x[n-1])) return 0;
+	hi = n-1;                       // x[hi] >= t
+	while (lo < hi)
+	{
+		mid = lo + (hi - lo)/2;
+		if (x[mid] >= t) hi = mid;
+		else lo = mid + 1;
+	}
+	return lo;
+}
+
+/* The sorted union of two grids; points that differ by less than 1e-14 relative count
+ * as one, the smallest of them is kept. */
 void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout )
 {
-    uint32_t n1 = (uint32_t) x1.size();
-    uint32_t n2 = (uint32_t) x2.size();
-    uint32_t nout = n1+n2;
-    xout = std::vector<double>(nout);
     const double eps = 1E-14;
-    for (uint32_t i = 0; i < n1; i++)
+    std::vector<double> all = std::vector<double>(x1.size() + x2.size());
+    for (uint32_t i = 0; i < (uint32_t) x1.size(); i++) all[i] = x1[i];
+    for (uint32_t i = 0; i < (uint32_t) x2.size(); i++) all[i + x1.size()] = x2[i];
+    if (all.size() > 0) qsort(&(all[0]), all.size(), sizeof(double), &qsortcomparedoubles);
+    xout.clear();
+    for (uint32_t i = 0; i < (uint32_t) all.size(); i++)
     {
-        xout[i] = x1[i];
-    }
-    for (uint32_t i = 0; i < n2; i++)
-    {
-        xout[i+n1] = x2[i];
-    }    
-    qsort(&(xout[0]), nout, sizeof(double), &qsortcomparedoubles);
-    for (std::vector<double>::iterator it = xout.end()-1; it != xout.begin(); it--)
-    {
-        if (fabs(((*it)-(*(it-1)))) <= eps * (fabs(*it)+eps))
+        if (xout.size() == 0 || !(fabs(all[i] - xout.back()) <= eps * (fabs(all[i]) + eps)))
         {
-            xout.erase(it);
+            xout.push_back(all[i]);
         }
     }
 }

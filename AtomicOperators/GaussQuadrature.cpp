@@ -9,7 +9,43 @@ namespace Quad {
 
 using std::vector;
 
+// k Gauss-Legendre nodes on [-1,1], ascending, from the 34-digit table in
+// Core/BasicMath/Interpolation/GaussLegendre (k = 1 .. 127)
 vector<double> GetKnots(uint32_t k)
+{
+	vector<double> knots;
+	if (k == 0 || k > 127)
+	{
+		printf("error in GaussQuad::GetKnots: number of knots must be 1 .. 127; got %u\n",k);
+		fflush(stdout);
+		return knots;
+	}
+	knots = vector<double>(k);
+	vector<double> weights = vector<double>(k);
+	GaussLegendreNodesWeights(k, -1., 1., &knots[0], &weights[0]);
+	return knots;
+}
+
+// the k Gauss-Legendre weights on [-1,1] that belong to GetKnots(k)
+vector<double> GetWeights(uint32_t k)
+{
+	vector<double> weights;
+	if (k == 0 || k > 127)
+	{
+		printf("error in GaussQuad::GetWeights: number of knots must be 1 .. 127; got %u\n",k);
+		fflush(stdout);
+		return weights;
+	}
+	vector<double> knots = vector<double>(k);
+	weights = vector<double>(k);
+	GaussLegendreNodesWeights(k, -1., 1., &knots[0], &weights[0]);
+	return weights;
+}
+
+// Martin Brass' tables (2018), to 6 digits, for k = 1 .. 7; replaced by the 34-digit
+// table above. Kept for the record, not compiled.
+#if 0
+vector<double> GetKnotsOld(uint32_t k)
 {
 	vector<double> knots;
 	switch (k) {
@@ -63,7 +99,7 @@ vector<double> GetKnots(uint32_t k)
 	return knots;
 }
 
-vector<double> GetWeights(uint32_t k)
+vector<double> GetWeightsOld(uint32_t k)
 {
 	vector<double> weights;
 	switch (k) {
@@ -117,6 +153,8 @@ vector<double> GetWeights(uint32_t k)
 	return weights;
 }
 
+#endif
+
 vector<double> GetWeights(uint32_t k, vector<double> x)
 {
 	vector<double> w = GetWeights(k);
@@ -165,7 +203,7 @@ double Integrate(vector<double> f,double a, double b)
 	if ( a == b)
 		return 0.;
 	uint32_t n = (uint32_t) f.size();
-	if (n > 7)
+	if (n > 127)
 	{
 		cout << "error: in GaussQuad::Integrate: number of knots too big" << endl;
 		return 0;
@@ -185,7 +223,7 @@ double Integrate(vector<double> f,double a, double b)
 double Integrate(uint32_t k, vector<double> x, vector<double> f)
 {
 	uint32_t n = (uint32_t) x.size();
-	if (k > 7)
+	if (k > 127)
 	{
 		cout << "error: in GaussQuad::Integrate: number of knots too big" << endl;
 		return 0;

@@ -29,7 +29,8 @@ void CubicSpline::Create(const std::vector<double> &u, const std::vector<double>
 	x = u;
 	y = v;
 	int n = (int)x.size()-1;
-	y2 = std::vector<double>(n+1);
+	y2 = std::vector<double>(n+1 > 0 ? n+1 : 0);
+	if (n < 2) return;  // 2 points: a straight line, y'' = 0
 	std::vector<double> cc,dd;
 	cc = std::vector<double>(n-1);
 	dd = std::vector<double>(n-1);
@@ -66,6 +67,11 @@ void CubicSpline::Create(const std::vector<double> &u, const std::vector<double>
     x = u;
 	y = v;
 	int n = (int)x.size()-1;
+    if (n < 1)
+    {
+        y2 = std::vector<double>(n+1 > 0 ? n+1 : 0);
+        return;
+    }
     std::vector<double> a = std::vector<double>(n);
     std::vector<double> b = std::vector<double>(n+1);
     std::vector<double> c = std::vector<double>(n);
@@ -90,127 +96,48 @@ void CubicSpline::Create(const std::vector<double> &u, const std::vector<double>
     ThomasAlgorithm(a,b,c,d,y2);
 }
 
+// The spline at t; 0 outside the grid
 double CubicSpline::operator()(double t)
 {
-	for (unsigned int i = 1; i < (uint32_t) x.size(); i++)
-	{
-		if (t <= x[i])
-		{
-			double a,b,c,h, xx;
-			xx = t - x[i-1];
-			h = x[i] - x[i-1];
-			b = y2[i-1];
-			a = (y2[i] -y2[i-1]) / h / 3.;
-			c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
-
-			return y[i-1] + xx*(c +xx*(b + xx * a));
-		}
-	}
-
-	std::cout << "error: value out of interpolation range" << std::endl;
-	return NAN;
+	return (*this)(t, 0);
 }
 
+// The k-th derivative of the spline at t; 0 outside the grid and for k > 3
 double CubicSpline::operator()(double t,unsigned int k)
 {
-	for (unsigned int i = 1; i < (uint32_t) x.size(); i++)
-	{
-		if (t <= x[i])
-		{
-			double a,b,c,h, xx;
-			xx = t - x[i-1];
-			h = x[i] - x[i-1];
-			b = y2[i-1];
-			a = (y2[i] -y2[i-1]) / h / 3.;
-			c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
-			switch (k) {
-				case 0:
-					return y[i-1] + xx*(c +xx*(b + xx * a));
-					break;
-				case 1:
-					return c +xx*(2*b + xx * a *3);
-					break;
-				case 2:
-					return 2*b + xx * a *6;
-					break;
-				default:
-					std::cout << "error: order of derivative of interpolated function at most 2" << std::endl;
-					return NAN;
-					break;
-			}
-
-		}
+	uint32_t i = GridInterval(x, t);
+	if (i == 0) return 0.;
+	double a,b,c,h, xx;
+	xx = t - x[i-1];
+	h = x[i] - x[i-1];
+	b = y2[i-1];
+	a = (y2[i] -y2[i-1]) / h / 3.;
+	c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
+	switch (k) {
+		case 0:
+			return y[i-1] + xx*(c +xx*(b + xx * a));
+		case 1:
+			return c +xx*(2*b + xx * a *3);
+		case 2:
+			return 2*b + xx * a *6;
+		case 3:
+			return a*6;
+		default:
+			return 0.;
 	}
-
-	std::cout << "error: value out of interpolation range" << std::endl;
-	return NAN;
 }
 
 std::vector<double> CubicSpline::operator()(const std::vector<double> &t)
 {
 	std::vector<double> val = std::vector<double>(t.size());
-	uint32_t i = 1;
-	for (uint32_t j = 0; j < (uint32_t) t.size(); j++)
-	{
-		while (t[j] > x[i] && i < (uint32_t) x.size()-1)
-		{
-			i++;
-		}
-		double a,b,c,h, xx;
-		xx = t[j] - x[i-1];
-		h = x[i] - x[i-1];
-		b = y2[i-1];
-		a = (y2[i] -y2[i-1]) / h / 3.;
-		c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
-
-		val[j] = y[i-1] + xx*(c +xx*(b + xx * a));
-		if(j < (uint32_t) t.size()-1) //TODO improve that
-		{
-			if (t[j+1] < t[j])
-			{
-				i = 1;
-			}
-		}
-	}
+	for (uint32_t j = 0; j < (uint32_t) t.size(); j++) val[j] = (*this)(t[j], 0);
 	return val;
 }
 
 std::vector<double> CubicSpline::operator()(const std::vector<double> &t, unsigned int k)
 {
 	std::vector<double> val = std::vector<double>(t.size());
-	uint32_t i = 1;
-	for (uint32_t j = 0; j < (uint32_t) t.size(); j++)
-	{
-		while (t[j] > x[i] && i < (uint32_t) x.size()-1)
-		{
-			i++;
-		}
-		if (t[j] <= x[i])
-		{
-			double a,b,c,h, xx;
-			xx = t[j] - x[i-1];
-			h = x[i] - x[i-1];
-			b = y2[i-1];
-			a = (y2[i] -y2[i-1]) / h / 3.;
-			c = (y[i]-y[i-1])/h -h/3. * (y2[i] + 2*y2[i-1]);
-			switch (k) {
-				case 0:
-					val[j] = y[i-1] + xx*(c +xx*(b + xx * a));
-					break;
-				case 1:
-					val[j] = c +xx*(2*b + xx * a *3);
-					break;
-				case 2:
-					val[j] = 2*b + xx * a *6;
-					break;
-				default:
-					std::cout << "error: order of derivative of interpolated function at most 2" << std::endl;
-					val[j] = NAN;
-					break;
-			}
-
-		}
-	}
+	for (uint32_t j = 0; j < (uint32_t) t.size(); j++) val[j] = (*this)(t[j], k);
 	return val;
 }
 

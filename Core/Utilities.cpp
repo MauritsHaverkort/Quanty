@@ -100,7 +100,8 @@ int BitMaskCombine(const char *BitMask1, const char *BitMask2, char Operation, i
 }
 
 
-/* Looks up Name in PhysicalConstants (SI units) and returns its value.
+/* Looks up Name in PhysicalConstants (SI units or dimensionless) and
+ * returns its compiled value.
  * Returns 0 and sets *Value if found, 1 (leaving *Value untouched)
  * otherwise. Uses sizeof(PhysicalConstants) rather than a stored
  * count, so this stays correct as entries are added, removed, or

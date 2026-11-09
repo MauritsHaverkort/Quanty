@@ -193,8 +193,10 @@ static int LuaInterpolateUnm(lua_State * L)
 	}
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::UnaryMinus(*((BSpline::TBSpline *)f),*r);
 	}
 	else
 	{
@@ -230,8 +232,10 @@ static int LuaInterpolateAdd(lua_State * L)
     }
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::Add(*((BSpline::TBSpline *)f),*g,*r);
 	}
     else
     {
@@ -264,8 +268,10 @@ static int LuaInterpolateSub(lua_State * L)
     }
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::Sub(*((BSpline::TBSpline *)f),*g,*r);
 	}
     else
     {
@@ -299,8 +305,10 @@ static int LuaInterpolateMul(lua_State * L)
     }
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::Mul(*((BSpline::TBSpline *)f),*g,*r);
 	}
     else
     {
@@ -333,8 +341,10 @@ static int LuaInterpolateDiv(lua_State * L)
     }
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::Div(*((BSpline::TBSpline *)f),*g,*r);
 	}
     else
     {
@@ -369,8 +379,10 @@ static int LuaInterpolatePow(lua_State * L)
     }
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::Pow(*((BSpline::TBSpline *)f),n,*r);
 	}
     else
     {
@@ -404,8 +416,10 @@ static int LuaInterpolateConcat(lua_State * L)
     }
 	else if (f->type == "BSpline")
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+		luaL_setmetatable(L, "InterpolatingFunction_Type");
+		BSpline::TBSpline *r = new(memory) BSpline::TBSpline;
+		BSpline::Concat(*((BSpline::TBSpline *)f),*g,*r);
 	}
     else
     {
@@ -431,10 +445,9 @@ static int LuaInterpolateEq(lua_State * L)
     {
     	equal = (*((Interpolation::CubicHermiteSpline*)f) == (*((Interpolation::CubicHermiteSpline*)g)));
     }
-	else if (f->type == "BSpline")
+	else if (f->type == "BSpline" && f->type == g->type)
 	{
-		printf("Error: Arithmetics for BSplines not yet implemented\n");
-		return 0;
+		equal = (*((BSpline::TBSpline*)f) == (*((BSpline::TBSpline*)g)));
 	}
     lua_push(L,equal);
   return 1;

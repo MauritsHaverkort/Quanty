@@ -64,7 +64,7 @@ double **CalculateDiracMatrixElements2(double **basisfuns, double **derivativefu
 		for ( j = i; j < Nindices; j++)
 		{
 			m = indices[j];
-			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
+			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z, speedoflight);
 		}
 	}
 
@@ -244,7 +244,7 @@ double **CalculateContinuumBoundDiracElements(double **basisfuns, double **deriv
 		for ( j = 0; j < Nindices; j++)
 		{
 			m = indices[j];
-			result[i][j] = DiracH(basisfuns[m],dualcont[i],derivativefuns[m], x, NGridPoints, kappa, Z);
+			result[i][j] = DiracH(basisfuns[m],dualcont[i],derivativefuns[m], x, NGridPoints, kappa, Z, speedoflight);
 		}
 	}
 
@@ -267,7 +267,7 @@ vector<vector<double> > CalculateContinuumBoundDiracElements(vector<vector<doubl
 		for ( j = 0; j < Nindices; j++)
 		{
 			m = indices[j];
-			result[i].insert(result[i].end(), DiracH(basisfuns[m],dualcont[i],derivativefuns[m], x, NGridPoints, kappa, Z));
+			result[i].insert(result[i].end(), DiracH(basisfuns[m],dualcont[i],derivativefuns[m], x, NGridPoints, kappa, Z, speedoflight));
 		}
 	}
 
@@ -291,7 +291,7 @@ double *KineticEnergyCB(double **basisfuns, double **derivativefuns, double **du
 	{
 		l = -kappa -1;
 	}
-	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z);
+	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z,speedoflight);
 	Tcb = CalculateContinuumBoundDiracElements(basisfuns,derivativefuns,dualcont,NcontFuns,indices,Nindices,x,NGridPoints,kappa,Z);
 
 	dim = Nindices + NcontFuns;
@@ -357,7 +357,7 @@ vector<double> KineticEnergyCB(vector<vector<double> > basisfuns, vector<vector<
 	{
 		l = -kappa -1;
 	}
-	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z);
+	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z,speedoflight);
 	Tcb = CalculateContinuumBoundDiracElements(basisfuns,derivativefuns,dualcont,NcontFuns,indices,Nindices,x,NGridPoints,kappa,Z);
 
 	dim = Nindices + NcontFuns;
@@ -854,7 +854,7 @@ vector<double> CreateEKinCB(vector<vector<double> > basisfuns, vector<vector<dou
 	{
 		l = -kappa -1;
 	}
-	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z);
+	Tbb = CalculateDiracMatrixElements(basisfuns,derivativefuns,dualfuns,indices,Nindices,x,NGridPoints,kappa,Z,speedoflight);
 	Tcb = CalculateContinuumBoundDiracElements(basisfuns,derivativefuns,dualcont,NcontFuns,indices,Nindices,x,NGridPoints,kappa,Z);
 
 	dim = Nindices + NcontFuns;

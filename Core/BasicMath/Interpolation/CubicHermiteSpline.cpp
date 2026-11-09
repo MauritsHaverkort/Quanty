@@ -34,8 +34,13 @@ void CubicHermiteSpline::Create(const std::vector<double> &u, const std::vector<
 	unsigned long n = u.size();
 	std::vector<double> delta;
 	std::vector<double> m;
-	delta.reserve(n-1);
 	m = std::vector<double>(n);
+	if (n < 2)
+	{
+		Create(u,v,m);
+		return;
+	}
+	delta = std::vector<double>(n-1);
 	for(unsigned long k = 0; k < n-1; k++)
 	{
 		delta[k] = (v[k+1] - v[k])/(u[k+1] - u[k]);
@@ -88,113 +93,44 @@ void CubicHermiteSpline::Create(const std::vector<double> &u, const std::vector<
 	m = w;
 }
 
+// The spline at t; 0 outside the grid
 double CubicHermiteSpline::operator()(double t)
 {
-	for (unsigned int i = 1; i < x.size(); i++)
-	{
-		if (t <= x[i])
-		{
-			double d  = x[i]-x[i-1];
-			double tx = (t-x[i-1])/d;
-			return y[i-1]  + tx * (m[i-1]*d + tx * (3*(y[i]-y[i-1]) - d*(2*m[i-1]+m[i]) + tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))));
-		}
-	}
-
-	std::cout << "error: value out of interpolation range" << std::endl;
-	return NAN;
+	return (*this)(t, 0);
 }
 
+// The k-th derivative of the spline at t; 0 outside the grid and for k > 3
 double CubicHermiteSpline::operator()(double t, unsigned int k)
 {
-	for (unsigned int i = 1; i < x.size(); i++)
-	{
-		if (t <= x[i])
-		{
-			double d  = x[i]-x[i-1];
-			double tx = (t-x[i-1])/d;
-			switch (k) {
-				case 0:
-					return y[i-1]  + tx * (m[i-1]*d + tx * (3*(y[i]-y[i-1]) - d*(2*m[i-1]+m[i]) + tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))));
-					break;
-				case 1:
-					return m[i-1] + tx * (6*(y[i]-y[i-1]) - 2*d*(2*m[i-1]+m[i]) + 3*tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i])))/d;
-					break;
-				case 2:
-					return (6*(y[i]-y[i-1]) - 2*d*(2*m[i-1]+m[i]) + 6*tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i])))/d/d;
-					break;
-				case 3:
-					return 6 * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))/d/d/d;
-					break;
-				default:
-					return 0;
-					break;
-			}
-
-		}
+	uint32_t i = GridInterval(x, t);
+	if (i == 0) return 0.;
+	double d  = x[i]-x[i-1];
+	double tx = (t-x[i-1])/d;
+	switch (k) {
+		case 0:
+			return y[i-1]  + tx * (m[i-1]*d + tx * (3*(y[i]-y[i-1]) - d*(2*m[i-1]+m[i]) + tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))));
+		case 1:
+			return m[i-1] + tx * (6*(y[i]-y[i-1]) - 2*d*(2*m[i-1]+m[i]) + 3*tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i])))/d;
+		case 2:
+			return (6*(y[i]-y[i-1]) - 2*d*(2*m[i-1]+m[i]) + 6*tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i])))/d/d;
+		case 3:
+			return 6 * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))/d/d/d;
+		default:
+			return 0.;
 	}
-	std::cout << "error: value out of interpolation range" << std::endl;
-	return NAN;
 }
+
 std::vector<double> CubicHermiteSpline::operator()(const std::vector<double> &t)
 {
 	std::vector<double> val = std::vector<double>(t.size());
-	uint32_t i = 1;
-	for (uint32_t j = 0; j < t.size(); j++)
-	{
-		while (t[j] > x[i] && i < x.size()-1)
-		{
-			i++;
-		}
-		double d  = x[i]-x[i-1];
-		double tx = (t[j]-x[i-1])/d;
-		val[j] = y[i-1]  + tx * (m[i-1]*d + tx * (3*(y[i]-y[i-1]) - d*(2*m[i-1]+m[i]) + tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))));
-		if(j < t.size()-1) //TODO improve that
-		{
-			if (t[j+1] < t[j])
-			{
-				i = 1;
-			}
-		}
-	}
+	for (uint32_t j = 0; j < (uint32_t) t.size(); j++) val[j] = (*this)(t[j], 0);
 	return val;
 }
+
 std::vector<double> CubicHermiteSpline::operator()(const std::vector<double> &t, unsigned int k)
 {
 	std::vector<double> val = std::vector<double>(t.size());
-	uint32_t i = 1;
-	for (uint32_t j = 0; j < t.size(); j++)
-	{
-		while (t[j] > x[i] && i < x.size()-1)
-		{
-			i++;
-		}
-		double d  = x[i]-x[i-1];
-		double tx = (t[j]-x[i-1])/d;
-		switch (k) {
-			case 0:
-				val[j] = y[i-1]  + tx * (m[i-1]*d + tx * (3*(y[i]-y[i-1]) - d*(2*m[i-1]+m[i]) + tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))));
-				break;
-			case 1:
-				val[j] = m[i-1] + tx * (6*(y[i]-y[i-1]) - 2*d*(2*m[i-1]+m[i]) + 3*tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i])))/d;
-				break;
-			case 2:
-				val[j] = (6*(y[i]-y[i-1]) - 2*d*(2*m[i-1]+m[i]) + 6*tx * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i])))/d/d;
-				break;
-			case 3:
-				val[j] = 6 * (2*(y[i-1]-y[i]) + d*(m[i-1]+m[i]))/d/d/d;
-				break;
-			default:
-				val[j] = 0;
-				break;
-		}
-		if(j < t.size()-1) //TODO improve that
-		{
-			if (t[j+1] < t[j])
-			{
-				i = 1;
-			}
-		}
-	}
+	for (uint32_t j = 0; j < (uint32_t) t.size(); j++) val[j] = (*this)(t[j], k);
 	return val;
 }
 
