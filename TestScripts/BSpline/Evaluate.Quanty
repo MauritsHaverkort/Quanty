@@ -8,8 +8,9 @@
  *  Evaluating on a table of points must give the same values as one point at a time.
  *
  *  The reference was recorded with the recursive B-spline code of Martin Brass, before
- *  it was replaced by de Boor's algorithm (2026). Every array must reproduce to 1e-12
- *  times its largest element.
+ *  it was replaced by de Boor's algorithm (2026). The integrals were recorded again once
+ *  Integrate took enough Gauss points to be exact for a B-spline. Every array must
+ *  reproduce to 1e-12 times its largest element.
  *
  *  To record the reference again:  Quanty TestScripts/BSpline/Evaluate.Quanty record
  ]]
@@ -96,6 +97,24 @@ for _, set in ipairs(sets) do
       InterpolatingFunction.Integrate(f),
       InterpolatingFunction.Integrate(f, a + 0.3*(b-a), a + 0.8*(b-a)),
     })
+  end
+end
+
+-- the integral of an interpolated function is as accurate as the interpolation:
+-- sin on 25 points with degree 9 is accurate to 3e-12, so its integral must be too
+do
+  local x = uniform(0, 3, 25)
+  local y = {}
+  for i = 1, #x do y[i] = math.sin(x[i]) end
+  local f = InterpolatingFunction.BSpline(x, y, 9)
+  local I = InterpolatingFunction.Integrate(f)
+  print(string.format("integral of sin on [0,3], degree 9: %.15f, error %.2e", I, I - (1 - math.cos(3))))
+  if not (math.abs(I - (1 - math.cos(3))) < 1e-11) then
+    error("the integral of a B-spline is less accurate than the B-spline", 1)
+  end
+  I = InterpolatingFunction.Integrate(f, 0.5, 2.5)
+  if not (math.abs(I - (math.cos(0.5) - math.cos(2.5))) < 1e-11) then
+    error("the integral of a B-spline over [a,b] is less accurate than the B-spline", 1)
   end
 end
 

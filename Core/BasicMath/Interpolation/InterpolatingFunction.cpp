@@ -157,9 +157,21 @@ bool operator==(InterpolatingFunction &f,InterpolatingFunction &g)
     return true;
 }
 
+/* Gauss points per interval of f.x that integrate f exactly. Two suffice for the
+ * cubic splines; a B-spline of degree d needs (d+2)/2, at least 2. */
+static uint32_t IntegrationPoints(InterpolatingFunction &f)
+{
+	if (f.type == "BSpline")
+	{
+		uint32_t degree = ((BSpline::TBSpline &) f).degree;
+		return std::max((uint32_t) 2, (degree + 2)/2);
+	}
+	return 2;
+}
+
 double Integrate(InterpolatingFunction &f)
 {
-	uint32_t N = 2;
+	uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	vector<double> x,w,y;
 	for (uint32_t i = 0; i < (uint32_t) f.x.size()-1; i++)
@@ -177,7 +189,7 @@ double Integrate(InterpolatingFunction &f)
 
 double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 {
-	uint32_t N = 2;
+	uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	vector<double> x,w,y;
 	Quad::GaussianQuadratureWeights(N,x,w,f.x[idx],f.x[idx+1]);
@@ -191,7 +203,7 @@ double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 
 double Integrate(InterpolatingFunction &f, double a, double b)
 {
-	const uint32_t N = 2;
+	const uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	double sign = 1;
 	uint32_t i = 0;
