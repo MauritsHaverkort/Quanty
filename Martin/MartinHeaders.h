@@ -8,7 +8,10 @@
 #ifndef MARTIN_MARTINHEADERS_H_
 #define MARTIN_MARTINHEADERS_H_
 
-#define speedoflight 137.0
+/* Speed of light in Hartree atomic units for the continuum code, which is reachable
+ * only as Martin.<Name>. It is the compiled CODATA value; the Dirac operator itself
+ * (NewOperator("Dirac"), Martin.NewDirac) takes c from PhysicalConstants.cAU.value. */
+#define speedoflight SpeedOfLightAU
 
 #include <vector>
 #include <map>

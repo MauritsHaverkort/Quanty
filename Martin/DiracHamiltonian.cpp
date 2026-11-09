@@ -7,13 +7,10 @@
 
 #include "DiracHamiltonian.h"
 
-#ifndef speedoflight
-#define speedoflight 137.0
-#endif
 
 //double ddot();
 
-double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const int Z)
+double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const int Z, const double c)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
 	//const double speedoflight = 137;
@@ -41,13 +38,13 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 	{
 		r = x[i];
 		H11G[i] = (-Z)/r * basisfun[i];
-		H22F[i] = (-2*speedoflight*speedoflight-Z/r) * basisfun[NGridPoints+i];
+		H22F[i] = (-2*c*c-Z/r) * basisfun[NGridPoints+i];
 		H12F[i] = kappa/r * basisfun[NGridPoints+i] - derivfun[NGridPoints+i];
 		H21G[i] = kappa/r * basisfun[i] + derivfun[i];
 		i++;
 	}
-	result = ddot((unsigned int *) &NGridPoints,dualfun,&eins,H11G,&eins) + speedoflight * ddot((unsigned int *) &NGridPoints,dualfun,&eins,H12F,&eins)
-			+ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + speedoflight * ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
+	result = ddot((unsigned int *) &NGridPoints,dualfun,&eins,H11G,&eins) + c * ddot((unsigned int *) &NGridPoints,dualfun,&eins,H12F,&eins)
+			+ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + c * ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
 	free(H11G);
 	free(H12F);
 	free(H21G);
@@ -56,7 +53,7 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 	return result;
 }
 
-double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> derivfun,vector<double> x, int NGridPoints, const int kappa, const int Z)
+double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> derivfun,vector<double> x, int NGridPoints, const int kappa, const int Z, const double c)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
 
@@ -84,13 +81,13 @@ double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> deri
 	{
 		r = x[i];
 		H11G[i] = (-Z)/r * basisfun[i];
-		H22F[i] = (-2*speedoflight*speedoflight-Z/r) * basisfun[NGridPoints+i];
+		H22F[i] = (-2*c*c-Z/r) * basisfun[NGridPoints+i];
 		H12F[i] = kappa/r * basisfun[NGridPoints+i] - derivfun[NGridPoints+i];
 		H21G[i] = kappa/r * basisfun[i] + derivfun[i];
 		i++;
 	}
-	result = ddot((unsigned int *) &NGridPoints,&(dualfun[0]),&eins,H11G,&eins) + speedoflight * ddot((unsigned int *) &NGridPoints,&(dualfun[0]),&eins,H12F,&eins)
-			+ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + speedoflight * ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
+	result = ddot((unsigned int *) &NGridPoints,&(dualfun[0]),&eins,H11G,&eins) + c * ddot((unsigned int *) &NGridPoints,&(dualfun[0]),&eins,H12F,&eins)
+			+ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H22F,&eins) + c * ddot((unsigned int *) &NGridPoints,&(dualfun[NGridPoints]),&eins,H21G,&eins);
 	free(H11G);
 	free(H12F);
 	free(H21G);
@@ -100,7 +97,7 @@ double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> deri
 }
 
 double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
-		unsigned int NGridPoints, const int kappa, const int Z)
+		unsigned int NGridPoints, const int kappa, const int Z, const double c)
 {
 	double **result = (double **) malloc(Nindices * sizeof(double *));
 
@@ -112,7 +109,7 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 		for ( j = i; j < Nindices; j++)
 		{
 			m = indices[j];
-			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
+			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z, c);
 		}
 	}
 
@@ -121,7 +118,7 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 }
 
 vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
-		const unsigned int *indices, const unsigned int Nindices, vector<double> x,	unsigned int NGridPoints, const int kappa, const int Z)
+		const unsigned int *indices, const unsigned int Nindices, vector<double> x,	unsigned int NGridPoints, const int kappa, const int Z, const double c)
 {
 	vector<vector<double> > result = vector<vector<double> >(Nindices);
 
@@ -133,7 +130,7 @@ vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > bas
 		for (uint32_t j = i; j < Nindices; j++)
 		{
 			uint32_t m = indices[j];
-			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
+			result[i][j] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z, c);
 		}
 	}
 
@@ -143,7 +140,7 @@ vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > bas
 
 /*
 double *CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
-		unsigned int NGridPoints, const int kappa, const int Z)
+		unsigned int NGridPoints, const int kappa, const int Z, const double c)
 {
 	double *result = (double *) malloc(Nindices*Nindices * sizeof(double));
 	double h0;
@@ -155,7 +152,7 @@ double *CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns
 		for ( j = i; j < Nindices; j++)
 		{
 			m = indices[j];
-			h0 = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
+			h0 = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z, c);
 			result[Nindices*i+ j] = h0;
 			result[Nindices*j+ i] = h0;
 
@@ -177,7 +174,7 @@ double *CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns
 		{
 
 			m = indices[j];
-			result[(j-i) + i*Nindices - i*(i-1)/2] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z);
+			result[(j-i) + i*Nindices - i*(i-1)/2] = DiracH(basisfuns[m],dualfuns[n],derivativefuns[m], x, NGridPoints, kappa, Z, c);
 		}
 
 	}

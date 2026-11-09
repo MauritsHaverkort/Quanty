@@ -14,7 +14,7 @@ using std::string;
 using std::map;
 
 void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfuns, vector<vector<double> > derivfuns, vector<double> x,
-		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, OperatorType *op)
+		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, double c, OperatorType *op)
 {
 	vector<vector<double> > diracElements, dualfuns;
 
@@ -32,7 +32,7 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 
 	for ( n = 0; n < Ngroups; n++)
 	{
-		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z);
+		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z,c);
 		//PrintMartix2(diracElements,groups[n].n);
 
 		for ( i = 0; i < groups[n].n; i++)
@@ -280,10 +280,11 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	vector<vector<double> > basisfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,0);
 	vector<vector<double> > derivfuns = PutRelativisticSplineOnGrid(funsG,funsF,x,1);
 
+	double c = LuaGetPhysicalConstant(L, "cAU");
 	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 
 	//CreateOperatorDirac(NF, basisfuns,derivfuns,x,groups,NGroups,indices,Z,op);
-	CreateOperatorDirac(NF, basisfuns,derivfuns,x,&groups[0],(uint32_t)groups.size(),indices,Z,op);
+	CreateOperatorDirac(NF, basisfuns,derivfuns,x,&groups[0],(uint32_t)groups.size(),indices,Z,c,op);
 
 	luaL_setmetatable(L,"Operator_Type");
 

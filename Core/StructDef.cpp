@@ -79,64 +79,80 @@ void FreeDynamicString(DynamicString *S)
   *S = InitDynamicString();
 }
 
-/*
+/* Physical constants in SI units, or dimensionless.
  *
+ * Values: CODATA 2022 (P. J. Mohr et al., Rev. Mod. Phys. 97, 025002 (2025)), taken
+ * from https://physics.nist.gov/cuu/Constants/Table/allascii.txt on 2026-11-09.
+ * Since the 2019 SI revision e, h, kB and NA are exact (c since 1983). The constants
+ * that follow from these alone (hbar, G0, R0, KJ, Phi0, RK, F, R, sigma) are given to
+ * full double precision, computed from their definitions.
+ *
+ * SpeedOfLightAU is the speed of light in Hartree atomic units, 1/alpha, and alpha is
+ * defined as its inverse, so cAU*alpha is 1 to rounding. The published alpha
+ * (7.2973525643E-3) and 1/alpha (137.035999177) are each rounded and miss being exact
+ * inverses by 4.3E-12 relative, 35 times less than their uncertainty.
+ *
+ * C kernels that need c take it as an argument. The Lua bindings read it from
+ * PhysicalConstants.cAU.value, so a change made in a script reaches them.
  */
+#define SpeedOfLightAU 137.035999177
+
 const struct { char const *name; double value; char const *units; char const *description;} PhysicalConstants[] =
 {
   // Particles
-  {"malpha",     6.644657230E-27,     "kg",              "alpha particle mass in kilogram"},
-  {"gd",         0.8574382311,        "",                "Deuteron g factor"},
-  {"mud",        0.4330735040E-26,    "J T^-1",          "Deuteron magnetic moment in Joule per Tesla"},
-  {"md",         3.343583719E-27,     "kg",              "Deuteron mass in kilogram"},
-  {"lambdaCe",   2.4263102367E-12,    "m",               "Electron Compton wavelength in units of meter"},
-  {"ge",         -2.00231930436182,   "",                "Electron g factor"},
-  {"mue",        -928.4764620E-26,    "J T^-1",          "Electron magnetic moment in Joule per Tesla"},
-  {"me",         9.10938356E-31,      "kg",              "Electron mass in kilogram"},
-  {"lambdaCmu",  11.73444111E-15,     "m",               "Muon Compton wavelength in units of meter"},
-  {"gmu",        -2.0023318418,       "",                "Muon g factor"},
-  {"mumu",       -4.49044826E-26,     "J T^-1",          "Muon magnetic moment in Joule per Tesla"},
-  {"mmu",        1.883531594E-28,     "kg",              "Muon mass in kilogram"},
-  {"lambdaCn",   1.319590904E-15,     "m",               "Neutron Compton wavelength in units of meter"},
-  {"gn",         -3.82608545,         "",                "Neutron g factor"},
-  {"mun",        -0.96623650E-26,     "J T^-1",          "Neutron magnetic moment in Joule per Tesla"},
-  {"mn",         1.674927471E-27,     "kg",              "Neutron mass in kilogram"},
-  {"lambdaCp",   1.32140985396E-15,   "m",               "Proton Compton wavelength in units of meter"},
-  {"gp",         5.585694702,         "",                "Proton g factor"},
-  {"mup",        1.4106067873E-26,    "J T^-1",          "Proton magnetic moment in Joule per Tesla"},
-  {"mp",         1.672621898E-27,     "kg",              "Proton mass in kilogram"},
-  {"lambdaCtau", 0.697787E-15,        "m",               "Tau Compton wavelength in units of meter"},
-  {"mtau",       3.167E-27,           "kg",              "Tau mass in kilogram"},
+  {"malpha",     6.6446573450E-27,    "kg",              "alpha particle mass in kilogram"},
+  {"gd",         0.8574382335,        "",                "Deuteron g factor"},
+  {"mud",        0.4330735087E-26,    "J T^-1",          "Deuteron magnetic moment in Joule per Tesla"},
+  {"md",         3.3435837768E-27,    "kg",              "Deuteron mass in kilogram"},
+  {"lambdaCe",   2.42631023538E-12,   "m",               "Electron Compton wavelength in units of meter"},
+  {"ge",         -2.00231930436092,   "",                "Electron g factor"},
+  {"mue",        -928.47646917E-26,   "J T^-1",          "Electron magnetic moment in Joule per Tesla"},
+  {"me",         9.1093837139E-31,    "kg",              "Electron mass in kilogram"},
+  {"lambdaCmu",  11.73444110E-15,     "m",               "Muon Compton wavelength in units of meter"},
+  {"gmu",        -2.00233184123,      "",                "Muon g factor"},
+  {"mumu",       -4.49044830E-26,     "J T^-1",          "Muon magnetic moment in Joule per Tesla"},
+  {"mmu",        1.883531627E-28,     "kg",              "Muon mass in kilogram"},
+  {"lambdaCn",   1.31959090382E-15,   "m",               "Neutron Compton wavelength in units of meter"},
+  {"gn",         -3.82608552,         "",                "Neutron g factor"},
+  {"mun",        -0.96623653E-26,     "J T^-1",          "Neutron magnetic moment in Joule per Tesla"},
+  {"mn",         1.67492750056E-27,   "kg",              "Neutron mass in kilogram"},
+  {"lambdaCp",   1.32140985360E-15,   "m",               "Proton Compton wavelength in units of meter"},
+  {"gp",         5.5856946893,        "",                "Proton g factor"},
+  {"mup",        1.41060679545E-26,   "J T^-1",          "Proton magnetic moment in Joule per Tesla"},
+  {"mp",         1.67262192595E-27,   "kg",              "Proton mass in kilogram"},
+  {"lambdaCtau", 0.697771E-15,        "m",               "Tau Compton wavelength in units of meter"},
+  {"mtau",       3.16754E-27,         "kg",              "Tau mass in kilogram"},
   // Aditional constants
-  {"Z0",         376.730313461,       "Ohm",             "Characteristic impedance of vacuum in Ohm"},
-  {"G",          6.67408E-11,         "m^3 kg^-1 s^-2",  "Newtonian constant of graviation in units of meter cubed per kilogram per second squared"},
-  {"lPlanck",    1.616229E-35,        "m",               "Planck length in meter"},
-  {"mPlanck",    2.176470E-8,         "kg",              "Planck mass in kilogram"},
-  {"TPlanck",    1.416808E32,         "K",               "Planck temperature in Kelvin"},
-  {"tPlanck",    5.39116E-44,         "s",               "Planck time in seconds"},
-  {"G0",         7.7480917310E-5,     "S",               "Conductance quantum in units of Siemens"},
-  {"R0",         12906.4037278,       "Ohm",             "Resistance quantum in units of Ohm"},
-  {"KJ",         483597.8525E9,       "Hz V^_1",         "Josephson constant in Herz per Volt"},
-  {"Phi0",       2.067833831E-15,     "Wb",              "Magnetic flux quantum in units of Weber"},
-  {"RK",         25812.807455,        "Ohm",             "Klaus von Klitzing constant in units of Ohm"},
-  {"re",         2.8179403227E-15,    "m",               "classical electron radius in meter"},
-  {"mu",         1.660539040E-27,     "kg",              "Atomic mass constant in kilogram"},
-  {"muN",        5.050783699E-27,    "J T^-1",          "Nuclear magneton in Joule per Tesla"},
-  {"F",          96485.33289,         "C mol^-1",        "Faraday constant in units of Coulomb per mole"},
-  {"R",          8.3144598,           "J mol^-1 K^-1",   "Molar gas constant in Joule per mole per Kelvin"},
-  {"sigma",      5.670367E-8,         "W m^-2 K^-4",     "Stefan-Boltzmann constant in Wat per meter square per Kelvin to the forth power"},
+  {"Z0",         376.730313412,       "Ohm",             "Characteristic impedance of vacuum in Ohm"},
+  {"G",          6.67430E-11,         "m^3 kg^-1 s^-2",  "Newtonian constant of graviation in units of meter cubed per kilogram per second squared"},
+  {"lPlanck",    1.616255E-35,        "m",               "Planck length in meter"},
+  {"mPlanck",    2.176434E-8,         "kg",              "Planck mass in kilogram"},
+  {"TPlanck",    1.416784E32,         "K",               "Planck temperature in Kelvin"},
+  {"tPlanck",    5.391247E-44,        "s",               "Planck time in seconds"},
+  {"G0",         7.7480917298636506E-5, "S",             "Conductance quantum in units of Siemens"},
+  {"R0",         12906.403729652253,  "Ohm",             "Resistance quantum in units of Ohm"},
+  {"KJ",         483597.84841698363E9, "Hz V^_1",        "Josephson constant in Herz per Volt"},
+  {"Phi0",       2.0678338484619293E-15, "Wb",           "Magnetic flux quantum in units of Weber"},
+  {"RK",         25812.807459304507,  "Ohm",             "Klaus von Klitzing constant in units of Ohm"},
+  {"re",         2.8179403205E-15,    "m",               "classical electron radius in meter"},
+  {"mu",         1.66053906892E-27,   "kg",              "Atomic mass constant in kilogram"},
+  {"muN",        5.0507837393E-27,    "J T^-1",          "Nuclear magneton in Joule per Tesla"},
+  {"F",          96485.332123310018,  "C mol^-1",        "Faraday constant in units of Coulomb per mole"},
+  {"R",          8.3144626181532400,  "J mol^-1 K^-1",   "Molar gas constant in Joule per mole per Kelvin"},
+  {"sigma",      5.6703744191844295E-8, "W m^-2 K^-4",   "Stefan-Boltzmann constant in Wat per meter square per Kelvin to the forth power"},
   // often used constants
-  {"e",          1.6021766208E-19,                     "C",              "Elementary charge in units of Coulomb"},
-  {"a0",         0.52917721067E-10,                    "m",              "Bohr radius in meter"},
+  {"e",          1.602176634E-19,                      "C",              "Elementary charge in units of Coulomb"},
+  {"a0",         0.529177210544E-10,                   "m",              "Bohr radius in meter"},
   {"c",          299792458,                            "m s^-1",         "speed of light in vacuum in meter per second"},
-  {"epsilon0",   8.85418781762038985053656303171E-12,  "F m^-1",         "Electric constant (vacuum permittivity) in Farads per meter"},
-  {"mu0",        1.25663706143591729538505735331E-6,   "N A^-2",         "Magnetic constant (vacuum permeability) in Newton per Ampare squared"},
-  {"h",          6.626070040E-34,                      "J s",            "Planck's constant in Joule second"},
-  {"hbar",       1.054571800E-34,                      "J s",            "Planck's constant divided by 2 pi in Joule second"},
-  {"muB",        927.4009994E-26,                      "J T^-1",         "Bohr magneton in Joule per Tesla"},
-  {"kB",         1.38064852E-23,                       "J K^-1",         "Boltzmann constant in units of Joule per Kelvin"},
-  {"NA",         6.022140857E23,                       "mol^-1",         "Avogadro constant in units of number of particles per mole"},
-  {"alpha",      7.2973525664E-3,                      "",               "fine-structure constant (1/(4 pi epsilon0) e^2/(hbar c)"}
+  {"epsilon0",   8.8541878188E-12,                     "F m^-1",         "Electric constant (vacuum permittivity) in Farads per meter"},
+  {"mu0",        1.25663706127E-6,                     "N A^-2",         "Magnetic constant (vacuum permeability) in Newton per Ampare squared"},
+  {"h",          6.62607015E-34,                       "J s",            "Planck's constant in Joule second"},
+  {"hbar",       1.0545718176461564E-34,               "J s",            "Planck's constant divided by 2 pi in Joule second"},
+  {"muB",        927.40100657E-26,                     "J T^-1",         "Bohr magneton in Joule per Tesla"},
+  {"kB",         1.380649E-23,                         "J K^-1",         "Boltzmann constant in units of Joule per Kelvin"},
+  {"NA",         6.02214076E23,                        "mol^-1",         "Avogadro constant in units of number of particles per mole"},
+  {"alpha",      1.0/SpeedOfLightAU,                   "",               "fine-structure constant (1/(4 pi epsilon0) e^2/(hbar c)"},
+  {"cAU",        SpeedOfLightAU,                       "",               "speed of light in Hartree atomic units (= 1/alpha, dimensionless)"}
 };
 
 /*
@@ -144,17 +160,17 @@ const struct { char const *name; double value; char const *units; char const *de
  */
 const struct { char const *namelong; char const *nameshort; double value; char const * units; char const * description;} EnergyUnits[] =
 {
-  // energy units in Joule
+  // energy units in Joule, CODATA 2022 (see PhysicalConstants above)
   {"Joule",         "J",     1,                          "J",               "Energy transferred (or work done) to an object when a force of one newton acts on that object in the direction of its motion through a distance of one meter"},
-  {"Rydberg",       "Ryd",   2.179872324952945e-18,      "J",               "Rydberg, binding energy of a clasical electron to a point potential of 1 unit of electrical charge"},
-  {"Hartree",       "Ha",    4.35974464990589e-18,       "J",               "Hartree energy (2 Rydberg)"},
-  {"electron Volt", "eV",    1.6021766207999999e-19,     "J",               "The amount of energy gained (or lost) by the charge of a single electron moved across an electric potential difference of one volt"},
-  {"Kelvin",        "K",     1.3806485200000002e-23,     "J",               "kB Boltzmann constant"},
-  {"Tesla",         "T",     9.274009993999999e-24,      "J",               "muB Bohr magneton"},
-  {"pernm",         "nm^-1", 1.9864458241717586e-16,     "J",               "10^9 h c"},
-  {"percm",         "cm^-1", 1.9864458241717587e-23,     "J",               "100 h c"},
-  {"TeraHz",        "THz",   6.626070040000001e-22,      "J",               "10^12 h"},
-  {"perfs",         "fs^-1", 6.626070040000001e-19,      "J",               "10^15 h"}
+  {"Rydberg",       "Ryd",   2.1798723611030e-18,        "J",               "Rydberg, binding energy of a clasical electron to a point potential of 1 unit of electrical charge"},
+  {"Hartree",       "Ha",    4.3597447222060e-18,        "J",               "Hartree energy (2 Rydberg)"},
+  {"electron Volt", "eV",    1.602176634e-19,            "J",               "The amount of energy gained (or lost) by the charge of a single electron moved across an electric potential difference of one volt"},
+  {"Kelvin",        "K",     1.380649e-23,               "J",               "kB Boltzmann constant"},
+  {"Tesla",         "T",     9.2740100657e-24,           "J",               "muB Bohr magneton"},
+  {"pernm",         "nm^-1", 1.9864458571489287e-16,     "J",               "10^9 h c"},
+  {"percm",         "cm^-1", 1.9864458571489287e-23,     "J",               "100 h c"},
+  {"TeraHz",        "THz",   6.62607015e-22,             "J",               "10^12 h"},
+  {"perfs",         "fs^-1", 6.62607015e-19,             "J",               "10^15 h"}
 };
 
 

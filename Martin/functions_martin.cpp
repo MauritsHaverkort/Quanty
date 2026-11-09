@@ -249,8 +249,9 @@ static int LuaOperatorNewDirac(lua_State *L)
 	   	lua_pop(L,1);
 	}
 
+	double c = LuaGetPhysicalConstant(L, "cAU");
 	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
-	CreateOperatorDirac(NF,basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,indices,Z,op);
+	CreateOperatorDirac(NF,basisfuns->Ni, basisfuns->VRe,derivfuns->VRe,x,NGridpoints,groups,NGroups,indices,Z,c,op);
 
 	luaL_setmetatable(L,"Operator_Type");
 

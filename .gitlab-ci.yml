@@ -328,6 +328,7 @@ test-jobs:
           - "Orthonormalize"
           - "PartialMeanFieldOperator"
           - "PartialOperator"
+          - "PhysicalConstants"
           - "Rotate"
           - "ScriptDirectory"
           - "ShellAverage"

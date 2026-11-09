@@ -1,0 +1,100 @@
+--[[
+ *  The tables PhysicalConstants and EnergyUnits hold CODATA 2022 values (Core/StructDef.cpp).
+ *
+ *  Tested:
+ *  - cAU (speed of light in Hartree atomic units) and alpha are each other's inverse.
+ *    This catches a future update that changes only one of the two.
+ *  - Relations between the entries that hold to the precision of the table, among
+ *    them relations between PhysicalConstants and EnergyUnits. These catch an update
+ *    of one table but not the other.
+ *  - NewOperator("Dirac") takes c from PhysicalConstants.cAU.value at the time it is
+ *    called, and raises an error when that is not a number.
+ ]]
+
+local function check(condition, message)
+  if not condition then error(message, 2) end
+end
+
+local function relative(a, b)
+  return math.abs(a/b - 1)
+end
+
+print("===========================================")
+print("cAU and alpha")
+
+local cAU   = PhysicalConstants.cAU.value
+local alpha = PhysicalConstants.alpha.value
+print(string.format("cAU   = %.15g", cAU))
+print(string.format("alpha = %.15g", alpha))
+check(cAU == 137.035999177, "cAU is not the CODATA 2022 value 137.035999177")
+check(math.abs(cAU*alpha - 1) < 1e-15, "cAU*alpha differs from 1")
+print("passed")
+
+print("===========================================")
+print("relations between the constants")
+
+local e    = PhysicalConstants.e.value
+local h    = PhysicalConstants.h.value
+local hbar = PhysicalConstants.hbar.value
+local c    = PhysicalConstants.c.value
+local me   = PhysicalConstants.me.value
+local a0   = PhysicalConstants.a0.value
+local kB   = PhysicalConstants.kB.value
+local muB  = PhysicalConstants.muB.value
+
+-- exact since the 2019 SI revision
+check(e  == 1.602176634E-19, "e is not the exact SI value")
+check(h  == 6.62607015E-34,  "h is not the exact SI value")
+check(kB == 1.380649E-23,    "kB is not the exact SI value")
+check(PhysicalConstants.NA.value == 6.02214076E23, "NA is not the exact SI value")
+check(relative(hbar, h/(2*math.pi)) < 1e-15, "hbar differs from h/(2 pi)")
+
+-- measured quantities: agree within their uncertainty (relative 1e-9 or better)
+check(relative(a0, hbar/(me*c*alpha)) < 1e-9, "a0 differs from hbar/(me c alpha)")
+check(relative(muB, e*hbar/(2*me)) < 1e-9, "muB differs from e hbar/(2 me)")
+
+-- EnergyUnits.<unit>.value is in the current energy unit; divide by J for Joule
+local function joule(unit)
+  return EnergyUnits[unit].value / EnergyUnits.J.value
+end
+check(relative(joule("eV"),  e)   < 1e-15, "EnergyUnits.eV differs from PhysicalConstants.e")
+check(relative(joule("K"),   kB)  < 1e-15, "EnergyUnits.K differs from PhysicalConstants.kB")
+check(relative(joule("T"),   muB) < 1e-15, "EnergyUnits.T differs from PhysicalConstants.muB")
+check(relative(joule("cm^-1"), 100*h*c) < 1e-15, "EnergyUnits.cm^-1 differs from 100 h c")
+check(relative(joule("THz"), 1e12*h) < 1e-15, "EnergyUnits.THz differs from 10^12 h")
+check(relative(joule("Ha"),  2*joule("Ryd")) < 1e-15, "EnergyUnits.Ha differs from 2 Ryd")
+check(relative(joule("Ha"),  alpha^2*me*c^2) < 1e-9, "EnergyUnits.Ha differs from alpha^2 me c^2")
+print(string.format("Hartree = %.14g eV", joule("Ha")/e))
+check(relative(joule("Ha")/e, 27.211386245981) < 1e-13, "Hartree in eV is not the CODATA 2022 value")
+print("passed")
+
+print("===========================================")
+print("NewOperator(\"Dirac\") reads PhysicalConstants.cAU.value")
+
+-- a 1s1/2 orbital: large component r exp(-r), small component 0.01 r exp(-r)
+local x, yG, yF = {}, {}, {}
+for i = 0, 300 do
+  local r = i * 0.1
+  x[i+1]  = r
+  yG[i+1] = r * math.exp(-r)
+  yF[i+1] = 0.01 * r * math.exp(-r)
+end
+local G = InterpolatingFunction.Spline(x, yG)
+local F = InterpolatingFunction.Spline(x, yF)
+local indices, NF = CreateAtomicIndicesList({"1s1/2"}, {{"Kappas", true}})
+
+local H1 = NewOperator("Dirac", NF, 1, indices, {G}, {F})
+PhysicalConstants.cAU.value = 2*cAU
+local H2 = NewOperator("Dirac", NF, 1, indices, {G}, {F})
+PhysicalConstants.cAU.value = cAU
+local H3 = NewOperator("Dirac", NF, 1, indices, {G}, {F})
+check(tostring(H1) ~= tostring(H2), "changing PhysicalConstants.cAU.value did not change NewOperator(\"Dirac\")")
+check(tostring(H1) == tostring(H3), "restoring PhysicalConstants.cAU.value did not restore NewOperator(\"Dirac\")")
+
+PhysicalConstants.cAU.value = "fast"
+local ok, message = pcall(NewOperator, "Dirac", NF, 1, indices, {G}, {F})
+PhysicalConstants.cAU.value = cAU
+print("error raised: " .. tostring(message))
+check(not ok, "a cAU that is not a number did not raise an error")
+check(string.find(tostring(message), "cAU", 1, true) ~= nil, "the error message does not name cAU")
+print("passed")
