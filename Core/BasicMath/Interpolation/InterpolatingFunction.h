@@ -37,6 +37,7 @@ public:
 
 };
 
+uint32_t GridInterval(const std::vector<double> &x, double t);
 void MergeGrids(const std::vector<double> &x1,const std::vector<double> &x2, std::vector<double> &xout );
 void Add(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);
 void Mul(InterpolatingFunction &f, InterpolatingFunction &g, InterpolatingFunction &fplusg);

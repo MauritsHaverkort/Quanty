@@ -12,8 +12,13 @@
  *  with estimated slopes, cubics for the spline with exact end slopes and the Hermite
  *  spline with exact slopes, polynomials up to the degree for a B-spline. Each passes
  *  through its data points, and a table of points gives the values of one point at a
- *  time. For a smooth function the natural spline converges as h^4 when f'' vanishes
- *  at the ends.
+ *  time, also when the points are not sorted. For a smooth function the natural spline
+ *  converges as h^4 when f'' vanishes at the ends.
+ *
+ *  Outside its grid every interpolating function is 0, its derivatives too, for one
+ *  point and for a table of points. A Spline and a HermiteCSpline through 2 points are
+ *  straight lines; with end slopes the Spline through 2 points is the cubic with those
+ *  slopes. The third derivative of a cubic spline is constant on every interval.
  ]]
 
 local x = {0, 0.3, 0.7, 1.2, 1.5, 2.1, 2.6, 3}
@@ -67,6 +72,8 @@ local Sc = InterpolatingFunction.Spline(x, tabulate(cub, x), dcub(0), dcub(3))
 check("clamped spline of a cubic", Sc, cub, 0, 1e-13)
 check("clamped spline of a cubic, derivative", Sc, dcub, 1, 1e-13)
 check("clamped spline of a cubic, second derivative", Sc, d2cub, 2, 1e-12)
+check("clamped spline of a cubic, third derivative", Sc, d3cub, 3, 1e-10)
+check("natural spline of a line, third derivative", S, zero, 3, 1e-12)
 print("passed")
 
 print("===========================================")
@@ -131,6 +138,64 @@ if #B3.x ~= #x - 3 + 1 then error("BSpline.x should hold the distinct knots", 1)
 if string.sub(tostring(S), 1, 11) ~= "CubicSpline" then error("tostring of a Spline", 1) end
 if string.sub(tostring(H), 1, 18) ~= "CubicHermiteSpline" then error("tostring of a HermiteCSpline", 1) end
 if tostring(B3) ~= "Interpolating Function" then error("tostring of a BSpline", 1) end
+print("passed")
+
+print("===========================================")
+print("outside the grid every interpolating function is 0")
+local outside = {-0.5, -1e-9, 3 + 1e-9, 3.5, 100}
+local all = {
+  {"Spline", InterpolatingFunction.Spline(x, y)},
+  {"Spline with end slopes", InterpolatingFunction.Spline(x, y, 1, -1)},
+  {"HermiteCSpline", InterpolatingFunction.HermiteCSpline(x, y)},
+  {"HermiteCSpline with slopes", InterpolatingFunction.HermiteCSpline(x, y, tabulate(dcub, x))},
+  {"BSpline degree 3", InterpolatingFunction.BSpline(x, y, 3)},
+}
+for _, entry in ipairs(all) do
+  local f = entry[2]
+  for k = 0, 3 do
+    local table_values
+    if k == 0 then table_values = f(outside) else table_values = f(outside, k) end
+    for i, s in ipairs(outside) do
+      local v
+      if k == 0 then v = f(s) else v = f(s, k) end
+      if v ~= 0 or table_values[i] ~= 0 then
+        error(string.format("%s: derivative %d at %g is %g (one point) and %g (table), expected 0", entry[1], k, s, v, table_values[i]), 1)
+      end
+    end
+  end
+end
+print("passed")
+
+print("===========================================")
+print("a table of points in any order gives the values of one point at a time")
+local shuffled = {2.9, 0.1, 1.7, 0, 3, 0.05, 2.2, 1.2, 0.7, 2.95}
+for _, entry in ipairs(all) do
+  local f = entry[2]
+  for k = 0, 3 do
+    local w
+    if k == 0 then w = f(shuffled) else w = f(shuffled, k) end
+    for i, s in ipairs(shuffled) do
+      local v
+      if k == 0 then v = f(s) else v = f(s, k) end
+      if w[i] ~= v then error(string.format("%s: derivative %d of an unsorted table differs at %g", entry[1], k, s), 1) end
+    end
+  end
+end
+print("passed")
+
+print("===========================================")
+print("2 points: a straight line, or the cubic with the given end slopes")
+local x2 = {0.5, 2}
+local line = function(s) return 3 - 2*s end
+local twoS = InterpolatingFunction.Spline(x2, tabulate(line, x2))
+local twoH = InterpolatingFunction.HermiteCSpline(x2, tabulate(line, x2))
+local twoC = InterpolatingFunction.Spline(x2, tabulate(cub, x2), dcub(0.5), dcub(2))
+for i = 0, 20 do
+  local s = 0.5 + 1.5*i/20
+  if not (math.abs(twoS(s) - line(s)) < 1e-14 and math.abs(twoS(s, 1) + 2) < 1e-14) then error("Spline through 2 points is not the line", 1) end
+  if not (math.abs(twoH(s) - line(s)) < 1e-14 and math.abs(twoH(s, 1) + 2) < 1e-14) then error("HermiteCSpline through 2 points is not the line", 1) end
+  if not (math.abs(twoC(s) - cub(s)) < 1e-13) then error("Spline through 2 points with end slopes is not the cubic", 1) end
+end
 print("passed")
 
 print("===========================================")

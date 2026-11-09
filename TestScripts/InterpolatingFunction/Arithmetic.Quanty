@@ -1,14 +1,18 @@
 --[[
- *  Arithmetic of interpolating functions (Spline and HermiteCSpline):
+ *  Arithmetic of interpolating functions (Spline, HermiteCSpline and BSpline):
  *    -f, f + g, f - g, f * g, f / g   a new function of the type of f, on the union of
  *                                     the grids of f and g, through op(f(x), g(x))
  *    f ^ n                            on the grid of f, through f(x)^n
  *    f .. g                           on the grid of f, through f(g(x))
  *    f == g                           same type, grid and values (relative 1e-14)
  *
+ *  For a BSpline the grid is the set of points it interpolates (f.x holds its knots), the
+ *  result has the degree of f, and -f, and f + g and f - g for two B-splines with the
+ *  same degree and knots, act on the coefficients and are exact everywhere.
+ *
  *  Tested: the grid of the result, its values on that grid, its type, that linear
  *  functions stay exact under + and -, that -f is exact everywhere, and ==.
- *  Not tested, because it is not implemented: arithmetic on B-splines, < and <=.
+ *  Not tested, because it has no meaning for functions: < and <=.
  ]]
 
 local function tabulate(f, points)
@@ -130,5 +134,78 @@ if typeOf(S + H) ~= "CubicSpline" then error("Spline + HermiteCSpline has type "
 if typeOf(H + S) ~= "CubicHermiteSpline" then error("HermiteCSpline + Spline has type " .. typeOf(H + S), 1) end
 if S == InterpolatingFunction.HermiteCSpline(x1, tabulate(smooth1, x1)) then
   error("a Spline and a HermiteCSpline through the same data compare equal", 1)
+end
+print("passed")
+
+print("===========================================")
+print("BSpline: -f, and f + g and f - g on the same knots, are exact everywhere")
+local x3 = {0, 0.2, 0.5, 0.9, 1.3, 1.8, 2.2, 2.7, 3}
+local Bf = InterpolatingFunction.BSpline(x3, tabulate(smooth1, x3), 4)
+local Bg = InterpolatingFunction.BSpline(x3, tabulate(smooth2, x3), 4)
+local sum, diff, neg = Bf + Bg, Bf - Bg, -Bf
+for i = 0, 60 do
+  local s = 3*i/60
+  for k = 0, 2 do
+    if not (math.abs(sum(s, k) - (Bf(s, k) + Bg(s, k))) < 1e-13) then error("BSpline f+g is not exact at " .. s .. " for derivative " .. k, 1) end
+    if not (math.abs(diff(s, k) - (Bf(s, k) - Bg(s, k))) < 1e-13) then error("BSpline f-g is not exact at " .. s .. " for derivative " .. k, 1) end
+    if not (math.abs(neg(s, k) + Bf(s, k)) < 1e-15) then error("BSpline -f is not exact at " .. s .. " for derivative " .. k, 1) end
+  end
+end
+if typeOf(sum) ~= "Interpolating Function" then error("BSpline f+g has type " .. typeOf(sum), 1) end
+print("passed")
+
+print("===========================================")
+print("BSpline: + - * / on different points pass through op(f, g) on the union of the points")
+local x4 = {0, 0.4, 1.1, 1.6, 2.4, 3}
+local Bh = InterpolatingFunction.BSpline(x4, tabulate(smooth2, x4), 3)
+local points = union(x3, x4)
+for _, op in ipairs({
+    {"+", function(a, b) return a + b end},
+    {"-", function(a, b) return a - b end},
+    {"*", function(a, b) return a * b end},
+    {"/", function(a, b) return a / b end}}) do
+  local r = op[2](Bf, Bh)
+  for _, s in ipairs(points) do
+    local expect = op[2](Bf(s), Bh(s))
+    if not (math.abs(r(s) - expect) <= 1e-12*math.max(1, math.abs(expect))) then
+      error(string.format("BSpline f %s g at %.17g: %.17g, expected %.17g", op[1], s, r(s), expect), 1)
+    end
+  end
+end
+-- the result has the degree of f: a polynomial of degree 4 is reproduced exactly
+local p4 = function(s) return 1 - s + 0.5*s^2 - 0.2*s^3 + 0.05*s^4 end
+local P = InterpolatingFunction.BSpline(x3, tabulate(p4, x3), 4)
+local Z = InterpolatingFunction.BSpline(x4, tabulate(function(s) return 0 end, x4), 3)
+local PZ = P + Z
+for i = 0, 30 do
+  local s = 3*i/30
+  if not (math.abs(PZ(s) - p4(s)) < 1e-12) then error("BSpline f+g does not have the degree of f", 1) end
+end
+print("passed")
+
+print("===========================================")
+print("BSpline: f^n and f..g on the points of f, ==, mixed types")
+for _, n in ipairs({2, 0.5, -1}) do
+  local r = Bf^n
+  for _, s in ipairs(x3) do
+    if not (math.abs(r(s) - Bf(s)^n) <= 1e-12*math.abs(Bf(s)^n)) then error("BSpline f^" .. n .. " differs at " .. s, 1) end
+  end
+end
+local mirror = InterpolatingFunction.BSpline(x4, tabulate(function(s) return 3 - s end, x4), 3)
+local comp = Bf .. mirror
+for _, s in ipairs(x3) do
+  if not (math.abs(comp(s) - Bf(mirror(s))) < 1e-12) then error("BSpline f..g differs from f(g(x)) at " .. s, 1) end
+end
+if not (Bf == Bf) then error("BSpline f == f is false", 1) end
+if not (Bf == InterpolatingFunction.BSpline(x3, tabulate(smooth1, x3), 4)) then error("two B-splines from the same data differ", 1) end
+if not (Bf == -(-Bf)) then error("BSpline f == -(-f) is false", 1) end
+if Bf == Bg then error("B-splines with different values compare equal", 1) end
+if Bf == InterpolatingFunction.BSpline(x3, tabulate(smooth1, x3), 3) then error("B-splines of different degree compare equal", 1) end
+if Bf == InterpolatingFunction.Spline(x3, tabulate(smooth1, x3)) then error("a BSpline and a Spline compare equal", 1) end
+local S3 = InterpolatingFunction.Spline(x4, tabulate(smooth2, x4))
+if typeOf(Bf + S3) ~= "Interpolating Function" then error("BSpline + Spline has type " .. typeOf(Bf + S3), 1) end
+if typeOf(S3 + Bf) ~= "CubicSpline" then error("Spline + BSpline has type " .. typeOf(S3 + Bf), 1) end
+for _, s in ipairs(points) do
+  if not (math.abs((Bf + S3)(s) - (Bf(s) + S3(s))) < 1e-12) then error("BSpline + Spline differs at " .. s, 1) end
 end
 print("passed")
