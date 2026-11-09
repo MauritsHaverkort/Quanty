@@ -1,0 +1,134 @@
+--[[
+ *  Arithmetic of interpolating functions (Spline and HermiteCSpline):
+ *    -f, f + g, f - g, f * g, f / g   a new function of the type of f, on the union of
+ *                                     the grids of f and g, through op(f(x), g(x))
+ *    f ^ n                            on the grid of f, through f(x)^n
+ *    f .. g                           on the grid of f, through f(g(x))
+ *    f == g                           same type, grid and values (relative 1e-14)
+ *
+ *  Tested: the grid of the result, its values on that grid, its type, that linear
+ *  functions stay exact under + and -, that -f is exact everywhere, and ==.
+ *  Not tested, because it is not implemented: arithmetic on B-splines, < and <=.
+ ]]
+
+local function tabulate(f, points)
+  local y = {}
+  for i = 1, #points do y[i] = f(points[i]) end
+  return y
+end
+
+local function union(a, b)
+  local u = {}
+  for _, v in ipairs(a) do u[#u+1] = v end
+  for _, v in ipairs(b) do u[#u+1] = v end
+  table.sort(u)
+  local r = {u[1]}
+  for i = 2, #u do if u[i] ~= r[#r] then r[#r+1] = u[i] end end
+  return r
+end
+
+local function sameList(a, b, name)
+  if #a ~= #b then error(string.format("%s: %d points, expected %d", name, #a, #b), 2) end
+  for i = 1, #a do
+    if math.abs(a[i] - b[i]) > 1e-14*math.max(1, math.abs(b[i])) then
+      error(string.format("%s: point %d is %.17g, expected %.17g", name, i, a[i], b[i]), 2)
+    end
+  end
+end
+
+local function typeOf(f) return (string.gsub(tostring(f), "\n.*", "")) end
+
+local x1 = {0, 0.3, 0.7, 1.2, 1.5, 2.1, 2.6, 3}
+local x2 = {0, 0.5, 1.2, 1.9, 3}
+local lin1 = function(s) return 2 - 0.5*s end
+local lin2 = function(s) return 0.5 + 1.5*s end
+local smooth1 = function(s) return math.exp(-s) + 1 end
+local smooth2 = function(s) return 2 + math.sin(2*s) end
+
+local constructors = {
+  {"Spline", InterpolatingFunction.Spline, "CubicSpline"},
+  {"HermiteCSpline", InterpolatingFunction.HermiteCSpline, "CubicHermiteSpline"},
+}
+
+for _, c in ipairs(constructors) do
+  local name, new, typename = c[1], c[2], c[3]
+
+  print("===========================================")
+  print(name .. ": + - * / on the union of the grids")
+  local f = new(x1, tabulate(smooth1, x1))
+  local g = new(x2, tabulate(smooth2, x2))
+  local ops = {
+    {"+", function(a, b) return a + b end},
+    {"-", function(a, b) return a - b end},
+    {"*", function(a, b) return a * b end},
+    {"/", function(a, b) return a / b end},
+  }
+  for _, op in ipairs(ops) do
+    local r = op[2](f, g)
+    local label = name .. " f " .. op[1] .. " g"
+    if typeOf(r) ~= typename then error(label .. ": result has type " .. typeOf(r), 1) end
+    sameList(r.x, union(x1, x2), label .. ", grid")
+    for _, s in ipairs(r.x) do
+      local expect = op[2](f(s), g(s))
+      if not (math.abs(r(s) - expect) <= 1e-14*math.max(1, math.abs(expect))) then
+        error(string.format("%s at %.17g: %.17g, expected %.17g", label, s, r(s), expect), 1)
+      end
+    end
+  end
+  print("passed")
+
+  print("===========================================")
+  print(name .. ": linear functions stay exact under + and -, -f is exact")
+  local l1, l2 = new(x1, tabulate(lin1, x1)), new(x2, tabulate(lin2, x2))
+  local sum, diff, neg = l1 + l2, l1 - l2, -f
+  for i = 0, 60 do
+    local s = 3*i/60
+    if not (math.abs(sum(s) - (lin1(s) + lin2(s))) < 1e-14) then error(name .. ": sum of lines not exact", 1) end
+    if not (math.abs(diff(s) - (lin1(s) - lin2(s))) < 1e-14) then error(name .. ": difference of lines not exact", 1) end
+    if not (math.abs(neg(s) + f(s)) < 1e-15) then error(name .. ": -f differs from -(f(t))", 1) end
+    if not (math.abs(neg(s, 1) + f(s, 1)) < 1e-14) then error(name .. ": (-f)' differs from -f'", 1) end
+  end
+  if typeOf(neg) ~= typename then error(name .. ": -f has type " .. typeOf(neg), 1) end
+  print("passed")
+
+  print("===========================================")
+  print(name .. ": f^n and f..g on the grid of f")
+  for _, n in ipairs({2, 0.5, -1}) do
+    local p = f^n
+    sameList(p.x, x1, name .. " f^" .. n .. ", grid")
+    for _, s in ipairs(x1) do
+      if not (math.abs(p(s) - f(s)^n) <= 1e-14*math.abs(f(s)^n)) then
+        error(string.format("%s: f^%g at %g is %.17g, expected %.17g", name, n, s, p(s), f(s)^n), 1)
+      end
+    end
+  end
+  -- g maps [0,3] onto [0,3], so f(g(x)) stays inside the range of f
+  local h = new(x2, tabulate(function(s) return 3 - s end, x2))
+  local fh = f .. h
+  sameList(fh.x, x1, name .. " f..g, grid")
+  for _, s in ipairs(x1) do
+    if not (math.abs(fh(s) - f(h(s))) < 1e-14) then error(name .. ": f..g differs from f(g(x)) at " .. s, 1) end
+  end
+  print("passed")
+
+  print("===========================================")
+  print(name .. ": ==")
+  local f2 = new(x1, tabulate(smooth1, x1))
+  if not (f == f) then error(name .. ": f == f is false", 1) end
+  if not (f == f2) then error(name .. ": two functions from the same data differ", 1) end
+  if not (f == -(-f)) then error(name .. ": f == -(-f) is false", 1) end
+  if f == g then error(name .. ": functions on different grids compare equal", 1) end
+  if f == new(x1, tabulate(smooth2, x1)) then error(name .. ": functions with different values compare equal", 1) end
+  print("passed")
+end
+
+print("===========================================")
+print("mixed types: the result has the type of the first function")
+local S = InterpolatingFunction.Spline(x1, tabulate(smooth1, x1))
+local H = InterpolatingFunction.HermiteCSpline(x2, tabulate(smooth2, x2))
+if typeOf(S + H) ~= "CubicSpline" then error("Spline + HermiteCSpline has type " .. typeOf(S + H), 1) end
+if typeOf(H + S) ~= "CubicHermiteSpline" then error("HermiteCSpline + Spline has type " .. typeOf(H + S), 1) end
+if S == InterpolatingFunction.HermiteCSpline(x1, tabulate(smooth1, x1)) then
+  error("a Spline and a HermiteCSpline through the same data compare equal", 1)
+end
+print("passed")

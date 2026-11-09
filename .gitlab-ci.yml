@@ -2,6 +2,7 @@ stages:
   - build
   - test_math
   - test_bspline
+  - test_interpolatingfunction
   - test_matrix
   - test_plot
   - test_responsefunction
@@ -111,6 +112,26 @@ test-jobs-bspline:
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/BSpline/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test interpolating functions: constructors, evaluation, arithmetic, integrals
+# ===== These functions are registered in Interpolate.cpp
+#
+
+test-jobs-interpolatingfunction:
+  stage: test_interpolatingfunction
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "Arithmetic"
+          - "Create"
+          - "Integrate"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/InterpolatingFunction/${TEST_NAME}.Quanty"
   dependencies:
     - build-job
 
