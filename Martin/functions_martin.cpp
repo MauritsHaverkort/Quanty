@@ -21,6 +21,7 @@
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_Selfenergy.cpp"
 #include "Auger-Meitner_Selfenergy/ResonantSpectrum_CNSED.cpp"
 #include "BreitInteraction.cpp"
+#include "Hartree-Fock/Hartree-Fock.h"
 #include "Hartree-Fock/Hartree-Fock.cpp"
 #include "Slater_Rework/Slater_Integrals.cpp"
 #include "Slater_Rework/Coulomb_Operator.cpp"

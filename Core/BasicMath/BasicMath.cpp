@@ -53,6 +53,7 @@
 #include "Interpolation/CubicHermiteSpline.cpp"
 #include "Interpolation/InterpolatingFunction.cpp"
 #include "Interpolation/BSpline.cpp"
+#include "Interpolation/BSplineMatrix.cpp"
 
 
 /*

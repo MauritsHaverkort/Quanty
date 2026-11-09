@@ -26,7 +26,7 @@ Status: proposal, 2026-11-09. Companion to `QuantyDFT_Step0_BSplineConsolidation
 |---|---|
 | `GaussLegendre.{h,cpp}` | The 34-digit table and `GaussLegendreQuadrature(n)`, `…Node`, `…Weight`, moved from `BasicMath_StandardFunctions`. New `GaussLegendreNodesWeights(N,a,b,x,w)`: table for N ≤ 127, Golub–Welsch (moved from `Martin/Math/Quad.cpp`) above. The old `Quad::` entry points become thin wrappers. |
 | `BSpline.{h,cpp}` | The C core (§3) and the C-named successors of the namespace functions (§4). |
-| `BSplineMatrix.{h,cpp}` | The matrix builders now in `Martin/Hartree-Fock/Hartree-Fock.cpp` that `AtomicOperators` reaches: `CreateLaplacian`, `CreatePotentialMatrix`, `PutBSplinesOnQuadGrid`, `CalcOffDiagSlaterInts`, `CalcDiagSlaterInts`, `AssembleSlaterInts2`. They are rebuilt on `BSplineMatrixBanded`. |
+| `BSplineMatrix.{h,cpp}` | `BSplineQuadratureSetup`, `BSplineMatrixBanded`, and Martin's Slater cell method: `BSplineCellValues` (was `PutBSplinesOnQuadGrid`), `BSplineSlaterCellTables` (was `CalcOffDiagSlaterInts` and `CalcDiagSlaterInts`) and `BSplineSlaterIntegral` (was `AssembleSlaterInts2`), with the same quadrature and table layouts. `NewOperator("H0")` and `NewOperator("AU")` call them directly. Martin's `HartreeFock::` functions, which `Martin.HF` still uses, are `std::vector` wrappers around them; his original code is kept as `…Old` in `#if 0`. |
 | `TBSpline.{h,cpp}` | The class; its internals call the core. |
 
 `Core` then no longer includes anything from `Martin/`. `AtomicOperators/GaussQuadrature.cpp`
@@ -45,11 +45,12 @@ int BSplineValues(double t, uint32_t interval, const double *knot, uint32_t degr
                   uint32_t nDeriv, double *val);     /* val[(nDeriv+1)*(degree+1)] */
 int BSplineKnotsExponential(uint32_t degree, uint32_t nInterval, double r1, double rMax,
                   double **knot, uint32_t *nKnot);
-int BSplineQuadratureSetup(const double *knot, uint32_t nKnot, uint32_t degree, uint32_t nQ,
+int BSplineQuadratureSetup(const double *knot, uint32_t nKnot, uint32_t nQ,
                   double **rq, double **wq, uint32_t *nPoint);
 int BSplineMatrixBanded(const double *knot, uint32_t nKnot, uint32_t degree,
                   const double *rq, const double *wq, uint32_t nPoint, const double *fq,
-                  uint32_t a, uint32_t b, double *band);
+                  uint32_t a, uint32_t b, uint32_t first, uint32_t n,
+                  double *band, uint32_t ldBand);
 ```
 
 - **`BSplineFindInterval`**: binary search for μ with `knot[μ] ≤ t < knot[μ+1]`. At
@@ -81,7 +82,9 @@ int BSplineMatrixBanded(const double *knot, uint32_t nKnot, uint32_t degree,
   M_ij = ∫ B_i^(a)(r) f(r) B_j^(b)(r) dr ≈ Σ_q w_q f(r_q) B_i^(a)(r_q) B_j^(b)(r_q),
 
   for derivative orders a, b ∈ {0,1,2}. Only |i−j| ≤ degree is nonzero, so it is
-  stored in LAPACK band format. f enters as its values `fq` on the quadrature points,
+  stored in LAPACK band format, `band[(i-j) + j*ldBand]` for i ≥ j, for the basis
+  functions `first … first+n-1` (the boundary conditions leave out the first and the
+  last). f enters as its values `fq` on the quadrature points (NULL for f = 1),
   with no callback, which keeps it OpenMP-safe. One routine then replaces Martin's
   separate builders:
 

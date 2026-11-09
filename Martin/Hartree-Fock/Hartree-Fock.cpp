@@ -10,7 +10,43 @@
 namespace HartreeFock
 {
 
-double OverlapMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x)
+// The matrix builders below are wrappers around the B-spline core
+// (Core/BasicMath/Interpolation/BSplineMatrix), with the layout of before: element (i,j),
+// i >= j, of the B-splines 1 .. dim (the first and last are left out), at (i-j) + j*dim in
+// a vector of dim*dim, dim = Nspline-2. Martin Brass' original code is kept below as ...Old.
+static void CreateRadialMatrix(const vector<double> &x, const uint32_t n, uint32_t nQ, uint32_t a, double Z, int l, bool potential, vector<double> &M)
+{
+	uint32_t dim = (uint32_t) x.size() - n - 1 - 2;
+	double *rq, *wq;
+	uint32_t nPoint;
+	M = vector<double>(dim*dim);
+	BSplineQuadratureSetup(&x[0], (uint32_t) x.size(), nQ, &rq, &wq, &nPoint);
+	vector<double> fq = vector<double>(nPoint+1);
+	for (uint32_t q = 0; q < nPoint; q++) fq[q] = l*(l+1)/rq[q]/rq[q]/2 - Z/rq[q];
+	BSplineMatrixBanded(&x[0], (uint32_t) x.size(), n, rq, wq, nPoint, potential ? &fq[0] : NULL, a, a, 1, dim, &M[0], dim);
+	free(rq);
+	free(wq);
+}
+
+void CreateOverlapMatrix(const vector<double> &x, const uint32_t n, vector<double> &S)
+{
+	CreateRadialMatrix(x, n, n+1, 0, 0., 0, false, S);
+}
+
+// int B_i' B_j'
+void CreateLaplacian(const vector<double> &x, const uint32_t n, vector<double> &L)
+{
+	CreateRadialMatrix(x, n, n, 1, 0., 0, false, L);
+}
+
+// int B_i (l(l+1)/(2r^2) - Z/r) B_j, with n+3 Gauss points per knot interval
+void CreatePotentialMatrix(const vector<double> &x, const uint32_t n, vector<double> &V, double Z, int l)
+{
+	CreateRadialMatrix(x, n, n+3, 0, Z, l, true, V);
+}
+
+#if 0
+double OverlapMatrixOld(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x)
 {
 	uint32_t ia = std::max(i,j);
 	uint32_t ib = std::min(i,j) + n+1; // n+1 since the B-Splines start with n = 0 so n = polynomial degree
@@ -31,7 +67,7 @@ double OverlapMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x
 	return integral;
 }
 
-void CreateOverlapMatrix(const vector<double> &x, const uint32_t n, vector<double> &S)
+void CreateOverlapMatrixOld(const vector<double> &x, const uint32_t n, vector<double> &S)
 {
 	uint32_t Nspline = (uint32_t) x.size() - n - 1;
 
@@ -40,12 +76,12 @@ void CreateOverlapMatrix(const vector<double> &x, const uint32_t n, vector<doubl
 	{
 		for ( int i = j; i <= std::min(Nspline-2-1,j+n); i++)  // n = #sub-diagonals
 		{
-			S[(i-j) + j*(Nspline-2)] = OverlapMatrix(i+1,j+1,n,x);
+			S[(i-j) + j*(Nspline-2)] = OverlapMatrixOld(i+1,j+1,n,x);
 		}
 	}
 }
 
-double LaplaceMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x)
+double LaplaceMatrixOld(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x)
 {
 	double s1 = 0;
 	double s2 = 0;
@@ -56,28 +92,28 @@ double LaplaceMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x
 	{
 		if (x[j] != x[j+n])
 		{
-			s1 = OverlapMatrix(i,j,n-1,x)/(x[i+n] - x[i])/(x[j+n]-x[j]);
+			s1 = OverlapMatrixOld(i,j,n-1,x)/(x[i+n] - x[i])/(x[j+n]-x[j]);
 		}
 		if (x[j+n+1] != x[j+1])
 		{
-			s2 = -OverlapMatrix(i,j+1,n-1,x)/(x[i+n] - x[i])/(x[j+n+1] - x[j+1]);
+			s2 = -OverlapMatrixOld(i,j+1,n-1,x)/(x[i+n] - x[i])/(x[j+n+1] - x[j+1]);
 		}
 	}
 	if (x[i+n+1] != x[i+1])
 	{
 		if (x[j+n+1] != x[j+1])
 		{
-			s3 = OverlapMatrix(i+1,j+1,n-1,x)/(x[i+n+1] -x[i+1])/(x[j+n+1]-x[j+1]);
+			s3 = OverlapMatrixOld(i+1,j+1,n-1,x)/(x[i+n+1] -x[i+1])/(x[j+n+1]-x[j+1]);
 		}
 		if (x[j+n] != x[j])
 		{
-			s4 = -OverlapMatrix(i+1,j,n-1,x)/(x[i+n+1]-x[i+1])/(x[j+n]-x[j]);
+			s4 = -OverlapMatrixOld(i+1,j,n-1,x)/(x[i+n+1]-x[i+1])/(x[j+n]-x[j]);
 		}
 	}
 	return n*n*(s1 + s2 + s3 + s4);
 }
 
-void CreateLaplacian(const vector<double> &x, const uint32_t n, vector<double> &L)
+void CreateLaplacianOld(const vector<double> &x, const uint32_t n, vector<double> &L)
 {
 	uint32_t Nspline = (uint32_t) x.size() - n - 1;
 
@@ -86,12 +122,12 @@ void CreateLaplacian(const vector<double> &x, const uint32_t n, vector<double> &
 	{
 		for ( int i = j; i <= std::min(Nspline-2-1,j+n); i++)  // n = #sub-diagonals
 		{
-			L[(i-j) + j*(Nspline-2)] = LaplaceMatrix(i+1,j+1,n,x);
+			L[(i-j) + j*(Nspline-2)] = LaplaceMatrixOld(i+1,j+1,n,x);
 		}
 	}
 }
 
-double PotentialMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x, double Z, int l)
+double PotentialMatrixOld(uint32_t i, uint32_t j, uint32_t n, const vector<double> &x, double Z, int l)
 {
 	uint32_t ia = std::max(i,j);
 	uint32_t ib = std::min(i,j) + n+1; // n+1 since the B-Splines start with n = 0 so n = polynomial degree
@@ -113,7 +149,7 @@ double PotentialMatrix(uint32_t i, uint32_t j, uint32_t n, const vector<double> 
 	return integral;
 }
 
-void CreatePotentialMatrix(const vector<double> &x, const uint32_t n, vector<double> &V, double Z, int l)
+void CreatePotentialMatrixOld(const vector<double> &x, const uint32_t n, vector<double> &V, double Z, int l)
 {
 	uint32_t Nspline = (uint32_t) x.size() - n - 1;
 
@@ -122,10 +158,12 @@ void CreatePotentialMatrix(const vector<double> &x, const uint32_t n, vector<dou
 	{
 		for ( int i = j; i <= std::min(Nspline-2-1,j+n); i++)  // n = #sub-diagonals
 		{
-			V[(i-j) + j*(Nspline-2)] = PotentialMatrix(i+1,j+1,n,x,Z,l);
+			V[(i-j) + j*(Nspline-2)] = PotentialMatrixOld(i+1,j+1,n,x,Z,l);
 		}
 	}
 }
+
+#endif
 
 void SolveCatOwnerEquation(vector<double> &H, vector<double> &S, uint32_t dim, uint32_t bandsize, vector<double> &eigVal,vector<double> &eigVec)
 {
@@ -173,7 +211,44 @@ void CreateGrid(unsigned int Nknots, int n, double R, int powGrid, vector<double
 	}
 }
 
+// The Slater cell tables, wrappers around BSplineCellValues and BSplineSlaterCellTables
 void PutBSplinesOnQuadGrid(const vector<double> &x, uint32_t n,uint32_t Nweights, vector<double> &BSval)
+{
+	BSval = vector<double>(((uint32_t) x.size() - 1)*(n+1)*Nweights);
+	BSplineCellValues(&x[0], (uint32_t) x.size(), n, Nweights, &BSval[0]);
+}
+
+void CalcOffDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
+{
+	uint32_t ks = n + 1;
+	rk1 = vector<double>(((uint32_t) x.size() - 1)*ks*ks);
+	rk2 = vector<double>(((uint32_t) x.size() - 1)*ks*ks);
+	BSplineSlaterCellTables(&x[0], (uint32_t) x.size(), n, Nweights, &BSval[0], k, &rk1[0], &rk2[0], NULL);
+}
+
+void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
+{
+	vector<double> BSval;
+	PutBSplinesOnQuadGrid(x, n, n+1+3, BSval);
+	CalcOffDiagSlaterInts(x, BSval, n+1+3, rk1, rk2, k, n);
+}
+
+void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rkD, int k, uint32_t n)
+{
+	uint32_t ks = n + 1;
+	rkD = vector<double>(((uint32_t) x.size() - 1)*ks*ks*ks*ks);
+	BSplineSlaterCellTables(&x[0], (uint32_t) x.size(), n, Nweights, &BSval[0], k, NULL, NULL, &rkD[0]);
+}
+
+void CalcDiagSlaterInts(const vector<double> &x, vector<double> &rkD, int k, uint32_t n)
+{
+	vector<double> BSval;
+	PutBSplinesOnQuadGrid(x, n, n+1+3, BSval);
+	CalcDiagSlaterInts(x, BSval, n+1+3, rkD, k, n);
+}
+
+#if 0
+void PutBSplinesOnQuadGridOld(const vector<double> &x, uint32_t n,uint32_t Nweights, vector<double> &BSval)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
@@ -199,7 +274,7 @@ void PutBSplinesOnQuadGrid(const vector<double> &x, uint32_t n,uint32_t Nweights
 	}
 }
 
-void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
+void CalcOffDiagSlaterIntsOld(const vector<double> &x, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
@@ -231,7 +306,7 @@ void CalcOffDiagSlaterInts(const vector<double> &x, vector<double> &rk1, vector<
 	}
 }
 
-void CalcOffDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
+void CalcOffDiagSlaterIntsOld(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rk1, vector<double> &rk2, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
@@ -263,7 +338,7 @@ void CalcOffDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,
 	}
 }
 
-void CalcDiagSlaterInts(const vector<double> &x, vector<double> &rkD, int k, uint32_t n)
+void CalcDiagSlaterIntsOld(const vector<double> &x, vector<double> &rkD, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
@@ -313,7 +388,7 @@ void CalcDiagSlaterInts(const vector<double> &x, vector<double> &rkD, int k, uin
 	}
 }
 
-void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rkD, int k, uint32_t n)
+void CalcDiagSlaterIntsOld(const vector<double> &x, const vector<double> &BSval,uint32_t Nweights, vector<double> &rkD, int k, uint32_t n)
 {
 	uint32_t ks = n + 1;
 	uint32_t nv = (uint32_t) x.size() - 1;
@@ -366,6 +441,8 @@ void CalcDiagSlaterInts(const vector<double> &x, const vector<double> &BSval,uin
 		}
 	}
 }
+
+#endif
 
 double AssembleSlaterInts(uint32_t i1, uint32_t j1,uint32_t i2, uint32_t j2, const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD, uint32_t n)
 {
@@ -421,7 +498,9 @@ double AssembleSlaterInts(uint32_t i1, uint32_t j1,uint32_t i2, uint32_t j2, con
 	return val;
 }
 
-double AssembleSlaterInts2(const vector<double> &Ci1,const vector<double> &Cj1,const vector<double> &Ci2,const vector<double> &Cj2,
+// AssembleSlaterInts2 is BSplineSlaterIntegral in the B-spline core
+#if 0
+double AssembleSlaterInts2Old(const vector<double> &Ci1,const vector<double> &Cj1,const vector<double> &Ci2,const vector<double> &Cj2,
 						  const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD, uint32_t n)
 {
 	double val = 0;
@@ -475,6 +554,8 @@ double AssembleSlaterInts2(const vector<double> &Ci1,const vector<double> &Cj1,c
 	}
 	return val;
 }
+
+#endif
 
 double AssembleSlaterInts(const vector<double> &Ci1,const vector<double> &Cj1,const vector<double> &Ci2,const vector<double> &Cj2,
 						  const vector<double> &rk1, const vector<double> &rk2, const vector<double> &rkD, uint32_t n)

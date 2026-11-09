@@ -138,13 +138,30 @@ static int LuaOperatorNewAtomicH0(lua_State *L)
 	}
 	lua_check(L,4,G);
 
-	vector<double> Lap;
+	// int B_i' B_j' and int B_i (l(l+1)/(2r^2) - Z/r) B_j for the B-splines 1 .. dim
+	// (the first and the last are left out, boundary conditions), as LAPACK lower bands
+	// with leading dimension ld: element (i,j), i >= j, at (i-j) + j*ld
 	vector<vector<double> > H0 = vector<vector<double> >(lMax+1);
 	vector<vector<double> > V = vector<vector<double> >(lMax+1);
-	HartreeFock::CreateLaplacian(G[0]->knots,G[0]->degree,Lap);
+	uint32_t degree = G[0]->degree;
+	const double *knot = &(G[0]->knots[0]);
+	uint32_t nKnot = (uint32_t) G[0]->knots.size();
 	uint32_t dim = (uint32_t) G[0]->y.size()-2;
+	uint32_t ld = degree+1;
+	double *rq, *wq;
+	uint32_t nPoint;
+	BSplineQuadratureSetup(knot, nKnot, degree+3, &rq, &wq, &nPoint);
+	vector<double> Lap = vector<double>(ld*dim);
+	BSplineMatrixBanded(knot, nKnot, degree, rq, wq, nPoint, NULL, 1, 1, 1, dim, &Lap[0], ld);
+	vector<double> fq = vector<double>(nPoint);
 	for (l = 0; l <= lMax; l++)
-		HartreeFock::CreatePotentialMatrix(G[0]->knots,G[0]->degree,V[l],Z,l);
+	{
+		for (uint32_t q = 0; q < nPoint; q++) fq[q] = l*(l+1)/rq[q]/rq[q]/2 - Z/rq[q];
+		V[l] = vector<double>(ld*dim);
+		BSplineMatrixBanded(knot, nKnot, degree, rq, wq, nPoint, &fq[0], 0, 0, 1, dim, &V[l][0], ld);
+	}
+	free(rq);
+	free(wq);
 
 	op = (OperatorType *) lua_newuserdata(L,sizeof(OperatorType));
 	luaL_setmetatable(L,"Operator_Type");
@@ -167,9 +184,9 @@ static int LuaOperatorNewAtomicH0(lua_State *L)
 				{
 					for ( int i = j; i <= std::min(dim-1,j+G[0]->degree); i++)  // n = #sub-diagonals
 					{
-						h0 += G[idx1]->y[i+1] * (Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim]) * G[idx2]->y[j+1];
+						h0 += G[idx1]->y[i+1] * (Lap[(i-j) + j*ld]/2. + V[l][(i-j) + j*ld]) * G[idx2]->y[j+1];
 						if (i != j)
-							h0 += G[idx1]->y[j+1] * (Lap[(i-j) + j*dim]/2. + V[l][(i-j) + j*dim]) * G[idx2]->y[i+1];
+							h0 += G[idx1]->y[j+1] * (Lap[(i-j) + j*ld]/2. + V[l][(i-j) + j*ld]) * G[idx2]->y[i+1];
 					}
 				}
 				for (uint32_t k = 0; k < 2*l+1; k++)

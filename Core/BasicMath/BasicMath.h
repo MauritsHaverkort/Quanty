@@ -26,6 +26,7 @@
 #include "Interpolation/CubicHermiteSpline.h"
 #include "Interpolation/BSpline.h"
 #include "Interpolation/TBSpline.h"
+#include "Interpolation/BSplineMatrix.h"
 
 
 
