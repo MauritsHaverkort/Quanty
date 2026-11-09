@@ -26,7 +26,7 @@
                        printf("====    www.quanty.org                                   ====\n");\
                        printf("====    Beta version, be critical and report errors!!!   ====\n");\
                        printf("=============================================================\n");\
-                       printf("====    Version 0.9.0 pre release                        ====\n");\
+                       printf("====    Version 0.9.0                                    ====\n");\
                        printf("====            compiled at: %s at %s     ====\n",__DATE__,__TIME__);\
                        printf("=============================================================\n");\
                        printf("====    When used in scientific publications please cite ====\n");\
