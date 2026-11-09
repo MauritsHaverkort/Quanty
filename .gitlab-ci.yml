@@ -1,6 +1,7 @@
 stages:
   - build
   - test_math
+  - test_bspline
   - test_matrix
   - test_plot
   - test_responsefunction
@@ -90,6 +91,26 @@ test-jobs-math:
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/Math/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test B-spline functions and the atomic operators built from them
+# ===== These functions are registered in Interpolate.cpp and ssp.cpp
+# ===== The code lives in Core/BasicMath/Interpolation
+#
+
+test-jobs-bspline:
+  stage: test_bspline
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "AtomicOperators"
+          - "Evaluate"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/BSpline/${TEST_NAME}.Quanty"
   dependencies:
     - build-job
 

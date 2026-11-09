@@ -1,0 +1,152 @@
+--[[
+ *  Regression test for the atomic operators built from B-spline radial functions:
+ *    NewOperator("H0", NF, Z, indices, G)        kinetic and nuclear energy (B-spline matrices)
+ *    NewOperator("AU", NF, indices, G)           Coulomb interaction, non-relativistic
+ *    NewOperator("AU", NF, indices, G, F)        Coulomb interaction, relativistic
+ *    NewOperator("Dirac", NF, Z, indices, G, F)  Dirac operator, from the splines on a grid
+ *
+ *  The radial functions are hydrogen-like functions, interpolated by
+ *  InterpolatingFunction.BSpline on one grid, so that all share the same knots.
+ *  Recorded are the one-particle matrices (OperatorToMatrix) and, for the interaction,
+ *  every matrix element between two-electron determinants.
+ *
+ *  The reference was recorded with the B-spline code of Martin Brass, before it was
+ *  replaced by de Boor's algorithm (2026). Every array must reproduce to 1e-12 times its
+ *  largest element.
+ *
+ *  To record the reference again:  Quanty TestScripts/BSpline/AtomicOperators.Quanty record
+ ]]
+
+local record = (args ~= nil) and (args[1] == "record")
+local referenceFile = ScriptDirectory .. "AtomicOperators.reference"
+local tol = 1e-12
+
+-- radial grid, dense near the nucleus
+local x = {}
+for i = 0, 59 do x[i+1] = 30*(i/59)^2 end
+
+local function spline(f, degree)
+  local y = {}
+  for i = 1, #x do y[i] = f(x[i]) end
+  return InterpolatingFunction.BSpline(x, y, degree)
+end
+
+local P1s = function(r) return 2*r*math.exp(-r) end
+local P2s = function(r) return r*(2-r)*math.exp(-r/2)/(2*math.sqrt(2)) end
+local P2p = function(r) return r^2*math.exp(-r/2)/(2*math.sqrt(6)) end
+local Q1s = function(r) return 0.004*r*math.exp(-r) end
+local Q2p = function(r) return 0.002*r^2*math.exp(-r/2) end
+
+local degree = 5
+local Z = 1
+
+-- collect every recorded array under a name
+local result = {}
+local order = {}
+local function store(name, values)
+  result[name] = values
+  order[#order+1] = name
+end
+
+local function storeMatrix(name, M)
+  local v = {}
+  for i = 1, #M do
+    for j = 1, #M[i] do v[#v+1] = M[i][j] end
+  end
+  store(name, v)
+end
+
+-- all matrix elements of O between determinants with two electrons in NF spin orbitals
+local function storeTwoElectron(name, O, NF)
+  local dets = {}
+  for a = 0, NF-2 do
+    for b = a+1, NF-1 do
+      local s = {}
+      for i = 0, NF-1 do s[i+1] = ((i == a) or (i == b)) and "1" or "0" end
+      dets[#dets+1] = NewWavefunction(NF, 0, {{table.concat(s), 1}})
+    end
+  end
+  local v = {}
+  for i = 1, #dets do
+    for j = i, #dets do v[#v+1] = Braket(dets[i], O, dets[j]) end
+  end
+  store(name, v)
+end
+
+-- non-relativistic: 1s, 2s and 2p; per orbital one list of spin-up and one of spin-down indices
+local G = {spline(P1s, degree), spline(P2s, degree), spline(P2p, degree)}
+local indices = {{0}, {1}, {2}, {3}, {4, 6, 8}, {5, 7, 9}}
+local NF = 10
+
+local H0 = NewOperator("H0", NF, Z, indices, G)
+storeMatrix("H0", OperatorToMatrix(H0))
+
+local U = NewOperator("AU", NF, indices, G)
+storeTwoElectron("AU non-relativistic", U, NF)
+
+-- relativistic: 1s1/2, 2p1/2 and 2p3/2
+local indicesK, NFK = CreateAtomicIndicesList({"1s1/2", "2p1/2", "2p3/2"}, {{"Kappas", true}})
+local GK = {spline(P1s, degree), spline(P2p, degree), spline(P2p, degree)}
+local FK = {spline(Q1s, degree), spline(Q2p, degree), spline(Q2p, degree)}
+
+local UK = NewOperator("AU", NFK, indicesK, GK, FK)
+storeTwoElectron("AU relativistic", UK, NFK)
+
+local D = NewOperator("Dirac", NFK, Z, indicesK, GK, FK)
+storeMatrix("Dirac", OperatorToMatrix(D))
+
+-- write or compare
+local function maxabs(v)
+  local m = 0
+  for i = 1, #v do m = math.max(m, math.abs(v[i])) end
+  return m
+end
+
+if record then
+  local file = io.open(referenceFile, "w")
+  file:write("-- reference values for AtomicOperators.Quanty, recorded with \"Quanty AtomicOperators.Quanty record\"\n")
+  file:write("return {\n")
+  for _, name in ipairs(order) do
+    file:write(string.format("[%q] = {", name))
+    for i, value in ipairs(result[name]) do
+      if value ~= value then error("NaN in " .. name, 1) end
+      file:write(string.format("%.17g", value), i < #result[name] and "," or "")
+    end
+    file:write("},\n")
+  end
+  file:write("}\n")
+  file:close()
+  print("recorded " .. #order .. " arrays in " .. referenceFile)
+  return
+end
+
+local reference = dofile(referenceFile)
+local failed = 0
+for _, name in ipairs(order) do
+  local ref, new = reference[name], result[name]
+  if ref == nil then
+    print("no reference for " .. name)
+    failed = failed + 1
+  elseif #ref ~= #new then
+    print(string.format("%s: %d values, reference has %d", name, #new, #ref))
+    failed = failed + 1
+  else
+    local scale = math.max(maxabs(ref), 1e-300)
+    local worst = 0
+    local bad = false
+    for i = 1, #ref do
+      local d = math.abs(new[i] - ref[i])
+      if not (d <= tol*scale) then
+        bad = true
+        if d == d then worst = math.max(worst, d/scale) end
+      end
+    end
+    print(string.format("%-22s %5d values, largest %.6e", name, #ref, scale))
+    if bad then
+      print(string.format("%s: relative difference %.3e", name, worst))
+      failed = failed + 1
+    end
+  end
+end
+if failed > 0 then error("atomic operators from B-splines differ from the reference", 1) end
+print("passed")
