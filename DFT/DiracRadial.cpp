@@ -244,8 +244,8 @@ void DiracAddBlock(double *H, uint32_t N, uint32_t row0, uint32_t col0, uint32_t
  * cancel exactly and are left out. This list was checked against the direct evaluation
  * of the prototype (dkb.py) to 1e-16 relative for kappa = -4 .. 3. The integrands with
  * r^-3 and r^-2 B' are not integrable at r = 0 for the first working spline (B_1 ~ r) when
- * |kappa| >= 2; the Gauss sum is finite, and the eigenvalues are insensitive to it (they
- * do not change when B_1 is left out for |kappa| >= 2), see the design note. */
+ * |kappa| >= 2; the Gauss sum is finite, and the eigenvalues are insensitive to it.
+ * DiracRadialEigen leaves these functions out by default (DiracActiveFunctions). */
 int DiracDKBMatrices(const RadialBasisType *basis, int kappa, double c, const DFTReal *V, const DFTReal *Vbeta, double *H, double *S)
 {
   uint32_t n = basis->nSpline - 2, N = 2*n, q, i, j, m;
@@ -349,9 +349,39 @@ int DiracDKBMatrices(const RadialBasisType *basis, int kappa, double c, const DF
   return error;
 }
 
-/* All 2n eigenvalues E (ascending) and eigenvectors C (column j: C[i + j*2n]) of
- * H c = E S c (dsygvd), normalized as C^T S C = 1. Electronic states are those with
- * E > -c^2 (DiracElectronicFirst); below them lie the n states of the negative continuum.
+/* The DKB functions in use. On the first working spline B_1 (~ r), u_1^(1) has
+ * Q(0) = h a B_1'(0)(1+kappa) and u_1^(2) has P(0) = h b B_1'(0)(1-kappa). With
+ * originBoundary != 0 (default, decided by Maurits, 2026-11-11):
+ *   kappa = +1     u_1^(1) is left out: its Q(0) != 0 is bound without limit by the -Z/r
+ *                  of a point nucleus and makes a spurious state (-16542.7 Ha for U);
+ *   |kappa| >= 2   both are left out: P(0) = Q(0) = 0, and the integrands with B_1^2/r^3
+ *                  etc. that are logarithmically divergent are gone;
+ *   kappa = -1     both are kept: u_1^(2), with Q = B_1 ~ r, is the only independent linear
+ *                  term of Q at the origin, which a point nucleus needs where -Z/r exceeds
+ *                  2c^2 and kinetic balance fails (without it Q' of hydrogen 1s is 500 times
+ *                  worse at r = 1e-3); kappa = -1 has no spurious state.
+ * active[0 .. *nActive-1] receives the indices (0 .. 2n-1, u^(1) first) of the functions
+ * in use, and *nLarge the number of them of type u^(1). */
+void DiracActiveFunctions(const RadialBasisType *basis, int kappa, int originBoundary, uint32_t *active, uint32_t *nActive, uint32_t *nLarge)
+{
+  uint32_t n = basis->nSpline - 2, i, m = 0;
+  *nLarge = 0;
+  for (i = 0; i < 2*n; i++)
+  {
+    if (originBoundary && i == 0 && kappa != -1) continue;
+    if (originBoundary && i == n && kappa != 1 && kappa != -1) continue;
+    active[m++] = i;
+    if (i < n) (*nLarge)++;
+  }
+  *nActive = m;
+}
+
+/* The eigenvalues E (ascending) and eigenvectors of H c = E S c (dsygvd) in the DKB
+ * functions in use (DiracActiveFunctions); *nE receives their number, at most 2n. The
+ * eigenvectors are returned with all 2n DKB coefficients (0 for the functions left out),
+ * column j at C[i + j*2n], normalized as C^T S C = 1; E and C must have room for 2n and
+ * (2n)^2 values. Electronic states are those with E > -c^2 (DiracElectronicFirst); below
+ * them lie the states of the negative continuum, one per function u^(2) in use.
  *
  * rayleigh != 0 replaces every eigenvalue by the Rayleigh quotient c^T H c / c^T S c of
  * its eigenvector, with the H and S as assembled. The eigenvalues of a dense solver carry
@@ -362,23 +392,37 @@ int DiracDKBMatrices(const RadialBasisType *basis, int kappa, double c, const DF
  * If residual is not NULL it receives max_i |(H c_j - E_j S c_j)_i| for every j, with the
  * returned E_j. */
 int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DFTReal *V, const DFTReal *Vbeta, int rayleigh,
-                     double *E, double *C, double *residual, double *Edsygvd)
+                     int originBoundary, double *E, double *C, uint32_t *nE, double *residual, double *Edsygvd)
 {
-  uint32_t N = 2*(basis->nSpline - 2), lwork, liwork, itype = 1, i, j, l;
-  double *H, *S, *Sc, *work;
+  uint32_t Nf = 2*(basis->nSpline - 2), N, nLarge, lwork, liwork, itype = 1, i, j, l, *active;
+  double *Hf, *Sf, *H, *S, *Cr, *Sc, *work;
   int *iwork, info = 0;
   char jobz = 'V', uplo = 'L';
+  Hf = (double *) malloc(Nf*Nf*sizeof(double));
+  Sf = (double *) malloc(Nf*Nf*sizeof(double));
+  if (DiracDKBMatrices(basis, kappa, c, V, Vbeta, Hf, Sf)) { free(Hf); free(Sf); return 1; }
+  active = (uint32_t *) malloc(Nf*sizeof(uint32_t));
+  DiracActiveFunctions(basis, kappa, originBoundary, active, &N, &nLarge);
+  *nE = N;
   H = (double *) malloc(N*N*sizeof(double));
   S = (double *) malloc(N*N*sizeof(double));
-  if (DiracDKBMatrices(basis, kappa, c, V, Vbeta, H, S)) { free(H); free(S); return 1; }
-  for (i = 0; i < N*N; i++) C[i] = H[i];
+  for (j = 0; j < N; j++)
+    for (i = 0; i < N; i++)
+    {
+      H[i + j*N] = Hf[active[i] + active[j]*Nf];
+      S[i + j*N] = Sf[active[i] + active[j]*Nf];
+    }
+  free(Hf);
+  free(Sf);
+  Cr = (double *) malloc(N*N*sizeof(double));
+  for (i = 0; i < N*N; i++) Cr[i] = H[i];
   Sc = (double *) malloc(N*N*sizeof(double));         // dsygvd overwrites it with its Cholesky factor
   for (i = 0; i < N*N; i++) Sc[i] = S[i];
   lwork = 1 + 6*N + 2*N*N;
   liwork = 3 + 5*N;
   work = (double *) malloc(lwork*sizeof(double));
   iwork = (int *) malloc(liwork*sizeof(int));
-  dsygvd(&itype, &jobz, &uplo, &N, C, &N, Sc, &N, E, work, &lwork, iwork, &liwork, &info);
+  dsygvd(&itype, &jobz, &uplo, &N, Cr, &N, Sc, &N, E, work, &lwork, iwork, &liwork, &info);
   free(work);
   free(iwork);
   free(Sc);
@@ -394,8 +438,8 @@ int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DF
         sc[i] = 0.;
         for (l = 0; l < N; l++)
         {
-          hc[i] += H[i + l*N]*C[l + j*N];
-          sc[i] += S[i + l*N]*C[l + j*N];
+          hc[i] += H[i + l*N]*Cr[l + j*N];
+          sc[i] += S[i + l*N]*Cr[l + j*N];
         }
       }
       if (rayleigh)
@@ -404,8 +448,8 @@ int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DF
         csc = 0.;
         for (i = 0; i < N; i++)
         {
-          chc += C[i + j*N]*hc[i];
-          csc += C[i + j*N]*sc[i];
+          chc += Cr[i + j*N]*hc[i];
+          csc += Cr[i + j*N]*sc[i];
         }
         E[j] = chc/csc;
       }
@@ -418,8 +462,14 @@ int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DF
     free(hc);
     free(sc);
   }
+  // the eigenvectors with all 2n coefficients
+  for (i = 0; i < Nf*Nf; i++) C[i] = 0.;
+  for (j = 0; j < N; j++)
+    for (i = 0; i < N; i++) C[active[i] + j*Nf] = Cr[i + j*N];
+  free(Cr);
   free(H);
   free(S);
+  free(active);
   return (info != 0);
 }
 

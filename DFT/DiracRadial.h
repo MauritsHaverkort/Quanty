@@ -51,8 +51,9 @@ int NucleusPotential(const NucleusType *nucleus, const RadialBasisType *basis, c
 
 int DiracKappaL(int kappa);
 int DiracDKBMatrices(const RadialBasisType *basis, int kappa, double c, const DFTReal *V, const DFTReal *Vbeta, double *H, double *S);
+void DiracActiveFunctions(const RadialBasisType *basis, int kappa, int originBoundary, uint32_t *active, uint32_t *nActive, uint32_t *nLarge);
 int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DFTReal *V, const DFTReal *Vbeta, int rayleigh,
-                     double *E, double *C, double *residual, double *Edsygvd);
+                     int originBoundary, double *E, double *C, uint32_t *nE, double *residual, double *Edsygvd);
 uint32_t DiracElectronicFirst(const double *E, uint32_t nE, double c);
 int DiracRootIndex(uint32_t n, int kappa, uint32_t *index);
 int DiracComponents(const RadialBasisType *basis, int kappa, double c, const double *coef, const double *r, uint32_t nr,

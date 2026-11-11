@@ -29,6 +29,9 @@
  *     NStates          number of states returned, default 3
  *     RayleighQuotient true (default): the eigenvalues are the Rayleigh quotients of the
  *                      eigenvectors (DiracRadialEigen); false: those of dsygvd
+ *     OriginBoundary   true (default): the DKB functions on B_1 that are nonzero at r = 0
+ *                      are left out for kappa != -1 (DiracActiveFunctions), which removes
+ *                      the spurious state of a point nucleus for kappa = +1; false: all 2n
  *     ConfinementRadius rc > 0 switches on the confinement V_conf = (r/rc)^N (design
  *                      section 6), default none
  *     ConfinementPower N, default 8
@@ -36,6 +39,8 @@
  *                      to V, for comparison only (negative-continuum intruders)
  *     ConfinementVmax  with a confinement and no rMax given, rMax = rc Vmax^(1/N), where
  *                      V_conf reaches Vmax; default 1e5 Ha (rMax = 4.2 rc for N = 8)
+ * Info.NBasis is the number of DKB functions in use, Info.NLarge and Info.NSmall those of
+ * type u^(1) and u^(2); the negative continuum has NSmall states.
  * Info.BetaVbeta[i] is <beta V_conf> = int V_conf (P^2 - Q^2) dr for "Scalar" and
  * int V_conf (P^2 + Q^2) dr for "Vector"; Info.NormQ[i] = int Q^2 dr.
  * c is PhysicalConstants.cAU.value, 1 bohr = PhysicalConstants.a0.value m.
@@ -48,7 +53,7 @@ static int LuaDiracRadialSolve(lua_State *L)
     char *Nucleus;
     double A, Rrms, FermiThickness, DensityTolerance, rMin, rMax;
     uint32_t Degree, NIntervals, NQuadrature, NStates;
-    bool RayleighQuotient;
+    bool RayleighQuotient, OriginBoundary;
     int Density;
     double ConfinementRadius, ConfinementPower, ConfinementVmax;
     char *ConfinementType;
@@ -67,6 +72,7 @@ static int LuaDiracRadialSolve(lua_State *L)
     {"NQuadrature", "uint32_t", &(Options.NQuadrature)},
     {"NStates", "uint32_t", &(Options.NStates)},
     {"RayleighQuotient", "bool", &(Options.RayleighQuotient)},
+    {"OriginBoundary", "bool", &(Options.OriginBoundary)},
     {"ConfinementRadius", "double", &(Options.ConfinementRadius)},
     {"ConfinementPower", "double", &(Options.ConfinementPower)},
     {"ConfinementVmax", "double", &(Options.ConfinementVmax)},
@@ -76,7 +82,7 @@ static int LuaDiracRadialSolve(lua_State *L)
   NucleusType nucleus;
   double c, a0fm, Z, *V, *rho = NULL, *E, *Edsygvd, *C, *res, *coef, charge = 0., *Vconf = NULL, *ones;
   int vectorConfinement = 0;
-  uint32_t len = (uint32_t) lua_gettop(L), N, first, i, q, nStates;
+  uint32_t len = (uint32_t) lua_gettop(L), N, first, i, q, nStates, nE, nLarge, *active;
   int kappa, l;
 
   if (len < 2 || len > 3) return luaL_error(L, "Error in DiracRadialSolve: 2 or 3 arguments expected (Z, kappa, {options}), got %d\n", (int) len);
@@ -99,6 +105,7 @@ static int LuaDiracRadialSolve(lua_State *L)
   Options.NQuadrature = 0;
   Options.NStates = 3;
   Options.RayleighQuotient = true;
+  Options.OriginBoundary = true;
   Options.Density = LUA_NOREF;
   Options.ConfinementRadius = 0.;
   Options.ConfinementPower = 8.;
@@ -200,15 +207,19 @@ static int LuaDiracRadialSolve(lua_State *L)
   Edsygvd = (double *) malloc(N*sizeof(double));
   res = (double *) malloc(N*sizeof(double));
   C = (double *) malloc(N*N*sizeof(double));
-  if (DiracRadialEigen(&basis, kappa, c, V, vectorConfinement ? NULL : Vconf, Options.RayleighQuotient ? 1 : 0, E, C, res, Edsygvd))
+  if (DiracRadialEigen(&basis, kappa, c, V, vectorConfinement ? NULL : Vconf, Options.RayleighQuotient ? 1 : 0,
+                       Options.OriginBoundary ? 1 : 0, E, C, &nE, res, Edsygvd))
   {
     free(V); free(Vconf); free(rho); free(E); free(Edsygvd); free(res); free(C);
     RadialBasisFree(&basis);
     return luaL_error(L, "Error in DiracRadialSolve: the generalized eigenvalue problem (dsygvd) failed\n");
   }
-  first = DiracElectronicFirst(E, N, c);
+  first = DiracElectronicFirst(E, nE, c);
   nStates = Options.NStates;
-  if (first + nStates > N) nStates = N - first;
+  if (first + nStates > nE) nStates = nE - first;
+  active = (uint32_t *) malloc(N*sizeof(uint32_t));
+  DiracActiveFunctions(&basis, kappa, Options.OriginBoundary ? 1 : 0, active, &nE, &nLarge);
+  free(active);
 
   // E, G, F
   lua_createtable(L, nStates, 0);
@@ -240,7 +251,9 @@ static int LuaDiracRadialSolve(lua_State *L)
   lua_pushinteger(L, kappa);                 lua_setfield(L, -2, "kappa");
   lua_pushinteger(L, l);                     lua_setfield(L, -2, "l");
   lua_pushinteger(L, first);                 lua_setfield(L, -2, "NNegativeContinuum");
-  lua_pushinteger(L, N);                     lua_setfield(L, -2, "NBasis");
+  lua_pushinteger(L, nE);                    lua_setfield(L, -2, "NBasis");
+  lua_pushinteger(L, nLarge);                lua_setfield(L, -2, "NLarge");
+  lua_pushinteger(L, nE - nLarge);           lua_setfield(L, -2, "NSmall");
   lua_pushinteger(L, basis.nKnot);           lua_setfield(L, -2, "NKnots");
   lua_pushnumber(L, Options.rMin);           lua_setfield(L, -2, "rMin");
   lua_pushnumber(L, Options.rMax);           lua_setfield(L, -2, "rMax");
