@@ -28,6 +28,9 @@
  *     Confinement       {Rho = 6, N = 10, P = 1}: rc = P_n,kappa P Rho for every orbital;
  *                       without it there is no confinement (and no P)
  *     ConfinementVmax   with a confinement and no rMax: rMax = max rc Vmax^(1/N), 1e5 Ha
+ *     FourierBessel     {KMax = 30, NK = 1001}: the transforms of the returned orbitals on
+ *                       k = 0 .. KMax (NK points), Atom.FourierBessel = {k, P, Q}
+ *                       (FourierBessel.cpp; Q empty without relativity)
  *     Orthonormalize    "GramSchmidt" (default, lowest n first) or "Lowdin"
  *     RedundancyTolerance  smallest eigenvalue of an overlap matrix, 1e-8 (error below)
  *     MaxIterations 200, History 8, Mixing (Kohn-Sham ground state 0.3), OrbitalMixing
@@ -233,7 +236,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     double Z;
     char *Configuration, *Method, *Orthonormalize;
     bool Relativistic, RayleighQuotient, OriginBoundary, MixDensity;
-    int NMax, Orbitals, Confinement;
+    int NMax, Orbitals, Confinement, FourierBessel;
     uint32_t MaxIterations, History;
     double Mixing, OrbitalMixing, EnergyTolerance, ResidualTolerance, OrbitalTolerance, DensityCutoff, RedundancyTolerance, ConfinementVmax;
   } Options;
@@ -245,6 +248,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     {"NMax", "table", &(Options.NMax)},
     {"Orbitals", "table", &(Options.Orbitals)},
     {"Confinement", "table", &(Options.Confinement)},
+    {"FourierBessel", "table", &(Options.FourierBessel)},
     {"ConfinementVmax", "double", &(Options.ConfinementVmax)},
     {"Orthonormalize", "char*", &(Options.Orthonormalize)},
     {"RedundancyTolerance", "double", &(Options.RedundancyTolerance)},
@@ -302,7 +306,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   Options.RayleighQuotient = true;
   Options.OriginBoundary = true;
   Options.MixDensity = false;
-  Options.NMax = Options.Orbitals = Options.Confinement = LUA_NOREF;
+  Options.NMax = Options.Orbitals = Options.Confinement = Options.FourierBessel = LUA_NOREF;
   Options.MaxIterations = 200;
   Options.History = 8;
   Options.Mixing = 0.3;
@@ -650,6 +654,48 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     lua_rawseti(L, -2, k+1);
   }
   lua_setfield(L, -2, "Orbitals");
+  // Fourier-Bessel transforms of the returned orbitals on k = 0 .. KMax (NK points)
+  if (Options.FourierBessel != LUA_NOREF)
+  {
+    double kMax, *kk, *Pk, *Qk;
+    uint32_t nk;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, Options.FourierBessel);
+    kMax = DFTLuaFieldNumber(L, who, "FourierBessel", "KMax", 0.);
+    nk = (uint32_t) DFTLuaFieldNumber(L, who, "FourierBessel", "NK", 1001.);
+    lua_pop(L, 1);
+    luaL_unref(L, LUA_REGISTRYINDEX, Options.FourierBessel);
+    if (!(kMax > 0.) || nk < 2)
+    {
+      AtomBasisFree(&res, atom.nOrb); AtomFree(&atom); RadialBasisFree(&basis);
+      return luaL_error(L, "Error in %s: FourierBessel needs KMax > 0 and NK >= 2\n", who);
+    }
+    kk = (double *) malloc(nk*sizeof(double));
+    Pk = (double *) malloc(nk*sizeof(double));
+    Qk = (double *) malloc(nk*sizeof(double));
+    for (i = 0; i < nk; i++) kk[i] = kMax*i/(nk - 1.);
+    lua_newtable(L);
+    LuaPushArray_double(L, kk, (int) nk);
+    lua_setfield(L, -2, "k");
+    lua_createtable(L, nRet, 0);
+    lua_createtable(L, nRet, 0);
+    for (k = 0; k < nRet && !error; k++)
+    {
+      o = map[ret[k]];
+      error = FourierBesselTransform(&basis, atom.relativistic, atom.orb[o].kappa, atom.orb[o].l, c, atom.orb[o].coef, nk, kk, Pk, Qk);
+      LuaPushArray_double(L, Pk, (int) nk);
+      lua_rawseti(L, -3, k + 1);
+      if (atom.relativistic) { LuaPushArray_double(L, Qk, (int) nk); lua_rawseti(L, -2, k + 1); }
+    }
+    lua_setfield(L, -3, "Q");
+    lua_setfield(L, -2, "P");
+    lua_setfield(L, -2, "FourierBessel");
+    free(kk); free(Pk); free(Qk);
+    if (error)
+    {
+      AtomBasisFree(&res, atom.nOrb); AtomFree(&atom); RadialBasisFree(&basis);
+      return luaL_error(L, "Error in %s: the Fourier-Bessel transform failed\n", who);
+    }
+  }
   // Slater integrals of the returned orbitals, jj-resolved (Dirac) or nl (Schroedinger), the
   // j averages, and zeta_nl = 2 (<F>_{l+1/2} - <F>_{l-1/2})/(2l+1) of EnergyGround
   {

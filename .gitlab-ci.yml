@@ -134,6 +134,7 @@ test-jobs-diracatom:
           - "AtomicBasisFunctions"
           - "Confinement"
           - "DKBSplineEvaluate"
+          - "FourierBessel"
           - "Function3DNucleus"
           - "FunctionNucleus"
           - "GaussianNucleus"

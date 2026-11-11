@@ -24,5 +24,6 @@ typedef double DFTReal;
 #include "AtomHF.h"
 #include "AtomBasis.h"
 #include "NucleusMultipole.h"
+#include "FourierBessel.h"
 
 #endif /* DFT_DFT_H_ */
