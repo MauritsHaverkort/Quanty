@@ -2,6 +2,7 @@ stages:
   - build
   - test_math
   - test_interpolatingfunction
+  - test_diracatom
   - test_matrix
   - test_plot
   - test_responsefunction
@@ -115,6 +116,25 @@ test-jobs-interpolatingfunction:
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/InterpolatingFunction/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
+# ===== Test the radial Dirac solver of the DFT/HF add-on (stage A) and the
+# ===== atomic Dirac operator
+# ===== The code lives in DFT/, Core/BasicMath/Interpolation and AtomicOperators
+#
+
+test-jobs-diracatom:
+  stage: test_diracatom
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "NewOperatorDiracZ"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/DiracAtom/${TEST_NAME}.Quanty"
   dependencies:
     - build-job
 

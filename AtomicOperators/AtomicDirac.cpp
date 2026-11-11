@@ -14,7 +14,7 @@ using std::string;
 using std::map;
 
 void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfuns, vector<vector<double> > derivfuns, vector<double> x,
-		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, double c, OperatorType *op)
+		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, double Z, double c, OperatorType *op)
 {
 	vector<vector<double> > diracElements, dualfuns;
 
@@ -208,16 +208,24 @@ static int LuaOperatorNewAtomicH0(lua_State *L)
 	return 1;
 }
 
+/* NewOperator("Dirac", NF, Z, indices, G, F): the one-electron Dirac operator
+ *     h_D = c alpha.p + (beta - 1) c^2 - Z/r
+ * between the radial functions G = P = r g (large) and F = Q = r f (small), with the
+ * spinors psi = (1/r) (P Omega_kappa,mu ; i Q Omega_-kappa,mu) and int (P^2 + Q^2) dr = 1.
+ * Z is a double (fractional Z for VCA-type tests), c is PhysicalConstants.cAU.value.
+ * Accuracy: the functions are sampled on G[1]:GetX() and integrated with the weights of
+ * CreateWeights (a midpoint rule on that grid), which converges only as O(h^2), however
+ * accurate G and F are. This holds for every type of interpolating function. */
 static int LuaOperatorNewAtomicDirac(lua_State *L)
 {
 	OperatorType *op;
 	uint32_t **indices;
 	uint32_t NF, NIndices, NfunsG, NfunsF, temp;
 	//SKappaGroup *groups;
-	int Z;
+	double Z;
 
 	NF = (uint32_t)luaL_checkunsigned(L, 1);
-	Z = (int) luaL_checkunsigned(L, 2);
+	Z = luaL_checknumber(L, 2);
 	NIndices = (uint32_t)lua_objlen(L,3);
 	NfunsG = (uint32_t)lua_objlen(L,4);
 	NfunsF = (uint32_t)lua_objlen(L,5);

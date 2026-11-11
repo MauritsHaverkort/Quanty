@@ -212,7 +212,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 	uint32_t NF, i, NGroups, NGridpoints, NIndices, temp;
 	SKappaGroup *groups;
 	MatrixType *basisfuns, *derivfuns;
-	int Z;
+	double Z;
 	double *x;
 
 	NF = (uint32_t)luaL_checkunsigned(L, 1);
@@ -236,7 +236,7 @@ static int LuaOperatorNewDirac(lua_State *L)
 	   	lua_pop(L,1);
 	   	lua_pop(L,1);
 	}
-	Z = (int) luaL_checkunsigned(L, 6);
+	Z = luaL_checknumber(L, 6);
 	luaL_checktype(L, 7, LUA_TTABLE);
 	NIndices = (uint32_t)lua_objlen(L,7);
 

@@ -12,6 +12,13 @@ using std::string;
 using std::ifstream;
 using std::map;
 
+/* NewOperator("AU", ...) for radial functions that are not B-splines.
+ * Accuracy: the Slater integrals converge only as O(h^2) in the spacing h of the grid
+ * G[1]:GetX(), however accurate the functions are. With F (relativistic,
+ * Slater_Integrate) the double integral is a trapezoid-type sum over that grid; without F
+ * (GetSlaterIntegrals) it uses 3 Gauss points per grid interval, but the kernel
+ * r<^k/r>^(k+1) has a kink on the diagonal r = r', which limits the order to 2.
+ * B-splines take LuaOperatorNewAtomicUBSpline instead. */
 static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 {
     OperatorType *op;

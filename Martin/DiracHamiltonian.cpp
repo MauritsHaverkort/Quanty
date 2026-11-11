@@ -10,7 +10,7 @@
 
 //double ddot();
 
-double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const int Z, const double c)
+double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x, int NGridPoints, const int kappa, const double Z, const double c)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
 	//const double speedoflight = 137;
@@ -53,7 +53,7 @@ double DiracH(double *basisfun,double *dualfun,double *derivfun,const double *x,
 	return result;
 }
 
-double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> derivfun,vector<double> x, int NGridPoints, const int kappa, const int Z, const double c)
+double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> derivfun,vector<double> x, int NGridPoints, const int kappa, const double Z, const double c)
 {
 	double *H11G, *H22F,*H12F, *H21G, result, r;
 
@@ -97,7 +97,7 @@ double DiracH(vector<double> basisfun,vector<double> dualfun,vector<double> deri
 }
 
 double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
-		unsigned int NGridPoints, const int kappa, const int Z, const double c)
+		unsigned int NGridPoints, const int kappa, const double Z, const double c)
 {
 	double **result = (double **) malloc(Nindices * sizeof(double *));
 
@@ -118,7 +118,7 @@ double **CalculateDiracMatrixElements(double **basisfuns, double **derivativefun
 }
 
 vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > basisfuns, vector<vector<double> > derivativefuns, vector<vector<double> > dualfuns,
-		const unsigned int *indices, const unsigned int Nindices, vector<double> x,	unsigned int NGridPoints, const int kappa, const int Z, const double c)
+		const unsigned int *indices, const unsigned int Nindices, vector<double> x,	unsigned int NGridPoints, const int kappa, const double Z, const double c)
 {
 	vector<vector<double> > result = vector<vector<double> >(Nindices);
 
@@ -140,7 +140,7 @@ vector<vector<double> > CalculateDiracMatrixElements(vector<vector<double> > bas
 
 /*
 double *CalculateDiracMatrixElements(double **basisfuns, double **derivativefuns, double **dualfuns, const unsigned int *indices, const unsigned int Nindices, const double *x,
-		unsigned int NGridPoints, const int kappa, const int Z, const double c)
+		unsigned int NGridPoints, const int kappa, const double Z, const double c)
 {
 	double *result = (double *) malloc(Nindices*Nindices * sizeof(double));
 	double h0;

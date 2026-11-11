@@ -198,7 +198,7 @@ uint32_t CreateOperatorFullCoulombRelativistic(uint32_t const NFermion,double **
 }
 
 uint32_t CreateOperatorDirac(uint32_t const NFermion,const unsigned int NBasisFuns, double **basisfuns, double **derivfuns, const double *x, uint32_t NGridpoints,
-		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, int Z, double c, OperatorType *op)
+		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, double Z, double c, OperatorType *op)
 {
 	double **diracElements, **dualfuns;
 
