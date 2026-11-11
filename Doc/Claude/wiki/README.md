@@ -689,11 +689,35 @@ section 6.
 - `NewOperator("NuclearMultipole", ...)` and the `"Function3D"` nucleus are named
   in the input list only; a page of their own could follow.
 
-### Follow-up edits elsewhere
+### Updated draft: NewOperator
 
-- `documentation:language_reference:functions:newoperator`: the types `"Dirac"`
-  and `"AU"` accept the functions of `CalculateAtomicBasisFunctions` (computed
-  exactly on their B-spline basis), and `"Dirac"` takes an optional list of
-  nucleus options as a last argument. A sentence there pointing to the new page
-  would be the natural place.
-- If `ReadFPLOBasisFunctions` gets a page, a pointer to this one.
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.newoperator.txt` | `documentation:language_reference:functions:newoperator` |
+
+A drop-in replacement. **It also carries batch 2**: the live page (fetched raw
+with curl on 11 November 2026, 3078 characters) is still the version without
+the `Basis` section of batch 2, so pasting this file brings in both. Changes
+against the live page:
+
+- the first paragraph gains the `Basis` sentence (batch 2) and one sentence
+  pointing to the new section;
+- the section `Basis` (batch 2);
+- a new section `Atomic orbitals given by radial functions`: the three
+  operators `"Dirac"`, `"AU"` and `"NuclearMultipole"` with their arguments,
+  where the radial functions come from (`ReadFPLOBasisFunctions` or
+  `CalculateAtomicBasisFunctions`, the latter computed exactly on the B-spline
+  basis), the nucleus options of `"Dirac"`, and an example (Ne: the diagonal of
+  the Dirac operator and the determinant energy, which equals `Atom.Etot`). The
+  example was run on the branch build; the output block is its output.
+
+### Not touched
+
+- `documentation:standard_operators:atomic_coulomb_repulsion` documents
+  `NewOperator("AtomicU")` with FPLO functions only (and still says "available
+  in the release of October 2019"). A sentence that the functions of
+  `CalculateAtomicBasisFunctions` work too, and that `"conserve"` and
+  `"1P-Operator"` are not yet available for them, would fit there.
+- `NewOperator("Dirac")` has no page of its own; the new section on the
+  NewOperator page is now its only documentation.
+- If `ReadFPLOBasisFunctions` gets a page, a pointer to `CalculateAtomicBasisFunctions`.
