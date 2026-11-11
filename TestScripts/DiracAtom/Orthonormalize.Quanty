@@ -1,0 +1,96 @@
+--[[
+ *  DFT stage A, check 14 (Doc/Claude/QuantyDFT_StageA, design sections 6.1 and 12):
+ *  on-site orthonormalization of orbitals of one kappa generated in different potentials,
+ *  on one knot set. Until the self-consistent atom exists (A3, A4), different nuclear
+ *  charges stand in for the ionicity Q_ion and different confinement radii for P:
+ *      3d5/2 of Z = 26 with rc = 3,  3d5/2 of Z = 25 with rc = 2,  4d5/2 of Z = 26 with rc = 4,
+ *      3d5/2 of Z = 24 without confinement      (kappa = -3, same knots, rMax = 15)
+ *  - Gram-Schmidt (default): max |C^T S C - 1| < 1e-13 afterwards, the first orbital
+ *    unchanged to 1e-14, every orbital k a combination of the input orbitals 1..k only
+ *    (it is orthogonal to the input orbitals before it);
+ *  - Lowdin: max |C^T S C - 1| < 1e-13, and symmetric: the result does not depend on the
+ *    order of the input, to the rounding of O^(-1/2), eps cond(O) = 4e-10 here (1e-10);
+ *  - both with two passes (DiracOrthonormalize): one pass leaves eps cond(O) = 3e-10;
+ *  - a nearly duplicated orbital gives the redundancy error; different kappa or knots give
+ *    an error.
+]]
+
+local common = {{"A", 56}, {"rMin", 2e-6}, {"rMax", 15}, {"NIntervals", 140}, {"NStates", 2}}
+local function solve(Z, rc, extra)
+  local o = {}
+  for _, v in ipairs(common) do o[#o+1] = v end
+  if rc then o[#o+1] = {"ConfinementRadius", rc} end
+  for _, v in ipairs(extra or {}) do o[#o+1] = v end
+  local E, G, F, Info = DiracRadialSolve(Z, -3, o)
+  return G, F, Info
+end
+local G1, F1, Info = solve(26, 3)
+local G2, F2 = solve(25, 2)
+local G3, F3 = solve(26, 4)
+local G4, F4 = solve(24, nil)
+local G = {G1[1], G2[1], G3[2], G4[1]}
+local F = {F1[1], F2[1], F3[2], F4[1]}
+local r, w = Info.r, Info.w
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+-- <a|b> = int (P_a P_b + Q_a Q_b) dr on the quadrature points
+local function overlap(Ga, Fa, Gb, Fb)
+  local s = 0
+  local pa, qa, pb, qb = Ga(r), Fa(r), Gb(r), Fb(r)
+  for i = 1, #r do s = s + w[i]*(pa[i]*pb[i] + qa[i]*qb[i]) end
+  return s
+end
+
+local G2s, F2s, I = DiracOrthonormalize(G, F)
+print(string.format("        input: max |C^T S C - 1| = %.3e, smallest eigenvalue of the overlap %.3e", I.OrthonormalityErrorBefore, I.MinOverlapEigenvalue))
+check(I.OrthonormalityErrorBefore > 1e-3, "the input orbitals are not orthogonal")
+check(I.OrthonormalityError < 1e-13, string.format("Gram-Schmidt: max |C^T S C - 1| = %.1e", I.OrthonormalityError))
+local d, m = 0, 0
+local g0, g1, f0, f1 = G[1](r), G2s[1](r), F[1](r), F2s[1](r)
+for i = 1, #r do
+  d = math.max(d, math.abs(g1[i] - g0[i]), math.abs(f1[i] - f0[i]))
+  m = math.max(m, math.abs(g0[i]))
+end
+check(d < 1e-14*m, string.format("Gram-Schmidt: first orbital unchanged, %.1e of max |G|", d/m))
+local worst = 0
+for k = 2, 4 do
+  for j = 1, k-1 do worst = math.max(worst, math.abs(overlap(G2s[k], F2s[k], G[j], F[j]))) end
+end
+check(worst < 1e-13, string.format("Gram-Schmidt: orbital k orthogonal to the input orbitals 1..k-1, %.1e", worst))
+worst = 0
+for a = 1, 4 do
+  for b = 1, 4 do worst = math.max(worst, math.abs(overlap(G2s[a], F2s[a], G2s[b], F2s[b]) - ((a == b) and 1 or 0))) end
+end
+check(worst < 1e-13, string.format("Gram-Schmidt: overlaps on the quadrature points, max |<a|b> - delta| = %.1e", worst))
+
+-- Lowdin: symmetric, independent of the order
+local GL, FL, IL = DiracOrthonormalize(G, F, {{"Method", "Lowdin"}})
+check(IL.OrthonormalityError < 1e-13, string.format("Lowdin: max |C^T S C - 1| = %.1e", IL.OrthonormalityError))
+local GR, FR = DiracOrthonormalize({G[4], G[3], G[2], G[1]}, {F[4], F[3], F[2], F[1]}, {{"Method", "Lowdin"}})
+d = 0
+for k = 1, 4 do
+  local a, b = GL[k](r), GR[5-k](r)
+  for i = 1, #r do d = math.max(d, math.abs(a[i] - b[i])) end
+end
+check(d < 1e-10, string.format("Lowdin: independent of the order, %.1e", d))
+
+-- errors
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+local Gd, Fd = solve(26, 3 + 1e-7)        -- almost the first orbital again
+fails(function() return DiracOrthonormalize({G[1], Gd[1]}, {F[1], Fd[1]}) end, "nearly duplicated orbital")
+local _, Gp, Fp = DiracRadialSolve(26, 2, common)
+fails(function() return DiracOrthonormalize({G[1], Gp[1]}, {F[1], Fp[1]}) end, "different kappa")
+local Gk, Fk = solve(26, 3, {{"NIntervals", 120}})
+fails(function() return DiracOrthonormalize({G[1], Gk[1]}, {F[1], Fk[1]}) end, "different knots")
+fails(function() return DiracOrthonormalize({G[1]}, {F[2]}) end, "G and F of different spinors")
+fails(function() return DiracOrthonormalize({F[1]}, {G[1]}) end, "G and F swapped")
+
+if failed then error("DiracOrthonormalize checks failed", 1) end
+print("passed")

@@ -131,11 +131,14 @@ test-jobs-diracatom:
   parallel:
     matrix:
       - TEST_NAME:
+          - "Confinement"
           - "DKBSplineEvaluate"
           - "FunctionNucleus"
           - "GaussianNucleus"
           - "NewOperatorDiracZ"
+          - "Orthonormalize"
           - "PointNucleus"
+          - "RadialPoisson"
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/DiracAtom/${TEST_NAME}.Quanty"

@@ -6107,7 +6107,9 @@ static const struct luaL_Reg global_functions[] = {
   {"CoupledSphericalTensorKToSphericalTensorYMatrix", LuaCoupledSphericalTensorKToSphericalTensorYMatrix},
 	{"CreateAtomicIndicesDict",LuaCreateAtomicIndicesDict},
 	{"CreateAtomicIndicesList",LuaCreateAtomicIndicesList},
+	{"DiracOrthonormalize",LuaDiracOrthonormalize}, // temporary, DFT stage A2
 	{"DiracRadialSolve",LuaDiracRadialSolve},       // temporary, DFT stage A1
+	{"RadialPoisson",LuaRadialPoisson},             // temporary, DFT stage A2
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},

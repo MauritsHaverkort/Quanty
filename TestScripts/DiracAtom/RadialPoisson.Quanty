@@ -1,0 +1,74 @@
+--[[
+ *  DFT stage A, check 4 (Doc/Claude/QuantyDFT_StageA, design section 12): the Galerkin
+ *  solution of the radial Poisson equation (RadialPoisson, BSplinePoissonSetup/Solve),
+ *      Y^k(r) = r int rho(r') r<^k / r>^(k+1) dr',
+ *  degree 8, 13 points per interval, rMin = 1e-5, rMax = 40, against closed forms:
+ *  - hydrogen 1s, rho = 4 r^2 e^(-2r): Y^0 = 1 - e^(-2r) (1 + r), to 1e-8 (80 intervals)
+ *    and 1e-11 (160 intervals); the prototype has 6.8e-9 and 8.0e-12;
+ *  - rho = r^6 e^(-2r) (1 + 0.3 r^3), k = 0, 1, 2, 4, by incomplete gamma functions,
+ *    on 160 intervals, to 5e-9 of max |Y|: the error (2e-9 for k = 4) is the discretization
+ *    at r ~ 8, where the knots are 1 bohr apart (160 -> 320 intervals changes Y by the same
+ *    amount, 240 -> 320 by 1.3e-9).
+ *  Y is a BSpline on the same knots: Y(rMax) = total charge for k = 0.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local function options(n) return {{"Degree", 8}, {"NIntervals", n}, {"rMin", 1e-5}, {"rMax", 40}, {"NQuadrature", 13}} end
+local points = {}
+for i = 0, 200 do points[#points+1] = 1e-4*(40/1e-4)^(i/200) end
+
+-- hydrogen 1s
+for _, n in ipairs({80, 160}) do
+  local Y = RadialPoisson(function(r) return 4*r*r*math.exp(-2*r) end, 0, options(n))
+  local err = 0
+  for _, r in ipairs(points) do err = math.max(err, math.abs(Y(r) - (1 - math.exp(-2*r)*(1 + r)))) end
+  check(err < ((n == 80) and 1e-8 or 1e-11), string.format("hydrogen 1s Y^0, %3d intervals: max error %.1e", n, err))
+  check(math.abs(Y(40) - 1) < 1e-12, string.format("              Y^0(rMax) - 1 = %.1e", Y(40) - 1))
+end
+
+-- int_0^r s^n e^(-2s) ds and int_r^inf s^n e^(-2s) ds for integer n >= 0
+local function fact(n) local f = 1; for i = 2, n do f = f*i end; return f end
+local function upper(n, r)
+  local sum, term = 0, 1
+  for j = 0, n do
+    if j > 0 then term = term*2*r/j end
+    sum = sum + term
+  end
+  return fact(n)/2^(n+1)*math.exp(-2*r)*sum
+end
+local function lower(n, r)
+  if 2*r > 2 then return fact(n)/2^(n+1) - upper(n, r) end
+  local sum, term, m = 0, r^(n+1)/(n+1), 0       -- series sum_m (-2)^m r^(n+m+1) / (m! (n+m+1))
+  while math.abs(term) > 1e-18*math.abs(sum) or m < 3 do
+    sum = sum + term
+    m = m + 1
+    term = term*(-2*r)/m*(n+m)/(n+m+1)
+  end
+  return sum
+end
+-- rho = r^6 e^-2r + 0.3 r^9 e^-2r
+local function Yexact(r, k)
+  local inner = lower(6 + k, r) + 0.3*lower(9 + k, r)
+  local outer = upper(5 - k, r) + 0.3*upper(8 - k, r)
+  return r^(-k)*inner + r^(k+1)*outer
+end
+for _, k in ipairs({0, 1, 2, 4}) do
+  local Y = RadialPoisson(function(r) return r^6*math.exp(-2*r)*(1 + 0.3*r^3) end, k, options(160))
+  local err, scale = 0, 0
+  for _, r in ipairs(points) do
+    local y = Yexact(r, k)
+    err = math.max(err, math.abs(Y(r) - y))
+    scale = math.max(scale, math.abs(y))
+  end
+  check(err < 5e-9*scale, string.format("rho = r^6 e^-2r (1 + 0.3 r^3), k = %d: max error %.1e of max |Y| = %.3f", k, err, scale))
+end
+
+local ok, message = pcall(function() return RadialPoisson(function(r) return 0 end, -1) end)
+check(not ok, "k < 0: " .. string.gsub(tostring(message), "\n", ""))
+
+if failed then error("RadialPoisson checks failed", 1) end
+print("passed")
