@@ -18,4 +18,6 @@
 
 typedef double DFTReal;
 
+#include "DiracRadial.h"
+
 #endif /* DFT_DFT_H_ */

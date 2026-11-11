@@ -8,3 +8,5 @@
  *     AtomSCF.cpp         Dirac-Hartree-Fock and Dirac-Kohn-Sham atom
  *     LuaAtom.cpp         Lua bindings
  */
+
+#include "DiracRadial.cpp"
