@@ -13,6 +13,10 @@
 // Core/BasicMath/Interpolation/GaussLegendre; above it the weights are good to 4e-10 only
 #define DiracMaxQuadraturePoints 127
 
+// on-site orthonormalization (design section 6.1)
+#define DiracGramSchmidt 0
+#define DiracLowdin      1
+
 // nucleus models (design section 3)
 #define NucleusPoint    0
 #define NucleusGaussian 1
@@ -37,6 +41,7 @@ typedef struct {
 } NucleusType;
 
 int RadialBasisCreate(uint32_t degree, uint32_t nInterval, double r1, double rMax, uint32_t nQ, RadialBasisType *basis);
+int RadialBasisFromKnots(const double *knot, uint32_t nKnot, uint32_t degree, uint32_t nQ, RadialBasisType *basis);
 void RadialBasisFree(RadialBasisType *basis);
 
 int NucleusFermiParameters(DFTReal Rrms, DFTReal t, DFTReal *cFermi, DFTReal *aFermi);
@@ -53,5 +58,13 @@ int DiracRootIndex(uint32_t n, int kappa, uint32_t *index);
 int DiracComponents(const RadialBasisType *basis, int kappa, double c, const double *coef, const double *r, uint32_t nr,
                     double *P, double *Q);
 int DiracSignConvention(const RadialBasisType *basis, int kappa, double c, double *coef);
+
+int ConfinementPotential(const RadialBasisType *basis, DFTReal rc, DFTReal N, DFTReal *Vbeta);
+DFTReal ConfinementRMax(DFTReal rc, DFTReal N, DFTReal Vmax);
+DFTReal DiracExpectation(const RadialBasisType *basis, int kappa, double c, const double *coef, const DFTReal *f, int sign);
+int DiracDKBOverlap(const RadialBasisType *basis, int kappa, double c, double *S);
+int DiracOrthonormalize(const double *S, uint32_t N, double *C, uint32_t m, int method, double redundancy, double *minEigenvalue);
+int DiracOrthonormalizePass(const double *S, uint32_t N, double *C, uint32_t m, int method, double redundancy, double *minEigenvalue);
+double DiracOrthonormalityError(const double *S, uint32_t N, const double *C, uint32_t m);
 
 #endif /* DFT_DIRACRADIAL_H_ */

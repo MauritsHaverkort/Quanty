@@ -31,16 +31,40 @@ void NeumaierAdd(DFTReal *sum, DFTReal *comp, DFTReal x)
  * for invalid knots, or for fewer than 3 B-splines. */
 int RadialBasisCreate(uint32_t degree, uint32_t nInterval, double r1, double rMax, uint32_t nQ, RadialBasisType *basis)
 {
+  double *knot;
+  uint32_t nKnot;
+  int error;
   basis->knot = NULL;
   basis->rq = NULL;
   basis->wq = NULL;
-  if (nQ == 0 || nQ > DiracMaxQuadraturePoints || degree == 0 || degree > BSplineMaxDegree) return 1;
-  if (BSplineKnotsExponential(degree, nInterval, r1, rMax, &(basis->knot), &(basis->nKnot))) return 1;
+  if (degree == 0 || degree > BSplineMaxDegree) return 1;
+  if (BSplineKnotsExponential(degree, nInterval, r1, rMax, &knot, &nKnot)) return 1;
+  error = RadialBasisFromKnots(knot, nKnot, degree, nQ, basis);
+  free(knot);
+  return error;
+}
+
+/* The radial basis for a given knot vector (copied), which must start with degree+1
+ * knots at 0, with nQ Gauss points per non-empty interval. The caller frees it with
+ * RadialBasisFree. Returns 1 for nQ = 0 or nQ > DiracMaxQuadraturePoints, knots that do
+ * not start at 0, or fewer than 3 B-splines. */
+int RadialBasisFromKnots(const double *knot, uint32_t nKnot, uint32_t degree, uint32_t nQ, RadialBasisType *basis)
+{
+  uint32_t i;
+  basis->knot = NULL;
+  basis->rq = NULL;
+  basis->wq = NULL;
+  if (nQ == 0 || nQ > DiracMaxQuadraturePoints || degree == 0 || degree > BSplineMaxDegree || nKnot < degree + 4) return 1;
+  if (knot[0] != 0. || knot[degree] != 0.) return 1;
+  basis->knot = (double *) malloc(nKnot*sizeof(double));
+  for (i = 0; i < nKnot; i++) basis->knot[i] = knot[i];
+  basis->nKnot = nKnot;
   basis->degree = degree;
-  basis->nInterval = nInterval;
-  basis->nSpline = basis->nKnot - degree - 1;
+  basis->nInterval = 0;
+  for (i = 0; i+1 < nKnot; i++) if (knot[i] < knot[i+1]) basis->nInterval++;
+  basis->nSpline = nKnot - degree - 1;
   basis->nQ = nQ;
-  if (basis->nSpline < 3 || BSplineQuadratureSetup(basis->knot, basis->nKnot, nQ, &(basis->rq), &(basis->wq), &(basis->nPoint)))
+  if (BSplineQuadratureSetup(basis->knot, basis->nKnot, nQ, &(basis->rq), &(basis->wq), &(basis->nPoint)))
   {
     RadialBasisFree(basis);
     return 1;
@@ -470,4 +494,147 @@ int DiracSignConvention(const RadialBasisType *basis, int kappa, double c, doubl
   free(P);
   if (s < 0.) for (q = 0; q < n2; q++) coef[q] = -coef[q];
   return (Pmax > 0.) ? 0 : 1;
+}
+
+/* Lorentz-scalar confinement (design section 6) on the quadrature points:
+ *     V_beta(r) = (r/rc)^N,
+ * rc the confinement radius (P_nl P_at rho in the design, combined by the caller). Enters
+ * the Dirac equation as beta V_beta, a position-dependent mass c^2 + V_beta. Returns 1 for
+ * rc <= 0 or N <= 0. */
+int ConfinementPotential(const RadialBasisType *basis, DFTReal rc, DFTReal N, DFTReal *Vbeta)
+{
+  uint32_t q;
+  if (!(rc > 0.) || !(N > 0.)) return 1;
+  for (q = 0; q < basis->nPoint; q++) Vbeta[q] = pow(basis->rq[q]/rc, N);
+  return 0;
+}
+
+/* The end of the knots for a confinement (r/rc)^N: where it reaches Vmax,
+ *     rMax = rc Vmax^(1/N).
+ * The largest eigenvalue of the DKB problem, and with it the rounding error of every
+ * eigenvalue, grows with V_beta(rMax); Vmax = 1e5 Ha gives rMax = 4.2 rc for N = 8,
+ * enough for the confined orbitals to vanish, and max |E| ~ 1e10 instead of 1e15 Ha for
+ * rMax = 40, rc = 0.5. */
+DFTReal ConfinementRMax(DFTReal rc, DFTReal N, DFTReal Vmax)
+{
+  return rc*pow(Vmax, 1./N);
+}
+
+/* int f (P^2 - Q^2) dr of the spinor with DKB coefficients coef, f on the quadrature
+ * points; with f = V_beta the confinement energy <beta V_beta> (design section 6). With
+ * sign = +1 instead the expectation value int f (P^2 + Q^2) dr. Compensated summation. */
+DFTReal DiracExpectation(const RadialBasisType *basis, int kappa, double c, const double *coef, const DFTReal *f, int sign)
+{
+  uint32_t q;
+  double *P = (double *) malloc(basis->nPoint*sizeof(double)), *Q = (double *) malloc(basis->nPoint*sizeof(double));
+  DFTReal sum = 0., comp = 0.;
+  DiracComponents(basis, kappa, c, coef, basis->rq, basis->nPoint, P, Q);
+  for (q = 0; q < basis->nPoint; q++) NeumaierAdd(&sum, &comp, basis->wq[q]*f[q]*(P[q]*P[q] + sign*Q[q]*Q[q]));
+  free(P);
+  free(Q);
+  return sum + comp;
+}
+
+// the DKB overlap matrix S (2n x 2n, dense, column major) of DiracDKBMatrices; it does not depend on V
+int DiracDKBOverlap(const RadialBasisType *basis, int kappa, double c, double *S)
+{
+  uint32_t N = 2*(basis->nSpline - 2), q;
+  double *H = (double *) malloc(N*N*sizeof(double)), *V = (double *) malloc(basis->nPoint*sizeof(double));
+  int error;
+  for (q = 0; q < basis->nPoint; q++) V[q] = 0.;
+  error = DiracDKBMatrices(basis, kappa, c, V, NULL, H, S);
+  free(H);
+  free(V);
+  return error;
+}
+
+/* On-site orthonormalization (design section 6.1) of m orbitals of one kappa on one knot
+ * set: the columns of C (N x m, column major, the DKB coefficient vectors), S the DKB
+ * overlap matrix (N x N). With the overlap O = C^T S C (m x m):
+ *     DiracGramSchmidt  O = L L^T (Cholesky), C <- C L^-T: ordered Gram-Schmidt in the
+ *                       order of the columns; the first column is only normalized, every
+ *                       other one changes least with respect to those before it;
+ *     DiracLowdin       C <- C O^(-1/2) (symmetric).
+ * The step is exact in exact arithmetic, but in floating point it leaves max |C^T S C - 1|
+ * of about DBL_EPSILON cond(O): 3e-10 for two 3d orbitals of Z = 25 and 26 (smallest
+ * eigenvalue of O 2.8e-7). It is therefore done twice ("twice is enough" as long as
+ * DBL_EPSILON cond(O) < 1, which the redundancy check guarantees): the second pass, on an
+ * O = 1 + O(1e-10), brings the error to 1e-16 and keeps the Gram-Schmidt order (the
+ * first orbital stays the normalized input) and the symmetry of Lowdin (decided by
+ * Maurits, 2026-11-11; the design said one pass suffices).
+ * *minEigenvalue receives the smallest eigenvalue of the O of the input. If it is below
+ * redundancy, the orbitals are (nearly) linearly dependent; C is left unchanged and 1 is
+ * returned. Returns 1 also if a LAPACK routine fails or the method is unknown. */
+int DiracOrthonormalize(const double *S, uint32_t N, double *C, uint32_t m, int method, double redundancy, double *minEigenvalue)
+{
+  double second;
+  if (DiracOrthonormalizePass(S, N, C, m, method, redundancy, minEigenvalue)) return 1;
+  return DiracOrthonormalizePass(S, N, C, m, method, 0., &second);
+}
+
+// one pass of DiracOrthonormalize, with the same arguments
+int DiracOrthonormalizePass(const double *S, uint32_t N, double *C, uint32_t m, int method, double redundancy, double *minEigenvalue)
+{
+  double *SC, *O, *U, *w, *work, *T, one = 1., zero = 0.;
+  uint32_t i, j, l, lwork = 3*m + 1 + m*m;
+  int info = 0, error = 0;
+  char uplo = 'L', jobz = 'V', side = 'R', trans = 'T', diag = 'N', nt = 'N';
+  if (m == 0) return 1;
+  SC = (double *) malloc(N*m*sizeof(double));
+  O = (double *) malloc(m*m*sizeof(double));
+  U = (double *) malloc(m*m*sizeof(double));
+  w = (double *) malloc(m*sizeof(double));
+  work = (double *) malloc(lwork*sizeof(double));
+  // O = C^T S C
+  dgemm(&nt, &nt, &N, &m, &N, &one, (double *) S, &N, C, &N, &zero, SC, &N);
+  dgemm(&trans, &nt, &m, &m, &N, &one, C, &N, SC, &N, &zero, O, &m);
+  for (j = 0; j < m; j++)
+    for (i = j+1; i < m; i++) O[i + j*m] = O[j + i*m] = 0.5*(O[i + j*m] + O[j + i*m]);
+  for (i = 0; i < m*m; i++) U[i] = O[i];
+  dsyev(&jobz, &uplo, &m, U, &m, w, work, &lwork, &info);
+  *minEigenvalue = (info == 0) ? w[0] : NAN;
+  if (info != 0 || !(w[0] >= redundancy)) error = 1;
+  else if (method == DiracGramSchmidt)
+  {
+    dpotrf(&uplo, &m, O, &m, &info);
+    if (info != 0) error = 1;
+    else dtrsm(&side, &uplo, &trans, &diag, &N, &m, &one, O, &m, C, &N);
+  }
+  else if (method == DiracLowdin)
+  {
+    // O^(-1/2) = U diag(w^(-1/2)) U^T
+    T = (double *) malloc(m*m*sizeof(double));
+    for (j = 0; j < m; j++)
+      for (i = 0; i < m; i++)
+      {
+        double sum = 0.;
+        for (l = 0; l < m; l++) sum += U[i + l*m]*U[j + l*m]/sqrt(w[l]);
+        T[i + j*m] = sum;
+      }
+    for (i = 0; i < N*m; i++) SC[i] = C[i];
+    dgemm(&nt, &nt, &N, &m, &m, &one, SC, &N, T, &m, &zero, C, &N);
+    free(T);
+  }
+  else error = 1;
+  free(SC);
+  free(O);
+  free(U);
+  free(w);
+  free(work);
+  return error;
+}
+
+// max_ij |(C^T S C - 1)_ij| for the m columns of C (N x m), S (N x N)
+double DiracOrthonormalityError(const double *S, uint32_t N, const double *C, uint32_t m)
+{
+  double *SC = (double *) malloc(N*m*sizeof(double)), *O = (double *) malloc(m*m*sizeof(double)), one = 1., zero = 0., err = 0.;
+  uint32_t i, j;
+  char nt = 'N', trans = 'T';
+  dgemm(&nt, &nt, &N, &m, &N, &one, (double *) S, &N, (double *) C, &N, &zero, SC, &N);
+  dgemm(&trans, &nt, &m, &m, &N, &one, (double *) C, &N, SC, &N, &zero, O, &m);
+  for (j = 0; j < m; j++)
+    for (i = 0; i < m; i++) err = fmax(err, fabs(O[i + j*m] - ((i == j) ? 1. : 0.)));
+  free(SC);
+  free(O);
+  return err;
 }
