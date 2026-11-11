@@ -54,7 +54,7 @@ One future application is high-precision physics. The code must therefore never 
    - finite nuclear mass;
    - the Breit interaction: Martin's `BreitInteraction.cpp` exists and should be reviewed then.
 
-## 0.2 Status of step 0 and tasks A0–A3
+## 0.2 Status of step 0 and tasks A0–A4
 
 ### What stage A can build on (branch `Claude`, commits f50b204f … 9a14a753)
 
@@ -150,6 +150,24 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **Mixing: density for the GGAs, potential for the LDAs** (decided by Maurits; option `MixDensity` overrides). The Dirac GGA does not converge with potential mixing (Ne PBE: residual 1e-4 after 150 iterations, the energy converged): the GGA potential near the nucleus ($-4(\partial e/\partial\sigma)n'/r$, $n'$ large inside the nucleus) reacts too strongly to the input. Density mixing ($f$ and $f'$) converges it in 12 iterations with the same energies to 1e-8; for the Dirac LDA it is slower (Ne 135 instead of 15 iterations at residual 1e-9), hence potential mixing there, as in the design.
 - Not done in A3: the LDA/GGA atom with confinement (A5), spin polarization (not in stage A).
 
+### Task A4: configuration-average Hartree–Fock (done 2026-11-11)
+
+- **Code**: `DFT/AtomHF.{h,cpp}` on top of the A3 atom (`DiracAtomType`: basis, symmetry groups with $H_0$, $S$, $H_0+M[V_N]$). One subshell per $n\kappa$ (Dirac) or $nl$ (Schrödinger = Cowan's average of configuration); pair numbers and ratios $N_{ab}/\bar q_a$ in closed form (§8.1, never $\bar q_a(\bar q_a-1)/2$); $\Gamma^k$ from Quanty's `ThreeJSymbolHalf` (Dirac) and `ThreeJSymbol` (Cowan, $\tfrac12(l_a\,k\,l_b;000)^2$). $R^k$ through the Galerkin $Y^k$ of §7 (one factorization per $k\le 2l_{\max}+1$): $R^k(ab;cd)=(2k+1)\,b_{ac}^TA_k^{-1}b_{bd}$ is exactly symmetric, so the discrete $E_{av}$ is a quartic form and the Fock matrices are its exact derivative.
+- **Exchange: exact matrices** (decided by Maurits; resolves open point 3). $K^k[b]_{\alpha\beta}=\int\rho_{\alpha b}Y^k[\rho_{\beta b}]/r=(2k+1)B^TA_k^{-1}B$ with $B_{i\alpha}=\int B_i(P_\alpha P_b+Q_\alpha Q_b)/r$, banded; one banded solve with all $\alpha$ as right-hand sides, once per symmetry group, partner $b$ and $k$. Instead of the exchange vector $x_a$ and the local-equivalent or inhomogeneous solve of §8.4/§8.5.
+- **Deviation from §8.4, the self term**: written as $N_{aa}\frac{g_a}{g_a-1}[F^0(aa)-\sum_{k\ge0}\Gamma^k_{aa}F^k(aa)]$ (equal, since $\Gamma^0_{aa}=1/g_a$), whose derivative has the same $J-K$ operator form as the pair terms: $F_a=H_0+M[V_N]+\sum_bC_{ab}(M[Y^0_{bb}/r]-\sum_k\Gamma^k_{ab}K^k[b])$ with $C_{ab}=N_{ab}/\bar q_a$, $C_{aa}=\frac{2N_{aa}}{\bar q_a}\frac{g_a}{g_a-1}$. $F_ac_a$ is the same as with §8.4's local self term, but now every closed subshell of a group has the same operator (the Roothaan closed-shell one, $C_{ab}=g_b$), so a closed-shell atom needs one eigenproblem per $\kappa$ and gets canonical orbital energies.
+- **Check 6** (C harness `QuantyDFT_StageA_proto/check6_fock_gradient.cpp`): $2\bar q_aF_ac_a$ against Richardson-extrapolated central differences of $E_{av}$ (exact for a quartic): Ni $3d^84s^2$ Dirac (ten subshells) 2.5e-13 – 2.8e-10 relative, O $2p^4$ and Fe $3d^64s^2$ Dirac and Schrödinger alike; the absolute ≤ 3.3e-10 is the rounding of the differences ($|E|\varepsilon/h$). Prototype: 2e-11 – 8e-11.
+- **SCF (deviation from §8.5)**, from the self-consistent LDA-VWN atom of the configuration:
+  1. new orbitals per class with one Fock matrix (all closed subshells of a group together; each open subshell alone), the other occupied orbitals of the group projected out exactly: $F''=Q^TF_aQ+\sigma SC_oC_o^TS$, $Q=1-C_oC_o^TS$, is block diagonal in ${\rm span}(C_o)$ and its $S$-complement, so its eigenvectors below $\sigma=2Z^2+10$ are orthogonal to $C_o$ and $F_ac-\varepsilon Sc\in{\rm span}(SC_o)$: the gradient towards the unoccupied space vanishes at the fixed point. Root by maximum overlap; Löwdin per group;
+  2. one sweep of Brillouin rotations over the pairs of one $\kappa$ not both closed, Newton with the fixed-Fock second derivative;
+  3. Pulay DIIS on the stacked coefficients, $R=c_{\rm out}-c_{\rm in}$ in the $S$ metric, Löwdin.
+- **Convergence: the orbital step, not the gradient** (deviation from §8.5 item 4). $\max_a\|R_a\|_S$ contains both stationarity conditions. The gradient in its dual norm $\sqrt{G^TS^{-1}G}$ has a rounding floor of 1e-8 (Be) to 1e-6 (Xe) from the steep functions near the nucleus ($F\sim1/r_1^2$), while the step reaches 1e-13 and $E$ is stable to 1e-14; it is reported (`Gradient`), with `PairGradient` (Brillouin, 1e-10 – 4e-8 at convergence). Defaults: `ResidualTolerance` 1e-8 (the eigensolver noise of the point-nucleus Dirac basis puts the step floor at 2e-9 for Hg, where $E$ varies by 4e-11), `EnergyTolerance` 1e-10, `Mixing` 0.5, `History` 8. 9–15 iterations for He–Xe, Li, Na, O, Fe, Pd⁺, Gd; Dirac Kr 21 (9 s), Hg 1 s per iteration.
+- $E_{\rm tot}=\tfrac12\sum_a\bar q_a(\varepsilon_a+I_a)$ holds for any orbitals (the one- and two-electron parts are homogeneous of degree 2 and 4), so it checks the Fock matrices against the energy, not the convergence: ≤ 2.7e-12.
+- **Check 7**: no Dirac–Fock reference could be fetched (GRASP manual unreadable, Visscher–Dyall 403); decided by Maurits: the nonrelativistic HF limits. Lehtola (IJQC 119, e25945 (2019), Table 5; PRA 101, 012516 (2020), Table 4), point nucleus: He, Be, Ne, Mg, Ar ≤ 5.1e-10 (table rounding 5e-10), Ca, Zn, Kr, Xe ≤ 3.5e-7 (six decimals). Dirac–Fock He −2.8618133422 = this design's −2.8618133. Dirac Ne −128.6919694947, Kr −2788.8848347 (point nucleus, no reference). Li $2s$ −7.432726931 and Na $3s$ −161.858911617 agree with remembered Roothaan–HF values to 3e-10, but no source could be fetched; tested only internally.
+- **Check 5** in C: in Schrödinger mode `Atom.EavJJ` (the converged radial functions with the $j$-subshell angular factors and pair counts) equals Cowan's $E_{av}$ to ≤ 1.8e-12 for $p^4$, $d^6s^2$, $d^9$, $f^7d^1s^2$.
+- **Check 8** (decided by Maurits): internal. The Schrödinger mode is Cowan's average of configuration (check 5 and the HF limits); the FPLO radial functions in the tutorials folder are the reference for A5. One-electron ions: $E_{\rm tot}$ equals the bare Dirac eigenvalue (U⁹¹⁺ $1s$: 3e-15 relative; $2p^1$: $\tfrac13\varepsilon_{2p_{1/2}}+\tfrac23\varepsilon_{2p_{3/2}}$ to 9e-13).
+- **Temporary Lua entry** `DiracHartreeFock(Z, configuration, {options})` (as agreed), returns `Atom, G, F` as `DiracKohnSham`; every shell needs $q>0$. The orbital table and $G$, $F$ output are shared with `DiracKohnSham` (`DFTLuaPushOrbitals`, `DFTLuaPushRadialFunctions`). Tests `HartreeFockLimits`, `HartreeFockAverage`.
+- Not done in A4: the export of $F^k$, $G^k$ (open point 1, with A5); HF with confinement (A5).
+
 ### Order of work in stage A (one commit series per task, each closed by its checkpoints in §12)
 
 | Task | Content | Checks |
@@ -158,7 +176,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 | A1 | Nucleus models (§3, without `Function3D`), DKB assembly from `BSplineMatrixBanded` (§5), eigenproblem, root selection; `DKBSpline` evaluation — done | 1a, 1b, 2, 13 (spherical part) |
 | A2 | Poisson $Y^k$ in `BSplineMatrix` (§7), Lorentz-scalar confinement (§6), on-site orthonormalization (§6.1) — done | 3, 4, 14 |
 | A3 | XC functionals and Dirac–Kohn–Sham atom (§9) — done | 9, 10 |
-| A4 | Configuration-average DHF (§8) | 5, 6, 7, 8 |
+| A4 | Configuration-average DHF (§8) — done | 5, 6, 7, 8 |
 | A5 | `CalculateAtomicBasisFunctions` binding, exact `"Dirac"`/`"AU"` paths (§11), `Function3D` (§3.1), Fourier–Bessel (§10) | 11, 12, 13 |
 
 ### Known limits that stay (not part of stage A)
@@ -338,6 +356,8 @@ The energy gradient with respect to the coefficient vector $c_a$ of the normaliz
 $$\partial E_{av}/\partial c_a = 2\bar q_a\,(F_ac_a + x_a - \varepsilon_a S c_a).$$
 This was verified against finite differences (§12, check 6).
 
+*Implemented differently (§0.2 A4):* exact exchange matrices $K^k[b]$ instead of $x_a$, and the self term in $J-K$ form, so that all closed subshells of a $\kappa$ share one Fock operator.
+
 ### 8.5 SCF procedure
 1. **Initial guess:** a self-consistent LDA atom (§9) with the same configuration. This is robust and also gives the guess for $V^{\rm at}$.
 2. **Each iteration:** compute all $Y^k_{bb}$ and $Y^k_{ab}$ (§7). For each subshell, build $F_a$ and the exchange vector $x_a$ from the current orbitals. Then either (i) diagonalize $F_a$ with the exchange approximated by a local-equivalent potential (the exchange term divided by the previous orbital, per component, regularized at nodes, as in RCN), or (ii) solve the inhomogeneous linear system $(F_a-\varepsilon_aS)c_a=-x_a$ with $\varepsilon_a$ updated from normalization; see open point 3. Pick the root by maximum overlap with the previous iterate, as in Froese Fischer's method and Cowan's RCN. Orthogonalize orbitals of equal $\kappa$ (Löwdin, or Schmidt starting from the most strongly bound).
@@ -345,6 +365,8 @@ This was verified against finite differences (§12, check 6).
 $$\bar q_a\langle b|f_a|a\rangle=\bar q_b\langle a|f_b|b\rangle .$$
    It is automatically satisfied (redundant rotation) when both subshells are closed. Otherwise enforce it with a rotation step per pair, or use DIIS on the projected orbital gradient of §8.4, which contains it.
 4. **Convergence:** max |orbital gradient| $<10^{-8}$ and $\Delta E<10^{-10}$ Ha. Acceleration: DIIS over the stacked $(c_a)$ with error vectors equal to the projected gradients.
+
+*Implemented differently (§0.2 A4):* projected eigenproblems per class (other occupied orbitals removed exactly), Brillouin rotations, DIIS on the orbital step, and convergence on the orbital step (the dual-norm gradient has a rounding floor of 1e-8 – 1e-6).
 
 ### 8.6 Nonrelativistic limit
 With $j$-independent radial functions ($R^k$ equal for both $j$ subshells), $E_{av}$ of §8.3 equals Cowan's
@@ -480,9 +502,9 @@ Prototype results (Python, from a scratch implementation of exactly the equation
 | 3 | Lorentz-scalar confinement, Fe²⁵⁺, $V_\beta=(r/r_0)^8$ | $E-E_{\rm free}$ on the same knots ($A=56$ Gaussian nucleus, 140 intervals, $R_{\max}=r_0\,(10^5)^{1/8}$, Rayleigh quotients), $r_0$ = 0.5, 1, 2, 4: 3d₅/₂ 1.2714638668, 1.3936838314e-2, 5.7358135983e-5, 2.2412199030e-7 Ha; 4s₁/₂ 24.515661797, 1.5071830268, 1.3505189202e-2, 5.4031644439e-5 Ha (A2; the prototype at $R_{\max}=40$ with `dsygvd` gave 1.27, 1.4e-2, 5.7e-5, 2.2e-7). Small component decays with large component. $\langle\beta V_\beta\rangle\to\Delta E$ for weak confinement. The vector variant shows negative-continuum intruders (ΔE ~ 10⁴ Ha; with $R_{\max}=40$ at $r_0$ = 1–2, with the automatic $R_{\max}$ at every $r_0$). |
 | 4 | Galerkin $Y^k$, k = 0–4 vs. direct quadrature; hydrogen 1s $Y^0=1-e^{-2r}(1+r)$ | 80 intervals: 7e-9; 160 intervals: 8e-12 (order 9) |
 | 5 | Configuration average vs. Cowan (symbolic) | identical for $p^q,d^q,f^q$ (q = 2, 3, 5) and $sp,pd,df,sd$ pairs; the fixed-occupation variant fails ($d^3$: $\tfrac{44}{1875}F^2-\tfrac{8}{375}F^4$) |
-| 6 | Fock gradient (§8.4) vs. finite differences, Ni-like $3d_{3/2},3d_{5/2},4s$, $3d^84s^2$ | relative agreement 2e-11 – 8e-11 |
-| 7 | DHF closed shells, point nucleus: He, Ne, Ar | Compare with GRASP/literature DHF totals (He −2.8618133 Ha, Ne −128.6919 Ha — confirm to µHa with GRASP2018 at the same $c$). |
-| 8 | Nonrelativistic limit ($c\to 10^4$) of DHF-AOC vs. Cowan RCN (HF, no relativistic corrections), e.g. Ni 3d⁸4s², C 2p² | $E_{av}$, ε, $F^k(3d,3d)$, $G^k$: agreement to RCN's numerical accuracy |
+| 6 | Fock gradient (§8.4) vs. finite differences, Ni-like $3d_{3/2},3d_{5/2},4s$, $3d^84s^2$ | relative agreement 2e-11 – 8e-11 (C, A4: 2.5e-13 – 2.8e-10, the rounding of the differences) |
+| 7 | DHF closed shells, point nucleus: He, Ne, Ar | Compare with GRASP/literature DHF totals (He −2.8618133 Ha, Ne −128.6919 Ha — confirm to µHa with GRASP2018 at the same $c$). A4: no DHF reference fetched; nonrelativistic HF limits (Lehtola) He–Xe to ≤ 5.1e-10 / table rounding; DHF He −2.8618133422, Ne −128.6919694947. |
+| 8 | Nonrelativistic limit ($c\to 10^4$) of DHF-AOC vs. Cowan RCN (HF, no relativistic corrections), e.g. Ni 3d⁸4s², C 2p² | $E_{av}$, ε, $F^k(3d,3d)$, $G^k$: agreement to RCN's numerical accuracy. A4: internal (Schrödinger mode = Cowan's AOC, checks 5 and 7); FPLO radial functions as the reference in A5. |
 | 9 | Dirac–Kohn–Sham vs. NIST atomic reference data | NIST uses VWN correlation; its RLDA adds the MacDonald–Vosko factor to exchange. Compare LDA with VWN5 (nonrelativistic, $c\to\infty$) and RLDA with VWN5 + MV to µHa. First pin down NIST's nucleus model and $j$-subshell occupations from the documentation. |
 | 10 | PBE atom | Compare to an independent all-electron code (e.g. FHI-aims or PySCF with a large basis); consistency of the two total-energy expressions (§9) to 1e-9 Ha |
 | 11 | Fourier–Bessel | Plancherel $\int k^2(\tilde P^2+\tilde Q^2)dk=1$; inverse transform reproduces $P,Q$ |
@@ -494,7 +516,7 @@ Prototype results (Python, from a scratch implementation of exactly the equation
 
 1. **Slater-integral export convention for Quanty:** jj-resolved $R^k$ (four radial variants for $d$–$d$), the $g$-weighted $j$-average, or both. Proposal: both, with LS-Quanty scripts using the average plus $\zeta$.
 2. **NIST validation details** (check 9): nucleus model, $c$ value and subshell occupations of the RLDA reference.
-3. **Exchange in the DHF eigenproblem:** treat $x_a$ through the previous orbital (simple, linear convergence) or solve the inhomogeneous linear system per iteration (faster). Decide at implementation, after check 6.
+3. **Exchange in the DHF eigenproblem:** treat $x_a$ through the previous orbital (simple, linear convergence) or solve the inhomogeneous linear system per iteration (faster). Decide at implementation, after check 6. *Resolved in A4: exact exchange matrices (Maurits), §0.2 A4.*
 
 ## References
 - V. M. Shabaev et al., Phys. Rev. Lett. 93, 130405 (2004) — dual kinetic balance.

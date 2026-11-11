@@ -135,6 +135,8 @@ test-jobs-diracatom:
           - "DKBSplineEvaluate"
           - "FunctionNucleus"
           - "GaussianNucleus"
+          - "HartreeFockAverage"
+          - "HartreeFockLimits"
           - "NewOperatorDiracZ"
           - "NISTAtoms"
           - "Orthonormalize"
