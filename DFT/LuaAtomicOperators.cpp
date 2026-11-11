@@ -117,6 +117,9 @@ int DFTLuaNewOperatorDiracDKB(lua_State *L)
     {"FermiThickness", "double", &(Options.nuc.FermiThickness)},
     {"Density", "function", &(Options.nuc.Density)},
     {"DensityTolerance", "double", &(Options.nuc.DensityTolerance)},
+    {"NucleusLmax", "uint32_t", &(Options.nuc.NucleusLmax)},
+    {"NucleusNTheta", "uint32_t", &(Options.nuc.NucleusNTheta)},
+    {"NucleusNPhi", "uint32_t", &(Options.nuc.NucleusNPhi)},
     {NULL, NULL, NULL}};
   const char *who = "NewOperator(\"Dirac\",...)";
   RadialBasisType basis;
@@ -258,6 +261,113 @@ int DFTLuaNewOperatorUDKB(lua_State *L)
   for (i = 0; i < n*n*kMax; i++) free(Ycache[i]);
   for (k = 0; k < kMax; k++) free(band[k]);
   free(Ycache); free(band); free(P); free(Q); free(dP); free(dQ); free(rho); free(coef); free(kappa);
+  RadialBasisFree(&basis);
+  return 1;
+}
+
+/*
+ *     O = NewOperator("NuclearMultipole", NF, Z, indices, G, F, {nucleus options})
+ *
+ * The non-spherical part of the nuclear potential of a "Function3D" nucleus (design section
+ * 3.1, NucleusMultipole.cpp) as a one-particle operator on DKB spinors of one knot set:
+ *     O = sum_{L >= 2, M} V_LM(r) S_LM(r^),
+ *     <a mu_a|O|b mu_b> = sum_LM int V_LM (P_a P_b + Q_a Q_b) dr <kappa_a mu_a|S_LM|kappa_b mu_b>,
+ * V_LM computed on the knots of the spinors from the options (Nucleus "Function3D", Density
+ * rho(x, y, z), NucleusLmax, NucleusNTheta, NucleusNPhi, DensityTolerance; the density is
+ * normalized to Z as for the atom), the angular factor as RealHarmonicMatrixElement.
+ * First order in O is exact for all practical purposes (design 3.1). Complex in general
+ * (S_LM with M != 0 in the mu basis); real if every element is.
+ */
+int DFTLuaNewOperatorNuclearMultipole(lua_State *L)
+{
+  struct { DFTLuaNucleusOptions nuc; } Options;
+  LuaOptionsType LuaMultipoleOptions[] = {
+    {"Nucleus", "char*", &(Options.nuc.Nucleus)},
+    {"Density", "function", &(Options.nuc.Density)},
+    {"DensityTolerance", "double", &(Options.nuc.DensityTolerance)},
+    {"NucleusLmax", "uint32_t", &(Options.nuc.NucleusLmax)},
+    {"NucleusNTheta", "uint32_t", &(Options.nuc.NucleusNTheta)},
+    {"NucleusNPhi", "uint32_t", &(Options.nuc.NucleusNPhi)},
+    {NULL, NULL, NULL}};
+  const char *who = "NewOperator(\"NuclearMultipole\",...)";
+  RadialBasisType basis;
+  NucleusType nucleus;
+  OperatorType *op;
+  uint32_t NF, n, a, b, k1, k2, q, lm, nLM, nP, Nf, **indices = NULL, len = (uint32_t) lua_gettop(L);
+  std::vector<int> indToK;
+  double Z, c, a0fm, *V, *coef, charge, *VLM, *P, *Q, *dP, *dQ, *Re, *Im, re, im;
+  int *kappa, Lq, Mq, complex = 0;
+  uint16_t oadd[2];
+  if (len != 6) return luaL_error(L, "Error in %s: 6 arguments expected (NF, Z, indices, G, F, {nucleus options}), got %d\n", who, (int) len);
+  NF = (uint32_t) luaL_checkunsigned(L, 1);
+  Z = luaL_checknumber(L, 2);
+  c = LuaGetPhysicalConstant(L, "cAU");
+  a0fm = LuaGetPhysicalConstant(L, "a0")*1e15;
+  DFTLuaNucleusDefaults(&Options.nuc, a0fm);
+  Options.nuc.Nucleus = (char *) "Function3D";
+  LuaCheckOptions(L, 6, LuaMultipoleOptions);
+  DFTLuaIndices(L, who, 3, &indices, &n, indToK);
+  kappa = (int *) malloc(n*sizeof(int));
+  DFTLuaDKBSpinors(L, who, 4, 5, n, c, &basis, kappa, &coef);
+  for (a = 0; a < n; a++)
+    if (kappa[a] != indToK[a])
+      return luaL_error(L, "Error in %s: orbital %d has kappa = %d, indices.kappas says %d\n", who, (int) a + 1, kappa[a], indToK[a]);
+  if (strcicmp(Options.nuc.Nucleus, "Function3D") != 0) return luaL_error(L, "Error in %s: the nucleus must be \"Function3D\"\n", who);
+  DFTLuaNucleus(L, who, Z, &Options.nuc, a0fm, &nucleus);
+  nP = basis.nPoint;
+  nLM = NucleusMultipoleCount(Options.nuc.NucleusLmax);
+  VLM = (double *) malloc(nLM*nP*sizeof(double));
+  Options.nuc.multipoleV = VLM;
+  DFTLuaNuclearPotential(L, who, Z, &Options.nuc, &nucleus, &basis, &V, &charge);
+  // P, Q of the orbitals on the points
+  Nf = 2*(basis.nSpline - 2);
+  P = (double *) malloc(n*nP*sizeof(double));
+  Q = (double *) malloc(n*nP*sizeof(double));
+  dP = (double *) malloc(nP*sizeof(double));
+  dQ = (double *) malloc(nP*sizeof(double));
+  for (a = 0; a < n; a++) AtomOrbitalOnPoints(&basis, 1, kappa[a], c, coef + a*Nf, P + a*nP, dP, Q + a*nP, dQ);
+  // the elements <a mu_a|O|b mu_b>, indexed by the fermion indices
+  Re = (double *) calloc(NF*NF, sizeof(double));
+  Im = (double *) calloc(NF*NF, sizeof(double));
+  for (a = 0; a < n; a++)
+    for (b = 0; b < n; b++)
+      for (lm = 0; lm < nLM; lm++)
+      {
+        DFTReal sum = 0., comp = 0.;
+        NucleusMultipoleLM(lm, &Lq, &Mq);
+        if (Lq < 2 || (DiracKappaL(kappa[a]) + DiracKappaL(kappa[b]) + Lq) % 2 != 0) continue;
+        for (q = 0; q < nP; q++) NeumaierAdd(&sum, &comp, basis.wq[q]*VLM[lm*nP + q]*(P[a*nP + q]*P[b*nP + q] + Q[a*nP + q]*Q[b*nP + q]));
+        double R = sum + comp;
+        for (k1 = 0; k1 < (uint32_t) (2*abs(kappa[a])); k1++)
+          for (k2 = 0; k2 < (uint32_t) (2*abs(kappa[b])); k2++)
+          {
+            int jA2 = 2*abs(kappa[a]) - 1, jB2 = 2*abs(kappa[b]) - 1;
+            uint32_t ia = indices[a][k1], ib = indices[b][k2];
+            if (ia >= NF || ib >= NF) return luaL_error(L, "Error in %s: an index is not below NF = %d\n", who, (int) NF);
+            RealHarmonicMatrixElement(kappa[a], -jA2 + 2*(int) k1, Lq, Mq, kappa[b], -jB2 + 2*(int) k2, &re, &im);
+            Re[ia*NF + ib] += R*re;
+            Im[ia*NF + ib] += R*im;
+          }
+      }
+  for (a = 0; a < NF*NF; a++) if (Im[a] != 0.) complex = 1;
+  op = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+  InitNamedOperator(op, "NuclearMultipole");
+  op->NFermion = NF;
+  op->NWord = Min(op->NFermion, 1 + (op->NFermion - 1)/8);
+  InitOperatorFixedLength(op, 2, 8);
+  if (complex) { MakeRealOperatorFixedLengthComplex(op, 2); op->QComplex = 1; }
+  for (a = 0; a < NF; a++)
+    for (b = 0; b < NF; b++)
+    {
+      if (Re[a*NF + b] == 0. && Im[a*NF + b] == 0.) continue;
+      oadd[1] = CrAnMask + (uint16_t) a;      // creator of the bra
+      oadd[0] = (uint16_t) b;                 // annihilator of the ket
+      if (complex) ComplexOperatorAddLaderNormalOrder(op, oadd, 2, Re[a*NF + b], Im[a*NF + b], &QDetNotOrderedFcFaBcBa);
+      else RealOperatorAddLaderNormalOrder(op, oadd, 2, Re[a*NF + b], &QDetNotOrderedFcFaBcBa);
+    }
+  luaL_setmetatable(L, "Operator_Type");
+  for (a = 0; a < n; a++) free(indices[a]);
+  free(indices); free(kappa); free(coef); free(V); free(VLM); free(P); free(Q); free(dP); free(dQ); free(Re); free(Im);
   RadialBasisFree(&basis);
   return 1;
 }

@@ -203,6 +203,18 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **Cost**: Ni $3d^84s^2$, 15 orbitals up to $5s$, all confined (one SCF per occupied orbital): 43 s.
 - **Not done in A5b**: the potentials as `InterpolatingFunction`s, $\langle r^k\rangle$, the virial ratio, `{"Precision","High"}` and `ConvergenceCheck` (A5e); `Function3D` (A5c); Fourier–Bessel (A5d).
 
+### Task A5c: `"Function3D"` nucleus and its multipole operator (done 2026-11-11)
+
+- **Options** (every DFT entry): `{"Nucleus", "Function3D"}`, `{"Density", rho(x, y, z)}`, `NucleusLmax` (default 4, even $L$ only), `NucleusNTheta`, `NucleusNPhi` (defaults $L_{\max}+8$ Gauss–Legendre points in $\cos\theta$ and $2L_{\max}+16$ uniform in $\phi$, as in §3.1). The density is sampled in the binding on the product grid at every radial quadrature point, projected on $S_{LM}$, and normalized to $Z$ like `"Function"`; $\rho_{00}/\sqrt{4\pi}$ is the spherical nucleus of the atom.
+- **Real harmonics** (`DFT/NucleusMultipole.cpp`): $S_{LM}=\sqrt2N_{LM}P_L^M\cos M\phi$, $S_{L,-M}=\sqrt2N_{LM}P_L^M\sin M\phi$ ($P_L^M$ without the Condon–Shortley phase), i.e. $S_{LM}=(Y_{L,-M}+(-1)^MY_{LM})/\sqrt2$, $S_{L,-M}=i(Y_{L,-M}-(-1)^MY_{LM})/\sqrt2$. The same $S_{LM}$ define $\rho_{LM}$ and the operator, so nothing depends on other tesseral conventions in Quanty.
+- **Operator** `NewOperator("NuclearMultipole", NF, Z, indices, G, F, {nucleus options})` (DKB spinors of one knot set): $\sum_{L\ge2,M}V_{LM}S_{LM}$ with $V_{LM}=-\frac{4\pi}{2L+1}Y^L[r^2\rho_{LM}]/r$ on the spinors' knots; $\langle\kappa\mu|S_{LM}|\kappa'\mu'\rangle$ by Wigner–Eckart in Grant's convention, $\langle\kappa\|C^L\|\kappa'\rangle=(-1)^{j+1/2}[j,j']^{1/2}(j\,L\,j';\tfrac12\,0\,{-\tfrac12})\pi$, the same for large and small components (it depends on $l$ only through the parity). Complex in general; real if every element is. `CalculateAtomicBasisFunctions` returns `Atom.NuclearMultipoleMoments` ($q_{LM}=\int r^LS_{LM}\rho\,d^3r$, $L\ge2$), and `Atom.Nucleus` carries the Function3D options for `NewOperator("Dirac")` and `("NuclearMultipole")`.
+- **Check 13** (test `Function3DNucleus`): a spherical Gaussian as Function3D gives the `"Gaussian"` energies of U to ≤ 2.1e-11 relative (the Poisson route against the analytic erf; design 1e-10) and a multipole operator of 2.9e-20 Ha (design: $V_{L>0}<10^{-12}$).
+- **Moments**: triaxial Gaussian, $q_{20}$ and $q_{22}$ = analytic to 2.7e-13.
+- **Angular algebra against independent machinery**: with one non-spherical component ($2z^2-x^2-y^2$, $x^2-y^2$, $xy$) the $3d_{3/2}$/$3d_{5/2}$ blocks of the operator equal Quanty's `NewOperator("CF")` on the $3d$ spin-orbitals rotated with `YtojjzMatrix(2)`, each block times one real number (the radial integral), to 5.7e-15; the three numbers agree in sign and to 1 %.
+- Ne with an oblate Function3D nucleus: $\langle{\rm det}|H_0+U|{\rm det}\rangle=E_{\rm tot}$ to 2.8e-13 with `Atom.Nucleus`.
+- A test density of mine, $3z^2-x^2-y^2$, first looked like a 2.5 % charge error: it is $2z^2-x^2-y^2+z^2$ and has an $L=0$ part (not a code error; the Gauss–Legendre table was verified for $N=2$–16).
+- Not done: odd $L$ (excluded by the design: no static electric dipole of a nucleus); the magnetic hyperfine fields (§3.1, later).
+
 ### Order of work in stage A (one commit series per task, each closed by its checkpoints in §12)
 
 | Task | Content | Checks |

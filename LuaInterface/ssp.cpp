@@ -860,6 +860,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewCF(L);
   }
+  if (strcmp(OT, "NuclearMultipole") == 0)    // DFT stage A5c, DFT/LuaAtomicOperators.cpp
+  {
+    lua_remove(L, 1);
+    return DFTLuaNewOperatorNuclearMultipole(L);
+  }
   if ((strcmp(OT, "Create") == 0)||(strcmp(OT, "Cr") == 0))
   {
     lua_remove(L, 1);

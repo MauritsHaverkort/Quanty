@@ -137,7 +137,8 @@ int NucleusDensity(const NucleusType *nucleus, const RadialBasisType *basis, DFT
  *     Fermi     -Y^0[4 pi r^2 rho](r)/r   (radial Poisson equation, design section 7)
  *     Function  the same, with the density rho (per volume) given on the quadrature
  *               points; it should be normalized to Z, the caller checks that.
- * rho is used only for "Function" (NULL otherwise). Returns 1 for an unknown model or if
+ *     Function3D the same with the spherical part rho_00/sqrt(4 pi) (NucleusMultipole.cpp).
+ * rho is used only for "Function" and "Function3D" (NULL otherwise). Returns 1 for an unknown model or if
  * the Poisson solver fails. */
 int NucleusPotential(const NucleusType *nucleus, const RadialBasisType *basis, const DFTReal *rho, DFTReal *V)
 {
@@ -156,8 +157,8 @@ int NucleusPotential(const NucleusType *nucleus, const RadialBasisType *basis, c
     for (q = 0; q < basis->nPoint; q++) V[q] = -nucleus->Z*erf(sqrt(zeta)*basis->rq[q])/basis->rq[q];
     return 0;
   }
-  if (nucleus->model != NucleusFermi && nucleus->model != NucleusFunction) return 1;
-  if (nucleus->model == NucleusFunction && rho == NULL) return 1;
+  if (nucleus->model != NucleusFermi && nucleus->model != NucleusFunction && nucleus->model != NucleusFunction3D) return 1;
+  if (nucleus->model != NucleusFermi && rho == NULL) return 1;
   f = (DFTReal *) malloc(basis->nPoint*sizeof(DFTReal));
   if (nucleus->model == NucleusFermi)
   {

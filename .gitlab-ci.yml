@@ -134,6 +134,7 @@ test-jobs-diracatom:
           - "AtomicBasisFunctions"
           - "Confinement"
           - "DKBSplineEvaluate"
+          - "Function3DNucleus"
           - "FunctionNucleus"
           - "GaussianNucleus"
           - "HartreeFockAverage"

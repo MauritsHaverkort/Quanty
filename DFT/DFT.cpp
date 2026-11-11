@@ -14,6 +14,7 @@
 #include "AtomSCF.cpp"
 #include "AtomHF.cpp"
 #include "AtomBasis.cpp"
+#include "NucleusMultipole.cpp"
 #include "LuaDiracRadial.cpp"
 #include "LuaAtom.cpp"
 #include "LuaAtomicOperators.cpp"

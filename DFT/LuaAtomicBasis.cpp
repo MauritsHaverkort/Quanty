@@ -39,7 +39,8 @@
  * for Kohn-Sham; Converged, Iterations, Residual, dE), Method, Relativistic, c, Z,
  * NElectron, rMin, rMax, Nucleus (an options list for NewOperator("Dirac")), Labels,
  * MinOverlapEigenvalue and OrthonormalityError (max |C^T S C - 1|) of the
- * orthonormalization, and Orbitals[i] = {Label, n, l, kappa,
+ * orthonormalization, for a "Function3D" nucleus NuclearMultipoleMoments[i] = {L, M, Value =
+ * int r^L S_LM rho d^3r} (L >= 2; S_LM as in NucleusMultipole.cpp), and Orbitals[i] = {Label, n, l, kappa,
  * j, Occupation, Q, P, rc, Energy (eigenvalue of its generating equation), EnergyGround
  * (<a|F|a> of the returned function with the ground-state operator), Vbeta (<beta V_beta>),
  * EtotGenerating, Generated, Converged}; SlaterIntegrals in the format of GetSlaterIntegrals,
@@ -253,6 +254,9 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     {"FermiThickness", "double", &(Options.nuc.FermiThickness)},
     {"Density", "function", &(Options.nuc.Density)},
     {"DensityTolerance", "double", &(Options.nuc.DensityTolerance)},
+    {"NucleusLmax", "uint32_t", &(Options.nuc.NucleusLmax)},
+    {"NucleusNTheta", "uint32_t", &(Options.nuc.NucleusNTheta)},
+    {"NucleusNPhi", "uint32_t", &(Options.nuc.NucleusNPhi)},
     {"Degree", "uint32_t", &(Options.nuc.Degree)},
     {"NIntervals", "uint32_t", &(Options.nuc.NIntervals)},
     {"rMin", "double", &(Options.nuc.rMin)},
@@ -458,6 +462,12 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     lua_rawgeti(L, LUA_REGISTRYINDEX, Options.nuc.Density);     // kept for Atom.Nucleus
     densityIndex = lua_gettop(L);
   }
+  double moments[1024];
+  if (strcicmp(Options.nuc.Nucleus, "Function3D") == 0)
+  {
+    if (NucleusMultipoleCount(Options.nuc.NucleusLmax) > 1024) return luaL_error(L, "Error in %s: NucleusLmax %d is too large\n", who, (int) Options.nuc.NucleusLmax);
+    Options.nuc.multipoleMoment = moments;
+  }
   DFTLuaNucleusBasis(L, who, Options.Z, &Options.nuc, a0fm, &nucleus, &basis, &V, &charge);
   error = AtomSetup(&atom, &basis, V, Options.Z, Options.Relativistic ? 1 : 0, c, method, Options.OriginBoundary ? 1 : 0,
                     Options.DensityCutoff, nShell, shell);
@@ -558,7 +568,8 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   // Nucleus, as options for NewOperator("Dirac")
   lua_newtable(L);
   lua_newtable(L); lua_pushstring(L, "Nucleus"); lua_rawseti(L, -2, 1);
-  lua_pushstring(L, nucleus.model == NucleusPoint ? "Point" : nucleus.model == NucleusGaussian ? "Gaussian" : nucleus.model == NucleusFermi ? "Fermi" : "Function");
+  lua_pushstring(L, nucleus.model == NucleusPoint ? "Point" : nucleus.model == NucleusGaussian ? "Gaussian" : nucleus.model == NucleusFermi ? "Fermi"
+                  : nucleus.model == NucleusFunction ? "Function" : "Function3D");
   lua_rawseti(L, -2, 2); lua_rawseti(L, -2, 1);
   k = 2;
   if (nucleus.model == NucleusGaussian || nucleus.model == NucleusFermi)
@@ -569,11 +580,38 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   {
     lua_newtable(L); lua_pushstring(L, "FermiThickness"); lua_rawseti(L, -2, 1); lua_pushnumber(L, Options.nuc.FermiThickness); lua_rawseti(L, -2, 2); lua_rawseti(L, -2, k++);
   }
-  if (nucleus.model == NucleusFunction && densityIndex > 0)
+  if ((nucleus.model == NucleusFunction || nucleus.model == NucleusFunction3D) && densityIndex > 0)
   {
     lua_newtable(L); lua_pushstring(L, "Density"); lua_rawseti(L, -2, 1); lua_pushvalue(L, densityIndex); lua_rawseti(L, -2, 2); lua_rawseti(L, -2, k++);
   }
+  if (nucleus.model == NucleusFunction3D)
+  {
+    const char *nm[3] = {"NucleusLmax", "NucleusNTheta", "NucleusNPhi"};
+    uint32_t nv[3] = {Options.nuc.NucleusLmax, Options.nuc.NucleusNTheta, Options.nuc.NucleusNPhi};
+    for (int t = 0; t < 3; t++)
+    {
+      lua_newtable(L); lua_pushstring(L, nm[t]); lua_rawseti(L, -2, 1); lua_pushinteger(L, nv[t]); lua_rawseti(L, -2, 2); lua_rawseti(L, -2, k++);
+    }
+  }
   lua_setfield(L, -2, "Nucleus");
+  // Function3D: the multipole moments q_LM = int r^L S_LM rho d^3r of L >= 2
+  if (nucleus.model == NucleusFunction3D)
+  {
+    uint32_t nLM = NucleusMultipoleCount(Options.nuc.NucleusLmax), t = 0;
+    lua_newtable(L);
+    for (i = 0; i < nLM; i++)
+    {
+      int Lq, Mq;
+      NucleusMultipoleLM(i, &Lq, &Mq);
+      if (Lq < 2) continue;
+      lua_newtable(L);
+      lua_pushinteger(L, Lq); lua_setfield(L, -2, "L");
+      lua_pushinteger(L, Mq); lua_setfield(L, -2, "M");
+      lua_pushnumber(L, moments[i]); lua_setfield(L, -2, "Value");
+      lua_rawseti(L, -2, ++t);
+    }
+    lua_setfield(L, -2, "NuclearMultipoleMoments");
+  }
   // Labels and Orbitals
   lua_createtable(L, nRet, 0);
   for (k = 0; k < nRet; k++)

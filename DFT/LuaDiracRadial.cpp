@@ -54,6 +54,9 @@ typedef struct
   double A, Rrms, FermiThickness, DensityTolerance, rMin, rMax;
   uint32_t Degree, NIntervals, NQuadrature;
   int Density;
+  uint32_t NucleusLmax, NucleusNTheta, NucleusNPhi;   // Function3D: even L <= Lmax; the angular grid (0: Lmax+8, 2 Lmax+16)
+  double *multipoleMoment;   // Function3D, set by the caller to receive q_LM (NucleusMultipoleCount(Lmax)), or NULL
+  double *multipoleV;        // Function3D, set by the caller to receive V_LM on the basis points, or NULL
 } DFTLuaNucleusOptions;
 
 int DFTLuaNucleus(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, double a0fm, NucleusType *nucleus);
@@ -73,6 +76,11 @@ void DFTLuaNucleusDefaults(DFTLuaNucleusOptions *o, double a0fm)
   o->NIntervals = 120;
   o->NQuadrature = 0;
   o->Density = LUA_NOREF;
+  o->NucleusLmax = 4;
+  o->NucleusNTheta = 0;
+  o->NucleusNPhi = 0;
+  o->multipoleMoment = NULL;
+  o->multipoleV = NULL;
 }
 
 /* The nucleus, the radial basis and the nuclear potential *V (on the quadrature points,
@@ -111,11 +119,19 @@ int DFTLuaNucleus(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions 
   else if (strcicmp(o->Nucleus, "Gaussian") == 0) nucleus->model = NucleusGaussian;
   else if (strcicmp(o->Nucleus, "Fermi") == 0) nucleus->model = NucleusFermi;
   else if (strcicmp(o->Nucleus, "Function") == 0) nucleus->model = NucleusFunction;
-  else return luaL_error(L, "Error in %s: unknown Nucleus \"%s\" (Point, Gaussian, Fermi or Function)\n", who, o->Nucleus);
-  if ((nucleus->model == NucleusFunction) != (o->Density != LUA_NOREF))
+  else if (strcicmp(o->Nucleus, "Function3D") == 0) nucleus->model = NucleusFunction3D;
+  else return luaL_error(L, "Error in %s: unknown Nucleus \"%s\" (Point, Gaussian, Fermi, Function or Function3D)\n", who, o->Nucleus);
+  if ((nucleus->model == NucleusFunction || nucleus->model == NucleusFunction3D) != (o->Density != LUA_NOREF))
   {
     if (o->Density != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
-    return luaL_error(L, "Error in %s: the option Density goes with Nucleus \"Function\", and only with it\n", who);
+    return luaL_error(L, "Error in %s: the option Density goes with Nucleus \"Function\" or \"Function3D\", and only with them\n", who);
+  }
+  if (nucleus->model == NucleusFunction3D)
+  {
+    if (o->NucleusNTheta == 0) o->NucleusNTheta = o->NucleusLmax + 8;
+    if (o->NucleusNPhi == 0) o->NucleusNPhi = 2*o->NucleusLmax + 16;
+    if (o->NucleusNTheta > DiracMaxQuadraturePoints)
+      return luaL_error(L, "Error in %s: NucleusNTheta = %d, at most %d (Gauss-Legendre in cos theta)\n", who, (int) o->NucleusNTheta, DiracMaxQuadraturePoints);
   }
   if (nucleus->model == NucleusGaussian || nucleus->model == NucleusFermi)
   {
@@ -158,6 +174,61 @@ int DFTLuaNuclearPotential(lua_State *L, const char *who, double Z, DFTLuaNucleu
       lua_pop(L, 1);
     }
     luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
+  }
+  // Function3D: rho(x, y, z) on the product grid (Gauss-Legendre in cos theta, uniform in
+  // phi) at every quadrature point, projected on S_LM (NucleusMultipole.cpp); the spherical
+  // part rho_00/sqrt(4 pi) is the nucleus of the atom
+  if (nucleus->model == NucleusFunction3D)
+  {
+    uint32_t nT = o->NucleusNTheta, nF = o->NucleusNPhi, nP = basis->nPoint, i, j, nLM = NucleusMultipoleCount(o->NucleusLmax);
+    double *xT = (double *) malloc(nT*sizeof(double)), *wT = (double *) malloc(nT*sizeof(double));
+    double *rho3 = (double *) malloc(nP*nT*nF*sizeof(double)), *rhoLM = (double *) malloc(nLM*nP*sizeof(double));
+    GaussLegendreNodesWeights(nT, -1., 1., xT, wT);
+    for (q = 0; q < nP; q++)
+      for (i = 0; i < nT; i++)
+        for (j = 0; j < nF; j++)
+        {
+          double r = basis->rq[q], st = sqrt(fmax(0., 1. - xT[i]*xT[i])), ph = 2.*M_PI*j/nF;
+          lua_rawgeti(L, LUA_REGISTRYINDEX, o->Density);
+          lua_pushnumber(L, r*st*cos(ph));
+          lua_pushnumber(L, r*st*sin(ph));
+          lua_pushnumber(L, r*xT[i]);
+          lua_call(L, 3, 1);
+          if (lua_type(L, -1) != LUA_TNUMBER)
+          {
+            free(xT); free(wT); free(rho3); free(rhoLM);
+            RadialBasisFree(basis);
+            return luaL_error(L, "Error in %s: Density(%f, %f, %f) is not a number\n", who, r*st*cos(ph), r*st*sin(ph), r*xT[i]);
+          }
+          rho3[(q*nT + i)*nF + j] = lua_tonumber(L, -1);
+          lua_pop(L, 1);
+        }
+    luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
+    NucleusMultipoleProject(rho3, nP, nT, nF, xT, wT, o->NucleusLmax, rhoLM);
+    rho = (double *) malloc(nP*sizeof(double));
+    for (q = 0; q < nP; q++) rho[q] = rhoLM[q]/sqrt(4.*M_PI);
+    *charge = NucleusCharge(basis, rho);
+    if (*charge > 0.)
+    {
+      for (i = 0; i < nLM*nP; i++) rhoLM[i] *= Z/(*charge);
+      if (o->multipoleMoment != NULL)
+        for (i = 0; i < nLM; i++)
+        {
+          int Lq, Mq;
+          NucleusMultipoleLM(i, &Lq, &Mq);
+          o->multipoleMoment[i] = NucleusMultipoleMoment(basis, Lq, rhoLM + i*nP);
+        }
+      if (o->multipoleV != NULL && NucleusMultipolePotentials(basis, o->NucleusLmax, rhoLM, o->multipoleV))
+      {
+        free(xT); free(wT); free(rho3); free(rhoLM); free(rho);
+        RadialBasisFree(basis);
+        return luaL_error(L, "Error in %s: the multipole potentials failed\n", who);
+      }
+    }
+    free(xT); free(wT); free(rho3); free(rhoLM);
+  }
+  if (nucleus->model == NucleusFunction || nucleus->model == NucleusFunction3D)
+  {
     *charge = NucleusCharge(basis, rho);
     if (!(*charge > 0.))
     {
@@ -199,6 +270,9 @@ static int LuaDiracRadialSolve(lua_State *L)
     {"FermiThickness", "double", &(Options.nuc.FermiThickness)},
     {"Density", "function", &(Options.nuc.Density)},
     {"DensityTolerance", "double", &(Options.nuc.DensityTolerance)},
+    {"NucleusLmax", "uint32_t", &(Options.nuc.NucleusLmax)},
+    {"NucleusNTheta", "uint32_t", &(Options.nuc.NucleusNTheta)},
+    {"NucleusNPhi", "uint32_t", &(Options.nuc.NucleusNPhi)},
     {"Degree", "uint32_t", &(Options.nuc.Degree)},
     {"NIntervals", "uint32_t", &(Options.nuc.NIntervals)},
     {"rMin", "double", &(Options.nuc.rMin)},

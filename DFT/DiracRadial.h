@@ -22,6 +22,7 @@
 #define NucleusGaussian 1
 #define NucleusFermi    2
 #define NucleusFunction 3
+#define NucleusFunction3D 4   // spherical part as NucleusFunction; the multipoles in NucleusMultipole.cpp
 
 // knots, quadrature points and weights of one radial B-spline basis
 typedef struct {

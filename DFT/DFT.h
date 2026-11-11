@@ -23,5 +23,6 @@ typedef double DFTReal;
 #include "AtomSCF.h"
 #include "AtomHF.h"
 #include "AtomBasis.h"
+#include "NucleusMultipole.h"
 
 #endif /* DFT_DFT_H_ */
