@@ -395,6 +395,18 @@ test-jobs:
 
 
 # =========================================================================
+# ===== The atomic code and the DFT/HF add-on use double precision only
+# ===== (no float, no single-precision math functions); a source check, no build
+#
+
+test-job-nosingleprecision:
+  stage: test
+  script:
+    - sh TestScripts/NoSinglePrecision.sh
+  dependencies: []
+
+
+# =========================================================================
 # ===== Test what Quanty makes of its command line
 # ===== These are set in LuaInterface/main.cpp and need a command line of their
 # ===== own, so they can not run in the matrix above
