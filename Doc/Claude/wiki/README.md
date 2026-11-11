@@ -711,13 +711,26 @@ against the live page:
   the Dirac operator and the determinant energy, which equals `Atom.Etot`). The
   example was run on the branch build; the output block is its output.
 
+### Updated page: Atomic coulomb repulsion
+
+| file | page |
+|---|---|
+| `documentation.standard_operators.atomic_coulomb_repulsion.txt` | `documentation:standard_operators:atomic_coulomb_repulsion` |
+
+A drop-in replacement built on the live raw source (curl, 11 November 2026):
+nothing removed, 25 lines added. After the input list one paragraph: the radial
+functions can also come from `CalculateAtomicBasisFunctions`, then computed
+exactly, all from one call, and `"conserve"` / `"1P-Operator"` not yet available
+for them. Before the table of contents a second example, "Example with
+calculated radial functions": the Coulomb energy of the Ne determinant equals
+`Atom.Edirect + Atom.Eexchange` (54.08660432 Hartree both); run on the branch
+build, the output block is its output. Left as they are, for you to decide: the
+line "Note: parts of the functionality of this function will be available in
+the release of October 2019", and the first sentence, which writes
+`NewOperator("AtomicU",indices,...)` without the `NF` that the example passes.
+
 ### Not touched
 
-- `documentation:standard_operators:atomic_coulomb_repulsion` documents
-  `NewOperator("AtomicU")` with FPLO functions only (and still says "available
-  in the release of October 2019"). A sentence that the functions of
-  `CalculateAtomicBasisFunctions` work too, and that `"conserve"` and
-  `"1P-Operator"` are not yet available for them, would fit there.
 - `NewOperator("Dirac")` has no page of its own; the new section on the
   NewOperator page is now its only documentation.
 - If `ReadFPLOBasisFunctions` gets a page, a pointer to `CalculateAtomicBasisFunctions`.
