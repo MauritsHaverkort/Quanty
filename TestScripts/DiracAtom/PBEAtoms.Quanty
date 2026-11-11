@@ -13,9 +13,11 @@
  *    GGA residual has a floor of a few 1e-10 for the heavier atoms).
  *  "LDA" (Slater + PW92) and "PBE" (on PW92) have no independent reference here (the PW92
  *  parameters could not be checked against libxc); for Ne, Dirac and Schroedinger, only
- *  convergence and the consistency of the two expressions are checked. The Dirac GGA
- *  uses density mixing ({"MixDensity", true}): mixing the potential does not converge there
- *  (the GGA potential near the nucleus, with n'/r, reacts too strongly to the input).
+ *  convergence and the consistency of the two expressions are checked. The GGAs use
+ *  density mixing by default: mixing the potential does not converge the Dirac GGA (the
+ *  GGA potential near the nucleus, with n'/r, reacts too strongly to the input). The
+ *  Lehtola rows mix the potential ({"MixDensity", false}) so that the bound on the
+ *  energy difference applies; the default is checked as well.
 ]]
 
 local lehtola = {
@@ -45,7 +47,8 @@ for _, a in ipairs(lehtola) do
   for k, m in ipairs({"LDA-VWN", "PBE-VWN"}) do
     -- the eigenvalue-sum expression differs from Etot to first order in the residual: an LDA
     -- converges easily to 1e-10, the GGA to 1e-9 (its residual floor is a few 1e-10)
-    local A = DiracKohnSham(a[1], a[2], options({{"Method", m}, {"Relativistic", false}, {"ResidualTolerance", (k == 1) and 1e-10 or 1e-9}}))
+    local A = DiracKohnSham(a[1], a[2], options({{"Method", m}, {"Relativistic", false}, {"MixDensity", false},
+                                                 {"ResidualTolerance", (k == 1) and 1e-10 or 1e-9}}))
     local d = A.Etot - a[2+k]
     check(A.Converged and math.abs(d) < 1e-6 and math.abs(A.EtotEigenvalueSum - A.Etot) < 3*math.sqrt(a[1])*A.Residual,
           string.format("Z = %2d %-7s Etot = %.6f (Lehtola %.6f) %+.1e, eigenvalue-sum expression %+.1e, %d iterations",
@@ -56,15 +59,24 @@ end
 -- LDA and PBE on PW92, Ne: no reference, convergence and consistency
 for _, m in ipairs({"LDA", "PBE"}) do
   for _, rel in ipairs({false, true}) do
-    local mixDensity = rel and m == "PBE"
-    local A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", m}, {"Relativistic", rel}, {"MixDensity", mixDensity},
-                                                        {"ResidualTolerance", mixDensity and 1e-8 or 1e-9}}))
+    local A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", m}, {"Relativistic", rel}, {"ResidualTolerance", (m == "PBE") and 1e-8 or 1e-9}}))
+    local mixDensity = A.MixDensity
     -- the bound sqrt(N) |R| holds for the potential residual; with density mixing R is a density
     check(A.Converged and math.abs(A.EtotEigenvalueSum - A.Etot) < (mixDensity and 1e-8 or 3*math.sqrt(10)*A.Residual),
           string.format("Ne %-3s %-13s Etot = %.6f, eigenvalue-sum expression %+.1e, %d iterations", m, rel and "Dirac" or "Schroedinger",
                         A.Etot, A.EtotEigenvalueSum - A.Etot, A.Iterations))
   end
 end
+
+-- the default mixing: density for the GGAs, potential for the LDAs; an explicit option wins
+local defaults = {{"PBE", true}, {"PBE-VWN", true}, {"LDA", false}, {"LDA-VWN", false}, {"RLDA-MV", false}}
+local okDefault = true
+for _, d in ipairs(defaults) do
+  local A = DiracKohnSham(2, "1s2", options({{"Method", d[1]}, {"Relativistic", false}}))
+  if A.MixDensity ~= d[2] or not A.Converged then okDefault = false end
+end
+local B = DiracKohnSham(2, "1s2", options({{"Method", "PBE"}, {"Relativistic", false}, {"mixdensity", false}}))
+check(okDefault and B.MixDensity == false, "default mixing: density for PBE, PBE-VWN, potential for the LDAs; {\"MixDensity\", false} wins")
 
 -- configurations
 local A = DiracKohnSham(10, "1s2, 2s2, 2p6", options({{"Method", "LDA-VWN"}, {"Relativistic", false}}))

@@ -32,8 +32,33 @@
  *     EnergyTolerance   change of Etot between iterations, 1e-10 Ha
  *     ResidualTolerance norm of the potential residual, 1e-8
  *     DensityCutoff     density below which e_xc = 0, 1e-30
+ *     MixDensity        Pulay mixing of the density (f and f') instead of the potential
+ *                       (v and g); default true for the GGAs (PBE, PBE-VWN), whose Dirac
+ *                       atoms do not converge with potential mixing, false for the LDAs
+ *                       (decided by Maurits, 2026-11-11)
  *     RayleighQuotient, OriginBoundary   as in DiracRadialSolve, true
  */
+
+/* 1 if the options table at index arg has an entry {name, value} (case insensitive). */
+int DFTLuaHasOption(lua_State *L, int arg, const char *name)
+{
+  uint32_t i, len;
+  int found = 0;
+  if (!lua_istable(L, arg)) return 0;
+  len = (uint32_t) lua_objlen(L, arg);
+  for (i = 1; i <= len && !found; i++)
+  {
+    lua_rawgeti(L, arg, i);
+    if (lua_istable(L, -1))
+    {
+      lua_rawgeti(L, -1, 1);
+      if (lua_type(L, -1) == LUA_TSTRING && strcicmp(lua_tostring(L, -1), name) == 0) found = 1;
+      lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+  }
+  return found;
+}
 static int LuaDiracKohnSham(lua_State *L)
 {
   struct
@@ -99,6 +124,7 @@ static int LuaDiracKohnSham(lua_State *L)
   if (len == 3) LuaCheckOptions(L, 3, LuaDiracKohnShamOptions);
   method = XCMethodFromName(Options.Method);
   if (method < 0) return luaL_error(L, "Error in DiracKohnSham: unknown Method \"%s\" (LDA, LDA-VWN, RLDA-MV, PBE, PBE-VWN)\n", Options.Method);
+  if (len < 3 || !DFTLuaHasOption(L, 3, "MixDensity")) Options.MixDensity = XCIsGGA(method) ? true : false;
   if (AtomParseConfiguration(configuration, maxShell, &nShell, shellN, shellL, shellQ))
     return luaL_error(L, "Error in DiracKohnSham: can not read the configuration \"%s\"\n", configuration);
   if (Options.nuc.rMax <= 0.) Options.nuc.rMax = 40.;
@@ -135,6 +161,7 @@ static int LuaDiracKohnSham(lua_State *L)
   lua_pushnumber(L, c);           lua_setfield(L, -2, "c");
   lua_pushstring(L, Options.Method); lua_setfield(L, -2, "Method");
   lua_pushboolean(L, Options.Relativistic); lua_setfield(L, -2, "Relativistic");
+  lua_pushboolean(L, Options.MixDensity); lua_setfield(L, -2, "MixDensity");
   lua_pushnumber(L, Options.nuc.rMin); lua_setfield(L, -2, "rMin");
   lua_pushnumber(L, Options.nuc.rMax); lua_setfield(L, -2, "rMax");
   lua_createtable(L, atom.nOrb, 0);

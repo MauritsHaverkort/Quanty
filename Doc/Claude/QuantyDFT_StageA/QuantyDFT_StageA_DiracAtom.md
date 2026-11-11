@@ -138,7 +138,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **The nonrelativistic limit by $c\to10^8$ (§0, §11.1) does not work in double precision.** $H$ contains $-2c^2$ and $E$ is measured from $mc^2$, so the rounding is $\varepsilon\cdot2c^2$: hydrogen 1s is exact at $c$ = 137, off by 7e-9 at $c=10^4$ (whose relativistic correction is still −Z⁴/8c² = 8e-4 Ha for Ni, 0.09 Ha for U), off by 7e-6 at $c=10^6$, and +0.81 Ha at $c=10^8$. Decision on a true nonrelativistic mode pending (needed for NIST LDA in check 9 and the Cowan comparison in check 8).
 - NIST conventions for check 9 (read from the NIST pages, SRD 141): point nucleus, $c$ = 137.0359895 (CODATA 1986), VWN with the Ceperley–Alder fit (VWN5, NIST's parameters A = 0.0310907, $x_0$ = −0.10498, b = 3.72744, c = 12.9352), MacDonald–Vosko correction to exchange only in RLDA, $j$-subshells occupied in proportion to $2j+1$ (= $\bar q_a$ of §8.1), Hartree units, total energies to 1 µHa; tables list $E_{\rm tot}$, $E_{\rm kin}$, $E_{\rm coul}$, $E_{\rm enuc}$, $E_{\rm xc}$ and the eigenvalues. Ne (RLDA): $E_{\rm tot}$ = −128.336403, 1s −30.314393, 2s −1.326075, 2p₁/₂ −0.500040, 2p₃/₂ −0.496232 Ha.
 
-### Task A3: Dirac-Kohn-Sham atom (2026-11-11, in progress: the default mixing is open)
+### Task A3: Dirac-Kohn-Sham atom (done 2026-11-11, commits afc08c5e … see git log)
 
 - **Eigensolver: `dsygv`, not `dsygvd`.** The Schrödinger basis (new, below) gave hydrogen 1s = −0.4602 instead of −0.5. Cause: divide and conquer (`dsygvd`) gives the small eigenvalues of a strongly graded problem only to $\varepsilon\max|E|$ absolute ($\max|E|=2\times10^{14}$ for $r_1=10^{-6}$; the same wrong number with Accelerate's and with scipy's LAPACK). QR iteration (`dsygv`) gives −0.5 to 1e-12, and lowers the raw DKB eigenvalue noise from 1e-8 to 5e-10 Ha (the Rayleigh quotient stays the default, it is still the most accurate). Diagonal scaling of $S$ does not help (the spectrum stays). `Info.Edsygvd` is now `Info.EEigensolver`. `DiracGeneralizedEigen` solves prebuilt matrices; Rayleigh quotients via `dgemm`.
 - **Nonrelativistic limit** (decided by Maurits): option `{"Relativistic", false}`, the radial Schrödinger equation on the same B-splines ($P$ only), instead of $c\to10^8$ (which fails, §0.2 A3 preparation).
@@ -147,7 +147,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **Temporary Lua entries**: `DiracKohnSham(Z, configuration, {options})` (configurations like `"[Ne] 3s2 3p6"`, fractional occupations) and `XCFunctional(method, n, sigma)` (for the functional tests; not in the agreed list, added for them). The nucleus and basis setup of the Lua entries is shared (`DFTLuaNucleusBasis`).
 - **Check 9 (NIST)**, point nucleus, $c$ = 137.0359895, default basis: He, Ne, Ar, Kr, Xe, Rn, U, LDA (Schrödinger, `LDA-VWN`) and RLDA (Dirac, `RLDA-MV`). $E_{\rm tot}$ all to ≤ 5.3e-7 Ha, all 129 eigenvalues to ≤ 1.2e-6 Ha, 0.1–10 s per atom. The components agree to 9e-7 for $Z\le36$; for Xe, Rn, U $E_{\rm kin}$ and $E_{\rm enuc}$ differ by up to 7e-6 with opposite signs. Our converged values (160–240 intervals, $R_{\max}$ 40–60, $r_{\min}$ 1e-8/Z–1e-10/Z, degree 8–10 agree to 1e-7) differ from NIST by 4.3e-6 / 4.4e-6 for Rn: the spread of the reference, which claims 1 µHa for $E_{\rm tot}$ only. The test checks components to 1e-5.
 - **Check 10**: fully numerical PBE atoms with PW92 correlation could not be found; Lehtola's PRA 101, 012516 (2020), Table 1, has VWN (= NIST LDA) and PBE-VWN for He, Be, Ne, Mg, Ar, Ca, Zn, Kr to 1 µHa. Both reproduced to ≤ 6.1e-7 Ha (Schrödinger). The two energy expressions agree to ≤ 2e-9 (design: 1e-9; the GGA residual has a floor of a few 1e-10 for the heavier atoms, so the test uses the bound $3\sqrt N\|R\|$).
-- **Open: the Dirac GGA does not converge with potential mixing** (Ne PBE: residual 1e-4 after 150 iterations, the energy converged). The GGA potential near the nucleus ($-4(\partial e/\partial\sigma)n'/r$, $n'$ large inside the nucleus) reacts too strongly to the input. **Density mixing** (option `{"MixDensity", true}`, mixing $f$ and $f'$) converges it in 12 iterations, with the same energies to 1e-8; for the Dirac LDA it is slower (Ne 135 instead of 15 iterations at residual 1e-9). Default: potential mixing (design) until decided.
+- **Mixing: density for the GGAs, potential for the LDAs** (decided by Maurits; option `MixDensity` overrides). The Dirac GGA does not converge with potential mixing (Ne PBE: residual 1e-4 after 150 iterations, the energy converged): the GGA potential near the nucleus ($-4(\partial e/\partial\sigma)n'/r$, $n'$ large inside the nucleus) reacts too strongly to the input. Density mixing ($f$ and $f'$) converges it in 12 iterations with the same energies to 1e-8; for the Dirac LDA it is slower (Ne 135 instead of 15 iterations at residual 1e-9), hence potential mixing there, as in the design.
 - Not done in A3: the LDA/GGA atom with confinement (A5), spin polarization (not in stage A).
 
 ### Order of work in stage A (one commit series per task, each closed by its checkpoints in §12)
@@ -157,7 +157,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 | A0 | Remainder of step 0 (above) — done | step-0 tests plus the float check |
 | A1 | Nucleus models (§3, without `Function3D`), DKB assembly from `BSplineMatrixBanded` (§5), eigenproblem, root selection; `DKBSpline` evaluation — done | 1a, 1b, 2, 13 (spherical part) |
 | A2 | Poisson $Y^k$ in `BSplineMatrix` (§7), Lorentz-scalar confinement (§6), on-site orthonormalization (§6.1) — done | 3, 4, 14 |
-| A3 | XC functionals and Dirac–Kohn–Sham atom (§9) — in progress (default mixing open) | 9, 10 |
+| A3 | XC functionals and Dirac–Kohn–Sham atom (§9) — done | 9, 10 |
 | A4 | Configuration-average DHF (§8) | 5, 6, 7, 8 |
 | A5 | `CalculateAtomicBasisFunctions` binding, exact `"Dirac"`/`"AU"` paths (§11), `Function3D` (§3.1), Fourier–Bessel (§10) | 11, 12, 13 |
 
@@ -361,7 +361,7 @@ $$n(r)=\frac{1}{4\pi r^2}\sum_a\bar q_a\,(P_a^2+Q_a^2).$$
 $$\langle u_\alpha|v_{xc}|u_\beta\rangle=\int_0^{R_{\max}}4\pi r^2\Big[\frac{\partial e_{xc}}{\partial n}\,t_{\alpha\beta}+2\frac{\partial e_{xc}}{\partial\sigma}\,n'\,t_{\alpha\beta}'\Big]dr.$$
   Here $n'$ and $t'$ are analytic from the B-spline derivatives; $e_{xc}$ is the energy density per volume.
 - **Total energy:** $E=\sum_a\bar q_a\langle a|h_D|a\rangle+\tfrac12\int 4\pi r^2 nV_H+E_{xc}[n]$. Equivalently, the eigenvalue sum minus $\tfrac12\int nV_H-\int nv_{xc}+E_{xc}$, which serves as a consistency check.
-- **Mixing:** Pulay/Anderson mixing on $V_H+v_{xc}$ at the quadrature points.
+- **Mixing:** Pulay (DIIS) at the quadrature points, of $V_H+v_{xc}$ for the LDAs and of the density for the GGAs (A3; potential mixing does not converge the Dirac GGA).
 
 ## 10. Output of stage A
 
