@@ -1,0 +1,44 @@
+--[[
+ *  DFT stage A5e (Doc/Claude/QuantyDFT_StageA, design section 0.1): the accuracy report and
+ *  the preset of CalculateAtomicBasisFunctions.
+ *  - RExpectation and VirialRatio: hydrogen 1s (Schroedinger) <1/r> = 1, <r> = 3/2,
+ *    <r^2> = 3, -V/T = 2 (measured to the 12 printed digits, checked 1e-10); Ne Hartree-Fock
+ *    -V/T = 2 to the basis (measured 3.8e-10, checked 1e-8).
+ *  - Potential: r V_N -> -Z and r V_H -> N at rMax (point nucleus, neutral atom); Vxc for
+ *    Kohn-Sham only.
+ *  - {"Precision", "High"}: converges with OrbitalTolerance 1e-9, NQuadrature Degree+9, and
+ *    reports ConvergenceCheck (twice the knot intervals): Ne DHF dEtot 2.8e-14, dEnergy 1.1e-9
+ *    (checked 1e-10 and 1e-7); DHF reports Gradient and PairGradient.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local pt = {"Nucleus", "Point"}
+
+local G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 1}, {"Configuration", "1s1"}, pt, {"Relativistic", false}})
+local R = A.Orbitals[1].RExpectation
+check(math.abs(R[-1] - 1) < 1e-10 and math.abs(R[1] - 1.5) < 1e-10 and math.abs(R[2] - 3) < 1e-10 and R[-3] == nil and math.abs(A.VirialRatio - 2) < 1e-10,
+      string.format("H 1s: <1/r> %.12f, <r> %.12f, <r^2> %.12f, -V/T %.12f", R[-1], R[1], R[2], A.VirialRatio))
+
+G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"Configuration", "[He] 2s2 2p6"}, pt, {"Relativistic", false}})
+local n = #x
+check(math.abs(A.VirialRatio - 2) < 1e-8 and math.abs(A.Potential.VN[n]*x[n] + 10) < 1e-10 and math.abs(A.Potential.VH[n]*x[n] - 10) < 1e-10 and A.Potential.Vxc == nil,
+      string.format("Ne HF (Schroedinger): -V/T - 2 = %.1e, r V_N %.12f and r V_H %.12f at rMax", A.VirialRatio - 2, A.Potential.VN[n]*x[n], A.Potential.VH[n]*x[n]))
+
+G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"Configuration", "[He] 2s2 2p6"}, pt, {"Method", "LDA"}})
+check(A.Potential.Vxc ~= nil and #A.Potential.Vxc == #x and A.Potential.Vxc[10] < 0, "Kohn-Sham: Potential.Vxc on the points x")
+
+G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"Configuration", "[He] 2s2 2p6"}, {"Nucleus", "Gaussian"}, {"A", 20}, {"Precision", "High"}})
+local cc = A.ConvergenceCheck
+check(A.Converged and A.Residual < 1e-9 and A.Gradient ~= nil and A.PairGradient ~= nil and cc ~= nil and cc.NIntervals == 240
+      and math.abs(cc.dEtot) < 1e-10 and cc.dEnergy < 1e-7,
+      string.format("Ne DHF, Precision High: converged (step %.1e), ConvergenceCheck NIntervals %d, dEtot %.1e, dEnergy %.1e", A.Residual, cc and cc.NIntervals or 0,
+                    cc and cc.dEtot or 0, cc and cc.dEnergy or 0))
+
+local ok = pcall(function() return CalculateAtomicBasisFunctions(nil, {{"Z", 2}, {"Configuration", "1s2"}, pt, {"Precision", "Extreme"}}) end)
+check(not ok, "unknown Precision is an error")
+if failed then error("the accuracy report: checks failed", 1) end
+print("passed")

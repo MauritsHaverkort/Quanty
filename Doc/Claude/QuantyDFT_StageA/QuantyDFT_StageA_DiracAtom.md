@@ -54,7 +54,7 @@ One future application is high-precision physics. The code must therefore never 
    - finite nuclear mass;
    - the Breit interaction: Martin's `BreitInteraction.cpp` exists and should be reviewed then.
 
-## 0.2 Status of step 0 and tasks A0–A4
+## 0.2 Status of step 0 and tasks A0–A5
 
 ### What stage A can build on (branch `Claude`, commits f50b204f … 9a14a753)
 
@@ -221,6 +221,18 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **Spherical Bessel functions** (Maurits: both methods side by side, named by method, a Lua option, one implementation each): `Core/BasicMath/BasicMath_StandardFunctions.cpp` has `SphericalBesselJSeries` (the former `SphericalBesselJ`, two series) and `SphericalBesselJRecurrence` (upward recurrence for $x>l$; Miller's downward recurrence for $x\le l$, as §10.3 asks, normalized by the sum rule $\sum(2n+1)j_n^2=1$; the power series for $x<10^{-3}$). `SphericalBesselJ` is the general entry and uses the recurrence, which supersedes the series: against 30-digit mpmath values ($l=0$–60, $x=10^{-4}$–$10^3$ and densely $x=l/4$–$3l$) the recurrence is ≤ 1.3e-13 relative everywhere, the series 1e-11 at small $l$ and wrong in the middle range from $l\approx20$ (3e-7 at $l=20$, a factor 15 at $l=30$); the recurrence is 2.4–100 times faster in every range (e.g. $l=5$: 132 against 1167 ns for $x<1$, 74 against 370 ns for $x\approx l$). The existing Lua binding `math.SphericalBesselJ(l, x)` (`LuaInterface/lua/lmathlib.c`) has the option `{{"Method", "Recurrence"}}` (default) or `"Series"`; test `SphericalBesselJ`. Martin's `Eigendifferential.cpp` and `AtomicOperators/GaussQuadrature.cpp` call `SphericalBesselJ` and now get the recurrence.
 - **Check 11** (test `FourierBessel`): hydrogen 1s (Schrödinger) against $4\sqrt{2/\pi}/(1+k^2)^2$ to 8.1e-10 (the B-spline representation of $e^{-r}$); Plancherel $\int k^2(\tilde P^2+\tilde Q^2)dk=1$ to ≤ 2.3e-10 (He 1s Dirac, Ne $2p$); the inverse transform reproduces $G$, $F$ to ≤ 1.8e-6 (limited by the cut at $k_{\max}$).
 
+### Task A5e: precision preset, accuracy report, FPLO (done 2026-11-11)
+
+- **FPLO comparison** (Maurits: the A5 reference; test `FPLOAtom`): FPLO 21.00, set `No Contraction Of Virtual Orbitals/Re_Q0_V0` of the tutorials (Q = 0, V = 0: the basis states are eigenstates). FPLO's "relativistic atomic energies" belong to its self-consistent atom with the occupations of its run, 5d$_{3/2}$ full, one electron in 5d$_{5/2}$, 6s² (Fermi level in 5d$_{5/2}$), not to $2j+1$-averaged ones. With `Method "LDA"` (PW92), the configuration `"[Xe] 4f14 5d3/2(4) 5d5/2(1) 6s2"` and a uniform-sphere nucleus of the one fitted radius $R=6.90765721$ fm (fitted to the 1s; the Visscher–Dyall radius is 6.89892 fm, 1.3e-3 smaller, so FPLO's radius constants differ) all 22 bound eigenvalues agree to ≤ 8.7e-8 Ha and $G$, $F$ on FPLO's own mesh points to ≤ 2.7e-6. This confirms the PW92 parameters (unchecked against libxc in A3) and the Dirac–Kohn–Sham atom against an independent code. The 1s moves by 0.27 Ha/fm: the radius must be given to 1e-6 fm for a 1e-7 Ha check. FPLO's own total energy (−16705.38128) is that of its one-atom molecule (Ewald, confined basis), ours −16705.38022.
+- **New nucleus model `"Uniform"`** (homogeneous sphere, $R=\sqrt{5/3}R_{\rm rms}$, analytic potential; FPLO's "constant density"): a `"Function"` sphere put its discontinuity inside a knot interval, the quadrature missed 3.6e-3 of the charge and the rescaling to $Z$ changed the nucleus.
+- **Bug fixed: sign of $\kappa=+1$ functions** (one rule, `InnermostLobeSign`, now used by `DiracSignConvention` and `AtomSignConvention`). With a uniform-sphere nucleus the DKB basis leaves a linear term in $P$ of $p_{1/2}$ near $r=0$ (1.6e-7 max|P|; with a Gaussian 1e-11); the floor $\sqrt\varepsilon\max|P|$ took it for the innermost lobe and flipped the function against FPLO. The floor is now $\varepsilon^{1/3}\max|P|$ (6e-6); bare-nucleus artefacts were measured ≤ 1e-10, genuine innermost lobes are ≥ 1e-3.
+- **`{"Precision", "High"}`** (`CalculateAtomicBasisFunctions`; explicit options win): `EnergyTolerance` $10^{-13}|E_{TF}|$, `OrbitalTolerance` 1e-9, `NQuadrature` degree+9 ($k+8$, §0.1), `ConvergenceCheck`. Deviation from §0.1: no gradient criterion (A4: the orbital step), and the floors were measured: orbital step 1.6e-10 (Hg, Gaussian nucleus) and 2.3e-9 (Hg, point nucleus); the Kohn–Sham DIIS residual stalls at 1.7e-9 (Re), 7.5e-9 (U, finite nucleus), 8.7e-8 (U, point nucleus), so `ResidualTolerance` stays (Etot is second order in it).
+- **`ConvergenceCheck`**: the same calculation with twice the knot intervals (same $r_{\min}$, $r_{\max}$, degree, $n_q$): `Atom.ConvergenceCheck = {NIntervals, dEtot, dEnergy}`; Ne DHF: 2.8e-14 and 1.1e-9.
+- **Report** in `Atom`: `Gradient`, `PairGradient` (DHF), `VirialRatio` $-(E-T)/T$ (Schrödinger; Ne HF $2+3.8\times10^{-10}$), `Potential = {VN, VH, Vxc}` on the points `x`, per orbital `RExpectation` $\langle r^k\rangle$, $k=-3$ ($l>0$), $-1, 1, 2$ (hydrogen 1s exact to 12 digits). Test `AtomicBasisReport`.
+- Not done: eigen-residuals $\|Hc-\varepsilon Sc\|$ of the returned functions (they are orthonormalized, not eigenvectors; the ground state's step and gradients are reported instead); `Precision` in the temporary entries `DiracKohnSham`/`DiracHartreeFock`.
+
+**Stage A is complete** (A0–A5e). Open for later stages: the Lua interface beyond `CalculateAtomicBasisFunctions` (§11), `ExtraPotentials` (§0.1.7), magnetic hyperfine fields (§3.1), a finite nucleus for grid functions in `NewOperator("Dirac")`, options of the DKB `"AU"` path.
+
 ### Order of work in stage A (one commit series per task, each closed by its checkpoints in §12)
 
 | Task | Content | Checks |
@@ -230,7 +242,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 | A2 | Poisson $Y^k$ in `BSplineMatrix` (§7), Lorentz-scalar confinement (§6), on-site orthonormalization (§6.1) — done | 3, 4, 14 |
 | A3 | XC functionals and Dirac–Kohn–Sham atom (§9) — done | 9, 10 |
 | A4 | Configuration-average DHF (§8) — done | 5, 6, 7, 8 |
-| A5 | `CalculateAtomicBasisFunctions` binding, exact `"Dirac"`/`"AU"` paths (§11), `Function3D` (§3.1), Fourier–Bessel (§10) | 11, 12, 13 |
+| A5 | `CalculateAtomicBasisFunctions` binding, exact `"Dirac"`/`"AU"` paths (§11), `Function3D` (§3.1), Fourier–Bessel (§10) — done (A5a–A5e) | 11, 12, 13, FPLO |
 
 ### Known limits that stay (not part of stage A)
 - Martin's continuum code (`ContinuumStates`, `Eigendifferential`, reachable only as `Martin.*`) uses the compiled `cAU`; a change in a script does not reach it.

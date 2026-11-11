@@ -23,6 +23,7 @@
 #define NucleusFermi    2
 #define NucleusFunction 3
 #define NucleusFunction3D 4   // spherical part as NucleusFunction; the multipoles in NucleusMultipole.cpp
+#define NucleusUniform  5     // homogeneously charged sphere of radius sqrt(5/3) Rrms (FPLO's "constant density")
 
 // knots, quadrature points and weights of one radial B-spline basis
 typedef struct {
@@ -61,6 +62,7 @@ uint32_t DiracElectronicFirst(const double *E, uint32_t nE, double c);
 int DiracRootIndex(uint32_t n, int kappa, uint32_t *index);
 int DiracComponents(const RadialBasisType *basis, int kappa, double c, const double *coef, const double *r, uint32_t nr,
                     double *P, double *Q);
+double InnermostLobeSign(const double *P, uint32_t nP);
 int DiracSignConvention(const RadialBasisType *basis, int kappa, double c, double *coef);
 
 int ConfinementPotential(const RadialBasisType *basis, DFTReal rc, DFTReal N, DFTReal *Vbeta);

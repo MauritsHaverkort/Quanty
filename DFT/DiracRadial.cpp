@@ -119,6 +119,12 @@ int NucleusDensity(const NucleusType *nucleus, const RadialBasisType *basis, DFT
     for (q = 0; q < basis->nPoint; q++) rho[q] = nucleus->Z*pow(zeta/M_PI, 1.5)*exp(-zeta*basis->rq[q]*basis->rq[q]);
     return 0;
   }
+  if (nucleus->model == NucleusUniform)
+  {
+    DFTReal R = sqrt(5./3.)*nucleus->Rrms;
+    for (q = 0; q < basis->nPoint; q++) rho[q] = (basis->rq[q] < R) ? 3.*nucleus->Z/(4.*M_PI*R*R*R) : 0.;
+    return 0;
+  }
   if (nucleus->model == NucleusFermi)
   {
     for (q = 0; q < basis->nPoint; q++) rho[q] = 1./(1. + exp((basis->rq[q] - nucleus->cFermi)/nucleus->aFermi));
@@ -134,6 +140,8 @@ int NucleusDensity(const NucleusType *nucleus, const RadialBasisType *basis, DFT
  * points (design section 3):
  *     Point     -Z/r
  *     Gaussian  -Z erf(sqrt(zeta) r)/r,   zeta = 3/(2 Rrms^2)
+ *     Uniform   a homogeneously charged sphere, R = sqrt(5/3) Rrms (FPLO's "constant density"):
+ *               -Z (3 - r^2/R^2)/(2R) inside, -Z/r outside (A5e)
  *     Fermi     -Y^0[4 pi r^2 rho](r)/r   (radial Poisson equation, design section 7)
  *     Function  the same, with the density rho (per volume) given on the quadrature
  *               points; it should be normalized to Z, the caller checks that.
@@ -155,6 +163,16 @@ int NucleusPotential(const NucleusType *nucleus, const RadialBasisType *basis, c
   {
     zeta = 1.5/(nucleus->Rrms*nucleus->Rrms);
     for (q = 0; q < basis->nPoint; q++) V[q] = -nucleus->Z*erf(sqrt(zeta)*basis->rq[q])/basis->rq[q];
+    return 0;
+  }
+  if (nucleus->model == NucleusUniform)
+  {
+    DFTReal R = sqrt(5./3.)*nucleus->Rrms, r;
+    for (q = 0; q < basis->nPoint; q++)
+    {
+      r = basis->rq[q];
+      V[q] = (r < R) ? -nucleus->Z*(3. - r*r/(R*R))/(2.*R) : -nucleus->Z/r;
+    }
     return 0;
   }
   if (nucleus->model != NucleusFermi && nucleus->model != NucleusFunction && nucleus->model != NucleusFunction3D) return 1;
@@ -536,27 +554,36 @@ int DiracComponents(const RadialBasisType *basis, int kappa, double c, const dou
   return 0;
 }
 
-/* Sign convention: P > 0 on its innermost lobe, as in Grant's book and in FPLO's basis
- * files. The innermost lobe is the first local extremum of |P| on the quadrature points
- * with |P| > sqrt(DBL_EPSILON) max |P|; below that level, near r = 0 for large l, the
- * values are rounding noise of the coefficients (a property of double arithmetic, not a
- * tolerance of the physics). Flips the sign of coef if needed. */
+/* The sign of P on its innermost lobe, P given on nP points of increasing r: the first local
+ * extremum of |P| with |P| > DBL_EPSILON^(1/3) max |P| (6e-6). The floor skips what is not a
+ * lobe near r = 0: rounding noise of the coefficients for large l (below sqrt(DBL_EPSILON)
+ * max |P|), and a tiny linear term that the DKB basis leaves in P of kappa = +1 near the
+ * origin, 1.6e-7 max |P| with a uniform-sphere nucleus (with which the sign of Re 2p1/2
+ * came out opposite to FPLO's; A5e). Genuine innermost lobes are 1e-3 max |P| or more.
+ * Returns +1, -1, or 0 if P vanishes. Used by DiracSignConvention and AtomSignConvention. */
+double InnermostLobeSign(const double *P, uint32_t nP)
+{
+  uint32_t q;
+  double Pmax = 0., floor;
+  for (q = 0; q < nP; q++) if (fabs(P[q]) > Pmax) Pmax = fabs(P[q]);
+  floor = cbrt(DBL_EPSILON)*Pmax;
+  for (q = 0; q + 1 < nP; q++)
+    if (fabs(P[q]) > floor && fabs(P[q]) >= fabs(P[q+1])) return (P[q] > 0.) ? 1. : -1.;
+  return 0.;
+}
+
+/* Sign convention: P > 0 on its innermost lobe (InnermostLobeSign), as in Grant's book and in
+ * FPLO's basis files (checked against FPLO's Re functions, A5e). Flips the sign of coef if
+ * needed. */
 int DiracSignConvention(const RadialBasisType *basis, int kappa, double c, double *coef)
 {
   uint32_t q, nP = basis->nPoint, n2 = 2*(basis->nSpline - 2);
-  double *P = (double *) malloc(nP*sizeof(double)), Pmax = 0., noise, s = 0.;
+  double *P = (double *) malloc(nP*sizeof(double)), sign;
   DiracComponents(basis, kappa, c, coef, basis->rq, nP, P, NULL);
-  for (q = 0; q < nP; q++) if (fabs(P[q]) > Pmax) Pmax = fabs(P[q]);
-  noise = sqrt(DBL_EPSILON)*Pmax;
-  for (q = 0; q + 1 < nP; q++)
-    if (fabs(P[q]) > noise && fabs(P[q]) >= fabs(P[q+1]))
-    {
-      s = P[q];
-      break;
-    }
+  sign = InnermostLobeSign(P, nP);
   free(P);
-  if (s < 0.) for (q = 0; q < n2; q++) coef[q] = -coef[q];
-  return (Pmax > 0.) ? 0 : 1;
+  if (sign < 0.) for (q = 0; q < n2; q++) coef[q] = -coef[q];
+  return (sign != 0.) ? 0 : 1;
 }
 
 /* Lorentz-scalar confinement (design section 6) on the quadrature points:

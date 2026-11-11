@@ -132,9 +132,11 @@ test-jobs-diracatom:
     matrix:
       - TEST_NAME:
           - "AtomicBasisFunctions"
+          - "AtomicBasisReport"
           - "Confinement"
           - "DKBSplineEvaluate"
           - "FourierBessel"
+          - "FPLOAtom"
           - "Function3DNucleus"
           - "FunctionNucleus"
           - "GaussianNucleus"

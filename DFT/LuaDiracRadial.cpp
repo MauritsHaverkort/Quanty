@@ -12,7 +12,8 @@
  * n = l(kappa) + i), the large components G = P and the small components F = Q of these
  * states as interpolating functions of type "DKBSpline" (exact evaluation, 0 outside
  * [0, rMax]), and a table Info. Options (lengths in bohr):
- *     Nucleus          "Point", "Gaussian" (default), "Fermi" or "Function"
+ *     Nucleus          "Point", "Gaussian" (default), "Uniform" (sphere, R = sqrt(5/3) Rrms),
+ *                      "Fermi", "Function" or "Function3D"
  *     A, Rrms          mass number, or the root-mean-square radius; Rrms = (0.836 A^(1/3)
  *                      + 0.570) fm if only A is given (Visscher and Dyall)
  *     FermiThickness   skin thickness t of the Fermi nucleus, default 2.30 fm
@@ -120,7 +121,8 @@ int DFTLuaNucleus(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions 
   else if (strcicmp(o->Nucleus, "Fermi") == 0) nucleus->model = NucleusFermi;
   else if (strcicmp(o->Nucleus, "Function") == 0) nucleus->model = NucleusFunction;
   else if (strcicmp(o->Nucleus, "Function3D") == 0) nucleus->model = NucleusFunction3D;
-  else return luaL_error(L, "Error in %s: unknown Nucleus \"%s\" (Point, Gaussian, Fermi, Function or Function3D)\n", who, o->Nucleus);
+  else if (strcicmp(o->Nucleus, "Uniform") == 0) nucleus->model = NucleusUniform;
+  else return luaL_error(L, "Error in %s: unknown Nucleus \"%s\" (Point, Gaussian, Uniform, Fermi, Function or Function3D)\n", who, o->Nucleus);
   if ((nucleus->model == NucleusFunction || nucleus->model == NucleusFunction3D) != (o->Density != LUA_NOREF))
   {
     if (o->Density != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
@@ -133,7 +135,7 @@ int DFTLuaNucleus(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions 
     if (o->NucleusNTheta > DiracMaxQuadraturePoints)
       return luaL_error(L, "Error in %s: NucleusNTheta = %d, at most %d (Gauss-Legendre in cos theta)\n", who, (int) o->NucleusNTheta, DiracMaxQuadraturePoints);
   }
-  if (nucleus->model == NucleusGaussian || nucleus->model == NucleusFermi)
+  if (nucleus->model == NucleusGaussian || nucleus->model == NucleusFermi || nucleus->model == NucleusUniform)
   {
     if (o->Rrms > 0.) nucleus->Rrms = o->Rrms;
     else if (o->A > 0.) nucleus->Rrms = (0.836*pow(o->A, 1./3.) + 0.570)/a0fm;

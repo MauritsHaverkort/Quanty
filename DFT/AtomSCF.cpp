@@ -621,19 +621,14 @@ int AtomSCF(DiracAtomType *atom, uint32_t maxIterations, uint32_t history, doubl
   return error;
 }
 
-/* Sign convention of orbital o, as DiracSignConvention: P > 0 on its innermost lobe (the
- * first local extremum of |P| on the quadrature points above sqrt(DBL_EPSILON) max |P|),
- * for Dirac and Schroedinger orbitals alike. */
+/* Sign convention of orbital o, P > 0 on its innermost lobe (InnermostLobeSign), for Dirac and
+ * Schroedinger orbitals alike. */
 void AtomSignConvention(DiracAtomType *atom, uint32_t o)
 {
   uint32_t q, nP = atom->basis->nPoint;
   double *P = (double *) malloc(nP*sizeof(double)), *dP = (double *) malloc(nP*sizeof(double));
-  double *Q = (double *) malloc(nP*sizeof(double)), *dQ = (double *) malloc(nP*sizeof(double)), Pmax = 0., noise, s = 0.;
+  double *Q = (double *) malloc(nP*sizeof(double)), *dQ = (double *) malloc(nP*sizeof(double));
   AtomOrbitalOnPoints(atom->basis, atom->relativistic, atom->orb[o].kappa, atom->c, atom->orb[o].coef, P, dP, Q, dQ);
-  for (q = 0; q < nP; q++) Pmax = fmax(Pmax, fabs(P[q]));
-  noise = sqrt(DBL_EPSILON)*Pmax;
-  for (q = 0; q + 1 < nP; q++)
-    if (fabs(P[q]) > noise && fabs(P[q]) >= fabs(P[q+1])) { s = P[q]; break; }
-  if (s < 0.) for (q = 0; q < atom->Nf; q++) atom->orb[o].coef[q] = -atom->orb[o].coef[q];
+  if (InnermostLobeSign(P, nP) < 0.) for (q = 0; q < atom->Nf; q++) atom->orb[o].coef[q] = -atom->orb[o].coef[q];
   free(P); free(dP); free(Q); free(dQ);
 }

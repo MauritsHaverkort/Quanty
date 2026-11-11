@@ -33,19 +33,32 @@
  *                       (FourierBessel.cpp; Q empty without relativity)
  *     Orthonormalize    "GramSchmidt" (default, lowest n first) or "Lowdin"
  *     RedundancyTolerance  smallest eigenvalue of an overlap matrix, 1e-8 (error below)
+ *     Precision         "Normal" (default) or "High" (design 0.1): EnergyTolerance 1e-13 |E|
+ *                       (|E| of the Thomas-Fermi atom), OrbitalTolerance 1e-9 (the eigensolver
+ *                       floor of the orbital step: 1.6e-10 for Hg with a finite nucleus, 2e-9
+ *                       with a point nucleus), NQuadrature Degree+9, and ConvergenceCheck;
+ *                       ResidualTolerance (Kohn-Sham) stays: the DIIS residual stalls at
+ *                       1.7e-9 (Re), 7.5e-9 (U, finite nucleus), 8.7e-8 (U, point nucleus), and
+ *                       Etot is second order in it. Options given explicitly win
+ *     ConvergenceCheck  true: repeat with twice the knot intervals (same rMin, rMax, Degree,
+ *                       NQuadrature) and report Atom.ConvergenceCheck = {NIntervals, dEtot,
+ *                       dEnergy = max |change of an orbital energy|}
  *     MaxIterations 200, History 8, Mixing (Kohn-Sham ground state 0.3), OrbitalMixing
  *     (every orbital SCF: Hartree-Fock and the generating ones, 0.5), EnergyTolerance 1e-10,
  *     ResidualTolerance (Kohn-Sham potential residual) 1e-8, OrbitalTolerance (orbital step)
  *     1e-8, DensityCutoff 1e-30, MixDensity (default for the GGAs), RayleighQuotient,
  *     OriginBoundary
  * Atom: the ground state (Etot, Ekin, Eenuc, and Edirect, Eexchange for DHF or Ecoul, Exc
- * for Kohn-Sham; Converged, Iterations, Residual, dE), Method, Relativistic, c, Z,
+ * for Kohn-Sham; Converged, Iterations, Residual, dE; DHF: Gradient, PairGradient;
+ * Schroedinger: VirialRatio -(Etot - Ekin)/Ekin), Potential = {VN, VH, Vxc (Kohn-Sham)} of
+ * the ground state on the points x, Method, Relativistic, c, Z,
  * NElectron, rMin, rMax, Nucleus (an options list for NewOperator("Dirac")), Labels,
  * MinOverlapEigenvalue and OrthonormalityError (max |C^T S C - 1|) of the
  * orthonormalization, for a "Function3D" nucleus NuclearMultipoleMoments[i] = {L, M, Value =
  * int r^L S_LM rho d^3r} (L >= 2; S_LM as in NucleusMultipole.cpp), and Orbitals[i] = {Label, n, l, kappa,
  * j, Occupation, Q, P, rc, Energy (eigenvalue of its generating equation), EnergyGround
  * (<a|F|a> of the returned function with the ground-state operator), Vbeta (<beta V_beta>),
+ * RExpectation {[-3] (l > 0), [-1], [1], [2]} = <r^k> of the returned function,
  * EtotGenerating, Generated, Converged}; SlaterIntegrals in the format of GetSlaterIntegrals,
  * t["a b a b"] = {[k] = F^k(ab)} and t["a b b a"] = {[k] = G^k(ab)} for the returned orbitals
  * (jj-resolved in Dirac); Dirac also SlaterIntegralsNL, the same for the nl shells, the
@@ -235,7 +248,8 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     DFTLuaNucleusOptions nuc;
     double Z;
     char *Configuration, *Method, *Orthonormalize;
-    bool Relativistic, RayleighQuotient, OriginBoundary, MixDensity;
+    bool Relativistic, RayleighQuotient, OriginBoundary, MixDensity, ConvergenceCheck;
+    char *Precision;
     int NMax, Orbitals, Confinement, FourierBessel;
     uint32_t MaxIterations, History;
     double Mixing, OrbitalMixing, EnergyTolerance, ResidualTolerance, OrbitalTolerance, DensityCutoff, RedundancyTolerance, ConfinementVmax;
@@ -277,6 +291,8 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     {"OrbitalTolerance", "double", &(Options.OrbitalTolerance)},
     {"DensityCutoff", "double", &(Options.DensityCutoff)},
     {"MixDensity", "bool", &(Options.MixDensity)},
+    {"Precision", "char*", &(Options.Precision)},
+    {"ConvergenceCheck", "bool", &(Options.ConvergenceCheck)},
     {NULL, NULL, NULL}};
   const char *who = "CalculateAtomicBasisFunctions";
   const uint32_t maxShell = 256;
@@ -317,7 +333,20 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   Options.DensityCutoff = 1e-30;
   Options.RedundancyTolerance = 1e-8;
   Options.ConfinementVmax = 1e5;
+  Options.Precision = (char *) "Normal";
+  Options.ConvergenceCheck = false;
   LuaCheckOptions(L, 2, LuaBasisOptions);
+  // the preset {"Precision", "High"} (design 0.1): tighter defaults, explicit options win
+  if (strcicmp(Options.Precision, "High") == 0)
+  {
+    double scale = 0.7687*pow(fabs(Options.Z), 7./3.);     // |E| of the Thomas-Fermi atom
+    if (!DFTLuaHasOption(L, 2, "EnergyTolerance")) Options.EnergyTolerance = 1e-13*scale;
+    if (!DFTLuaHasOption(L, 2, "OrbitalTolerance")) Options.OrbitalTolerance = 1e-9;
+    if (!DFTLuaHasOption(L, 2, "NQuadrature")) Options.nuc.NQuadrature = Options.nuc.Degree + 9;
+    if (!DFTLuaHasOption(L, 2, "ConvergenceCheck")) Options.ConvergenceCheck = true;
+  }
+  else if (strcicmp(Options.Precision, "Normal") != 0)
+    return luaL_error(L, "Error in %s: Precision \"%s\" is not Normal or High\n", who, Options.Precision);
   if (!(Options.Z > 0.)) return luaL_error(L, "Error in %s: the option Z (nuclear charge > 0) is required\n", who);
   if (Options.Configuration == NULL) return luaL_error(L, "Error in %s: the option Configuration is required\n", who);
   if (strcicmp(Options.Method, "DHF") == 0) { hartreeFock = 1; method = XCLDAVWN; }
@@ -569,14 +598,37 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   lua_pushnumber(L, Options.nuc.rMax); lua_setfield(L, -2, "rMax");
   lua_pushnumber(L, minEig);     lua_setfield(L, -2, "MinOverlapEigenvalue");
   lua_pushnumber(L, orthoError); lua_setfield(L, -2, "OrthonormalityError");
+  if (hartreeFock)
+  {
+    lua_pushnumber(L, res.gradient);     lua_setfield(L, -2, "Gradient");
+    lua_pushnumber(L, res.pairGradient); lua_setfield(L, -2, "PairGradient");
+  }
+  if (!Options.Relativistic) { lua_pushnumber(L, -(res.Etot - res.Ekin)/res.Ekin); lua_setfield(L, -2, "VirialRatio"); }
+  // potentials of the ground state on the points x: V_N, V_H (of the ground-state density), V_xc (Kohn-Sham)
+  {
+    uint32_t nP = basis.nPoint;
+    double *VH = (double *) malloc(nP*sizeof(double)), *v = (double *) malloc(nP*sizeof(double)), *g = (double *) malloc(nP*sizeof(double)), Ec, Ex;
+    AtomDensity(&atom);
+    RadialYkOnPoints(&basis, 0, atom.poisson, atom.f, VH);
+    lua_newtable(L);
+    LuaPushArray_double(L, atom.VN, (int) nP); lua_setfield(L, -2, "VN");
+    LuaPushArray_double(L, VH, (int) nP);      lua_setfield(L, -2, "VH");
+    if (!hartreeFock && !AtomPotential(&atom, atom.f, atom.df, v, g, &Ec, &Ex))
+    {
+      for (i = 0; i < nP; i++) v[i] -= VH[i];
+      LuaPushArray_double(L, v, (int) nP);     lua_setfield(L, -2, "Vxc");
+    }
+    lua_setfield(L, -2, "Potential");
+    free(VH); free(v); free(g);
+  }
   // Nucleus, as options for NewOperator("Dirac")
   lua_newtable(L);
   lua_newtable(L); lua_pushstring(L, "Nucleus"); lua_rawseti(L, -2, 1);
   lua_pushstring(L, nucleus.model == NucleusPoint ? "Point" : nucleus.model == NucleusGaussian ? "Gaussian" : nucleus.model == NucleusFermi ? "Fermi"
-                  : nucleus.model == NucleusFunction ? "Function" : "Function3D");
+                  : nucleus.model == NucleusUniform ? "Uniform" : nucleus.model == NucleusFunction ? "Function" : "Function3D");
   lua_rawseti(L, -2, 2); lua_rawseti(L, -2, 1);
   k = 2;
-  if (nucleus.model == NucleusGaussian || nucleus.model == NucleusFermi)
+  if (nucleus.model == NucleusGaussian || nucleus.model == NucleusFermi || nucleus.model == NucleusUniform)
   {
     lua_newtable(L); lua_pushstring(L, "Rrms"); lua_rawseti(L, -2, 1); lua_pushnumber(L, nucleus.Rrms); lua_rawseti(L, -2, 2); lua_rawseti(L, -2, k++);
   }
@@ -651,6 +703,25 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     lua_pushnumber(L, res.Egenerating[o]); lua_setfield(L, -2, "EtotGenerating");
     lua_pushboolean(L, res.generated[o]); lua_setfield(L, -2, "Generated");
     lua_pushboolean(L, res.converged[o]); lua_setfield(L, -2, "Converged");
+    {
+      // <r^k> = int (P^2 + Q^2) r^k dr of the returned function, k = -3 (l > 0), -1, 1, 2
+      uint32_t nP = basis.nPoint, q;
+      double *P = (double *) malloc(nP*sizeof(double)), *dP = (double *) malloc(nP*sizeof(double));
+      double *Qs = (double *) malloc(nP*sizeof(double)), *dQ = (double *) malloc(nP*sizeof(double));
+      int ks[4] = {-3, -1, 1, 2};
+      AtomOrbitalOnPoints(&basis, atom.relativistic, orb->kappa, c, res.coef + o*atom.Nf, P, dP, Qs, dQ);
+      lua_newtable(L);
+      for (int t = 0; t < 4; t++)
+      {
+        DFTReal sum = 0., comp = 0.;
+        if (ks[t] == -3 && orb->l == 0) continue;
+        for (q = 0; q < nP; q++) NeumaierAdd(&sum, &comp, basis.wq[q]*(P[q]*P[q] + Qs[q]*Qs[q])*pow(basis.rq[q], ks[t]));
+        lua_pushnumber(L, sum + comp);
+        lua_rawseti(L, -2, ks[t]);
+      }
+      lua_setfield(L, -2, "RExpectation");
+      free(P); free(dP); free(Qs); free(dQ);
+    }
     lua_rawseti(L, -2, k+1);
   }
   lua_setfield(L, -2, "Orbitals");
@@ -742,5 +813,54 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   AtomFree(&atom);
   RadialBasisFree(&basis);
   if (densityIndex > 0) lua_remove(L, densityIndex);   // the reference was released by DFTLuaNuclearPotential
+  // ConvergenceCheck: the same calculation with twice the knot intervals (the same rMin, rMax,
+  // Degree, NQuadrature); Atom.ConvergenceCheck = {NIntervals, dEtot, dEnergy = max |d eps|}
+  if (Options.ConvergenceCheck)
+  {
+    int tAtom = lua_gettop(L), nOpt = (int) lua_objlen(L, 2), m = 0;
+    lua_pushcfunction(L, LuaCalculateAtomicBasisFunctions);
+    lua_pushvalue(L, 1);
+    lua_newtable(L);
+    for (int t = 1; t <= nOpt; t++)
+    {
+      lua_rawgeti(L, 2, t);
+      lua_rawgeti(L, -1, 1);
+      const char *name = lua_tostring(L, -1);
+      int skip = (name != NULL) && (strcicmp(name, "NIntervals") == 0 || strcicmp(name, "ConvergenceCheck") == 0 || strcicmp(name, "FourierBessel") == 0
+                                    || strcicmp(name, "rMin") == 0 || strcicmp(name, "rMax") == 0 || strcicmp(name, "NQuadrature") == 0);
+      lua_pop(L, 1);
+      if (skip) lua_pop(L, 1); else lua_rawseti(L, -2, ++m);
+    }
+    const char *nm[5] = {"NIntervals", "ConvergenceCheck", "rMin", "rMax", "NQuadrature"};
+    double nv[5] = {2.*Options.nuc.NIntervals, 0., Options.nuc.rMin, Options.nuc.rMax, (double) Options.nuc.NQuadrature};
+    for (int t = 0; t < 5; t++)
+    {
+      lua_newtable(L);
+      lua_pushstring(L, nm[t]); lua_rawseti(L, -2, 1);
+      if (t == 1) lua_pushboolean(L, 0); else lua_pushnumber(L, nv[t]);
+      lua_rawseti(L, -2, 2);
+      lua_rawseti(L, -2, ++m);
+    }
+    lua_call(L, 2, 4);
+    // the refined Atom at the top, the original at tAtom
+    double dE, dEps = 0.;
+    lua_getfield(L, -1, "Etot"); lua_getfield(L, tAtom, "Etot");
+    dE = lua_tonumber(L, -2) - lua_tonumber(L, -1);
+    lua_pop(L, 2);
+    lua_getfield(L, -1, "Orbitals"); lua_getfield(L, tAtom, "Orbitals");
+    for (k = 1; k <= (uint32_t) lua_objlen(L, -1); k++)
+    {
+      lua_rawgeti(L, -2, k); lua_getfield(L, -1, "Energy");
+      lua_rawgeti(L, -3, k); lua_getfield(L, -1, "Energy");
+      dEps = fmax(dEps, fabs(lua_tonumber(L, -3) - lua_tonumber(L, -1)));
+      lua_pop(L, 4);
+    }
+    lua_pop(L, 2 + 4);
+    lua_newtable(L);
+    lua_pushinteger(L, 2*Options.nuc.NIntervals); lua_setfield(L, -2, "NIntervals");
+    lua_pushnumber(L, dE);   lua_setfield(L, -2, "dEtot");
+    lua_pushnumber(L, dEps); lua_setfield(L, -2, "dEnergy");
+    lua_setfield(L, tAtom, "ConvergenceCheck");
+  }
   return 4;
 }
