@@ -91,15 +91,18 @@ void DFTLuaPushOrbitals(lua_State *L, DiracAtomType *atom)
 
 /* Push G and F, the radial functions of the atom's orbitals in the sign convention of
  * AtomSignConvention (applied here): Dirac, G = P and F = Q as DKBSplines; Schroedinger,
- * G = P as a BSpline and F empty. */
-void DFTLuaPushRadialFunctions(lua_State *L, DiracAtomType *atom)
+ * G = P as a BSpline and F empty. list[0 .. nList-1] picks the orbitals and their order
+ * (NULL: all, in the atom's order). */
+void DFTLuaPushRadialFunctions(lua_State *L, DiracAtomType *atom, const uint32_t *list, uint32_t nList)
 {
   RadialBasisType *basis = atom->basis;
-  uint32_t o, i;
-  lua_createtable(L, atom->nOrb, 0);
-  lua_createtable(L, atom->relativistic ? atom->nOrb : 0, 0);
-  for (o = 0; o < atom->nOrb; o++)
+  uint32_t k, o, i;
+  if (list == NULL) nList = atom->nOrb;
+  lua_createtable(L, nList, 0);
+  lua_createtable(L, atom->relativistic ? nList : 0, 0);
+  for (k = 0; k < nList; k++)
   {
+    o = (list == NULL) ? k : list[k];
     AtomSignConvention(atom, o);
     if (atom->relativistic)
     {
@@ -109,7 +112,7 @@ void DFTLuaPushRadialFunctions(lua_State *L, DiracAtomType *atom)
         Interpolation::DKBSpline *f = new(memory) Interpolation::DKBSpline;
         luaL_setmetatable(L, "InterpolatingFunction_Type");
         f->Create(basis->knot, basis->nKnot, basis->degree, atom->orb[o].kappa, (uint32_t) comp, atom->c, atom->orb[o].coef, basis->nQ);
-        lua_rawseti(L, comp == 0 ? -3 : -2, o+1);
+        lua_rawseti(L, comp == 0 ? -3 : -2, k+1);
       }
     }
     else
@@ -121,7 +124,7 @@ void DFTLuaPushRadialFunctions(lua_State *L, DiracAtomType *atom)
       void *memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
       new(memory) BSpline::TBSpline(x, knots, y, basis->degree);
       luaL_setmetatable(L, "InterpolatingFunction_Type");
-      lua_rawseti(L, -3, o+1);
+      lua_rawseti(L, -3, k+1);
     }
   }
 }
@@ -164,8 +167,9 @@ static int LuaDiracKohnSham(lua_State *L)
   RadialBasisType basis;
   NucleusType nucleus;
   DiracAtomType atom;
-  double c, a0fm, Z, *V, charge, shellQ[64];
-  int shellN[64], shellL[64], method, error;
+  double c, a0fm, Z, *V, charge;
+  AtomShellType shell[64];
+  int method, error;
   uint32_t len = (uint32_t) lua_gettop(L), nShell = 0;
   const char *configuration;
 
@@ -190,13 +194,13 @@ static int LuaDiracKohnSham(lua_State *L)
   method = XCMethodFromName(Options.Method);
   if (method < 0) return luaL_error(L, "Error in DiracKohnSham: unknown Method \"%s\" (LDA, LDA-VWN, RLDA-MV, PBE, PBE-VWN)\n", Options.Method);
   if (len < 3 || !DFTLuaHasOption(L, 3, "MixDensity")) Options.MixDensity = XCIsGGA(method) ? true : false;
-  if (AtomParseConfiguration(configuration, maxShell, &nShell, shellN, shellL, shellQ))
+  if (AtomParseConfiguration(configuration, maxShell, &nShell, shell))
     return luaL_error(L, "Error in DiracKohnSham: can not read the configuration \"%s\"\n", configuration);
   if (Options.nuc.rMax <= 0.) Options.nuc.rMax = 40.;
   DFTLuaNucleusBasis(L, "DiracKohnSham", Z, &Options.nuc, a0fm, &nucleus, &basis, &V, &charge);
 
   error = AtomSetup(&atom, &basis, V, Z, Options.Relativistic ? 1 : 0, c, method, Options.OriginBoundary ? 1 : 0, Options.DensityCutoff,
-                    nShell, shellN, shellL, shellQ);
+                    nShell, shell);
   if (!error) error = AtomSCF(&atom, Options.MaxIterations, Options.History, Options.Mixing, Options.EnergyTolerance,
                               Options.ResidualTolerance, Options.RayleighQuotient ? 1 : 0, Options.MixDensity ? 1 : 0);
   free(V);
@@ -232,7 +236,7 @@ static int LuaDiracKohnSham(lua_State *L)
   lua_pushnumber(L, Options.nuc.rMax); lua_setfield(L, -2, "rMax");
   DFTLuaPushOrbitals(L, &atom);
   lua_setfield(L, -2, "Orbitals");
-  DFTLuaPushRadialFunctions(L, &atom);
+  DFTLuaPushRadialFunctions(L, &atom, NULL, 0);
   AtomFree(&atom);
   RadialBasisFree(&basis);
   return 3;
@@ -299,8 +303,9 @@ static int LuaDiracHartreeFock(lua_State *L)
   NucleusType nucleus;
   DiracAtomType atom;
   DiracHFType hf, jj;
-  double c, a0fm, Z, *V, charge, shellQ[64], EavJJ = 0., e1, e2, e3, e4;
-  int shellN[64], shellL[64], error;
+  double c, a0fm, Z, *V, charge, EavJJ = 0., e1, e2, e3, e4;
+  AtomShellType shell[64];
+  int error;
   uint32_t len = (uint32_t) lua_gettop(L), nShell = 0, s, a;
   const char *configuration;
 
@@ -319,27 +324,27 @@ static int LuaDiracHartreeFock(lua_State *L)
   Options.EnergyTolerance = 1e-10;
   Options.ResidualTolerance = 1e-8;
   if (len == 3) LuaCheckOptions(L, 3, LuaDiracHartreeFockOptions);
-  if (AtomParseConfiguration(configuration, maxShell, &nShell, shellN, shellL, shellQ))
+  if (AtomParseConfiguration(configuration, maxShell, &nShell, shell))
     return luaL_error(L, "Error in DiracHartreeFock: can not read the configuration \"%s\"\n", configuration);
   for (s = 0; s < nShell; s++)
-    if (!(shellQ[s] > 0.))
-      return luaL_error(L, "Error in DiracHartreeFock: shell %d%c of \"%s\" is empty (every shell needs q > 0)\n", shellN[s], "spdfghi"[shellL[s]], configuration);
+    if (!(shell[s].q > 0.))
+      return luaL_error(L, "Error in DiracHartreeFock: shell %d%c of \"%s\" is empty (every shell needs q > 0)\n", shell[s].n, "spdfghi"[shell[s].l], configuration);
   if (Options.nuc.rMax <= 0.) Options.nuc.rMax = 40.;
   DFTLuaNucleusBasis(L, "DiracHartreeFock", Z, &Options.nuc, a0fm, &nucleus, &basis, &V, &charge);
 
   // the LDA atom as the start, then Hartree-Fock
   error = AtomSetup(&atom, &basis, V, Z, Options.Relativistic ? 1 : 0, c, XCLDAVWN, Options.OriginBoundary ? 1 : 0, 1e-30,
-                    nShell, shellN, shellL, shellQ);
+                    nShell, shell);
   if (!error) error = AtomSCF(&atom, Options.MaxIterations, 8, 0.3, 1e-8, 1e-6, Options.RayleighQuotient ? 1 : 0, 0);
   free(V);
-  if (!error) error = HFSetup(&hf, &atom, 0, nShell, shellN, shellL, shellQ);
+  if (!error) error = HFSetup(&hf, &atom, 0);
   if (!error)
   {
     error = HFSCF(&hf, Options.MaxIterations, Options.History, Options.Mixing, Options.EnergyTolerance, Options.ResidualTolerance,
                   Options.RayleighQuotient ? 1 : 0);
     if (!error && !Options.Relativistic)
     {
-      error = HFSetup(&jj, &atom, 1, nShell, shellN, shellL, shellQ);
+      error = HFSetup(&jj, &atom, 1);
       if (!error)
       {
         HFOrbitalsOnPoints(&jj);
@@ -382,7 +387,7 @@ static int LuaDiracHartreeFock(lua_State *L)
   lua_pushnumber(L, Options.nuc.rMax); lua_setfield(L, -2, "rMax");
   DFTLuaPushOrbitals(L, &atom);
   lua_setfield(L, -2, "Orbitals");
-  DFTLuaPushRadialFunctions(L, &atom);
+  DFTLuaPushRadialFunctions(L, &atom, NULL, 0);
   HFFree(&hf);
   AtomFree(&atom);
   RadialBasisFree(&basis);

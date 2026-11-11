@@ -131,6 +131,7 @@ test-jobs-diracatom:
   parallel:
     matrix:
       - TEST_NAME:
+          - "AtomicBasisFunctions"
           - "Confinement"
           - "DKBSplineEvaluate"
           - "FunctionNucleus"

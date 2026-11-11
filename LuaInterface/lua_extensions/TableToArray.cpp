@@ -4358,6 +4358,15 @@ int32_t LuaCheckOptions(lua_State *L, int narg, LuaOptionsType *Options)
           lua_pushvalue(L, -1); // luaL_ref pops the function, the value is popped once more below
           *(int*)Options[j].variable = luaL_ref(L, LUA_REGISTRYINDEX);
         }
+        else if(strcmp(Options[j].type, "table") == 0)
+        {
+          // a Lua table (e.g. with string keys); kept in the registry like a function, the key stored
+          // as an int (LUA_NOREF if not set); the caller releases it with luaL_unref(L, LUA_REGISTRYINDEX, key)
+          if(lua_type(L, -1)!=LUA_TTABLE) return luaL_error(L, "Error option \"%s\" should be a table\n", Options[j].name);
+          if(*(int*)Options[j].variable != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, *(int*)Options[j].variable);
+          lua_pushvalue(L, -1);
+          *(int*)Options[j].variable = luaL_ref(L, LUA_REGISTRYINDEX);
+        }
         else if(strcmp(Options[j].type, "DeterminantRestrictionType") == 0)
         {
           *(DeterminantRestrictionType*)Options[j].variable=*(DeterminantRestrictionType*)LuaReturnVariableType(L, -1, Options[j].type);

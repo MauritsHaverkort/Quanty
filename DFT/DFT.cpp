@@ -13,6 +13,8 @@
 #include "XCFunctional.cpp"
 #include "AtomSCF.cpp"
 #include "AtomHF.cpp"
+#include "AtomBasis.cpp"
 #include "LuaDiracRadial.cpp"
 #include "LuaAtom.cpp"
 #include "LuaAtomicOperators.cpp"
+#include "LuaAtomicBasis.cpp"
