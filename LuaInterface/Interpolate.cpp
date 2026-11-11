@@ -171,7 +171,7 @@ static int LuaCubicHermiteSplineInterpolate(lua_State * L)
 	return 1;
 }
 /*
- * Arithmetic, comparison and integration are not yet supported for the radial Dirac
+ * Arithmetic and comparison are not yet supported for the radial Dirac
  * spinor components of type "DKBSpline" (DFT stage A): the sum of two of them with
  * different kappa is no DKB function. An explicit error instead of a silent fall-through.
  */
@@ -616,7 +616,6 @@ static int LuaInterpolateDestroy(lua_State * L)
 static int LuaInterpolationIntegrate(lua_State * L)
 {
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-	if (f->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "InterpolatingFunction.Integrate");
 	uint32_t len = (uint32_t)lua_gettop(L);
 	double value;
 	if (len == 1)
@@ -628,6 +627,14 @@ static int LuaInterpolationIntegrate(lua_State * L)
 		double a,b;
 		lua_check(L,2,a);
 		lua_check(L,3,b);
+		if (f->type == "DKBSpline")
+		{
+			// the range of a DKBSpline is its knots, [0, rMax]; f->x are its quadrature points
+			Interpolation::DKBSpline *d = (Interpolation::DKBSpline *) f;
+			if (((a < d->knots.front() || b > d->knots.back()) && a < b) || ((b < d->knots.front() || a > d->knots.back()) && b < a)) return luaL_error(L,"error in InterpolatingFunction.Integrate, integration limits out of interpolation range\n");
+			lua_push(L, Interpolation::Integrate(*f,a,b));
+			return 1;
+		}
 		if ( ((a < f->x[0] || b > f->x.back()) && a < b) || ((b < f->x[0] || a > f->x.back()) && b < a)) return luaL_error(L,"error in InterpolatingFunction.Integrate, integration limits out of interpolation range\n");
 		value = Interpolation::Integrate(*f,a,b);
 	}

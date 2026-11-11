@@ -171,6 +171,7 @@ static uint32_t IntegrationPoints(InterpolatingFunction &f)
 
 double Integrate(InterpolatingFunction &f)
 {
+	if (f.type == "DKBSpline") return DKBSplineIntegrate((DKBSpline &) f, ((DKBSpline &) f).knots.front(), ((DKBSpline &) f).knots.back());
 	uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	vector<double> x,w,y;
@@ -203,6 +204,7 @@ double IntegrateInterval(InterpolatingFunction &f, uint32_t idx)
 
 double Integrate(InterpolatingFunction &f, double a, double b)
 {
+	if (f.type == "DKBSpline") return DKBSplineIntegrate((DKBSpline &) f, a, b);
 	const uint32_t N = IntegrationPoints(f);
 	double val = 0;
 	double sign = 1;

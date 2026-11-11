@@ -24,6 +24,9 @@
 
 #include "InterpolatingFunction.h"
 
+double DKBSplineEvaluate(double t, const double *knot, uint32_t nKnot, uint32_t degree, int kappa, uint32_t component, double c,
+                         const double *a, const double *b, uint32_t k);
+
 namespace Interpolation {
 
 class DKBSpline: public InterpolatingFunction {
@@ -40,11 +43,14 @@ public:
 	                             // the first and the last are 0
 	uint32_t nQ;                 // Gauss points per knot interval of x and of Integrate
 
+	int Create(const double *knot, uint32_t nKnot, uint32_t d, int k, uint32_t comp, double c, const double *coef, uint32_t nQuad);
 	double operator()(double t);
 	double operator()(double t, unsigned int k);
 	std::vector<double> operator()(const std::vector<double> &t);
 	std::vector<double> operator()(const std::vector<double> &t, unsigned int k);
 };
+
+double DKBSplineIntegrate(DKBSpline &f, double lo, double hi);
 
 } /* namespace Interpolation */
 
