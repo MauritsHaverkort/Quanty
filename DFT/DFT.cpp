@@ -10,4 +10,7 @@
  */
 
 #include "DiracRadial.cpp"
+#include "XCFunctional.cpp"
+#include "AtomSCF.cpp"
 #include "LuaDiracRadial.cpp"
+#include "LuaAtom.cpp"

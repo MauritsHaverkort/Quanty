@@ -1,0 +1,86 @@
+--[[
+ *  DFT stage A, check 10 (Doc/Claude/QuantyDFT_StageA, design section 12): the GGA atom.
+ *  Reference: fully numerical (finite-element, microhartree) total energies of
+ *  S. Lehtola, Phys. Rev. A 101, 012516 (2020), arXiv:1908.02528, Table 1: VWN (= NIST LDA)
+ *  and "a PBE functional based on VWN correlation", here Method "PBE-VWN" (PBE exchange,
+ *  PBE gradient correction of the correlation on VWN5), nonrelativistic, point nucleus.
+ *  Checked, nonrelativistic (Schroedinger), with ResidualTolerance 1e-10 (LDA) and 1e-9 (GGA):
+ *  - Etot to 1e-6 Ha (the 6 decimals of the table) for He, Be, Ne, Mg, Ar, Ca, Zn, Kr,
+ *    both LDA-VWN and PBE-VWN (all agree to 6.1e-7);
+ *  - the two total-energy expressions (direct, and through the eigenvalue sum): their
+ *    difference is first order in the potential residual R, |dE| <= sqrt(N) |R| for the
+ *    density-weighted norm; checked with a factor 3. Measured: <= 2e-9 (design: 1e-9; the
+ *    GGA residual has a floor of a few 1e-10 for the heavier atoms).
+ *  "LDA" (Slater + PW92) and "PBE" (on PW92) have no independent reference here (the PW92
+ *  parameters could not be checked against libxc); for Ne, Dirac and Schroedinger, only
+ *  convergence and the consistency of the two expressions are checked. The Dirac GGA
+ *  uses density mixing ({"MixDensity", true}): mixing the potential does not converge there
+ *  (the GGA potential near the nucleus, with n'/r, reacts too strongly to the input).
+]]
+
+local lehtola = {
+  {2,  "1s2",               -2.834836,    -2.893287},
+  {4,  "1s2 2s2",           -14.447209,   -14.630525},
+  {10, "[He] 2s2 2p6",      -128.233481,  -128.869661},
+  {12, "[Ne] 3s2",          -199.139406,  -199.958820},
+  {18, "[Ne] 3s2 3p6",      -525.946195,  -527.352025},
+  {20, "[Ar] 4s2",          -675.742283,  -677.355243},
+  {30, "[Ar] 3d10 4s2",     -1776.573850, -1779.194575},
+  {36, "[Ar] 3d10 4s2 4p6", -2750.147940, -2753.430126}}
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local common = {{"Nucleus", "Point"}, {"MaxIterations", 400}}
+local function options(extra)
+  local o = {}
+  for _, v in ipairs(common) do o[#o+1] = v end
+  for _, v in ipairs(extra) do o[#o+1] = v end
+  return o
+end
+
+for _, a in ipairs(lehtola) do
+  for k, m in ipairs({"LDA-VWN", "PBE-VWN"}) do
+    -- the eigenvalue-sum expression differs from Etot to first order in the residual: an LDA
+    -- converges easily to 1e-10, the GGA to 1e-9 (its residual floor is a few 1e-10)
+    local A = DiracKohnSham(a[1], a[2], options({{"Method", m}, {"Relativistic", false}, {"ResidualTolerance", (k == 1) and 1e-10 or 1e-9}}))
+    local d = A.Etot - a[2+k]
+    check(A.Converged and math.abs(d) < 1e-6 and math.abs(A.EtotEigenvalueSum - A.Etot) < 3*math.sqrt(a[1])*A.Residual,
+          string.format("Z = %2d %-7s Etot = %.6f (Lehtola %.6f) %+.1e, eigenvalue-sum expression %+.1e, %d iterations",
+                        a[1], m, A.Etot, a[2+k], d, A.EtotEigenvalueSum - A.Etot, A.Iterations))
+  end
+end
+
+-- LDA and PBE on PW92, Ne: no reference, convergence and consistency
+for _, m in ipairs({"LDA", "PBE"}) do
+  for _, rel in ipairs({false, true}) do
+    local mixDensity = rel and m == "PBE"
+    local A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", m}, {"Relativistic", rel}, {"MixDensity", mixDensity},
+                                                        {"ResidualTolerance", mixDensity and 1e-8 or 1e-9}}))
+    -- the bound sqrt(N) |R| holds for the potential residual; with density mixing R is a density
+    check(A.Converged and math.abs(A.EtotEigenvalueSum - A.Etot) < (mixDensity and 1e-8 or 3*math.sqrt(10)*A.Residual),
+          string.format("Ne %-3s %-13s Etot = %.6f, eigenvalue-sum expression %+.1e, %d iterations", m, rel and "Dirac" or "Schroedinger",
+                        A.Etot, A.EtotEigenvalueSum - A.Etot, A.Iterations))
+  end
+end
+
+-- configurations
+local A = DiracKohnSham(10, "1s2, 2s2, 2p6", options({{"Method", "LDA-VWN"}, {"Relativistic", false}}))
+check(math.abs(A.Etot + 128.233481) < 1e-6 and #A.Orbitals == 3, string.format("Ne written out with commas: %.6f", A.Etot))
+A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", "LDA-VWN"}}))
+check(#A.Orbitals == 4 and A.Orbitals[3].Label == "2p3/2" and math.abs(A.Orbitals[3].Occupation - 4) < 1e-15 and math.abs(A.Orbitals[4].Occupation - 2) < 1e-15,
+      "Dirac: 2p6 -> 2p3/2 with 4, 2p1/2 with 2 electrons")
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+fails(function() return DiracKohnSham(10, "1s2 2s2 2p7") end, "2p7")
+fails(function() return DiracKohnSham(10, "1s2 1s2") end, "1s twice")
+fails(function() return DiracKohnSham(10, "1p2") end, "1p")
+fails(function() return DiracKohnSham(10, "[Ne", {{"Nucleus", "Point"}}) end, "[Ne")
+fails(function() return DiracKohnSham(10, "[He] 2s2 2p6", {{"Nucleus", "Point"}, {"Method", "B3LYP"}}) end, "unknown method")
+
+if failed then error("DiracKohnSham: GGA atom checks failed", 1) end
+print("passed")

@@ -19,5 +19,7 @@
 typedef double DFTReal;
 
 #include "DiracRadial.h"
+#include "XCFunctional.h"
+#include "AtomSCF.h"
 
 #endif /* DFT_DFT_H_ */

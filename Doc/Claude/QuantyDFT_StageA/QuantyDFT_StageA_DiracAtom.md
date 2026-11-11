@@ -54,7 +54,7 @@ One future application is high-precision physics. The code must therefore never 
    - finite nuclear mass;
    - the Breit interaction: Martin's `BreitInteraction.cpp` exists and should be reviewed then.
 
-## 0.2 Status of step 0 and tasks A0, A1, A2
+## 0.2 Status of step 0 and tasks A0–A3
 
 ### What stage A can build on (branch `Claude`, commits f50b204f … 9a14a753)
 
@@ -138,6 +138,18 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **The nonrelativistic limit by $c\to10^8$ (§0, §11.1) does not work in double precision.** $H$ contains $-2c^2$ and $E$ is measured from $mc^2$, so the rounding is $\varepsilon\cdot2c^2$: hydrogen 1s is exact at $c$ = 137, off by 7e-9 at $c=10^4$ (whose relativistic correction is still −Z⁴/8c² = 8e-4 Ha for Ni, 0.09 Ha for U), off by 7e-6 at $c=10^6$, and +0.81 Ha at $c=10^8$. Decision on a true nonrelativistic mode pending (needed for NIST LDA in check 9 and the Cowan comparison in check 8).
 - NIST conventions for check 9 (read from the NIST pages, SRD 141): point nucleus, $c$ = 137.0359895 (CODATA 1986), VWN with the Ceperley–Alder fit (VWN5, NIST's parameters A = 0.0310907, $x_0$ = −0.10498, b = 3.72744, c = 12.9352), MacDonald–Vosko correction to exchange only in RLDA, $j$-subshells occupied in proportion to $2j+1$ (= $\bar q_a$ of §8.1), Hartree units, total energies to 1 µHa; tables list $E_{\rm tot}$, $E_{\rm kin}$, $E_{\rm coul}$, $E_{\rm enuc}$, $E_{\rm xc}$ and the eigenvalues. Ne (RLDA): $E_{\rm tot}$ = −128.336403, 1s −30.314393, 2s −1.326075, 2p₁/₂ −0.500040, 2p₃/₂ −0.496232 Ha.
 
+### Task A3: Dirac-Kohn-Sham atom (2026-11-11, in progress: the default mixing is open)
+
+- **Eigensolver: `dsygv`, not `dsygvd`.** The Schrödinger basis (new, below) gave hydrogen 1s = −0.4602 instead of −0.5. Cause: divide and conquer (`dsygvd`) gives the small eigenvalues of a strongly graded problem only to $\varepsilon\max|E|$ absolute ($\max|E|=2\times10^{14}$ for $r_1=10^{-6}$; the same wrong number with Accelerate's and with scipy's LAPACK). QR iteration (`dsygv`) gives −0.5 to 1e-12, and lowers the raw DKB eigenvalue noise from 1e-8 to 5e-10 Ha (the Rayleigh quotient stays the default, it is still the most accurate). Diagonal scaling of $S$ does not help (the spectrum stays). `Info.Edsygvd` is now `Info.EEigensolver`. `DiracGeneralizedEigen` solves prebuilt matrices; Rayleigh quotients via `dgemm`.
+- **Nonrelativistic limit** (decided by Maurits): option `{"Relativistic", false}`, the radial Schrödinger equation on the same B-splines ($P$ only), instead of $c\to10^8$ (which fails, §0.2 A3 preparation).
+- **Functionals** (`DFT/XCFunctional.cpp`, spin unpolarized; $e(n,\sigma)$, $\partial e/\partial n$, $\partial e/\partial\sigma$ analytic, checked against finite differences to 2e-12): `LDA` (Slater + PW92), `LDA-VWN` (Slater + VWN5, NIST's parameters), `RLDA-MV` (VWN5 + MacDonald–Vosko on exchange; series for $\beta<1/2$, since $\beta\eta-{\rm asinh}\,\beta$ loses all digits at low density), `PBE`, `PBE-VWN` (PBE with VWN5 under the correlation gradient correction, as in Kraisler et al. 2010 and Lehtola 2020). `log1p`/`expm1` in PW92 and in PBE's $A$: without them PBE on PW92 gave NaN below $n=10^{-26}$. **PW92's parameters could not be checked against an independent source** (libxc's source was not readable); PBE's $\kappa,\mu,\beta,\gamma$ are confirmed by the PBE-VWN atoms to 1e-6.
+- **SCF** (`DFT/AtomSCF.cpp`): mean occupations ($j$ in proportion to $2j+1$, = NIST); $H=H_0+M[V_N]+M[v,g]$ with $H_0$, $M[V_N]$ once per symmetry group and $M[v,g]$ per iteration by direct quadrature on the DKB functions (equal to the block list to 1e-17); GGA in the weak form, $v=V_H+\partial e/\partial n-4(\partial e/\partial\sigma)n'/r$, $g=2(\partial e/\partial\sigma)n'$, $M_{ab}=\int[v(P_aP_b+Q_aQ_b)+g(P_aP_b+Q_aQ_b)']dr$; Thomas–Fermi start (Latter's fit); Pulay (DIIS) mixing. The residual is weighted with the density, $\|R\|^2=\sum w f(R_v^2+R_g^2/r^2)$: with an $r^2$ weight the Dirac atoms stalled at 1e-6, because beyond $r\approx10$ the density is at its rounding level and $v_{xc}\propto n^{1/3}$ there is noise. Energies: $E_{\rm tot}=E_{\rm kin}+E_{\rm enuc}+E_{\rm coul}+E_{xc}$ (NIST's components) and the eigenvalue-sum expression, which differ to first order in the residual ($|\Delta E|\le\sqrt N\|R\|$).
+- **Temporary Lua entries**: `DiracKohnSham(Z, configuration, {options})` (configurations like `"[Ne] 3s2 3p6"`, fractional occupations) and `XCFunctional(method, n, sigma)` (for the functional tests; not in the agreed list, added for them). The nucleus and basis setup of the Lua entries is shared (`DFTLuaNucleusBasis`).
+- **Check 9 (NIST)**, point nucleus, $c$ = 137.0359895, default basis: He, Ne, Ar, Kr, Xe, Rn, U, LDA (Schrödinger, `LDA-VWN`) and RLDA (Dirac, `RLDA-MV`). $E_{\rm tot}$ all to ≤ 5.3e-7 Ha, all 129 eigenvalues to ≤ 1.2e-6 Ha, 0.1–10 s per atom. The components agree to 9e-7 for $Z\le36$; for Xe, Rn, U $E_{\rm kin}$ and $E_{\rm enuc}$ differ by up to 7e-6 with opposite signs. Our converged values (160–240 intervals, $R_{\max}$ 40–60, $r_{\min}$ 1e-8/Z–1e-10/Z, degree 8–10 agree to 1e-7) differ from NIST by 4.3e-6 / 4.4e-6 for Rn: the spread of the reference, which claims 1 µHa for $E_{\rm tot}$ only. The test checks components to 1e-5.
+- **Check 10**: fully numerical PBE atoms with PW92 correlation could not be found; Lehtola's PRA 101, 012516 (2020), Table 1, has VWN (= NIST LDA) and PBE-VWN for He, Be, Ne, Mg, Ar, Ca, Zn, Kr to 1 µHa. Both reproduced to ≤ 6.1e-7 Ha (Schrödinger). The two energy expressions agree to ≤ 2e-9 (design: 1e-9; the GGA residual has a floor of a few 1e-10 for the heavier atoms, so the test uses the bound $3\sqrt N\|R\|$).
+- **Open: the Dirac GGA does not converge with potential mixing** (Ne PBE: residual 1e-4 after 150 iterations, the energy converged). The GGA potential near the nucleus ($-4(\partial e/\partial\sigma)n'/r$, $n'$ large inside the nucleus) reacts too strongly to the input. **Density mixing** (option `{"MixDensity", true}`, mixing $f$ and $f'$) converges it in 12 iterations, with the same energies to 1e-8; for the Dirac LDA it is slower (Ne 135 instead of 15 iterations at residual 1e-9). Default: potential mixing (design) until decided.
+- Not done in A3: the LDA/GGA atom with confinement (A5), spin polarization (not in stage A).
+
 ### Order of work in stage A (one commit series per task, each closed by its checkpoints in §12)
 
 | Task | Content | Checks |
@@ -145,7 +157,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 | A0 | Remainder of step 0 (above) — done | step-0 tests plus the float check |
 | A1 | Nucleus models (§3, without `Function3D`), DKB assembly from `BSplineMatrixBanded` (§5), eigenproblem, root selection; `DKBSpline` evaluation — done | 1a, 1b, 2, 13 (spherical part) |
 | A2 | Poisson $Y^k$ in `BSplineMatrix` (§7), Lorentz-scalar confinement (§6), on-site orthonormalization (§6.1) — done | 3, 4, 14 |
-| A3 | XC functionals and Dirac–Kohn–Sham atom (§9) | 9, 10 |
+| A3 | XC functionals and Dirac–Kohn–Sham atom (§9) — in progress (default mixing open) | 9, 10 |
 | A4 | Configuration-average DHF (§8) | 5, 6, 7, 8 |
 | A5 | `CalculateAtomicBasisFunctions` binding, exact `"Dirac"`/`"AU"` paths (§11), `Function3D` (§3.1), Fourier–Bessel (§10) | 11, 12, 13 |
 
