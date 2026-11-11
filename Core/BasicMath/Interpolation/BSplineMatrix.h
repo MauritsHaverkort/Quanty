@@ -27,4 +27,10 @@ int BSplineSlaterCellTables(const double *knot, uint32_t nKnot, uint32_t degree,
 double BSplineSlaterIntegral(const double *ci1, const double *cj1, const double *ci2, const double *cj2,
                              const double *rk1, const double *rk2, const double *rkD, uint32_t nKnot, uint32_t degree);
 
+int BSplinePoissonSetup(const double *knot, uint32_t nKnot, uint32_t degree, const double *rq, const double *wq, uint32_t nPoint,
+                        uint32_t k, double *band, uint32_t ldBand);
+
+int BSplinePoissonSolve(const double *knot, uint32_t nKnot, uint32_t degree, const double *rq, const double *wq, uint32_t nPoint,
+                        uint32_t k, const double *band, uint32_t ldBand, const double *rho, double *Y);
+
 #endif /* CORE_BASICMATH_INTERPOLATION_BSPLINEMATRIX_H_ */
