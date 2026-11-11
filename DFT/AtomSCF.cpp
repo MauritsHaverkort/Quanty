@@ -112,51 +112,61 @@ void AtomOrbitalOnPoints(const RadialBasisType *basis, int relativistic, int kap
   }
 }
 
+/* The basis functions that are nonzero at quadrature point q, with their values: idx[m] the
+ * index (Dirac: 0 .. 2n-1, u^(1) then u^(2); Schroedinger: 0 .. n-1), P, P', Q, Q' (Q = 0
+ * without relativity), for m = 0 .. (return value)-1, at most 2(degree+1). The same
+ * pointwise expressions as DiracDKBMatrices (design section 5). */
+uint32_t AtomLocalFunctions(const RadialBasisType *basis, int relativistic, int kappa, double c, uint32_t q,
+                            uint32_t *idx, double *P, double *dP, double *Q, double *dQ)
+{
+  uint32_t n = basis->nSpline - 2, d = basis->degree, j, mu, m = 0;
+  int64_t i;
+  double val[3*(BSplineMaxDegree+1)], h = 1./(2.*c), r = basis->rq[q], B, dB, d2B;
+  mu = BSplineFindInterval(r, basis->knot, basis->nKnot);
+  if (mu >= basis->nKnot) return 0;
+  BSplineValues(r, mu, basis->knot, basis->nKnot, d, 2, val);
+  for (j = 0; j <= d; j++)
+  {
+    i = (int64_t) mu - d + j - 1;
+    if (i < 0 || i >= n) continue;
+    B = val[j];
+    dB = val[d + 1 + j];
+    d2B = val[2*(d + 1) + j];
+    if (!relativistic)
+    {
+      idx[m] = (uint32_t) i; P[m] = B; dP[m] = dB; Q[m] = 0.; dQ[m] = 0.; m++;
+      continue;
+    }
+    idx[m] = (uint32_t) i;                              // u_i^(1)
+    P[m] = B;
+    dP[m] = dB;
+    Q[m] = h*(dB + kappa*B/r);
+    dQ[m] = h*(d2B + kappa*dB/r - kappa*B/(r*r));
+    m++;
+    idx[m] = n + (uint32_t) i;                          // u_i^(2)
+    P[m] = h*(dB - kappa*B/r);
+    dP[m] = h*(d2B - kappa*dB/r + kappa*B/(r*r));
+    Q[m] = B;
+    dQ[m] = dB;
+    m++;
+  }
+  return m;
+}
+
 /* M_ab = int [ v (P_a P_b + Q_a Q_b) + g (P_a P_b + Q_a Q_b)' ] dr over the basis functions
  * (Dirac: the 2n DKB functions of design section 5, M is 2n x 2n; Schroedinger: the n
  * B-splines B_1 .. B_n, Q = 0), dense, column major, both triangles. v and g on the
  * quadrature points; g may be NULL. Direct quadrature: on every point the 2(degree+1)
- * nonzero functions, with the same pointwise expressions as DiracDKBMatrices, so that
- * M[v, NULL] equals the V part of DiracDKBMatrices to rounding. */
+ * nonzero functions (AtomLocalFunctions), so that M[v, NULL] equals the V part of
+ * DiracDKBMatrices to rounding. */
 void AtomPotentialMatrix(const RadialBasisType *basis, int relativistic, int kappa, double c, const double *v, const double *g, double *M)
 {
-  uint32_t n = basis->nSpline - 2, d = basis->degree, Nf = relativistic ? 2*n : n, q, j, k, mu, m, idx[2*(BSplineMaxDegree+1)];
-  int64_t i;
-  double val[3*(BSplineMaxDegree+1)], h = 1./(2.*c), r, B, dB, d2B, wv, wg;
-  double P[2*(BSplineMaxDegree+1)], dP[2*(BSplineMaxDegree+1)], Q[2*(BSplineMaxDegree+1)], dQ[2*(BSplineMaxDegree+1)];
+  uint32_t n = basis->nSpline - 2, Nf = relativistic ? 2*n : n, q, j, k, m, idx[2*(BSplineMaxDegree+1)];
+  double P[2*(BSplineMaxDegree+1)], dP[2*(BSplineMaxDegree+1)], Q[2*(BSplineMaxDegree+1)], dQ[2*(BSplineMaxDegree+1)], wv, wg;
   for (j = 0; j < Nf*Nf; j++) M[j] = 0.;
   for (q = 0; q < basis->nPoint; q++)
   {
-    r = basis->rq[q];
-    mu = BSplineFindInterval(r, basis->knot, basis->nKnot);
-    if (mu >= basis->nKnot) continue;
-    BSplineValues(r, mu, basis->knot, basis->nKnot, d, 2, val);
-    m = 0;
-    for (j = 0; j <= d; j++)
-    {
-      i = (int64_t) mu - d + j - 1;
-      if (i < 0 || i >= n) continue;
-      B = val[j];
-      dB = val[d + 1 + j];
-      d2B = val[2*(d + 1) + j];
-      if (!relativistic)
-      {
-        idx[m] = (uint32_t) i; P[m] = B; dP[m] = dB; Q[m] = 0.; dQ[m] = 0.; m++;
-        continue;
-      }
-      idx[m] = (uint32_t) i;                              // u_i^(1)
-      P[m] = B;
-      dP[m] = dB;
-      Q[m] = h*(dB + kappa*B/r);
-      dQ[m] = h*(d2B + kappa*dB/r - kappa*B/(r*r));
-      m++;
-      idx[m] = n + (uint32_t) i;                          // u_i^(2)
-      P[m] = h*(dB - kappa*B/r);
-      dP[m] = h*(d2B - kappa*dB/r + kappa*B/(r*r));
-      Q[m] = B;
-      dQ[m] = dB;
-      m++;
-    }
+    m = AtomLocalFunctions(basis, relativistic, kappa, c, q, idx, P, dP, Q, dQ);
     wv = basis->wq[q]*v[q];
     wg = (g != NULL) ? basis->wq[q]*g[q] : 0.;
     for (k = 0; k < m; k++)

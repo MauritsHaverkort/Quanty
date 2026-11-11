@@ -47,6 +47,8 @@ typedef struct {
 int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_t *nShell, int *shellN, int *shellL, double *shellQ);
 void AtomOrbitalOnPoints(const RadialBasisType *basis, int relativistic, int kappa, double c, const double *coef,
                          double *P, double *dP, double *Q, double *dQ);
+uint32_t AtomLocalFunctions(const RadialBasisType *basis, int relativistic, int kappa, double c, uint32_t q,
+                            uint32_t *idx, double *P, double *dP, double *Q, double *dQ);
 void AtomPotentialMatrix(const RadialBasisType *basis, int relativistic, int kappa, double c, const double *v, const double *g, double *M);
 int AtomKineticMatrices(const RadialBasisType *basis, int relativistic, int kappa, int l, double c, double *H0, double *S);
 double AtomBilinear(const double *x, const double *A, const double *y, uint32_t Nf);
