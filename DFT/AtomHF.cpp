@@ -165,16 +165,22 @@ void HFOrbitalsOnPoints(DiracHFType *hf)
   free(dQ);
 }
 
-// Y^k[rho](r)/r on the quadrature points, rho the radial pair density on them
-int HFYk(DiracHFType *hf, uint32_t k, const double *rho, double *Yr)
+/* Y^k[rho](r)/r on the quadrature points of basis b, rho the radial pair density on them,
+ * band the factorized Poisson matrix of BSplinePoissonSetup for this k */
+int RadialYkOnPoints(const RadialBasisType *b, uint32_t k, const double *band, const double *rho, double *Yr)
 {
-  RadialBasisType *b = hf->atom->basis;
   uint32_t q;
   double *Y = (double *) malloc(b->nSpline*sizeof(double));
-  if (BSplinePoissonSolve(b->knot, b->nKnot, b->degree, b->rq, b->wq, b->nPoint, k, hf->band[k], b->degree + 1, rho, Y)) { free(Y); return 1; }
+  if (BSplinePoissonSolve(b->knot, b->nKnot, b->degree, b->rq, b->wq, b->nPoint, k, band, b->degree + 1, rho, Y)) { free(Y); return 1; }
   for (q = 0; q < b->nPoint; q++) Yr[q] = BSplineDerivative(b->rq[q], b->knot, b->nKnot, b->degree, Y, 0)/b->rq[q];
   free(Y);
   return 0;
+}
+
+// Y^k[rho](r)/r on the quadrature points, rho the radial pair density on them
+int HFYk(DiracHFType *hf, uint32_t k, const double *rho, double *Yr)
+{
+  return RadialYkOnPoints(hf->atom->basis, k, hf->band[k], rho, Yr);
 }
 
 // int rho Yr dr on the quadrature points, compensated summation

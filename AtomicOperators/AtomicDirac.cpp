@@ -13,6 +13,8 @@ using std::vector;
 using std::string;
 using std::map;
 
+void OperatorAddKappaBlock(OperatorType *op, const SKappaGroup *group, uint32_t **indices, const vector<vector<double> > &elements);
+
 void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfuns, vector<vector<double> > derivfuns, vector<double> x,
 		SKappaGroup *groups,uint32_t Ngroups,uint32_t **indices, double Z, double c, OperatorType *op)
 {
@@ -20,8 +22,7 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 
 	//unsigned int NBasisFuns  = (unsigned int) basisfuns.size();
 	unsigned int NGridpoints = (unsigned int) x.size();
-	unsigned int *mj1,*mj2,n,k,j,i;
-	uint16_t oadd[2] = { 0, 0 };
+	unsigned int n;
 
 	CreateDualFunctions(basisfuns,x,dualfuns);
 
@@ -34,32 +35,38 @@ void CreateOperatorDirac(uint32_t const NFermion,vector<vector<double> > basisfu
 	{
 		diracElements = CalculateDiracMatrixElements(basisfuns,derivfuns,dualfuns,groups[n].indices,groups[n].n,x,NGridpoints,groups[n].kappa,Z,c);
 		//PrintMartix2(diracElements,groups[n].n);
+		OperatorAddKappaBlock(op, groups + n, indices, diracElements);
+	}
 
-		for ( i = 0; i < groups[n].n; i++)
+}
+
+/* Add the kappa block of a one-particle operator that is diagonal in mu and independent of
+ * it: elements[i][j] (j >= i used) between the orbitals group->indices[i] and [j], whose
+ * mu-components are indices[orbital][0 .. 2|kappa|-1]. */
+void OperatorAddKappaBlock(OperatorType *op, const SKappaGroup *group, uint32_t **indices, const vector<vector<double> > &elements)
+{
+	uint32_t *mj1, *mj2, i, j, k;
+	uint16_t oadd[2] = { 0, 0 };
+	for ( i = 0; i < group->n; i++)
+	{
+		for ( j = i; j < group->n; j++)
 		{
-			for ( j = i; j < groups[n].n; j++)
+			mj1 = indices[group->indices[i]];
+			mj2 = indices[group->indices[j]];
+			for ( k = 0; k < (uint32_t) 2*abs(group->kappa); k++)
 			{
-
-				mj1 = indices[groups[n].indices[i]];
-				mj2 = indices[groups[n].indices[j]];
-				for ( k = 0; k < (unsigned int) 2*abs(groups[n].kappa); k++)
+				oadd[1] = CrAnMask +  (uint16_t)mj2[k];
+				oadd[0] = (uint16_t) mj1[k];
+				RealOperatorAddLaderNormalOrder(op, oadd, 2, elements[i][j], &QDetNotOrderedFcFaBcBa);
+				if ( i != j)
 				{
-
-					oadd[1] = CrAnMask +  (uint16_t)mj2[k];
-					oadd[0] = (uint16_t) mj1[k];
-					RealOperatorAddLaderNormalOrder(op, oadd, 2, diracElements[i][j], &QDetNotOrderedFcFaBcBa);
-
-					if ( i != j)
-					{
-						oadd[1] = CrAnMask +  (uint16_t) mj1[k];
-						oadd[0] = (uint16_t) mj2[k];
-						RealOperatorAddLaderNormalOrder(op, oadd, 2, diracElements[i][j], &QDetNotOrderedFcFaBcBa);
-					}
+					oadd[1] = CrAnMask +  (uint16_t) mj1[k];
+					oadd[0] = (uint16_t) mj2[k];
+					RealOperatorAddLaderNormalOrder(op, oadd, 2, elements[i][j], &QDetNotOrderedFcFaBcBa);
 				}
 			}
 		}
 	}
-
 }
 
 void AddIndex(const uint32_t idx, const int kappa, vector<SKappaGroup> &groups)
@@ -224,6 +231,10 @@ static int LuaOperatorNewAtomicDirac(lua_State *L)
 	//SKappaGroup *groups;
 	double Z;
 
+	// radial Dirac spinors of type "DKBSpline" (DFT stage A): exact matrix elements
+	if (DFTLuaFunctionsAreDKB(L, 4) || DFTLuaFunctionsAreDKB(L, 5)) return DFTLuaNewOperatorDiracDKB(L);
+	// a sixth argument was ignored here (old scripts pass a kappa grouping); a Nucleus option is not
+	if (lua_gettop(L) > 5 && DFTLuaHasOption(L, 6, "Nucleus")) return luaL_error(L, "Error in NewOperator(\"Dirac\",...): the option Nucleus only for radial functions of type DKBSpline\n");
 	NF = (uint32_t)luaL_checkunsigned(L, 1);
 	Z = luaL_checknumber(L, 2);
 	NIndices = (uint32_t)lua_objlen(L,3);

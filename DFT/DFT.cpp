@@ -15,3 +15,4 @@
 #include "AtomHF.cpp"
 #include "LuaDiracRadial.cpp"
 #include "LuaAtom.cpp"
+#include "LuaAtomicOperators.cpp"

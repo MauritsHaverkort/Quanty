@@ -137,6 +137,7 @@ test-jobs-diracatom:
           - "GaussianNucleus"
           - "HartreeFockAverage"
           - "HartreeFockLimits"
+          - "NewOperatorDKB"
           - "NewOperatorDiracZ"
           - "NISTAtoms"
           - "Orthonormalize"

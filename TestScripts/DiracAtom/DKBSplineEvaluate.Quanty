@@ -9,7 +9,8 @@
  *  - The DKB functions are small but not exactly 0 at r = 0 and r = rMax.
  *  - 0 outside [0, rMax], value and derivatives.
  *  - int (G^2 + F^2) dr = 1 on the quadrature points (Info.r, Info.w); Integrate.
- *  - Arithmetic, == and NewOperator("AU") give an explicit error.
+ *  - Arithmetic and == give an explicit error, and so does NewOperator("AU") with a large
+ *    component passed as the small one (the AU path itself: NewOperatorDKB.Quanty, A5).
 ]]
 
 local c = PhysicalConstants.cAU.value
@@ -118,7 +119,7 @@ fails(function() return P == G[2] end, "G1 == G2")
 local B = InterpolatingFunction.BSpline({0, 1, 2, 3, 4}, {0, 1, 0, 1, 0}, 3)
 fails(function() return B + P end, "BSpline + DKBSpline")
 local indices, NF = CreateAtomicIndicesList({"1s1/2"}, {{"Kappas", true}})
-fails(function() return NewOperator("AU", NF, indices, {P}, {Q}) end, "NewOperator(\"AU\") with DKBSpline")
+fails(function() return NewOperator("AU", NF, indices, {P}, {P}) end, "NewOperator(\"AU\") with G as F")
 
 if failed then error("DKBSpline evaluation checks failed", 1) end
 print("passed")

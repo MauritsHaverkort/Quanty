@@ -56,6 +56,10 @@ typedef struct
   int Density;
 } DFTLuaNucleusOptions;
 
+int DFTLuaNucleus(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, double a0fm, NucleusType *nucleus);
+int DFTLuaNuclearPotential(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, const NucleusType *nucleus,
+                           RadialBasisType *basis, double **V, double *charge);
+
 void DFTLuaNucleusDefaults(DFTLuaNucleusOptions *o, double a0fm)
 {
   o->Nucleus = (char *) "Gaussian";
@@ -78,13 +82,26 @@ void DFTLuaNucleusDefaults(DFTLuaNucleusOptions *o, double a0fm)
 int DFTLuaNucleusBasis(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, double a0fm,
                        NucleusType *nucleus, RadialBasisType *basis, double **V, double *charge)
 {
-  double *rho = NULL;
-  uint32_t q;
-  *charge = 0.;
   if (o->NQuadrature == 0) o->NQuadrature = o->Degree + 5;
   if (o->NQuadrature > DiracMaxQuadraturePoints)
     return luaL_error(L, "Error in %s: NQuadrature = %d, at most %d points per knot interval (the 34-digit Gauss-Legendre table)\n",
                       who, (int) o->NQuadrature, DiracMaxQuadraturePoints);
+  DFTLuaNucleus(L, who, Z, o, a0fm, nucleus);
+  if (o->rMin <= 0.) o->rMin = (nucleus->Rrms > 0.) ? nucleus->Rrms/50. : 1e-6/fabs(Z);
+
+  if (RadialBasisCreate(o->Degree, o->NIntervals, o->rMin, o->rMax, o->NQuadrature, basis))
+  {
+    if (o->Density != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
+    return luaL_error(L, "Error in %s: no B-spline basis for Degree %d, NIntervals %d, rMin %f, rMax %f\n",
+                      who, (int) o->Degree, (int) o->NIntervals, o->rMin, o->rMax);
+  }
+  return DFTLuaNuclearPotential(L, who, Z, o, nucleus, basis, V, charge);
+}
+
+/* The nucleus model of a DFT Lua entry from its options (who names it in the messages).
+ * Raises a Lua error for an unknown or incomplete model. */
+int DFTLuaNucleus(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, double a0fm, NucleusType *nucleus)
+{
   nucleus->Z = Z;
   nucleus->A = o->A;
   nucleus->Rrms = 0.;
@@ -109,12 +126,19 @@ int DFTLuaNucleusBasis(lua_State *L, const char *who, double Z, DFTLuaNucleusOpt
   if (nucleus->model == NucleusFermi && NucleusFermiParameters(nucleus->Rrms, o->FermiThickness, &nucleus->cFermi, &nucleus->aFermi))
     return luaL_error(L, "Error in %s: Fermi nucleus with Rrms = %f bohr is too small for the skin thickness %f bohr (Rrms^2 <= 7/5 pi^2 a^2)\n",
                       who, nucleus->Rrms, o->FermiThickness);
-  if (o->rMin <= 0.) o->rMin = (nucleus->Rrms > 0.) ? nucleus->Rrms/50. : 1e-6/fabs(Z);
+  return 0;
+}
 
-  if (RadialBasisCreate(o->Degree, o->NIntervals, o->rMin, o->rMax, o->NQuadrature, basis))
-    return luaL_error(L, "Error in %s: no B-spline basis for Degree %d, NIntervals %d, rMin %f, rMax %f\n",
-                      who, (int) o->Degree, (int) o->NIntervals, o->rMin, o->rMax);
-
+/* The nuclear potential *V (allocated here) on the quadrature points of basis, for the
+ * nucleus of DFTLuaNucleus; a "Function" density (o->Density, released here) is sampled
+ * on them and rescaled to Z, *charge receives its norm before that. On a Lua error the
+ * basis is freed. */
+int DFTLuaNuclearPotential(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, const NucleusType *nucleus,
+                           RadialBasisType *basis, double **V, double *charge)
+{
+  double *rho = NULL;
+  uint32_t q;
+  *charge = 0.;
   // sample the nuclear density of a Lua function on the quadrature points, normalize to Z
   if (nucleus->model == NucleusFunction)
   {

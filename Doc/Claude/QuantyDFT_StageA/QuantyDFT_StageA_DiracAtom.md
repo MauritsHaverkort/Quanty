@@ -168,6 +168,24 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 - **Temporary Lua entry** `DiracHartreeFock(Z, configuration, {options})` (as agreed), returns `Atom, G, F` as `DiracKohnSham`; every shell needs $q>0$. The orbital table and $G$, $F$ output are shared with `DiracKohnSham` (`DFTLuaPushOrbitals`, `DFTLuaPushRadialFunctions`). Tests `HartreeFockLimits`, `HartreeFockAverage`.
 - Not done in A4: the export of $F^k$, $G^k$ (open point 1, with A5); HF with confinement (A5).
 
+### Task A5: decisions (Maurits, 2026-11-11)
+
+- **Q and P per $(n,\kappa)$** (FPLO's `=.basdef` convention): $Q$ changes the **nuclear charge**, $Z+Q$ (FPLO's README; design §6 had "charge removed", which is not FPLO's $Q$). Each $(n,\kappa)$ orbital comes from its own generating calculation, in which only the target $(n,\kappa)$ equation has $Z+Q$ and the confinement $V_\beta(P)$; the other electrons see $Z$ and no confinement. An occupied target with non-default $(Q,P)$ needs one SCF with its equation so modified; an empty one is one eigensolve.
+- **Empty (polarization) orbitals with DHF**: the $V^N$ Fock operator, $h+\sum_b\bar q_b(J_b-\sum_k\Gamma^k K_b)$, the $q\to0$ limit of the configuration average.
+- **Occupations per $(n,\kappa)$** in the configuration string, mixable with $nl$ entries: `"[Kr] 4d3/2(4) 4d5/2(5)"`. An $nl$ entry is Cowan's average over the nonrelativistic shell, an $n\kappa$ entry the average over the relativistic subshell ($N_{aa}=q(q-1)/2$, $N_{ab}=q_aq_b$: the §8.1 formulas with $G_s=g_a$). This extends the fixed decision of §0 ("average over the nonrelativistic configuration").
+- **Which orbitals**: `{"NMax", {s = 7, p = 6, d = 6, f = 5}}` per $l$ (FPLO's `nmax_s7p6d6f5`), with optional per-$\kappa$ entries (`["p1/2"] = 7`); all $n\le n_{\max}$ are calculated, the `orbitalLabels` argument picks what is returned (nil: all).
+- **Orthonormalization**: Gram–Schmidt per $\kappa$ from the lowest $n$ upwards (replaces the FPLO ordering of §6.1).
+- **Slater integrals** (open point 1): both, in the format of `GetSlaterIntegrals` (jj-resolved, keyed `"3d3/2 3d5/2 3d3/2 3d5/2"` → `{[k] = R^k}`), and the $g$-weighted $j$-average keyed by $nl$, plus $\zeta_{nl}$.
+
+### Task A5a: exact `NewOperator("Dirac")` and `NewOperator("AU")` for DKB spinors (done 2026-11-11)
+
+- `DFT/LuaAtomicOperators.cpp`, reached from `AtomicDirac.cpp` / `AtomicU.cpp` whenever a $G$ or $F$ list contains a `DKBSpline` (then all must be, of one knot set, degree, quadrature and the present $c$: errors otherwise, so they never reach the grid paths).
+- **Dirac**: $\langle a|h_D|b\rangle=c_a^TH_\kappa c_b$ with the §5 matrix (no $V_\beta$) for the nucleus of the new options (`Nucleus`, `A`, `Rrms`, `FermiThickness`, `Density`, `DensityTolerance` as `DiracRadialSolve`; default `"Point"`). The κ-block assembly of `CreateOperatorDirac` is now the helper `OperatorAddKappaBlock`, shared by both paths. **Not done:** a finite nucleus for grid functions (FPLO input): Martin's `DiracH` has $-Z/r$ built in; `{"Nucleus", …}` with grid functions is an error. A sixth argument without `Nucleus` is still ignored (old scripts pass a κ grouping there).
+- **AU**: $R^k(13;24)=\int\rho_{13}Y^k[\rho_{24}]/r$ with the Galerkin $Y^k$ (cached per pair and $k$), assembled by the loop of `Create_Relativistic_Coulomb_Operator` with `CreateOperatorAtomicURelativisticOneIntegral`. No options (`conserve`, `1P-Operator`) for DKB functions yet: an error.
+- **Check 12**: bare-nucleus eigen-orbitals ($s,p,d$, three each), Fe point and U Gaussian nucleus: $|H_{aa}-\varepsilon_a|\le3.7\times10^{-15}|\varepsilon_a|$, $|H_{ab}|\le2.2\times10^{-12}\max|\varepsilon|$ (eigenvector noise).
+- **AU against A4**: $\langle{\rm det}|H_0+U|{\rm det}\rangle$ of the Dirac–Fock determinant = `DiracHartreeFock` $E_{\rm tot}$ (Ne, Ar, ≤ 1.7e-12); and the mean over all determinants of the configuration — by definition $E_{av}$, here from Quanty's own angular algebra — equals the A4 $E_{av}$ for Li, O $2p^4$ (15), Fe $3d^64s^2$ (210), Pd⁺ $4d^9$ (10) to ≤ 2.4e-15 relative. This checks $\Gamma^k$ and the pair counts of §8.1–8.3 independently of A4's code (in place of the Dirac–Fock literature value). Test `NewOperatorDKB`.
+- The FPLO debug example (`Debug examples/AtomicOperators`) gives identical output before and after.
+
 ### Order of work in stage A (one commit series per task, each closed by its checkpoints in §12)
 
 | Task | Content | Checks |
