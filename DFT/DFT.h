@@ -22,5 +22,6 @@ typedef double DFTReal;
 #include "XCFunctional.h"
 #include "AtomSCF.h"
 #include "AtomHF.h"
+#include "AtomBasis.h"
 
 #endif /* DFT_DFT_H_ */

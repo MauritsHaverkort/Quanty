@@ -29,16 +29,16 @@ static void run(double Z, const char *conf, int rel, int jj)
   DiracAtomType atom;
   DiracHFType hf;
   uint32_t nShell, q, a, i, Nf, gr;
-  int shellN[40], shellL[40];
-  double shellQ[40], cc = 137.035999084;
+  AtomShellType shell[40];
+  double cc = 137.035999084;
   nShell = 0;
-  if (AtomParseConfiguration(conf, 40, &nShell, shellN, shellL, shellQ)) { printf("parse failed\n"); return; }
+  if (AtomParseConfiguration(conf, 40, &nShell, shell)) { printf("parse failed\n"); return; }
   RadialBasisCreate(8, 120, 1e-6/Z, 40., 13, &basis);
   double *V = (double *) malloc(basis.nPoint*sizeof(double));
   for (q = 0; q < basis.nPoint; q++) V[q] = -Z/basis.rq[q];
-  if (AtomSetup(&atom, &basis, V, Z, rel, cc, XCLDAVWN, 1, 1e-30, nShell, shellN, shellL, shellQ)) { printf("setup failed\n"); return; }
+  if (AtomSetup(&atom, &basis, V, Z, rel, cc, XCLDAVWN, 1, 1e-30, nShell, shell)) { printf("setup failed\n"); return; }
   AtomSCF(&atom, 200, 8, 0.5, 1e-10, 1e-8, 1, 0);
-  if (HFSetup(&hf, &atom, jj, nShell, shellN, shellL, shellQ)) { printf("HFSetup failed\n"); return; }
+  if (HFSetup(&hf, &atom, jj)) { printf("HFSetup failed\n"); return; }
   double E, Ek, En, Ed, Ex;
   HFOrbitalsOnPoints(&hf);
   HFEnergy(&hf, &E, &Ek, &En, &Ed, &Ex);

@@ -52,29 +52,28 @@ double HFGamma(int la, int kappaA, int lb, int kappaB, int k)
  * The ratios N_ab/qbar_a are taken in closed form (no division by qbar):
  *   2N_aa/qbar_a = (q_s-1)(g_a-1)/(G_s-1),
  *   N_ab/qbar_a = (q_s-1) g_b/(G_s-1) (same shell),   q_t g_b/G_t = qbar_b (other shells). */
-int HFSetup(DiracHFType *hf, DiracAtomType *atom, int jjAngular, uint32_t nShell, const int *shellN, const int *shellL, const double *shellQ)
+int HFSetup(DiracHFType *hf, DiracAtomType *atom, int jjAngular)
 {
   RadialBasisType *b = atom->basis;
-  uint32_t o, s, a, c, k, nMax, lMax = 0, ld = b->degree + 1;
+  uint32_t o, s, a, c, k, nMax, lMax = 0, ld = b->degree + 1, nShell = atom->nShell;
   int t, nt;
   memset(hf, 0, sizeof(DiracHFType));
   hf->atom = atom;
   hf->nShell = nShell;
-  hf->shellQ = (double *) malloc(nShell*sizeof(double));
-  hf->shellG = (double *) malloc(nShell*sizeof(double));
+  hf->shellQ = (double *) malloc((nShell + 1)*sizeof(double));
+  hf->shellG = (double *) malloc((nShell + 1)*sizeof(double));
   for (s = 0; s < nShell; s++)
   {
-    hf->shellQ[s] = shellQ[s];
-    hf->shellG[s] = 4.*shellL[s] + 2.;
-    if ((uint32_t) shellL[s] > lMax) lMax = (uint32_t) shellL[s];
+    hf->shellQ[s] = atom->shell[s].q;
+    hf->shellG[s] = AtomShellDegeneracy(atom->shell + s);
+    if ((uint32_t) atom->shell[s].l > lMax) lMax = (uint32_t) atom->shell[s].l;
   }
   nMax = 2*atom->nOrb;
   hf->sub = (HFSubshellType *) calloc(nMax, sizeof(HFSubshellType));
   for (o = 0; o < atom->nOrb; o++)
   {
     DiracOrbitalType *orb = atom->orb + o;
-    for (s = 0; s < nShell; s++) if (shellN[s] == orb->n && shellL[s] == orb->l) break;
-    if (s == nShell) { HFFree(hf); return 1; }
+    s = orb->shell;
     nt = (!atom->relativistic && jjAngular && orb->l > 0) ? 2 : 1;
     for (t = 0; t < nt; t++)
     {
@@ -88,8 +87,9 @@ int HFSetup(DiracHFType *hf, DiracAtomType *atom, int jjAngular, uint32_t nShell
       else if (jjAngular) sub->kappa = (t == 0) ? -(orb->l + 1) : orb->l;
       else sub->kappa = 0;
       sub->g = (sub->kappa == 0) ? 4.*orb->l + 2. : 2.*abs(sub->kappa);
-      sub->qbar = shellQ[s]*sub->g/hf->shellG[s];
-      sub->closed = (shellQ[s] == hf->shellG[s]);
+      sub->qbar = hf->shellQ[s]*sub->g/hf->shellG[s];
+      sub->closed = (hf->shellQ[s] == hf->shellG[s]);
+      sub->empty = (hf->shellQ[s] == 0.);
       hf->nSub++;
     }
   }
@@ -104,6 +104,10 @@ int HFSetup(DiracHFType *hf, DiracAtomType *atom, int jjAngular, uint32_t nShell
       HFSubshellType *A = hf->sub + a, *C = hf->sub + c;
       double qs = hf->shellQ[A->shell], Gs = hf->shellG[A->shell], qt = hf->shellQ[C->shell], Gt = hf->shellG[C->shell];
       for (k = 0; k <= hf->kMax; k++) hf->Gam[(a*hf->nSub + c)*(hf->kMax + 1) + k] = HFGamma(A->l, A->kappa, C->l, C->kappa, (int) k);
+      // an empty partner contributes nothing; an empty subshell itself has no self term, and
+      // its couplings N_ac/qbar_a = qbar_c to the occupied ones make its Fock operator that
+      // of V^N, the q -> 0 limit (its pairs N_ac are 0 with q_s = 0)
+      if (C->empty || (A->empty && a == c)) continue;
       if (a == c)
       {
         hf->Npair[a*hf->nSub + a] = qs*(qs - 1.)/2.*A->g*(A->g - 1.)/(Gs*(Gs - 1.));
@@ -205,20 +209,35 @@ int HFEnergy(DiracHFType *hf, double *Etot, double *Ekin, double *Eenuc, double 
   int error = 0;
   *Ekin = 0.;
   *Eenuc = 0.;
+  hf->Eextra = 0.;
   // one-electron part; Y^0 of every subshell
   for (a = 0; a < hf->nSub && !error; a++)
   {
-    DiracGroupType *gr = atom->group + atom->orb[hf->sub[a].orbital].group;
+    DiracOrbitalType *orb = atom->orb + hf->sub[a].orbital;
+    DiracGroupType *gr = atom->group + orb->group;
+    if (hf->sub[a].empty) continue;
     I = AtomBilinear(hf->sub[a].coef, gr->Hfix, hf->sub[a].coef, atom->Nf);
     kin = AtomBilinear(hf->sub[a].coef, gr->H0, hf->sub[a].coef, atom->Nf);
     *Ekin += hf->sub[a].qbar*kin;
     *Eenuc += hf->sub[a].qbar*(I - kin);
+    if (orb->extra != NULL) hf->Eextra += hf->sub[a].qbar*AtomBilinear(hf->sub[a].coef, orb->extra, hf->sub[a].coef, atom->Nf);
+    if (hf->ks) continue;
     for (q = 0; q < nP; q++) rho[q] = hf->P[a*nP + q]*hf->P[a*nP + q] + hf->Q[a*nP + q]*hf->Q[a*nP + q];
     error |= HFYk(hf, 0, rho, Y0 + a*nP);
+  }
+  if (hf->ks)
+  {
+    // Kohn-Sham: the Hartree and exchange-correlation energy of the density of the orbitals
+    double *v = (double *) malloc(nP*sizeof(double)), *g = (double *) malloc(nP*sizeof(double));
+    error |= AtomDensityPotential(atom, v, g, Edirect, Eexchange);
+    *Etot = *Ekin + *Eenuc + hf->Eextra + *Edirect + *Eexchange;
+    free(v); free(g); free(rho); free(Yr); free(Y0);
+    return error;
   }
   for (a = 0; a < hf->nSub && !error; a++)
   {
     HFSubshellType *A = hf->sub + a;
+    if (A->empty) continue;
     for (q = 0; q < nP; q++) rho[q] = hf->P[a*nP + q]*hf->P[a*nP + q] + hf->Q[a*nP + q]*hf->Q[a*nP + q];
     // aa: N_aa [F^0 - g/(g-1) sum_k>0 Gamma^k F^k]
     sumD += hf->Npair[a*hf->nSub + a]*HFIntegral(b, rho, Y0 + a*nP);
@@ -232,6 +251,7 @@ int HFEnergy(DiracHFType *hf, double *Etot, double *Ekin, double *Eenuc, double 
     for (c = a + 1; c < hf->nSub; c++)
     {
       double Nac = hf->Npair[a*hf->nSub + c], *rac;
+      if (hf->sub[c].empty) continue;
       sumD += Nac*HFIntegral(b, rho, Y0 + c*nP);
       rac = (double *) malloc(nP*sizeof(double));
       for (q = 0; q < nP; q++) rac[q] = hf->P[a*nP + q]*hf->P[c*nP + q] + hf->Q[a*nP + q]*hf->Q[c*nP + q];
@@ -248,7 +268,7 @@ int HFEnergy(DiracHFType *hf, double *Etot, double *Ekin, double *Eenuc, double 
   }
   *Edirect = sumD;
   *Eexchange = sumX;
-  *Etot = *Ekin + *Eenuc + sumD + sumX;
+  *Etot = *Ekin + *Eenuc + hf->Eextra + sumD + sumX;
   free(rho); free(Yr); free(Y0);
   return error;
 }
@@ -320,15 +340,29 @@ int HFFockMatrices(DiracHFType *hf, double **F)
   RadialBasisType *b = atom->basis;
   uint32_t a, c, k, q, i, gr, nP = b->nPoint, Nf = atom->Nf, K1 = hf->kMax + 1;
   double *rho = (double *) malloc(nP*sizeof(double)), *v = (double *) malloc(nP*sizeof(double));
-  double *Y0 = (double *) malloc(hf->nSub*nP*sizeof(double)), *M = (double *) malloc(Nf*Nf*sizeof(double)), coefK;
+  double *Y0 = (double *) calloc(hf->nSub*nP, sizeof(double)), *M = (double *) malloc(Nf*Nf*sizeof(double)), coefK;
   int error = 0, need;
-  for (a = 0; a < hf->nSub && !error; a++)
+  if (hf->ks)
   {
+    // Kohn-Sham: F_a = H0 + M[V_N] + M[v, g] of the density of the orbitals (+ extra)
+    double *gg = (double *) malloc(nP*sizeof(double)), Ec, Ex;
+    error = AtomDensityPotential(atom, v, gg, &Ec, &Ex);
+    for (gr = 0; gr < atom->nGroup && !error; gr++)
+    {
+      AtomPotentialMatrix(b, atom->relativistic, atom->group[gr].kappa, atom->c, v, XCIsGGA(atom->method) ? gg : NULL, M);
+      for (a = 0; a < hf->nSub; a++)
+        if (atom->orb[hf->sub[a].orbital].group == gr) for (i = 0; i < Nf*Nf; i++) F[a][i] = atom->group[gr].Hfix[i] + M[i];
+    }
+    free(gg);
+  }
+  for (a = 0; a < hf->nSub && !error && !hf->ks; a++)
+  {
+    if (hf->sub[a].empty) continue;   // couples to nothing
     for (q = 0; q < nP; q++) rho[q] = hf->P[a*nP + q]*hf->P[a*nP + q] + hf->Q[a*nP + q]*hf->Q[a*nP + q];
     error |= HFYk(hf, 0, rho, Y0 + a*nP);
   }
   // local part
-  for (a = 0; a < hf->nSub && !error; a++)
+  for (a = 0; a < hf->nSub && !error && !hf->ks; a++)
   {
     HFSubshellType *A = hf->sub + a;
     DiracGroupType *g = atom->group + atom->orb[A->orbital].group;
@@ -339,7 +373,7 @@ int HFFockMatrices(DiracHFType *hf, double **F)
     for (i = 0; i < Nf*Nf; i++) F[a][i] = g->Hfix[i] + M[i];
   }
   // exchange: K^k[c] once per group, partner c and k, added to every subshell of the group
-  for (gr = 0; gr < atom->nGroup && !error; gr++)
+  for (gr = 0; gr < atom->nGroup && !error && !hf->ks; gr++)
     for (c = 0; c < hf->nSub && !error; c++)
       for (k = 0; k <= hf->kMax && !error; k++)
       {
@@ -356,8 +390,37 @@ int HFFockMatrices(DiracHFType *hf, double **F)
           for (i = 0; i < Nf*Nf; i++) F[a][i] += coefK*M[i];
         }
       }
+  // the one-electron term of a single orbital (A5: Z+Q and the confinement of a target)
+  for (a = 0; a < hf->nSub && !error; a++)
+  {
+    const double *extra = atom->orb[hf->sub[a].orbital].extra;
+    if (extra != NULL) for (i = 0; i < Nf*Nf; i++) F[a][i] += extra[i];
+  }
   free(rho); free(v); free(Y0); free(M);
   return error;
+}
+
+/* 1 if subshell a shares its Fock operator with the other such subshells of its group, so
+ * that they are solved together (one eigenproblem) and rotations among them are redundant:
+ * Hartree-Fock, a closed subshell (HFCoupling); Kohn-Sham, any occupied orbital; in both
+ * only without an extra one-electron term. */
+int HFShared(const DiracHFType *hf, uint32_t a)
+{
+  const HFSubshellType *A = hf->sub + a;
+  return !A->empty && hf->atom->orb[A->orbital].extra == NULL && (hf->ks || A->closed);
+}
+
+/* 1 if the energy without extra one-electron terms is invariant under rotations between the
+ * occupied subshells a and b of one group, so that no rotation is taken between them:
+ * Hartree-Fock, both closed; Kohn-Sham, equal occupations. With an extra term on one of
+ * them (A5) the extra term alone would decide such a rotation (a closed target with
+ * Z+Q > Z would turn into the 1s-like combination), so it stays out: the target remains
+ * the eigenvector of its own operator orthogonal to the others. */
+int HFRedundantPair(const DiracHFType *hf, uint32_t a, uint32_t b)
+{
+  const HFSubshellType *A = hf->sub + a, *B = hf->sub + b;
+  if (hf->ks) return A->qbar == B->qbar;
+  return A->closed && B->closed;
 }
 
 /* The gradient of E_av on the orbitals, orthonormal per symmetry group (F from
@@ -387,15 +450,16 @@ int HFGradient(DiracHFType *hf, double **F, double *gradient, double *pairGradie
     for (i = 0; i < Nf; i++) { Fc[i] = 0.; for (j = 0; j < Nf; j++) Fc[i] += F[a][i + j*Nf]*A->coef[j]; }
     A->energy = 0.;
     for (i = 0; i < Nf; i++) { A->energy += A->coef[i]*Fc[i]; r[i] = Fc[i]; }
+    if (A->empty) continue;
     for (b = 0; b < hf->nSub; b++)
     {
       HFSubshellType *B = hf->sub + b;
-      if (atom->orb[B->orbital].group != gr) continue;
+      if (atom->orb[B->orbital].group != gr || B->empty) continue;
       for (i = 0; i < Nf; i++) { Sc[i] = 0.; for (j = 0; j < Nf; j++) Sc[i] += g->S[i + j*Nf]*B->coef[j]; }
       lam = 0.;
       for (i = 0; i < Nf; i++) lam += B->coef[i]*Fc[i];
       for (i = 0; i < Nf; i++) r[i] -= lam*Sc[i];
-      if (b > a && !(A->closed && B->closed))
+      if (b > a && !HFRedundantPair(hf, a, b))
       {
         gab = 2.*(A->qbar*lam - B->qbar*AtomBilinear(A->coef, F[b], B->coef, Nf));
         if (fabs(gab) > *pairGradient) *pairGradient = fabs(gab);
@@ -433,12 +497,12 @@ int HFOrthonormalize(DiracHFType *hf)
   {
     m = 0;
     for (a = 0; a < hf->nSub; a++)
-      if (atom->orb[hf->sub[a].orbital].group == gr) { for (i = 0; i < Nf; i++) C[i + m*Nf] = hf->sub[a].coef[i]; m++; }
+      if (atom->orb[hf->sub[a].orbital].group == gr && !hf->sub[a].empty) { for (i = 0; i < Nf; i++) C[i + m*Nf] = hf->sub[a].coef[i]; m++; }
     if (m == 0) continue;
     error = DiracOrthonormalize(atom->group[gr].S, Nf, C, m, DiracLowdin, 0., &minEig);
     m = 0;
     for (a = 0; a < hf->nSub && !error; a++)
-      if (atom->orb[hf->sub[a].orbital].group == gr) { for (i = 0; i < Nf; i++) hf->sub[a].coef[i] = C[i + m*Nf]; m++; }
+      if (atom->orb[hf->sub[a].orbital].group == gr && !hf->sub[a].empty) { for (i = 0; i < Nf; i++) hf->sub[a].coef[i] = C[i + m*Nf]; m++; }
   }
   free(C);
   return error;
@@ -464,7 +528,7 @@ int HFClassOrbitals(DiracHFType *hf, uint32_t gr, const double *Fa, const int *i
   int *taken, error;
   for (b = 0; b < hf->nSub; b++)
   {
-    if (atom->orb[hf->sub[b].orbital].group != gr || inClass[b]) continue;
+    if (atom->orb[hf->sub[b].orbital].group != gr || inClass[b] || hf->sub[b].empty) continue;
     for (i = 0; i < Nf; i++) Co[i + mo*Nf] = hf->sub[b].coef[i];
     mo++;
   }
@@ -566,7 +630,6 @@ int HFSCF(DiracHFType *hf, uint32_t maxIterations, uint32_t history, double mixi
   rhs = (double *) malloc((history + 1)*sizeof(double));
   ipiv = (int *) malloc((history + 1)*sizeof(int));
   inClass = (int *) malloc(nS*sizeof(int));
-  sigma = 2.*atom->Z*atom->Z + 10.;
   hf->converged = 0;
   error = HFOrthonormalize(hf);
   for (it = 1; it <= maxIterations && !error; it++)
@@ -578,41 +641,46 @@ int HFSCF(DiracHFType *hf, uint32_t maxIterations, uint32_t history, double mixi
     Eone = 0.;
     for (a = 0; a < nS; a++)
     {
-      DiracGroupType *g = atom->group + atom->orb[hf->sub[a].orbital].group;
-      I = AtomBilinear(hf->sub[a].coef, g->Hfix, hf->sub[a].coef, Nf);
+      DiracOrbitalType *orb = atom->orb + hf->sub[a].orbital;
+      if (hf->sub[a].empty) continue;
+      I = AtomBilinear(hf->sub[a].coef, atom->group[orb->group].Hfix, hf->sub[a].coef, Nf);
+      if (orb->extra != NULL) I += AtomBilinear(hf->sub[a].coef, orb->extra, hf->sub[a].coef, Nf);
       Eone += 0.5*hf->sub[a].qbar*(hf->sub[a].energy + I);
     }
+    if (hf->ks) Eone = hf->Etot;   // the identity is one of Hartree-Fock
     hf->Eidentity = Eone;
     hf->dE = hf->Etot - Ebefore;
     hf->iterations = it;
     Ebefore = hf->Etot;
     for (a = 0; a < nS; a++) for (i = 0; i < Nf; i++) x[a*Nf + i] = hf->sub[a].coef[i];
     // 2. new orbitals per class
+    sigma = 10.;
+    for (a = 0; a < nS; a++) if (!hf->sub[a].empty && 4.*fabs(hf->sub[a].energy) + 10. > sigma) sigma = 4.*fabs(hf->sub[a].energy) + 10.;
     for (gr = 0; gr < atom->nGroup && !error; gr++)
     {
       any = -1;
       for (a = 0; a < nS; a++)
       {
-        inClass[a] = (atom->orb[hf->sub[a].orbital].group == gr && hf->sub[a].closed);
+        inClass[a] = (atom->orb[hf->sub[a].orbital].group == gr && HFShared(hf, a));
         if (inClass[a] && any < 0) any = (int) a;
       }
       if (any >= 0) error |= HFClassOrbitals(hf, gr, F[any], inClass, sigma, rayleigh, out);
       for (a = 0; a < nS && !error; a++)
       {
-        if (atom->orb[hf->sub[a].orbital].group != gr || hf->sub[a].closed) continue;
+        if (atom->orb[hf->sub[a].orbital].group != gr || HFShared(hf, a) || hf->sub[a].empty) continue;
         for (b = 0; b < nS; b++) inClass[b] = (b == a);
         error |= HFClassOrbitals(hf, gr, F[a], inClass, sigma, rayleigh, out);
       }
     }
     if (error) break;
-    for (a = 0; a < nS; a++) for (i = 0; i < Nf; i++) hf->sub[a].coef[i] = out[a][i];
+    for (a = 0; a < nS; a++) if (!hf->sub[a].empty) for (i = 0; i < Nf; i++) hf->sub[a].coef[i] = out[a][i];
     if (HFOrthonormalize(hf)) { error = 1; break; }
     // 3. Brillouin rotations
     for (a = 0; a < nS; a++)
       for (b = a + 1; b < nS; b++)
       {
         HFSubshellType *A = hf->sub + a, *B = hf->sub + b;
-        if (atom->orb[A->orbital].group != atom->orb[B->orbital].group || (A->closed && B->closed)) continue;
+        if (atom->orb[A->orbital].group != atom->orb[B->orbital].group || A->empty || B->empty || HFRedundantPair(hf, a, b)) continue;
         gab = 2.*(A->qbar*AtomBilinear(B->coef, F[a], A->coef, Nf) - B->qbar*AtomBilinear(A->coef, F[b], B->coef, Nf));
         d2 = 2.*(A->qbar*(AtomBilinear(B->coef, F[a], B->coef, Nf) - AtomBilinear(A->coef, F[a], A->coef, Nf))
                + B->qbar*(AtomBilinear(A->coef, F[b], A->coef, Nf) - AtomBilinear(B->coef, F[b], B->coef, Nf)));

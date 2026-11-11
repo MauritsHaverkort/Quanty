@@ -14,15 +14,17 @@ typedef struct {
   double g, qbar;            // degeneracy and mean occupation
   double *coef;              // radial coefficients (not owned)
   uint32_t orbital;          // the DiracAtomType orbital it belongs to
-  int closed;                // its nl shell is full
+  int closed;                // its shell is full
+  int empty;                 // its shell is empty (q = 0): not in the SCF, Fock operator of V^N
   double energy;             // eps_a = c_a^T F_a c_a (HFSCF)
 } HFSubshellType;
 
 typedef struct {
   DiracAtomType *atom;       // orbitals, groups, basis (not owned)
   uint32_t nSub, nShell, kMax, nPois;
+  int ks;                    // 1: Kohn-Sham operators and energy (atom->method) instead of Hartree-Fock
   HFSubshellType *sub;
-  double *shellQ, *shellG;   // occupation q_s and degeneracy G_s = 4l+2 of every shell
+  double *shellQ, *shellG;   // occupation q_s and degeneracy G_s (4l+2, or 2j+1 for an n kappa subshell)
   double *Gam;               // Gamma^k_ab at [(a*nSub + b)*(kMax+1) + k]
   double *Rself;             // 2 N_aa / qbar_a
   double *Rpair;             // N_ab / qbar_a at [a*nSub + b]
@@ -32,11 +34,11 @@ typedef struct {
   // HFSCF results
   uint32_t iterations;
   int converged;
-  double Etot, Ekin, Eenuc, Edirect, Eexchange, Eidentity, dE, gradient, pairGradient, residual;
+  double Etot, Ekin, Eenuc, Edirect, Eexchange, Eidentity, Eextra, dE, gradient, pairGradient, residual;
 } DiracHFType;
 
 double HFGamma(int la, int kappaA, int lb, int kappaB, int k);
-int HFSetup(DiracHFType *hf, DiracAtomType *atom, int jjAngular, uint32_t nShell, const int *shellN, const int *shellL, const double *shellQ);
+int HFSetup(DiracHFType *hf, DiracAtomType *atom, int jjAngular);
 void HFFree(DiracHFType *hf);
 void HFOrbitalsOnPoints(DiracHFType *hf);
 int RadialYkOnPoints(const RadialBasisType *b, uint32_t k, const double *band, const double *rho, double *Yr);
@@ -44,6 +46,8 @@ int HFYk(DiracHFType *hf, uint32_t k, const double *rho, double *Yr);
 double HFIntegral(const RadialBasisType *b, const double *rho, const double *Yr);
 int HFEnergy(DiracHFType *hf, double *Etot, double *Ekin, double *Eenuc, double *Edirect, double *Eexchange);
 double HFCoupling(const DiracHFType *hf, uint32_t a, uint32_t b);
+int HFShared(const DiracHFType *hf, uint32_t a);
+int HFRedundantPair(const DiracHFType *hf, uint32_t a, uint32_t b);
 int HFFockMatrices(DiracHFType *hf, double **F);
 int HFExchangeMatrix(DiracHFType *hf, uint32_t group, uint32_t b, uint32_t k, double *K);
 int HFGradient(DiracHFType *hf, double **F, double *gradient, double *pairGradient);

@@ -21,12 +21,16 @@
 
 #include "AtomSCF.h"
 
-/* The shells of a configuration such as "1s2 2s2 2p6", "[Ne] 3s2 3p6" or "[Ar] 3d7.5 4s0.5":
- * n, l and the (possibly fractional) occupation q of each, at most maxShell. "[He]", "[Ne]",
- * "[Ar]", "[Kr]", "[Xe]" and "[Rn]" stand for the closed shells of the noble gases.
- * Returns 1 for a syntax error, a shell given twice, n <= l, l > 6, q < 0 or
- * q > 2(2l+1). */
-int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_t *nShell, int *shellN, int *shellL, double *shellQ)
+/* The shells of a configuration such as "1s2 2s2 2p6", "[Ne] 3s2 3p6", "[Ar] 3d7.5 4s0.5" or
+ * "[Kr] 4d3/2(4) 4d5/2(5)": n, l, kappa and the (possibly fractional) occupation q of each,
+ * at most maxShell, appended to shell[*nShell ..]. An nl entry ("3d8") is a nonrelativistic
+ * shell (kappa = 0; Cowan's average over its 4l+2 spinors), an n l 2j/2 entry with the
+ * occupation in parentheses ("4d5/2(5)") one relativistic subshell (kappa = -(l+1) for
+ * j = l+1/2, l for j = l-1/2; the average over its 2j+1 spinors). "[He]", "[Ne]", "[Ar]",
+ * "[Kr]", "[Xe]" and "[Rn]" stand for the closed shells of the noble gases. Returns 1 for a
+ * syntax error, a shell or subshell given twice (also as nl and as n kappa), n <= l, l > 6,
+ * j not l -+ 1/2, q < 0 or q above the degeneracy. */
+int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_t *nShell, AtomShellType *shell)
 {
   const char *cores[6][2] = {{"[He]", "1s2"}, {"[Ne]", "[He] 2s2 2p6"}, {"[Ar]", "[Ne] 3s2 3p6"}, {"[Kr]", "[Ar] 3d10 4s2 4p6"},
                              {"[Xe]", "[Kr] 4d10 5s2 5p6"}, {"[Rn]", "[Xe] 4f14 5d10 6s2 6p6"}};
@@ -34,8 +38,8 @@ int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_
   const char *p = configuration, *where;
   char *end;
   uint32_t i, j;
-  int n, l, found;
-  double q;
+  int n, l, kappa, twoJ, found;
+  double q, G;
   while (*p != '\0')
   {
     while (*p == ' ' || *p == '\t' || *p == ',') p++;
@@ -46,7 +50,7 @@ int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_
       for (i = 0; i < 6 && !found; i++)
         if (strncmp(p, cores[i][0], 4) == 0)
         {
-          if (AtomParseConfiguration(cores[i][1], maxShell, nShell, shellN, shellL, shellQ)) return 1;
+          if (AtomParseConfiguration(cores[i][1], maxShell, nShell, shell)) return 1;
           p += 4;
           found = 1;
         }
@@ -60,18 +64,45 @@ int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_
     if (where == NULL || *p == '\0') return 1;
     l = (int) (where - letters);
     p++;
-    q = strtod(p, &end);
-    if (end == p) return 1;
-    p = end;
-    if (n <= l || q < 0. || q > 2.*(2*l + 1)) return 1;
-    for (j = 0; j < *nShell; j++) if (shellN[j] == n && shellL[j] == l) return 1;
+    kappa = 0;
+    twoJ = (int) strtol(p, &end, 10);
+    if (end != p && end[0] == '/' && end[1] == '2')
+    {
+      // n l 2j/2 (q)
+      if (twoJ == 2*l + 1) kappa = -(l + 1);
+      else if (twoJ == 2*l - 1 && l > 0) kappa = l;
+      else return 1;
+      p = end + 2;
+      if (*p != '(') return 1;
+      q = strtod(p + 1, &end);
+      if (end == p + 1 || *end != ')') return 1;
+      p = end + 1;
+      G = twoJ + 1.;
+    }
+    else
+    {
+      q = strtod(p, &end);
+      if (end == p) return 1;
+      p = end;
+      G = 2.*(2*l + 1);
+    }
+    if (n <= l || q < 0. || q > G) return 1;
+    for (j = 0; j < *nShell; j++)
+      if (shell[j].n == n && shell[j].l == l && (kappa == 0 || shell[j].kappa == 0 || shell[j].kappa == kappa)) return 1;
     if (*nShell >= maxShell) return 1;
-    shellN[*nShell] = n;
-    shellL[*nShell] = l;
-    shellQ[*nShell] = q;
+    shell[*nShell].n = n;
+    shell[*nShell].l = l;
+    shell[*nShell].kappa = kappa;
+    shell[*nShell].q = q;
     (*nShell)++;
   }
   return 0;
+}
+
+// the degeneracy of a shell: 4l+2 for an nl shell, 2j+1 = 2|kappa| for a relativistic subshell
+double AtomShellDegeneracy(const AtomShellType *shell)
+{
+  return (shell->kappa == 0) ? 4.*shell->l + 2. : 2.*abs(shell->kappa);
 }
 
 /* P, P', Q, Q' at the quadrature points of the orbital with coefficients coef (Dirac: 2n DKB
@@ -287,13 +318,15 @@ int AtomDensityPotential(DiracAtomType *atom, double *v, double *g, double *Ecou
   return AtomPotential(atom, atom->f, atom->df, v, g, Ecoul, Exc);
 }
 
-/* Set up the atom for the configuration on the basis with the nuclear potential VN (on the
- * quadrature points; copied): the subshells (Dirac: kappa = l and -(l+1) with
- * qbar = q (2j+1)/(4l+2); Schroedinger: one per shell), their symmetry groups with H0, S
- * and H0 + M[V_N], and the Poisson factorization (k = 0). Returns 1 for a configuration
- * without electrons or a failing setup. */
+/* Set up the atom for the shells (AtomParseConfiguration; copied) on the basis with the
+ * nuclear potential VN (on the quadrature points; copied): the subshells (Dirac: an nl
+ * shell gives kappa = -(l+1) and l with qbar = q (2j+1)/(4l+2), an n kappa subshell one;
+ * Schroedinger: one per nl shell), their symmetry groups with H0, S and H0 + M[V_N], and
+ * the Poisson factorization (k = 0). Shells with q = 0 give empty orbitals (no density;
+ * the SCF still solves for them). Returns 1 for a configuration without electrons, an
+ * n kappa subshell without relativity, or a failing setup. */
 int AtomSetup(DiracAtomType *atom, RadialBasisType *basis, const DFTReal *VN, double Z, int relativistic, double c, int method,
-              int originBoundary, DFTReal cutoff, uint32_t nShell, const int *shellN, const int *shellL, const double *shellQ)
+              int originBoundary, DFTReal cutoff, uint32_t nShell, const AtomShellType *shell)
 {
   uint32_t s, o, k, nf, nP = basis->nPoint, n = basis->nSpline - 2, nLarge;
   int found, kap, l, t;
@@ -309,24 +342,30 @@ int AtomSetup(DiracAtomType *atom, RadialBasisType *basis, const DFTReal *VN, do
   nf = atom->Nf;
   atom->orb = (DiracOrbitalType *) calloc(2*nShell + 1, sizeof(DiracOrbitalType));
   atom->group = (DiracGroupType *) calloc(2*nShell + 1, sizeof(DiracGroupType));
+  atom->nShell = nShell;
+  atom->shell = (AtomShellType *) malloc((nShell + 1)*sizeof(AtomShellType));
+  for (s = 0; s < nShell; s++) atom->shell[s] = shell[s];
   for (s = 0; s < nShell; s++)
   {
-    l = shellL[s];
-    for (t = 0; t < (relativistic && l > 0 ? 2 : 1); t++)
+    l = shell[s].l;
+    if (shell[s].kappa != 0 && !relativistic) return 1;
+    for (t = 0; t < (relativistic && l > 0 && shell[s].kappa == 0 ? 2 : 1); t++)
     {
       DiracOrbitalType *orb = atom->orb + atom->nOrb;
-      orb->n = shellN[s];
+      orb->n = shell[s].n;
       orb->l = l;
+      orb->shell = s;
       if (relativistic)
       {
-        kap = (t == 0) ? -(l + 1) : l;                    // j = l+1/2 first, then l-1/2
+        if (shell[s].kappa != 0) kap = shell[s].kappa;
+        else kap = (t == 0) ? -(l + 1) : l;               // j = l+1/2 first, then l-1/2
         orb->kappa = kap;
-        orb->q = shellQ[s]*2.*abs(kap)/(2.*(2*l + 1));
+        orb->q = shell[s].q*2.*abs(kap)/AtomShellDegeneracy(shell + s);
       }
       else
       {
         orb->kappa = 0;
-        orb->q = shellQ[s];
+        orb->q = shell[s].q;
       }
       orb->coef = (double *) calloc(nf, sizeof(double));
       // its symmetry group
@@ -376,7 +415,8 @@ int AtomSetup(DiracAtomType *atom, RadialBasisType *basis, const DFTReal *VN, do
 void AtomFree(DiracAtomType *atom)
 {
   uint32_t k;
-  for (k = 0; k < atom->nOrb; k++) free(atom->orb[k].coef);
+  for (k = 0; k < atom->nOrb; k++) { free(atom->orb[k].coef); free(atom->orb[k].extra); }
+  free(atom->shell);
   for (k = 0; k < atom->nGroup; k++)
   {
     free(atom->group[k].H0);
