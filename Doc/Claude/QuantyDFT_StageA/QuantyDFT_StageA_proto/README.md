@@ -10,5 +10,6 @@ Scratch implementation of the equations of `QuantyDFT_StageA_DiracAtom.md`, used
 | `check4_poisson.py` | 4 (Galerkin Y^k); argument = number of knot intervals, e.g. `python3 check4_poisson.py 160` |
 | `check5_aoc_vs_cowan.py` | 5 (configuration average = Cowan, symbolic) |
 | `check6_fock_gradient.py` | 6 (Fock operator vs finite-difference gradient) |
+| `check6_fock_gradient.cpp` | 6 for the C code (`DFT/AtomHF.cpp`); a C++ harness that includes Quanty, build command in its header |
 
 Note: `dkb.py` uses the order k (degree k−1); the Quanty C core uses the degree.
