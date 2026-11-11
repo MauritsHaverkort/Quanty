@@ -99,6 +99,145 @@ int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_
   return 0;
 }
 
+/* The ground-state configuration of the neutral atom Z = 1 .. 103, from the NIST Atomic Spectra
+ * Database (ionization energies, "Ground Shells" of the neutral atoms, fetched 11 November 2026;
+ * the cores [Cd] and [Hg] written out), in the syntax of AtomParseConfiguration; NULL for Z
+ * outside 1 .. 103 or not an integer. */
+const char *AtomGroundStateConfiguration(double Z)
+{
+  static const char *table[103] = {
+    "1s1",
+    "1s2",
+    "1s2 2s1",
+    "1s2 2s2",
+    "1s2 2s2 2p1",
+    "1s2 2s2 2p2",
+    "1s2 2s2 2p3",
+    "1s2 2s2 2p4",
+    "1s2 2s2 2p5",
+    "1s2 2s2 2p6",
+    "[Ne] 3s1",
+    "[Ne] 3s2",
+    "[Ne] 3s2 3p1",
+    "[Ne] 3s2 3p2",
+    "[Ne] 3s2 3p3",
+    "[Ne] 3s2 3p4",
+    "[Ne] 3s2 3p5",
+    "[Ne] 3s2 3p6",
+    "[Ar] 4s1",
+    "[Ar] 4s2",
+    "[Ar] 3d1 4s2",
+    "[Ar] 3d2 4s2",
+    "[Ar] 3d3 4s2",
+    "[Ar] 3d5 4s1",
+    "[Ar] 3d5 4s2",
+    "[Ar] 3d6 4s2",
+    "[Ar] 3d7 4s2",
+    "[Ar] 3d8 4s2",
+    "[Ar] 3d10 4s1",
+    "[Ar] 3d10 4s2",
+    "[Ar] 3d10 4s2 4p1",
+    "[Ar] 3d10 4s2 4p2",
+    "[Ar] 3d10 4s2 4p3",
+    "[Ar] 3d10 4s2 4p4",
+    "[Ar] 3d10 4s2 4p5",
+    "[Ar] 3d10 4s2 4p6",
+    "[Kr] 5s1",
+    "[Kr] 5s2",
+    "[Kr] 4d1 5s2",
+    "[Kr] 4d2 5s2",
+    "[Kr] 4d4 5s1",
+    "[Kr] 4d5 5s1",
+    "[Kr] 4d5 5s2",
+    "[Kr] 4d7 5s1",
+    "[Kr] 4d8 5s1",
+    "[Kr] 4d10",
+    "[Kr] 4d10 5s1",
+    "[Kr] 4d10 5s2",
+    "[Kr] 4d10 5s2 5p1",
+    "[Kr] 4d10 5s2 5p2",
+    "[Kr] 4d10 5s2 5p3",
+    "[Kr] 4d10 5s2 5p4",
+    "[Kr] 4d10 5s2 5p5",
+    "[Kr] 4d10 5s2 5p6",
+    "[Xe] 6s1",
+    "[Xe] 6s2",
+    "[Xe] 5d1 6s2",
+    "[Xe] 4f1 5d1 6s2",
+    "[Xe] 4f3 6s2",
+    "[Xe] 4f4 6s2",
+    "[Xe] 4f5 6s2",
+    "[Xe] 4f6 6s2",
+    "[Xe] 4f7 6s2",
+    "[Xe] 4f7 5d1 6s2",
+    "[Xe] 4f9 6s2",
+    "[Xe] 4f10 6s2",
+    "[Xe] 4f11 6s2",
+    "[Xe] 4f12 6s2",
+    "[Xe] 4f13 6s2",
+    "[Xe] 4f14 6s2",
+    "[Xe] 4f14 5d1 6s2",
+    "[Xe] 4f14 5d2 6s2",
+    "[Xe] 4f14 5d3 6s2",
+    "[Xe] 4f14 5d4 6s2",
+    "[Xe] 4f14 5d5 6s2",
+    "[Xe] 4f14 5d6 6s2",
+    "[Xe] 4f14 5d7 6s2",
+    "[Xe] 4f14 5d9 6s1",
+    "[Xe] 4f14 5d10 6s1",
+    "[Xe] 4f14 5d10 6s2",
+    "[Xe] 4f14 5d10 6s2 6p1",
+    "[Xe] 4f14 5d10 6s2 6p2",
+    "[Xe] 4f14 5d10 6s2 6p3",
+    "[Xe] 4f14 5d10 6s2 6p4",
+    "[Xe] 4f14 5d10 6s2 6p5",
+    "[Xe] 4f14 5d10 6s2 6p6",
+    "[Rn] 7s1",
+    "[Rn] 7s2",
+    "[Rn] 6d1 7s2",
+    "[Rn] 6d2 7s2",
+    "[Rn] 5f2 6d1 7s2",
+    "[Rn] 5f3 6d1 7s2",
+    "[Rn] 5f4 6d1 7s2",
+    "[Rn] 5f6 7s2",
+    "[Rn] 5f7 7s2",
+    "[Rn] 5f7 6d1 7s2",
+    "[Rn] 5f9 7s2",
+    "[Rn] 5f10 7s2",
+    "[Rn] 5f11 7s2",
+    "[Rn] 5f12 7s2",
+    "[Rn] 5f13 7s2",
+    "[Rn] 5f14 7s2",
+    "[Rn] 5f14 7s2 7p1"};
+  int z = (int) Z;
+  if ((double) z != Z || z < 1 || z > 103) return NULL;
+  return table[z - 1];
+}
+
+/* The mass number used when a finite nucleus is asked for without A or Rrms: that of the most
+ * abundant isotope (NIST Atomic Weights and Isotopic Compositions, fetched 11 November 2026),
+ * for elements without a stable isotope the mass number NIST gives in brackets (Tc, Pm, Po ..
+ * Ac, Np, Pu), and for Am .. Lr, where NIST gives none, that of the longest-lived isotope.
+ * 0 for Z outside 1 .. 103 or not an integer. */
+int AtomDefaultMassNumber(double Z)
+{
+  static const int table[103] = {
+    1, 4, 7, 9, 11, 12, 14, 16, 19, 20,
+    23, 24, 27, 28, 31, 32, 35, 40, 39, 40,
+    45, 48, 51, 52, 55, 56, 59, 58, 63, 64,
+    69, 74, 75, 80, 79, 84, 85, 88, 89, 90,
+    93, 98, 98, 102, 103, 106, 107, 114, 115, 120,
+    121, 130, 127, 132, 133, 138, 139, 140, 141, 142,
+    145, 152, 153, 158, 159, 164, 165, 166, 169, 174,
+    175, 180, 181, 184, 187, 192, 193, 195, 197, 202,
+    205, 208, 209, 209, 210, 222, 223, 226, 227, 232,
+    231, 238, 237, 244, 243, 247, 247, 251, 252, 257,
+    258, 259, 262};
+  int z = (int) Z;
+  if ((double) z != Z || z < 1 || z > 103) return 0;
+  return table[z - 1];
+}
+
 // the degeneracy of a shell: 4l+2 for an nl shell, 2j+1 = 2|kappa| for a relativistic subshell
 double AtomShellDegeneracy(const AtomShellType *shell)
 {

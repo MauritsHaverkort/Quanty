@@ -1,7 +1,7 @@
 /*
  * LuaAtomicBasis.cpp
  *
- *     G, F, x, Atom = CalculateAtomicBasisFunctions(orbitalLabels, {options})
+ *     G, F, x, Atom = CalculateAtomicBasisFunctions(Z [, configuration] [, {options}])
  *
  * Atomic radial basis functions (DFT stage A5, design sections 6, 6.1, 10 and 11.1), the
  * drop-in replacement of ReadFPLOBasisFunctions: G (large components P) and F (small
@@ -9,24 +9,30 @@
  * G, F, Atom.Nucleus) and NewOperator("AU", NF, indices, G, F); x the quadrature points.
  * Schroedinger ({"Relativistic", false}): G as BSplines, F empty.
  *
- * Which orbitals: those of the configuration, all n <= NMax, the labels of orbitalLabels and
- * of the Orbitals option. Returned: orbitalLabels in its order (nil: all, ordered by n, l, j;
- * Atom.Labels lists them). Each orbital (n, kappa) may have its own extra nuclear charge Q
+ * Z: the nuclear charge (a real number). configuration: e.g. "[Ar] 3d8 4s2" or
+ * "[Kr] 4d3/2(4) 4d5/2(5)"; an orbital with occupation 0 ("4p0", "5p1/2(0)") is calculated as
+ * an empty orbital. Without it, the ground-state configuration of the neutral atom
+ * (AtomGroundStateConfiguration, NIST, Z = 1 .. 103). Every orbital of the configuration and
+ * all n <= NMax are calculated and returned, ordered by n, l, j (Atom.Labels lists them; a
+ * selection is made in Lua). Each orbital (n, kappa) may have its own extra nuclear charge Q
  * and confinement scale P; it then comes from its own generating calculation, in which only
- * its own equation has Z+Q and V_beta = (r/(P P_at rho))^N (AtomBasis.cpp). All are made
+ * its own equation has Z+Q and V_beta = (r/(P rho))^N (AtomBasis.cpp). All are made
  * orthonormal per kappa, Gram-Schmidt from the lowest n upwards.
- * Options (with the nucleus and basis options of DiracHartreeFock):
- *     Z                 nuclear charge (required)
- *     Configuration     e.g. "[Ar] 3d8 4s2" or "[Kr] 4d3/2(4) 4d5/2(5)" (required)
+ * Options (with the nucleus and basis options of DiracHartreeFock); none is required:
  *     Method            "DHF" (default; configuration-average Hartree-Fock), "LDA",
  *                       "LDA-VWN", "RLDA-MV", "PBE", "PBE-VWN"
  *     Relativistic      true (default): Dirac; false: Schroedinger
  *     NMax              {s = 7, p = 6, d = 6, f = 5}, per l, with per-kappa entries such
  *                       as ["p1/2"] = 7 (Schroedinger: per l only)
- *     Orbitals          {["4s1/2"] = {Q = 0, P = 0.9}, ["5d"] = {Q = 2}}: Q (default 0) and
- *                       P (default 1) per n kappa; an nl key sets both j (n kappa wins)
- *     Confinement       {Rho = 6, N = 10, P = 1}: rc = P_n,kappa P Rho for every orbital;
- *                       without it there is no confinement (and no P)
+ *     Q                 {["4p"] = 1, ["5s1/2"] = 2}: the extra nuclear charge of the equation
+ *                       of an orbital (default 0); an nl key sets both j (n kappa wins); only
+ *                       orbitals that are calculated
+ *     P                 {["4d5/2"] = 0.8}: the confinement scale of an orbital (default 1),
+ *                       likewise; needs Confinement
+ *     Confinement       {Rho = 6, N = 10}: rc = P(n kappa) Rho for every orbital; without it
+ *                       there is no confinement
+ *     Nucleus           as DiracHartreeFock; a finite nucleus without A or Rrms takes the mass
+ *                       number of AtomDefaultMassNumber (the most abundant isotope)
  *     ConfinementVmax   with a confinement and no rMax: rMax = max rc Vmax^(1/N), 1e5 Ha
  *     FourierBessel     {KMax = 30, NK = 1001}: the transforms of the returned orbitals on
  *                       k = 0 .. KMax (NK points), Atom.FourierBessel = {k, P, Q}
@@ -52,7 +58,7 @@
  * for Kohn-Sham; Converged, Iterations, Residual, dE; DHF: Gradient, PairGradient;
  * Schroedinger: VirialRatio -(Etot - Ekin)/Ekin), Potential = {VN, VH, Vxc (Kohn-Sham)} of
  * the ground state on the points x, Method, Relativistic, c, Z,
- * NElectron, rMin, rMax, Nucleus (an options list for NewOperator("Dirac")), Labels,
+ * NElectron, Configuration, A, rMin, rMax, Nucleus (an options list for NewOperator("Dirac")), Labels,
  * MinOverlapEigenvalue and OrthonormalityError (max |C^T S C - 1|) of the
  * orthonormalization, for a "Function3D" nucleus NuclearMultipoleMoments[i] = {L, M, Value =
  * int r^L S_LM rho d^3r} (L >= 2; S_LM as in NucleusMultipole.cpp), and Orbitals[i] = {Label, n, l, kappa,
@@ -250,17 +256,16 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     char *Configuration, *Method, *Orthonormalize;
     bool Relativistic, RayleighQuotient, OriginBoundary, MixDensity, ConvergenceCheck;
     char *Precision;
-    int NMax, Orbitals, Confinement, FourierBessel;
+    int NMax, Qtab, Ptab, Confinement, FourierBessel;
     uint32_t MaxIterations, History;
     double Mixing, OrbitalMixing, EnergyTolerance, ResidualTolerance, OrbitalTolerance, DensityCutoff, RedundancyTolerance, ConfinementVmax;
   } Options;
   LuaOptionsType LuaBasisOptions[] = {
-    {"Z", "double", &(Options.Z)},
-    {"Configuration", "char*", &(Options.Configuration)},
     {"Method", "char*", &(Options.Method)},
     {"Relativistic", "bool", &(Options.Relativistic)},
     {"NMax", "table", &(Options.NMax)},
-    {"Orbitals", "table", &(Options.Orbitals)},
+    {"Q", "table", &(Options.Qtab)},
+    {"P", "table", &(Options.Ptab)},
     {"Confinement", "table", &(Options.Confinement)},
     {"FourierBessel", "table", &(Options.FourierBessel)},
     {"ConfinementVmax", "double", &(Options.ConfinementVmax)},
@@ -300,8 +305,8 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   AtomShellType shell[256];
   DFTOrbitalKeyType want[256];
   uint32_t nShell = 0, nWant = 0, len = (uint32_t) lua_gettop(L), i, k, o, s, nRet = 0, ret[256], map[256];
-  double c, a0fm, *V, charge, Q[256], Pnk[256], rc[256], Pat = 1., Rho = 0., Nconf = 0., rcMax = 0., minEig = 1., orthoError = 0.;
-  int method, hartreeFock, error, n, l, kappa, nmaxL[7], nmaxK[7][2], densityIndex = 0;
+  double c, a0fm, *V, charge, Q[256], Pnk[256], rc[256], Rho = 0., Nconf = 0., rcMax = 0., minEig = 1., orthoError = 0.;
+  int method, hartreeFock, error, n, l, kappa, nmaxL[7], nmaxK[7][2], densityIndex = 0, optArg = 0;
   RadialBasisType basis;
   NucleusType nucleus;
   DiracAtomType atom;
@@ -309,20 +314,28 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   AtomSCFOptionsType scf;
   char label[32];
 
-  if (len != 2 || !lua_istable(L, 2)) return luaL_error(L, "Error in %s: 2 arguments expected (orbitalLabels or nil, {options})\n", who);
-  if (!lua_isnil(L, 1) && !lua_istable(L, 1)) return luaL_error(L, "Error in %s: argument 1 must be a list of orbital labels or nil\n", who);
+  // CalculateAtomicBasisFunctions(Z), (Z, configuration), (Z, configuration, {options}), (Z, {options})
+  if (len < 1 || len > 3) return luaL_error(L, "Error in %s: 1 to 3 arguments expected (Z, configuration, {options}), got %d\n", who, (int) len);
+  Options.Z = luaL_checknumber(L, 1);
+  Options.Configuration = NULL;
+  if (len >= 2 && lua_type(L, 2) == LUA_TSTRING) Options.Configuration = (char *) lua_tostring(L, 2);
+  else if (len == 2 && lua_istable(L, 2)) optArg = 2;
+  else if (len >= 2 && !lua_isnil(L, 2)) return luaL_error(L, "Error in %s: argument 2 must be the configuration (a string), or the options\n", who);
+  if (len == 3)
+  {
+    if (!lua_istable(L, 3)) return luaL_error(L, "Error in %s: argument 3 must be the options\n", who);
+    optArg = 3;
+  }
   c = LuaGetPhysicalConstant(L, "cAU");
   a0fm = LuaGetPhysicalConstant(L, "a0")*1e15;
   DFTLuaNucleusDefaults(&Options.nuc, a0fm);
-  Options.Z = 0.;
-  Options.Configuration = NULL;
   Options.Method = (char *) "DHF";
   Options.Orthonormalize = (char *) "GramSchmidt";
   Options.Relativistic = true;
   Options.RayleighQuotient = true;
   Options.OriginBoundary = true;
   Options.MixDensity = false;
-  Options.NMax = Options.Orbitals = Options.Confinement = Options.FourierBessel = LUA_NOREF;
+  Options.NMax = Options.Qtab = Options.Ptab = Options.Confinement = Options.FourierBessel = LUA_NOREF;
   Options.MaxIterations = 200;
   Options.History = 8;
   Options.Mixing = 0.3;
@@ -335,27 +348,32 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   Options.ConfinementVmax = 1e5;
   Options.Precision = (char *) "Normal";
   Options.ConvergenceCheck = false;
-  LuaCheckOptions(L, 2, LuaBasisOptions);
+  if (optArg > 0) LuaCheckOptions(L, optArg, LuaBasisOptions);
   // the preset {"Precision", "High"} (design 0.1): tighter defaults, explicit options win
   if (strcicmp(Options.Precision, "High") == 0)
   {
     double scale = 0.7687*pow(fabs(Options.Z), 7./3.);     // |E| of the Thomas-Fermi atom
-    if (!DFTLuaHasOption(L, 2, "EnergyTolerance")) Options.EnergyTolerance = 1e-13*scale;
-    if (!DFTLuaHasOption(L, 2, "OrbitalTolerance")) Options.OrbitalTolerance = 1e-9;
-    if (!DFTLuaHasOption(L, 2, "NQuadrature")) Options.nuc.NQuadrature = Options.nuc.Degree + 9;
-    if (!DFTLuaHasOption(L, 2, "ConvergenceCheck")) Options.ConvergenceCheck = true;
+    if (!(optArg > 0 && DFTLuaHasOption(L, optArg, "EnergyTolerance"))) Options.EnergyTolerance = 1e-13*scale;
+    if (!(optArg > 0 && DFTLuaHasOption(L, optArg, "OrbitalTolerance"))) Options.OrbitalTolerance = 1e-9;
+    if (!(optArg > 0 && DFTLuaHasOption(L, optArg, "NQuadrature"))) Options.nuc.NQuadrature = Options.nuc.Degree + 9;
+    if (!(optArg > 0 && DFTLuaHasOption(L, optArg, "ConvergenceCheck"))) Options.ConvergenceCheck = true;
   }
   else if (strcicmp(Options.Precision, "Normal") != 0)
     return luaL_error(L, "Error in %s: Precision \"%s\" is not Normal or High\n", who, Options.Precision);
-  if (!(Options.Z > 0.)) return luaL_error(L, "Error in %s: the option Z (nuclear charge > 0) is required\n", who);
-  if (Options.Configuration == NULL) return luaL_error(L, "Error in %s: the option Configuration is required\n", who);
+  if (!(Options.Z > 0.)) return luaL_error(L, "Error in %s: the nuclear charge Z = %f must be positive\n", who, Options.Z);
+  if (Options.Configuration == NULL)
+  {
+    Options.Configuration = (char *) AtomGroundStateConfiguration(Options.Z);
+    if (Options.Configuration == NULL)
+      return luaL_error(L, "Error in %s: no ground-state configuration known for Z = %f (Z = 1 .. 103); give the configuration\n", who, Options.Z);
+  }
   if (strcicmp(Options.Method, "DHF") == 0) { hartreeFock = 1; method = XCLDAVWN; }
   else
   {
     hartreeFock = 0;
     method = XCMethodFromName(Options.Method);
     if (method < 0) return luaL_error(L, "Error in %s: unknown Method \"%s\" (DHF, LDA, LDA-VWN, RLDA-MV, PBE, PBE-VWN)\n", who, Options.Method);
-    if (!DFTLuaHasOption(L, 2, "MixDensity")) Options.MixDensity = XCIsGGA(method) ? true : false;
+    if (!(optArg > 0 && DFTLuaHasOption(L, optArg, "MixDensity"))) Options.MixDensity = XCIsGGA(method) ? true : false;
   }
   if (AtomParseConfiguration(Options.Configuration, maxShell, &nShell, shell))
     return luaL_error(L, "Error in %s: can not read the configuration \"%s\"\n", who, Options.Configuration);
@@ -411,67 +429,59 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
           if (DFTAddOrbital(want, &nWant, maxShell, n, l, kappa) == maxShell) return luaL_error(L, "Error in %s: more than %d orbitals\n", who, (int) maxShell);
       }
   }
-  // orbitalLabels
-  if (lua_istable(L, 1))
-    for (i = 1; i <= (uint32_t) lua_objlen(L, 1); i++)
-    {
-      lua_rawgeti(L, 1, i);
-      if (lua_type(L, -1) != LUA_TSTRING || DFTParseOrbitalLabel(lua_tostring(L, -1), Options.Relativistic, 0, &n, &l, &kappa))
-        return luaL_error(L, "Error in %s: orbitalLabels[%d] is not an orbital label (Dirac \"4d5/2\", Schroedinger \"4d\")\n", who, (int) i);
-      lua_pop(L, 1);
-      ret[nRet++] = DFTAddOrbital(want, &nWant, maxShell, n, l, kappa);
-      if (ret[nRet-1] == maxShell) return luaL_error(L, "Error in %s: more than %d orbitals\n", who, (int) maxShell);
-    }
-  // Q and P per orbital: nl keys first, then n kappa keys (they win)
+  // Q and P per orbital (options "Q" and "P"): nl keys first, then n kappa keys (they win);
+  // only orbitals that are calculated (the configuration and NMax)
   for (i = 0; i < maxShell; i++) { Q[i] = 0.; Pnk[i] = 1.; rc[i] = 0.; }
-  int hasP = 0;
-  if (Options.Orbitals != LUA_NOREF)
+  for (int which = 0; which < 2; which++)
   {
-    lua_rawgeti(L, LUA_REGISTRYINDEX, Options.Orbitals);
+    int ref = (which == 0) ? Options.Qtab : Options.Ptab;
+    const char *name = (which == 0) ? "Q" : "P";
+    if (ref == LUA_NOREF) continue;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
     for (int pass = 0; pass < 2; pass++)
     {
       lua_pushnil(L);
       while (lua_next(L, -2) != 0)
       {
-        if (lua_type(L, -2) != LUA_TSTRING || !lua_istable(L, -1)
+        if (lua_type(L, -2) != LUA_TSTRING || lua_type(L, -1) != LUA_TNUMBER
             || DFTParseOrbitalLabel(lua_tostring(L, -2), Options.Relativistic, 1, &n, &l, &kappa))
-          return luaL_error(L, "Error in %s: Orbitals entries are [\"4d5/2\"] = {Q = .., P = ..}\n", who);
+          return luaL_error(L, "Error in %s: the entries of %s are [\"4d5/2\"] = number or [\"4d\"] = number\n", who, name);
         if ((pass == 0) == (kappa == 0 || !Options.Relativistic))
         {
-          double q = DFTLuaFieldNumber(L, who, "Orbitals", "Q", 0.), p = DFTLuaFieldNumber(L, who, "Orbitals", "P", 1.);
-          lua_getfield(L, -1, "P");
-          if (!lua_isnil(L, -1)) hasP = 1;
-          lua_pop(L, 1);
-          if (!(p > 0.)) return luaL_error(L, "Error in %s: Orbitals[\"%s\"].P must be positive\n", who, lua_tostring(L, -2));
+          double v = lua_tonumber(L, -1);
+          if (which == 1 && !(v > 0.)) return luaL_error(L, "Error in %s: P[\"%s\"] must be positive\n", who, lua_tostring(L, -2));
           for (int t = 0; t < 2; t++)
           {
             int kap = kappa;
             if (kappa == 0 && Options.Relativistic) { if (t == 0 && l == 0) continue; kap = (t == 0) ? l : -(l + 1); }
             else if (t == 1) break;
-            k = DFTAddOrbital(want, &nWant, maxShell, n, l, kap);
-            if (k == maxShell) return luaL_error(L, "Error in %s: more than %d orbitals\n", who, (int) maxShell);
-            Q[k] = q;
-            Pnk[k] = p;
+            for (k = 0; k < nWant; k++) if (want[k].n == n && want[k].l == l && want[k].kappa == kap) break;
+            if (k == nWant)
+              return luaL_error(L, "Error in %s: %s[\"%s\"]: the orbital is not calculated (add it to the configuration, with occupation 0 if empty, or to NMax)\n",
+                                who, name, lua_tostring(L, -2));
+            if (which == 0) Q[k] = v; else Pnk[k] = v;
           }
         }
         lua_pop(L, 1);
       }
     }
     lua_pop(L, 1);
-    luaL_unref(L, LUA_REGISTRYINDEX, Options.Orbitals);
+    luaL_unref(L, LUA_REGISTRYINDEX, ref);
   }
   if (Options.Confinement != LUA_NOREF)
   {
     lua_rawgeti(L, LUA_REGISTRYINDEX, Options.Confinement);
     Rho = DFTLuaFieldNumber(L, who, "Confinement", "Rho", 0.);
     Nconf = DFTLuaFieldNumber(L, who, "Confinement", "N", 0.);
-    Pat = DFTLuaFieldNumber(L, who, "Confinement", "P", 1.);
-    lua_pop(L, 1);
+    lua_getfield(L, -1, "P");
+    int hasAtomP = !lua_isnil(L, -1);
+    lua_pop(L, 2);
     luaL_unref(L, LUA_REGISTRYINDEX, Options.Confinement);
-    if (!(Rho > 0.) || !(Nconf > 0.) || !(Pat > 0.)) return luaL_error(L, "Error in %s: Confinement needs Rho > 0 and N > 0 (and P > 0)\n", who);
-    for (k = 0; k < nWant; k++) { rc[k] = Pnk[k]*Pat*Rho; if (rc[k] > rcMax) rcMax = rc[k]; }
+    if (hasAtomP) return luaL_error(L, "Error in %s: Confinement takes Rho and N; the radius is P Rho with P per orbital (option P, default 1)\n", who);
+    if (!(Rho > 0.) || !(Nconf > 0.)) return luaL_error(L, "Error in %s: Confinement needs Rho > 0 and N > 0\n", who);
+    for (k = 0; k < nWant; k++) { rc[k] = Pnk[k]*Rho; if (rc[k] > rcMax) rcMax = rc[k]; }
   }
-  else if (hasP) return luaL_error(L, "Error in %s: a confinement scale P needs the option Confinement {Rho = .., N = ..}\n", who);
+  else if (Options.Ptab != LUA_NOREF) return luaL_error(L, "Error in %s: the confinement scale P needs the option Confinement {Rho = .., N = ..}\n", who);
 
   // the shells of the atom: the configuration and an empty one for every other orbital
   for (k = 0; k < nWant; k++)
@@ -490,6 +500,10 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
 
   // basis, nucleus, atom
   if (Options.nuc.rMax <= 0.) Options.nuc.rMax = (rcMax > 0.) ? ConfinementRMax(rcMax, Nconf, Options.ConfinementVmax) : 40.;
+  // a finite nucleus without A or Rrms: the mass number of AtomDefaultMassNumber
+  if ((strcicmp(Options.nuc.Nucleus, "Gaussian") == 0 || strcicmp(Options.nuc.Nucleus, "Uniform") == 0 || strcicmp(Options.nuc.Nucleus, "Fermi") == 0)
+      && !(Options.nuc.A > 0.) && !(Options.nuc.Rrms > 0.))
+    Options.nuc.A = AtomDefaultMassNumber(Options.Z);
   if (Options.nuc.Density != LUA_NOREF)
   {
     lua_rawgeti(L, LUA_REGISTRYINDEX, Options.nuc.Density);     // kept for Atom.Nucleus
@@ -552,8 +566,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     if (!res.converged[o])
       luaL_warning(L, "Warning in %s: the generating calculation of orbital %d%c is not converged\n", who, atom.orb[o].n, letters[atom.orb[o].l]);
   }
-  // the returned orbitals: orbitalLabels, or all ordered by n, l, j
-  if (!lua_istable(L, 1))
+  // the returned orbitals: all, ordered by n, l, j
   {
     nRet = 0;
     for (k = 0; k < nWant; k++)
@@ -593,6 +606,8 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   lua_pushboolean(L, Options.Relativistic); lua_setfield(L, -2, "Relativistic");
   lua_pushnumber(L, c);          lua_setfield(L, -2, "c");
   lua_pushnumber(L, Options.Z);  lua_setfield(L, -2, "Z");
+  lua_pushstring(L, Options.Configuration); lua_setfield(L, -2, "Configuration");
+  if (Options.nuc.A > 0.) { lua_pushnumber(L, Options.nuc.A); lua_setfield(L, -2, "A"); }
   lua_pushnumber(L, atom.nElectron); lua_setfield(L, -2, "NElectron");
   lua_pushnumber(L, Options.nuc.rMin); lua_setfield(L, -2, "rMin");
   lua_pushnumber(L, Options.nuc.rMax); lua_setfield(L, -2, "rMax");
@@ -817,13 +832,14 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   // Degree, NQuadrature); Atom.ConvergenceCheck = {NIntervals, dEtot, dEnergy = max |d eps|}
   if (Options.ConvergenceCheck)
   {
-    int tAtom = lua_gettop(L), nOpt = (int) lua_objlen(L, 2), m = 0;
+    int tAtom = lua_gettop(L), nOpt = (optArg > 0) ? (int) lua_objlen(L, optArg) : 0, m = 0;
     lua_pushcfunction(L, LuaCalculateAtomicBasisFunctions);
-    lua_pushvalue(L, 1);
+    lua_pushnumber(L, Options.Z);
+    lua_pushstring(L, Options.Configuration);
     lua_newtable(L);
     for (int t = 1; t <= nOpt; t++)
     {
-      lua_rawgeti(L, 2, t);
+      lua_rawgeti(L, optArg, t);
       lua_rawgeti(L, -1, 1);
       const char *name = lua_tostring(L, -1);
       int skip = (name != NULL) && (strcicmp(name, "NIntervals") == 0 || strcicmp(name, "ConvergenceCheck") == 0 || strcicmp(name, "FourierBessel") == 0
@@ -841,7 +857,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
       lua_rawseti(L, -2, 2);
       lua_rawseti(L, -2, ++m);
     }
-    lua_call(L, 2, 4);
+    lua_call(L, 3, 4);
     // the refined Atom at the top, the original at tAtom
     double dE, dEps = 0.;
     lua_getfield(L, -1, "Etot"); lua_getfield(L, tAtom, "Etot");

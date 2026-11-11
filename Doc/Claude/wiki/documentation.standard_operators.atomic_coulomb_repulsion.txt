@@ -26,66 +26,8 @@ The example below shows how to create the full Coulomb interaction between multi
 
 ==== Input ====
 <code Quanty Example.Quanty>
-orbitallabels = {"1s1/2","2s1/2","2p1/2","2p3/2"}
-ind, NF = CreateAtomicIndicesList(orbitallabels,{{"Kappas",true}})
-G, F = ReadFPLOBasisFunctions(orbitallabels,"+fval.001.1", "+fval.001.2")
-
-U = NewOperator("AtomicU",NF,ind,G,F) -- creates full Coulomb interaction
-
--- now occupation of the s-orbitals shall be conserved
-
-function Take(list,n1,n2)
-  local result={}
-  if n2== nil then
-    if n1 > 0 then
-      for i = 1, n1 do
-        result[i]=list[i]
-      end
-    else
-      for i=1,-n1 do
-        result[i]=list[#list+n1+i]
-      end
-    end
-   else
-     for i = n1, n2 do
-       result[i+1-n1] = list[i]
-     end
-   end
-  return result
-end
-
-n0 = 3
-n1 = 4
-
-indConserved = Take(ind,1,n0-1)
-indConserved.kappas = Take(ind.kappas,1,n0-1)
-GConserved = Take(G,1,n0-1)
-FConserved = Take(F,1,n0-1)
-
-indNonCnsrvd = Take(ind,n0,n1)
-indNonCnsrvd.kappas = Take(ind.kappas,n0,n1)
-GNonCnsrvd = Take(G,n0,n1)
-FNonCnsrvd = Take(F,n0,n1)
-
-U0 = NewOperator("AU",NF,indConserved,GConserved,FConserved,{{"conserve",true}}) -- Coulomb interaction between conserved orbitals only
-
-U1 = NewOperator("AU",NF,ind,G,F,indConserved.kappas,indNonCnsrvd.kappas,{{"conserve",true},{"1P-Operator",true}}) -- Coulomb interaction between conserved orbitals and others transformed to a one-particle operator given that the conserved orbitals are always completely filled.
-
-U2 = NewOperator("AU",NF,indNonCnsrvd,GNonCnsrvd,FNonCnsrvd) -- Coulomb interaction between non-conserved orbitals
-
-Uconserved = U0 + U1 + U2
-</code>
-
-
-===== Example with calculated radial functions =====
-
-###
-The Coulomb interaction of the ten electrons of Ne with the Dirac-Fock orbitals of //CalculateAtomicBasisFunctions()//. The energy of the closed-shell Slater determinant under this operator is the electron-electron energy of the Dirac-Fock atom, the sum of its direct and exchange energy.
-###
-
-<code Quanty Example.Quanty>
 -- the Coulomb interaction of the electrons of Ne on its own Dirac-Fock orbitals
-G, F, x, Atom = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"A", 20}, {"Configuration", "[He] 2s2 2p6"}})
+G, F, x, Atom = CalculateAtomicBasisFunctions(10)
 ind, NF = CreateAtomicIndicesList(Atom.Labels, {{"Kappas", true}})
 
 U = NewOperator("AU", NF, ind, G, F)

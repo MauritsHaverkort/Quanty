@@ -22,13 +22,14 @@ Contents:
 ## 1. What it does, in one script
 
 ```lua
--- Ni: Dirac-Fock (configuration average), orbitals up to 5s, confined valence functions
-G, F, x, Atom = CalculateAtomicBasisFunctions(nil, {
-    {"Z", 28}, {"Nucleus", "Gaussian"}, {"A", 58},
-    {"Configuration", "[Ar] 3d8 4s2"},
+-- the minimal call: the ground state of the neutral Ni atom (Dirac-Fock, Gaussian nucleus of 58Ni)
+G, F, x, Atom = CalculateAtomicBasisFunctions(28)
+
+-- a basis: orbitals up to 5s, 4p and 4d, all confined, the empty 4p and 4d contracted
+G, F, x, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {
     {"NMax", {s = 5, p = 4, d = 4}},
     {"Confinement", {Rho = 3.5, N = 8}},
-    {"Orbitals", {["4p"] = {Q = 2}, ["4d"] = {Q = 3}}} })
+    {"Q", {["4p"] = 2, ["4d"] = 3}} })
 
 indices, NF = CreateAtomicIndicesList(Atom.Labels, {{"Kappas", true}})
 H0 = NewOperator("Dirac", NF, 28, indices, G, F, Atom.Nucleus)   -- exact one-electron part
@@ -42,23 +43,24 @@ print(Atom.Etot, Atom.Zeta["3d"], Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2])
 
 ## 2. Lua interface
 
-### 2.1 `CalculateAtomicBasisFunctions(orbitalLabels, {options})`
+### 2.1 `CalculateAtomicBasisFunctions(Z [, Configuration] [, {options}])`
 
 Returns `G, F, x, Atom`.
 
-**Which orbitals are calculated:** those of the configuration, all `n` up to `NMax`, the labels in `orbitalLabels`, and the keys of the `Orbitals` option. **Which are returned:** `orbitalLabels` in its order, or, with `nil`, all of them ordered by n, l, j. `Atom.Labels` lists the returned labels in the returned order, ready for `CreateAtomicIndicesList`.
+**Arguments:** `Z`, the nuclear charge (a real number), and optionally the configuration, e.g. `"[Ar] 3d8 4s2"`, per relativistic subshell `"[Kr] 4d3/2(4) 4d5/2(5)"`, or both kinds mixed. An nl entry is averaged over its 4l+2 spinors (Cowan), an n κ entry over its 2j+1 spinors; fractional occupations are allowed, and an occupation 0 (`"4p0"`, `"5p1/2(0)"`) adds an empty orbital. Without a configuration the ground state of the neutral atom is used (`AtomGroundStateConfiguration`, from the NIST Atomic Spectra Database, Z = 1–103). No option is required.
+
+**Which orbitals:** every orbital of the configuration and all `n` up to `NMax` are calculated and returned, ordered by n, l and j. `Atom.Labels` lists them in that order, ready for `CreateAtomicIndicesList`; a selection is made in Lua.
 
 Options:
 
 | Option | Default | Meaning |
 |---|---|---|
-| `Z` | required | nuclear charge (a real number) |
-| `Configuration` | required | `"[Ar] 3d8 4s2"`; per relativistic subshell `"[Kr] 4d3/2(4) 4d5/2(5)"`; both kinds can be mixed. An nl entry is averaged over its 4l+2 spinors (Cowan), an n κ entry over its 2j+1 spinors. Fractional occupations are allowed. |
 | `Method` | `"DHF"` | `"DHF"` (configuration-average Hartree–Fock), `"LDA"` (Slater + PW92), `"LDA-VWN"`, `"RLDA-MV"`, `"PBE"`, `"PBE-VWN"` |
 | `Relativistic` | `true` | `false`: Schrödinger equation; `G` are then B-splines and `F` is empty |
 | `NMax` | none | `{s = 7, p = 6, d = 6, f = 5}`; per κ: `["p1/2"] = 7` |
-| `Orbitals` | none | `{["4s1/2"] = {Q = 0, P = 0.9}}`: extra nuclear charge `Q` and confinement scale `P` per n κ; an nl key (`["4s"]`) sets both j |
-| `Confinement` | none | `{Rho = 6, N = 10, P = 1}`: confinement radius r_c = P(n κ) · P · Rho for every orbital |
+| `Q` | none | `{["4p"] = 1, ["5s1/2"] = 2}`: extra nuclear charge of the equation of an orbital; an nl key sets both j (n κ wins); only calculated orbitals |
+| `P` | 1 | `{["4d5/2"] = 0.8}`: confinement scale of an orbital, likewise; needs `Confinement` |
+| `Confinement` | none | `{Rho = 6, N = 10}`: confinement radius r_c = P(n κ) · Rho for every orbital |
 | `ConfinementVmax` | 1e5 Ha | with a confinement and no `rMax`: rMax = max r_c · Vmax^(1/N) |
 | `Orthonormalize` | `"GramSchmidt"` | per κ from the lowest n upwards; or `"Lowdin"` |
 | `RedundancyTolerance` | 1e-8 | error if an overlap eigenvalue is smaller (linearly dependent functions) |
@@ -66,7 +68,7 @@ Options:
 | `Precision` | `"Normal"` | `"High"`: EnergyTolerance 1e-13 |E|, OrbitalTolerance 1e-9, NQuadrature Degree+9, ConvergenceCheck on |
 | `ConvergenceCheck` | `false` | repeat with twice the knot intervals and report the changes |
 | `Nucleus` | `"Gaussian"` | `"Point"`, `"Gaussian"`, `"Uniform"`, `"Fermi"`, `"Function"`, `"Function3D"` |
-| `A`, `Rrms` | | mass number, or the rms radius in bohr (Rrms = (0.836 A^(1/3) + 0.570) fm from A) |
+| `A`, `Rrms` | most abundant isotope | mass number, or the rms radius in bohr (Rrms = (0.836 A^(1/3) + 0.570) fm from A); default `AtomDefaultMassNumber` (NIST isotopic compositions) |
 | `FermiThickness` | 2.30 fm | skin thickness of the Fermi nucleus |
 | `Density` | | Lua function ρ(r) (`"Function"`) or ρ(x, y, z) (`"Function3D"`), charge per volume, rescaled to Z |
 | `DensityTolerance` | 1e-10 | relative charge error above which a warning is printed |
@@ -86,7 +88,7 @@ Options:
 The returned `Atom` table:
 
 - **Ground state:** `Etot`, `Ekin`, `Eenuc`, and `Edirect`, `Eexchange` (DHF) or `Ecoul`, `Exc` (Kohn–Sham); `Converged`, `Iterations`, `Residual`, `dE`; DHF: `Gradient`, `PairGradient`; Schrödinger: `VirialRatio` = −(Etot − Ekin)/Ekin.
-- **Echo of the input:** `Method`, `Relativistic`, `c`, `Z`, `NElectron`, `rMin`, `rMax`, and `Nucleus` as an options list that `NewOperator("Dirac", ..., Atom.Nucleus)` accepts.
+- **Echo of the input:** `Method`, `Relativistic`, `c`, `Z`, `Configuration`, `A`, `NElectron`, `rMin`, `rMax`, and `Nucleus` as an options list that `NewOperator("Dirac", ..., Atom.Nucleus)` accepts.
 - **Per orbital, `Orbitals[i]`:** `Label`, `n`, `l`, `kappa`, `j`, `Occupation`, `Q`, `P`, `rc`, `Energy` (eigenvalue of its generating equation), `EnergyGround` (⟨a|F|a⟩ of the returned function with the ground-state operator), `Vbeta` (⟨βV_β⟩), `RExpectation` (⟨r⁻³⟩ for l > 0, ⟨r⁻¹⟩, ⟨r⟩, ⟨r²⟩), `EtotGenerating`, `Generated`, `Converged`.
 - **Slater integrals:** `SlaterIntegrals` in the format of `GetSlaterIntegrals` — `t["3d5/2 4s1/2 3d5/2 4s1/2"] = {[k] = F^k}` and `t["3d5/2 4s1/2 4s1/2 3d5/2"] = {[k] = G^k}` — jj-resolved in Dirac mode; `SlaterIntegralsNL`, the same for nl shells with the radial integrals averaged over j with weights (2j+1)/(4l+2); `Zeta[nl]` = 2(⟨F⟩_{l+1/2} − ⟨F⟩_{l−1/2})/(2l+1).
 - **Diagnostics:** `MinOverlapEigenvalue`, `OrthonormalityError`, `Potential = {VN, VH, Vxc}` on the points `x`, `ConvergenceCheck = {NIntervals, dEtot, dEnergy}`, `FourierBessel = {k, P, Q}`, and for `"Function3D"` `NuclearMultipoleMoments[i] = {L, M, Value}`.
@@ -201,7 +203,7 @@ Everything is in `DFT/` unless noted. Header files declare the routines of their
 | `DFT.h`, `DFT.cpp` | include order of the add-on; `DFTReal` |
 | `DiracRadial.cpp` | radial basis (`RadialBasisCreate`, `RadialBasisFromKnots`); nucleus models (`NucleusPotential`, `NucleusDensity`, `NucleusCharge`, `NucleusFermiParameters`); DKB matrices (`DiracDKBMatrices`, `DiracActiveFunctions`); eigenproblem (`DiracRadialEigen`, `DiracGeneralizedEigen`, `DiracElectronicFirst`, `DiracRootIndex`); spinor values (`DiracComponents`, `DiracExpectation`); sign (`InnermostLobeSign`, `DiracSignConvention`); confinement (`ConfinementPotential`, `ConfinementRMax`); orthonormalization (`DiracOrthonormalize`, `DiracOrthonormalityError`); `NeumaierAdd` |
 | `XCFunctional.cpp` | `XCEvaluate`, `XCPW92`, `XCVWN`, `XCMacDonaldVosko`, `XCMethodFromName` |
-| `AtomSCF.cpp` | configuration parser (`AtomParseConfiguration`, `AtomShellType`); the atom (`DiracAtomType`, `AtomSetup`, `AtomFree`); orbitals on the points (`AtomOrbitalOnPoints`, `AtomLocalFunctions`, `AtomPotentialMatrix`); Kohn–Sham density and potential (`AtomDensity`, `AtomPotential`); the Kohn–Sham SCF (`AtomSCF`); `AtomSignConvention` |
+| `AtomSCF.cpp` | configuration parser (`AtomParseConfiguration`, `AtomShellType`); NIST tables (`AtomGroundStateConfiguration`, `AtomDefaultMassNumber`); the atom (`DiracAtomType`, `AtomSetup`, `AtomFree`); orbitals on the points (`AtomOrbitalOnPoints`, `AtomLocalFunctions`, `AtomPotentialMatrix`); Kohn–Sham density and potential (`AtomDensity`, `AtomPotential`); the Kohn–Sham SCF (`AtomSCF`); `AtomSignConvention` |
 | `AtomHF.cpp` | `DiracHFType`; angular factors and pair numbers (`HFGamma`, `HFSetup`, `HFCoupling`); energy (`HFEnergy`); Fock and exchange matrices (`HFFockMatrices`, `HFExchangeMatrix`); the orbital SCF (`HFGradient`, `HFClassOrbitals`, `HFOrthonormalize`, `HFSCF`); `RadialYkOnPoints`, `HFIntegral` |
 | `AtomBasis.cpp` | generating calculations (`AtomTargetMatrices`, `AtomRootSolve`, `AtomBasisFunctions`, `AtomBasisType`); `AtomOrthonormalizeBasis` |
 | `NucleusMultipole.cpp` | real spherical harmonics, multipole projection, potentials, moments, `RealHarmonicMatrixElement` |
@@ -216,8 +218,8 @@ Everything is in `DFT/` unless noted. Header files declare the routines of their
 | `LuaInterface/ssp.cpp` | registration of the Lua functions and of `NewOperator("NuclearMultipole")` |
 
 **Data flow of `CalculateAtomicBasisFunctions`:**
-1. parse the options and the configuration;
-2. collect the wanted orbitals and add empty shells for those not in the configuration;
+1. parse Z, the configuration (default `AtomGroundStateConfiguration`) and the options;
+2. collect the orbitals (configuration and `NMax`), add empty shells for the `NMax` orbitals not in the configuration, and attach Q and P;
 3. nucleus and basis (`DFTLuaNucleusBasis`);
 4. `AtomSetup`;
 5. `AtomBasisFunctions`: the ground state through `AtomSCF` and `HFSetup`/`HFSCF`, then the generating calculations;

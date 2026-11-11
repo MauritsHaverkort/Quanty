@@ -18,27 +18,27 @@ local function check(ok, text)
 end
 local pt = {"Nucleus", "Point"}
 
-local G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 1}, {"Configuration", "1s1"}, pt, {"Relativistic", false}})
+local G, F, x, A = CalculateAtomicBasisFunctions(1, "1s1", {pt, {"Relativistic", false}})
 local R = A.Orbitals[1].RExpectation
 check(math.abs(R[-1] - 1) < 1e-10 and math.abs(R[1] - 1.5) < 1e-10 and math.abs(R[2] - 3) < 1e-10 and R[-3] == nil and math.abs(A.VirialRatio - 2) < 1e-10,
       string.format("H 1s: <1/r> %.12f, <r> %.12f, <r^2> %.12f, -V/T %.12f", R[-1], R[1], R[2], A.VirialRatio))
 
-G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"Configuration", "[He] 2s2 2p6"}, pt, {"Relativistic", false}})
+G, F, x, A = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"Relativistic", false}})
 local n = #x
 check(math.abs(A.VirialRatio - 2) < 1e-8 and math.abs(A.Potential.VN[n]*x[n] + 10) < 1e-10 and math.abs(A.Potential.VH[n]*x[n] - 10) < 1e-10 and A.Potential.Vxc == nil,
       string.format("Ne HF (Schroedinger): -V/T - 2 = %.1e, r V_N %.12f and r V_H %.12f at rMax", A.VirialRatio - 2, A.Potential.VN[n]*x[n], A.Potential.VH[n]*x[n]))
 
-G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"Configuration", "[He] 2s2 2p6"}, pt, {"Method", "LDA"}})
+G, F, x, A = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"Method", "LDA"}})
 check(A.Potential.Vxc ~= nil and #A.Potential.Vxc == #x and A.Potential.Vxc[10] < 0, "Kohn-Sham: Potential.Vxc on the points x")
 
-G, F, x, A = CalculateAtomicBasisFunctions(nil, {{"Z", 10}, {"Configuration", "[He] 2s2 2p6"}, {"Nucleus", "Gaussian"}, {"A", 20}, {"Precision", "High"}})
+G, F, x, A = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {{"Nucleus", "Gaussian"}, {"A", 20}, {"Precision", "High"}})
 local cc = A.ConvergenceCheck
 check(A.Converged and A.Residual < 1e-9 and A.Gradient ~= nil and A.PairGradient ~= nil and cc ~= nil and cc.NIntervals == 240
       and math.abs(cc.dEtot) < 1e-10 and cc.dEnergy < 1e-7,
       string.format("Ne DHF, Precision High: converged (step %.1e), ConvergenceCheck NIntervals %d, dEtot %.1e, dEnergy %.1e", A.Residual, cc and cc.NIntervals or 0,
                     cc and cc.dEtot or 0, cc and cc.dEnergy or 0))
 
-local ok = pcall(function() return CalculateAtomicBasisFunctions(nil, {{"Z", 2}, {"Configuration", "1s2"}, pt, {"Precision", "Extreme"}}) end)
+local ok = pcall(function() return CalculateAtomicBasisFunctions(2, "1s2", {pt, {"Precision", "Extreme"}}) end)
 check(not ok, "unknown Precision is an error")
 if failed then error("the accuracy report: checks failed", 1) end
 print("passed")

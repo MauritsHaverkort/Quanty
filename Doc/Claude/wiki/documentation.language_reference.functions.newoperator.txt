@@ -45,60 +45,8 @@ The standard operators created by //NewOperator(name, ...)// need to know which 
 | "jjz" | eigenstates of $j$ and $j_z$ | //IndexUp// holds the $2l$ states of $j=l-1/2$ and //IndexDn// the $2l+2$ states of $j=l+1/2$, both from $j_z=-j$ to $j_z=j$, in the order of //[[documentation:language_reference:functions:ytojjzmatrix|YtojjzMatrix()]]// |
 
 <code Quanty Example.Quanty>
-NF = 10
-IndexDn = {0,2,4,6,8}
-IndexUp = {1,3,5,7,9}
--- Lz on the five cubic harmonics x2-y2, z2, yz, xz, xy
-OppLz = NewOperator("Lz", NF, IndexUp, IndexDn, {{"Basis","K"}})
-
--- the same shell read as j=3/2 and j=5/2 instead
-Indexjmin  = {0,1,2,3}
-Indexjplus = {4,5,6,7,8,9}
-OppJz = NewOperator("Jz", NF, Indexjmin, Indexjplus, {{"Basis","jjz"}})
-</code>
-
-###
-If no "Basis" option is given, "jjz" is assumed when the second index list is two longer than the first and "Y" otherwise.
-###
-
-###
-All operators are created in the basis of spherical harmonics and rotated from there with the matrix
-\begin{eqnarray}
-C_{i,m} = \langle \mathrm{new}_i | Y_{l,m} \rangle,
-\end{eqnarray}
-which is what //[[documentation:language_reference:functions:ytozmatrix|YtoZMatrix()]]//, //[[documentation:language_reference:functions:ytokmatrix|YtoKMatrix()]]// and //[[documentation:language_reference:functions:ytojjzmatrix|YtojjzMatrix()]]// return, so that a one particle operator with matrix $A$ in the spherical harmonics basis has the matrix $A' = C^* A C^T$ in the new basis. This is exactly what //[[documentation:language_reference:functions:rotate|Rotate()]]// does when it is handed $C$, so
-###
-
-<code Quanty Example.Quanty>
-NewOperator("Qzz", NF, IndexUp, IndexDn, {{"Basis","Z"}})
-Rotate(NewOperator("Qzz", NF, IndexUp, IndexDn), Matrix.ToUserdata(YtoZMatrix(2)))
-</code>
-
-###
-are the same operator. The consequence worth keeping in mind is that the Slater integrals of the Coulomb operator, and the parameters of every other standard operator, keep the meaning they have in the spherical harmonics basis whichever basis is asked for. The Coulomb repulsion of a shell is still given as $F^0, F^2, \ldots$ on the jjz basis, and //[[documentation:language_reference:functions:angularmomentumoperators|AngularMomentumOperators()]]// returns the more general set with a separate $F^k$ and $G^k$ per pair of $j$ shells alongside it.
-###
-
-###
-The "P" (pyramidal harmonics) value is accepted by the option parser but is not implemented.
-###
-
-===== Atomic orbitals given by radial functions =====
-
-###
-Three standard operators work on atomic orbitals given by their radial functions, the large components $P(r) = r g(r)$ in //G// and the small components $Q(r) = r f(r)$ in //F//, one function per orbital:
-###
-
-  * //NewOperator("Dirac", NF, Z, indices, G, F, Options)// : the one particle Dirac operator, kinetic energy, rest mass and the potential of the nucleus of charge //Z//.
-  * //NewOperator("AU", NF, indices, G, F, Options)// (also //"AtomicU"//) : the Coulomb interaction of all pairs of electrons, see //[[documentation:standard_operators:atomic_coulomb_repulsion|]]//.
-  * //NewOperator("NuclearMultipole", NF, Z, indices, G, F, Options)// : the non-spherical part of the potential of a nucleus given by a charge density $\rho(x,y,z)$ (the option //{"Nucleus", "Function3D"}// with //{"Density", rho}//), for example the electric quadrupole interaction with the nucleus.
-
-###
-//indices// is the list made by //CreateAtomicIndicesList(orbitalLabels, {{"Kappas", true}})//, which holds the indices of every orbital and its relativistic quantum number $\kappa$. The radial functions can come from //ReadFPLOBasisFunctions()//, on the radial grid of FPLO, or from //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//. For the functions of //CalculateAtomicBasisFunctions()// all three operators are calculated exactly on the B-spline basis of the atom, without a radial grid; all functions must then come from the same call, and the speed of light //PhysicalConstants.cAU.value// must be the one they were calculated with. //"Dirac"// then accepts the options of the nucleus (//"Nucleus"//, //"A"//, //"Rrms"//, //"Density"//, ...; the default is a point nucleus), conveniently the list //Atom.Nucleus// that //CalculateAtomicBasisFunctions()// returns. The options //"conserve"// and //"1P-Operator"// of //"AU"// are not available for these functions yet.
-###
-
-<code Quanty Example.Quanty>
 -- the atomic operators of Ne on its own Dirac-Fock orbitals
-G, F, x, Atom = CalculateAtomicBasisFunctions({"1s1/2", "2s1/2", "2p1/2", "2p3/2"}, {{"Z", 10}, {"A", 20}, {"Configuration", "[He] 2s2 2p6"}})
+G, F, x, Atom = CalculateAtomicBasisFunctions(10)
 indices, NF = CreateAtomicIndicesList(Atom.Labels, {{"Kappas", true}})
 
 H0 = NewOperator("Dirac", NF, 10, indices, G, F, Atom.Nucleus)  -- kinetic energy, rest mass and nucleus

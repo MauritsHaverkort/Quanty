@@ -55,6 +55,8 @@ typedef struct {
 
 int AtomParseConfiguration(const char *configuration, uint32_t maxShell, uint32_t *nShell, AtomShellType *shell);
 double AtomShellDegeneracy(const AtomShellType *shell);
+const char *AtomGroundStateConfiguration(double Z);
+int AtomDefaultMassNumber(double Z);
 void AtomOrbitalOnPoints(const RadialBasisType *basis, int relativistic, int kappa, double c, const double *coef,
                          double *P, double *dP, double *Q, double *dQ);
 uint32_t AtomLocalFunctions(const RadialBasisType *basis, int relativistic, int kappa, double c, uint32_t q,
