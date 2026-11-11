@@ -1,0 +1,81 @@
+--[[
+ *  DFT stage A, checks 1a and 1b (Doc/Claude/QuantyDFT_StageA, design section 12):
+ *  the radial Dirac equation for a point nucleus on the dual-kinetic-balance B-spline basis
+ *  (DiracRadialSolve, degree 8, 120 knot intervals, rMin = 1e-6/Z, rMax = 60/sqrt(Z),
+ *  80 for Z = 1) against the exact hydrogen-like energies
+ *      E = c^2 [ (1 + (Z/c)^2/(n - |kappa| + gamma)^2)^(-1/2) - 1 ],  gamma = sqrt(kappa^2 - (Z/c)^2).
+ *
+ *  1a: the lowest three electronic roots for Z = 1, 80, 92 and kappa = -1, +1, -2, +2, -3
+ *      (+1 not for Z = 92) to 5e-9 Ha; U 1s1/2 (discretization error of r^gamma) to 3e-8 Ha.
+ *      Z = 1, n = 5 is limited by the box (rMax = 80) to 2.6e-6 Ha and is not checked.
+ *      Every basis has n states below -c^2 and n above (no spurious state).
+ *  1b: Z = 92, kappa = +1 has one intruder state near -16542.7 Ha, half large and half
+ *      small component, at <r> = 0.02 bohr (the reason for a finite nucleus); the next
+ *      three roots are the exact 2p1/2, 3p1/2 and 4p1/2.
+ *  Both with the Rayleigh quotient (default) and with the plain dsygvd eigenvalues, whose
+ *  rounding error is about 1e-8 - 1e-7 Ha here and depends on the LAPACK (tolerance 1e-6 Ha).
+]]
+
+local c = PhysicalConstants.cAU.value
+local function exact(Z, n, kappa)
+  local g = math.sqrt(kappa^2 - (Z/c)^2)
+  return c^2*((1 + (Z/c/(n - math.abs(kappa) + g))^2)^-0.5 - 1)
+end
+local function lOf(kappa) return (kappa > 0) and kappa or -kappa - 1 end
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+for _, rayleigh in ipairs({true, false}) do
+  print("RayleighQuotient = " .. tostring(rayleigh))
+  for _, Z in ipairs({1, 80, 92}) do
+    local rMax = (Z > 1) and 60/math.sqrt(Z) or 80
+    for _, kappa in ipairs({-1, 1, -2, 2, -3}) do
+      local l = lOf(kappa)
+      local E, G, F, Info = DiracRadialSolve(Z, kappa, {{"Nucleus", "Point"}, {"Degree", 8}, {"NIntervals", 120},
+                                                        {"rMin", 1e-6/Z}, {"rMax", rMax}, {"NStates", 4}, {"RayleighQuotient", rayleigh}})
+      check(Info.NNegativeContinuum == Info.NBasis/2,
+            string.format("Z = %2d kappa = %+d: %d of %d states below -c^2", Z, kappa, Info.NNegativeContinuum, Info.NBasis))
+      if Z == 92 and kappa == 1 then
+        -- check 1b: the intruder, then the exact 2p1/2, 3p1/2, 4p1/2
+        local w, r = Info.w, Info.r
+        local P2, Q2, rm = 0, 0, 0
+        local g, f = G[1](r), F[1](r)
+        for i = 1, #r do
+          P2 = P2 + w[i]*g[i]^2
+          Q2 = Q2 + w[i]*f[i]^2
+          rm = rm + w[i]*r[i]*(g[i]^2 + f[i]^2)
+        end
+        check(math.abs(E[1] + 16542.7) < 1, string.format("Z = 92 kappa = +1: intruder at %.4f Ha, int P^2 = %.3f, int Q^2 = %.3f, <r> = %.4f",
+                                                          E[1], P2, Q2, rm))
+        check(P2 > 0.3 and Q2 > 0.3 and rm < 0.05, "            intruder has both components and lies at the nucleus")
+        for n = 2, 4 do
+          local err = E[n] - exact(Z, n, kappa)
+          check(math.abs(err) < (rayleigh and 5e-9 or 1e-6), string.format("            n = %d E = %.10f error %+.1e", n, E[n], err))
+        end
+      elseif not (Z == 92 and kappa == 1) then
+        for i = 1, 3 do
+          local n = l + i
+          local err = E[i] - exact(Z, n, kappa)
+          local tol = rayleigh and 5e-9 or 1e-6
+          if Z == 92 and kappa == -1 and n == 1 then tol = rayleigh and 3e-8 or 1e-6 end
+          if Z == 1 and n == 5 then
+            print(string.format("        Z = %2d kappa = %+d n = %d E = %.12f error %+.1e (box, not checked)", Z, kappa, n, E[i], err))
+          else
+            check(math.abs(err) < tol, string.format("Z = %2d kappa = %+d n = %d E = %.12f error %+.1e", Z, kappa, n, E[i], err))
+          end
+        end
+      end
+    end
+  end
+end
+
+-- the value quoted in the design for U 1s1/2
+local E = DiracRadialSolve(92, -1, {{"Nucleus", "Point"}, {"rMin", 1e-6/92}, {"rMax", 60/math.sqrt(92)}})
+check(math.abs(E[1] + 4861.1979032) < 1e-7, string.format("U 1s1/2 point nucleus = %.10f Ha (design: -4861.1979032)", E[1]))
+
+if failed then error("DiracRadialSolve: point nucleus checks failed", 1) end
+print("passed")

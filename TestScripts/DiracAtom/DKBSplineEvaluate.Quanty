@@ -1,0 +1,124 @@
+--[[
+ *  Interpolating functions of type "DKBSpline": the large (G = P) and small (F = Q)
+ *  components of the radial Dirac spinors from DiracRadialSolve (DFT stage A1).
+ *
+ *  - Hydrogen 1s1/2 (point nucleus): against the exact P = A sqrt(1+gamma) r^gamma e^-r,
+ *    Q = -A sqrt(1-gamma) r^gamma e^-r, values and first derivatives.
+ *  - Derivatives 1 .. 3 against central finite differences (Richardson extrapolated).
+ *  - Derivatives continuous at the first knot rMin (they come from an exact integral).
+ *  - The DKB functions are small but not exactly 0 at r = 0 and r = rMax.
+ *  - 0 outside [0, rMax], value and derivatives.
+ *  - int (G^2 + F^2) dr = 1 on the quadrature points (Info.r, Info.w); Integrate.
+ *  - Arithmetic, == and NewOperator("AU") give an explicit error.
+]]
+
+local c = PhysicalConstants.cAU.value
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local rMin, rMax = 1e-6, 80
+local E, G, F, Info = DiracRadialSolve(1, -1, {{"Nucleus", "Point"}, {"rMin", rMin}, {"rMax", rMax}, {"NStates", 2}})
+local P, Q = G[1], F[1]
+
+-- exact hydrogen 1s1/2, normalized on the same quadrature points
+local gam = math.sqrt(1 - (1/c)^2)
+local function Pe(r) return math.sqrt(1+gam)*r^gam*math.exp(-r) end
+local function Qe(r) return -math.sqrt(1-gam)*r^gam*math.exp(-r) end
+local norm, normDKB = 0, 0
+for i = 1, #Info.r do
+  local r = Info.r[i]
+  norm = norm + Info.w[i]*(Pe(r)^2 + Qe(r)^2)
+  normDKB = normDKB + Info.w[i]*(P(r)^2 + Q(r)^2)
+end
+local A = 1/math.sqrt(norm)
+check(math.abs(normDKB - 1) < 1e-13, string.format("int (G^2 + F^2) dr - 1 = %.1e", normDKB - 1))
+-- errors relative to the largest value of the exact function (in the tail the function
+-- itself is tiny and its relative error large, from the sparse knots there). The
+-- derivatives from r = 1e-3 on: for a point nucleus P' and Q' go as r^(gamma-1), which
+-- no polynomial follows near r = 0 (the error of Q' is 1e-6 of its largest value at
+-- r = 1e-5, 6e-13 at r = 0.1).
+local rs = {1e-5, 1e-3, 0.01, 0.1, 0.5, 1, 2, 5, 10, 20}
+local eP, eQ, eP1, eQ1, mP, mQ, mP1, mQ1 = 0, 0, 0, 0, 0, 0, 0, 0
+for i, r in ipairs(rs) do
+  local dPe = A*math.sqrt(1+gam)*math.exp(-r)*r^gam*(gam/r - 1)
+  local dQe = -A*math.sqrt(1-gam)*math.exp(-r)*r^gam*(gam/r - 1)
+  eP, mP = math.max(eP, math.abs(P(r) - A*Pe(r))), math.max(mP, math.abs(A*Pe(r)))
+  eQ, mQ = math.max(eQ, math.abs(Q(r) - A*Qe(r))), math.max(mQ, math.abs(A*Qe(r)))
+  if r >= 1e-3 then
+    eP1, mP1 = math.max(eP1, math.abs(P(r, 1) - dPe)), math.max(mP1, math.abs(dPe))
+    eQ1, mQ1 = math.max(eQ1, math.abs(Q(r, 1) - dQe)), math.max(mQ1, math.abs(dQe))
+  end
+end
+check(eP/mP < 3e-8 and eQ/mQ < 3e-8, string.format("hydrogen 1s: G and F against the exact P and Q, %.1e and %.1e of their largest value", eP/mP, eQ/mQ))
+check(eP1/mP1 < 3e-8 and eQ1/mQ1 < 3e-8, string.format("hydrogen 1s: G' and F' against the exact P' and Q', %.1e and %.1e of their largest value", eP1/mP1, eQ1/mQ1))
+
+-- derivatives against finite differences, for the 2s state and both components
+local function fd(f, r, k, h)
+  -- central differences of order h^2 for derivative k, from derivative k-1
+  return (f(r + h, k-1) - f(r - h, k-1))/(2*h)
+end
+for name, f in pairs({G2s = G[2], F2s = F[2]}) do
+  local worst = 0
+  for _, r in ipairs({0.05, 0.2, 1.3, 4, 9}) do
+    for k = 1, 3 do
+      local h = 1e-3*r
+      local d = (4*fd(f, r, k, h/2) - fd(f, r, k, h))/3       -- Richardson: order h^4
+      local scale = math.abs(f(r, k)) + math.abs(f(r, k-1))/r
+      worst = math.max(worst, math.abs(f(r, k) - d)/scale)
+    end
+  end
+  check(worst < 1e-8, string.format("%s: derivatives 1..3 against finite differences, relative %.1e", name, worst))
+end
+
+-- small r: the derivatives of B/r come from an exact integral, without the cancellation
+-- of the Leibniz sum; they are continuous at the first knot rMin and smooth below it
+for name, f in pairs({G2s = G[2], F2s = F[2]}) do
+  local worst = 0
+  for k = 0, 6 do
+    local left, right = f(rMin*(1 - 1e-13), k), f(rMin*(1 + 1e-13), k)
+    worst = math.max(worst, math.abs(left - right)/math.max(math.abs(left), math.abs(right)))
+  end
+  check(worst < 1e-9, string.format("%s: derivatives 0..6 continuous at rMin = %g, relative %.1e", name, rMin, worst))
+end
+-- the DKB functions are not exactly 0 at the ends: P(0) = h b_1 B_1'(0) (1 - kappa),
+-- and P(rMax), Q(rMax) contain S'(rMax); small against the function
+local gmax = 0
+for i = 1, #Info.r do gmax = math.max(gmax, math.abs(P(Info.r[i]))) end
+check(math.abs(P(0)) < 1e-10*gmax and math.abs(P(rMax)) < 1e-10*gmax and math.abs(Q(rMax)) < 1e-10*gmax,
+      string.format("G(0) = %.1e, G(rMax) = %.1e, F(rMax) = %.1e, max |G| = %.3f", P(0), P(rMax), Q(rMax), gmax))
+
+-- zero outside the knots
+local outside = 0
+for _, r in ipairs({-1, -1e-12, rMax*(1 + 1e-12), rMax + 1, 1e6}) do
+  for k = 0, 3 do outside = math.max(outside, math.abs(P(r, k)), math.abs(Q(r, k))) end
+end
+check(outside == 0, "0 outside [0, rMax], value and derivatives")
+
+-- Integrate: per knot interval, against the sum on the quadrature points
+local sum = 0
+for i = 1, #Info.r do sum = sum + Info.w[i]*P(Info.r[i]) end
+local I1, I2 = InterpolatingFunction.Integrate(P), InterpolatingFunction.Integrate(P, 0, rMax)
+check(math.abs(I1 - sum) < 1e-13 and I1 == I2, string.format("Integrate(G) = %.15f, quadrature sum %.15f", I1, sum))
+local Ihalf = InterpolatingFunction.Integrate(P, 0, 1) + InterpolatingFunction.Integrate(P, 1, rMax)
+check(math.abs(Ihalf - I1) < 1e-13, string.format("Integrate(G,0,1) + Integrate(G,1,rMax) - Integrate(G) = %.1e", Ihalf - I1))
+check(math.abs(#P.x - #Info.r) == 0, string.format("G.x holds the %d quadrature points", #P.x))
+
+-- explicit errors
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+fails(function() return P + Q end, "G + F")
+fails(function() return P * Q end, "G * F")
+fails(function() return -P end, "-G")
+fails(function() return P == G[2] end, "G1 == G2")
+local B = InterpolatingFunction.BSpline({0, 1, 2, 3, 4}, {0, 1, 0, 1, 0}, 3)
+fails(function() return B + P end, "BSpline + DKBSpline")
+local indices, NF = CreateAtomicIndicesList({"1s1/2"}, {{"Kappas", true}})
+fails(function() return NewOperator("AU", NF, indices, {P}, {Q}) end, "NewOperator(\"AU\") with DKBSpline")
+
+if failed then error("DKBSpline evaluation checks failed", 1) end
+print("passed")

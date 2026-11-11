@@ -10,3 +10,4 @@
  */
 
 #include "DiracRadial.cpp"
+#include "LuaDiracRadial.cpp"

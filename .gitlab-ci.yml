@@ -131,7 +131,11 @@ test-jobs-diracatom:
   parallel:
     matrix:
       - TEST_NAME:
+          - "DKBSplineEvaluate"
+          - "FunctionNucleus"
+          - "GaussianNucleus"
           - "NewOperatorDiracZ"
+          - "PointNucleus"
   script:
     - export OMP_NUM_THREADS=8
     - ./Quanty.exe "TestScripts/DiracAtom/${TEST_NAME}.Quanty"
