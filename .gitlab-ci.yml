@@ -393,6 +393,7 @@ test-jobs:
           - "Rotate"
           - "ScriptDirectory"
           - "ShellAverage"
+          - "SphericalBesselJ"
           - "Statistics"
           - "TensorProduct"
           - "TimeStartStopPrintSet"
