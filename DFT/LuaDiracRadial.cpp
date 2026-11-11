@@ -28,7 +28,8 @@
  *     NQuadrature      Gauss points per knot interval, default Degree+5, at most 127
  *     NStates          number of states returned, default 3
  *     RayleighQuotient true (default): the eigenvalues are the Rayleigh quotients of the
- *                      eigenvectors (DiracRadialEigen); false: those of dsygvd
+ *                      eigenvectors (DiracRadialEigen); false: those of the eigensolver
+ *                      (dsygv), always in Info.EEigensolver
  *     OriginBoundary   true (default): the DKB functions on B_1 that are nonzero at r = 0
  *                      are left out for kappa != -1 (DiracActiveFunctions), which removes
  *                      the spurious state of a point nucleus for kappa = +1; false: all 2n
@@ -46,30 +47,139 @@
  * c is PhysicalConstants.cAU.value, 1 bohr = PhysicalConstants.a0.value m.
  */
 
+/* The options of the DFT Lua entries that fix the nucleus and the radial basis. */
+typedef struct
+{
+  char *Nucleus;
+  double A, Rrms, FermiThickness, DensityTolerance, rMin, rMax;
+  uint32_t Degree, NIntervals, NQuadrature;
+  int Density;
+} DFTLuaNucleusOptions;
+
+void DFTLuaNucleusDefaults(DFTLuaNucleusOptions *o, double a0fm)
+{
+  o->Nucleus = (char *) "Gaussian";
+  o->A = 0.;
+  o->Rrms = 0.;
+  o->FermiThickness = 2.30/a0fm;
+  o->DensityTolerance = 1e-10;
+  o->rMin = 0.;
+  o->rMax = 0.;
+  o->Degree = 8;
+  o->NIntervals = 120;
+  o->NQuadrature = 0;
+  o->Density = LUA_NOREF;
+}
+
+/* The nucleus, the radial basis and the nuclear potential *V (on the quadrature points,
+ * allocated here) from the options of a DFT Lua entry (who names it in the messages);
+ * o->rMin and o->rMax (rMax must be set) receive the values used, *charge the norm of a
+ * "Function" density before rescaling. Raises a Lua error on failure. */
+int DFTLuaNucleusBasis(lua_State *L, const char *who, double Z, DFTLuaNucleusOptions *o, double a0fm,
+                       NucleusType *nucleus, RadialBasisType *basis, double **V, double *charge)
+{
+  double *rho = NULL;
+  uint32_t q;
+  *charge = 0.;
+  if (o->NQuadrature == 0) o->NQuadrature = o->Degree + 5;
+  if (o->NQuadrature > DiracMaxQuadraturePoints)
+    return luaL_error(L, "Error in %s: NQuadrature = %d, at most %d points per knot interval (the 34-digit Gauss-Legendre table)\n",
+                      who, (int) o->NQuadrature, DiracMaxQuadraturePoints);
+  nucleus->Z = Z;
+  nucleus->A = o->A;
+  nucleus->Rrms = 0.;
+  nucleus->cFermi = 0.;
+  nucleus->aFermi = 0.;
+  if (strcicmp(o->Nucleus, "Point") == 0) nucleus->model = NucleusPoint;
+  else if (strcicmp(o->Nucleus, "Gaussian") == 0) nucleus->model = NucleusGaussian;
+  else if (strcicmp(o->Nucleus, "Fermi") == 0) nucleus->model = NucleusFermi;
+  else if (strcicmp(o->Nucleus, "Function") == 0) nucleus->model = NucleusFunction;
+  else return luaL_error(L, "Error in %s: unknown Nucleus \"%s\" (Point, Gaussian, Fermi or Function)\n", who, o->Nucleus);
+  if ((nucleus->model == NucleusFunction) != (o->Density != LUA_NOREF))
+  {
+    if (o->Density != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
+    return luaL_error(L, "Error in %s: the option Density goes with Nucleus \"Function\", and only with it\n", who);
+  }
+  if (nucleus->model == NucleusGaussian || nucleus->model == NucleusFermi)
+  {
+    if (o->Rrms > 0.) nucleus->Rrms = o->Rrms;
+    else if (o->A > 0.) nucleus->Rrms = (0.836*pow(o->A, 1./3.) + 0.570)/a0fm;
+    else return luaL_error(L, "Error in %s: a %s nucleus needs the option A or Rrms\n", who, o->Nucleus);
+  }
+  if (nucleus->model == NucleusFermi && NucleusFermiParameters(nucleus->Rrms, o->FermiThickness, &nucleus->cFermi, &nucleus->aFermi))
+    return luaL_error(L, "Error in %s: Fermi nucleus with Rrms = %f bohr is too small for the skin thickness %f bohr (Rrms^2 <= 7/5 pi^2 a^2)\n",
+                      who, nucleus->Rrms, o->FermiThickness);
+  if (o->rMin <= 0.) o->rMin = (nucleus->Rrms > 0.) ? nucleus->Rrms/50. : 1e-6/fabs(Z);
+
+  if (RadialBasisCreate(o->Degree, o->NIntervals, o->rMin, o->rMax, o->NQuadrature, basis))
+    return luaL_error(L, "Error in %s: no B-spline basis for Degree %d, NIntervals %d, rMin %f, rMax %f\n",
+                      who, (int) o->Degree, (int) o->NIntervals, o->rMin, o->rMax);
+
+  // sample the nuclear density of a Lua function on the quadrature points, normalize to Z
+  if (nucleus->model == NucleusFunction)
+  {
+    rho = (double *) malloc(basis->nPoint*sizeof(double));
+    for (q = 0; q < basis->nPoint; q++)
+    {
+      lua_rawgeti(L, LUA_REGISTRYINDEX, o->Density);
+      lua_pushnumber(L, basis->rq[q]);
+      lua_call(L, 1, 1);
+      if (lua_type(L, -1) != LUA_TNUMBER)
+      {
+        free(rho);
+        RadialBasisFree(basis);
+        return luaL_error(L, "Error in %s: Density(%f) is not a number\n", who, basis->rq[q]);
+      }
+      rho[q] = lua_tonumber(L, -1);
+      lua_pop(L, 1);
+    }
+    luaL_unref(L, LUA_REGISTRYINDEX, o->Density);
+    *charge = NucleusCharge(basis, rho);
+    if (!(*charge > 0.))
+    {
+      free(rho);
+      RadialBasisFree(basis);
+      return luaL_error(L, "Error in %s: the nuclear charge 4 pi int r^2 rho dr = %f is not positive\n", who, *charge);
+    }
+    if (fabs(*charge - Z) > o->DensityTolerance*fabs(Z))
+      luaL_warning(L, "Warning in %s: 4 pi int r^2 rho dr = %f differs from Z = %f by %f relative; the density is rescaled to Z\n",
+                   who, *charge, Z, fabs(*charge - Z)/fabs(Z));
+    for (q = 0; q < basis->nPoint; q++) rho[q] *= Z/(*charge);
+  }
+  *V = (double *) malloc(basis->nPoint*sizeof(double));
+  if (NucleusPotential(nucleus, basis, rho, *V))
+  {
+    free(*V);
+    free(rho);
+    RadialBasisFree(basis);
+    return luaL_error(L, "Error in %s: the nuclear potential failed\n", who);
+  }
+  free(rho);
+  return 0;
+}
+
 static int LuaDiracRadialSolve(lua_State *L)
 {
   struct
   {
-    char *Nucleus;
-    double A, Rrms, FermiThickness, DensityTolerance, rMin, rMax;
-    uint32_t Degree, NIntervals, NQuadrature, NStates;
+    DFTLuaNucleusOptions nuc;
+    uint32_t NStates;
     bool RayleighQuotient, OriginBoundary;
-    int Density;
     double ConfinementRadius, ConfinementPower, ConfinementVmax;
     char *ConfinementType;
   } Options;
   LuaOptionsType LuaDiracRadialOptions[] = {
-    {"Nucleus", "char*", &(Options.Nucleus)},
-    {"A", "double", &(Options.A)},
-    {"Rrms", "double", &(Options.Rrms)},
-    {"FermiThickness", "double", &(Options.FermiThickness)},
-    {"Density", "function", &(Options.Density)},
-    {"DensityTolerance", "double", &(Options.DensityTolerance)},
-    {"Degree", "uint32_t", &(Options.Degree)},
-    {"NIntervals", "uint32_t", &(Options.NIntervals)},
-    {"rMin", "double", &(Options.rMin)},
-    {"rMax", "double", &(Options.rMax)},
-    {"NQuadrature", "uint32_t", &(Options.NQuadrature)},
+    {"Nucleus", "char*", &(Options.nuc.Nucleus)},
+    {"A", "double", &(Options.nuc.A)},
+    {"Rrms", "double", &(Options.nuc.Rrms)},
+    {"FermiThickness", "double", &(Options.nuc.FermiThickness)},
+    {"Density", "function", &(Options.nuc.Density)},
+    {"DensityTolerance", "double", &(Options.nuc.DensityTolerance)},
+    {"Degree", "uint32_t", &(Options.nuc.Degree)},
+    {"NIntervals", "uint32_t", &(Options.nuc.NIntervals)},
+    {"rMin", "double", &(Options.nuc.rMin)},
+    {"rMax", "double", &(Options.nuc.rMax)},
+    {"NQuadrature", "uint32_t", &(Options.nuc.NQuadrature)},
     {"NStates", "uint32_t", &(Options.NStates)},
     {"RayleighQuotient", "bool", &(Options.RayleighQuotient)},
     {"OriginBoundary", "bool", &(Options.OriginBoundary)},
@@ -80,7 +190,7 @@ static int LuaDiracRadialSolve(lua_State *L)
     {NULL, NULL, NULL}};
   RadialBasisType basis;
   NucleusType nucleus;
-  double c, a0fm, Z, *V, *rho = NULL, *E, *Edsygvd, *C, *res, *coef, charge = 0., *Vconf = NULL, *ones;
+  double c, a0fm, Z, *V, *E, *Eeig2, *C, *res, *coef, charge = 0., *Vconf = NULL, *ones;
   int vectorConfinement = 0;
   uint32_t len = (uint32_t) lua_gettop(L), N, first, i, q, nStates, nE, nLarge, *active;
   int kappa, l;
@@ -93,20 +203,10 @@ static int LuaDiracRadialSolve(lua_State *L)
   c = LuaGetPhysicalConstant(L, "cAU");
   a0fm = LuaGetPhysicalConstant(L, "a0")*1e15;   // 1 bohr in fm
 
-  Options.Nucleus = (char *) "Gaussian";
-  Options.A = 0.;
-  Options.Rrms = 0.;
-  Options.FermiThickness = 2.30/a0fm;
-  Options.DensityTolerance = 1e-10;
-  Options.Degree = 8;
-  Options.NIntervals = 120;
-  Options.rMin = 0.;
-  Options.rMax = 0.;
-  Options.NQuadrature = 0;
+  DFTLuaNucleusDefaults(&Options.nuc, a0fm);
   Options.NStates = 3;
   Options.RayleighQuotient = true;
   Options.OriginBoundary = true;
-  Options.Density = LUA_NOREF;
   Options.ConfinementRadius = 0.;
   Options.ConfinementPower = 8.;
   Options.ConfinementVmax = 1e5;
@@ -117,84 +217,11 @@ static int LuaDiracRadialSolve(lua_State *L)
     return luaL_error(L, "Error in DiracRadialSolve: unknown ConfinementType \"%s\" (Scalar or Vector)\n", Options.ConfinementType);
   if (Options.ConfinementRadius < 0. || !(Options.ConfinementPower > 0.) || !(Options.ConfinementVmax > 0.))
     return luaL_error(L, "Error in DiracRadialSolve: ConfinementRadius, ConfinementPower and ConfinementVmax must be positive\n");
-  if (Options.rMax <= 0.)
-    Options.rMax = (Options.ConfinementRadius > 0.) ? ConfinementRMax(Options.ConfinementRadius, Options.ConfinementPower, Options.ConfinementVmax) : 40.;
-  if (Options.NQuadrature == 0) Options.NQuadrature = Options.Degree + 5;
-  if (Options.NQuadrature > DiracMaxQuadraturePoints)
-    return luaL_error(L, "Error in DiracRadialSolve: NQuadrature = %d, at most %d points per knot interval (the 34-digit Gauss-Legendre table)\n",
-                      (int) Options.NQuadrature, DiracMaxQuadraturePoints);
+  if (Options.nuc.rMax <= 0.)
+    Options.nuc.rMax = (Options.ConfinementRadius > 0.) ? ConfinementRMax(Options.ConfinementRadius, Options.ConfinementPower, Options.ConfinementVmax) : 40.;
 
-  // the nucleus
-  nucleus.Z = Z;
-  nucleus.A = Options.A;
-  nucleus.Rrms = 0.;
-  nucleus.cFermi = 0.;
-  nucleus.aFermi = 0.;
-  if (strcicmp(Options.Nucleus, "Point") == 0) nucleus.model = NucleusPoint;
-  else if (strcicmp(Options.Nucleus, "Gaussian") == 0) nucleus.model = NucleusGaussian;
-  else if (strcicmp(Options.Nucleus, "Fermi") == 0) nucleus.model = NucleusFermi;
-  else if (strcicmp(Options.Nucleus, "Function") == 0) nucleus.model = NucleusFunction;
-  else return luaL_error(L, "Error in DiracRadialSolve: unknown Nucleus \"%s\" (Point, Gaussian, Fermi or Function)\n", Options.Nucleus);
-  if ((nucleus.model == NucleusFunction) != (Options.Density != LUA_NOREF))
-  {
-    if (Options.Density != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, Options.Density);
-    return luaL_error(L, "Error in DiracRadialSolve: the option Density goes with Nucleus \"Function\", and only with it\n");
-  }
-  if (nucleus.model == NucleusGaussian || nucleus.model == NucleusFermi)
-  {
-    if (Options.Rrms > 0.) nucleus.Rrms = Options.Rrms;
-    else if (Options.A > 0.) nucleus.Rrms = (0.836*pow(Options.A, 1./3.) + 0.570)/a0fm;
-    else return luaL_error(L, "Error in DiracRadialSolve: a %s nucleus needs the option A or Rrms\n", Options.Nucleus);
-  }
-  if (nucleus.model == NucleusFermi && NucleusFermiParameters(nucleus.Rrms, Options.FermiThickness, &nucleus.cFermi, &nucleus.aFermi))
-    return luaL_error(L, "Error in DiracRadialSolve: Fermi nucleus with Rrms = %f bohr is too small for the skin thickness %f bohr (Rrms^2 <= 7/5 pi^2 a^2)\n",
-                      nucleus.Rrms, Options.FermiThickness);
-  if (Options.rMin <= 0.) Options.rMin = (nucleus.Rrms > 0.) ? nucleus.Rrms/50. : 1e-6/fabs(Z);
-
-  if (RadialBasisCreate(Options.Degree, Options.NIntervals, Options.rMin, Options.rMax, Options.NQuadrature, &basis))
-    return luaL_error(L, "Error in DiracRadialSolve: no B-spline basis for Degree %d, NIntervals %d, rMin %f, rMax %f\n",
-                      (int) Options.Degree, (int) Options.NIntervals, Options.rMin, Options.rMax);
+  DFTLuaNucleusBasis(L, "DiracRadialSolve", Z, &Options.nuc, a0fm, &nucleus, &basis, &V, &charge);
   N = 2*(basis.nSpline - 2);
-
-  // sample the nuclear density of a Lua function on the quadrature points, normalize to Z
-  if (nucleus.model == NucleusFunction)
-  {
-    rho = (double *) malloc(basis.nPoint*sizeof(double));
-    for (q = 0; q < basis.nPoint; q++)
-    {
-      lua_rawgeti(L, LUA_REGISTRYINDEX, Options.Density);
-      lua_pushnumber(L, basis.rq[q]);
-      lua_call(L, 1, 1);
-      if (lua_type(L, -1) != LUA_TNUMBER)
-      {
-        free(rho);
-        RadialBasisFree(&basis);
-        return luaL_error(L, "Error in DiracRadialSolve: Density(%f) is not a number\n", basis.rq[q]);
-      }
-      rho[q] = lua_tonumber(L, -1);
-      lua_pop(L, 1);
-    }
-    luaL_unref(L, LUA_REGISTRYINDEX, Options.Density);
-    charge = NucleusCharge(&basis, rho);
-    if (!(charge > 0.))
-    {
-      free(rho);
-      RadialBasisFree(&basis);
-      return luaL_error(L, "Error in DiracRadialSolve: the nuclear charge 4 pi int r^2 rho dr = %f is not positive\n", charge);
-    }
-    if (fabs(charge - Z) > Options.DensityTolerance*fabs(Z))
-      luaL_warning(L, "Warning in DiracRadialSolve: 4 pi int r^2 rho dr = %f differs from Z = %f by %f relative; the density is rescaled to Z\n",
-                   charge, Z, fabs(charge - Z)/fabs(Z));
-    for (q = 0; q < basis.nPoint; q++) rho[q] *= Z/charge;
-  }
-  V = (double *) malloc(basis.nPoint*sizeof(double));
-  if (NucleusPotential(&nucleus, &basis, rho, V))
-  {
-    free(V);
-    free(rho);
-    RadialBasisFree(&basis);
-    return luaL_error(L, "Error in DiracRadialSolve: the nuclear potential failed\n");
-  }
 
   if (Options.ConfinementRadius > 0.)
   {
@@ -204,15 +231,15 @@ static int LuaDiracRadialSolve(lua_State *L)
   }
 
   E = (double *) malloc(N*sizeof(double));
-  Edsygvd = (double *) malloc(N*sizeof(double));
+  Eeig2 = (double *) malloc(N*sizeof(double));
   res = (double *) malloc(N*sizeof(double));
   C = (double *) malloc(N*N*sizeof(double));
   if (DiracRadialEigen(&basis, kappa, c, V, vectorConfinement ? NULL : Vconf, Options.RayleighQuotient ? 1 : 0,
-                       Options.OriginBoundary ? 1 : 0, E, C, &nE, res, Edsygvd))
+                       Options.OriginBoundary ? 1 : 0, E, C, &nE, res, Eeig2))
   {
-    free(V); free(Vconf); free(rho); free(E); free(Edsygvd); free(res); free(C);
+    free(V); free(Vconf); free(E); free(Eeig2); free(res); free(C);
     RadialBasisFree(&basis);
-    return luaL_error(L, "Error in DiracRadialSolve: the generalized eigenvalue problem (dsygvd) failed\n");
+    return luaL_error(L, "Error in DiracRadialSolve: the generalized eigenvalue problem (dsygv) failed\n");
   }
   first = DiracElectronicFirst(E, nE, c);
   nStates = Options.NStates;
@@ -255,11 +282,11 @@ static int LuaDiracRadialSolve(lua_State *L)
   lua_pushinteger(L, nLarge);                lua_setfield(L, -2, "NLarge");
   lua_pushinteger(L, nE - nLarge);           lua_setfield(L, -2, "NSmall");
   lua_pushinteger(L, basis.nKnot);           lua_setfield(L, -2, "NKnots");
-  lua_pushnumber(L, Options.rMin);           lua_setfield(L, -2, "rMin");
-  lua_pushnumber(L, Options.rMax);           lua_setfield(L, -2, "rMax");
+  lua_pushnumber(L, Options.nuc.rMin);       lua_setfield(L, -2, "rMin");
+  lua_pushnumber(L, Options.nuc.rMax);       lua_setfield(L, -2, "rMax");
   lua_createtable(L, nStates, 0);
-  for (i = 0; i < nStates; i++) { lua_pushnumber(L, Edsygvd[first + i]); lua_rawseti(L, -2, i+1); }
-  lua_setfield(L, -2, "Edsygvd");
+  for (i = 0; i < nStates; i++) { lua_pushnumber(L, Eeig2[first + i]); lua_rawseti(L, -2, i+1); }
+  lua_setfield(L, -2, "EEigensolver");
   lua_createtable(L, nStates, 0);
   for (i = 0; i < nStates; i++) { lua_pushnumber(L, res[first + i]); lua_rawseti(L, -2, i+1); }
   lua_setfield(L, -2, "Residual");
@@ -297,7 +324,7 @@ static int LuaDiracRadialSolve(lua_State *L)
   LuaPushArray_double(L, V, (int) basis.nPoint);
   lua_setfield(L, -2, "V");
   lua_newtable(L);
-  lua_pushstring(L, Options.Nucleus);        lua_setfield(L, -2, "Model");
+  lua_pushstring(L, Options.nuc.Nucleus);    lua_setfield(L, -2, "Model");
   lua_pushnumber(L, nucleus.Z);              lua_setfield(L, -2, "Z");
   lua_pushnumber(L, nucleus.A);              lua_setfield(L, -2, "A");
   lua_pushnumber(L, nucleus.Rrms);           lua_setfield(L, -2, "Rrms");
@@ -306,7 +333,7 @@ static int LuaDiracRadialSolve(lua_State *L)
   if (nucleus.model == NucleusFunction) { lua_pushnumber(L, charge); lua_setfield(L, -2, "DensityCharge"); }
   lua_setfield(L, -2, "Nucleus");
 
-  free(V); free(Vconf); free(rho); free(E); free(Edsygvd); free(res); free(C);
+  free(V); free(Vconf); free(E); free(Eeig2); free(res); free(C);
   RadialBasisFree(&basis);
   return 4;
 }

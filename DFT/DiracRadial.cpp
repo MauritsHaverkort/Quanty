@@ -376,7 +376,7 @@ void DiracActiveFunctions(const RadialBasisType *basis, int kappa, int originBou
   *nActive = m;
 }
 
-/* The eigenvalues E (ascending) and eigenvectors of H c = E S c (dsygvd) in the DKB
+/* The eigenvalues E (ascending) and eigenvectors of H c = E S c (DiracGeneralizedEigen) in the DKB
  * functions in use (DiracActiveFunctions); *nE receives their number, at most 2n. The
  * eigenvectors are returned with all 2n DKB coefficients (0 for the functions left out),
  * column j at C[i + j*2n], normalized as C^T S C = 1; E and C must have room for 2n and
@@ -388,22 +388,46 @@ void DiracActiveFunctions(const RadialBasisType *basis, int kappa, int originBou
  * a rounding error of about DBL_EPSILON times the largest |E|, which is ~1e12 Ha for a
  * point nucleus (r1 = 1e-6/Z), i.e. 1e-8 Ha; the Rayleigh quotient is second order in the
  * eigenvector error and brings them to the discretization error (Z = 80: 1e-10, Z = 1:
- * 1e-13). If Edsygvd is not NULL it receives the eigenvalues of dsygvd itself.
+ * 1e-13). If Eeigensolver is not NULL it receives the eigenvalues of the eigensolver itself.
  * If residual is not NULL it receives max_i |(H c_j - E_j S c_j)_i| for every j, with the
  * returned E_j. */
 int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DFTReal *V, const DFTReal *Vbeta, int rayleigh,
-                     int originBoundary, double *E, double *C, uint32_t *nE, double *residual, double *Edsygvd)
+                     int originBoundary, double *E, double *C, uint32_t *nE, double *residual, double *Eeigensolver)
 {
-  uint32_t Nf = 2*(basis->nSpline - 2), N, nLarge, lwork, liwork, itype = 1, i, j, l, *active;
-  double *Hf, *Sf, *H, *S, *Cr, *Sc, *work;
-  int *iwork, info = 0;
-  char jobz = 'V', uplo = 'L';
+  uint32_t Nf = 2*(basis->nSpline - 2), nLarge, *active;
+  double *Hf, *Sf;
+  int error;
   Hf = (double *) malloc(Nf*Nf*sizeof(double));
   Sf = (double *) malloc(Nf*Nf*sizeof(double));
   if (DiracDKBMatrices(basis, kappa, c, V, Vbeta, Hf, Sf)) { free(Hf); free(Sf); return 1; }
   active = (uint32_t *) malloc(Nf*sizeof(uint32_t));
-  DiracActiveFunctions(basis, kappa, originBoundary, active, &N, &nLarge);
-  *nE = N;
+  DiracActiveFunctions(basis, kappa, originBoundary, active, nE, &nLarge);
+  error = DiracGeneralizedEigen(Hf, Sf, Nf, active, *nE, rayleigh, E, C, residual, Eeigensolver);
+  free(Hf);
+  free(Sf);
+  free(active);
+  return error;
+}
+
+/* H c = E S c for the N functions active[0 .. N-1] of the Nf x Nf matrices Hf, Sf (dense,
+ * column major, the lower triangle is used). E (ascending, N values) and the eigenvectors
+ * with all Nf coefficients (0 outside the active functions), column j at C[i + j*Nf],
+ * normalized as C^T S C = 1; C must have room for Nf*N values. rayleigh, residual and
+ * Eeigensolver as in DiracRadialEigen. Returns 1 if LAPACK fails.
+ * dsygv (QR iteration), not dsygvd (divide and conquer): the reduced tridiagonal matrix is
+ * strongly graded (largest eigenvalue 2e14 for the Schroedinger basis with r1 = 1e-6,
+ * 1e12 for the DKB basis of a point nucleus), and divide and conquer gives the small
+ * eigenvalues only to DBL_EPSILON max |E| absolute: hydrogen 1s = -0.4602 instead of -0.5
+ * (Schroedinger; the same number with Accelerate's and with scipy's LAPACK), and 1e-8 Ha
+ * noise for the DKB basis. QR iteration keeps them: -0.5 to 1e-12, and 5e-10 instead of
+ * 1e-8 Ha for the DKB basis. Diagonal scaling of S does not help (the spectrum stays). */
+int DiracGeneralizedEigen(const double *Hf, const double *Sf, uint32_t Nf, const uint32_t *active, uint32_t N, int rayleigh,
+                          double *E, double *C, double *residual, double *Eeigensolver)
+{
+  uint32_t lwork, itype = 1, i, j;
+  double *H, *S, *Cr, *Sc, *work, *HC, *SC, one = 1., zero = 0., chc, csc;
+  int info = 0;
+  char jobz = 'V', uplo = 'L', nt = 'N';
   H = (double *) malloc(N*N*sizeof(double));
   S = (double *) malloc(N*N*sizeof(double));
   for (j = 0; j < N; j++)
@@ -412,64 +436,52 @@ int DiracRadialEigen(const RadialBasisType *basis, int kappa, double c, const DF
       H[i + j*N] = Hf[active[i] + active[j]*Nf];
       S[i + j*N] = Sf[active[i] + active[j]*Nf];
     }
-  free(Hf);
-  free(Sf);
   Cr = (double *) malloc(N*N*sizeof(double));
   for (i = 0; i < N*N; i++) Cr[i] = H[i];
-  Sc = (double *) malloc(N*N*sizeof(double));         // dsygvd overwrites it with its Cholesky factor
+  Sc = (double *) malloc(N*N*sizeof(double));         // dsygv overwrites it with its Cholesky factor
   for (i = 0; i < N*N; i++) Sc[i] = S[i];
-  lwork = 1 + 6*N + 2*N*N;
-  liwork = 3 + 5*N;
+  lwork = 64*N;
   work = (double *) malloc(lwork*sizeof(double));
-  iwork = (int *) malloc(liwork*sizeof(int));
-  dsygvd(&itype, &jobz, &uplo, &N, Cr, &N, Sc, &N, E, work, &lwork, iwork, &liwork, &info);
+  dsygv(&itype, &jobz, &uplo, &N, Cr, &N, Sc, &N, E, work, &lwork, &info);
   free(work);
-  free(iwork);
   free(Sc);
-  if (info == 0 && Edsygvd != NULL) for (j = 0; j < N; j++) Edsygvd[j] = E[j];
+  if (info == 0 && Eeigensolver != NULL) for (j = 0; j < N; j++) Eeigensolver[j] = E[j];
   if (info == 0 && (rayleigh || residual != NULL))
   {
-    double *hc = (double *) malloc(N*sizeof(double)), *sc = (double *) malloc(N*sizeof(double)), chc, csc;
+    // H C and S C with the matrices as assembled (both triangles)
+    HC = (double *) malloc(N*N*sizeof(double));
+    SC = (double *) malloc(N*N*sizeof(double));
+    dgemm(&nt, &nt, &N, &N, &N, &one, H, &N, Cr, &N, &zero, HC, &N);
+    dgemm(&nt, &nt, &N, &N, &N, &one, S, &N, Cr, &N, &zero, SC, &N);
     for (j = 0; j < N; j++)
     {
-      for (i = 0; i < N; i++)
-      {
-        hc[i] = 0.;
-        sc[i] = 0.;
-        for (l = 0; l < N; l++)
-        {
-          hc[i] += H[i + l*N]*Cr[l + j*N];
-          sc[i] += S[i + l*N]*Cr[l + j*N];
-        }
-      }
       if (rayleigh)
       {
         chc = 0.;
         csc = 0.;
         for (i = 0; i < N; i++)
         {
-          chc += Cr[i + j*N]*hc[i];
-          csc += Cr[i + j*N]*sc[i];
+          chc += Cr[i + j*N]*HC[i + j*N];
+          csc += Cr[i + j*N]*SC[i + j*N];
         }
         E[j] = chc/csc;
       }
       if (residual != NULL)
       {
         residual[j] = 0.;
-        for (i = 0; i < N; i++) if (fabs(hc[i] - E[j]*sc[i]) > residual[j]) residual[j] = fabs(hc[i] - E[j]*sc[i]);
+        for (i = 0; i < N; i++) residual[j] = fmax(residual[j], fabs(HC[i + j*N] - E[j]*SC[i + j*N]));
       }
     }
-    free(hc);
-    free(sc);
+    free(HC);
+    free(SC);
   }
-  // the eigenvectors with all 2n coefficients
-  for (i = 0; i < Nf*Nf; i++) C[i] = 0.;
+  // the eigenvectors with all Nf coefficients
+  for (i = 0; i < Nf*N; i++) C[i] = 0.;
   for (j = 0; j < N; j++)
     for (i = 0; i < N; i++) C[active[i] + j*Nf] = Cr[i + j*N];
   free(Cr);
   free(H);
   free(S);
-  free(active);
   return (info != 0);
 }
 

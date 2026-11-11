@@ -15,7 +15,7 @@
  *      default basis leaves out, for kappa != -1, the DKB functions that are nonzero at
  *      r = 0, among them the one that makes the intruder, and so has none (1a, kappa = +1,
  *      Z = 92).
- *  Both with the Rayleigh quotient (default) and with the plain dsygvd eigenvalues, whose
+ *  Both with the Rayleigh quotient (default) and with the plain eigenvalues of the eigensolver (dsygv), whose
  *  rounding error is about 1e-8 - 1e-7 Ha here and depends on the LAPACK (tolerance 1e-6 Ha).
 ]]
 
