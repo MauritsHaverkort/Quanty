@@ -357,6 +357,14 @@ void lua_check(lua_State *L, int arg, Interpolation::InterpolatingFunction* &in)
 	in = (Interpolation::InterpolatingFunction*) luaL_checkudata(L, arg, "InterpolatingFunction_Type");
 }
 
+// an interpolating function of type "DKBSpline" (radial Dirac spinor component), an error otherwise
+void lua_check(lua_State *L, int arg, Interpolation::DKBSpline* &in)
+{
+	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction*) luaL_checkudata(L, arg, "InterpolatingFunction_Type");
+	if (f->type != "DKBSpline") luaL_error(L, "Error: argument %d is an interpolating function of type %s, not DKBSpline\n", arg, f->type.c_str());
+	in = (Interpolation::DKBSpline*) f;
+}
+
 //Begin of luaL_isType, which checks if the type of an object on the stack is the same as that of the example given as reference, returning a bool without throwing an error.
 
 bool luaL_isudata(lua_State *L, int ud, const char *tname)

@@ -108,6 +108,7 @@ using std::vector;
 
 #include "../AtomicOperators/AtomicAux.h"
 #include "../AtomicOperators/AtomicU.h"
+#include "../DFT/DFT.h"
 
 #include "../Plot/Plot.h"
 #include "../Plot/LuaBinding.h"

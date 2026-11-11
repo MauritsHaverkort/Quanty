@@ -425,6 +425,20 @@ static int LuaOperatorNewAtomicUBSpline (lua_State *L)
 
 static int LuaOperatorNewAtomicU (lua_State *L)
 {
+	// radial Dirac spinors of type "DKBSpline" (DFT stage A) need their own path (Poisson
+	// solver on their knot set); until it exists they must not reach the grid quadrature
+	for (int arg = 3; arg <= 4; arg++)
+	{
+		if (!lua_istable(L, arg)) continue;
+		for (uint32_t i = 1; i <= (uint32_t) lua_objlen(L, arg); i++)
+		{
+			lua_rawgeti(L, arg, i);
+			Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_testudata(L, -1, "InterpolatingFunction_Type");
+			lua_pop(L, 1);
+			if (f != NULL && f->type == "DKBSpline")
+				return luaL_error(L, "Error: NewOperator(\"AU\",...) is not yet supported for radial functions of type DKBSpline\n");
+		}
+	}
 	luaL_checktype(L, 3, LUA_TTABLE);
 	lua_rawgeti(L, 3, 1); //TODO: remove > 4 in line below and implememnt non rel stuff
 	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline" )

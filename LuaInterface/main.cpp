@@ -7,6 +7,7 @@
 #include "../IO/IO.cpp"
 #include "../Tight_Binding/Tight_Binding.cpp"
 #include "../AtomicOperators/AtomicAux.cpp"
+#include "../DFT/DFT.cpp"
 
 // Include files that should be reoredered into the main libraries
 #include "../Model/StandardOperators.cpp"

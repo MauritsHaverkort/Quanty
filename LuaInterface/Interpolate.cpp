@@ -171,12 +171,23 @@ static int LuaCubicHermiteSplineInterpolate(lua_State * L)
 	return 1;
 }
 /*
+ * Arithmetic, comparison and integration are not yet supported for the radial Dirac
+ * spinor components of type "DKBSpline" (DFT stage A): the sum of two of them with
+ * different kappa is no DKB function. An explicit error instead of a silent fall-through.
+ */
+static int LuaInterpolateDKBSplineUnsupported(lua_State * L, const char *what)
+{
+	return luaL_error(L, "Error: %s is not yet supported for interpolating functions of type DKBSpline\n", what);
+}
+
+/*
  *
  */
 static int LuaInterpolateUnm(lua_State * L)
 {
 	void* memory;
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "-f");
 	if (f->type == "CubicSpline")
 	{
 		memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -216,6 +227,7 @@ static int LuaInterpolateAdd(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline" || g->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f + g");
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -252,6 +264,7 @@ static int LuaInterpolateSub(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline" || g->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f - g");
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -289,6 +302,7 @@ static int LuaInterpolateMul(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline" || g->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f * g");
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -325,6 +339,7 @@ static int LuaInterpolateDiv(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline" || g->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f / g");
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -361,6 +376,7 @@ static int LuaInterpolatePow(lua_State * L)
 {
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f ^ n");
     double n;
     lua_check(L,2,n);
     if (f->type == "CubicSpline")
@@ -400,6 +416,7 @@ static int LuaInterpolateConcat(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline" || g->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f .. g");
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -435,6 +452,7 @@ static int LuaInterpolateEq(lua_State * L)
 {
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline" || g->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "f == g");
 
     bool equal = false;
     if (f->type == "CubicSpline" && f->type == g->type)
@@ -598,6 +616,7 @@ static int LuaInterpolateDestroy(lua_State * L)
 static int LuaInterpolationIntegrate(lua_State * L)
 {
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	if (f->type == "DKBSpline") return LuaInterpolateDKBSplineUnsupported(L, "InterpolatingFunction.Integrate");
 	uint32_t len = (uint32_t)lua_gettop(L);
 	double value;
 	if (len == 1)
