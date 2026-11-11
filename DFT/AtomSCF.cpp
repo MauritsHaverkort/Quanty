@@ -510,6 +510,16 @@ int AtomSCF(DiracAtomType *atom, uint32_t maxIterations, uint32_t history, doubl
       norm += W[i]*R[i]*R[i] + W2[i]*R[nP + i]*R[nP + i];
     }
     atom->residual = sqrt(norm);
+    // the potential residual in both modes, weighted with the output density: it bounds the
+    // difference of the two energy expressions, |Eeig - Etot| <= sqrt(N) |R_v| + ... (to
+    // first order)
+    norm = 0.;
+    for (i = 0; i < nP; i++)
+    {
+      double rv = vout[i] - (mixDensity ? vin[i] : x[i]), rg = gout[i] - (mixDensity ? gin[i] : x[nP + i]);
+      norm += b->wq[i]*atom->f[i]*(rv*rv + rg*rg/(b->rq[i]*b->rq[i]));
+    }
+    atom->potentialResidual = sqrt(norm);
     atom->dE = atom->Etot - Ebefore;
     atom->iterations = it;
     Ebefore = atom->Etot;

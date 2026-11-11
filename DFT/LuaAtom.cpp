@@ -15,7 +15,8 @@
  * Returns the table Atom with the energies (Etot = Ekin + Ecoul + Eenuc + Exc, the
  * components as in the NIST atomic reference data, and EtotEigenvalueSum, the expression
  * through the eigenvalues, equal to Etot at self-consistency), Converged, Iterations,
- * Residual, dE, and Orbitals[i] = {Label, n, l, kappa, j, Occupation, Energy}; and the
+ * Residual (of the mixed quantity), PotentialResidual (sqrt(int f |v_out - v_in|^2 + ...),
+ * which bounds |EtotEigenvalueSum - Etot| by about sqrt(NElectron) times it), dE, and Orbitals[i] = {Label, n, l, kappa, j, Occupation, Energy}; and the
  * radial functions: Dirac, G = P and F = Q as DKBSplines; Schroedinger, G = P as a BSpline
  * and F empty. Options: those of the nucleus and the basis as in DiracRadialSolve
  * (Nucleus, A, Rrms, FermiThickness, Density, DensityTolerance, Degree, NIntervals, rMin,
@@ -156,6 +157,7 @@ static int LuaDiracKohnSham(lua_State *L)
   lua_pushboolean(L, atom.converged); lua_setfield(L, -2, "Converged");
   lua_pushinteger(L, atom.iterations); lua_setfield(L, -2, "Iterations");
   lua_pushnumber(L, atom.residual); lua_setfield(L, -2, "Residual");
+  lua_pushnumber(L, atom.potentialResidual); lua_setfield(L, -2, "PotentialResidual");
   lua_pushnumber(L, atom.dE);     lua_setfield(L, -2, "dE");
   lua_pushnumber(L, atom.nElectron); lua_setfield(L, -2, "NElectron");
   lua_pushnumber(L, c);           lua_setfield(L, -2, "c");

@@ -39,7 +39,8 @@ typedef struct {
   // results
   uint32_t iterations;
   int converged;
-  double residual, dE;
+  double residual, dE;      // residual of the mixed quantity, change of Etot
+  double potentialResidual;  // |v_out - v_in| weighted with the density, in both modes
   double Etot, Ekin, Eenuc, Ecoul, Exc, Eeig;
 } DiracAtomType;
 

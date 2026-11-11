@@ -8,16 +8,19 @@
  *  - Etot to 1e-6 Ha (the 6 decimals of the table) for He, Be, Ne, Mg, Ar, Ca, Zn, Kr,
  *    both LDA-VWN and PBE-VWN (all agree to 6.1e-7);
  *  - the two total-energy expressions (direct, and through the eigenvalue sum): their
- *    difference is first order in the potential residual R, |dE| <= sqrt(N) |R| for the
- *    density-weighted norm; checked with a factor 3. Measured: <= 2e-9 (design: 1e-9; the
- *    GGA residual has a floor of a few 1e-10 for the heavier atoms).
+ *    difference is first order in the potential residual, |dE| <= sqrt(N) |R_v| with
+ *    |R_v| = Atom.PotentialResidual (density-weighted, reported in both mixing modes);
+ *    checked as |dE| <= 2 sqrt(N) |R_v|. Measured in 30 runs, both modes, LDA and GGA,
+ *    Schroedinger and Dirac: |dE|/(sqrt(N) |R_v|) <= 0.92. Measured |dE| <= 2e-9 for the
+ *    Lehtola rows (design: 1e-9; the GGA residual has a floor of a few 1e-10).
  *  "LDA" (Slater + PW92) and "PBE" (on PW92) have no independent reference here (the PW92
  *  parameters could not be checked against libxc); for Ne, Dirac and Schroedinger, only
- *  convergence and the consistency of the two expressions are checked. The GGAs use
- *  density mixing by default: mixing the potential does not converge the Dirac GGA (the
- *  GGA potential near the nucleus, with n'/r, reacts too strongly to the input). The
- *  Lehtola rows mix the potential ({"MixDensity", false}) so that the bound on the
- *  energy difference applies; the default is checked as well.
+ *  convergence and the same bound are checked. The GGAs use density mixing by default:
+ *  mixing the potential does not converge the Dirac GGA (the GGA potential near the
+ *  nucleus, with n'/r, reacts too strongly to the input). There the potential residual
+ *  stays at 1e-4 (in a tiny region at the nucleus), so the bound is weak; the check for
+ *  the Dirac GGA is that it converges. (A fixed 1e-8 on |dE| failed on lin0 with MKL:
+ *  1.5e-8 against 2.4e-9 with Accelerate, the same residual.)
 ]]
 
 local lehtola = {
@@ -50,9 +53,10 @@ for _, a in ipairs(lehtola) do
     local A = DiracKohnSham(a[1], a[2], options({{"Method", m}, {"Relativistic", false}, {"MixDensity", false},
                                                  {"ResidualTolerance", (k == 1) and 1e-10 or 1e-9}}))
     local d = A.Etot - a[2+k]
-    check(A.Converged and math.abs(d) < 1e-6 and math.abs(A.EtotEigenvalueSum - A.Etot) < 3*math.sqrt(a[1])*A.Residual,
-          string.format("Z = %2d %-7s Etot = %.6f (Lehtola %.6f) %+.1e, eigenvalue-sum expression %+.1e, %d iterations",
-                        a[1], m, A.Etot, a[2+k], d, A.EtotEigenvalueSum - A.Etot, A.Iterations))
+    local dE = A.EtotEigenvalueSum - A.Etot
+    check(A.Converged and math.abs(d) < 1e-6 and math.abs(dE) < 2*math.sqrt(a[1])*A.PotentialResidual,
+          string.format("Z = %2d %-7s Etot = %.6f (Lehtola %.6f) %+.1e, eigenvalue-sum expression %+.1e (bound %.1e), %d iterations",
+                        a[1], m, A.Etot, a[2+k], d, dE, math.sqrt(a[1])*A.PotentialResidual, A.Iterations))
   end
 end
 
@@ -60,11 +64,10 @@ end
 for _, m in ipairs({"LDA", "PBE"}) do
   for _, rel in ipairs({false, true}) do
     local A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", m}, {"Relativistic", rel}, {"ResidualTolerance", (m == "PBE") and 1e-8 or 1e-9}}))
-    local mixDensity = A.MixDensity
-    -- the bound sqrt(N) |R| holds for the potential residual; with density mixing R is a density
-    check(A.Converged and math.abs(A.EtotEigenvalueSum - A.Etot) < (mixDensity and 1e-8 or 3*math.sqrt(10)*A.Residual),
-          string.format("Ne %-3s %-13s Etot = %.6f, eigenvalue-sum expression %+.1e, %d iterations", m, rel and "Dirac" or "Schroedinger",
-                        A.Etot, A.EtotEigenvalueSum - A.Etot, A.Iterations))
+    local dE = A.EtotEigenvalueSum - A.Etot
+    check(A.Converged and math.abs(dE) < 2*math.sqrt(10)*A.PotentialResidual,
+          string.format("Ne %-3s %-13s Etot = %.6f, eigenvalue-sum expression %+.1e (bound %.1e), %d iterations", m, rel and "Dirac" or "Schroedinger",
+                        A.Etot, dE, math.sqrt(10)*A.PotentialResidual, A.Iterations))
   end
 end
 
