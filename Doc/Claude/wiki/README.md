@@ -654,3 +654,46 @@ frame per second, looping, Play restarts); they were not clicked through.
 - The film player shows the files in the order the browser lists them and
   does not sort them itself; the page tells users to number with a fixed
   number of digits.
+
+
+## Batch 11 — CalculateAtomicBasisFunctions
+
+Drafted 11 November 2026, for stage A of the DFT/HF add-on on the `Claude` branch
+(up to `df3c7788`): atomic radial functions calculated inside Quanty.
+
+### A new page
+
+| file | page |
+|---|---|
+| `documentation.language_reference.functions.calculateatomicbasisfunctions.txt` | `documentation:language_reference:functions:calculateatomicbasisfunctions` |
+
+The page does not exist yet, so create it at that id and paste the file in. The
+function namespace lists its children with `{{indexmenu>.#2}}`, so no index
+footer and no `indexmenu_n` value is needed.
+
+### Checked
+
+All four examples were run on the branch build and the output blocks are that
+output, without Quanty's start-up banner; in the multiplet example the progress
+lines of `Eigensystem` are left out (the page says so). Run times on this
+laptop: 7 s, 5 s, 2 s and 15 s. The accuracy statements in the last section come
+from the tests in `TestScripts/DiracAtom/` (NIST, the Hartree-Fock limits of
+Lehtola, FPLO); see `../QuantyDFT_StageA/QuantyDFT_StageA_Implementation.md`,
+section 6.
+
+### Not on the page
+
+- The temporary building blocks (`DiracRadialSolve`, `DiracKohnSham`,
+  `DiracHartreeFock`, `RadialPoisson`, `DiracOrthonormalize`, `XCFunctional`):
+  they are for the tests and may change.
+- `NewOperator("NuclearMultipole", ...)` and the `"Function3D"` nucleus are named
+  in the input list only; a page of their own could follow.
+
+### Follow-up edits elsewhere
+
+- `documentation:language_reference:functions:newoperator`: the types `"Dirac"`
+  and `"AU"` accept the functions of `CalculateAtomicBasisFunctions` (computed
+  exactly on their B-spline basis), and `"Dirac"` takes an optional list of
+  nucleus options as a last argument. A sentence there pointing to the new page
+  would be the natural place.
+- If `ReadFPLOBasisFunctions` gets a page, a pointer to this one.
