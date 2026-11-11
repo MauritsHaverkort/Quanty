@@ -41,18 +41,6 @@
  * c is PhysicalConstants.cAU.value, 1 bohr = PhysicalConstants.a0.value m.
  */
 
-/* luaL_error with the full printf formats (%g, %e, %.15g, ...), which lua_pushfstring
- * does not know */
-int DFTLuaError(lua_State *L, const char *format, ...)
-{
-  char message[1024];
-  va_list args;
-  va_start(args, format);
-  vsnprintf(message, sizeof(message), format, args);
-  va_end(args);
-  return luaL_error(L, "%s", message);
-}
-
 static int LuaDiracRadialSolve(lua_State *L)
 {
   struct
@@ -91,10 +79,10 @@ static int LuaDiracRadialSolve(lua_State *L)
   uint32_t len = (uint32_t) lua_gettop(L), N, first, i, q, nStates;
   int kappa, l;
 
-  if (len < 2 || len > 3) return DFTLuaError(L, "Error in DiracRadialSolve: 2 or 3 arguments expected (Z, kappa, {options}), got %d\n", len);
+  if (len < 2 || len > 3) return luaL_error(L, "Error in DiracRadialSolve: 2 or 3 arguments expected (Z, kappa, {options}), got %d\n", (int) len);
   Z = luaL_checknumber(L, 1);
   kappa = (int) luaL_checkinteger(L, 2);
-  if (kappa == 0) return DFTLuaError(L, "Error in DiracRadialSolve: kappa = 0\n");
+  if (kappa == 0) return luaL_error(L, "Error in DiracRadialSolve: kappa = 0\n");
   l = DiracKappaL(kappa);
   c = LuaGetPhysicalConstant(L, "cAU");
   a0fm = LuaGetPhysicalConstant(L, "a0")*1e15;   // 1 bohr in fm
@@ -119,14 +107,14 @@ static int LuaDiracRadialSolve(lua_State *L)
   if (len == 3) LuaCheckOptions(L, 3, LuaDiracRadialOptions);
   if (strcicmp(Options.ConfinementType, "Vector") == 0) vectorConfinement = 1;
   else if (strcicmp(Options.ConfinementType, "Scalar") != 0)
-    return DFTLuaError(L, "Error in DiracRadialSolve: unknown ConfinementType \"%s\" (Scalar or Vector)\n", Options.ConfinementType);
+    return luaL_error(L, "Error in DiracRadialSolve: unknown ConfinementType \"%s\" (Scalar or Vector)\n", Options.ConfinementType);
   if (Options.ConfinementRadius < 0. || !(Options.ConfinementPower > 0.) || !(Options.ConfinementVmax > 0.))
-    return DFTLuaError(L, "Error in DiracRadialSolve: ConfinementRadius, ConfinementPower and ConfinementVmax must be positive\n");
+    return luaL_error(L, "Error in DiracRadialSolve: ConfinementRadius, ConfinementPower and ConfinementVmax must be positive\n");
   if (Options.rMax <= 0.)
     Options.rMax = (Options.ConfinementRadius > 0.) ? ConfinementRMax(Options.ConfinementRadius, Options.ConfinementPower, Options.ConfinementVmax) : 40.;
   if (Options.NQuadrature == 0) Options.NQuadrature = Options.Degree + 5;
   if (Options.NQuadrature > DiracMaxQuadraturePoints)
-    return DFTLuaError(L, "Error in DiracRadialSolve: NQuadrature = %d, at most %d points per knot interval (the 34-digit Gauss-Legendre table)\n",
+    return luaL_error(L, "Error in DiracRadialSolve: NQuadrature = %d, at most %d points per knot interval (the 34-digit Gauss-Legendre table)\n",
                       (int) Options.NQuadrature, DiracMaxQuadraturePoints);
 
   // the nucleus
@@ -139,25 +127,25 @@ static int LuaDiracRadialSolve(lua_State *L)
   else if (strcicmp(Options.Nucleus, "Gaussian") == 0) nucleus.model = NucleusGaussian;
   else if (strcicmp(Options.Nucleus, "Fermi") == 0) nucleus.model = NucleusFermi;
   else if (strcicmp(Options.Nucleus, "Function") == 0) nucleus.model = NucleusFunction;
-  else return DFTLuaError(L, "Error in DiracRadialSolve: unknown Nucleus \"%s\" (Point, Gaussian, Fermi or Function)\n", Options.Nucleus);
+  else return luaL_error(L, "Error in DiracRadialSolve: unknown Nucleus \"%s\" (Point, Gaussian, Fermi or Function)\n", Options.Nucleus);
   if ((nucleus.model == NucleusFunction) != (Options.Density != LUA_NOREF))
   {
     if (Options.Density != LUA_NOREF) luaL_unref(L, LUA_REGISTRYINDEX, Options.Density);
-    return DFTLuaError(L, "Error in DiracRadialSolve: the option Density goes with Nucleus \"Function\", and only with it\n");
+    return luaL_error(L, "Error in DiracRadialSolve: the option Density goes with Nucleus \"Function\", and only with it\n");
   }
   if (nucleus.model == NucleusGaussian || nucleus.model == NucleusFermi)
   {
     if (Options.Rrms > 0.) nucleus.Rrms = Options.Rrms;
     else if (Options.A > 0.) nucleus.Rrms = (0.836*pow(Options.A, 1./3.) + 0.570)/a0fm;
-    else return DFTLuaError(L, "Error in DiracRadialSolve: a %s nucleus needs the option A or Rrms\n", Options.Nucleus);
+    else return luaL_error(L, "Error in DiracRadialSolve: a %s nucleus needs the option A or Rrms\n", Options.Nucleus);
   }
   if (nucleus.model == NucleusFermi && NucleusFermiParameters(nucleus.Rrms, Options.FermiThickness, &nucleus.cFermi, &nucleus.aFermi))
-    return DFTLuaError(L, "Error in DiracRadialSolve: Fermi nucleus with Rrms = %g bohr is too small for the skin thickness %g bohr (Rrms^2 <= 7/5 pi^2 a^2)\n",
+    return luaL_error(L, "Error in DiracRadialSolve: Fermi nucleus with Rrms = %f bohr is too small for the skin thickness %f bohr (Rrms^2 <= 7/5 pi^2 a^2)\n",
                       nucleus.Rrms, Options.FermiThickness);
   if (Options.rMin <= 0.) Options.rMin = (nucleus.Rrms > 0.) ? nucleus.Rrms/50. : 1e-6/fabs(Z);
 
   if (RadialBasisCreate(Options.Degree, Options.NIntervals, Options.rMin, Options.rMax, Options.NQuadrature, &basis))
-    return DFTLuaError(L, "Error in DiracRadialSolve: no B-spline basis for Degree %d, NIntervals %d, rMin %g, rMax %g\n",
+    return luaL_error(L, "Error in DiracRadialSolve: no B-spline basis for Degree %d, NIntervals %d, rMin %f, rMax %f\n",
                       (int) Options.Degree, (int) Options.NIntervals, Options.rMin, Options.rMax);
   N = 2*(basis.nSpline - 2);
 
@@ -174,7 +162,7 @@ static int LuaDiracRadialSolve(lua_State *L)
       {
         free(rho);
         RadialBasisFree(&basis);
-        return DFTLuaError(L, "Error in DiracRadialSolve: Density(%g) is not a number\n", basis.rq[q]);
+        return luaL_error(L, "Error in DiracRadialSolve: Density(%f) is not a number\n", basis.rq[q]);
       }
       rho[q] = lua_tonumber(L, -1);
       lua_pop(L, 1);
@@ -185,15 +173,11 @@ static int LuaDiracRadialSolve(lua_State *L)
     {
       free(rho);
       RadialBasisFree(&basis);
-      return DFTLuaError(L, "Error in DiracRadialSolve: the nuclear charge 4 pi int r^2 rho dr = %g is not positive\n", charge);
+      return luaL_error(L, "Error in DiracRadialSolve: the nuclear charge 4 pi int r^2 rho dr = %f is not positive\n", charge);
     }
     if (fabs(charge - Z) > Options.DensityTolerance*fabs(Z))
-    {
-      char message[256];
-      snprintf(message, sizeof(message), "Warning in DiracRadialSolve: 4 pi int r^2 rho dr = %.15g differs from Z = %.15g by %.3e relative; the density is rescaled to Z\n",
-               charge, Z, fabs(charge - Z)/fabs(Z));
-      luaL_warning(L, "%s", message);
-    }
+      luaL_warning(L, "Warning in DiracRadialSolve: 4 pi int r^2 rho dr = %f differs from Z = %f by %f relative; the density is rescaled to Z\n",
+                   charge, Z, fabs(charge - Z)/fabs(Z));
     for (q = 0; q < basis.nPoint; q++) rho[q] *= Z/charge;
   }
   V = (double *) malloc(basis.nPoint*sizeof(double));
@@ -202,7 +186,7 @@ static int LuaDiracRadialSolve(lua_State *L)
     free(V);
     free(rho);
     RadialBasisFree(&basis);
-    return DFTLuaError(L, "Error in DiracRadialSolve: the nuclear potential failed\n");
+    return luaL_error(L, "Error in DiracRadialSolve: the nuclear potential failed\n");
   }
 
   if (Options.ConfinementRadius > 0.)
@@ -220,7 +204,7 @@ static int LuaDiracRadialSolve(lua_State *L)
   {
     free(V); free(Vconf); free(rho); free(E); free(Edsygvd); free(res); free(C);
     RadialBasisFree(&basis);
-    return DFTLuaError(L, "Error in DiracRadialSolve: the generalized eigenvalue problem (dsygvd) failed\n");
+    return luaL_error(L, "Error in DiracRadialSolve: the generalized eigenvalue problem (dsygvd) failed\n");
   }
   first = DiracElectronicFirst(E, N, c);
   nStates = Options.NStates;
@@ -345,9 +329,9 @@ static int LuaRadialPoisson(lua_State *L)
   double *rho, *band, *Y;
   int error;
 
-  if (len < 2 || len > 3) return DFTLuaError(L, "Error in RadialPoisson: 2 or 3 arguments expected (rho, k, {options}), got %d\n", len);
+  if (len < 2 || len > 3) return luaL_error(L, "Error in RadialPoisson: 2 or 3 arguments expected (rho, k, {options}), got %d\n", (int) len);
   luaL_checktype(L, 1, LUA_TFUNCTION);
-  if (luaL_checkinteger(L, 2) < 0) return DFTLuaError(L, "Error in RadialPoisson: k < 0\n");
+  if (luaL_checkinteger(L, 2) < 0) return luaL_error(L, "Error in RadialPoisson: k < 0\n");
   k = (uint32_t) luaL_checkinteger(L, 2);
   Options.Degree = 8;
   Options.NIntervals = 120;
@@ -357,9 +341,9 @@ static int LuaRadialPoisson(lua_State *L)
   if (len == 3) LuaCheckOptions(L, 3, LuaRadialPoissonOptions);
   if (Options.NQuadrature == 0) Options.NQuadrature = Options.Degree + 5;
   if (Options.NQuadrature > DiracMaxQuadraturePoints)
-    return DFTLuaError(L, "Error in RadialPoisson: NQuadrature = %d, at most %d points per knot interval\n", (int) Options.NQuadrature, DiracMaxQuadraturePoints);
+    return luaL_error(L, "Error in RadialPoisson: NQuadrature = %d, at most %d points per knot interval\n", (int) Options.NQuadrature, DiracMaxQuadraturePoints);
   if (RadialBasisCreate(Options.Degree, Options.NIntervals, Options.rMin, Options.rMax, Options.NQuadrature, &basis))
-    return DFTLuaError(L, "Error in RadialPoisson: no B-spline basis for Degree %d, NIntervals %d, rMin %g, rMax %g\n",
+    return luaL_error(L, "Error in RadialPoisson: no B-spline basis for Degree %d, NIntervals %d, rMin %f, rMax %f\n",
                       (int) Options.Degree, (int) Options.NIntervals, Options.rMin, Options.rMax);
   rho = (double *) malloc(basis.nPoint*sizeof(double));
   for (q = 0; q < basis.nPoint; q++)
@@ -371,7 +355,7 @@ static int LuaRadialPoisson(lua_State *L)
     {
       free(rho);
       RadialBasisFree(&basis);
-      return DFTLuaError(L, "Error in RadialPoisson: rho(%g) is not a number\n", basis.rq[q]);
+      return luaL_error(L, "Error in RadialPoisson: rho(%f) is not a number\n", basis.rq[q]);
     }
     rho[q] = lua_tonumber(L, -1);
     lua_pop(L, 1);
@@ -385,7 +369,7 @@ static int LuaRadialPoisson(lua_State *L)
   {
     free(rho); free(band); free(Y);
     RadialBasisFree(&basis);
-    return DFTLuaError(L, "Error in RadialPoisson: the Poisson solver failed\n");
+    return luaL_error(L, "Error in RadialPoisson: the Poisson solver failed\n");
   }
   // the breakpoints, for x (Integrate is exact on them)
   std::vector<double> x, knots(basis.knot, basis.knot + basis.nKnot), coef(Y, Y + basis.nSpline);
@@ -436,7 +420,7 @@ static int LuaDiracOrthonormalize(lua_State *L)
   double *S, *C, minEig = 0., before, after;
   int method;
 
-  if (len < 2 || len > 3) return DFTLuaError(L, "Error in DiracOrthonormalize: 2 or 3 arguments expected (G, F, {options}), got %d\n", len);
+  if (len < 2 || len > 3) return luaL_error(L, "Error in DiracOrthonormalize: 2 or 3 arguments expected (G, F, {options}), got %d\n", (int) len);
   luaL_checktype(L, 1, LUA_TTABLE);
   luaL_checktype(L, 2, LUA_TTABLE);
   Options.Method = (char *) "GramSchmidt";
@@ -445,9 +429,9 @@ static int LuaDiracOrthonormalize(lua_State *L)
   if (len == 3) LuaCheckOptions(L, 3, LuaDiracOrthonormalizeOptions);
   if (strcicmp(Options.Method, "GramSchmidt") == 0) method = DiracGramSchmidt;
   else if (strcicmp(Options.Method, "Lowdin") == 0) method = DiracLowdin;
-  else return DFTLuaError(L, "Error in DiracOrthonormalize: unknown Method \"%s\" (GramSchmidt or Lowdin)\n", Options.Method);
+  else return luaL_error(L, "Error in DiracOrthonormalize: unknown Method \"%s\" (GramSchmidt or Lowdin)\n", Options.Method);
   m = (uint32_t) lua_objlen(L, 1);
-  if (m == 0 || m != (uint32_t) lua_objlen(L, 2)) return DFTLuaError(L, "Error in DiracOrthonormalize: G and F must hold the same number (> 0) of functions\n");
+  if (m == 0 || m != (uint32_t) lua_objlen(L, 2)) return luaL_error(L, "Error in DiracOrthonormalize: G and F must hold the same number (> 0) of functions\n");
   for (i = 0; i < m; i++)
   {
     lua_rawgeti(L, 1, i+1);
@@ -467,16 +451,16 @@ static int LuaDiracOrthonormalize(lua_State *L)
     {
       f = (j == 0) ? Gs[i] : Fs[i];
       if (f->component != j)
-        return DFTLuaError(L, "Error in DiracOrthonormalize: %s[%d] is not a %s component\n", j ? "F" : "G", (int) i+1, j ? "small" : "large");
+        return luaL_error(L, "Error in DiracOrthonormalize: %s[%d] is not a %s component\n", j ? "F" : "G", (int) i+1, j ? "small" : "large");
       if (f->kappa != g0->kappa || f->degree != g0->degree || f->knots != g0->knots || f->speedOfLight != g0->speedOfLight || f->nQ != g0->nQ)
-        return DFTLuaError(L, "Error in DiracOrthonormalize: all functions must have the same kappa, knots, c and quadrature (%s[%d] differs from G[1])\n",
+        return luaL_error(L, "Error in DiracOrthonormalize: all functions must have the same kappa, knots, c and quadrature (%s[%d] differs from G[1])\n",
                           j ? "F" : "G", (int) i+1);
     }
     if (Gs[i]->a != Fs[i]->a || Gs[i]->b != Fs[i]->b)
-      return DFTLuaError(L, "Error in DiracOrthonormalize: G[%d] and F[%d] are not the two components of one spinor\n", (int) i+1, (int) i+1);
+      return luaL_error(L, "Error in DiracOrthonormalize: G[%d] and F[%d] are not the two components of one spinor\n", (int) i+1, (int) i+1);
   }
   if (RadialBasisFromKnots(g0->knots.data(), (uint32_t) g0->knots.size(), g0->degree, g0->nQ, &basis))
-    return DFTLuaError(L, "Error in DiracOrthonormalize: invalid knots\n");
+    return luaL_error(L, "Error in DiracOrthonormalize: invalid knots\n");
   n = basis.nSpline - 2;
   N = 2*n;
   S = (double *) malloc(N*N*sizeof(double));
@@ -485,7 +469,7 @@ static int LuaDiracOrthonormalize(lua_State *L)
   {
     free(S); free(C);
     RadialBasisFree(&basis);
-    return DFTLuaError(L, "Error in DiracOrthonormalize: the DKB overlap matrix failed\n");
+    return luaL_error(L, "Error in DiracOrthonormalize: the DKB overlap matrix failed\n");
   }
   for (j = 0; j < m; j++)
     for (i = 0; i < n; i++)
@@ -498,7 +482,7 @@ static int LuaDiracOrthonormalize(lua_State *L)
   {
     free(S); free(C);
     RadialBasisFree(&basis);
-    return DFTLuaError(L, "Error in DiracOrthonormalize: the overlap matrix has the eigenvalue %g < RedundancyThreshold %g; the orbitals are (nearly) linearly dependent\n",
+    return luaL_error(L, "Error in DiracOrthonormalize: the overlap matrix has the eigenvalue %f < RedundancyThreshold %f; the orbitals are (nearly) linearly dependent\n",
                       minEig, Options.RedundancyThreshold);
   }
   after = DiracOrthonormalityError(S, N, C, m);
@@ -506,7 +490,7 @@ static int LuaDiracOrthonormalize(lua_State *L)
   {
     free(S); free(C);
     RadialBasisFree(&basis);
-    return DFTLuaError(L, "Error in DiracOrthonormalize: max |C^T S C - 1| = %g after orthonormalization exceeds OrthonormalityTolerance %g\n",
+    return luaL_error(L, "Error in DiracOrthonormalize: max |C^T S C - 1| = %f after orthonormalization exceeds OrthonormalityTolerance %f\n",
                       after, Options.OrthonormalityTolerance);
   }
   for (j = 0; j < 2; j++)
