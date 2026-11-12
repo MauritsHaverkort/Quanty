@@ -1,0 +1,99 @@
+{{indexmenu_n>999}}
+====== Response function ======
+
+###
+
+The ResponseFunction object in Quanty defines (linear) response functions. For Hamiltonian $H$, ground-state $| \psi_0 \rangle$ and a list of transition operators $T_i$ with $i \in [1,n]$ we define the response function $G(\omega,\Gamma)$ as giving an $n$ by $n$ matrix for each value of $\omega$ and $\Gamma$. The elements of this matrix are given as
+$$
+G_{i,j}(\omega,\Gamma) = \left\langle \psi_0 \middle| T^{\dagger}_i \frac{1}{\omega - H + \mathrm{i} \Gamma/2 + E_0} T^{\phantom{\dagger}}_j \middle| \psi_0 \right\rangle,
+$$
+with $E_0 = \left\langle \psi_0 \middle| H \middle| \psi_0 \right\rangle$. One can calculate response functions using the Quanty function [[documentation:language_reference:functions:createspectra|CreateSpectra]]. This function returns two objects. At the first position a spectra object that contains the intensity for given values of $\omega$ and one specific value of $\Gamma$ on a grid. At the second position [[documentation:language_reference:functions:createspectra|CreateSpectra]] returns a ResponseFunction object.
+
+###
+
+
+###
+
+ResponseFunctions are objects that can be evaluated at any frequency or imaginary offset. For example:
+<code Quanty Example.Quanty>
+H   = Matrix.ToOperator( Matrix.Diagonal({1,2,3,4,5}) )
+psi = NewWavefunction(5,0,{{"00000",1}})
+T = {}
+for i=0,4 do
+  T[i+1] = NewOperator(5,0,{{i,1}})
+end
+S, G = CreateSpectra(H,T,psi)
+omega = 1.1
+gamma = 0.01
+print(G[1](omega,gamma))
+</code>
+returns
+<file Quanty_Output>
+(9.9750623441396 - 0.49875311720698 I)
+</file>
+i.e. the value of the response function for the first transition operator defined at $\omega=1.1$ and $\Gamma=0.01$. 
+
+###
+
+###
+
+Besides single complex valued functions we can generate a response function that returns a matrix for each value of $\omega$. For example
+<code Quanty Example.Quanty>
+H   = Matrix.ToOperator( Matrix.Diagonal({1,2,3,4,5}) )
+psi = NewWavefunction(5,0,{{"00000",1}})
+T = {}
+for i=0,4 do
+  T[i+1] = NewOperator(5,0,{{i,1}})
+end
+S, G = CreateSpectra(H,T,psi,{{"Tensor",true}})
+omega = 1.1
+gamma = 0.01
+print(G(omega,gamma))
+</code>
+returns
+<file Quanty_Output>
+{ { (9.9750623441396 - 0.49875311720698 I) , 0 , 0 , 0 , 0 } , 
+  { 0 , (-1.1110768186167 - 0.0061726489923151 I) , 0 , 0 , 0 } , 
+  { 0 , 0 , (-0.52631214465274 - 0.0013850319596125 I) , 0 , 0 } , 
+  { 0 , 0 , 0 , (-0.34482656115767 - 0.00059452855372011 I) , 0 } , 
+  { 0 , 0 , 0 , 0 , (-0.25640983496082 - 0.00032873055764208 I) } }
+</file>
+i.e. a 5 by 5 matrix with matrix elements $G_{i,j}(\omega,\gamma)$. (In this case the response function is diagonal as the Hamiltonian is diagonal. In general all elements can be non-zero.)
+
+###
+
+###
+
+Response functions can be added, subtracted, scaled and many other functions are available to modify them. Response functions can be used to calculate self energies of systems and used for diagrammatic expansions of problems otherwise to involved to solve.
+
+###
+
+###
+
+Internally response functions can be stored in different formats. We need several formats as (1) transformations between the different formats take time (2) transformations between different formats can involve a loss of numerical accuracy and (3) different algorithms require the response function in different formats. The formats used in Quanty to store response functions are
+  - List of poles $$ G(\omega,\Gamma) = A_0 + \sum_{i=1}^{n} B_{i-1} \frac{1}{\omega + \mathrm{i}\Gamma/2 - a_i} $$
+  - Tri-diagonal $$ G(\omega,\Gamma) = A_0 + B_0^* \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_1 - B_{1}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_2 - B_{2}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_3 - B_{3}^{\phantom{\dagger}} \frac{...}{\omega + \mathrm{i}\Gamma/2 - A_{n-1} - B_{n-1}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_n } B_{n-1}^{\dagger}} B_{3}^{\dagger} } B_{2}^{\dagger} } B_{1}^{\dagger} } B_0^T $$
+  - Anderson $$ G(\omega,\Gamma) = A_0 + B_0^* \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_1 - \sum_{i=2}^{n} B_{i-1}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_{i} } B_{i-1}^{\dagger} } B_0^T $$
+  - Natural Impurity. We define $G_{val}(\omega,\Gamma)$ and $G_{con}(\omega,\Gamma)$ as response functions with poles either at positive energy ($G_{con}(\omega,\Gamma)$) or poles at negative energy ($G_{val}(\omega,\Gamma)$). The full response function is defined as $$ G(\omega,\Gamma) = A_0 + B_0^* \left( G_{val}(\omega,\Gamma) + G_{con}(\omega,\Gamma) \right) B_0^T$$ 
+  - Double tri-diagonal. Two response functions in the tri-diagonal form above, $G_{val}(\omega,\Gamma)$ for the chain of the poles below the chemical potential and $G_{con}(\omega,\Gamma)$ for the chain of the poles above, define the full response function as $$ G(\omega,\Gamma) = A_0 + B_0^* \frac{1}{\omega + \mathrm{i}\Gamma/2 - G_{val}(\omega,\Gamma) - G_{con}(\omega,\Gamma)} B_0^T $$ 
+
+###
+
+###
+
+
+Whereby capital letters $A_i$ and $B_i$ refer to matrices equal to the dimension of $G(\omega,\Gamma)$ and small letters $a_i$ refer to numbers.
+
+###
+
+###
+
+
+Below you find several functions, methods, properties and operations related to response functions.
+
+Response functions can be stored internally as Lua tables with a metatable set to ResponseFunctionMeta, or as a user data. Both objects behave similarly. One should be careful as a comparison between a response function stored as a table to a response function stored as a user data is always falls. That said, comparing functions of doubles will always be problematic due to numerical inaccuracies.
+
+###
+
+===== Table of contents =====
+{{indexmenu>.#2|tsort}}

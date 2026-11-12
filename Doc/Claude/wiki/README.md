@@ -22,6 +22,7 @@ The live page is wrong or incomplete without these.
 | `documentation.language_reference.functions.createresonantspectra.txt` | `epsilon` is 1.49E-10 (not 1.49E-8, since 2018) and means the smallest prefactor of a determinant; the option `SingularValue` added. |
 | `documentation.language_reference.functions.createfluorescenceyield.txt` | The same. |
 | `documentation.language_reference.functions.eigensystem.txt` | The same. |
+| `documentation.language_reference.objects.responsefunction.start.txt` | The list of representations gains the fifth, double tri-diagonal (`DoubleTri`), with its formula. Checked numerically: a 2 by 2 complex list of poles converted with `ChangeType(G, "DoubleTri")` and rebuilt from its `ToTable` parts by this formula agrees with G to 1E-14 at two energies; with `B_0 ... B_0` instead of `B_0^* ... B_0^T` it does not. |
 
 
 ## Links to new pages
@@ -42,9 +43,10 @@ New pages that are otherwise only reachable from the menu.
 
 ## Open points without a file
 
-- `documentation:language_reference:objects:responsefunction:start` lists four
-  representations; there are five (`DoubleTri` is missing). This needs a
-  formula, not a sentence; to be drafted and checked against the code.
+- `documentation:language_reference:objects:responsefunction:functions:new`
+  still says there are four types and has no `DoubleTri` example. In
+  `ToTable` a DoubleTri is `{ {A0, B0}, val = {...}, con = {...}, mu, kBT }`,
+  with `val` and `con` two tables of type `Tri`.
 - `documentation:standard_operators:atomic_coulomb_repulsion`: the first sentence
   writes `NewOperator("AtomicU",indices,...)` without the `NF` that the example
   passes. Left for you to decide.
