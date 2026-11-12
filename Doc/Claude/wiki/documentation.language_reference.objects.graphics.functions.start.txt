@@ -1,8 +1,0 @@
-====== Functions ======
-
-###
-Quanty defines a small library of functions that make and change Graphics objects.
-###
-
-===== Available functions =====
-{{indexmenu>.#1}}
