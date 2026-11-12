@@ -1,0 +1,167 @@
+====== OperatorSetOnsiteEnergy ======
+
+###
+(available with next release)
+
+OperatorSetOnsiteEnergy($O$, $t$, {$i_1,...,i_n$}) takes an Operator $O$, an optional real value $t$ for the trace average and an optional list {$i_1,...,i_n$} of included orbitals, and sets the trace of these orbitals to $t$ divided by the number of orbitals. It furthermore sets any scalar offset of the operator to 0. If no list of indices is given the function includes all orbitals up to the number of fermionic states, and if no value $t$ is given the trace is set to 0.
+
+After the operation the operator has the property
+\begin{equation*}
+\sum_{j=\{i_1,...,i_n\}}
+\frac{O_{jj}}{n}
+=
+t
+\hspace{0.3cm}
+,
+\end{equation*}
+where $O_{jj}$ are the prefactors of the diagonal quadratic terms of the operator,
+\begin{equation*}
+O
+=
+\sum_{i,j}
+O_{ij} a_i^\dagger a_j^{\phantom{\dagger}}
++
+...
+\hspace{0.3cm}
+.
+\end{equation*}
+
+//[[documentation:language_reference:functions:shellaverage|ShellAverage()]]// goes one step further: it averages the one and the two particle part of an operator over all unitary transformations within one shell and returns the result as a new operator.
+###
+
+===== Input =====
+
+  * $O$ : Operator
+  * $t$ : New value of the trace average (Default 0)
+  * {$i_1,...,i_n$} : List of indices (Default {$0,...,N_{Fermi}-1$})
+
+===== Output =====
+
+  * $O^\prime$ : Operator with newly set trace average
+
+===== Example =====
+
+
+==== Input ====
+<code Quanty Example.Quanty>
+Orbitals = {"1s","2s"}
+Indices, NF = CreateAtomicIndicesDict(Orbitals)
+e1s = 1
+e2s = 2
+F0ss = 0.5
+O = NewOperator("Number", NF, Indices["1s"], Indices["1s"],{e1s, e1s})
+    + NewOperator("Number", NF, Indices["2s"], Indices["2s"],{e2s, e2s})
+    + NewOperator("U", NF, Indices["1s_Up"], Indices["1s_Dn"],{F0ss})
+    + NewOperator("U", NF, Indices["2s_Up"], Indices["2s_Dn"],{F0ss})  
+O.Name = "Operator"
+print(O)
+
+print("Set Operator trace average to 0")
+OperatorSetOnsiteEnergy(O)
+print(O)
+
+print("Set Operator trace average to 2")
+OperatorSetOnsiteEnergy(O,2)
+print(O)
+
+print("Set trace average of 1s orbitals to -1, and trace average of 2s orbitals to 15")
+OperatorSetOnsiteEnergy(O,-1,Indices["1s"])
+OperatorSetOnsiteEnergy(O,15,Indices["2s"])
+print(O)
+</code>
+
+==== Result ====
+<file Quanty_Output>
+Operator: Operator
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          4 (largest number of product of lader operators)
+NFermionic modes =          4 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          4 (number of operators of length   2)
+C  0 A  0 |  1.000000000000000E+00
+C  1 A  1 |  1.000000000000000E+00
+C  2 A  2 |  2.000000000000000E+00
+C  3 A  3 |  2.000000000000000E+00
+
+Operator of Length   4
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          2 (number of operators of length   4)
+C  1 C  0 A  1 A  0 | -5.000000000000000E-01
+C  3 C  2 A  3 A  2 | -5.000000000000000E-01
+
+
+Set Operator trace average to 0
+
+Operator: Operator
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          4 (largest number of product of lader operators)
+NFermionic modes =          4 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          4 (number of operators of length   2)
+C  0 A  0 | -5.000000000000000E-01
+C  1 A  1 | -5.000000000000000E-01
+C  2 A  2 |  5.000000000000000E-01
+C  3 A  3 |  5.000000000000000E-01
+
+Operator of Length   4
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          2 (number of operators of length   4)
+C  1 C  0 A  1 A  0 | -5.000000000000000E-01
+C  3 C  2 A  3 A  2 | -5.000000000000000E-01
+
+
+Set Operator trace average to 2
+
+Operator: Operator
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          4 (largest number of product of lader operators)
+NFermionic modes =          4 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          4 (number of operators of length   2)
+C  0 A  0 |  1.500000000000000E+00
+C  1 A  1 |  1.500000000000000E+00
+C  2 A  2 |  2.500000000000000E+00
+C  3 A  3 |  2.500000000000000E+00
+
+Operator of Length   4
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          2 (number of operators of length   4)
+C  1 C  0 A  1 A  0 | -5.000000000000000E-01
+C  3 C  2 A  3 A  2 | -5.000000000000000E-01
+
+
+Set trace average of 1s orbitals to -1, and trace average of 2s orbitals to 15
+
+Operator: Operator
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          4 (largest number of product of lader operators)
+NFermionic modes =          4 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          4 (number of operators of length   2)
+C  0 A  0 | -1.000000000000000E+00
+C  1 A  1 | -1.000000000000000E+00
+C  2 A  2 |  1.500000000000000E+01
+C  3 A  3 |  1.500000000000000E+01
+
+Operator of Length   4
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          2 (number of operators of length   4)
+C  1 C  0 A  1 A  0 | -5.000000000000000E-01
+C  3 C  2 A  3 A  2 | -5.000000000000000E-01
+
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

@@ -1,0 +1,37 @@
+====== ReadFPLOBasisFunctions ======
+
+###
+ReadFPLOBasisFunctions(orbitals,file1,file2) reads the files specified by file1 and file2 that contain the wavefunctions obtained from the FPLO DFT calculation and returns interpolating functions corresponding to the names given by orbitals.
+
+The radial functions of a free atom can also be calculated within Quanty, with //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//.
+###
+
+===== Input =====
+
+  * orbitals : list of string
+  * file1 : string
+  * file2 : string - optional - if given, relativistic wave functions are assumed where the large part is contained in file1 and the small part in file2
+
+===== Output =====
+
+  * list of InterpolatingFunction : large part of the wavefunctions if file2 is given, otherwise non-relativistic wave functions
+  * list of InterpolatingFunction : small part of the wavefunctions if file2 is given, otherwise NULL
+
+===== Example =====
+
+###
+For non-relativistic wave functions the orbitals are labeled "nl" where n is the principle quantum number and l is the letter corresponding to the angular momentum quantum number. For relativistic wave functions the orbitals are labeled "nlj" where j is the total angular momentum quantum number.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+orbs = {"3s","3p","3d","4d"}
+f = ReadFPLOBasisFunctions(orbs,"+fval.001.1")
+
+orbs = {"3d3/2","3d5/2"}
+G, F = ReadFPLOBasisFunctions(orbs,"+fval.001.1","+fval.001.2")
+</code>
+
+
+===== Table of contents =====
+{{indexmenu>.#1}}

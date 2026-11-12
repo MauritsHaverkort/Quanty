@@ -1,0 +1,20 @@
+{{indexmenu_n>10}}
+====== Language Reference ======
+
+###
+
+This section contains a list of //all// functions implemented in Quanty. We separate the documentation into 3 parts, Constants, Global functions, and Objects. 
+
+  * Constants are lists of some useful numbers (electron mass, value of the speed of light, ...).
+  * Global functions are, as the name suggests functions available in Quanty that take a set of input parameters and produce several output values. In general the internal algorithm used is context dependent. For example Eigensystem will use dense methods is the dimension of the Hilbert space is small and sparse methods if the dimension is large. You can control the automated behaviour of functions with the use of options.
+  * Objects define a data structure and a set of libraries that can act on these data structures. These libraries can be divided into functions, methods, operations and properties. **Functions** leave the arguments unchanged and are called using the name of the object "." the name of the function. **Methods** are called by indexing a variable of the given type with a function name. Methods change the variable they act upon. **Operations** define how +, -, /, *, etc. act on the data structure. **Properties** allow you to access the different elements of a data structure by indexing the variable. Note that not all Objects contain all 4 categories.
+
+How Quanty is started, the arguments a script reads back from //args// and the directory of the script in //ScriptDirectory// are not part of the language reference; they are described on [[documentation:command_line|]].
+
+###
+
+
+
+
+===== Sub pages =====
+{{indexmenu>.#2}}
