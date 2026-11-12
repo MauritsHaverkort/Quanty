@@ -1,0 +1,514 @@
+{{indexmenu_n>999}}
+====== New ======
+
+###
+
+ResponseFunction.New(Table) creates a new response function object according to the values in Table. Response functions can be of 5 different types (ListOfPoles, Tri, And, Nat, or DoubleTri) and single-valued or matrix-valued. Below 10 examples for creating each of these response functions by hand at some arbitrary values.
+
+###
+
+###
+
+The input table contains the elements
+  * "type" a string equal to "ListOfPoles", "Tri", "And", "Nat", or "DoubleTri" defining the type used for the internal storage of a response function
+  * "name" an arbitrary string used to recognise the response function
+  * "mu" a double giving the chemical potential. We highly recommend to shift the energy scale such that $\mu=0$. Documentation for the behaviour of several functions at finite chemical potential, $\mu$ is still missing. You can always shift the chemical potential to zero by shifting the onsite energy of all orbitals by $-\mu$.
+  * Depending on the type lists of doubles, matrices, or complex matrices $A$ and $B$. Each section below starts by defining $G(\omega,\Gamma)$ in terms of $A$'s and $B$'s, the input below uses these variables. We use capital font for matrices and small font for numbers. Note that the matrices $A$ and $B$ must fulfil several conditions for the response function to be physical. Only physical response functions can be transformed between all types as unitary transformations.
+
+###
+
+===== ListOfPoles representation =====
+
+###
+Response functions stored as list of poles are defined via 
+$$ G(\omega,\Gamma) = A_0 + \sum_{i=1}^{n}  \frac{B_{i-1}}{\omega + \mathrm{i}\Gamma/2 - a_i} $$
+###
+
+==== Single valued functions ====
+<code Quanty Example.Quanty>
+a = {10, -1,-0.5, 0,   0.5,  1,  1.5}
+b = {  0.1, 0.1, 0.1, 0.1, 0.2, 0.3}
+G = ResponseFunction.New( {a,b,mu=0,type="ListOfPoles", name="A"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ",G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+The resposne function definition is
+{ { 10 , -1 , -0.5 , 0 , 0.5 , 1 , 1.5 } , 
+  { 0.1 , 0.1 , 0.1 , 0.1 , 0.2 , 0.3 } ,
+  name = A ,
+  type = ListOfPoles ,
+  mu = 0 }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 	(11.617645834991 - 0.011148328755289 I)
+</file>
+
+
+==== Matrix valued functions ====
+<code Quanty Example.Quanty>
+A0 = Matrix.New( {{0,0,0},{0,0,0},{0,0,0}} )
+a1 = -1
+a2 = 1/2
+a3 = 1
+B1s = Matrix.New( {{1,1,3},{1,5,6},{3,6,9}} )
+B1 = B1s * B1s--the B matrices have to be hermitian to ensure H to be hermitian
+B2s = Matrix.New( {{2,0,3},{0,5,6},{3,6,9}} )
+B2 = B2s * B2s--the B matrices have to be hermitian to ensure H to be hermitian
+B3s = Matrix.New( {{3,0,3},{0,5,6},{3,6,9}} )
+B3 = B3s * B3s--the B matrices have to be hermitian to ensure H to be hermitian
+G = ResponseFunction.New( { {A0,a1,a2,a3}, {B1,B2,B3}, mu=0, type="ListOfPoles", name="ML"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+
+Generates the output
+<file Quanty_Output>
+{ { { { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } } , -1 , 0.5 , 1 } , 
+  { { { 11 , 24 , 36 } , 
+  { 24 , 62 , 87 } , 
+  { 36 , 87 , 126 } } , 
+  { { 13 , 18 , 33 } , 
+  { 18 , 61 , 84 } , 
+  { 33 , 84 , 126 } } , 
+  { { 18 , 18 , 36 } , 
+  { 18 , 61 , 84 } , 
+  { 36 , 84 , 126 } } } ,
+  type = ListOfPoles ,
+  name = ML ,
+  mu = 0 }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+{ { (206.90024667403 - 0.91928020904165 I) , (221.42405005987 - 0.9276985714825 I) , (432.13381820162 - 1.8498699350513 I) } , 
+  { (221.42405005987 - 0.9276985714825 I) , (741.17515429623 - 3.1416753933531 I) , (1021.4074723828 - 4.3264255332922 I) } , 
+  { (432.13381820162 - 1.8498699350513 I) , (1021.4074723828 - 4.3264255332922 I) , (1529.9683515529 - 6.4891280958856 I) } }
+</file>
+
+
+
+===== Tridiagonal representation =====
+
+###
+Response functions stored in tridiagonal format are defined via 
+$$ G(\omega,\Gamma) = A_0 + B_0^* \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_1 - B_{1}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_2 - B_{2}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_2 - B_{3}^{\phantom{\dagger}} \frac{...}{\omega + \mathrm{i}\Gamma/2 - A_{n-1} - B_{n-1}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_n } B_{n-1}^{\dagger}} B_{3}^{\dagger} } B_{2}^{\dagger} } B_{1}^{\dagger} } B_0^T $$
+###
+
+==== Single valued functions ====
+<code Quanty Example.Quanty>
+a = {0, 1,   1,   1,   1,   1,  1}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+G = ResponseFunction.New( {a,b,mu=0,type="Tri", name="GT"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+{ { 0 , 1 , 1 , 1 , 1 , 1 , 1 } , 
+  { 1 , 0.5 , 0.5 , 0.5 , 0.5 , 0.5 } ,
+  name = GT ,
+  type = Tri ,
+  mu = 0 }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+(-1.4800882525182 - 0.010904814637879 I)
+</file>
+
+
+==== Matrix valued functions ====
+<code Quanty Example.Quanty>
+A0 = Matrix.New( {{0,0,0},{0,0,0},{0,0,0}} )
+A1 = Matrix.New( {{1,2,3},{2,5,6},{3,6,9}} )
+A2 = Matrix.New( {{2,2,3},{2,5,6},{3,6,9}} )
+A3 = Matrix.New( {{3,2,3},{2,5,6},{3,6,9}} )
+B0s = Matrix.New( {{1,0,0},{0,1,0},{0,0,1}} )
+B0 = B0s * B0s
+B1s = Matrix.New( {{1,1,3},{1,5,6},{3,6,9}} )
+B1 = B1s * B1s
+B2s = Matrix.New( {{2,0,3},{0,5,6},{3,6,9}} )
+B2 = B2s * B2s
+B3s = Matrix.New( {{3,0,3},{0,5,6},{3,6,9}} )
+B3 = B3s * B3s
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="Tri", name="MT"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+
+Generates the output
+<file Quanty_Output>
+{ { { { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } } , 
+  { { 1 , 2 , 3 } , 
+  { 2 , 5 , 6 } , 
+  { 3 , 6 , 9 } } , 
+  { { 2 , 2 , 3 } , 
+  { 2 , 5 , 6 } , 
+  { 3 , 6 , 9 } } , 
+  { { 3 , 2 , 3 } , 
+  { 2 , 5 , 6 } , 
+  { 3 , 6 , 9 } } } , 
+  { { { 1 , 0 , 0 } , 
+  { 0 , 1 , 0 } , 
+  { 0 , 0 , 1 } } , 
+  { { 11 , 24 , 36 } , 
+  { 24 , 62 , 87 } , 
+  { 36 , 87 , 126 } } , 
+  { { 13 , 18 , 33 } , 
+  { 18 , 61 , 84 } , 
+  { 33 , 84 , 126 } } } ,
+  type = Tri ,
+  mu = 0 ,
+  BlockSize = { 3 , 3 , 3 , 3 } ,
+  name = MT }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+{ { (0.82041346528466 - 0.0005287731551253 I) , (-0.10773626514221 + 0.00047135055668369 I) , (-0.18782055050369 - 0.00021908813997981 I) } , 
+  { (-0.10773626514222 + 0.00047135055668371 I) , (0.9906660606812 - 0.0018715007457328 I) , (-0.67958409204703 + 0.0013049040629232 I) } , 
+  { (-0.18782055050369 - 0.00021908813997982 I) , (-0.67958409204703 + 0.0013049040629232 I) , (0.51775011277794 - 0.00095267059250443 I) } }
+</file>
+
+
+===== Anderson representation =====
+
+###
+Response functions stored in Anderson format are defined via 
+$$ G(\omega,\Gamma) = A_0 + B_0^* \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_1 - \sum_{i=2}^{n} B_{i-1}^{\phantom{\dagger}} \frac{1}{\omega + \mathrm{i}\Gamma/2 - A_{i} } B_{i-1}^{\dagger} } B_0^T $$
+###
+
+==== Single valued functions ====
+<code Quanty Example.Quanty>
+a = {0, 1, 1.5,   2, 2.5,   3, 3.5}
+b = {   1, 0.5, 0.5, 0.5, 0.5, 0.5}
+G = ResponseFunction.New( {a,b,mu=0,type="And", name="GA"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+The resposne function definition is
+{ { 0 , 1 , 1.5 , 2 , 2.5 , 3 , 3.5 } , 
+  { 1 , 0.5 , 0.5 , 0.5 , 0.5 , 0.5 } ,
+  type = And ,
+  name = GA ,
+  mu = 0 }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+(0.70566877797716 - 0.00077467678957667 I)
+</file>
+
+
+==== Matrix valued functions ====
+<code Quanty Example.Quanty>
+A0 = Matrix.New( {{0,0,0},{0,0,0},{0,0,0}} )
+A1 = Matrix.New( {{1,2,3},{2,5,6},{3,6,9}} )
+A2 = Matrix.New( {{2,2,3},{2,5,6},{3,6,9}} )
+A3 = Matrix.New( {{3,2,3},{2,5,6},{3,6,9}} )
+B0s = Matrix.New( {{1,0,0},{0,1,0},{0,0,1}} )
+B0 = B0s * B0s
+B1s = Matrix.New( {{1,1,3},{1,5,6},{3,6,9}} )
+B1 = B1s * B1s
+B2s = Matrix.New( {{2,0,3},{0,5,6},{3,6,9}} )
+B2 = B2s * B2s
+B3s = Matrix.New( {{3,0,3},{0,5,6},{3,6,9}} )
+B3 = B3s * B3s
+G = ResponseFunction.New( { {A0,A1,A2,A3}, {B0,B1,B2}, mu=0, type="And", name="MA"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+
+Generates the output
+<file Quanty_Output>
+{ { { { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } } , 
+  { { 1 , 2 , 3 } , 
+  { 2 , 5 , 6 } , 
+  { 3 , 6 , 9 } } , 
+  { { 2 , 2 , 3 } , 
+  { 2 , 5 , 6 } , 
+  { 3 , 6 , 9 } } , 
+  { { 3 , 2 , 3 } , 
+  { 2 , 5 , 6 } , 
+  { 3 , 6 , 9 } } } , 
+  { { { 1 , 0 , 0 } , 
+  { 0 , 1 , 0 } , 
+  { 0 , 0 , 1 } } , 
+  { { 11 , 24 , 36 } , 
+  { 24 , 62 , 87 } , 
+  { 36 , 87 , 126 } } , 
+  { { 13 , 18 , 33 } , 
+  { 18 , 61 , 84 } , 
+  { 33 , 84 , 126 } } } ,
+  mu = 0 ,
+  name = MA ,
+  type = And }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+{ { (0.079202023515427 - 0.00018271816123949 I) , (0.019672301598063 - 0.00021050428128743 I) , (-0.033329362936266 + 0.00019529208541705 I) } , 
+  { (0.019672301598062 - 0.00021050428128743 I) , (-0.028178571653589 - 0.00029307470840254 I) , (0.014801870346139 + 0.00026254621032145 I) } , 
+  { (-0.033329362936266 + 0.00019529208541705 I) , (0.014801870346139 + 0.00026254621032145 I) , (-0.0017775335507766 - 0.00023672956892774 I) } }
+</file>
+
+===== Natural impurity orbital representation =====
+
+###
+Response functions stored in Natural impurity format are defined via 
+$$ G(\omega,\Gamma) = A_0 + B_0^* \left( G_{val}(\omega,\Gamma) + G_{con}(\omega,\Gamma) \right) B_0^T$$, with $G_{val}(\omega,\Gamma)$ and $G_{con}(\omega,\Gamma)$ as response functions with poles either at positive energy ($G_{con}(\omega,\Gamma)$) or poles at negative energy ($G_{val}(\omega,\Gamma)$).
+###
+
+==== Single valued functions ====
+<code Quanty Example.Quanty>
+acon = {0,         1,   1,   1,   1,   1,  1}
+bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gcon = ResponseFunction.New(  {acon,bcon,mu=0,type="Tri"} )
+aval = {0,        -1,  -1,  -2,  -1,  -1, -1}
+bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gval = ResponseFunction.New( {aval,bval,mu=0,type="Tri"} )
+a0=0
+b0=1
+G = ResponseFunction.New( {{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="GD"} )
+print("The resposne function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+The resposne function definition is
+{ { 0 , 1 } ,
+  type = NaturalImpurityOrbital ,
+  name = GD ,
+  mu = 0 ,
+  con = { { 0 , 1 , 1 , 1 , 1 , 1 , 1 } , 
+  { 0.70710678118655 , 0.5 , 0.5 , 0.5 , 0.5 , 0.5 } ,
+  mu = 0 ,
+  type = Tri ,
+  name = Matrix } ,
+  epsilon = 0 ,
+  val = { { 0 , -1 , -1 , -2 , -1 , -1 , -1 } , 
+  { 0.70710678118655 , 0.5 , 0.5 , 0.5 , 0.5 , 0.5 } ,
+  mu = 0 ,
+  type = Tri ,
+  name = Matrix } }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+(-0.48700605787262 - 0.0055204934115643 I)
+</file>
+
+
+==== Matrix valued functions ====
+<code Quanty Example.Quanty>
+Zero = Matrix.New( {{0,0},{0,0}} )
+acon = {Zero, Matrix.New( {{1,0.2},{0.2,1.5}} ), Matrix.New( {{2,0},{0,2}} )}
+bcon = {Matrix.New( {{0.6,0.1},{0.1,0.4}} ), Matrix.New( {{0.5,0},{0,0.5}} )}
+Gcon = ResponseFunction.New( {acon,bcon,mu=0,type="Tri"} )
+aval = {Zero, Matrix.New( {{-1,0.3},{0.3,-1.2}} ), Matrix.New( {{-2,0},{0,-2}} )}
+bval = {Matrix.New( {{0.5,0},{0,0.7}} ), Matrix.New( {{0.4,0.1},{0.1,0.4}} )}
+Gval = ResponseFunction.New( {aval,bval,mu=0,type="Tri"} )
+a0 = Zero
+b0 = Matrix.New( {{1,0},{0,1}} )
+G = ResponseFunction.New( {{a0,b0},val=Gval,con=Gcon,mu=0,type="Nat", name="MN"} )
+print("The response function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+The response function definition is
+{ { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { 1 , 0 } , 
+  { 0 , 1 } } } ,
+  val = { { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { -1 , 0.3 } , 
+  { 0.3 , -1.2 } } , 
+  { { -2 , 0 } , 
+  { 0 , -2 } } } , 
+  { { { 0.5 , 0 } , 
+  { 0 , 0.7 } } , 
+  { { 0.4 , 0.1 } , 
+  { 0.1 , 0.4 } } } ,
+  BlockSize = { 2 , 2 , 2 } ,
+  mu = 0 ,
+  name =  ,
+  type = Tri } ,
+  mu = 0 ,
+  name = MN ,
+  epsilon = 2.2204460492503e-13 ,
+  con = { { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { 1 , 0.2 } , 
+  { 0.2 , 1.5 } } , 
+  { { 2 , 0 } , 
+  { 0 , 2 } } } , 
+  { { { 0.6 , 0.1 } , 
+  { 0.1 , 0.4 } } , 
+  { { 0.5 , 0 } , 
+  { 0 , 0.5 } } } ,
+  BlockSize = { 2 , 2 , 2 } ,
+  mu = 0 ,
+  name =  ,
+  type = Tri } ,
+  type = NaturalImpurityOrbital }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+{ { (0.31338878914433 - 0.0024767552810116 I) , (-0.64505747360543 - 0.0020730553941133 I) } , 
+  { (-0.64505747360543 - 0.0020730553941133 I) , (-0.64950023863436 - 0.00303795224319 I) } }
+</file>
+
+===== Double tri-diagonal representation =====
+
+###
+Response functions stored in double tri-diagonal format are defined via 
+$$ G(\omega,\Gamma) = A_0 + B_0^* \frac{1}{\omega + \mathrm{i}\Gamma/2 - G_{val}(\omega,\Gamma) - G_{con}(\omega,\Gamma)} B_0^T $$, with $G_{val}(\omega,\Gamma)$ and $G_{con}(\omega,\Gamma)$ two response functions in tri-diagonal format, the chain of the poles at negative energy ($G_{val}(\omega,\Gamma)$) and the chain of the poles at positive energy ($G_{con}(\omega,\Gamma)$). Where the natural impurity orbital representation adds the two chains, here they enter the denominator: both chains couple to one orbital. A response function of another type is converted to this one with //[[documentation:language_reference:objects:responsefunction:functions:changetype|ResponseFunction.ChangeType(G, "DoubleTri")]]//.
+###
+
+==== Single valued functions ====
+<code Quanty Example.Quanty>
+acon = {0,         1,   1,   1,   1,   1,  1}
+bcon = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gcon = ResponseFunction.New( {acon,bcon,mu=0,type="Tri"} )
+aval = {0,        -1,  -1,  -2,  -1,  -1, -1}
+bval = {   sqrt(1/2), 0.5, 0.5, 0.5, 0.5, 0.5}
+Gval = ResponseFunction.New( {aval,bval,mu=0,type="Tri"} )
+a0 = 0
+b0 = 1
+G = ResponseFunction.New( {{a0,b0},val=Gval,con=Gcon,mu=0,type="DoubleTri", name="GDT"} )
+print("The response function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+The response function definition is
+{ { 0 , 1 } ,
+  kBT = 0 ,
+  mu = 0 ,
+  name = GDT ,
+  con = { { 0 , 1 , 1 , 1 , 1 , 1 , 1 } , 
+  { 0.70710678118655 , 0.5 , 0.5 , 0.5 , 0.5 , 0.5 } ,
+  name =  ,
+  type = Tri ,
+  mu = 0 } ,
+  val = { { 0 , -1 , -1 , -2 , -1 , -1 , -1 } , 
+  { 0.70710678118655 , 0.5 , 0.5 , 0.5 , 0.5 , 0.5 } ,
+  name =  ,
+  type = Tri ,
+  mu = 0 } ,
+  type = DoubleTri }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+(0.63010824925044 - 0.0023903894659797 I)
+</file>
+
+
+==== Matrix valued functions ====
+<code Quanty Example.Quanty>
+Zero = Matrix.New( {{0,0},{0,0}} )
+acon = {Zero, Matrix.New( {{1,0.2},{0.2,1.5}} ), Matrix.New( {{2,0},{0,2}} )}
+bcon = {Matrix.New( {{0.6,0.1},{0.1,0.4}} ), Matrix.New( {{0.5,0},{0,0.5}} )}
+Gcon = ResponseFunction.New( {acon,bcon,mu=0,type="Tri"} )
+aval = {Zero, Matrix.New( {{-1,0.3},{0.3,-1.2}} ), Matrix.New( {{-2,0},{0,-2}} )}
+bval = {Matrix.New( {{0.5,0},{0,0.7}} ), Matrix.New( {{0.4,0.1},{0.1,0.4}} )}
+Gval = ResponseFunction.New( {aval,bval,mu=0,type="Tri"} )
+a0 = Zero
+b0 = Matrix.New( {{1,0},{0,1}} )
+G = ResponseFunction.New( {{a0,b0},val=Gval,con=Gcon,mu=0,type="DoubleTri", name="MDT"} )
+print("The response function definition is")
+print(G)
+omega = 1.1
+Gamma = 0.001
+print()
+print("Evaluated at omega =",omega," and Gamma =",Gamma," yields ")
+print(G(omega,Gamma))
+</code>
+Generates the output
+<file Quanty_Output>
+The response function definition is
+{ { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { 1 , 0 } , 
+  { 0 , 1 } } } ,
+  val = { { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { -1 , 0.3 } , 
+  { 0.3 , -1.2 } } , 
+  { { -2 , 0 } , 
+  { 0 , -2 } } } , 
+  { { { 0.5 , 0 } , 
+  { 0 , 0.7 } } , 
+  { { 0.4 , 0.1 } , 
+  { 0.1 , 0.4 } } } ,
+  mu = 0 ,
+  name =  ,
+  type = Tri ,
+  BlockSize = { 2 , 2 , 2 } } ,
+  con = { { { { 0 , 0 } , 
+  { 0 , 0 } } , 
+  { { 1 , 0.2 } , 
+  { 0.2 , 1.5 } } , 
+  { { 2 , 0 } , 
+  { 0 , 2 } } } , 
+  { { { 0.6 , 0.1 } , 
+  { 0.1 , 0.4 } } , 
+  { { 0.5 , 0 } , 
+  { 0 , 0.5 } } } ,
+  mu = 0 ,
+  name =  ,
+  type = Tri ,
+  BlockSize = { 2 , 2 , 2 } } ,
+  mu = 0 ,
+  name = MDT ,
+  type = DoubleTri ,
+  kBT = 0 }
+
+Evaluated at omega =	1.1	 and Gamma =	0.001	 yields 
+{ { (1.8222256078917 - 0.0064053919125334 I) , (-0.67187644577143 + 0.0015612104628324 I) } , 
+  { (-0.67187644577143 + 0.0015612104628324 I) , (0.81931802332689 - 0.0014363767262552 I) } }
+</file>
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}
