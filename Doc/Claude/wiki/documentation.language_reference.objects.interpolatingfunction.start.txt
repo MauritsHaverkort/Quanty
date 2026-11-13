@@ -1,0 +1,89 @@
+{{indexmenu_n>999}}
+====== Interpolating function ======
+
+###
+1D interpolation is currently implemented using cubic splines. Further methods will follow. An interpolating function can be evaluated at a given point or on a set of points, which gives a speed boost, if these points are in ascending order. Higher order derivatives of the interpolating function can also be evaluated. Multiple arithmetic operations on interpolating functions are implemented. Addition and subtraction of splines of a given order leads to a new spline of the same order. For multiplication, division and concatenation this is in general not the case. However, we chose to return an interpolating function of the same type and order such that the function values at the knots are correct.
+###
+
+===== Example =====
+
+###
+
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+x = {1,2,3}
+y = {1,4,9}
+f = InterpolatingFunction.Spline(x,y)
+
+f(2.5) -- evaluates f at 2.5
+n = 1
+f(2.5,n) --evaluates the n-th derivative of f at 2.5
+
+f({1.2,2.5,2.7,2.9}) -- evaluates f successively at the given values
+
+y2 = {2,1,2}
+g = InterpolatingFunction.Spline(x,y2)
+y3 = {2,4,18}      -- this equals y * y2
+
+-- Arithmetics:
+f + g
+f - g
+
+FtimesG = InterpolatingFunction.Spline(x,y2)
+print(FtimesG == f * g)    -- these functions are equal
+
+f^3 == f*f*f
+
+f..g     -- concatenation; let X be a subset of the interval on which g is defined, when evaluating f..g on X make sure that f is defined on the image g(X), otherwise you'll get an error
+
+InterpolatingFunction.Integrate(f) -- integrates f over its full domain
+a = 1.5
+b = 2.5
+InterpolatingFunction.Integrate(f,a,b) -- integrates f from a to b
+
+</code>
+
+
+===== Data points, knots and degree =====
+
+###
+An interpolating function //f// has the fields
+  * //f.x// : the points the function is given on, //f.y// : its values there. For //InterpolatingFunction.Spline//, //InterpolatingFunction.HermiteCSpline// and //InterpolatingFunction.BSpline// these are the data points it was made from. A B-spline made from coefficients (for example by //CalculateAtomicBasisFunctions// without relativity) gives its knots. The radial functions of type //"DKBSpline"// of //CalculateAtomicBasisFunctions// give the radial points of the quadrature.
+  * //f.knots// : the knots, the points where the polynomial pieces of the function join. For the cubic splines these are the data points, for a B-spline they are averages of neighbouring data points.
+  * //f.degree// : the polynomial degree of the pieces, 3 for the cubic splines.
+  * //f.coefficients// : (B-splines only) the B-spline coefficients, one per data point.
+###
+
+<code Quanty Example.Quanty>
+x = {0, 0.5, 1, 1.5, 2, 2.5, 3}
+y = {}
+for i = 1, #x do y[i] = math.exp(-x[i]) end
+f = InterpolatingFunction.Spline(x, y)
+g = InterpolatingFunction.BSpline(x, y, 3)
+
+function List(t)
+  local s = {}
+  for i = 1, #t do s[i] = string.format("%.4f", t[i]) end
+  return "{" .. table.concat(s, ", ") .. "}"
+end
+print("Spline   x      = " .. List(f.x))
+print("Spline   knots  = " .. List(f.knots) .. ", degree " .. f.degree)
+print("BSpline  x      = " .. List(g.x))
+print("BSpline  y      = " .. List(g.y))
+print("BSpline  knots  = " .. List(g.knots) .. ", degree " .. g.degree)
+print("BSpline  coefficients = " .. List(g.coefficients))
+</code>
+
+<file Quanty_Output Example.out>
+Spline   x      = {0.0000, 0.5000, 1.0000, 1.5000, 2.0000, 2.5000, 3.0000}
+Spline   knots  = {0.0000, 0.5000, 1.0000, 1.5000, 2.0000, 2.5000, 3.0000}, degree 3
+BSpline  x      = {0.0000, 0.5000, 1.0000, 1.5000, 2.0000, 2.5000, 3.0000}
+BSpline  y      = {1.0000, 0.6065, 0.3679, 0.2231, 0.1353, 0.0821, 0.0498}
+BSpline  knots  = {0.0000, 1.0000, 1.5000, 2.0000, 3.0000}, degree 3
+BSpline  coefficients = {1.0000, 0.6713, 0.3996, 0.2139, 0.1018, 0.0670, 0.0498}
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1|msort}}
