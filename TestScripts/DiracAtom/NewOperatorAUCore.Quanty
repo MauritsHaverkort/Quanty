@@ -1,0 +1,145 @@
+--[[
+ *  NewOperator("AU", ...) for radial functions of type DKBSpline (DFT/LuaAtomicOperators.cpp)
+ *  with the options of the grid path: {"conserve", true} and the core form
+ *  (NF, indices, G, F, kappas1, kappas2, {"1P-Operator", true|false}). Checked by exact
+ *  identities against the full operator of the same functions (Fe [Ar] 3d6 4s2 orbitals of
+ *  DiracHartreeFock), so the R^k are the same numbers and only the selection of terms and
+ *  the angular assembly are tested:
+ *  - conserve: on all two-electron determinants of 1s, 2s, 2p, 3d (both kappas) the matrix
+ *    elements of U_conserve equal those of U_full between determinants with the same
+ *    occupation of every orbital, and U_conserve leaves no weight outside that sector.
+ *    A two-particle operator is fixed by its two-electron matrix elements.
+ *  - core form: core 1s .. 3p filled, one valence electron in 3d or 4s:
+ *      <core v|U_full|core v'> - <core|U_full|core> delta_vv'
+ *    equals <core v|U|core v'> of the core-valence operator ("1P-Operator" false) and of its
+ *    mean field ("1P-Operator" true, the default). Once with the core at the first fermion
+ *    indices, once with the valence first (the core orbitals still first in the list).
+ *  Measured: all differences <= 1e-15 of the largest element (checked 1e-12).
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local A, G, F = DiracHartreeFock(26, "[Ar] 3d6 4s2", {{"Nucleus", "Point"}})
+local orb = {}
+for i, o in ipairs(A.Orbitals) do orb[o.Label] = {G = G[i], F = F[i]} end
+local function functions(labels)
+  local g, f = {}, {}
+  for i, l in ipairs(labels) do g[i] = orb[l].G; f[i] = orb[l].F end
+  return g, f
+end
+local function det(NF, occupied)
+  local s = {}
+  for k = 1, NF do s[k] = "0" end
+  for _, k in ipairs(occupied) do s[k+1] = "1" end
+  return NewWavefunction(NF, 0, {{table.concat(s), 1}})
+end
+
+-- conserve
+do
+  local labels = {"1s1/2", "2s1/2", "2p1/2", "2p3/2", "3d3/2", "3d5/2"}
+  local g, f = functions(labels)
+  local indices, NF = CreateAtomicIndicesList(labels, {{"Kappas", true}})
+  local Ufull = NewOperator("AU", NF, indices, g, f)
+  local Ucons = NewOperator("AU", NF, indices, g, f, {{"conserve", true}})
+  local orbitalOf = {}
+  for o = 1, #labels do for _, k in ipairs(indices[o]) do orbitalOf[k] = o end end
+  local dets = {}
+  for a = 0, NF - 1 do
+    for b = a + 1, NF - 1 do
+      local o1, o2 = orbitalOf[a], orbitalOf[b]
+      dets[#dets+1] = {psi = det(NF, {a, b}), sector = math.min(o1, o2) .. "_" .. math.max(o1, o2)}
+    end
+  end
+  local scale, dsame, leak = 0, 0, 0
+  for _, d in ipairs(dets) do
+    local Uf, Uc = Ufull*d.psi, Ucons*d.psi
+    local inside = 0
+    for _, e in ipairs(dets) do
+      if e.sector == d.sector then
+        local vf, vc = e.psi*Uf, e.psi*Uc
+        scale = math.max(scale, math.abs(vf))
+        dsame = math.max(dsame, math.abs(vf - vc))
+        inside = inside + vc*vc
+      end
+    end
+    leak = math.max(leak, math.abs(Uc*Uc - inside))
+  end
+  check(dsame < 1e-12*scale and leak < 1e-12*scale*scale,
+        string.format("conserve: %d two-electron determinants, max |U_full - U_conserve| in a sector %.1e, weight outside %.1e (largest element %.3f)",
+                      #dets, dsame/scale, leak/(scale*scale), scale))
+end
+
+-- core form
+local core = {"1s1/2", "2s1/2", "2p1/2", "2p3/2", "3s1/2", "3p1/2", "3p3/2"}
+local valence = {"3d3/2", "3d5/2", "4s1/2"}
+local function coreForm(valenceFirst)
+  local labels, kappas1, kappas2 = {}, {}, {}
+  for _, l in ipairs(core) do labels[#labels+1] = l end
+  for _, l in ipairs(valence) do labels[#labels+1] = l end
+  local g, f = functions(labels)
+  local indices, NF
+  if valenceFirst then
+    local order = {}
+    for _, l in ipairs(valence) do order[#order+1] = l end
+    for _, l in ipairs(core) do order[#order+1] = l end
+    local ind
+    ind, NF = CreateAtomicIndicesList(order, {{"Kappas", true}})
+    indices = {kappas = {}}
+    for i = 1, #core do indices[i] = ind[#valence + i]; indices.kappas[i] = ind.kappas[#valence + i] end
+    for i = 1, #valence do indices[#core + i] = ind[i]; indices.kappas[#core + i] = ind.kappas[i] end
+  else
+    indices, NF = CreateAtomicIndicesList(labels, {{"Kappas", true}})
+  end
+  for i = 1, #core do kappas1[i] = indices.kappas[i] end
+  for i = 1, #valence do kappas2[i] = indices.kappas[#core + i] end
+  local Ufull = NewOperator("AU", NF, indices, g, f)
+  local Ucv = NewOperator("AU", NF, indices, g, f, kappas1, kappas2, {{"1P-Operator", false}})
+  local U1P = NewOperator("AU", NF, indices, g, f, kappas1, kappas2)
+  local coreIdx, valIdx = {}, {}
+  for i = 1, #core do for _, k in ipairs(indices[i]) do coreIdx[#coreIdx+1] = k end end
+  for i = 1, #valence do for _, k in ipairs(indices[#core + i]) do valIdx[#valIdx+1] = k end end
+  local psiCore = det(NF, coreIdx)
+  local Ecore = psiCore*Ufull*psiCore
+  local states = {}
+  for i, v in ipairs(valIdx) do
+    local occ = {}
+    for _, k in ipairs(coreIdx) do occ[#occ+1] = k end
+    occ[#occ+1] = v
+    states[i] = det(NF, occ)
+  end
+  local scale, dcv, d1P = 0, 0, 0
+  for i, s in ipairs(states) do
+    local Uf, Uc, U1 = Ufull*s, Ucv*s, U1P*s
+    for j, t in ipairs(states) do
+      local ref = t*Uf - ((i == j) and Ecore or 0)
+      scale = math.max(scale, math.abs(ref))
+      dcv = math.max(dcv, math.abs(ref - t*Uc))
+      d1P = math.max(d1P, math.abs(ref - t*U1))
+    end
+  end
+  check(dcv < 1e-12*scale and d1P < 1e-12*scale,
+        string.format("core form, %s first: %d valence states, max |U_full - E_core - U_cv| %.1e, mean field %.1e (largest %.3f)",
+                      valenceFirst and "valence" or "core", #states, dcv/scale, d1P/scale, scale))
+  return NF, indices, g, f, kappas1, kappas2
+end
+local NF, indices, g, f, kappas1, kappas2 = coreForm(false)
+coreForm(true)
+
+-- errors
+local function fails(fn, text)
+  local ok, message = pcall(fn)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+fails(function() return NewOperator("AU", NF, indices, g, f, kappas1, {-3, 2}) end, "kappas1 and kappas2 shorter than the orbital list")
+local wrong = {}
+for i, k in ipairs(kappas2) do wrong[i] = k end
+wrong[1], wrong[2] = wrong[2], wrong[1]
+fails(function() return NewOperator("AU", NF, indices, g, f, kappas1, wrong) end, "kappas2 not the kappas of the functions")
+fails(function() return NewOperator("AU", NF, indices, g, f, kappas1) end, "five arguments without options")
+
+if failed then error("NewOperator(\"AU\") options with DKBSpline functions: checks failed", 1) end
+print("passed")

@@ -6,7 +6,7 @@
  * AtomicOperators/AtomicDirac.cpp and AtomicU.cpp:
  *
  *     H0 = NewOperator("Dirac", NF, Z, indices, G, F, {options})
- *     U  = NewOperator("AU", NF, indices, G, F)
+ *     U  = NewOperator("AU", NF, indices, G, F [, kappas1, kappas2] [, {options}])
  *
  * All functions must share one knot set, degree and number of Gauss points, and must
  * have been made with the present c = PhysicalConstants.cAU.value (the DKB functions
@@ -18,7 +18,8 @@
  *  - AU: R^k(13;24) = int rho_13 Y^k[rho_24]/r dr with the Galerkin solution Y^k of design
  *    section 7 on the shared knots (rho_ab = P_a P_b + Q_a Q_b), assembled exactly as
  *    Create_Relativistic_Coulomb_Operator (Martin/Slater_Rework/Coulomb_Operator.cpp) does
- *    with its grid integrals.
+ *    with its grid integrals; the options "conserve" and "1P-Operator" and the core form
+ *    with kappas1, kappas2 as the grid path (AtomicU.cpp), see DFTLuaNewOperatorUDKB.
  */
 
 /* 1 if the table at index arg is a list with an interpolating function of type DKBSpline
@@ -173,33 +174,98 @@ int DFTLuaNewOperatorDiracDKB(lua_State *L)
   return 1;
 }
 
+/*
+ *     U = NewOperator("AU", NF, indices, G, F [, {options}])
+ *     U = NewOperator("AU", NF, indices, G, F, kappas1, kappas2 [, {options}])
+ *
+ * The forms and options of the grid path (AtomicU.cpp, LuaOperatorNewAtomicUGeneralFunction),
+ * with the integrals R^k exact on the knots:
+ *  - 4 arguments: all integrals, the tuples of Create_Relativistic_Coulomb_Operator.
+ *  - {"conserve", true}: only the terms that conserve the occupation of every orbital, the
+ *    direct (a b|a b) and exchange (a b|b a) tuples of CreateSlaterTupleTwoFilled.
+ *  - kappas1, kappas2: the first #kappas1 orbitals are a core, the others valence; only the
+ *    core-valence terms, the tuples (c v|c v') and (c v|v' c) of CreateSlaterTupleOneFilled.
+ *    {"1P-Operator", true} (the default) returns their mean field with the core filled: the
+ *    one-particle Hartree-Fock potential of the core on the valence. The grid path fills the
+ *    first fermion indices; here the indices of the core orbitals are filled, the same when
+ *    the core comes first in the indices.
+ * "1P-Operator" acts only in the second form and "conserve" only in the first, as in the
+ * grid path.
+ */
 int DFTLuaNewOperatorUDKB(lua_State *L)
 {
   const char *who = "NewOperator(\"AU\",...)";
+  struct { bool conserve; bool QMF; } Options;
+  LuaOptionsType LuaUOptions[] = {
+    {"conserve", "bool", &(Options.conserve)},
+    {"1P-Operator", "bool", &(Options.QMF)},
+    {NULL, NULL, NULL}};
   RadialBasisType basis;
-  uint32_t NF, n, i, i1, i2, i3, i4, q, k, nP, nPois, kMax = 0, len = (uint32_t) lua_gettop(L);
+  uint32_t NF, n, nCore = 0, i, t, q, k, nP, nPois, kMax = 0, len = (uint32_t) lua_gettop(L);
   std::vector<std::vector<uint16_t> > indices;
-  std::vector<int> indToK;
+  std::vector<int> indToK, kappas1, kappas2;
+  std::vector<uint32_t> tuple;
   double c, *coef, *P, *Q, *dP, *dQ, **band, *rho, **Ycache;
-  int *kappa;
-  if (len != 4) return luaL_error(L, "Error in %s: for radial functions of type DKBSpline 4 arguments (NF, indices, G, F), got %d (no options)\n", who, (int) len);
+  int *kappa, mode;
+  Options.conserve = false;
+  Options.QMF = true;
+  if ((len == 5 || len == 7) && LuaTestOptionsList(L, (int) len))
+  {
+    LuaCheckOptions(L, (int) len, LuaUOptions);
+    len--;
+  }
+  if (len != 4 && len != 6)
+    return luaL_error(L, "Error in %s: for radial functions of type DKBSpline (NF, indices, G, F) or (NF, indices, G, F, kappas1, kappas2), each with optional {options}, got %d arguments\n", who, (int) lua_gettop(L));
   NF = (uint32_t) luaL_checkunsigned(L, 1);
   c = LuaGetPhysicalConstant(L, "cAU");
   lua_check(L, 2, indices);
-  lua_getfield(L, 2, "kappas");
-  if (lua_isnil(L, -1)) return luaL_error(L, "Error in %s: the indices have no field kappas\n", who);
-  lua_check(L, -1, indToK);
-  lua_pop(L, 1);
   n = (uint32_t) indices.size();
-  if (indToK.size() != n) return luaL_error(L, "Error in %s: indices.kappas and indices differ in length\n", who);
+  if (len == 4)
+  {
+    lua_getfield(L, 2, "kappas");
+    if (lua_isnil(L, -1)) return luaL_error(L, "Error in %s: the indices have no field kappas\n", who);
+    lua_check(L, -1, indToK);
+    lua_pop(L, 1);
+    if (indToK.size() != n) return luaL_error(L, "Error in %s: indices.kappas and indices differ in length\n", who);
+    mode = Options.conserve ? 1 : 0;
+  }
+  else
+  {
+    lua_check(L, 5, kappas1);
+    lua_check(L, 6, kappas2);
+    nCore = (uint32_t) kappas1.size();
+    indToK = kappas1;
+    indToK.insert(indToK.end(), kappas2.begin(), kappas2.end());
+    if (indToK.size() != n) return luaL_error(L, "Error in %s: kappas1 and kappas2 have %d kappas together, the indices %d orbitals\n", who, (int) indToK.size(), (int) n);
+    mode = 2;
+  }
   if (lua_objlen(L, 3) != n || lua_objlen(L, 4) != n) return luaL_error(L, "Error in %s: G and F need one function per orbital of the indices (%d)\n", who, (int) n);
   kappa = (int *) malloc(n*sizeof(int));
   DFTLuaDKBSpinors(L, who, 3, 4, n, c, &basis, kappa, &coef);
   for (i = 0; i < n; i++)
   {
     if (kappa[i] != indToK[i])
-      return luaL_error(L, "Error in %s: orbital %d has kappa = %d, indices.kappas says %d\n", who, (int) i + 1, kappa[i], indToK[i]);
+      return luaL_error(L, "Error in %s: orbital %d has kappa = %d, the kappas say %d\n", who, (int) i + 1, kappa[i], indToK[i]);
     if ((uint32_t) (2*abs(kappa[i])) > kMax) kMax = (uint32_t) (2*abs(kappa[i]));
+  }
+  // the tuples (i1, i2, i3, i4) of the integrals R^k(13;24)
+  if (mode == 0)
+  {
+    // those of Create_Relativistic_Coulomb_Operator: i2 = i1, and i2 > i1
+    uint32_t i1, i2, i3, i4;
+    for (i1 = 0; i1 < n; i1++)
+      for (i2 = i1; i2 < n; i2++)
+        for (i3 = i1; i3 < n; i3++)
+          for (i4 = (i2 == i1) ? i3 : i2; i4 < n; i4++)
+          {
+            tuple.push_back(i1); tuple.push_back(i2); tuple.push_back(i3); tuple.push_back(i4);
+          }
+  }
+  else
+  {
+    std::map<myarray, myarray> tupel = (mode == 1) ? CreateSlaterTupleTwoFilled(indToK) : CreateSlaterTupleOneFilled(kappas1, kappas2);
+    for (std::map<myarray, myarray>::iterator it = tupel.begin(); it != tupel.end(); ++it)
+      for (q = 0; q < 4; q++) tuple.push_back((uint32_t) it->first.val[q]);
   }
   // P, Q of every orbital on the quadrature points; Poisson factorizations k = 0 .. kMax-1
   nP = basis.nPoint;
@@ -220,43 +286,57 @@ int DFTLuaNewOperatorUDKB(lua_State *L)
   // Y^k[rho_24]/r on the points, computed once per pair (i2 <= i4) and k
   Ycache = (double **) calloc(n*n*kMax, sizeof(double *));
   OperatorType *U = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-  InitNamedOperator(U, "Coulomb Operator");
-  U->NFermion = NF;
-  U->NWord = Min(U->NFermion, 1 + (U->NFermion - 1)/8);
-  InitOperatorFixedLength(U, 2, 8);
-  InitOperatorFixedLength(U, 4, 8);
-  // the tuples of Create_Relativistic_Coulomb_Operator: i2 = i1, and i2 > i1
-  for (i1 = 0; i1 < n; i1++)
-    for (i2 = i1; i2 < n; i2++)
-      for (i3 = i1; i3 < n; i3++)
-        for (i4 = (i2 == i1) ? i3 : i2; i4 < n; i4++)
-        {
-          int k1 = kappa[i1], k2 = kappa[i2], k3 = kappa[i3], k4 = kappa[i4];
-          int L0 = Max(abs(abs(k1) - abs(k3)), abs(abs(k2) - abs(k4)));
-          int L1 = Min(abs(k1) + abs(k3), abs(k2) + abs(k4)) - 1;
-          if ((abs(k1) + abs(k3) + (Sign(k1) + Sign(k3))/2 + L0) % 2 == 0) L0++;
-          if (L0 > L1) continue;
-          double Fk[(L1 - L0)/2 + 1];
-          uint32_t a = Min(i2, i4), b = Max(i2, i4);
-          for (int Lk = L0; Lk <= L1; Lk += 2)
-          {
-            double **Y = Ycache + (a*n + b)*kMax + Lk;
-            if (*Y == NULL)
-            {
-              *Y = (double *) malloc(nP*sizeof(double));
-              for (q = 0; q < nP; q++) rho[q] = P[a*nP + q]*P[b*nP + q] + Q[a*nP + q]*Q[b*nP + q];
-              if (RadialYkOnPoints(&basis, (uint32_t) Lk, band[Lk], rho, *Y))
-                return luaL_error(L, "Error in %s: the Poisson equation for k = %d failed\n", who, Lk);
-            }
-            for (q = 0; q < nP; q++) rho[q] = P[i1*nP + q]*P[i3*nP + q] + Q[i1*nP + q]*Q[i3*nP + q];
-            Fk[(Lk - L0)/2] = HFIntegral(&basis, rho, *Y);
-          }
-          OperatorType optemp;
-          CreateOperatorAtomicURelativisticOneIntegral(NF, k1, k2, k3, k4, &(indices[i1][0]), &(indices[i2][0]), &(indices[i3][0]), &(indices[i4][0]),
-                                                       Fk, i1, i2, i3, i4, &optemp);
-          OperatorAdd(U, optemp, 1., 0.);
-          FreeOperator(&optemp);
-        }
+  OperatorType Uocc, *Ut = (mode == 2 && Options.QMF) ? &Uocc : U;
+  InitNamedOperator(Ut, "Coulomb Operator");
+  Ut->NFermion = NF;
+  Ut->NWord = Min(Ut->NFermion, 1 + (Ut->NFermion - 1)/8);
+  InitOperatorFixedLength(Ut, 2, 8);
+  InitOperatorFixedLength(Ut, 4, 8);
+  for (t = 0; t < (uint32_t) tuple.size(); t += 4)
+  {
+    uint32_t i1 = tuple[t], i2 = tuple[t + 1], i3 = tuple[t + 2], i4 = tuple[t + 3];
+    int k1 = kappa[i1], k2 = kappa[i2], k3 = kappa[i3], k4 = kappa[i4];
+    int L0 = Max(abs(abs(k1) - abs(k3)), abs(abs(k2) - abs(k4)));
+    int L1 = Min(abs(k1) + abs(k3), abs(k2) + abs(k4)) - 1;
+    if ((abs(k1) + abs(k3) + (Sign(k1) + Sign(k3))/2 + L0) % 2 == 0) L0++;
+    if (L0 > L1) continue;
+    double Fk[(L1 - L0)/2 + 1];
+    uint32_t a = Min(i2, i4), b = Max(i2, i4);
+    for (int Lk = L0; Lk <= L1; Lk += 2)
+    {
+      double **Y = Ycache + (a*n + b)*kMax + Lk;
+      if (*Y == NULL)
+      {
+        *Y = (double *) malloc(nP*sizeof(double));
+        for (q = 0; q < nP; q++) rho[q] = P[a*nP + q]*P[b*nP + q] + Q[a*nP + q]*Q[b*nP + q];
+        if (RadialYkOnPoints(&basis, (uint32_t) Lk, band[Lk], rho, *Y))
+          return luaL_error(L, "Error in %s: the Poisson equation for k = %d failed\n", who, Lk);
+      }
+      for (q = 0; q < nP; q++) rho[q] = P[i1*nP + q]*P[i3*nP + q] + Q[i1*nP + q]*Q[i3*nP + q];
+      Fk[(Lk - L0)/2] = HFIntegral(&basis, rho, *Y);
+    }
+    const uint16_t *J1 = &(indices[i1][0]), *J2 = &(indices[i2][0]), *J3 = &(indices[i3][0]), *J4 = &(indices[i4][0]);
+    OperatorType optemp;
+    if (mode == 0) CreateOperatorAtomicURelativisticOneIntegral(NF, k1, k2, k3, k4, J1, J2, J3, J4, Fk, i1, i2, i3, i4, &optemp);
+    else if (mode == 1) CreateOperatorAtomicURelativisticOneIntegralOccupationConserving(NF, k1, k2, k3, k4, J1, J2, J3, J4, Fk, i1, i2, i3, i4, &optemp);
+    else CreateOperatorAtomicURelativisticOneIntegralOccupationConservingOneShell(NF, k1, k2, k3, k4, J1, J2, J3, J4, Fk, i1, i2, i3, i4, &optemp);
+    OperatorAdd(Ut, optemp, 1., 0.);
+    FreeOperator(&optemp);
+  }
+  if (Ut != U)
+  {
+    // the mean field of the core-valence terms with every index of the core orbitals filled
+    CompactMatrixType rhoCore;
+    rhoCore.Ni = NF;
+    rhoCore.Nj = NF;
+    rhoCore.QComplex = 0;
+    InitCompactMatrix(&rhoCore);
+    for (i = 0; i < nCore; i++)
+      for (q = 0; q < (uint32_t) indices[i].size(); q++) rhoCore.VRe[indices[i][q]*NF + indices[i][q]] = 1;
+    MeanFieldOperatorOld(&Uocc, U, rhoCore);
+    FreeOperator(&Uocc);
+    FreeCompactMatrix(&rhoCore);
+  }
   luaL_setmetatable(L, "Operator_Type");
   for (i = 0; i < n*n*kMax; i++) free(Ycache[i]);
   for (k = 0; k < kMax; k++) free(band[k]);

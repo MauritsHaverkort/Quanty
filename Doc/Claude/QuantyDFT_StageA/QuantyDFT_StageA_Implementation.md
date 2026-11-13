@@ -98,7 +98,9 @@ The returned `Atom` table:
 These dispatch to the exact DKB paths when `G` or `F` contains a `DKBSpline` (then all functions must be DKB spinors of one knot set, made with the present c):
 
 - `NewOperator("Dirac", NF, Z, indices, G, F, {nucleus options})` — ⟨a|h_D|b⟩ = c_aᵀ H_κ c_b with the DKB matrix of the nucleus given (default point nucleus). For grid functions (FPLO) the old path is unchanged; a `Nucleus` option is an error there.
-- `NewOperator("AU", NF, indices, G, F)` — the Coulomb interaction with R^k from the Galerkin Poisson solution, assembled exactly as `Create_Relativistic_Coulomb_Operator` does with grid integrals. No options for DKB functions yet.
+- `NewOperator("AU", NF, indices, G, F [, kappas1, kappas2] [, {options}])` — the Coulomb interaction with R^k from the Galerkin Poisson solution, assembled exactly as `Create_Relativistic_Coulomb_Operator` does with grid integrals. The forms and options of the grid path (`AtomicU.cpp`), with the same tuple generators and assembly routines:
+  - `{"conserve", true}`: only the terms that conserve every orbital's occupation, (ab|ab) and (ab|ba) (`CreateSlaterTupleTwoFilled`);
+  - `kappas1, kappas2`: the first #kappas1 orbitals are a core, the rest valence; only the core-valence terms (`CreateSlaterTupleOneFilled`). With `{"1P-Operator", true}` (the default) their mean field with the core filled (`MeanFieldOperatorOld`): the Hartree–Fock potential of the core on the valence. The DKB path fills the fermion indices of the core orbitals; the grid path fills the first fermion indices, which is the same only when the core comes first in the indices.
 - `NewOperator("NuclearMultipole", NF, Z, indices, G, F, {nucleus options})` — the L ≥ 2 part of a `"Function3D"` nucleus as a one-particle operator (e.g. the electric quadrupole hyperfine interaction).
 
 ### 2.3 Temporary building blocks
@@ -248,6 +250,7 @@ All tests are in `TestScripts/DiracAtom/` (CI job `test-jobs-diracatom`), plus `
 | Fock operator = energy gradient | finite differences | 2.5e-13 – 2.8e-10 | C harness (check 6) |
 | Exact `"Dirac"` operator | DKB eigenvalues | 3.7e-15 relative | `NewOperatorDKB` |
 | `"AU"` operator | mean of ⟨det\|H\|det⟩ over all determinants = E_av | 2.4e-15 relative | `NewOperatorDKB` |
+| `"AU"` options | conserve = full within every occupation sector; core form = full − E_core on core + one valence electron | 5e-15 relative | `NewOperatorAUCore` |
 | Generating calculations | Hellmann–Feynman in Q and in r_c | ≤ 3.5e-9, ≤ 3.6e-8 | `AtomicBasisFunctions` |
 | V^N virtual orbitals | Koopmans with Quanty operators | 3.4e-14 | `AtomicBasisFunctions` |
 | Galerkin Slater integrals | Martin's cell method | 9.5e-13 | `AtomicBasisFunctions` |
@@ -272,7 +275,6 @@ The FPLO comparison uses FPLO's own occupations (5d3/2 full, one electron in 5d5
 - **Performance:** a heavy Dirac atom costs about 1 s per Hartree–Fock iteration; a basis in which every orbital has its own generating calculation costs one SCF per occupied orbital (Ni, 15 orbitals: 43 s).
 - **Operators:**
   - `NewOperator("Dirac")` has no finite nucleus for grid (FPLO) functions;
-  - the DKB `"AU"` path takes no options (`conserve`, `1P-Operator`);
   - the multipole operator covers even L only and no magnetic hyperfine fields.
 - **Interfaces:** the temporary entries of section 2.3 have no `Precision` preset. The interfaces for the later stages (environment-dependent compression, inter-site overlaps S(R)) do not exist yet; the stage-A design lists them.
 - **Labels:** l is limited to 6.

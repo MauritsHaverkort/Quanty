@@ -15,7 +15,7 @@
  *    Li 2s, O 2p4 (15 determinants), Fe 3d6 4s2 (210) and Pd+ 4d9 (10, 3d and 4d of one
  *    kappa): measured <= 2.4e-15 |E| (checked 1e-13 |E|).
  *  - Errors: functions made with another c, DKBSpline mixed with other types, a Nucleus
- *    option for grid functions, options for the AU path of DKB functions.
+ *    option for grid functions. The options of the AU path: NewOperatorAUCore.Quanty.
 ]]
 
 local failed = false
@@ -116,7 +116,6 @@ fails(function() return NewOperator("Dirac", NFb, 26, indb, Gm, Fm) end, "BSplin
 fails(function() return NewOperator("AU", NFb, indb, Gm, Fm) end, "AU: BSpline first, then DKBSpline")
 local i1, NF1 = CreateAtomicIndicesList({"1s1/2"}, {{"Kappas", true}})
 fails(function() return NewOperator("Dirac", NF1, 1, i1, {bs}, {bs}, {{"Nucleus", "Gaussian"}, {"A", 1}}) end, "Nucleus option for grid functions")
-fails(function() return NewOperator("AU", NFb, indb, Gb, Fb, {{"conserve", true}}) end, "options for the AU path of DKB functions")
 
 if failed then error("NewOperator with DKBSpline functions: checks failed", 1) end
 print("passed")
