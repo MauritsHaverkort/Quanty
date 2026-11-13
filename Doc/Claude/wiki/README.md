@@ -19,7 +19,7 @@ commit `ec5a6a39`.
   second example, Fe [Ar] core on 3d and 4s, run on the present build. Built on
   the live page source of 2026-11-13.
 - `documentation:language_reference:objects:interpolatingfunction:start`: a section
-  on the fields x, y, knots, degree and coefficients, with an example run on the present
+  on the fields x, y, knots, degree, coefficients and type, with an example run on the present
   build. The page still says interpolation is cubic splines only; the BSpline
   constructor is not yet documented. Built on the live page source of 2026-11-13.
 

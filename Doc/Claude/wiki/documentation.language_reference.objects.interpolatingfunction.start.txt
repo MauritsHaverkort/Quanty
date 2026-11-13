@@ -54,6 +54,7 @@ An interpolating function //f// has the fields
   * //f.knots// : the knots, the points where the polynomial pieces of the function join. For the cubic splines these are the data points, for a B-spline they are averages of neighbouring data points.
   * //f.degree// : the polynomial degree of the pieces, 3 for the cubic splines.
   * //f.coefficients// : (B-splines only) the B-spline coefficients, one per data point.
+  * //f.type// : the name of the constructor, //"Spline"//, //"HermiteCSpline"// or //"BSpline"//, so that //InterpolatingFunction[f.type]// makes a function of the same kind. The radial functions of //CalculateAtomicBasisFunctions// are of type //"DKBSpline"// (or //"BSpline"// without relativity).
 ###
 
 <code Quanty Example.Quanty>
@@ -74,6 +75,7 @@ print("BSpline  x      = " .. List(g.x))
 print("BSpline  y      = " .. List(g.y))
 print("BSpline  knots  = " .. List(g.knots) .. ", degree " .. g.degree)
 print("BSpline  coefficients = " .. List(g.coefficients))
+print("type: " .. f.type .. " and " .. g.type)
 </code>
 
 <file Quanty_Output Example.out>
@@ -83,6 +85,7 @@ BSpline  x      = {0.0000, 0.5000, 1.0000, 1.5000, 2.0000, 2.5000, 3.0000}
 BSpline  y      = {1.0000, 0.6065, 0.3679, 0.2231, 0.1353, 0.0821, 0.0498}
 BSpline  knots  = {0.0000, 1.0000, 1.5000, 2.0000, 3.0000}, degree 3
 BSpline  coefficients = {1.0000, 0.6713, 0.3996, 0.2139, 0.1018, 0.0670, 0.0498}
+type: Spline and BSpline
 </file>
 
 ===== Table of contents =====
