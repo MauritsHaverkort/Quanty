@@ -13,22 +13,7 @@ commit `ec5a6a39`.
 
 ## Open pages
 
-- `documentation:standard_operators:atomic_coulomb_repulsion`: the core form
-  (kappas1, kappas2) documented, "1P-Operator" no longer tied to "conserve"
-  (in the code it acts only in the core form, "conserve" only without it), and a
-  second example, Fe [Ar] core on 3d and 4s, run on the present build. Built on
-  the live page source of 2026-11-13.
-- `documentation:language_reference:objects:interpolatingfunction:start`: rewritten.
-  What interpolation is, a table of the four types, a section per type (Spline,
-  HermiteCSpline, BSpline, DKBSpline with its large and small components),
-  evaluation, properties (x, y, knots, degree, coefficients, type), arithmetic
-  (which results are exact), integration. Built on the live page source of
-  2026-11-13; the old example had `FtimesG` made from `y2` instead of `y3`.
-  Image `interpolation_types.png` (in `media/`, 2400 x 1697) to upload to the
-  namespace `documentation:language_reference:objects:interpolatingfunction`.
-- New pages in `documentation:language_reference:objects:interpolatingfunction:functions`:
-  `start`, `spline`, `hermitecspline`, `bspline`, `integrate`. All examples run
-  on the present build, outputs pasted from those runs.
+None.
 
 ## Open points without a file
 
