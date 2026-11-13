@@ -11,6 +11,14 @@ batches (what was checked and how) are in the git history of this file, up to
 commit `ec5a6a39`.
 
 
+## Open pages
+
+- `documentation:standard_operators:atomic_coulomb_repulsion`: the core form
+  (kappas1, kappas2) documented, "1P-Operator" no longer tied to "conserve"
+  (in the code it acts only in the core form, "conserve" only without it), and a
+  second example, Fe [Ar] core on 3d and 4s, run on the present build. Built on
+  the live page source of 2026-11-13.
+
 ## Open points without a file
 
 - `documentation:language_reference:functions:createspectra`: the first example
