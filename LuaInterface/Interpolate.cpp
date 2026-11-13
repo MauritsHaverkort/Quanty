@@ -590,6 +590,8 @@ static std::vector<double> LuaInterpolateBreakpoints(const std::vector<double> &
  * f.degree      the polynomial degree (3 for the cubic splines; of the B-splines of a
  *               DKBSpline)
  * f.coefficients  the B-spline coefficients of a BSpline, one per B-spline
+ * f.type        the name of its constructor: "Spline", "HermiteCSpline", "BSpline", or
+ *               "DKBSpline" (no constructor; CalculateAtomicBasisFunctions, DiracRadialSolve)
  */
 static int LuaInterpolateIndex(lua_State *L)
 {
@@ -624,13 +626,20 @@ static int LuaInterpolateIndex(lua_State *L)
 		else lua_pushinteger(L, 3);
 		return 1;
 	}
+	if (str.compare("type") == 0 || str.compare("Type") == 0)
+	{
+		if (f->type == "CubicSpline") lua_pushstring(L, "Spline");
+		else if (f->type == "CubicHermiteSpline") lua_pushstring(L, "HermiteCSpline");
+		else lua_pushstring(L, f->type.c_str());
+		return 1;
+	}
 	if (str.compare("coefficients") == 0)
 	{
 		if (!bspline) return luaL_error(L, "Error: coefficients only for an interpolating function of type BSpline, this one is of type %s", f->type.c_str());
 		lua_push(L, f->GetY());
 		return 1;
 	}
-	return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\" (x, y, knots, degree or coefficients)", str.c_str());
+	return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\" (x, y, knots, degree, coefficients or type)", str.c_str());
 }
 
 /*

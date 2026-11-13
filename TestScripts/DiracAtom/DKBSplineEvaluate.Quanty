@@ -109,8 +109,8 @@ check(math.abs(#P.x - #Info.r) == 0, string.format("G.x holds the %d quadrature 
 local K = P.knots
 local distinct = true
 for i = 2, #K do distinct = distinct and K[i] > K[i-1] end
-check(K[1] == 0 and K[2] == rMin and math.abs(K[#K] - rMax) < 1e-12*rMax and distinct and P.degree == 8 and Q.degree == 8,
-      string.format("G.knots: %d breakpoints from 0, rMin to rMax; G.degree = %d", #K, P.degree))
+check(K[1] == 0 and K[2] == rMin and math.abs(K[#K] - rMax) < 1e-12*rMax and distinct and P.degree == 8 and Q.degree == 8 and P.type == "DKBSpline",
+      string.format("G.knots: %d breakpoints from 0, rMin to rMax; G.degree = %d; G.type = %s", #K, P.degree, P.type))
 
 -- explicit errors
 local function fails(f, text)
