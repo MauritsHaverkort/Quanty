@@ -572,35 +572,65 @@ static int LuaInterpolateToString(lua_State * L)
 	return 1;
 }
 
+/* the distinct values of a knot sequence, in order */
+static std::vector<double> LuaInterpolateBreakpoints(const std::vector<double> &knots)
+{
+	std::vector<double> r;
+	for (uint32_t i = 0; i < (uint32_t) knots.size(); i++)
+		if (i == 0 || knots[i] > knots[i-1]) r.push_back(knots[i]);
+	return r;
+}
+
 /*
- *
+ * f.x, f.y      the points the function is given on and its values there: the data points
+ *               of a Spline, HermiteCSpline or BSpline (a B-spline made from coefficients:
+ *               its breakpoints), the quadrature points of a DKBSpline
+ * f.knots       the breakpoints, where the polynomial pieces join (for the cubic splines
+ *               the data points, for BSpline and DKBSpline the distinct knots)
+ * f.degree      the polynomial degree (3 for the cubic splines; of the B-splines of a
+ *               DKBSpline)
+ * f.coefficients  the B-spline coefficients of a BSpline, one per B-spline
  */
 static int LuaInterpolateIndex(lua_State *L)
 {
 	string str;
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-	if (luaL_isType(L, 2, str))
+	int bspline = (f->type == "BSpline"), dkb = (f->type == "DKBSpline");
+	if (!luaL_isType(L, 2, str)) return luaL_error(L, "Error: Interpolation function indexed with unrecognised type!");
+	lua_check(L, 2, str);
+	if (str.compare("x") == 0 || str.compare("X") == 0)
 	{
-		lua_check(L, 2, str);
-		if (str.compare("x") == 0 || str.compare("X") == 0)
-		{
-			lua_push(L, f->GetX());
-			return 1;
-		}
-		else if (str.compare("y") == 0 || str.compare("Y") == 0)
-		{
-			lua_push(L, f->GetY());
-			return 1;
-		}
-		else
-		{
-			return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\"", str.c_str());
-		}
+		if (bspline) lua_push(L, BSpline::SamplePoints(*f));
+		else lua_push(L, f->GetX());
+		return 1;
 	}
-	else
+	if (str.compare("y") == 0 || str.compare("Y") == 0)
 	{
-		return luaL_error(L, "Error: Interpolation function indexed with unrecognised type!");
+		if (bspline) lua_push(L, (*f)(BSpline::SamplePoints(*f)));
+		else lua_push(L, f->GetY());
+		return 1;
 	}
+	if (str.compare("knots") == 0)
+	{
+		if (bspline) lua_push(L, LuaInterpolateBreakpoints(((BSpline::TBSpline *) f)->knots));
+		else if (dkb) lua_push(L, LuaInterpolateBreakpoints(((Interpolation::DKBSpline *) f)->knots));
+		else lua_push(L, f->GetX());
+		return 1;
+	}
+	if (str.compare("degree") == 0)
+	{
+		if (bspline) lua_pushinteger(L, (lua_Integer) ((BSpline::TBSpline *) f)->degree);
+		else if (dkb) lua_pushinteger(L, (lua_Integer) ((Interpolation::DKBSpline *) f)->degree);
+		else lua_pushinteger(L, 3);
+		return 1;
+	}
+	if (str.compare("coefficients") == 0)
+	{
+		if (!bspline) return luaL_error(L, "Error: coefficients only for an interpolating function of type BSpline, this one is of type %s", f->type.c_str());
+		lua_push(L, f->GetY());
+		return 1;
+	}
+	return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\" (x, y, knots, degree or coefficients)", str.c_str());
 }
 
 /*

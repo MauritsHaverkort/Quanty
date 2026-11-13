@@ -6,7 +6,7 @@
  *    f .. g                           on the grid of f, through f(g(x))
  *    f == g                           same type, grid and values (relative 1e-14)
  *
- *  For a BSpline the grid is the set of points it interpolates (f.x holds its knots), the
+ *  For a BSpline the grid is the set of points it interpolates (f.x, as for the others), the
  *  result has the degree of f, and -f, and f + g and f - g for two B-splines with the
  *  same degree and knots, act on the coefficients and are exact everywhere.
  *

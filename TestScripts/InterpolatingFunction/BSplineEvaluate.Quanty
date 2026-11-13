@@ -2,7 +2,7 @@
  *  Regression test for B-spline interpolation, InterpolatingFunction.BSpline(x, y, degree).
  *
  *  Analytic functions are interpolated for degree 1 to 9. Recorded are the knots and
- *  coefficients (f.x, f.y), the function and its derivatives k = 0 .. min(3, degree)
+ *  coefficients (f.knots, f.coefficients), the function and its derivatives k = 0 .. min(3, degree)
  *  at both end points, at every knot, half way between knots and at quasi-random points
  *  (no math.random, its sequence differs between macOS and Linux), and the integrals.
  *  Evaluating on a table of points must give the same values as one point at a time.
@@ -77,9 +77,9 @@ for _, set in ipairs(sets) do
   for degree = 1, 9 do
     local f = InterpolatingFunction.BSpline(set.x, y, degree)
     local prefix = set.name .. " degree " .. degree
-    local knots = f.x
+    local knots = f.knots
     store(prefix .. " knots", knots)
-    store(prefix .. " coefficients", f.y)
+    store(prefix .. " coefficients", f.coefficients)
     local t = points(knots)
     for k = 0, math.min(3, degree) do
       local v = {}
