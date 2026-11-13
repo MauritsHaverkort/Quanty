@@ -1,0 +1,68 @@
+{{indexmenu_n>999}}
+====== HermiteCSpline ======
+
+###
+//f = InterpolatingFunction.HermiteCSpline(x, y)// or //f = InterpolatingFunction.HermiteCSpline(x, y, m)// makes a cubic Hermite spline through the points $(x_i, y_i)$, an [[documentation:language_reference:objects:interpolatingfunction:start|interpolating function]] of type //"HermiteCSpline"//. On every interval $[x_i, x_{i+1}]$ it is the cubic polynomial with the values $y_i$, $y_{i+1}$ and the slopes $m_i$, $m_{i+1}$ at its ends. The function and its first derivative are continuous; the second derivative jumps at the points.
+###
+
+===== Input =====
+
+  * //x// : a table of $N \geq 2$ different real numbers, the points. They need not be sorted; the points are sorted together with their values and slopes.
+  * //y// : a table of $N$ real numbers, the values at the points.
+  * //m// : (optional) a table of $N$ real numbers, the first derivative at the points.
+
+===== Output =====
+
+  * //f// : an interpolating function of type //"HermiteCSpline"//. //f.x// and //f.y// are the sorted points and values, //f.knots// the points, //f.degree// is 3.
+
+###
+Without //m// the slopes are estimated: at a point inside, the average of the slopes $(y_{i+1} - y_i)/(x_{i+1} - x_i)$ of the two neighbouring intervals, at the ends the slope of the first and of the last interval. They are then limited as proposed by Fritsch and Carlson ([[https://doi.org/10.1137/0717021|SIAM J. Numer. Anal. 17, 238 (1980)]]): on an interval where the data is flat both slopes are 0, at a local minimum or maximum of the data the slope is 0, and slopes that are too large are scaled down. The interpolation is then monotone on every interval where the data is: it makes no minima or maxima the data does not have, and stays between the smallest and the largest value. Straight lines are reproduced exactly.
+###
+
+###
+With //m// the slopes are used as given, without limiting. With the exact derivatives the Hermite spline reproduces every cubic polynomial, and its error decreases as $h^4$.
+###
+
+###
+The curve on an interval only depends on the points nearby, so changing one data point changes the function only locally. The price is a second derivative that jumps at the points, and an error that decreases more slowly than that of a //[[documentation:language_reference:objects:interpolatingfunction:functions:spline|Spline]]// when the estimated slopes are used for smooth data.
+###
+
+===== Example =====
+
+###
+An occupation that rises from 0 to 1. The cubic spline overshoots below 0 and above 1, the Hermite spline does not. With the exact slopes a cubic polynomial is reproduced.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- an occupation that rises from 0 to 1, sampled at 8 points
+x = {0, 1, 2, 2.5, 3, 3.5, 4, 6}
+y = {0, 0, 0.05, 0.4, 0.9, 1, 1, 1}
+S = InterpolatingFunction.Spline(x, y)
+H = InterpolatingFunction.HermiteCSpline(x, y)
+for _, f in ipairs({S, H}) do
+  local min, max = 0, 1
+  for i = 0, 600 do
+    local v = f(i/100)
+    min, max = math.min(min, v), math.max(max, v)
+  end
+  print(string.format("%-14s min %8.4f   max %8.4f", f.type, min, max))
+end
+
+-- with the exact slopes a cubic Hermite spline reproduces every cubic polynomial
+p  = function(t) return 1 + t - 2*t^2 + 0.5*t^3 end
+dp = function(t) return 1 - 4*t + 1.5*t^2 end
+yp, mp = {}, {}
+for i = 1, #x do yp[i] = p(x[i]); mp[i] = dp(x[i]) end
+P = InterpolatingFunction.HermiteCSpline(x, yp, mp)
+print(string.format("cubic with exact slopes: P(4.7) - p(4.7) = %.1e", P(4.7) - p(4.7)))
+</code>
+
+<file Quanty_Output Example.out>
+Spline         min  -0.0339   max   1.0023
+HermiteCSpline min   0.0000   max   1.0000
+cubic with exact slopes: P(4.7) - p(4.7) = 1.8e-15
+</file>
+
+===== Table of contents =====
+{{indexmenu>../#2|tsort}}
