@@ -1,7 +1,7 @@
 ====== CalculateAtomicBasisFunctions ======
 
 ###
-//CalculateAtomicBasisFunctions(Z, Configuration, Options)// calculates the radial functions of the orbitals of an atom. //CalculateAtomicBasisFunctions(Z)// is enough for the ground state of the neutral atom. The atom is calculated self-consistently, relativistically (Dirac equation) or nonrelativistically (Schrödinger equation), either in the configuration-average Hartree-Fock approximation or in density functional theory (LDA, PBE). The radial functions are expanded in B-splines and returned as interpolating functions.
+//G, F, Atom = CalculateAtomicBasisFunctions(Z, Configuration, Options)// calculates the radial functions of the orbitals of an atom. //CalculateAtomicBasisFunctions(Z)// is enough for the ground state of the neutral atom. The atom is calculated self-consistently, relativistically (Dirac equation) or nonrelativistically (Schrödinger equation), either in the configuration-average Hartree-Fock approximation or in density functional theory (LDA, PBE). The radial functions are expanded in B-splines and returned as interpolating functions.
 ###
 
 ###
@@ -16,7 +16,7 @@ The nickel atom with all defaults: its ground-state configuration, Dirac-Fock, a
 
 <code Quanty Example.Quanty>
 -- the Ni atom: the ground-state configuration, Dirac-Fock, a Gaussian nucleus of 58Ni
-G, F, x, Atom = CalculateAtomicBasisFunctions(28)
+G, F, Atom = CalculateAtomicBasisFunctions(28)
 
 print(Atom.Configuration, Atom.A)
 
@@ -74,10 +74,9 @@ Each $nl$ shell is split into its two $j$ subshells, $nl_{j=l-1/2}$ and $nl_{j=l
 ===== Output =====
 
   * //G// : A table of the large components $P(r) = r g(r)$ of the orbitals, [[documentation:language_reference:objects:interpolatingfunction:start|interpolating functions]] of type //"DKBSpline"// (relativistic) or //"BSpline"// (nonrelativistic).
-  * //F// : A table of the small components $Q(r) = r f(r)$ (empty without relativity). The functions are normalized as $\int (P^2 + Q^2) \, \mathrm{d}r = 1$.
-  * //x// : The radial points of the quadrature.
+  * //F// : A table of the small components $Q(r) = r f(r)$ (empty without relativity). The functions are normalized as $\int (P^2 + Q^2) \, \mathrm{d}r = 1$. Every function returned, also the potentials in //Atom.Potential//, gives the radial points of the quadrature as //f.x//, for example //x = G[1].x//.
   * //Atom// : A table with
-      * //Etot//, //Ekin//, //Eenuc// and //Edirect//, //Eexchange// (Hartree-Fock) or //Ecoul//, //Exc// (density functional theory): the total energy and its parts, and //Converged//, //Iterations//, //Residual//.
+      * //Etot//, //Ekin//, //Eenuc// and //Edirect//, //Eexchange// (Hartree-Fock) or //Ecoul//, //Exc// (density functional theory): the total energy and its parts, //EtotEigenvalueSum//, the total energy from the orbital energies (equal to //Etot// when the calculation is converged; for Hartree-Fock for any orbitals), and //Converged//, //Iterations//, //Residual//.
       * //Orbitals// : per returned orbital //{Label, n, l, kappa, j, Occupation, Energy, RExpectation, ...}//, with //RExpectation[k]// $= \langle r^k \rangle$ for $k = -3$ (for $l > 0$), $-1$, $1$, $2$.
       * //Labels// : the labels of the orbitals, in the order of //G// and //F//: all calculated orbitals, ordered by $n$, $l$ and $j$. A selection is made in Lua.
       * //SlaterIntegrals// : the Slater integrals $F^k$ and $G^k$ between all returned orbitals, in the format of //GetSlaterIntegrals()//: //SlaterIntegrals["3d5/2 4s1/2 3d5/2 4s1/2"][k]// is $F^k$, //SlaterIntegrals["3d5/2 4s1/2 4s1/2 3d5/2"][k]// is $G^k$.
@@ -85,7 +84,7 @@ Each $nl$ shell is split into its two $j$ subshells, $nl_{j=l-1/2}$ and $nl_{j=l
       * //Zeta// : the spin-orbit coupling constant of every shell returned with both $j$, //Zeta["3d"]//.
       * //Nucleus// : the nucleus as a list of options, to pass on to //NewOperator("Dirac", ...)//.
       * //Potential// : //rVN//, //rVH// and (density functional theory) //rVxc//, $r$ times the potential of the nucleus, the Hartree potential and the exchange-correlation potential of the ground state, interpolating functions of type //"BSpline"//, see [[#the_potentials|The potentials]] below.
-      * //FourierBessel//, //ConvergenceCheck//, //VirialRatio// (nonrelativistic), //Gradient//, //PairGradient// (Hartree-Fock), //MinOverlapEigenvalue//, //OrthonormalityError//, and the input: //Method//, //Relativistic//, //c//, //Z//, //Configuration//, //A//, //NElectron//, //rMin//, //rMax//.
+      * //FourierBessel//, //ConvergenceCheck//, //VirialRatio// (nonrelativistic), //PotentialResidual// and //MixDensity// (density functional theory), //Gradient//, //PairGradient// (Hartree-Fock), //EavJJ// (nonrelativistic Hartree-Fock: the average energy with the angular factors of the $j$ subshells, equal to //Etot//), //MinOverlapEigenvalue//, //OrthonormalityError//, and the input: //Method//, //Relativistic//, //c//, //Z//, //Configuration//, //A//, //NElectron//, //rMin//, //rMax//.
 
 All energies are in Hartree and all lengths in bohr. The speed of light is //PhysicalConstants.cAU.value//.
 
@@ -107,7 +106,7 @@ The Hartree-Fock Slater integrals and the spin-orbit coupling of Ni$^{2+}$ ($3d^
 
 <code Quanty Example.Quanty>
 -- Hartree-Fock Slater integrals and spin-orbit coupling of Ni2+ in a 3d8 multiplet calculation
-G, F, x, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8")
+G, F, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8")
 eV = 27.211386
 F2 = Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2]*eV
 F4 = Atom.SlaterIntegralsNL["3d 3d 3d 3d"][4]*eV
@@ -151,7 +150,7 @@ The functions //G// and //F// can be used with //NewOperator("Dirac", ...)// and
 
 <code Quanty Example.Quanty>
 -- the full relativistic Hamiltonian of Ne from its own Dirac-Fock orbitals
-G, F, x, Atom = CalculateAtomicBasisFunctions(10)
+G, F, Atom = CalculateAtomicBasisFunctions(10)
 indices, NF = CreateAtomicIndicesList(Atom.Labels, {{"Kappas", true}})
 H = NewOperator("Dirac", NF, 10, indices, G, F, Atom.Nucleus) + NewOperator("AU", NF, indices, G, F)
 psi = NewWavefunction(NF, 0, {{string.rep("1", NF), 1}})
@@ -177,7 +176,7 @@ The function of such an orbital comes from its own calculation, in which only th
 
 <code Quanty Example.Quanty>
 -- a confined basis for Fe: all orbitals up to 5s, 4p and 4d, the empty 4p and 4d contracted
-G, F, x, Atom = CalculateAtomicBasisFunctions(26, "[Ar] 3d6 4s2", {{"Method", "LDA"},
+G, F, Atom = CalculateAtomicBasisFunctions(26, "[Ar] 3d6 4s2", {{"Method", "LDA"},
   {"NMax", {s = 5, p = 4, d = 4}},
   {"Confinement", {Rho = 4, N = 8}},
   {"Q", {["4p"] = 1, ["4d"] = 2}},
@@ -222,7 +221,7 @@ The energies are those of the equation each function was calculated with, includ
   * //rVxc// : $r V_{xc}(r)$, the exchange-correlation potential, only in density functional theory. For the gradient corrected functionals //"PBE"// and //"PBE-VWN"// it is the whole potential $\delta E_{xc}/\delta n(r)$, including the term with the gradient of the density. Hartree-Fock has no //rVxc//: its exchange is not a potential but an integral operator, different for every orbital.
 
 ###
-$r V(r)$ stays finite at the nucleus and becomes constant far from the atom, where $V$ itself diverges as $1/r$ or goes to 0 slowly. Each potential is a //BSpline// of the degree of the radial functions through its values on the points //x//. It equals the numbers of the calculation on these points and interpolates between them. The three have the same points and degree, so their sum is again a //BSpline//, without approximation: //rVN + rVH + rVxc// is $r$ times the Kohn-Sham potential that every orbital feels.
+$r V(r)$ stays finite at the nucleus and becomes constant far from the atom, where $V$ itself diverges as $1/r$ or goes to 0 slowly. Each potential is a //BSpline// of the degree of the radial functions through its values on the radial points of the quadrature, //G[1].x//. It equals the numbers of the calculation on these points and interpolates between them. The three have the same points and degree, so their sum is again a //BSpline//, without approximation: //rVN + rVH + rVxc// is $r$ times the Kohn-Sham potential that every orbital feels.
 ###
 
 ###
@@ -239,9 +238,9 @@ The potentials of Kr in LDA. $-r V(r)$ is the charge an electron at $r$ sees: th
 
 <code Quanty Example.Quanty>
 -- the potentials of the Kr atom in LDA, as r V(r)
-G, F, x, Atom = CalculateAtomicBasisFunctions(36, "[Ar] 3d10 4s2 4p6", {{"Method", "LDA"}})
+G, F, Atom = CalculateAtomicBasisFunctions(36, "[Ar] 3d10 4s2 4p6", {{"Method", "LDA"}})
 V = Atom.Potential
-print(V.rVN.type, V.rVN.degree, #V.rVN.x == #x)
+print(V.rVN.type, V.rVN.degree, #V.rVN.x == #G[1].x)
 
 -- the charge an electron sees: the nucleus, screened by the electrons
 ZNH = -(V.rVN + V.rVH)
@@ -296,12 +295,13 @@ The derivative gives the spin-orbit coupling of a nonrelativistic calculation, f
 $$
 \zeta_{nl} = \frac{1}{2c^2} \int_0^\infty P_{nl}(r)^2 \, \frac{1}{r} \frac{\mathrm{d}V}{\mathrm{d}r} \, \mathrm{d}r,
 $$
-here for the 3d shell of Ni. The integrand is made into an interpolating function through the points //x// and integrated.
+here for the 3d shell of Ni. The integrand is made into an interpolating function through the radial points of the quadrature, //x = G[1].x//, and integrated.
 ###
 
 <code Quanty Example.Quanty>
 -- the spin-orbit coupling of the Ni 3d shell from the derivative of the potential
-G, F, x, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {{"Method", "LDA"}, {"Relativistic", false}})
+G, F, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {{"Method", "LDA"}, {"Relativistic", false}})
+x = G[1].x
 c = Atom.c
 rV = Atom.Potential.rVN + Atom.Potential.rVH + Atom.Potential.rVxc
 for i, label in ipairs(Atom.Labels) do if label == "3d" then d = i end end
@@ -311,7 +311,7 @@ y = {}
 for i = 1, #x do y[i] = P[i]^2*(df[i] - f[i]/x[i])/x[i]^2/(2*c*c) end
 zeta = InterpolatingFunction.Integrate(InterpolatingFunction.BSpline(x, y, 8))
 
-G, F, x, Dirac = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {{"Method", "LDA"}})
+G, F, Dirac = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {{"Method", "LDA"}})
 eV = 27.211386
 print(string.format("zeta(3d) = %.4f eV from the Schroedinger potential, %.4f eV from the Dirac calculation", zeta*eV, Dirac.Zeta["3d"]*eV))
 </code>

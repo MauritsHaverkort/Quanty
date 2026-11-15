@@ -21,6 +21,17 @@ commit `ec5a6a39`.
   the live page source of 2026-11-15; the four existing examples were rerun and
   their outputs are unchanged. Image `atomic_potentials.png` (in `media/`,
   2400 x 1697) to upload to the namespace `documentation:language_reference:functions`.
+  Also the new call `G, F, Atom = CalculateAtomicBasisFunctions(...)`: `x` is gone
+  (every returned function gives the quadrature points as `f.x`), and the fields
+  `EtotEigenvalueSum`, `PotentialResidual`, `MixDensity`, `EavJJ` in Output.
+- `documentation:standard_operators:atomic_coulomb_repulsion` and
+  `documentation:language_reference:functions:newoperator`: only the call
+  `G, F, x, Atom = ...` becomes `G, F, Atom = ...` in the examples (outputs rerun,
+  unchanged).
+- `documentation:language_reference:objects:interpolatingfunction:start`: one
+  sentence under Properties, f.x of the radial functions of
+  CalculateAtomicBasisFunctions is now the quadrature grid also for the
+  nonrelativistic BSpline.
 
 ## Open points without a file
 
