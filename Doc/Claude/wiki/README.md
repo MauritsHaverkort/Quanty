@@ -32,8 +32,10 @@ commit `ec5a6a39`.
 - `documentation:language_reference:objects:interpolatingfunction:start`: one
   sentence under Properties, f.x of the radial functions of
   CalculateAtomicBasisFunctions is now the quadrature grid also for the
-  nonrelativistic BSpline; and DiracRadialSolve (removed) is no longer named in the
-  DKBSpline section.
+  nonrelativistic BSpline; DiracRadialSolve (removed) is no longer named in the
+  DKBSpline section; DKBSpline arithmetic (as a BSpline through f.x, result a BSpline)
+  in the DKBSpline and Arithmetic sections, and the DKBSpline example now computes
+  overlaps instead of showing the error (`G, F, Atom` call; rerun).
 
 ## Open points without a file
 

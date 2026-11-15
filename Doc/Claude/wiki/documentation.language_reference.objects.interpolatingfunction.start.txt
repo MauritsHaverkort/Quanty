@@ -111,13 +111,13 @@ A //DKBSpline// therefore has properties of its own:
   * $G$ and $F$ of one orbital share the coefficients; each function knows its $\kappa$, whether it is the large or the small component, and the speed of light it was made with. //NewOperator("Dirac", ...)// and //NewOperator("AU", ...)// recognise the functions and calculate their matrix elements exactly, and give an error if //PhysicalConstants.cAU.value// has been changed since.
   * Because of the $1/r$ terms the function is not a polynomial between the knots. //f.degree// is the degree of the B-splines. Derivatives of every order are calculated exactly from the B-splines.
   * //f.x// are the radial points of the quadrature of the atom, //f.knots// the knots of the B-splines, from 0 to the end of the radial grid.
-  * Arithmetic (//G + F//, //G * F//, ...) and comparison are not available: the sum of two components is no longer a component of a spinor.
+  * In arithmetic (//G + F//, //G * F//, ...) and comparison a //DKBSpline// acts as the //BSpline// of its degree through its values on //f.x//, and the result is a //BSpline//: the sum or product of two components is no longer a component of a spinor. The points are dense, so integrals of products, for example the overlap $\int (G_a G_b + F_a F_b) \, \mathrm{d}r$, are exact to rounding.
 
 ###
 
 <code Quanty Example.Quanty>
 -- the 2p orbitals of Ne: the large components G and the small components F
-G, F, x, Atom = CalculateAtomicBasisFunctions(10)
+G, F, Atom = CalculateAtomicBasisFunctions(10)
 c, r = PhysicalConstants.cAU.value, 1
 for i, o in ipairs(Atom.Orbitals) do
   if o.l == 1 then
@@ -128,15 +128,16 @@ for i, o in ipairs(Atom.Orbitals) do
 end
 print(string.format("type %s, degree %d, %d knots from %g to %g, %d points x",
                     G[1].type, G[1].degree, #G[1].knots, G[1].knots[1], G[1].knots[#G[1].knots], #G[1].x))
-ok, message = pcall(function() return G[1] + G[2] end)
-print(message)
+-- the overlaps of 1s1/2 and 2s1/2: the products are BSplines on the points x
+print(string.format("<1s|1s> - 1 = %.1e, <1s|2s> = %.1e, type of G * G: %s", InterpolatingFunction.Integrate(G[1]*G[1] + F[1]*F[1]) - 1,
+                    InterpolatingFunction.Integrate(G[1]*G[2] + F[1]*F[2]), (G[1]*G[2]).type))
 </code>
 
 <file Quanty_Output Example.out>
 2p1/2  kappa  1   G(1) = 0.831088   F(1) =  0.0009597   (G'(1) + kappa G(1))/(2c) =  0.0009596
 2p3/2  kappa -2   G(1) = 0.831407   F(1) = -0.0081275   (G'(1) + kappa G(1))/(2c) = -0.0081277
 type DKBSpline, degree 8, 121 knots from 0 to 40, 1560 points x
-Example.Quanty:13: Error: f + g is not yet supported for interpolating functions of type DKBSpline
+<1s|1s> - 1 = -2.1e-15, <1s|2s> = -1.8e-16, type of G * G: BSpline
 </file>
 
 ===== Evaluation =====
@@ -195,7 +196,7 @@ type: Spline and BSpline
 ===== Arithmetic =====
 
 ###
-For two interpolating functions //f// and //g//, //-f//, //f + g//, //f - g//, //f * g//, //f / g//, //f ^ n// (with //n// a number) and the composition //f .. g//, $f(g(x))$, are again interpolating functions, of the type of //f//. Both operands must be interpolating functions; a number is not converted. The result is made on the data points of //f// and //g// together (//f ^ n// and //f .. g// on those of //f//), through the exact values $f(x_i) + g(x_i)$, ... at these points, and is interpolated between them by the type of //f//. It is therefore exact at the points, and in general a new approximation between them. Exact everywhere are:
+For two interpolating functions //f// and //g//, //-f//, //f + g//, //f - g//, //f * g//, //f / g//, //f ^ n// (with //n// a number) and the composition //f .. g//, $f(g(x))$, are again interpolating functions, of the type of //f//; a //DKBSpline// acts as the //BSpline// through its values on its points //f.x//, so its results are //BSpline//s. Both operands must be interpolating functions; a number is not converted. The result is made on the data points of //f// and //g// together (//f ^ n// and //f .. g// on those of //f//), through the exact values $f(x_i) + g(x_i)$, ... at these points, and is interpolated between them by the type of //f//. It is therefore exact at the points, and in general a new approximation between them. Exact everywhere are:
   * //f + g// and //f - g// of two //Spline//s: the sum of two cubic splines is a cubic spline on the points of both.
   * //-f//, and //f + g// and //f - g// of two //BSpline//s of the same degree and knots, which act on the coefficients.
 For a //HermiteCSpline// even a sum is a new interpolation, with new slopes. //f == g// is true when //f// and //g// are of the same type and have the same points and values (//BSpline//: the same degree, knots and coefficients) to a relative precision of $10^{-14}$.
