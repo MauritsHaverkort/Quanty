@@ -13,7 +13,7 @@
  * depend on c through h = 1/(2c)). G[i] and F[i] are the two components of one spinor.
  *  - Dirac: <a|h_D|b> = c_a^T H_kappa c_b with H_kappa the DKB matrix of design section 5
  *    for the nucleus of the options (Nucleus, A, Rrms, FermiThickness, Density,
- *    DensityTolerance as in DiracRadialSolve; default "Point" with charge Z), without
+ *    DensityTolerance as in LuaDiracRadial.cpp; default "Point" with charge Z), without
  *    confinement. For the solver's orbitals, nucleus and c this is the solver's matrix.
  *  - AU: R^k(13;24) = int rho_13 Y^k[rho_24]/r dr with the Galerkin solution Y^k of design
  *    section 7 on the shared knots (rho_ab = P_a P_b + Q_a Q_b), assembled exactly as

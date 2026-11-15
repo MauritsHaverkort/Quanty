@@ -125,14 +125,19 @@ int AtomBasisFunctions(DiracAtomType *atom, int hartreeFock, const double *Q, co
   C0 = (double *) malloc(nOrb*Nf*sizeof(double));
   Mbeta = (double *) malloc(Nf*Nf*sizeof(double));
 
-  // 1. the ground state
-  if (hartreeFock) error = AtomSCF(atom, opt->maxIterations, 8, 0.3, 1e-8, 1e-6, opt->rayleigh, 0);   // the LDA start
+  // 1. the ground state; without electrons the bare nucleus: every orbital a root of H0 + V_N
+  if (!(atom->nElectron > 0.))
+    for (o = 0; o < nOrb && !error; o++)
+      error = AtomRootSolve(atom, atom->orb[o].group, atom->group[atom->orb[o].group].Hfix, atom->orb[o].root, opt->rayleigh,
+                            atom->orb[o].coef, &(atom->orb[o].energy));
+  else if (hartreeFock) error = AtomSCF(atom, opt->maxIterations, 8, 0.3, 1e-8, 1e-6, opt->rayleigh, 0);   // the LDA start
   else error = AtomSCF(atom, opt->maxIterations, opt->history, opt->mixing, opt->energyTolerance, opt->residualTolerance,
                        opt->rayleigh, opt->mixDensity);
   if (!error) error = HFSetup(&hf, atom, 0);
   if (error) { free(C0); free(Mbeta); return 1; }
   hf.ks = !hartreeFock;
-  if (hartreeFock)
+  if (!(atom->nElectron > 0.)) res->groundConverged = 1;   // nothing to iterate; the energies are 0
+  else if (hartreeFock)
   {
     error = HFSCF(&hf, opt->maxIterations, opt->history, opt->mixing, opt->energyTolerance, opt->orbitalTolerance, opt->rayleigh);
     res->groundConverged = hf.converged;

@@ -10,17 +10,18 @@
  *  is a difference of two energies of -40 Ha and good to their rounding, 1e-14 Ha. For weak
  *  confinement (3d at r0 >= 2, 4s at r0 = 4; 4s at r0 = 2 is 2 % off) <beta V_beta> =
  *  int V_beta (P^2 - Q^2) dr equals the shift to first order (1e-3).
- *  The vector variant (V_beta added to V) pulls a state of the negative continuum into the
- *  bound region (V_conf > 2c^2 inside the box): the lowest electronic kappa = -3 root lies
- *  thousands of Ha below the free 3d5/2 and is almost all small component.
+ *  The bare nucleus with confinement: CalculateAtomicBasisFunctions without electrons, the
+ *  option Confinement {Rho = r0, N = 8}; Orbitals[i].Energy is the eigenvalue with the
+ *  confinement, Orbitals[i].Vbeta = <beta V_beta>. Until 2026-11-15 through the temporary
+ *  DiracRadialSolve, which also had a vector variant (V_beta added to V, for comparison
+ *  only: it pulls a state of the negative continuum into the bound region).
 ]]
 
 local Z, A = 26, 56
 local reference = {
   [-3] = {[0.5] = 1.2714638668, [1] = 1.3936838314e-2, [2] = 5.7358135983e-5, [4] = 2.2412199030e-7},
   [-1] = {[0.5] = 2.4515661797e1, [1] = 1.5071830268, [2] = 1.3505189202e-2, [4] = 5.4031644439e-5}}
-local root = {[-3] = 1, [-1] = 4}            -- 3d5/2 is the first kappa = -3 root, 4s the fourth kappa = -1 root
-local names = {[-3] = "3d5/2", [-1] = "4s1/2"}
+local names = {[-3] = "3d5/2", [-1] = "4s1/2"}   -- the first kappa = -3 root, the fourth kappa = -1 root
 
 local failed = false
 local function check(ok, text)
@@ -28,35 +29,33 @@ local function check(ok, text)
   if not ok then failed = true end
 end
 
-for _, kappa in ipairs({-3, -1}) do
-  for _, r0 in ipairs({0.5, 1, 2, 4}) do
-    local i = root[kappa]
-    local E, G, F, Info = DiracRadialSolve(Z, kappa, {{"A", A}, {"NIntervals", 140}, {"NStates", 4},
-                                                      {"ConfinementRadius", r0}, {"ConfinementPower", 8}})
-    local E0 = DiracRadialSolve(Z, kappa, {{"A", A}, {"NIntervals", 140}, {"NStates", 4}, {"rMax", Info.rMax}})
-    local dE = E[i] - E0[i]
+local function energies(A)
+  local e = {}
+  for _, o in ipairs(A.Orbitals) do e[o.kappa] = o end
+  return e
+end
+for _, r0 in ipairs({0.5, 1, 2, 4}) do
+  local G, F, Ac = CalculateAtomicBasisFunctions(Z, "3d5/2(0) 4s0", {{"A", A}, {"NIntervals", 140}, {"Confinement", {Rho = r0, N = 8}}})
+  local G0, F0, A0 = CalculateAtomicBasisFunctions(Z, "3d5/2(0) 4s0", {{"A", A}, {"NIntervals", 140}, {"rMax", Ac.rMax}})
+  local ec, e0 = energies(Ac), energies(A0)
+  for _, kappa in ipairs({-3, -1}) do
+    local dE = ec[kappa].Energy - e0[kappa].Energy
     local ref = reference[kappa][r0]
     -- relative 1e-8, or the rounding of the two energies (~ eps |E|) for the smallest shifts
-    check(math.abs(dE - ref) < math.max(1e-8*math.abs(ref), 1e-13*math.abs(E0[i])), string.format("%s r0 = %3.1f rMax = %6.3f: E - E_free = %.10e Ha, prototype %+.1e relative",
-                                                     names[kappa], r0, Info.rMax, dE, dE/ref - 1))
+    check(math.abs(dE - ref) < math.max(1e-8*math.abs(ref), 1e-13*math.abs(e0[kappa].Energy)), string.format("%s r0 = %3.1f rMax = %6.3f: E - E_free = %.10e Ha, prototype %+.1e relative",
+                                                     names[kappa], r0, Ac.rMax, dE, dE/ref - 1))
     if (kappa == -3 and r0 >= 2) or r0 == 4 then
-      check(math.abs(Info.BetaVbeta[i]/dE - 1) < 1e-3, string.format("            <beta V_beta> = %.6e, relative to the shift %+.1e", Info.BetaVbeta[i], Info.BetaVbeta[i]/dE - 1))
-    end
-    if kappa == -3 then
-      local Ev, _, _, Iv = DiracRadialSolve(Z, kappa, {{"A", A}, {"NIntervals", 140}, {"ConfinementRadius", r0}, {"ConfinementType", "Vector"}})
-      check(Ev[1] < E0[1] - 1000 and Iv.NormQ[1] > 0.9,
-            string.format("            vector confinement: lowest root %.1f Ha below the free 3d5/2, int Q^2 = %.3f (intruder)", E0[1] - Ev[1], Iv.NormQ[1]))
+      local bv = ec[kappa].Vbeta
+      check(math.abs(bv/dE - 1) < 1e-3, string.format("            <beta V_beta> = %.6e, relative to the shift %+.1e", bv, bv/dE - 1))
     end
   end
 end
 
 -- the automatic rMax and its options
-local _, _, _, Info = DiracRadialSolve(Z, -3, {{"A", A}, {"ConfinementRadius", 2}, {"ConfinementPower", 10}, {"ConfinementVmax", 1e4}})
-check(math.abs(Info.rMax - 2*1e4^(1/10)) < 1e-12, string.format("rMax = rc Vmax^(1/N) = %.6f", Info.rMax))
-_, _, _, Info = DiracRadialSolve(Z, -3, {{"A", A}, {"ConfinementRadius", 2}, {"rMax", 12}})
-check(Info.rMax == 12, "an explicit rMax wins")
-local ok, message = pcall(function() return DiracRadialSolve(Z, -3, {{"A", A}, {"ConfinementRadius", 2}, {"ConfinementType", "Tensor"}}) end)
-check(not ok, "unknown ConfinementType: " .. string.gsub(tostring(message), "\n", ""))
+local G, F, Ai = CalculateAtomicBasisFunctions(Z, "3d5/2(0)", {{"A", A}, {"Confinement", {Rho = 2, N = 10}}, {"ConfinementVmax", 1e4}})
+check(math.abs(Ai.rMax - 2*1e4^(1/10)) < 1e-12, string.format("rMax = rc Vmax^(1/N) = %.6f", Ai.rMax))
+G, F, Ai = CalculateAtomicBasisFunctions(Z, "3d5/2(0)", {{"A", A}, {"Confinement", {Rho = 2, N = 8}}, {"rMax", 12}})
+check(Ai.rMax == 12, "an explicit rMax wins")
 
-if failed then error("DiracRadialSolve: confinement checks failed", 1) end
+if failed then error("confinement checks failed", 1) end
 print("passed")

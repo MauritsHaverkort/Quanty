@@ -1,22 +1,25 @@
 --[[
  *  DFT stage A, checks 1a and 1b (Doc/Claude/QuantyDFT_StageA, design section 12):
  *  the radial Dirac equation for a point nucleus on the dual-kinetic-balance B-spline basis
- *  (DiracRadialSolve, degree 8, 120 knot intervals, rMin = 1e-6/Z, rMax = 60/sqrt(Z),
- *  80 for Z = 1) against the exact hydrogen-like energies
+ *  (CalculateAtomicBasisFunctions without electrons, the bare nucleus; degree 8, 120 knot
+ *  intervals, rMin = 1e-6/Z, rMax = 60/sqrt(Z), 80 for Z = 1) against the exact
+ *  hydrogen-like energies
  *      E = c^2 [ (1 + (Z/c)^2/(n - |kappa| + gamma)^2)^(-1/2) - 1 ],  gamma = sqrt(kappa^2 - (Z/c)^2).
  *
  *  1a: the lowest three electronic roots for Z = 1, 80, 92 and kappa = -1, +1, -2, +2, -3
- *      to 5e-9 Ha; U 1s1/2 (discretization error of r^gamma) to 3e-8 Ha. Z = 1, n = 5 is
- *      limited by the box (rMax = 80) to 2.6e-6 Ha and is not checked. Every basis has one
- *      state below -c^2 per DKB function u^(2) in use (Info.NSmall): no spurious state.
+ *      (1s .. 3s, 2p .. 4p, 3d .. 5d) to 5e-9 Ha; U 1s1/2 (discretization error of
+ *      r^gamma) to 3e-8 Ha. Z = 1, n = 5 is limited by the box (rMax = 80) to 2.6e-6 Ha and
+ *      is not checked.
  *  1b: with the full DKB basis ({"OriginBoundary", false}), Z = 92, kappa = +1 has one
- *      intruder state near -16542.7 Ha, half large and half small component, at
- *      <r> = 0.02 bohr; the next three roots are the exact 2p1/2, 3p1/2 and 4p1/2. The
- *      default basis leaves out, for kappa != -1, the DKB functions that are nonzero at
- *      r = 0, among them the one that makes the intruder, and so has none (1a, kappa = +1,
- *      Z = 92).
+ *      intruder state near -16542.7 Ha at <r> = 0.02 bohr: it takes the place of 2p1/2, and
+ *      the next three roots (returned as 3p1/2 .. 5p1/2) are the exact 2p1/2, 3p1/2 and
+ *      4p1/2. The default basis leaves out, for kappa != -1, the DKB functions that are
+ *      nonzero at r = 0, among them the one that makes the intruder, and so has none (1a,
+ *      kappa = +1, Z = 92).
  *  Both with the Rayleigh quotient (default) and with the plain eigenvalues of the eigensolver (dsygv), whose
  *  rounding error is about 1e-8 - 1e-7 Ha here and depends on the LAPACK (tolerance 1e-6 Ha).
+ *  (Until 2026-11-15 through the temporary DiracRadialSolve, which also checked the count of
+ *  negative-continuum states against the DKB functions u^(2) in use.)
 ]]
 
 local c = PhysicalConstants.cAU.value
@@ -32,26 +35,25 @@ local function check(ok, text)
   if not ok then failed = true end
 end
 
+local empty = "1s0 2s0 3s0 2p0 3p0 4p0 3d0 4d0 5d0"
 for _, rayleigh in ipairs({true, false}) do
   print("RayleighQuotient = " .. tostring(rayleigh))
   for _, Z in ipairs({1, 80, 92}) do
     local rMax = (Z > 1) and 60/math.sqrt(Z) or 80
+    local G, F, A = CalculateAtomicBasisFunctions(Z, empty, {{"Nucleus", "Point"}, {"Degree", 8}, {"NIntervals", 120},
+                                                    {"rMin", 1e-6/Z}, {"rMax", rMax}, {"RayleighQuotient", rayleigh}})
+    check(A.NElectron == 0 and A.Etot == 0 and A.Converged, string.format("Z = %2d: no electrons, Etot %g", Z, A.Etot))
     for _, kappa in ipairs({-1, 1, -2, 2, -3}) do
-      local l = lOf(kappa)
-      local E, G, F, Info = DiracRadialSolve(Z, kappa, {{"Nucleus", "Point"}, {"Degree", 8}, {"NIntervals", 120},
-                                                        {"rMin", 1e-6/Z}, {"rMax", rMax}, {"NStates", 4}, {"RayleighQuotient", rayleigh}})
-      check(Info.NNegativeContinuum == Info.NSmall,
-            string.format("Z = %2d kappa = %+d: %d of %d states below -c^2, %d functions u^(2)", Z, kappa, Info.NNegativeContinuum, Info.NBasis, Info.NSmall))
-      do
-        for i = 1, 3 do
-          local n = l + i
-          local err = E[i] - exact(Z, n, kappa)
+      for _, o in ipairs(A.Orbitals) do
+        if o.kappa == kappa then
+          local n = o.n
+          local err = o.Energy - exact(Z, n, kappa)
           local tol = rayleigh and 5e-9 or 1e-6
           if Z == 92 and kappa == -1 and n == 1 then tol = rayleigh and 3e-8 or 1e-6 end
           if Z == 1 and n == 5 then
-            print(string.format("        Z = %2d kappa = %+d n = %d E = %.12f error %+.1e (box, not checked)", Z, kappa, n, E[i], err))
+            print(string.format("        Z = %2d kappa = %+d n = %d E = %.12f error %+.1e (box, not checked)", Z, kappa, n, o.Energy, err))
           else
-            check(math.abs(err) < tol, string.format("Z = %2d kappa = %+d n = %d E = %.12f error %+.1e", Z, kappa, n, E[i], err))
+            check(math.abs(err) < tol, string.format("Z = %2d kappa = %+d n = %d E = %.12f error %+.1e", Z, kappa, n, o.Energy, err))
           end
         end
       end
@@ -59,33 +61,24 @@ for _, rayleigh in ipairs({true, false}) do
   end
 end
 
--- check 1b: the full DKB basis has the intruder, then the exact 2p1/2, 3p1/2, 4p1/2
+-- check 1b: the full DKB basis has the intruder in the place of 2p1/2, then the exact 2p1/2, 3p1/2, 4p1/2
 do
   local Z, kappa = 92, 1
-  local E, G, F, Info = DiracRadialSolve(Z, kappa, {{"Nucleus", "Point"}, {"rMin", 1e-6/Z}, {"rMax", 60/math.sqrt(Z)},
-                                                    {"NStates", 4}, {"OriginBoundary", false}})
-  check(Info.NBasis == 2*Info.NLarge and Info.NNegativeContinuum == Info.NSmall,
-        string.format("full basis: %d functions, %d states below -c^2", Info.NBasis, Info.NNegativeContinuum))
-  local w, r = Info.w, Info.r
-  local P2, Q2, rm = 0, 0, 0
-  local g, f = G[1](r), F[1](r)
-  for i = 1, #r do
-    P2 = P2 + w[i]*g[i]^2
-    Q2 = Q2 + w[i]*f[i]^2
-    rm = rm + w[i]*r[i]*(g[i]^2 + f[i]^2)
-  end
-  check(math.abs(E[1] + 16542.7) < 1, string.format("full basis, Z = 92 kappa = +1: intruder at %.4f Ha, int P^2 = %.3f, int Q^2 = %.3f, <r> = %.4f",
-                                                    E[1], P2, Q2, rm))
-  check(P2 > 0.3 and Q2 > 0.3 and rm < 0.05, "            intruder has both components and lies at the nucleus")
+  local G, F, A = CalculateAtomicBasisFunctions(Z, "2p1/2(0) 3p1/2(0) 4p1/2(0) 5p1/2(0)", {{"Nucleus", "Point"}, {"rMin", 1e-6/Z},
+                                                  {"rMax", 60/math.sqrt(Z)}, {"OriginBoundary", false}})
+  local o = A.Orbitals
+  check(math.abs(o[1].Energy + 16542.7) < 1 and o[1].RExpectation[1] < 0.05,
+        string.format("full basis, Z = 92 kappa = +1: intruder at %.4f Ha, <r> = %.4f", o[1].Energy, o[1].RExpectation[1]))
   for n = 2, 4 do
-    local err = E[n] - exact(Z, n, kappa)
-    check(math.abs(err) < 5e-9, string.format("            n = %d E = %.10f error %+.1e", n, E[n], err))
+    local err = o[n].Energy - exact(Z, n, kappa)
+    check(math.abs(err) < 5e-9, string.format("            root %d (%s) E = %.10f, exact %dp1/2 error %+.1e", n, o[n].Label, o[n].Energy, n, err))
   end
 end
 
 -- the value quoted in the design for U 1s1/2
-local E = DiracRadialSolve(92, -1, {{"Nucleus", "Point"}, {"rMin", 1e-6/92}, {"rMax", 60/math.sqrt(92)}})
-check(math.abs(E[1] + 4861.1979032) < 1e-7, string.format("U 1s1/2 point nucleus = %.10f Ha (design: -4861.1979032)", E[1]))
+local G, F, A = CalculateAtomicBasisFunctions(92, "1s0", {{"Nucleus", "Point"}, {"rMin", 1e-6/92}, {"rMax", 60/math.sqrt(92)}})
+local E1 = A.Orbitals[1].Energy
+check(math.abs(E1 + 4861.1979032) < 1e-7, string.format("U 1s1/2 point nucleus = %.10f Ha (design: -4861.1979032)", E1))
 
-if failed then error("DiracRadialSolve: point nucleus checks failed", 1) end
+if failed then error("bare point nucleus checks failed", 1) end
 print("passed")

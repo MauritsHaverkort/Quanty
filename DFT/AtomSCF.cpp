@@ -462,8 +462,8 @@ int AtomDensityPotential(DiracAtomType *atom, double *v, double *g, double *Ecou
  * shell gives kappa = -(l+1) and l with qbar = q (2j+1)/(4l+2), an n kappa subshell one;
  * Schroedinger: one per nl shell), their symmetry groups with H0, S and H0 + M[V_N], and
  * the Poisson factorization (k = 0). Shells with q = 0 give empty orbitals (no density;
- * the SCF still solves for them). Returns 1 for a configuration without electrons, an
- * n kappa subshell without relativity, or a failing setup. */
+ * the SCF still solves for them); a configuration of empty shells only is the bare nucleus.
+ * Returns 1 for an n kappa subshell without relativity or a failing setup. */
 int AtomSetup(DiracAtomType *atom, RadialBasisType *basis, const DFTReal *VN, double Z, int relativistic, double c, int method,
               int originBoundary, DFTReal cutoff, uint32_t nShell, const AtomShellType *shell)
 {
@@ -538,7 +538,6 @@ int AtomSetup(DiracAtomType *atom, RadialBasisType *basis, const DFTReal *VN, do
       atom->nOrb++;
     }
   }
-  if (!(atom->nElectron > 0.)) return 1;
   // the roots: n - l - 1 within the electronic branch of the group
   for (o = 0; o < atom->nOrb; o++) atom->orb[o].root = (uint32_t) (atom->orb[o].n - atom->orb[o].l - 1);
   atom->VN = (DFTReal *) malloc(nP*sizeof(DFTReal));

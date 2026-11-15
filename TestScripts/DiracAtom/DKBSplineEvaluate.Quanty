@@ -1,6 +1,7 @@
 --[[
  *  Interpolating functions of type "DKBSpline": the large (G = P) and small (F = Q)
- *  components of the radial Dirac spinors from DiracRadialSolve (DFT stage A1).
+ *  components of the radial Dirac spinors of the bare nucleus (CalculateAtomicBasisFunctions
+ *  without electrons; until 2026-11-15 the temporary DiracRadialSolve of DFT stage A1).
  *
  *  - Hydrogen 1s1/2 (point nucleus): against the exact P = A sqrt(1+gamma) r^gamma e^-r,
  *    Q = -A sqrt(1-gamma) r^gamma e^-r, values and first derivatives.
@@ -8,7 +9,8 @@
  *  - Derivatives continuous at the first knot rMin (they come from an exact integral).
  *  - The DKB functions are small but not exactly 0 at r = 0 and r = rMax.
  *  - 0 outside [0, rMax], value and derivatives.
- *  - int (G^2 + F^2) dr = 1 on the quadrature points (Info.r, Info.w); Integrate.
+ *  - int (G^2 + F^2) dr = 1 (Atom.OrthonormalityError, exact in coefficient space);
+ *    Integrate against the exact integral of P (Gamma function), and split at r = 1.
  *  - Arithmetic and == give an explicit error, and so does NewOperator("AU") with a large
  *    component passed as the small one (the AU path itself: NewOperatorDKB.Quanty, A5).
 ]]
@@ -21,21 +23,26 @@ local function check(ok, text)
 end
 
 local rMin, rMax = 1e-6, 80
-local E, G, F, Info = DiracRadialSolve(1, -1, {{"Nucleus", "Point"}, {"rMin", rMin}, {"rMax", rMax}, {"NStates", 2}})
+local G, F, Atom = CalculateAtomicBasisFunctions(1, "1s0 2s0", {{"Nucleus", "Point"}, {"rMin", rMin}, {"rMax", rMax}})
 local P, Q = G[1], F[1]
+local x = P.x
 
--- exact hydrogen 1s1/2, normalized on the same quadrature points
+-- the Gamma function (Lanczos, g = 7, 9 terms; 1e-15 relative for x near 2 and 3)
+local lanczos = {0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+                 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7}
+local function Gamma(z)
+  z = z - 1
+  local a, t = lanczos[1], z + 7.5
+  for i = 1, 8 do a = a + lanczos[i+1]/(z + i) end
+  return math.sqrt(2*math.pi)*t^(z + 0.5)*math.exp(-t)*a
+end
+-- exact hydrogen 1s1/2: P = A sqrt(1+gamma) r^gamma e^-r, Q = -A sqrt(1-gamma) r^gamma e^-r,
+-- int (P^2 + Q^2) dr = 2 A^2 Gamma(2 gamma + 1)/2^(2 gamma + 1) = 1 (the box at 80 bohr adds e^-160)
 local gam = math.sqrt(1 - (1/c)^2)
 local function Pe(r) return math.sqrt(1+gam)*r^gam*math.exp(-r) end
 local function Qe(r) return -math.sqrt(1-gam)*r^gam*math.exp(-r) end
-local norm, normDKB = 0, 0
-for i = 1, #Info.r do
-  local r = Info.r[i]
-  norm = norm + Info.w[i]*(Pe(r)^2 + Qe(r)^2)
-  normDKB = normDKB + Info.w[i]*(P(r)^2 + Q(r)^2)
-end
-local A = 1/math.sqrt(norm)
-check(math.abs(normDKB - 1) < 1e-13, string.format("int (G^2 + F^2) dr - 1 = %.1e", normDKB - 1))
+local A = 1/math.sqrt(2*Gamma(2*gam + 1)/2^(2*gam + 1))
+check(Atom.NElectron == 0 and Atom.OrthonormalityError < 1e-13, string.format("bare nucleus; int (G^2 + F^2) dr - 1 (OrthonormalityError) %.1e", Atom.OrthonormalityError))
 -- errors relative to the largest value of the exact function (in the tail the function
 -- itself is tiny and its relative error large, from the sparse knots there). The
 -- derivatives from r = 1e-3 on: for a point nucleus P' and Q' go as r^(gamma-1), which
@@ -87,7 +94,7 @@ end
 -- the DKB functions are not exactly 0 at the ends: P(0) = h b_1 B_1'(0) (1 - kappa),
 -- and P(rMax), Q(rMax) contain S'(rMax); small against the function
 local gmax = 0
-for i = 1, #Info.r do gmax = math.max(gmax, math.abs(P(Info.r[i]))) end
+for i = 1, #x do gmax = math.max(gmax, math.abs(P(x[i]))) end
 check(math.abs(P(0)) < 1e-10*gmax and math.abs(P(rMax)) < 1e-10*gmax and math.abs(Q(rMax)) < 1e-10*gmax,
       string.format("G(0) = %.1e, G(rMax) = %.1e, F(rMax) = %.1e, max |G| = %.3f", P(0), P(rMax), Q(rMax), gmax))
 
@@ -98,14 +105,14 @@ for _, r in ipairs({-1, -1e-12, rMax*(1 + 1e-12), rMax + 1, 1e6}) do
 end
 check(outside == 0, "0 outside [0, rMax], value and derivatives")
 
--- Integrate: per knot interval, against the sum on the quadrature points
-local sum = 0
-for i = 1, #Info.r do sum = sum + Info.w[i]*P(Info.r[i]) end
+-- Integrate: per knot interval, against the exact int P dr = A sqrt(1+gamma) Gamma(gamma + 1)
+local exactI = A*math.sqrt(1+gam)*Gamma(gam + 1)
 local I1, I2 = InterpolatingFunction.Integrate(P), InterpolatingFunction.Integrate(P, 0, rMax)
-check(math.abs(I1 - sum) < 1e-13 and I1 == I2, string.format("Integrate(G) = %.15f, quadrature sum %.15f", I1, sum))
+check(math.abs(I1 - exactI) < 1e-10*exactI and I1 == I2, string.format("Integrate(G) = %.15f, exact %.15f, %.1e relative", I1, exactI, I1/exactI - 1))
 local Ihalf = InterpolatingFunction.Integrate(P, 0, 1) + InterpolatingFunction.Integrate(P, 1, rMax)
 check(math.abs(Ihalf - I1) < 1e-13, string.format("Integrate(G,0,1) + Integrate(G,1,rMax) - Integrate(G) = %.1e", Ihalf - I1))
-check(math.abs(#P.x - #Info.r) == 0, string.format("G.x holds the %d quadrature points", #P.x))
+local xq = Atom.Potential.rVN.x
+check(#x == #xq and x[11] == xq[11], string.format("G.x holds the %d quadrature points", #x))
 local K = P.knots
 local distinct = true
 for i = 2, #K do distinct = distinct and K[i] > K[i-1] end

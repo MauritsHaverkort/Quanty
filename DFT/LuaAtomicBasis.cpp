@@ -14,14 +14,16 @@
  *
  * Z: the nuclear charge (a real number). configuration: e.g. "[Ar] 3d8 4s2" or
  * "[Kr] 4d3/2(4) 4d5/2(5)"; an orbital with occupation 0 ("4p0", "5p1/2(0)") is calculated as
- * an empty orbital. Without it, the ground-state configuration of the neutral atom
+ * an empty orbital. A configuration of empty orbitals only ("1s0 2s0 2p0") is the bare
+ * nucleus: every orbital an eigenfunction of the Dirac (Schroedinger) equation of the
+ * nucleus, the energies 0 and the potentials rVH, rVxc 0. Without a configuration, the ground-state configuration of the neutral atom
  * (AtomGroundStateConfiguration, NIST, Z = 1 .. 103). Every orbital of the configuration and
  * all n <= NMax are calculated and returned, ordered by n, l, j (Atom.Labels lists them; a
  * selection is made in Lua). Each orbital (n, kappa) may have its own extra nuclear charge Q
  * and confinement scale P; it then comes from its own generating calculation, in which only
  * its own equation has Z+Q and V_beta = (r/(P rho))^N (AtomBasis.cpp). All are made
  * orthonormal per kappa, Gram-Schmidt from the lowest n upwards.
- * Options (with the nucleus and basis options of DiracRadialSolve); none is required:
+ * Options (with the nucleus and basis options of LuaDiracRadial.cpp); none is required:
  *     Method            "DHF" (default; configuration-average Hartree-Fock), "LDA",
  *                       "LDA-VWN", "RLDA-MV", "PBE", "PBE-VWN"
  *     Relativistic      true (default): Dirac; false: Schroedinger
@@ -34,7 +36,7 @@
  *                       likewise; needs Confinement
  *     Confinement       {Rho = 6, N = 10}: rc = P(n kappa) Rho for every orbital; without it
  *                       there is no confinement
- *     Nucleus           as DiracRadialSolve; a finite nucleus without A or Rrms takes the mass
+ *     Nucleus           as in LuaDiracRadial.cpp; a finite nucleus without A or Rrms takes the mass
  *                       number of AtomDefaultMassNumber (the most abundant isotope)
  *     ConfinementVmax   with a confinement and no rMax: rMax = max rc Vmax^(1/N), 1e5 Ha
  *     FourierBessel     {KMax = 30, NK = 1001}: the transforms of the returned orbitals on
@@ -644,7 +646,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     lua_pushnumber(L, res.gradient);     lua_setfield(L, -2, "Gradient");
     lua_pushnumber(L, res.pairGradient); lua_setfield(L, -2, "PairGradient");
   }
-  if (!Options.Relativistic) { lua_pushnumber(L, -(res.Etot - res.Ekin)/res.Ekin); lua_setfield(L, -2, "VirialRatio"); }
+  if (!Options.Relativistic && atom.nElectron > 0.) { lua_pushnumber(L, -(res.Etot - res.Ekin)/res.Ekin); lua_setfield(L, -2, "VirialRatio"); }
   /* potentials of the ground state: r V_N, r V_H (of the ground-state density) and r V_xc
    * (Kohn-Sham), each a BSpline through its values on the quadrature points, of the degree of the
    * orbitals (the same points and degree, so the same knots). The GGA potential of the solver

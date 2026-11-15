@@ -35,14 +35,16 @@ local Rrms = (0.836*A^(1/3) + 0.570)/a0fm
 local zeta = 1.5/Rrms^2
 local function sphere(x, y, z) return Z*(zeta/math.pi)^1.5*math.exp(-zeta*(x*x + y*y + z*z)) end
 local f3 = {{"Nucleus", "Function3D"}, {"Density", sphere}, {"Rrms", Rrms}}
+local empty = "1s0 2s0 3s0 2p0 3p0 4p0 3d0"
+local Gg, Fg, Ag = CalculateAtomicBasisFunctions(Z, empty, {{"Nucleus", "Gaussian"}, {"Rrms", Rrms}})
+local Gf, Ff, Af = CalculateAtomicBasisFunctions(Z, empty, f3)
 local worst = 0
-for _, k in ipairs({-1, 1, -2}) do
-  local Eg = DiracRadialSolve(Z, k, {{"Nucleus", "Gaussian"}, {"Rrms", Rrms}})
-  local Ef = DiracRadialSolve(Z, k, f3)
-  for i = 1, 3 do worst = math.max(worst, math.abs(Ef[i] - Eg[i])/math.abs(Eg[i])) end
+for i, o in ipairs(Ag.Orbitals) do worst = math.max(worst, math.abs(Af.Orbitals[i].Energy - o.Energy)/math.abs(o.Energy)) end
+local G1, F1, G2, F2 = {}, {}, {}, {}
+for i, o in ipairs(Af.Orbitals) do
+  if o.Label == "3d3/2" then G1[1], F1[1] = Gf[i], Ff[i] end
+  if o.Label == "3d5/2" then G2[1], F2[1] = Gf[i], Ff[i] end
 end
-local E1, G1, F1 = DiracRadialSolve(Z, 2, f3)
-local E2, G2, F2 = DiracRadialSolve(Z, -3, f3)
 local idx, NF = CreateAtomicIndicesList({"3d3/2", "3d5/2"}, {{"Kappas", true}})
 local M = OperatorToMatrix(NewOperator("NuclearMultipole", NF, Z, idx, {G1[1], G2[1]}, {F1[1], F2[1]}, {{"Nucleus", "Function3D"}, {"Density", sphere}}))
 local mx = 0
@@ -121,9 +123,9 @@ local function fails(f, text)
   local ok, message = pcall(f)
   check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
 end
-fails(function() return DiracRadialSolve(10, -1, {{"Nucleus", "Function3D"}, {"Density", function(x, y, z) return nil end}}) end, "Density returns nil")
+fails(function() return CalculateAtomicBasisFunctions(10, "1s0", {{"Nucleus", "Function3D"}, {"Density", function(x, y, z) return nil end}}) end, "Density returns nil")
 fails(function() return NewOperator("NuclearMultipole", NF, Z, idx, {G1[1], G2[1]}, {F1[1], F2[1]}, {{"Nucleus", "Gaussian"}}) end, "NuclearMultipole needs Function3D")
-fails(function() return DiracRadialSolve(10, -1, {{"Nucleus", "Function3D"}}) end, "Function3D without Density")
+fails(function() return CalculateAtomicBasisFunctions(10, "1s0", {{"Nucleus", "Function3D"}}) end, "Function3D without Density")
 
 if failed then error("Function3D nucleus: checks failed", 1) end
 print("passed")

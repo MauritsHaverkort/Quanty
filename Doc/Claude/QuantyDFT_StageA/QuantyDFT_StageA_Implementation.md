@@ -103,15 +103,12 @@ These dispatch to the exact DKB paths when `G` or `F` contains a `DKBSpline` (th
   - `kappas1, kappas2`: the first #kappas1 orbitals are a core, the rest valence; only the core-valence terms (`CreateSlaterTupleOneFilled`). With `{"1P-Operator", true}` (the default) their mean field with the core filled (`MeanFieldOperatorOld`): the Hartree–Fock potential of the core on the valence. The DKB path fills the fermion indices of the core orbitals; the grid path fills the first fermion indices, which is the same only when the core comes first in the indices.
 - `NewOperator("NuclearMultipole", NF, Z, indices, G, F, {nucleus options})` — the L ≥ 2 part of a `"Function3D"` nucleus as a one-particle operator (e.g. the electric quadrupole hyperfine interaction).
 
-### 2.3 Temporary building blocks
+### 2.3 Other Lua functions
 
-Registered for the tests and for experiments; the final interface is section 2.1.
+The temporary test entries of stages A1–A4 (`DiracRadialSolve`, `RadialPoisson`, `DiracOrthonormalize`, `DiracKohnSham`, `DiracHartreeFock`) were merged into section 2.1 on 2026-11-15: a configuration of empty orbitals only (`"1s0 2s0 2p0"`) is the bare nucleus, `Atom.Potential.rVH` the Poisson solution, the option `Orthonormalize` the on-site orthonormalization.
 
 | Function | Returns |
 |---|---|
-| `DiracRadialSolve(Z, kappa, {options})` | `E, G, F, Info`: one electron in the field of a nucleus, with optional confinement (`ConfinementRadius`, `ConfinementPower`, `ConfinementType`) |
-| `RadialPoisson(rho, k, {options})` | `Y`: Y^k of a radial density, as a B-spline |
-| `DiracOrthonormalize(G, F, {options})` | `G2, F2, Info`: orthonormalized spinors of one κ |
 | `XCFunctional(method, n, sigma)` | `e, de/dn, de/dsigma` (kept: the only Lua access to the functionals) |
 | `math.SphericalBesselJ(l, x, {{"Method", ...}})` | j_l(x); `"Recurrence"` (default) or `"Series"` |
 
@@ -208,7 +205,7 @@ Everything is in `DFT/` unless noted. Header files declare the routines of their
 | `AtomBasis.cpp` | generating calculations (`AtomTargetMatrices`, `AtomRootSolve`, `AtomBasisFunctions`, `AtomBasisType`); `AtomOrthonormalizeBasis` |
 | `NucleusMultipole.cpp` | real spherical harmonics, multipole projection, potentials, moments, `RealHarmonicMatrixElement` |
 | `FourierBessel.cpp` | `FourierBesselTransform` |
-| `LuaDiracRadial.cpp` | nucleus and basis options of every Lua entry (`DFTLuaNucleusOptions`, `DFTLuaNucleus`, `DFTLuaNuclearPotential`, `DFTLuaNucleusBasis`); `DiracRadialSolve`, `RadialPoisson`, `DiracOrthonormalize` |
+| `LuaDiracRadial.cpp` | nucleus and basis options of every Lua entry (`DFTLuaNucleusOptions`, `DFTLuaNucleus`, `DFTLuaNuclearPotential`, `DFTLuaNucleusBasis`) |
 | `LuaAtom.cpp` | `XCFunctional`; `DFTLuaPushRadialFunctions`, `DFTLuaHasOption` |
 | `LuaAtomicBasis.cpp` | `CalculateAtomicBasisFunctions`; labels, Slater-integral tables |
 | `LuaAtomicOperators.cpp` | the DKB paths of `NewOperator("Dirac")`, `("AU")`, `("NuclearMultipole")` |
@@ -238,7 +235,7 @@ All tests are in `TestScripts/DiracAtom/` (CI job `test-jobs-diracatom`), plus `
 | U, Gaussian nucleus | converged prototype values | ≤ 1e-8 Ha (three grids agree to 1e-9 Ha) | `GaussianNucleus` |
 | Nucleus `"Function"` | the `"Gaussian"` energies | ≤ 1e-10 relative | `FunctionNucleus` |
 | Lorentz-scalar confinement | converged prototype shifts (Fe²⁵⁺) | ≤ 1e-8 relative | `Confinement` |
-| Galerkin Y^k | analytic hydrogen Y⁰ | 1e-8 (80 intervals), 1e-11 (160) | `RadialPoisson` |
+| Galerkin Y^k | analytic hydrogen Y⁰ (`rVH`); hydrogen Slater integrals k = 0, 1, 2 | 1e-8 (80 intervals), 1e-11 (160); 1.8e-11 | `RadialPoisson` |
 | On-site orthonormalization | C^T S C = 1 | < 1e-13 (two passes) | `Orthonormalize` |
 | LDA, RLDA atoms He–U | NIST SRD 141 | Etot ≤ 5.3e-7 Ha, eigenvalues ≤ 1.2e-6 Ha | `NISTAtoms` |
 | PBE-VWN and VWN atoms | Lehtola, PRA 101, 012516 | ≤ 6.1e-7 Ha | `PBEAtoms` |

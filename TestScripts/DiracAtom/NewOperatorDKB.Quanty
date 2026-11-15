@@ -2,7 +2,8 @@
  *  DFT stage A5, check 12 (Doc/Claude/QuantyDFT_StageA, design section 12) and the AU path:
  *  NewOperator("Dirac", ...) and NewOperator("AU", ...) for radial functions of type
  *  DKBSpline (DFT/LuaAtomicOperators.cpp), exact on the shared knot set.
- *  - Check 12: for the bare-nucleus eigen-orbitals of DiracRadialSolve (s, p, d, three each;
+ *  - Check 12: for the bare-nucleus eigen-orbitals (CalculateAtomicBasisFunctions without
+ *    electrons; s, p, d, three each;
  *    Fe point nucleus, U Gaussian nucleus with the same Nucleus option) the Dirac operator is
  *    diagonal with the eigenvalues: measured |H_aa - eps_a| <= 3.7e-15 |eps_a| (checked
  *    1e-13) and |H_ab| <= 2.2e-12 max |eps| (the eigenvector noise of the dense solver;
@@ -26,11 +27,9 @@ end
 
 -- check 12
 local function bare(Z, nucopts, label)
-  local labels, G, F, E = {}, {}, {}, {}
-  for _, k in ipairs({{-1, "s1/2", 0}, {1, "p1/2", 1}, {-2, "p3/2", 1}, {2, "d3/2", 2}, {-3, "d5/2", 2}}) do
-    local e, g, f = DiracRadialSolve(Z, k[1], nucopts)
-    for i = 1, 3 do labels[#labels+1] = (k[3] + i) .. k[2]; G[#G+1] = g[i]; F[#F+1] = f[i]; E[#E+1] = e[i] end
-  end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, "1s0 2s0 3s0 2p0 3p0 4p0 3d0 4d0 5d0", nucopts)
+  local labels, E = A.Labels, {}
+  for o, orb in ipairs(A.Orbitals) do E[o] = orb.Energy end
   local indices, NF = CreateAtomicIndicesList(labels, {{"Kappas", true}})
   local M = OperatorToMatrix(NewOperator("Dirac", NF, Z, indices, G, F, nucopts))
   local diag, off, scale = 0, 0, 0

@@ -591,7 +591,7 @@ static std::vector<double> LuaInterpolateBreakpoints(const std::vector<double> &
  *               DKBSpline)
  * f.coefficients  the B-spline coefficients of a BSpline, one per B-spline
  * f.type        the name of its constructor: "Spline", "HermiteCSpline", "BSpline", or
- *               "DKBSpline" (no constructor; CalculateAtomicBasisFunctions, DiracRadialSolve)
+ *               "DKBSpline" (no constructor; CalculateAtomicBasisFunctions)
  */
 static int LuaInterpolateIndex(lua_State *L)
 {
