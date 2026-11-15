@@ -15,8 +15,9 @@ commit `ec5a6a39`.
 
 - `documentation:language_reference:objects:graphics:functions:plot`: interpolating
   functions as data (PlotPoints + 1 equally spaced points and f.x, drawn as a list of
-  points), in Data, PlotPoints and the color-map restriction. Built on the live page
-  source of 2026-11-16.
+  points), in Data, PlotPoints and the color-map restriction. PlotPoints and NE count
+  intervals (PlotPoints + 1 points; checked: 400 gives 401), the live text said
+  "number of energies". Built on the live page source of 2026-11-16.
 - New pages `documentation:language_reference:functions:atomnumbertoname` and
   `documentation:language_reference:functions:atomnametonumber`: the element symbol of
   Z = 1 .. 118 and back (exported to Lua 2026-11-16); examples run on the present build.
