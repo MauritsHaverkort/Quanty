@@ -1293,6 +1293,43 @@ static void LuaReadPointList(lua_State *L, int narg, SpectraType *S, double **X,
   }
 }
 
+// Graphics.Plot: the interpolating function at narg as a curve, drawn like a list of points. It
+// is evaluated at NE+1 equally spaced points from Xmin to Xmax (NE = PlotPoints) and at its own
+// points inside that range (what Lua shows as f.x: the data points, or the quadrature points of a
+// DKBSpline), so that a feature narrower than the even spacing, such as a 1s orbital near the
+// nucleus, is not lost. An infinite Xmin or Xmax (no Frame range given) is the first or the last
+// of its own points. The values go into the spectrum S (Im 0) and the points into *X, as in
+// LuaReadPointList. Curve is the number of the curve, for error messages.
+static void LuaReadInterpolatingFunction(lua_State *L, int narg, double Xmin, double Xmax, int NE, SpectraType *S, double **X, int Curve)
+{
+  Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, narg, "InterpolatingFunction_Type");
+  std::vector<double> own = (f->type == "BSpline") ? BSpline::SamplePoints(*f) : f->GetX();
+  if(own.empty()) luaL_error(L, "Graphics.Plot: the interpolating function of curve %d has no points\n", Curve);
+  if(Xmin==-INFINITY) Xmin = *std::min_element(own.begin(), own.end());
+  if(Xmax== INFINITY) Xmax = *std::max_element(own.begin(), own.end());
+  if(!(Xmax>Xmin)) luaL_error(L, "Graphics.Plot: the x range of curve %d is empty\n", Curve);
+  std::vector<double> x;
+  for(int k=0;(NE>0)&&(k<=NE);k++) x.push_back(Xmin + (Xmax-Xmin)*k/NE);
+  for(uint32_t k=0;k<(uint32_t)own.size();k++) if((own[k]>=Xmin)&&(own[k]<=Xmax)) x.push_back(own[k]);
+  std::sort(x.begin(), x.end());
+  x.erase(std::unique(x.begin(), x.end()), x.end());
+  std::vector<double> y = (*f)(x);
+  int const N = (int)x.size();
+  memset(S, 0, sizeof(SpectraType));
+  S->ResonantEnergy = NAN;
+  S->N    = N-1;
+  S->Emin = x[0];
+  S->Emax = x[N-1];
+  S->Re = (double*)malloc(N*sizeof(double));
+  S->Im = (double*)calloc(N, sizeof(double));
+  *X    = (double*)malloc(N*sizeof(double));
+  for(int k=0;k<N;k++)
+  {
+    S->Re[k] = y[k];
+    (*X)[k]  = x[k];
+  }
+}
+
 // The colour of a colour map made by Graphics.Plot without a ColorFunction:
 // white to RGB as Saturation times the value (Im, or Re) goes from 0 to 1
 typedef struct BuiltInColorContext
@@ -1486,6 +1523,15 @@ int LuaPlotGraphics(lua_State * L)
     if((Options.NPixelX<1)||(Options.NPixelY<1)) return luaL_error(L, "Graphics.Plot: NPixelX and NPixelY should be 1 or larger, not %d and %d\n",Options.NPixelX,Options.NPixelY);
   }
   bool const SelectSpectra = (Options.SpectraStart!=1)||(Options.SpectraStep!=1)||(Options.SpectraStop!=INT_MAX);
+  // a single interpolating function is plotted as a list with one curve
+  if(luaL_testudata(L, 1, "InterpolatingFunction_Type") != NULL)
+  {
+    if(len!=1) return luaL_error(L, "Graphics.Plot: an interpolating function is plotted as Graphics.Plot(f [, {options}]), got %d arguments before the options\n", len);
+    lua_createtable(L, 1, 0);
+    lua_pushvalue(L, 1);
+    lua_rawseti(L, -2, 1);
+    lua_replace(L, 1);
+  }
   // select the type of graph to plot
   if(lua_type(L,1)==LUA_TTABLE)
   {
@@ -1602,8 +1648,13 @@ int LuaPlotGraphics(lua_State * L)
         }
         else if (luaL_testudata(L, -1, "InterpolatingFunction_Type") != NULL)
         {
-          // TODO: we found an interpolating function, convert it to a spectra
-          return luaL_error(L, "TODO plot of Interpolating Function\n");
+          // an interpolating function, drawn as a list of points (LuaReadInterpolatingFunction)
+          if(PointX==NULL)
+          {
+            NPointX = (int)a->NSpectra;
+            PointX = (double**)calloc(NPointX, sizeof(double*));
+          }
+          LuaReadInterpolatingFunction(L, -1, Options.Frame.PlotRange[0].X, Options.Frame.PlotRange[1].X, Options.PlotPoints, &(a->Spec[k]), &(PointX[k]), i+1);
         }
         else if (luaL_testudata(L, -1, "ResponseFunction_Type") != NULL)
         {
@@ -1872,11 +1923,6 @@ int LuaPlotGraphics(lua_State * L)
     {
       // TODO:
       return luaL_error(L, "TODO: Plot of Gaussian Radial function\n");
-    }
-    else if (luaL_testudata(L, 1, "InterpolatingFunction_Type") != NULL)
-    {
-      // TODO:
-      return luaL_error(L, "TODO plot of Interpolating Function\n");
     }
     else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
     {

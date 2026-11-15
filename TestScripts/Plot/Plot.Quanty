@@ -372,4 +372,42 @@ for k, n in ipairs({-1, 4}) do
   if pcall(Graphics.Plot, Lists, {LineFrame, {"LineStyleCycle",n}}) then error("Graphics.Plot accepted LineStyleCycle "..n.." with 3 styles\n", 1) end
 end
 
+-- interpolating functions are drawn as a list of points: PlotPoints+1 equally spaced points of the
+-- x range and the own points of the function (f.x) inside it; the same plot as that list of points
+print("Interpolating functions")
+function Mesh(f, Xmin, Xmax, NE)
+  local x, seen, points = {}, {}, {}
+  local own = f.x
+  Xmin = Xmin or math.min(table.unpack(own))
+  Xmax = Xmax or math.max(table.unpack(own))
+  for k = 0, NE do x[#x+1] = Xmin + (Xmax-Xmin)*k/NE end
+  for _, p in ipairs(own) do if p >= Xmin and p <= Xmax then x[#x+1] = p end end
+  table.sort(x)
+  for _, v in ipairs(x) do if not seen[v] then seen[v] = true; points[#points+1] = {v, f(v)} end end
+  return points
+end
+function SameSVG(A, B, What)
+  if Graphics.ToSVG(A) ~= Graphics.ToSVG(B) then error("Graphics.Plot "..What..": not the plot of the list of points\n", 1) end
+end
+Bs = InterpolatingFunction.BSpline({-2, -1.5, -0.4, 0.1, 1.2, 2.5}, {1, 3, -1, -2, 0.5, 4}, 3)
+Cs = InterpolatingFunction.Spline({-2, -1.5, -0.4, 0.1, 1.2, 2.5}, {1, 3, -1, -2, 0.5, 4})
+FrameIF = {{"Ymin",-10},{"Ymax",10},{"Xmin",-1},{"Xmax",2}}
+SameSVG(Graphics.Plot(Bs, {{"plotIm",false}, {"PlotPoints",7}, {"Frame",FrameIF}}),
+        Graphics.Plot(Mesh(Bs, -1, 2, 7), {{"plotIm",false}, {"PlotPoints",7}, {"Frame",FrameIF}}), "BSpline in a narrower frame")
+SameSVG(Graphics.Plot(Cs, {{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}}),
+        Graphics.Plot(Mesh(Cs, nil, nil, 600), {{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}}), "Spline, default x range")
+SameSVG(Graphics.Plot({Bs, Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}}),
+        Graphics.Plot({Mesh(Bs, -1, 2, 600), Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}}), "BSpline with a list of points")
+-- a DKBSpline: the hydrogen 1s, its quadrature points dense near the nucleus
+Gh, Fh = CalculateAtomicBasisFunctions(1, "1s0", {{"Nucleus","Point"}})
+FrameH = {{"Xmin",0},{"Xmax",10},{"Ymin",-1},{"Ymax",1}}
+SameSVG(Graphics.Plot({Gh[1], Fh[1]}, {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}),
+        Graphics.Plot({Mesh(Gh[1], 0, 10, 50), Mesh(Fh[1], 0, 10, 50)}, {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}), "DKBSpline")
+T = Graphics.ToTable(Graphics.Plot(Gh[1], {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}))
+if #T.Line[#T.Line].Point < 1000 then error("Graphics.Plot DKBSpline: "..#T.Line[#T.Line].Point.." points, the quadrature points are missing\n", 1) end
+-- errors: more arguments than the function, and a colour map (needs an even mesh)
+for k, w in ipairs({ function() return Graphics.Plot(Bs, 0.1) end, function() return Graphics.Plot({Bs, Bs}, {{"ColorMap",true}}) end }) do
+  if pcall(w) then error("Graphics.Plot accepted a wrong plot of an interpolating function in case "..k.."\n", 1) end
+end
+
 print("Graphics.Plot tests passed")
