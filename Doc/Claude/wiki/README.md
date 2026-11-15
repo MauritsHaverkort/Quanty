@@ -23,7 +23,8 @@ commit `ec5a6a39`.
   2400 x 1697) to upload to the namespace `documentation:language_reference:functions`.
   Also the new call `G, F, Atom = CalculateAtomicBasisFunctions(...)`: `x` is gone
   (every returned function gives the quadrature points as `f.x`), and the fields
-  `EtotEigenvalueSum`, `PotentialResidual`, `MixDensity`, `EavJJ` in Output.
+  `EtotEigenvalueSum`, `PotentialResidual`, `MixDensity`, `EavJJ` in Output; a
+  configuration of empty orbitals only is the bare nucleus (Input, Configuration).
 - `documentation:standard_operators:atomic_coulomb_repulsion` and
   `documentation:language_reference:functions:newoperator`: only the call
   `G, F, x, Atom = ...` becomes `G, F, Atom = ...` in the examples (outputs rerun,
@@ -31,7 +32,8 @@ commit `ec5a6a39`.
 - `documentation:language_reference:objects:interpolatingfunction:start`: one
   sentence under Properties, f.x of the radial functions of
   CalculateAtomicBasisFunctions is now the quadrature grid also for the
-  nonrelativistic BSpline.
+  nonrelativistic BSpline; and DiracRadialSolve (removed) is no longer named in the
+  DKBSpline section.
 
 ## Open points without a file
 

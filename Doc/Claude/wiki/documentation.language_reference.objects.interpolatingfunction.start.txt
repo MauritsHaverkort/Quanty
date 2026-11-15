@@ -96,7 +96,7 @@ BSpline        degree 5   min  -0.1343   max   1.1260
 ===== DKBSpline =====
 
 ###
-An interpolating function of type //"DKBSpline"// is not made from data. It is one of the two components of a radial Dirac spinor, as returned by //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]// and //DiracRadialSolve()//: the large component $G = P(r) = r g(r)$ or the small component $F = Q(r) = r f(r)$ of an orbital with quantum number $\kappa$. The two belong together. They are expanded in a dual kinetic balance (DKB) B-spline basis (V. M. Shabaev et al., [[https://doi.org/10.1103/PhysRevLett.93.130405|Phys. Rev. Lett. 93, 130405 (2004)]]), with the two sets of coefficients $a_j$ and $b_j$ of the orbital,
+An interpolating function of type //"DKBSpline"// is not made from data. It is one of the two components of a radial Dirac spinor, as returned by //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//: the large component $G = P(r) = r g(r)$ or the small component $F = Q(r) = r f(r)$ of an orbital with quantum number $\kappa$. The two belong together. They are expanded in a dual kinetic balance (DKB) B-spline basis (V. M. Shabaev et al., [[https://doi.org/10.1103/PhysRevLett.93.130405|Phys. Rev. Lett. 93, 130405 (2004)]]), with the two sets of coefficients $a_j$ and $b_j$ of the orbital,
 $$
 \begin{eqnarray}
 P(r) &=& \sum_j a_j B_j(r) + \frac{1}{2c} \sum_j b_j \left( \frac{d}{dr} - \frac{\kappa}{r} \right) B_j(r), \nonumber \\

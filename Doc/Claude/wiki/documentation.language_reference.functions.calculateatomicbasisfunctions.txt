@@ -51,7 +51,7 @@ Each $nl$ shell is split into its two $j$ subshells, $nl_{j=l-1/2}$ and $nl_{j=l
 ===== Input =====
 
   * //Z// : Real, the nuclear charge.
-  * //Configuration// : (optional) String, the electron configuration, for example //"[Ar] 3d8 4s2"//, see below. Left out, the ground-state configuration of the neutral atom is used (from the NIST atomic spectra database, for $Z$ = 1 to 103). Every orbital of the configuration is calculated and returned; an orbital with occupation 0, for example //"4p0"//, is calculated as an empty orbital.
+  * //Configuration// : (optional) String, the electron configuration, for example //"[Ar] 3d8 4s2"//, see below. Left out, the ground-state configuration of the neutral atom is used (from the NIST atomic spectra database, for $Z$ = 1 to 103). Every orbital of the configuration is calculated and returned; an orbital with occupation 0, for example //"4p0"//, is calculated as an empty orbital. A configuration of empty orbitals only, for example //"1s0 2s0 2p0"//, is the bare nucleus: the orbitals of a hydrogen-like ion of charge $Z$.
   * Options : (optional) A table of options. Possible options are:
       * //"Method"// : String. //"DHF"// (default) for configuration-average Hartree-Fock, //"LDA"// (Slater exchange and Perdew-Wang 92 correlation), //"LDA-VWN"// (Slater and Vosko-Wilk-Nusair), //"RLDA-MV"// (VWN with the relativistic MacDonald-Vosko correction of the exchange), //"PBE"// or //"PBE-VWN"//.
       * //"Relativistic"// : Boolean. Default value is true (Dirac equation); false solves the Schrödinger equation.
