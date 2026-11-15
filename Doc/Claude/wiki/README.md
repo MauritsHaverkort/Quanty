@@ -13,6 +13,10 @@ commit `ec5a6a39`.
 
 ## Open pages
 
+- `documentation:language_reference:objects:graphics:functions:plot`: interpolating
+  functions as data (PlotPoints + 1 equally spaced points and f.x, drawn as a list of
+  points), in Data, PlotPoints and the color-map restriction. Built on the live page
+  source of 2026-11-16.
 - New pages `documentation:language_reference:functions:atomnumbertoname` and
   `documentation:language_reference:functions:atomnametonumber`: the element symbol of
   Z = 1 .. 118 and back (exported to Lua 2026-11-16); examples run on the present build.
