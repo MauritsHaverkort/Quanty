@@ -134,7 +134,7 @@ The temporary test entries of stages A1–A4 (`DiracRadialSolve`, `RadialPoisson
 - **Quadrature:** Gauss–Legendre with NQuadrature points per interval from a 34-digit table (at most 127 points). All integrals are sums over these points, with Neumaier (compensated) summation where it matters.
 - **Dual kinetic balance (DKB):** with the working B-splines B_i (all but the first and the last) and h = 1/(2c), the 2n basis functions are
   u_i⁽¹⁾ = (B_i, h(B_i' + κB_i/r)) and u_i⁽²⁾ = (h(B_i' − κB_i/r), B_i).
-  A spinor is a coefficient vector of length 2n; P and Q are evaluated exactly through these formulas (`DKBSplineEvaluate`, class `Interpolation::DKBSpline`), never refitted.
+  A spinor is a coefficient vector of length 2n; P and Q are evaluated exactly through these formulas (`DKBSplineEvaluate`, class `Interpolation::DKBSpline`), never refitted. In Lua arithmetic and `==` (`LuaInterpolateAsBSpline`, `LuaInterface/Interpolate.cpp`) a DKBSpline acts as the BSpline of its degree through its values on its quadrature points; the result is a BSpline, and integrals of products such as $\int(P_aP_b+Q_aQ_b)\,dr$ are exact to rounding (Hg: 3e-15).
 - **Schrödinger mode** uses the B_i alone (n functions, Q = 0).
 
 ### 4.2 One-electron problem

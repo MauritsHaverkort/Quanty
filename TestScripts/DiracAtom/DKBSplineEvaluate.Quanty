@@ -11,8 +11,14 @@
  *  - 0 outside [0, rMax], value and derivatives.
  *  - int (G^2 + F^2) dr = 1 (Atom.OrthonormalityError, exact in coefficient space);
  *    Integrate against the exact integral of P (Gamma function), and split at r = 1.
- *  - Arithmetic and == give an explicit error, and so does NewOperator("AU") with a large
- *    component passed as the small one (the AU path itself: NewOperatorDKB.Quanty, A5).
+ *  - Arithmetic: a DKBSpline acts as the BSpline of its degree through its values on its
+ *    quadrature points, and the result is a BSpline. -G, G + F, G - G, G^2 on the points
+ *    (measured 2e-16 of max |G|, checked 1e-14); the overlaps int (G_a G_b + F_a F_b) dr of
+ *    1s and 2s through Integrate (measured 4e-16, checked 1e-12); a product with a
+ *    potential, int (G^2 + F^2) rVN / r dr = -Z <1/r> (checked 1e-10); == ; a BSpline plus
+ *    a DKBSpline at a common point.
+ *  - NewOperator("AU") with a large component passed as the small one is an error (the AU
+ *    path itself: NewOperatorDKB.Quanty, A5).
 ]]
 
 local c = PhysicalConstants.cAU.value
@@ -122,17 +128,36 @@ for i = 2, #K do distinct = distinct and K[i] > K[i-1] end
 check(K[1] == 0 and K[2] == rMin and math.abs(K[#K] - rMax) < 1e-12*rMax and distinct and P.degree == 8 and Q.degree == 8 and P.type == "DKBSpline",
       string.format("G.knots: %d breakpoints from 0, rMin to rMax; G.degree = %d; G.type = %s", #K, P.degree, P.type))
 
--- explicit errors
+-- arithmetic: as the BSpline through the values on the quadrature points
+local scale = 0
+for i = 1, #x do scale = math.max(scale, math.abs(G[2](x[i]))) end
+local neg, sum, zero, sq = -G[2], G[2] + F[2], G[2] - G[2], G[2]^2
+local e = 0
+for _, i in ipairs({1, 100, 700, 1200, #x}) do
+  local r = x[i]
+  e = math.max(e, math.abs(neg(r) + G[2](r)), math.abs(sum(r) - G[2](r) - F[2](r)), math.abs(zero(r)), math.abs(sq(r) - G[2](r)^2)/scale)
+end
+check(e < 1e-14*scale and neg.type == "BSpline" and sq.type == "BSpline", string.format("-G, G + F, G - G, G^2 on the quadrature points: %.1e of max |G|; the results are BSplines", e/scale))
+local S11 = InterpolatingFunction.Integrate(G[1]*G[1] + F[1]*F[1])
+local S12 = InterpolatingFunction.Integrate(G[1]*G[2] + F[1]*F[2])
+local S22 = InterpolatingFunction.Integrate(G[2]*G[2] + F[2]*F[2])
+local dS = math.max(math.abs(S11 - 1), math.abs(S12), math.abs(S22 - 1))
+check(dS < 1e-12, string.format("overlaps int (G_a G_b + F_a F_b) dr of 1s and 2s: max |S - 1| = %.1e", dS))
+local yinv = {}
+for i = 1, #x do yinv[i] = 1/x[i] end
+local inv = InterpolatingFunction.BSpline(x, yinv, P.degree)
+local VN = InterpolatingFunction.Integrate((G[1]*G[1] + F[1]*F[1])*Atom.Potential.rVN*inv)
+local exactVN = -Atom.Orbitals[1].RExpectation[-1]
+check(math.abs(VN/exactVN - 1) < 1e-10, string.format("int (G^2 + F^2) rVN / r dr = %.12f, -Z <1/r> = %.12f, %.1e relative", VN, exactVN, VN/exactVN - 1))
+check(G[1] == G[1] and not (G[1] == G[2]), "G1 == G1, G1 ~= G2")
+local B = InterpolatingFunction.BSpline({0, 1, 2, 3, 4}, {0, 1, 0, 1, 0}, 3)
+local BP = B + P
+check(BP.type == "BSpline" and math.abs(BP(1) - B(1) - P(1)) < 1e-12, string.format("BSpline + DKBSpline at r = 1: %.1e", BP(1) - B(1) - P(1)))
+
 local function fails(f, text)
   local ok, message = pcall(f)
   check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
 end
-fails(function() return P + Q end, "G + F")
-fails(function() return P * Q end, "G * F")
-fails(function() return -P end, "-G")
-fails(function() return P == G[2] end, "G1 == G2")
-local B = InterpolatingFunction.BSpline({0, 1, 2, 3, 4}, {0, 1, 0, 1, 0}, 3)
-fails(function() return B + P end, "BSpline + DKBSpline")
 local indices, NF = CreateAtomicIndicesList({"1s1/2"}, {{"Kappas", true}})
 fails(function() return NewOperator("AU", NF, indices, {P}, {P}) end, "NewOperator(\"AU\") with G as F")
 

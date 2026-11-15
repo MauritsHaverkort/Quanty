@@ -467,7 +467,7 @@ $$\langle u_\alpha|v_{xc}|u_\beta\rangle=\int_0^{R_{\max}}4\pi r^2\Big[\frac{\pa
    - The `DKBSpline` class follows the `TBSpline` conventions settled in step 0:
      - it is 0 outside the knot range, value and all derivatives;
      - `Integrate` is exact (per-interval Gauss–Legendre);
-     - arithmetic with other `InterpolatingFunction` types raises an explicit error until it is needed, since the sum of two DKB functions with different $\kappa$ is not a DKB function.
+     - (since 2026-11-16: in arithmetic and `==` a DKBSpline acts as the BSpline of its degree through its values on its quadrature points, the result a BSpline; overlaps $\int(P_aP_b+Q_aQ_b)\,dr$ of Hg to 3e-15) arithmetic with other `InterpolatingFunction` types raises an explicit error until it is needed, since the sum of two DKB functions with different $\kappa$ is not a DKB function.
 2. **Atomic quantities:**
    - orbital energies $\varepsilon_{n\kappa}$, total energy, $\langle\beta V_\beta\rangle$, $\langle r^k\rangle$;
    - $R^k(ab;cd)$, $F^k$ and $G^k$ jj-resolved;
