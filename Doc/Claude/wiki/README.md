@@ -13,7 +13,14 @@ commit `ec5a6a39`.
 
 ## Open pages
 
-None.
+- `documentation:language_reference:functions:calculateatomicbasisfunctions`: the
+  potentials are now `rVN`, `rVH`, `rVxc` as BSplines (commit 50df4172): the Output
+  entry, and a new section "The potentials" before "Accuracy" (what r V is, the
+  derivative V' = (f' - f/r)/r, Kr LDA screening with a figure, the Ni 3d spin-orbit
+  constant from dV/dr). The G entry links the interpolating function page. Built on
+  the live page source of 2026-11-15; the four existing examples were rerun and
+  their outputs are unchanged. Image `atomic_potentials.png` (in `media/`,
+  2400 x 1697) to upload to the namespace `documentation:language_reference:functions`.
 
 ## Open points without a file
 
