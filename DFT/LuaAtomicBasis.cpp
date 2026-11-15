@@ -1,13 +1,16 @@
 /*
  * LuaAtomicBasis.cpp
  *
- *     G, F, x, Atom = CalculateAtomicBasisFunctions(Z [, configuration] [, {options}])
+ *     G, F, Atom = CalculateAtomicBasisFunctions(Z [, configuration] [, {options}])
  *
  * Atomic radial basis functions (DFT stage A5, design sections 6, 6.1, 10 and 11.1), the
  * drop-in replacement of ReadFPLOBasisFunctions: G (large components P) and F (small
  * components Q) as DKBSplines, orthonormal, ready for NewOperator("Dirac", NF, Z, indices,
- * G, F, Atom.Nucleus) and NewOperator("AU", NF, indices, G, F); x the quadrature points.
- * Schroedinger ({"Relativistic", false}): G as BSplines, F empty.
+ * G, F, Atom.Nucleus) and NewOperator("AU", NF, indices, G, F). Schroedinger
+ * ({"Relativistic", false}): G as BSplines, F empty. Every function returned (G, F and the
+ * potentials) gives the quadrature points of the radial basis as f.x.
+ * This is the only Lua entry to the atom solvers; the temporary DiracKohnSham and
+ * DiracHartreeFock of stages A3 and A4 are merged into it.
  *
  * Z: the nuclear charge (a real number). configuration: e.g. "[Ar] 3d8 4s2" or
  * "[Kr] 4d3/2(4) 4d5/2(5)"; an orbital with occupation 0 ("4p0", "5p1/2(0)") is calculated as
@@ -18,7 +21,7 @@
  * and confinement scale P; it then comes from its own generating calculation, in which only
  * its own equation has Z+Q and V_beta = (r/(P rho))^N (AtomBasis.cpp). All are made
  * orthonormal per kappa, Gram-Schmidt from the lowest n upwards.
- * Options (with the nucleus and basis options of DiracHartreeFock); none is required:
+ * Options (with the nucleus and basis options of DiracRadialSolve); none is required:
  *     Method            "DHF" (default; configuration-average Hartree-Fock), "LDA",
  *                       "LDA-VWN", "RLDA-MV", "PBE", "PBE-VWN"
  *     Relativistic      true (default): Dirac; false: Schroedinger
@@ -31,7 +34,7 @@
  *                       likewise; needs Confinement
  *     Confinement       {Rho = 6, N = 10}: rc = P(n kappa) Rho for every orbital; without it
  *                       there is no confinement
- *     Nucleus           as DiracHartreeFock; a finite nucleus without A or Rrms takes the mass
+ *     Nucleus           as DiracRadialSolve; a finite nucleus without A or Rrms takes the mass
  *                       number of AtomDefaultMassNumber (the most abundant isotope)
  *     ConfinementVmax   with a confinement and no rMax: rMax = max rc Vmax^(1/N), 1e5 Ha
  *     FourierBessel     {KMax = 30, NK = 1001}: the transforms of the returned orbitals on
@@ -55,10 +58,16 @@
  *     1e-8, DensityCutoff 1e-30, MixDensity (default for the GGAs), RayleighQuotient,
  *     OriginBoundary
  * Atom: the ground state (Etot, Ekin, Eenuc, and Edirect, Eexchange for DHF or Ecoul, Exc
- * for Kohn-Sham; Converged, Iterations, Residual, dE; DHF: Gradient, PairGradient;
- * Schroedinger: VirialRatio -(Etot - Ekin)/Ekin), Potential = {rVN, rVH, rVxc (Kohn-Sham)},
+ * for Kohn-Sham; EtotEigenvalueSum, Etot through the eigenvalues, equal to Etot at
+ * self-consistency (Kohn-Sham: sum qbar eps - int (f v + f' g) + Ecoul + Exc; DHF:
+ * 1/2 sum qbar (eps + I), equal to Etot for any orbitals, a check of the Fock operators);
+ * Converged, Iterations, Residual, dE; Kohn-Sham: PotentialResidual (density-weighted
+ * |v_out - v_in|, |EtotEigenvalueSum - Etot| <~ sqrt(NElectron) PotentialResidual) and
+ * MixDensity; DHF: Gradient, PairGradient; Schroedinger DHF: EavJJ, E_av of the radial
+ * functions with the angular factors and pair counts of the j = l -+ 1/2 subshells, equal
+ * to Etot (design check 5); Schroedinger: VirialRatio -(Etot - Ekin)/Ekin), Potential = {rVN, rVH, rVxc (Kohn-Sham)},
  * r times the nuclear, Hartree and exchange-correlation potentials of the ground state, as
- * BSplines through the points x (degree of the orbitals; rVxc the local potential, also for a
+ * BSplines through the quadrature points (degree of the orbitals; rVxc the local potential, also for a
  * GGA; f(r, 1) = V + r V', so V' = (f'(r) - f(r)/r)/r), Method, Relativistic, c, Z,
  * NElectron, Configuration, A, rMin, rMax, Nucleus (an options list for NewOperator("Dirac")), Labels,
  * MinOverlapEigenvalue and OrthonormalityError (max |C^T S C - 1|) of the
@@ -594,13 +603,12 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     }
   }
 
-  // G, F, x
+  // G, F
   {
     uint32_t list[256];
     for (o = 0; o < atom.nOrb; o++) for (i = 0; i < atom.Nf; i++) atom.orb[o].coef[i] = res.coef[o*atom.Nf + i];
     for (k = 0; k < nRet; k++) list[k] = map[ret[k]];
     DFTLuaPushRadialFunctions(L, &atom, list, nRet);
-    LuaPushArray_double(L, basis.rq, (int) basis.nPoint);
   }
   // Atom
   lua_newtable(L);
@@ -609,6 +617,13 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   lua_pushnumber(L, res.Eenuc);  lua_setfield(L, -2, "Eenuc");
   lua_pushnumber(L, res.Edirect);   lua_setfield(L, -2, hartreeFock ? "Edirect" : "Ecoul");
   lua_pushnumber(L, res.Eexchange); lua_setfield(L, -2, hartreeFock ? "Eexchange" : "Exc");
+  lua_pushnumber(L, res.Eeig);   lua_setfield(L, -2, "EtotEigenvalueSum");
+  if (!hartreeFock)
+  {
+    lua_pushnumber(L, res.potentialResidual); lua_setfield(L, -2, "PotentialResidual");
+    lua_pushboolean(L, Options.MixDensity); lua_setfield(L, -2, "MixDensity");
+  }
+  if (hartreeFock && !Options.Relativistic) { lua_pushnumber(L, res.EavJJ); lua_setfield(L, -2, "EavJJ"); }
   lua_pushboolean(L, res.groundConverged); lua_setfield(L, -2, "Converged");
   lua_pushinteger(L, res.iterations); lua_setfield(L, -2, "Iterations");
   lua_pushnumber(L, res.residual); lua_setfield(L, -2, "Residual");
@@ -631,7 +646,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   }
   if (!Options.Relativistic) { lua_pushnumber(L, -(res.Etot - res.Ekin)/res.Ekin); lua_setfield(L, -2, "VirialRatio"); }
   /* potentials of the ground state: r V_N, r V_H (of the ground-state density) and r V_xc
-   * (Kohn-Sham), each a BSpline through its values on the points x, of the degree of the
+   * (Kohn-Sham), each a BSpline through its values on the quadrature points, of the degree of the
    * orbitals (the same points and degree, so the same knots). The GGA potential of the solver
    * is in weak form, v + g d/dr (AtomPotential); the local potential is v - g', g' the
    * derivative of the BSpline of g through the points. */
@@ -881,7 +896,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
       lua_rawseti(L, -2, 2);
       lua_rawseti(L, -2, ++m);
     }
-    lua_call(L, 3, 4);
+    lua_call(L, 3, 3);
     // the refined Atom at the top, the original at tAtom
     double dE, dEps = 0.;
     lua_getfield(L, -1, "Etot"); lua_getfield(L, tAtom, "Etot");
@@ -895,12 +910,12 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
       dEps = fmax(dEps, fabs(lua_tonumber(L, -3) - lua_tonumber(L, -1)));
       lua_pop(L, 4);
     }
-    lua_pop(L, 2 + 4);
+    lua_pop(L, 2 + 3);
     lua_newtable(L);
     lua_pushinteger(L, 2*Options.nuc.NIntervals); lua_setfield(L, -2, "NIntervals");
     lua_pushnumber(L, dE);   lua_setfield(L, -2, "dEtot");
     lua_pushnumber(L, dEps); lua_setfield(L, -2, "dEnergy");
     lua_setfield(L, tAtom, "ConvergenceCheck");
   }
-  return 4;
+  return 3;
 }

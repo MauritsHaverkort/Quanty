@@ -29,6 +29,9 @@ typedef struct {
   double **Fground;              // the Fock (or Kohn-Sham) matrices of the ground state, per orbital
   // ground state
   double Etot, Ekin, Eenuc, Edirect, Eexchange, dE, residual, gradient, pairGradient;
+  double Eeig;                   // Etot through the eigenvalues (Kohn-Sham: AtomSCF; Hartree-Fock: the identity of HFSCF)
+  double potentialResidual;      // Kohn-Sham: the density-weighted potential residual of AtomSCF
+  double EavJJ;                  // Schroedinger Hartree-Fock: E_av with the angular factors of the j subshells
   uint32_t iterations;
   int groundConverged;
 } AtomBasisType;

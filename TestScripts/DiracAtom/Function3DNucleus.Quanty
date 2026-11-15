@@ -55,7 +55,7 @@ local function gauss(ax, ay, az)
   return function(x, y, z) return Zl/((2*math.pi)^1.5*ax*ay*az)*math.exp(-x*x/(2*ax*ax) - y*y/(2*ay*ay) - z*z/(2*az*az)) end
 end
 local ax, ay, az = s0, 1.05*s0, 1.1*s0
-local G, F, x, At = CalculateAtomicBasisFunctions(Zl, "[Ar] 3d0 4s2", {{"Method", "LDA"},
+local G, F, At = CalculateAtomicBasisFunctions(Zl, "[Ar] 3d0 4s2", {{"Method", "LDA"},
                                                     {"Nucleus", "Function3D"}, {"Density", gauss(ax, ay, az)}, {"rMin", s0/50}})
 local q20 = math.sqrt(5/(16*math.pi))*Zl*(2*az^2 - ax^2 - ay^2)
 local q22 = math.sqrt(15/(16*math.pi))*Zl*(ax^2 - ay^2)
@@ -108,7 +108,7 @@ for _, cs in ipairs(cases) do
 end
 
 -- Atom.Nucleus with NewOperator("Dirac")
-local Gn, Fn, xn, An = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {
+local Gn, Fn, An = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {
    {"Nucleus", "Function3D"}, {"Density", function(x, y, z) return 10/((2*math.pi)^1.5*1e-12)*math.exp(-(x*x + y*y + 1.1*z*z)/2e-8)*math.sqrt(1.1) end}, {"rMin", 2e-6}})
 local idx3, NF3 = CreateAtomicIndicesList(An.Labels, {{"Kappas", true}})
 local H = NewOperator("Dirac", NF3, 10, idx3, Gn, Fn, An.Nucleus) + NewOperator("AU", NF3, idx3, Gn, Fn)

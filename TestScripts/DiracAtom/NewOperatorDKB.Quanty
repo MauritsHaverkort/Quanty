@@ -7,7 +7,7 @@
  *    diagonal with the eigenvalues: measured |H_aa - eps_a| <= 3.7e-15 |eps_a| (checked
  *    1e-13) and |H_ab| <= 2.2e-12 max |eps| (the eigenvector noise of the dense solver;
  *    checked 1e-10).
- *  - Closed shells: <det|H0 + U|det> of the Dirac-Fock determinant equals DiracHartreeFock's
+ *  - Closed shells: <det|H0 + U|det> of the Dirac-Fock determinant equals the Hartree-Fock
  *    Etot (Ne, Ar).
  *  - Open shells: the mean of <det|H0 + U|det> over all determinants of the nonrelativistic
  *    configuration is, by definition, the configuration-average energy; Quanty's angular
@@ -49,7 +49,7 @@ bare(92, {{"Nucleus", "Gaussian"}, {"A", 238}}, "U Gaussian nucleus")
 
 -- the energy of determinants
 local function atom(Z, conf)
-  local A, G, F = DiracHartreeFock(Z, conf, {{"Nucleus", "Point"}})
+  local G, F, A = CalculateAtomicBasisFunctions(Z, conf, {{"Nucleus", "Point"}})
   local labels = {}
   for i, o in ipairs(A.Orbitals) do labels[i] = o.Label end
   local indices, NF = CreateAtomicIndicesList(labels, {{"Kappas", true}})
@@ -92,7 +92,7 @@ for _, a in ipairs({{10, "[He] 2s2 2p6"}, {18, "[Ne] 3s2 3p6"}, {3, "1s2 2s1"}, 
   end
   local d = sum/#dets - A.Etot
   check(math.abs(d) < 1e-13*math.abs(A.Etot),
-        string.format("Z = %2d %-14s mean of %3d determinants - DiracHartreeFock E_av %+.1e (E_av %.10f)", a[1], a[2], #dets, d, A.Etot))
+        string.format("Z = %2d %-14s mean of %3d determinants - Hartree-Fock E_av %+.1e (E_av %.10f)", a[1], a[2], #dets, d, A.Etot))
 end
 
 -- errors

@@ -23,10 +23,10 @@ Contents:
 
 ```lua
 -- the minimal call: the ground state of the neutral Ni atom (Dirac-Fock, Gaussian nucleus of 58Ni)
-G, F, x, Atom = CalculateAtomicBasisFunctions(28)
+G, F, Atom = CalculateAtomicBasisFunctions(28)
 
 -- a basis: orbitals up to 5s, 4p and 4d, all confined, the empty 4p and 4d contracted
-G, F, x, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {
+G, F, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {
     {"NMax", {s = 5, p = 4, d = 4}},
     {"Confinement", {Rho = 3.5, N = 8}},
     {"Q", {["4p"] = 2, ["4d"] = 3}} })
@@ -37,7 +37,7 @@ U  = NewOperator("AU", NF, indices, G, F)                        -- exact Coulom
 print(Atom.Etot, Atom.Zeta["3d"], Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2])
 ```
 
-`CalculateAtomicBasisFunctions` replaces `ReadFPLOBasisFunctions`: it returns the large and small components `G` and `F` of every orbital, the radial points `x`, and a table `Atom` with energies, Slater integrals, spin–orbit constants and diagnostics. `NewOperator("Dirac")` and `NewOperator("AU")` recognise the returned functions (type `"DKBSpline"`) and compute their matrix elements exactly on the same basis, instead of on a grid.
+`CalculateAtomicBasisFunctions` replaces `ReadFPLOBasisFunctions`: it returns the large and small components `G` and `F` of every orbital and a table `Atom` with energies, Slater integrals, spin–orbit constants and diagnostics. `NewOperator("Dirac")` and `NewOperator("AU")` recognise the returned functions (type `"DKBSpline"`) and compute their matrix elements exactly on the same basis, instead of on a grid.
 
 ---
 
@@ -45,7 +45,7 @@ print(Atom.Etot, Atom.Zeta["3d"], Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2])
 
 ### 2.1 `CalculateAtomicBasisFunctions(Z [, Configuration] [, {options}])`
 
-Returns `G, F, x, Atom`.
+Returns `G, F, Atom`. Every returned function (G, F and the potentials) gives the quadrature points of the radial basis as `f.x`, so `x = G[1].x` where the points are needed. This is the only Lua entry to the atom solvers: the temporary `DiracKohnSham` and `DiracHartreeFock` of stages A3 and A4 were merged into it on 2026-11-15 (their extra fields moved to `Atom`).
 
 **Arguments:** `Z`, the nuclear charge (a real number), and optionally the configuration, e.g. `"[Ar] 3d8 4s2"`, per relativistic subshell `"[Kr] 4d3/2(4) 4d5/2(5)"`, or both kinds mixed. An nl entry is averaged over its 4l+2 spinors (Cowan), an n κ entry over its 2j+1 spinors; fractional occupations are allowed, and an occupation 0 (`"4p0"`, `"5p1/2(0)"`) adds an empty orbital. Without a configuration the ground state of the neutral atom is used (`AtomGroundStateConfiguration`, from the NIST Atomic Spectra Database, Z = 1–103). No option is required.
 
@@ -87,11 +87,11 @@ Options:
 
 The returned `Atom` table:
 
-- **Ground state:** `Etot`, `Ekin`, `Eenuc`, and `Edirect`, `Eexchange` (DHF) or `Ecoul`, `Exc` (Kohn–Sham); `Converged`, `Iterations`, `Residual`, `dE`; DHF: `Gradient`, `PairGradient`; Schrödinger: `VirialRatio` = −(Etot − Ekin)/Ekin.
+- **Ground state:** `Etot`, `Ekin`, `Eenuc`, and `Edirect`, `Eexchange` (DHF) or `Ecoul`, `Exc` (Kohn–Sham); `EtotEigenvalueSum`, Etot through the eigenvalues (Kohn–Sham: Σ q̄ε − ∫(f v + f′ g) + Ecoul + Exc, equal at self-consistency; DHF: ½ Σ q̄ (ε + I), equal for any orbitals); `Converged`, `Iterations`, `Residual`, `dE`; Kohn–Sham: `PotentialResidual` (|EtotEigenvalueSum − Etot| ≲ √N times it) and `MixDensity`; DHF: `Gradient`, `PairGradient`; Schrödinger DHF: `EavJJ` (E_av with the j-subshell angular factors, = Etot, design check 5); Schrödinger: `VirialRatio` = −(Etot − Ekin)/Ekin.
 - **Echo of the input:** `Method`, `Relativistic`, `c`, `Z`, `Configuration`, `A`, `NElectron`, `rMin`, `rMax`, and `Nucleus` as an options list that `NewOperator("Dirac", ..., Atom.Nucleus)` accepts.
 - **Per orbital, `Orbitals[i]`:** `Label`, `n`, `l`, `kappa`, `j`, `Occupation`, `Q`, `P`, `rc`, `Energy` (eigenvalue of its generating equation), `EnergyGround` (⟨a|F|a⟩ of the returned function with the ground-state operator), `Vbeta` (⟨βV_β⟩), `RExpectation` (⟨r⁻³⟩ for l > 0, ⟨r⁻¹⟩, ⟨r⟩, ⟨r²⟩), `EtotGenerating`, `Generated`, `Converged`.
 - **Slater integrals:** `SlaterIntegrals` in the format of `GetSlaterIntegrals` — `t["3d5/2 4s1/2 3d5/2 4s1/2"] = {[k] = F^k}` and `t["3d5/2 4s1/2 4s1/2 3d5/2"] = {[k] = G^k}` — jj-resolved in Dirac mode; `SlaterIntegralsNL`, the same for nl shells with the radial integrals averaged over j with weights (2j+1)/(4l+2); `Zeta[nl]` = 2(⟨F⟩_{l+1/2} − ⟨F⟩_{l−1/2})/(2l+1).
-- **Diagnostics:** `MinOverlapEigenvalue`, `OrthonormalityError`, `Potential = {rVN, rVH, rVxc}` ($rV$ as BSplines through the points `x`; `rVxc` Kohn-Sham only, the local potential also for a GGA: $v - g'$, $g'$ the derivative of a BSpline of $g$), `ConvergenceCheck = {NIntervals, dEtot, dEnergy}`, `FourierBessel = {k, P, Q}`, and for `"Function3D"` `NuclearMultipoleMoments[i] = {L, M, Value}`.
+- **Diagnostics:** `MinOverlapEigenvalue`, `OrthonormalityError`, `Potential = {rVN, rVH, rVxc}` ($rV$ as BSplines through the quadrature points; `rVxc` Kohn-Sham only, the local potential also for a GGA: $v - g'$, $g'$ the derivative of a BSpline of $g$), `ConvergenceCheck = {NIntervals, dEtot, dEnergy}`, `FourierBessel = {k, P, Q}`, and for `"Function3D"` `NuclearMultipoleMoments[i] = {L, M, Value}`.
 
 ### 2.2 Operators on the returned functions
 
@@ -110,11 +110,9 @@ Registered for the tests and for experiments; the final interface is section 2.1
 | Function | Returns |
 |---|---|
 | `DiracRadialSolve(Z, kappa, {options})` | `E, G, F, Info`: one electron in the field of a nucleus, with optional confinement (`ConfinementRadius`, `ConfinementPower`, `ConfinementType`) |
-| `DiracKohnSham(Z, configuration, {options})` | `Atom, G, F`: the Kohn–Sham atom |
-| `DiracHartreeFock(Z, configuration, {options})` | `Atom, G, F`: the configuration-average Hartree–Fock atom; Schrödinger mode also returns `EavJJ` |
 | `RadialPoisson(rho, k, {options})` | `Y`: Y^k of a radial density, as a B-spline |
 | `DiracOrthonormalize(G, F, {options})` | `G2, F2, Info`: orthonormalized spinors of one κ |
-| `XCFunctional(method, n, sigma)` | `e, de/dn, de/dsigma` |
+| `XCFunctional(method, n, sigma)` | `e, de/dn, de/dsigma` (kept: the only Lua access to the functionals) |
 | `math.SphericalBesselJ(l, x, {{"Method", ...}})` | j_l(x); `"Recurrence"` (default) or `"Series"` |
 
 ---
@@ -211,7 +209,7 @@ Everything is in `DFT/` unless noted. Header files declare the routines of their
 | `NucleusMultipole.cpp` | real spherical harmonics, multipole projection, potentials, moments, `RealHarmonicMatrixElement` |
 | `FourierBessel.cpp` | `FourierBesselTransform` |
 | `LuaDiracRadial.cpp` | nucleus and basis options of every Lua entry (`DFTLuaNucleusOptions`, `DFTLuaNucleus`, `DFTLuaNuclearPotential`, `DFTLuaNucleusBasis`); `DiracRadialSolve`, `RadialPoisson`, `DiracOrthonormalize` |
-| `LuaAtom.cpp` | `DiracKohnSham`, `DiracHartreeFock`, `XCFunctional`; shared output (`DFTLuaPushOrbitals`, `DFTLuaPushRadialFunctions`) |
+| `LuaAtom.cpp` | `XCFunctional`; `DFTLuaPushRadialFunctions`, `DFTLuaHasOption` |
 | `LuaAtomicBasis.cpp` | `CalculateAtomicBasisFunctions`; labels, Slater-integral tables |
 | `LuaAtomicOperators.cpp` | the DKB paths of `NewOperator("Dirac")`, `("AU")`, `("NuclearMultipole")` |
 | `Core/BasicMath/Interpolation/` | `BSplineKnotsExponential` (`BSpline.cpp`); `BSplinePoissonSetup`/`Solve` (`BSplineMatrix.cpp`); the `DKBSpline` class (`DKBSpline.cpp`); the Gauss–Legendre table |

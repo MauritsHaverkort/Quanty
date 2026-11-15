@@ -3,7 +3,7 @@
  *  with the options of the grid path: {"conserve", true} and the core form
  *  (NF, indices, G, F, kappas1, kappas2, {"1P-Operator", true|false}). Checked by exact
  *  identities against the full operator of the same functions (Fe [Ar] 3d6 4s2 orbitals of
- *  DiracHartreeFock), so the R^k are the same numbers and only the selection of terms and
+ *  CalculateAtomicBasisFunctions), so the R^k are the same numbers and only the selection of terms and
  *  the angular assembly are tested:
  *  - conserve: on all two-electron determinants of 1s, 2s, 2p, 3d (both kappas) the matrix
  *    elements of U_conserve equal those of U_full between determinants with the same
@@ -23,7 +23,7 @@ local function check(ok, text)
   if not ok then failed = true end
 end
 
-local A, G, F = DiracHartreeFock(26, "[Ar] 3d6 4s2", {{"Nucleus", "Point"}})
+local G, F, A = CalculateAtomicBasisFunctions(26, "[Ar] 3d6 4s2", {{"Nucleus", "Point"}})
 local orb = {}
 for i, o in ipairs(A.Orbitals) do orb[o.Label] = {G = G[i], F = F[i]} end
 local function functions(labels)

@@ -1,6 +1,6 @@
 --[[
  *  DFT stage A, check 7 (Doc/Claude/QuantyDFT_StageA, design section 12): the closed-shell
- *  Hartree-Fock atom, nonrelativistic (DiracHartreeFock with {"Relativistic", false}),
+ *  Hartree-Fock atom, nonrelativistic (CalculateAtomicBasisFunctions, Method "DHF", {"Relativistic", false}),
  *  point nucleus, against the fully numerical (finite-element) Hartree-Fock limits of
  *  S. Lehtola, Int. J. Quantum Chem. 119, e25945 (2019), arXiv:1810.11651, Table 5
  *  (nine decimals: He, Be, Ne, Mg, Ar), and Phys. Rev. A 101, 012516 (2020),
@@ -33,9 +33,14 @@ local function check(ok, text)
   if not ok then failed = true end
 end
 local function identity(A) return math.abs(A.EtotEigenvalueSum - A.Etot) < 1e-12 + 1e-13*math.abs(A.Etot) end
+-- the Atom table (and G, F) of CalculateAtomicBasisFunctions
+local function CalculateAtom(Z, configuration, options)
+  local G, F, A = CalculateAtomicBasisFunctions(Z, configuration, options)
+  return A, G, F
+end
 
 for _, a in ipairs(limits) do
-  local A = DiracHartreeFock(a[1], a[2], {{"Nucleus", "Point"}, {"Relativistic", false}})
+  local A = CalculateAtom(a[1], a[2], {{"Nucleus", "Point"}, {"Relativistic", false}})
   local d = A.Etot - a[3]
   check(A.Converged and math.abs(d) < a[4] and identity(A),
         string.format("Z = %2d Etot = %.9f (limit %.9f) %+.1e, eigenvalue expression %+.1e, %d iterations",
@@ -43,9 +48,9 @@ for _, a in ipairs(limits) do
 end
 
 -- Dirac-Fock He, point nucleus
-local A = DiracHartreeFock(2, "1s2", {{"Nucleus", "Point"}})
+local A = CalculateAtom(2, "1s2", {{"Nucleus", "Point"}})
 check(A.Converged and math.abs(A.Etot + 2.8618133) < 1e-7 and identity(A) and A.Orbitals[1].Label == "1s1/2",
       string.format("Dirac-Fock He Etot = %.10f (design -2.8618133)", A.Etot))
 
-if failed then error("DiracHartreeFock: Hartree-Fock limits failed", 1) end
+if failed then error("Hartree-Fock limits failed", 1) end
 print("passed")

@@ -39,6 +39,11 @@ local function check(ok, text)
   if not ok then failed = true end
 end
 local common = {{"Nucleus", "Point"}, {"MaxIterations", 400}}
+-- the Atom table (and G, F) of CalculateAtomicBasisFunctions
+local function CalculateAtom(Z, configuration, options)
+  local G, F, A = CalculateAtomicBasisFunctions(Z, configuration, options)
+  return A, G, F
+end
 local function options(extra)
   local o = {}
   for _, v in ipairs(common) do o[#o+1] = v end
@@ -50,7 +55,7 @@ for _, a in ipairs(lehtola) do
   for k, m in ipairs({"LDA-VWN", "PBE-VWN"}) do
     -- the eigenvalue-sum expression differs from Etot to first order in the residual: an LDA
     -- converges easily to 1e-10, the GGA to 1e-9 (its residual floor is a few 1e-10)
-    local A = DiracKohnSham(a[1], a[2], options({{"Method", m}, {"Relativistic", false}, {"MixDensity", false},
+    local A = CalculateAtom(a[1], a[2], options({{"Method", m}, {"Relativistic", false}, {"MixDensity", false},
                                                  {"ResidualTolerance", (k == 1) and 1e-10 or 1e-9}}))
     local d = A.Etot - a[2+k]
     local dE = A.EtotEigenvalueSum - A.Etot
@@ -63,7 +68,7 @@ end
 -- LDA and PBE on PW92, Ne: no reference, convergence and consistency
 for _, m in ipairs({"LDA", "PBE"}) do
   for _, rel in ipairs({false, true}) do
-    local A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", m}, {"Relativistic", rel}, {"ResidualTolerance", (m == "PBE") and 1e-8 or 1e-9}}))
+    local A = CalculateAtom(10, "[He] 2s2 2p6", options({{"Method", m}, {"Relativistic", rel}, {"ResidualTolerance", (m == "PBE") and 1e-8 or 1e-9}}))
     local dE = A.EtotEigenvalueSum - A.Etot
     check(A.Converged and math.abs(dE) < 2*math.sqrt(10)*A.PotentialResidual,
           string.format("Ne %-3s %-13s Etot = %.6f, eigenvalue-sum expression %+.1e (bound %.1e), %d iterations", m, rel and "Dirac" or "Schroedinger",
@@ -75,27 +80,27 @@ end
 local defaults = {{"PBE", true}, {"PBE-VWN", true}, {"LDA", false}, {"LDA-VWN", false}, {"RLDA-MV", false}}
 local okDefault = true
 for _, d in ipairs(defaults) do
-  local A = DiracKohnSham(2, "1s2", options({{"Method", d[1]}, {"Relativistic", false}}))
+  local A = CalculateAtom(2, "1s2", options({{"Method", d[1]}, {"Relativistic", false}}))
   if A.MixDensity ~= d[2] or not A.Converged then okDefault = false end
 end
-local B = DiracKohnSham(2, "1s2", options({{"Method", "PBE"}, {"Relativistic", false}, {"mixdensity", false}}))
+local B = CalculateAtom(2, "1s2", options({{"Method", "PBE"}, {"Relativistic", false}, {"mixdensity", false}}))
 check(okDefault and B.MixDensity == false, "default mixing: density for PBE, PBE-VWN, potential for the LDAs; {\"MixDensity\", false} wins")
 
 -- configurations
-local A = DiracKohnSham(10, "1s2, 2s2, 2p6", options({{"Method", "LDA-VWN"}, {"Relativistic", false}}))
+local A = CalculateAtom(10, "1s2, 2s2, 2p6", options({{"Method", "LDA-VWN"}, {"Relativistic", false}}))
 check(math.abs(A.Etot + 128.233481) < 1e-6 and #A.Orbitals == 3, string.format("Ne written out with commas: %.6f", A.Etot))
-A = DiracKohnSham(10, "[He] 2s2 2p6", options({{"Method", "LDA-VWN"}}))
-check(#A.Orbitals == 4 and A.Orbitals[3].Label == "2p3/2" and math.abs(A.Orbitals[3].Occupation - 4) < 1e-15 and math.abs(A.Orbitals[4].Occupation - 2) < 1e-15,
+A = CalculateAtom(10, "[He] 2s2 2p6", options({{"Method", "LDA-VWN"}}))
+check(#A.Orbitals == 4 and A.Orbitals[4].Label == "2p3/2" and math.abs(A.Orbitals[4].Occupation - 4) < 1e-15 and math.abs(A.Orbitals[3].Occupation - 2) < 1e-15,
       "Dirac: 2p6 -> 2p3/2 with 4, 2p1/2 with 2 electrons")
 local function fails(f, text)
   local ok, message = pcall(f)
   check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
 end
-fails(function() return DiracKohnSham(10, "1s2 2s2 2p7") end, "2p7")
-fails(function() return DiracKohnSham(10, "1s2 1s2") end, "1s twice")
-fails(function() return DiracKohnSham(10, "1p2") end, "1p")
-fails(function() return DiracKohnSham(10, "[Ne", {{"Nucleus", "Point"}}) end, "[Ne")
-fails(function() return DiracKohnSham(10, "[He] 2s2 2p6", {{"Nucleus", "Point"}, {"Method", "B3LYP"}}) end, "unknown method")
+fails(function() return CalculateAtom(10, "1s2 2s2 2p7") end, "2p7")
+fails(function() return CalculateAtom(10, "1s2 1s2") end, "1s twice")
+fails(function() return CalculateAtom(10, "1p2") end, "1p")
+fails(function() return CalculateAtom(10, "[Ne", {{"Nucleus", "Point"}}) end, "[Ne")
+fails(function() return CalculateAtom(10, "[He] 2s2 2p6", {{"Nucleus", "Point"}, {"Method", "B3LYP"}}) end, "unknown method")
 
-if failed then error("DiracKohnSham: GGA atom checks failed", 1) end
+if failed then error("Kohn-Sham GGA atom checks failed", 1) end
 print("passed")

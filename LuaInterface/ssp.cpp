@@ -6113,12 +6113,10 @@ static const struct luaL_Reg global_functions[] = {
 	{"CreateAtomicIndicesDict",LuaCreateAtomicIndicesDict},
 	{"CreateAtomicIndicesList",LuaCreateAtomicIndicesList},
 	{"CalculateAtomicBasisFunctions",LuaCalculateAtomicBasisFunctions}, // DFT stage A5
-	{"DiracHartreeFock",LuaDiracHartreeFock},       // temporary, DFT stage A4
-	{"DiracKohnSham",LuaDiracKohnSham},             // temporary, DFT stage A3
 	{"DiracOrthonormalize",LuaDiracOrthonormalize}, // temporary, DFT stage A2
 	{"DiracRadialSolve",LuaDiracRadialSolve},       // temporary, DFT stage A1
 	{"RadialPoisson",LuaRadialPoisson},             // temporary, DFT stage A2
-	{"XCFunctional",LuaXCFunctional},               // temporary, DFT stage A3
+	{"XCFunctional",LuaXCFunctional},               // DFT stage A3
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},

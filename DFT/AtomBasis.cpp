@@ -141,6 +141,20 @@ int AtomBasisFunctions(DiracAtomType *atom, int hartreeFock, const double *Q, co
     res->residual = hf.residual;
     res->gradient = hf.gradient;
     res->pairGradient = hf.pairGradient;
+    res->Eeig = hf.Eidentity;
+    if (!error && !atom->relativistic)
+    {
+      // Cowan's E_av again with the relativistic angular factors of j = l -+ 1/2 (design check 5)
+      DiracHFType jj;
+      double e1, e2, e3, e4;
+      error = HFSetup(&jj, atom, 1);
+      if (!error)
+      {
+        HFOrbitalsOnPoints(&jj);
+        error = HFEnergy(&jj, &res->EavJJ, &e1, &e2, &e3, &e4);
+        HFFree(&jj);
+      }
+    }
   }
   else
   {
@@ -148,6 +162,8 @@ int AtomBasisFunctions(DiracAtomType *atom, int hartreeFock, const double *Q, co
     res->iterations = atom->iterations;
     res->dE = atom->dE;
     res->residual = atom->residual;
+    res->Eeig = atom->Eeig;
+    res->potentialResidual = atom->potentialResidual;
   }
   // the ground-state operators of the ground-state orbitals; the empty orbitals of Hartree-Fock
   if (!error)
