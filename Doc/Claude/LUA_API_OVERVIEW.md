@@ -27,6 +27,8 @@ Source: `global_functions[]` in `LuaInterface/ssp.cpp`, registered via
 
 | Lua name | C function |
 |---|---|
+| AtomNameToNumber | LuaAtomNameToNumber (element symbol to Z, 2026-11-16) |
+| AtomNumberToName | LuaAtomNumberToName (Z to element symbol, 2026-11-16) |
 | BlockBandDiagonalize | LuaBlockBandDiagonalize |
 | Braket | LuaBraKet |
 | BraketDiagonal | LuaBraKetDiagonal |

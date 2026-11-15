@@ -349,6 +349,7 @@ test-jobs:
     matrix:
       - TEST_NAME:
           - "AngularMomentumOperators"
+          - "AtomNumberToName"
           - "BitMaskCombine"
           - "BitMaskToIndex"
           - "BlockBandDiagonalize"
