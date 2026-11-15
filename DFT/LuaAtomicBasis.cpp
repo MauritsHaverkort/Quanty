@@ -56,8 +56,10 @@
  *     OriginBoundary
  * Atom: the ground state (Etot, Ekin, Eenuc, and Edirect, Eexchange for DHF or Ecoul, Exc
  * for Kohn-Sham; Converged, Iterations, Residual, dE; DHF: Gradient, PairGradient;
- * Schroedinger: VirialRatio -(Etot - Ekin)/Ekin), Potential = {VN, VH, Vxc (Kohn-Sham)} of
- * the ground state on the points x, Method, Relativistic, c, Z,
+ * Schroedinger: VirialRatio -(Etot - Ekin)/Ekin), Potential = {rVN, rVH, rVxc (Kohn-Sham)},
+ * r times the nuclear, Hartree and exchange-correlation potentials of the ground state, as
+ * BSplines through the points x (degree of the orbitals; rVxc the local potential, also for a
+ * GGA; f(r, 1) = V + r V', so V' = (f'(r) - f(r)/r)/r), Method, Relativistic, c, Z,
  * NElectron, Configuration, A, rMin, rMax, Nucleus (an options list for NewOperator("Dirac")), Labels,
  * MinOverlapEigenvalue and OrthonormalityError (max |C^T S C - 1|) of the
  * orthonormalization, for a "Function3D" nucleus NuclearMultipoleMoments[i] = {L, M, Value =
@@ -124,6 +126,15 @@ static uint32_t DFTAddOrbital(DFTOrbitalKeyType *list, uint32_t *n, uint32_t max
 }
 
 // a number field of the table at the top of the stack, or def if it is absent
+// push a BSpline of degree n through the points (x_i, y_i), x increasing
+static void DFTLuaPushBSplineOnPoints(lua_State *L, const std::vector<double> &x, const std::vector<double> &y, uint32_t n)
+{
+  void *memory = lua_newuserdata(L, sizeof(BSpline::TBSpline));
+  BSpline::TBSpline *f = new(memory) BSpline::TBSpline;
+  luaL_setmetatable(L, "InterpolatingFunction_Type");
+  f->Create(x, y, n);
+}
+
 static double DFTLuaFieldNumber(lua_State *L, const char *who, const char *table, const char *name, double def)
 {
   double v = def;
@@ -619,19 +630,32 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     lua_pushnumber(L, res.pairGradient); lua_setfield(L, -2, "PairGradient");
   }
   if (!Options.Relativistic) { lua_pushnumber(L, -(res.Etot - res.Ekin)/res.Ekin); lua_setfield(L, -2, "VirialRatio"); }
-  // potentials of the ground state on the points x: V_N, V_H (of the ground-state density), V_xc (Kohn-Sham)
+  /* potentials of the ground state: r V_N, r V_H (of the ground-state density) and r V_xc
+   * (Kohn-Sham), each a BSpline through its values on the points x, of the degree of the
+   * orbitals (the same points and degree, so the same knots). The GGA potential of the solver
+   * is in weak form, v + g d/dr (AtomPotential); the local potential is v - g', g' the
+   * derivative of the BSpline of g through the points. */
   {
     uint32_t nP = basis.nPoint;
     double *VH = (double *) malloc(nP*sizeof(double)), *v = (double *) malloc(nP*sizeof(double)), *g = (double *) malloc(nP*sizeof(double)), Ec, Ex;
+    std::vector<double> r(basis.rq, basis.rq + nP), rV(nP), dg(nP, 0.);
     AtomDensity(&atom);
     RadialYkOnPoints(&basis, 0, atom.poisson, atom.f, VH);
     lua_newtable(L);
-    LuaPushArray_double(L, atom.VN, (int) nP); lua_setfield(L, -2, "VN");
-    LuaPushArray_double(L, VH, (int) nP);      lua_setfield(L, -2, "VH");
+    for (i = 0; i < nP; i++) rV[i] = r[i]*atom.VN[i];
+    DFTLuaPushBSplineOnPoints(L, r, rV, basis.degree); lua_setfield(L, -2, "rVN");
+    for (i = 0; i < nP; i++) rV[i] = r[i]*VH[i];
+    DFTLuaPushBSplineOnPoints(L, r, rV, basis.degree); lua_setfield(L, -2, "rVH");
     if (!hartreeFock && !AtomPotential(&atom, atom.f, atom.df, v, g, &Ec, &Ex))
     {
-      for (i = 0; i < nP; i++) v[i] -= VH[i];
-      LuaPushArray_double(L, v, (int) nP);     lua_setfield(L, -2, "Vxc");
+      if (XCIsGGA(atom.method))
+      {
+        BSpline::TBSpline gs;
+        gs.Create(r, std::vector<double>(g, g + nP), basis.degree);
+        dg = gs(r, 1);
+      }
+      for (i = 0; i < nP; i++) rV[i] = r[i]*(v[i] - VH[i] - dg[i]);
+      DFTLuaPushBSplineOnPoints(L, r, rV, basis.degree); lua_setfield(L, -2, "rVxc");
     }
     lua_setfield(L, -2, "Potential");
     free(VH); free(v); free(g);

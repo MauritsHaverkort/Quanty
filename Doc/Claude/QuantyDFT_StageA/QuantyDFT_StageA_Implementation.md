@@ -91,7 +91,7 @@ The returned `Atom` table:
 - **Echo of the input:** `Method`, `Relativistic`, `c`, `Z`, `Configuration`, `A`, `NElectron`, `rMin`, `rMax`, and `Nucleus` as an options list that `NewOperator("Dirac", ..., Atom.Nucleus)` accepts.
 - **Per orbital, `Orbitals[i]`:** `Label`, `n`, `l`, `kappa`, `j`, `Occupation`, `Q`, `P`, `rc`, `Energy` (eigenvalue of its generating equation), `EnergyGround` (⟨a|F|a⟩ of the returned function with the ground-state operator), `Vbeta` (⟨βV_β⟩), `RExpectation` (⟨r⁻³⟩ for l > 0, ⟨r⁻¹⟩, ⟨r⟩, ⟨r²⟩), `EtotGenerating`, `Generated`, `Converged`.
 - **Slater integrals:** `SlaterIntegrals` in the format of `GetSlaterIntegrals` — `t["3d5/2 4s1/2 3d5/2 4s1/2"] = {[k] = F^k}` and `t["3d5/2 4s1/2 4s1/2 3d5/2"] = {[k] = G^k}` — jj-resolved in Dirac mode; `SlaterIntegralsNL`, the same for nl shells with the radial integrals averaged over j with weights (2j+1)/(4l+2); `Zeta[nl]` = 2(⟨F⟩_{l+1/2} − ⟨F⟩_{l−1/2})/(2l+1).
-- **Diagnostics:** `MinOverlapEigenvalue`, `OrthonormalityError`, `Potential = {VN, VH, Vxc}` on the points `x`, `ConvergenceCheck = {NIntervals, dEtot, dEnergy}`, `FourierBessel = {k, P, Q}`, and for `"Function3D"` `NuclearMultipoleMoments[i] = {L, M, Value}`.
+- **Diagnostics:** `MinOverlapEigenvalue`, `OrthonormalityError`, `Potential = {rVN, rVH, rVxc}` ($rV$ as BSplines through the points `x`; `rVxc` Kohn-Sham only, the local potential also for a GGA: $v - g'$, $g'$ the derivative of a BSpline of $g$), `ConvergenceCheck = {NIntervals, dEtot, dEnergy}`, `FourierBessel = {k, P, Q}`, and for `"Function3D"` `NuclearMultipoleMoments[i] = {L, M, Value}`.
 
 ### 2.2 Operators on the returned functions
 
