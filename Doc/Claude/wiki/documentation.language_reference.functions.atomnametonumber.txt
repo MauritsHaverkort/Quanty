@@ -1,0 +1,44 @@
+====== AtomNameToNumber ======
+
+###
+//AtomNameToNumber(name)// returns the atomic number $Z$ of the chemical element with the symbol //name//, from 1 for //"H"// to 118 for //"Og"//. The inverse is //[[documentation:language_reference:functions:atomnumbertoname|AtomNumberToName()]]//.
+###
+
+===== Input =====
+
+  * //name// : String, the symbol of the element, written as in the periodic table: //"Fe"//, not //"fe"// or //"FE"//. Any other string is an error.
+
+===== Output =====
+
+  * //Z// : Integer, the atomic number.
+
+===== Example =====
+
+###
+The atomic numbers of a few elements, and the error for a symbol in lower case, caught with //pcall//.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the atomic number of an element given by its symbol
+for _, name in ipairs({"O", "Fe", "Ni", "Gd", "U"}) do
+  print(string.format("%-2s Z = %d", name, AtomNameToNumber(name)))
+end
+
+-- a symbol must be written as in the periodic table
+ok, message = pcall(AtomNameToNumber, "fe")
+print(message)
+</code>
+
+==== Result ====
+<file Quanty_Output>
+O  Z = 8
+Fe Z = 26
+Ni Z = 28
+Gd Z = 64
+U  Z = 92
+Error in AtomNameToNumber: "fe" is not an element symbol (H .. Og, written as "Fe")
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

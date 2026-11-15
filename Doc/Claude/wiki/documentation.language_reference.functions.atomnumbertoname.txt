@@ -1,0 +1,41 @@
+====== AtomNumberToName ======
+
+###
+//AtomNumberToName(Z)// returns the symbol of the chemical element with atomic number $Z$, from //"H"// for $Z = 1$ to //"Og"// for $Z = 118$. The inverse is //[[documentation:language_reference:functions:atomnametonumber|AtomNameToNumber()]]//.
+###
+
+===== Input =====
+
+  * //Z// : Integer, the atomic number, from 1 to 118. Any other value is an error.
+
+===== Output =====
+
+  * //name// : String, the symbol of the element, written as in the periodic table, for example //"Fe"//.
+
+===== Example =====
+
+###
+The elements of the 3d series, and the name of the element of an atomic calculation with //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//, which reports the nuclear charge as //Atom.Z//.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the elements of the 3d series
+for Z = 21, 30 do
+  io.write(AtomNumberToName(Z), " ")
+end
+print()
+
+-- the name of the element of an atomic calculation
+G, F, Atom = CalculateAtomicBasisFunctions(26)
+print(string.format("%s %s, Etot = %.6f Hartree", AtomNumberToName(Atom.Z), Atom.Configuration, Atom.Etot))
+</code>
+
+==== Result ====
+<file Quanty_Output>
+Sc Ti V Cr Mn Fe Co Ni Cu Zn 
+Fe [Ar] 3d6 4s2, Etot = -1271.391984 Hartree
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

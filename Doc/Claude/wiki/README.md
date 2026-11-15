@@ -13,6 +13,9 @@ commit `ec5a6a39`.
 
 ## Open pages
 
+- New pages `documentation:language_reference:functions:atomnumbertoname` and
+  `documentation:language_reference:functions:atomnametonumber`: the element symbol of
+  Z = 1 .. 118 and back (exported to Lua 2026-11-16); examples run on the present build.
 - `documentation:language_reference:functions:calculateatomicbasisfunctions`: the
   potentials are now `rVN`, `rVH`, `rVxc` as BSplines (commit 50df4172): the Output
   entry, and a new section "The potentials" before "Accuracy" (what r V is, the
