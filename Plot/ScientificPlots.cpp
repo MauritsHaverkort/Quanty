@@ -150,11 +150,14 @@ int AddXTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
   Text.Alignment='c';
   Text.Angle=0;
   Text.Font = TextFont;
-  for(Xval=TickStart-dTick;Xval<PlotRange[1].X-1E-8 * (PlotRange[1].X-PlotRange[0].X) ;Xval+=dTick)
+  // tick i at TickStart + i dTick, not a running sum (which put -2.8e-17 in place of 0);
+  // a value within rounding of 0 is written as 0
+  for(long i=-1;(Xval=TickStart+i*dTick)<PlotRange[1].X-1E-8 * (PlotRange[1].X-PlotRange[0].X) ;i++)
   {
     if( Xval > PlotRange[0].X + 1E-8 * (PlotRange[1].X-PlotRange[0].X) )
     {
       Text.Point.X = (Xval-PlotRange[0].X) * Scale + Margins[0].X;
+      if(fabs(Xval) < 1E-9*fabs(dTick)) Xval = 0.0;
       sprintf(String, format, Xval);
       AddText(Graphics, &Text);
     }
@@ -177,11 +180,13 @@ int AddYTicksLabelToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
   Text.Alignment='r';
   Text.Angle=0;
   Text.Font = TextFont;
-  for(Yval=TickStart-dTick;Yval<PlotRange[1].Y-1E-8 * (PlotRange[1].Y-PlotRange[0].Y) ;Yval+=dTick)
+  // as for the x ticks: TickStart + i dTick, and 0 written as 0
+  for(long i=-1;(Yval=TickStart+i*dTick)<PlotRange[1].Y-1E-8 * (PlotRange[1].Y-PlotRange[0].Y) ;i++)
   {
     if( Yval > PlotRange[0].Y + 1E-8 * (PlotRange[1].Y-PlotRange[0].Y) )
     {
       Text.Point.Y = (Yval-PlotRange[0].Y) * Scale + Margins[0].Y - 0.3*TextSize;
+      if(fabs(Yval) < 1E-9*fabs(dTick)) Yval = 0.0;
       sprintf(String, format, Yval);
       AddText(Graphics, &Text);
     }
