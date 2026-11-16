@@ -28,9 +28,9 @@ local P = {["3d5/2"] = 1, ["4d5/2"] = 2/3, ["5d5/2"] = 4/3, ["6d5/2"] = 3}
 local function atom(configuration, extra)
   local q, p = {}, {}          -- Q and P of the orbitals of this configuration only
   for label in string.gmatch(configuration, "(%d%a%d/%d)") do q[label], p[label] = Q[label], P[label] end
-  local o = {{"A", 56}, {"rMin", 2e-6}, {"rMax", 15}, {"NIntervals", 140}, {"Confinement", {Rho = 3, N = 8}}, {"Q", q}, {"P", p}}
+  local o = {{"Configuration", configuration}, {"A", 56}, {"rMin", 2e-6}, {"rMax", 15}, {"NIntervals", 140}, {"Confinement", {Rho = 3, N = 8}}, {"Q", q}, {"P", p}}
   for _, v in ipairs(extra or {}) do o[#o+1] = v end
-  return CalculateAtomicBasisFunctions(26, configuration, o)
+  return CalculateAtomicBasisFunctions(26, o)
 end
 -- the largest difference of two radial functions on the quadrature points, relative to max |a|
 local function difference(Ga, Fa, Gb, Fb)

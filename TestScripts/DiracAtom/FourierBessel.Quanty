@@ -24,13 +24,13 @@ local function simpson(f, h)
   return s*h/3
 end
 
-local G, F, A = CalculateAtomicBasisFunctions(1, "1s1", {pt, {"Relativistic", false}, {"FourierBessel", {KMax = 50, NK = 501}}})
+local G, F, A = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s1"}, pt, {"Relativistic", false}, {"FourierBessel", {KMax = 50, NK = 501}}})
 local w = 0
 for j, k in ipairs(A.FourierBessel.k) do w = math.max(w, math.abs(A.FourierBessel.P[1][j] - 4*math.sqrt(2/math.pi)/(1 + k*k)^2)) end
 check(w < 1e-8 and #A.FourierBessel.Q == 0, string.format("hydrogen 1s (Schroedinger): max |P~ - 4 sqrt(2/pi)/(1+k^2)^2| %.1e", w))
 
 for _, a in ipairs({{2, "1s2", nil, 400, 8001}, {10, "[He] 2s2 2p6", {"2p1/2", "2p3/2"}, 150, 3001}}) do
-  G, F, A = CalculateAtomicBasisFunctions(a[1], a[2], {pt, {"FourierBessel", {KMax = a[4], NK = a[5]}}})
+  G, F, A = CalculateAtomicBasisFunctions(a[1], {{"Configuration", a[2]}, pt, {"FourierBessel", {KMax = a[4], NK = a[5]}}})
   local fb = A.FourierBessel
   local h = fb.k[2] - fb.k[1]
   for i, o in ipairs(A.Orbitals) do
@@ -53,7 +53,7 @@ for _, a in ipairs({{2, "1s2", nil, 400, 8001}, {10, "[He] 2s2 2p6", {"2p1/2", "
   end
 end
 
-local ok = pcall(function() return CalculateAtomicBasisFunctions(1, "1s1", {pt, {"FourierBessel", {NK = 10}}}) end)
+local ok = pcall(function() return CalculateAtomicBasisFunctions(1, {{"Configuration", "1s1"}, pt, {"FourierBessel", {NK = 10}}}) end)
 check(not ok, "FourierBessel without KMax is an error")
 if failed then error("Fourier-Bessel transforms: checks failed", 1) end
 print("passed")

@@ -28,7 +28,7 @@ end
 local first = {}
 local fermi = {}
 for _, nInterval in ipairs({80, 120, 160}) do
-  local G, F, At = CalculateAtomicBasisFunctions(Z, "1s0 2p0", {{"Nucleus", "Gaussian"}, {"A", A}, {"NIntervals", nInterval},
+  local G, F, At = CalculateAtomicBasisFunctions(Z, {{"Configuration", "1s0 2p0"}, {"Nucleus", "Gaussian"}, {"A", A}, {"NIntervals", nInterval},
                                                    {"rMax", 60/math.sqrt(Z)}})
   for _, o in ipairs(At.Orbitals) do
     local kappa = o.kappa
@@ -43,7 +43,7 @@ for _, nInterval in ipairs({80, 120, 160}) do
     check(math.abs(At.rMin - Rrms/50) < 1e-20, string.format("rMin = Rrms/50 = %.6e bohr", At.rMin))
   end
   if nInterval >= 120 then
-    local G, F, Af = CalculateAtomicBasisFunctions(Z, "1s0", {{"Nucleus", "Fermi"}, {"A", A}, {"NIntervals", nInterval}, {"rMax", 60/math.sqrt(Z)}})
+    local G, F, Af = CalculateAtomicBasisFunctions(Z, {{"Configuration", "1s0"}, {"Nucleus", "Fermi"}, {"A", A}, {"NIntervals", nInterval}, {"rMax", 60/math.sqrt(Z)}})
     fermi[nInterval] = Af.Orbitals[1].Energy
     print(string.format("        Fermi nucleus %3d intervals 1s1/2 = %.10f Ha", nInterval, fermi[nInterval]))
   end

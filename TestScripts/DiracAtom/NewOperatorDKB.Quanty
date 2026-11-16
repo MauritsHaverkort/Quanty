@@ -27,7 +27,9 @@ end
 
 -- check 12
 local function bare(Z, nucopts, label)
-  local G, F, A = CalculateAtomicBasisFunctions(Z, "1s0 2s0 3s0 2p0 3p0 4p0 3d0 4d0 5d0", nucopts)
+  local o = {{"Configuration", "1s0 2s0 3s0 2p0 3p0 4p0 3d0 4d0 5d0"}}
+  for _, v in ipairs(nucopts) do o[#o+1] = v end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, o)
   local labels, E = A.Labels, {}
   for o, orb in ipairs(A.Orbitals) do E[o] = orb.Energy end
   local indices, NF = CreateAtomicIndicesList(labels, {{"Kappas", true}})
@@ -48,7 +50,7 @@ bare(92, {{"Nucleus", "Gaussian"}, {"A", 238}}, "U Gaussian nucleus")
 
 -- the energy of determinants
 local function atom(Z, conf)
-  local G, F, A = CalculateAtomicBasisFunctions(Z, conf, {{"Nucleus", "Point"}})
+  local G, F, A = CalculateAtomicBasisFunctions(Z, {{"Configuration", conf}, {"Nucleus", "Point"}})
   local labels = {}
   for i, o in ipairs(A.Orbitals) do labels[i] = o.Label end
   local indices, NF = CreateAtomicIndicesList(labels, {{"Kappas", true}})

@@ -51,6 +51,9 @@ Tagged in the drafts below; the pages without other changes:
   (every returned function gives the quadrature points as `f.x`), and the fields
   `EtotEigenvalueSum`, `PotentialResidual`, `MixDensity`, `EavJJ` in Output; a
   configuration of empty orbitals only is the bare nucleus (Input, Configuration).
+  The configuration is an option, no longer the second argument (2026-11-16):
+  `CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8"}})`; Input and the
+  examples changed accordingly.
 - `documentation:standard_operators:atomic_coulomb_repulsion` and
   `documentation:language_reference:functions:newoperator`: only the call
   `G, F, x, Atom = ...` becomes `G, F, Atom = ...` in the examples (outputs rerun,

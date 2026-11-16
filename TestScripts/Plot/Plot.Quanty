@@ -399,7 +399,7 @@ SameSVG(Graphics.Plot(Cs, {{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}
 SameSVG(Graphics.Plot({Bs, Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}}),
         Graphics.Plot({Mesh(Bs, -1, 2, 600), Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}}), "BSpline with a list of points")
 -- a DKBSpline: the hydrogen 1s, its quadrature points dense near the nucleus
-Gh, Fh = CalculateAtomicBasisFunctions(1, "1s0", {{"Nucleus","Point"}})
+Gh, Fh = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s0"}, {"Nucleus","Point"}})
 FrameH = {{"Xmin",0},{"Xmax",10},{"Ymin",-1},{"Ymax",1}}
 SameSVG(Graphics.Plot({Gh[1], Fh[1]}, {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}),
         Graphics.Plot({Mesh(Gh[1], 0, 10, 50), Mesh(Fh[1], 0, 10, 50)}, {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}), "DKBSpline")

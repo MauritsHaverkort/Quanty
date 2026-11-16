@@ -1,7 +1,7 @@
 /*
  * LuaAtomicBasis.cpp
  *
- *     G, F, Atom = CalculateAtomicBasisFunctions(Z [, configuration] [, {options}])
+ *     G, F, Atom = CalculateAtomicBasisFunctions(Z [, {options}])
  *
  * Atomic radial basis functions (DFT stage A5, design sections 6, 6.1, 10 and 11.1), the
  * drop-in replacement of ReadFPLOBasisFunctions: G (large components P) and F (small
@@ -12,7 +12,7 @@
  * This is the only Lua entry to the atom solvers; the temporary DiracKohnSham and
  * DiracHartreeFock of stages A3 and A4 are merged into it.
  *
- * Z: the nuclear charge (a real number). configuration: e.g. "[Ar] 3d8 4s2" or
+ * Z: the nuclear charge (a real number). Option Configuration: e.g. "[Ar] 3d8 4s2" or
  * "[Kr] 4d3/2(4) 4d5/2(5)"; an orbital with occupation 0 ("4p0", "5p1/2(0)") is calculated as
  * an empty orbital. A configuration of empty orbitals only ("1s0 2s0 2p0") is the bare
  * nucleus: every orbital an eigenfunction of the Dirac (Schroedinger) equation of the
@@ -24,6 +24,7 @@
  * its own equation has Z+Q and V_beta = (r/(P rho))^N (AtomBasis.cpp). All are made
  * orthonormal per kappa, Gram-Schmidt from the lowest n upwards.
  * Options (with the nucleus and basis options of LuaDiracRadial.cpp); none is required:
+ *     Configuration     the configuration, see above (default: the neutral ground state)
  *     Method            "DHF" (default; configuration-average Hartree-Fock), "LDA",
  *                       "LDA-VWN", "RLDA-MV", "PBE", "PBE-VWN"
  *     Relativistic      true (default): Dirac; false: Schroedinger
@@ -283,6 +284,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     double Mixing, OrbitalMixing, EnergyTolerance, ResidualTolerance, OrbitalTolerance, DensityCutoff, RedundancyTolerance, ConfinementVmax;
   } Options;
   LuaOptionsType LuaBasisOptions[] = {
+    {"Configuration", "char*", &(Options.Configuration)},
     {"Method", "char*", &(Options.Method)},
     {"Relativistic", "bool", &(Options.Relativistic)},
     {"NMax", "table", &(Options.NMax)},
@@ -336,17 +338,14 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   AtomSCFOptionsType scf;
   char label[32];
 
-  // CalculateAtomicBasisFunctions(Z), (Z, configuration), (Z, configuration, {options}), (Z, {options})
-  if (len < 1 || len > 3) return luaL_error(L, "Error in %s: 1 to 3 arguments expected (Z, configuration, {options}), got %d\n", who, (int) len);
+  // CalculateAtomicBasisFunctions(Z), (Z, {options})
+  if (len < 1 || len > 2) return luaL_error(L, "Error in %s: 1 or 2 arguments expected (Z, {options}), got %d\n", who, (int) len);
   Options.Z = luaL_checknumber(L, 1);
   Options.Configuration = NULL;
-  if (len >= 2 && lua_type(L, 2) == LUA_TSTRING) Options.Configuration = (char *) lua_tostring(L, 2);
-  else if (len == 2 && lua_istable(L, 2)) optArg = 2;
-  else if (len >= 2 && !lua_isnil(L, 2)) return luaL_error(L, "Error in %s: argument 2 must be the configuration (a string), or the options\n", who);
-  if (len == 3)
+  if (len == 2)
   {
-    if (!lua_istable(L, 3)) return luaL_error(L, "Error in %s: argument 3 must be the options\n", who);
-    optArg = 3;
+    if (!lua_istable(L, 2)) return luaL_error(L, "Error in %s: argument 2 must be the options, e.g. {{\"Configuration\", \"[Ar] 3d8 4s2\"}}\n", who);
+    optArg = 2;
   }
   c = LuaGetPhysicalConstant(L, "cAU");
   a0fm = LuaGetPhysicalConstant(L, "a0")*1e15;
@@ -387,7 +386,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
   {
     Options.Configuration = (char *) AtomGroundStateConfiguration(Options.Z);
     if (Options.Configuration == NULL)
-      return luaL_error(L, "Error in %s: no ground-state configuration known for Z = %f (Z = 1 .. 103); give the configuration\n", who, Options.Z);
+      return luaL_error(L, "Error in %s: no ground-state configuration known for Z = %f (Z = 1 .. 103); give the option Configuration\n", who, Options.Z);
   }
   if (strcicmp(Options.Method, "DHF") == 0) { hartreeFock = 1; method = XCLDAVWN; }
   else
@@ -876,7 +875,6 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
     int tAtom = lua_gettop(L), nOpt = (optArg > 0) ? (int) lua_objlen(L, optArg) : 0, m = 0;
     lua_pushcfunction(L, LuaCalculateAtomicBasisFunctions);
     lua_pushnumber(L, Options.Z);
-    lua_pushstring(L, Options.Configuration);
     lua_newtable(L);
     for (int t = 1; t <= nOpt; t++)
     {
@@ -884,7 +882,7 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
       lua_rawgeti(L, -1, 1);
       const char *name = lua_tostring(L, -1);
       int skip = (name != NULL) && (strcicmp(name, "NIntervals") == 0 || strcicmp(name, "ConvergenceCheck") == 0 || strcicmp(name, "FourierBessel") == 0
-                                    || strcicmp(name, "rMin") == 0 || strcicmp(name, "rMax") == 0 || strcicmp(name, "NQuadrature") == 0);
+                                    || strcicmp(name, "Configuration") == 0 || strcicmp(name, "rMin") == 0 || strcicmp(name, "rMax") == 0 || strcicmp(name, "NQuadrature") == 0);
       lua_pop(L, 1);
       if (skip) lua_pop(L, 1); else lua_rawseti(L, -2, ++m);
     }
@@ -898,7 +896,11 @@ static int LuaCalculateAtomicBasisFunctions(lua_State *L)
       lua_rawseti(L, -2, 2);
       lua_rawseti(L, -2, ++m);
     }
-    lua_call(L, 3, 3);
+    lua_newtable(L);
+    lua_pushstring(L, "Configuration"); lua_rawseti(L, -2, 1);
+    lua_pushstring(L, Options.Configuration); lua_rawseti(L, -2, 2);
+    lua_rawseti(L, -2, ++m);
+    lua_call(L, 2, 3);
     // the refined Atom at the top, the original at tAtom
     double dE, dEps = 0.;
     lua_getfield(L, -1, "Etot"); lua_getfield(L, tAtom, "Etot");

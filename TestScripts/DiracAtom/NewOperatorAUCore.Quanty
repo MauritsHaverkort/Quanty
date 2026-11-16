@@ -23,7 +23,7 @@ local function check(ok, text)
   if not ok then failed = true end
 end
 
-local G, F, A = CalculateAtomicBasisFunctions(26, "[Ar] 3d6 4s2", {{"Nucleus", "Point"}})
+local G, F, A = CalculateAtomicBasisFunctions(26, {{"Configuration", "[Ar] 3d6 4s2"}, {"Nucleus", "Point"}})
 local orb = {}
 for i, o in ipairs(A.Orbitals) do orb[o.Label] = {G = G[i], F = F[i]} end
 local function functions(labels)

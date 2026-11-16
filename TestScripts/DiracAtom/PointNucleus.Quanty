@@ -40,7 +40,7 @@ for _, rayleigh in ipairs({true, false}) do
   print("RayleighQuotient = " .. tostring(rayleigh))
   for _, Z in ipairs({1, 80, 92}) do
     local rMax = (Z > 1) and 60/math.sqrt(Z) or 80
-    local G, F, A = CalculateAtomicBasisFunctions(Z, empty, {{"Nucleus", "Point"}, {"Degree", 8}, {"NIntervals", 120},
+    local G, F, A = CalculateAtomicBasisFunctions(Z, {{"Configuration", empty}, {"Nucleus", "Point"}, {"Degree", 8}, {"NIntervals", 120},
                                                     {"rMin", 1e-6/Z}, {"rMax", rMax}, {"RayleighQuotient", rayleigh}})
     check(A.NElectron == 0 and A.Etot == 0 and A.Converged, string.format("Z = %2d: no electrons, Etot %g", Z, A.Etot))
     for _, kappa in ipairs({-1, 1, -2, 2, -3}) do
@@ -64,7 +64,7 @@ end
 -- check 1b: the full DKB basis has the intruder in the place of 2p1/2, then the exact 2p1/2, 3p1/2, 4p1/2
 do
   local Z, kappa = 92, 1
-  local G, F, A = CalculateAtomicBasisFunctions(Z, "2p1/2(0) 3p1/2(0) 4p1/2(0) 5p1/2(0)", {{"Nucleus", "Point"}, {"rMin", 1e-6/Z},
+  local G, F, A = CalculateAtomicBasisFunctions(Z, {{"Configuration", "2p1/2(0) 3p1/2(0) 4p1/2(0) 5p1/2(0)"}, {"Nucleus", "Point"}, {"rMin", 1e-6/Z},
                                                   {"rMax", 60/math.sqrt(Z)}, {"OriginBoundary", false}})
   local o = A.Orbitals
   check(math.abs(o[1].Energy + 16542.7) < 1 and o[1].RExpectation[1] < 0.05,
@@ -76,7 +76,7 @@ do
 end
 
 -- the value quoted in the design for U 1s1/2
-local G, F, A = CalculateAtomicBasisFunctions(92, "1s0", {{"Nucleus", "Point"}, {"rMin", 1e-6/92}, {"rMax", 60/math.sqrt(92)}})
+local G, F, A = CalculateAtomicBasisFunctions(92, {{"Configuration", "1s0"}, {"Nucleus", "Point"}, {"rMin", 1e-6/92}, {"rMax", 60/math.sqrt(92)}})
 local E1 = A.Orbitals[1].Energy
 check(math.abs(E1 + 4861.1979032) < 1e-7, string.format("U 1s1/2 point nucleus = %.10f Ha (design: -4861.1979032)", E1))
 

@@ -41,7 +41,9 @@ end
 local common = {{"Nucleus", "Point"}, {"MaxIterations", 400}}
 -- the Atom table (and G, F) of CalculateAtomicBasisFunctions
 local function CalculateAtom(Z, configuration, options)
-  local G, F, A = CalculateAtomicBasisFunctions(Z, configuration, options)
+  local o = {{"Configuration", configuration}}
+  for _, v in ipairs(options or {}) do o[#o+1] = v end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, o)
   return A, G, F
 end
 local function options(extra)

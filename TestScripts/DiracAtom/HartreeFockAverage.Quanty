@@ -27,7 +27,9 @@ local function identity(A) return math.abs(A.EtotEigenvalueSum - A.Etot) < 1e-12
 local point = {"Nucleus", "Point"}
 -- the Atom table (and G, F) of CalculateAtomicBasisFunctions
 local function CalculateAtom(Z, configuration, options)
-  local G, F, A = CalculateAtomicBasisFunctions(Z, configuration, options)
+  local o = {{"Configuration", configuration}}
+  for _, v in ipairs(options or {}) do o[#o+1] = v end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, o)
   return A, G, F
 end
 

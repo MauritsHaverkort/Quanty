@@ -26,7 +26,8 @@ Contents:
 G, F, Atom = CalculateAtomicBasisFunctions(28)
 
 -- a basis: orbitals up to 5s, 4p and 4d, all confined, the empty 4p and 4d contracted
-G, F, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {
+G, F, Atom = CalculateAtomicBasisFunctions(28, {
+    {"Configuration", "[Ar] 3d8 4s2"},
     {"NMax", {s = 5, p = 4, d = 4}},
     {"Confinement", {Rho = 3.5, N = 8}},
     {"Q", {["4p"] = 2, ["4d"] = 3}} })
@@ -43,11 +44,11 @@ print(Atom.Etot, Atom.Zeta["3d"], Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2])
 
 ## 2. Lua interface
 
-### 2.1 `CalculateAtomicBasisFunctions(Z [, Configuration] [, {options}])`
+### 2.1 `CalculateAtomicBasisFunctions(Z [, {options}])`
 
 Returns `G, F, Atom`. Every returned function (G, F and the potentials) gives the quadrature points of the radial basis as `f.x`, so `x = G[1].x` where the points are needed. This is the only Lua entry to the atom solvers: the temporary `DiracKohnSham` and `DiracHartreeFock` of stages A3 and A4 were merged into it on 2026-11-15 (their extra fields moved to `Atom`).
 
-**Arguments:** `Z`, the nuclear charge (a real number), and optionally the configuration, e.g. `"[Ar] 3d8 4s2"`, per relativistic subshell `"[Kr] 4d3/2(4) 4d5/2(5)"`, or both kinds mixed. An nl entry is averaged over its 4l+2 spinors (Cowan), an n κ entry over its 2j+1 spinors; fractional occupations are allowed, and an occupation 0 (`"4p0"`, `"5p1/2(0)"`) adds an empty orbital. Without a configuration the ground state of the neutral atom is used (`AtomGroundStateConfiguration`, from the NIST Atomic Spectra Database, Z = 1–103). No option is required.
+**Arguments:** `Z`, the nuclear charge (a real number), and the options. The option `Configuration` (an argument before 2026-11-16) is the configuration, e.g. `"[Ar] 3d8 4s2"`, per relativistic subshell `"[Kr] 4d3/2(4) 4d5/2(5)"`, or both kinds mixed. An nl entry is averaged over its 4l+2 spinors (Cowan), an n κ entry over its 2j+1 spinors; fractional occupations are allowed, and an occupation 0 (`"4p0"`, `"5p1/2(0)"`) adds an empty orbital. Without a configuration the ground state of the neutral atom is used (`AtomGroundStateConfiguration`, from the NIST Atomic Spectra Database, Z = 1–103). No option is required.
 
 **Which orbitals:** every orbital of the configuration and all `n` up to `NMax` are calculated and returned, ordered by n, l and j. `Atom.Labels` lists them in that order, ready for `CreateAtomicIndicesList`; a selection is made in Lua.
 

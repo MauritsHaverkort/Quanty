@@ -37,13 +37,13 @@ local pt = {"Nucleus", "Point"}
 
 -- ground state
 local nucNe = {{"Nucleus", "Gaussian"}, {"A", 20}}
-local G, F, A = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {nucNe[1], nucNe[2]})
+local G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, nucNe[1], nucNe[2]})
 local de = A.EtotEigenvalueSum - A.Etot
 local indices, NF = CreateAtomicIndicesList(A.Labels, {{"Kappas", true}})
 local H = NewOperator("Dirac", NF, 10, indices, G, F, A.Nucleus) + NewOperator("AU", NF, indices, G, F)
 local psi = NewWavefunction(NF, 0, {{string.rep("1", NF), 1}})
 local dd = psi*H*psi - A.Etot
-local Gs, Fs, As = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"Relativistic", false}})
+local Gs, Fs, As = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Relativistic", false}})
 local gx, fx, sx = G[1].x, F[1].x, Gs[1].x
 check(math.abs(de) < 1e-12*math.abs(A.Etot) and math.abs(dd) < 1e-12*math.abs(A.Etot) and A.Nucleus[1][2] == "Gaussian"
       and #gx > 100 and #fx == #gx and fx[7] == gx[7] and Gs[1].type == "BSpline" and #sx == #As.Potential.rVN.x and sx[7] == As.Potential.rVN.x[7],
@@ -68,7 +68,7 @@ check(Am.Configuration == "1s2 2s2 2p6" and Am.A == 20 and table.concat(Am.Label
 -- Hellmann-Feynman in Q
 local function hfQ(Z, conf, target, method)
   local d = 1e-3
-  local function run(q) return CalculateAtomicBasisFunctions(Z, conf, {pt, {"Method", method}, {"Q", {[target] = q}}}) end
+  local function run(q) return CalculateAtomicBasisFunctions(Z, {{"Configuration", conf}, pt, {"Method", method}, {"Q", {[target] = q}}}) end
   local G0, F0, A0 = run(0)
   local idx, NF1 = CreateAtomicIndicesList(A0.Labels, {{"Kappas", true}})
   local M1 = OperatorToMatrix(NewOperator("Dirac", NF1, 1, idx, G0, F0))
@@ -91,7 +91,7 @@ hfQ(3, "1s2 2s1", "2s1/2", "DHF")
 -- Hellmann-Feynman in the confinement radius (He 1s, rc = 2, N = 8): in ln rc
 for _, m in ipairs({"DHF", "LDA"}) do
   local N = 8
-  local function run(lnrc) return CalculateAtomicBasisFunctions(2, "1s2", {pt, {"Method", m}, {"Confinement", {Rho = math.exp(lnrc), N = N}}, {"rMax", 40}}) end
+  local function run(lnrc) return CalculateAtomicBasisFunctions(2, {{"Configuration", "1s2"}, pt, {"Method", m}, {"Confinement", {Rho = math.exp(lnrc), N = N}}, {"rMax", 40}}) end
   local G0, F0, A0 = run(math.log(2))
   local o = A0.Orbitals[1]
   local fd = derivative(run, math.log(2), 1e-3, 1) or 0
@@ -100,7 +100,7 @@ for _, m in ipairs({"DHF", "LDA"}) do
 end
 
 -- empty orbitals: Koopmans with V^N
-G, F, A = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6 3s1/2(0) 3p3/2(0) 3d5/2(0)", {pt})
+G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6 3s1/2(0) 3p3/2(0) 3d5/2(0)"}, pt})
 indices, NF = CreateAtomicIndicesList(A.Labels, {{"Kappas", true}})
 H = NewOperator("Dirac", NF, 10, indices, G, F) + NewOperator("AU", NF, indices, G, F)
 local core = {}
@@ -120,7 +120,7 @@ check(worst < 1e-10 and A.OrthonormalityError < 1e-13,
       string.format("Ne + 3s1/2, 3p3/2, 3d5/2 (V^N): max |E(core + a) - E(core) - eps_a| %.1e (eps 3s %.6f), OrthonormalityError %.1e", worst, A.Orbitals[5].Energy, A.OrthonormalityError))
 
 -- n kappa occupations
-G, F, A = CalculateAtomicBasisFunctions(8, "1s2 2s2 2p1/2(2) 2p3/2(2)", {pt})
+G, F, A = CalculateAtomicBasisFunctions(8, {{"Configuration", "1s2 2s2 2p1/2(2) 2p3/2(2)"}, pt})
 indices, NF = CreateAtomicIndicesList(A.Labels, {{"Kappas", true}})
 H = NewOperator("Dirac", NF, 8, indices, G, F, A.Nucleus) + NewOperator("AU", NF, indices, G, F)
 local sum, nd = 0, 0
@@ -136,7 +136,7 @@ check(table.concat(A.Labels, " ") == "1s1/2 2s1/2 2p1/2 2p3/2" and math.abs(sum/
       string.format("O 1s2 2s2 2p1/2(2) 2p3/2(2): E_av - mean of %d determinants %+.1e", nd, sum/nd - A.Etot))
 
 -- Slater integrals against the cell method (Schroedinger)
-G, F, A = CalculateAtomicBasisFunctions(26, "[Ar] 3d6 4s2", {pt, {"Relativistic", false}})
+G, F, A = CalculateAtomicBasisFunctions(26, {{"Configuration", "[Ar] 3d6 4s2"}, pt, {"Relativistic", false}})
 local S = GetSlaterIntegrals(A.Labels, G)
 local count = 0
 worst = 0
@@ -149,7 +149,7 @@ end
 check(worst < 1e-10 and count == 59 and #F == 0, string.format("Fe Schroedinger: %d Slater integrals, Galerkin - cell method %.1e", count, worst))
 
 -- Gram-Schmidt from the lowest n; NMax
-G, F, A = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"NMax", {s = 3, p = 3, ["p1/2"] = 2}}, {"Q", {["2s1/2"] = 1}}})
+G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"NMax", {s = 3, p = 3, ["p1/2"] = 2}}, {"Q", {["2s1/2"] = 1}}})
 local o1 = A.Orbitals[1]
 check(table.concat(A.Labels, " ") == "1s1/2 2s1/2 2p1/2 2p3/2 3s1/2 3p3/2" and o1.Label == "1s1/2" and not o1.Generated and math.abs(o1.EnergyGround - o1.Energy) < 1e-12*math.abs(o1.Energy)
       and A.Orbitals[2].Generated and A.OrthonormalityError < 1e-13,
@@ -161,11 +161,11 @@ local function fails(f, text)
   local ok, message = pcall(f)
   check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
 end
-fails(function() return CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"P", {["2p3/2"] = 0.9}}}) end, "P without Confinement")
-fails(function() return CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"Q", {["3d"] = 1}}}) end, "Q of an orbital that is not calculated")
-fails(function() return CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"Confinement", {Rho = 4, N = 8, P = 0.9}}}) end, "an atom-wide P in Confinement")
-fails(function() return CalculateAtomicBasisFunctions(10, "[He] 2s2 2p1/2(2) 2p6", {pt}) end, "2p given as nl and as n kappa")
-fails(function() return CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {pt, {"Method", "B3LYP"}}) end, "unknown method")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"P", {["2p3/2"] = 0.9}}}) end, "P without Confinement")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Q", {["3d"] = 1}}}) end, "Q of an orbital that is not calculated")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Confinement", {Rho = 4, N = 8, P = 0.9}}}) end, "an atom-wide P in Confinement")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p1/2(2) 2p6"}, pt}) end, "2p given as nl and as n kappa")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Method", "B3LYP"}}) end, "unknown method")
 fails(function() return CalculateAtomicBasisFunctions(26.5) end, "no ground-state configuration for Z = 26.5")
 
 if failed then error("CalculateAtomicBasisFunctions: checks failed", 1) end

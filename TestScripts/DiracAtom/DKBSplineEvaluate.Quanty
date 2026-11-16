@@ -29,7 +29,7 @@ local function check(ok, text)
 end
 
 local rMin, rMax = 1e-6, 80
-local G, F, Atom = CalculateAtomicBasisFunctions(1, "1s0 2s0", {{"Nucleus", "Point"}, {"rMin", rMin}, {"rMax", rMax}})
+local G, F, Atom = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s0 2s0"}, {"Nucleus", "Point"}, {"rMin", rMin}, {"rMax", rMax}})
 local P, Q = G[1], F[1]
 local x = P.x
 

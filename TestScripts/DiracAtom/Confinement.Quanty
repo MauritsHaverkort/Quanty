@@ -35,8 +35,8 @@ local function energies(A)
   return e
 end
 for _, r0 in ipairs({0.5, 1, 2, 4}) do
-  local G, F, Ac = CalculateAtomicBasisFunctions(Z, "3d5/2(0) 4s0", {{"A", A}, {"NIntervals", 140}, {"Confinement", {Rho = r0, N = 8}}})
-  local G0, F0, A0 = CalculateAtomicBasisFunctions(Z, "3d5/2(0) 4s0", {{"A", A}, {"NIntervals", 140}, {"rMax", Ac.rMax}})
+  local G, F, Ac = CalculateAtomicBasisFunctions(Z, {{"Configuration", "3d5/2(0) 4s0"}, {"A", A}, {"NIntervals", 140}, {"Confinement", {Rho = r0, N = 8}}})
+  local G0, F0, A0 = CalculateAtomicBasisFunctions(Z, {{"Configuration", "3d5/2(0) 4s0"}, {"A", A}, {"NIntervals", 140}, {"rMax", Ac.rMax}})
   local ec, e0 = energies(Ac), energies(A0)
   for _, kappa in ipairs({-3, -1}) do
     local dE = ec[kappa].Energy - e0[kappa].Energy
@@ -52,9 +52,9 @@ for _, r0 in ipairs({0.5, 1, 2, 4}) do
 end
 
 -- the automatic rMax and its options
-local G, F, Ai = CalculateAtomicBasisFunctions(Z, "3d5/2(0)", {{"A", A}, {"Confinement", {Rho = 2, N = 10}}, {"ConfinementVmax", 1e4}})
+local G, F, Ai = CalculateAtomicBasisFunctions(Z, {{"Configuration", "3d5/2(0)"}, {"A", A}, {"Confinement", {Rho = 2, N = 10}}, {"ConfinementVmax", 1e4}})
 check(math.abs(Ai.rMax - 2*1e4^(1/10)) < 1e-12, string.format("rMax = rc Vmax^(1/N) = %.6f", Ai.rMax))
-G, F, Ai = CalculateAtomicBasisFunctions(Z, "3d5/2(0)", {{"A", A}, {"Confinement", {Rho = 2, N = 8}}, {"rMax", 12}})
+G, F, Ai = CalculateAtomicBasisFunctions(Z, {{"Configuration", "3d5/2(0)"}, {"A", A}, {"Confinement", {Rho = 2, N = 8}}, {"rMax", 12}})
 check(Ai.rMax == 12, "an explicit rMax wins")
 
 if failed then error("confinement checks failed", 1) end

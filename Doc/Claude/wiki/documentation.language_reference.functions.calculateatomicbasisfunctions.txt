@@ -4,7 +4,7 @@
 ;;#
 
 ###
-//G, F, Atom = CalculateAtomicBasisFunctions(Z, Configuration, Options)// calculates the radial functions of the orbitals of an atom. //CalculateAtomicBasisFunctions(Z)// is enough for the ground state of the neutral atom. The atom is calculated self-consistently, relativistically (Dirac equation) or nonrelativistically (Schrödinger equation), either in the configuration-average Hartree-Fock approximation or in density functional theory (LDA, PBE). The radial functions are expanded in B-splines and returned as interpolating functions.
+//G, F, Atom = CalculateAtomicBasisFunctions(Z, Options)// calculates the radial functions of the orbitals of an atom. //CalculateAtomicBasisFunctions(Z)// is enough for the ground state of the neutral atom. The atom is calculated self-consistently, relativistically (Dirac equation) or nonrelativistically (Schrödinger equation), either in the configuration-average Hartree-Fock approximation or in density functional theory (LDA, PBE). The radial functions are expanded in B-splines and returned as interpolating functions.
 ###
 
 ###
@@ -54,8 +54,8 @@ Each $nl$ shell is split into its two $j$ subshells, $nl_{j=l-1/2}$ and $nl_{j=l
 ===== Input =====
 
   * //Z// : Real, the nuclear charge.
-  * //Configuration// : (optional) String, the electron configuration, for example //"[Ar] 3d8 4s2"//, see below. Left out, the ground-state configuration of the neutral atom is used (from the NIST atomic spectra database, for $Z$ = 1 to 103). Every orbital of the configuration is calculated and returned; an orbital with occupation 0, for example //"4p0"//, is calculated as an empty orbital. A configuration of empty orbitals only, for example //"1s0 2s0 2p0"//, is the bare nucleus: the orbitals of a hydrogen-like ion of charge $Z$.
   * Options : (optional) A table of options. Possible options are:
+      * //"Configuration"// : String, the electron configuration, for example //"[Ar] 3d8 4s2"//, see below. Default value is the ground-state configuration of the neutral atom (from the NIST atomic spectra database, for $Z$ = 1 to 103). Every orbital of the configuration is calculated and returned; an orbital with occupation 0, for example //"4p0"//, is calculated as an empty orbital. A configuration of empty orbitals only, for example //"1s0 2s0 2p0"//, is the bare nucleus: the orbitals of a hydrogen-like ion of charge $Z$.
       * //"Method"// : String. //"DHF"// (default) for configuration-average Hartree-Fock, //"LDA"// (Slater exchange and Perdew-Wang 92 correlation), //"LDA-VWN"// (Slater and Vosko-Wilk-Nusair), //"RLDA-MV"// (VWN with the relativistic MacDonald-Vosko correction of the exchange), //"PBE"// or //"PBE-VWN"//.
       * //"Relativistic"// : Boolean. Default value is true (Dirac equation); false solves the Schrödinger equation.
       * //"NMax"// : Table, also calculate all orbitals up to this principal quantum number, per $l$, for example //{s = 5, p = 4, d = 4}//; per $\kappa$ with entries such as //["p1/2"] = 5//.
@@ -109,7 +109,7 @@ The Hartree-Fock Slater integrals and the spin-orbit coupling of Ni$^{2+}$ ($3d^
 
 <code Quanty Example.Quanty>
 -- Hartree-Fock Slater integrals and spin-orbit coupling of Ni2+ in a 3d8 multiplet calculation
-G, F, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8")
+G, F, Atom = CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8"}})
 eV = 27.211386
 F2 = Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2]*eV
 F4 = Atom.SlaterIntegralsNL["3d 3d 3d 3d"][4]*eV
@@ -179,7 +179,7 @@ The function of such an orbital comes from its own calculation, in which only th
 
 <code Quanty Example.Quanty>
 -- a confined basis for Fe: all orbitals up to 5s, 4p and 4d, the empty 4p and 4d contracted
-G, F, Atom = CalculateAtomicBasisFunctions(26, "[Ar] 3d6 4s2", {{"Method", "LDA"},
+G, F, Atom = CalculateAtomicBasisFunctions(26, {{"Configuration", "[Ar] 3d6 4s2"}, {"Method", "LDA"},
   {"NMax", {s = 5, p = 4, d = 4}},
   {"Confinement", {Rho = 4, N = 8}},
   {"Q", {["4p"] = 1, ["4d"] = 2}},
@@ -241,7 +241,7 @@ The potentials of Kr in LDA. $-r V(r)$ is the charge an electron at $r$ sees: th
 
 <code Quanty Example.Quanty>
 -- the potentials of the Kr atom in LDA, as r V(r)
-G, F, Atom = CalculateAtomicBasisFunctions(36, "[Ar] 3d10 4s2 4p6", {{"Method", "LDA"}})
+G, F, Atom = CalculateAtomicBasisFunctions(36, {{"Configuration", "[Ar] 3d10 4s2 4p6"}, {"Method", "LDA"}})
 V = Atom.Potential
 print(V.rVN.type, V.rVN.degree, #V.rVN.x == #G[1].x)
 
@@ -303,7 +303,7 @@ here for the 3d shell of Ni. The integrand is made into an interpolating functio
 
 <code Quanty Example.Quanty>
 -- the spin-orbit coupling of the Ni 3d shell from the derivative of the potential
-G, F, Atom = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {{"Method", "LDA"}, {"Relativistic", false}})
+G, F, Atom = CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8 4s2"}, {"Method", "LDA"}, {"Relativistic", false}})
 x = G[1].x
 c = Atom.c
 rV = Atom.Potential.rVN + Atom.Potential.rVH + Atom.Potential.rVxc
@@ -314,7 +314,7 @@ y = {}
 for i = 1, #x do y[i] = P[i]^2*(df[i] - f[i]/x[i])/x[i]^2/(2*c*c) end
 zeta = InterpolatingFunction.Integrate(InterpolatingFunction.BSpline(x, y, 8))
 
-G, F, Dirac = CalculateAtomicBasisFunctions(28, "[Ar] 3d8 4s2", {{"Method", "LDA"}})
+G, F, Dirac = CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8 4s2"}, {"Method", "LDA"}})
 eV = 27.211386
 print(string.format("zeta(3d) = %.4f eV from the Schroedinger potential, %.4f eV from the Dirac calculation", zeta*eV, Dirac.Zeta["3d"]*eV))
 </code>

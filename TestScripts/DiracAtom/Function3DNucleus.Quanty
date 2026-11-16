@@ -34,10 +34,9 @@ local Z, A = 92, 238
 local Rrms = (0.836*A^(1/3) + 0.570)/a0fm
 local zeta = 1.5/Rrms^2
 local function sphere(x, y, z) return Z*(zeta/math.pi)^1.5*math.exp(-zeta*(x*x + y*y + z*z)) end
-local f3 = {{"Nucleus", "Function3D"}, {"Density", sphere}, {"Rrms", Rrms}}
 local empty = "1s0 2s0 3s0 2p0 3p0 4p0 3d0"
-local Gg, Fg, Ag = CalculateAtomicBasisFunctions(Z, empty, {{"Nucleus", "Gaussian"}, {"Rrms", Rrms}})
-local Gf, Ff, Af = CalculateAtomicBasisFunctions(Z, empty, f3)
+local Gg, Fg, Ag = CalculateAtomicBasisFunctions(Z, {{"Configuration", empty}, {"Nucleus", "Gaussian"}, {"Rrms", Rrms}})
+local Gf, Ff, Af = CalculateAtomicBasisFunctions(Z, {{"Configuration", empty}, {"Nucleus", "Function3D"}, {"Density", sphere}, {"Rrms", Rrms}})
 local worst = 0
 for i, o in ipairs(Ag.Orbitals) do worst = math.max(worst, math.abs(Af.Orbitals[i].Energy - o.Energy)/math.abs(o.Energy)) end
 local G1, F1, G2, F2 = {}, {}, {}, {}
@@ -57,7 +56,7 @@ local function gauss(ax, ay, az)
   return function(x, y, z) return Zl/((2*math.pi)^1.5*ax*ay*az)*math.exp(-x*x/(2*ax*ax) - y*y/(2*ay*ay) - z*z/(2*az*az)) end
 end
 local ax, ay, az = s0, 1.05*s0, 1.1*s0
-local G, F, At = CalculateAtomicBasisFunctions(Zl, "[Ar] 3d0 4s2", {{"Method", "LDA"},
+local G, F, At = CalculateAtomicBasisFunctions(Zl, {{"Configuration", "[Ar] 3d0 4s2"}, {"Method", "LDA"},
                                                     {"Nucleus", "Function3D"}, {"Density", gauss(ax, ay, az)}, {"rMin", s0/50}})
 local q20 = math.sqrt(5/(16*math.pi))*Zl*(2*az^2 - ax^2 - ay^2)
 local q22 = math.sqrt(15/(16*math.pi))*Zl*(ax^2 - ay^2)
@@ -110,7 +109,7 @@ for _, cs in ipairs(cases) do
 end
 
 -- Atom.Nucleus with NewOperator("Dirac")
-local Gn, Fn, An = CalculateAtomicBasisFunctions(10, "[He] 2s2 2p6", {
+local Gn, Fn, An = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, 
    {"Nucleus", "Function3D"}, {"Density", function(x, y, z) return 10/((2*math.pi)^1.5*1e-12)*math.exp(-(x*x + y*y + 1.1*z*z)/2e-8)*math.sqrt(1.1) end}, {"rMin", 2e-6}})
 local idx3, NF3 = CreateAtomicIndicesList(An.Labels, {{"Kappas", true}})
 local H = NewOperator("Dirac", NF3, 10, idx3, Gn, Fn, An.Nucleus) + NewOperator("AU", NF3, idx3, Gn, Fn)
@@ -123,9 +122,9 @@ local function fails(f, text)
   local ok, message = pcall(f)
   check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
 end
-fails(function() return CalculateAtomicBasisFunctions(10, "1s0", {{"Nucleus", "Function3D"}, {"Density", function(x, y, z) return nil end}}) end, "Density returns nil")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "1s0"}, {"Nucleus", "Function3D"}, {"Density", function(x, y, z) return nil end}}) end, "Density returns nil")
 fails(function() return NewOperator("NuclearMultipole", NF, Z, idx, {G1[1], G2[1]}, {F1[1], F2[1]}, {{"Nucleus", "Gaussian"}}) end, "NuclearMultipole needs Function3D")
-fails(function() return CalculateAtomicBasisFunctions(10, "1s0", {{"Nucleus", "Function3D"}}) end, "Function3D without Density")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "1s0"}, {"Nucleus", "Function3D"}}) end, "Function3D without Density")
 
 if failed then error("Function3D nucleus: checks failed", 1) end
 print("passed")

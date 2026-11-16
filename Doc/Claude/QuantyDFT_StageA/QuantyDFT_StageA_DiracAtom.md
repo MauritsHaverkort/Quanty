@@ -235,7 +235,7 @@ Results (degree 8, 13 points per interval, $c$ = 137.035999177):
 
 ### The interface of `CalculateAtomicBasisFunctions` (Maurits, after A5e)
 
-- Required input goes in the argument list, never in the options: `CalculateAtomicBasisFunctions(Z [, Configuration] [, {options}])`. `CalculateAtomicBasisFunctions(Z)` returns all occupied orbitals of the ground state of the neutral atom.
+- Required input goes in the argument list, optional input in the options: `CalculateAtomicBasisFunctions(Z [, {options}])`, the configuration is the option `Configuration` (2026-11-16). `CalculateAtomicBasisFunctions(Z)` returns all occupied orbitals of the ground state of the neutral atom.
 - **Defaults:** the configuration from the NIST Atomic Spectra Database ("Ground Shells" of the neutral atoms, Z = 1–103, `AtomGroundStateConfiguration`); the mass number of the most abundant isotope from the NIST isotopic compositions, for Am–Lr that of the longest-lived isotope (`AtomDefaultMassNumber`), so the Gaussian nucleus needs no `A`.
 - **The label list is gone.** The configuration says which orbitals exist (occupation 0 for an empty one, e.g. `"4p0"`), together with `NMax`; all are returned, ordered by n, l, j (`Atom.Labels`), and a selection is made in Lua.
 - **Q and P** are two options keyed by orbital, `{"Q", {["4p"] = 1}}` and `{"P", {["4d5/2"] = 0.8}}` (FPLO's names), for calculated orbitals only.
