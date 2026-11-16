@@ -929,9 +929,9 @@ int LuaAddToGraphics(lua_State * L)
                 {
                   Arc.ThetaR = Arc.ThetaR - TwoPi;
                 }
-                if(Arc.ThetaR < 0 )
+                while(Arc.ThetaR < 0 )
                 {
-                  Arc.ThetaR = 0;
+                  Arc.ThetaR = Arc.ThetaR + TwoPi;
                 }
                 lua_rawgeti(L, 2, 5); // thetamax
                 Arc.ThetaL=(double)luaL_checknumber(L, -1);
@@ -940,9 +940,9 @@ int LuaAddToGraphics(lua_State * L)
                 {
                   Arc.ThetaL = Arc.ThetaL - TwoPi;
                 }
-                if(Arc.ThetaL < 0 )
+                while(Arc.ThetaL < 0 )
                 {
-                  Arc.ThetaL = 0;
+                  Arc.ThetaL = Arc.ThetaL + TwoPi;
                 }
                 if(Arc.ThetaL <= Arc.ThetaR )
                 {
@@ -1149,7 +1149,6 @@ int LuaAddToGraphics(lua_State * L)
                   Curve.VL[i].Y=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
                   
-                  lua_rawgeti(L, 2, i+1);
                   lua_rawgeti(L, -1, 3); // X
                   Curve.Point[i].X=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
@@ -1157,7 +1156,6 @@ int LuaAddToGraphics(lua_State * L)
                   Curve.Point[i].Y=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
                   
-                  lua_rawgeti(L, 2, i+1);
                   lua_rawgeti(L, -1, 5); // X
                   Curve.VR[i].X=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
@@ -2415,7 +2413,7 @@ int LuaNewBitMap(lua_State * L)
       return luaL_error(L, "Error in LuaNewBitMap BitMap.New called with last argument that has the wrong format for options\n");
     }
   }
-  if ( (len==2) || (len=3) )
+  if ( (len==2) || (len==3) )
   {
     BitMap->NpointsX=(uint32_t)luaL_checkinteger(L, 1);
     BitMap->NpointsY=(uint32_t)luaL_checkinteger(L, 2);
@@ -2468,9 +2466,9 @@ int LuaBitMapSetPixel(lua_State *L)
   uint32_t len = (uint32_t)lua_gettop(L);
   BitMapType *BitMap = (BitMapType *) luaL_checkudata(L, 1, "BitMap_Type");
   int i = (int) luaL_checkinteger(L, 2);
-  if(i>BitMap->NpointsX) return luaL_error(L, "Error: can not index column %d from %d available\n",i, BitMap->NpointsX);
+  if((i<1)||(i>(int)BitMap->NpointsX)) return luaL_error(L, "Error: can not index column %d from %d available\n",i, (int)BitMap->NpointsX);
   int j = (int) luaL_checkinteger(L, 3);
-  if(j>BitMap->NpointsY) return luaL_error(L, "Error: can not index row %d from %d available\n",j, BitMap->NpointsY);
+  if((j<1)||(j>(int)BitMap->NpointsY)) return luaL_error(L, "Error: can not index row %d from %d available\n",j, (int)BitMap->NpointsY);
   uint32_t rgb = (uint32_t) luaL_checkinteger(L, 4);
   // the colour 0xAARRGGBB, AA the transparency, and with a fifth argument an opacity alpha (255 opaque) on top
   BitMap->Pixels[(i-1) + (j-1)*BitMap->NpointsX] = rgb;
@@ -2485,8 +2483,8 @@ int LuaBitMapSetPixel(lua_State *L)
 int LuaBitMapToFile(lua_State * L)
 {
   BitMapType *BitMap = (BitMapType *) luaL_checkudata(L, 1, "BitMap_Type");
-  const char *filename = lua_tostring(L, 2);
-  BitMapToFile(BitMap, filename);
+  const char *filename = luaL_checkstring(L, 2);
+  if(BitMapToFile(BitMap, filename)) return luaL_error(L, "Error in BitMap.Save: can not open the file %s\n", filename);
   return 0;
 }
 

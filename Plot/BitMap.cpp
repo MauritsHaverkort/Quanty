@@ -68,8 +68,9 @@ int BitMapToFile(BitMapType *BitMap, const char *filename)
 {
   FILE *fp;
   DynamicString A;
-  BitMapToBinaryString(BitMap, &A);
   fp = fopen( filename , "wb" );
+  if(fp==NULL) return 1;
+  BitMapToBinaryString(BitMap, &A);
   fwrite(A.str , 1 , A.length , fp );
   fclose(fp);
   FreeDynamicString(&A);

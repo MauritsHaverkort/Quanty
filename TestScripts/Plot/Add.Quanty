@@ -536,3 +536,27 @@ end
 for k, l in ipairs({-3, {1, 1}, {0, 2}, 1E30, -1E30, 0.5, I, {0, 1+I}, "a", {1, "a"}}) do
 	if pcall(G.Add, "x", 0, 0, {{"Layer",l}}) then error("Graphics.Add accepted a wrong Layer in case "..k.."\n", 1) end
 end
+
+-- an arc with a negative angle: the angles are taken modulo 2 pi, so {-Pi/2, Pi/2} is the right half
+-- of a circle, from 3 pi/2 to 5 pi/2 (a negative angle was set to 0 before)
+A = Graphics.ToTable(Graphics.Add(Graphics.New(), {"Arc", {0.5,0.5}, 0.1, -Pi/2, Pi/2})).Arc[1]
+if math.abs(A.ThetaR - 3*Pi/2) > 1E-12 or math.abs(A.ThetaL - 5*Pi/2) > 1E-12 then
+	error("Graphics.Add arc from -Pi/2 to Pi/2: from "..A.ThetaR.." to "..A.ThetaL.." instead of 3 pi/2 to 5 pi/2\n", 1)
+end
+-- a long Bezier curve: every point is read from the Lua stack and taken off again
+Long = {}
+for k = 1, 20000 do local x = k/20001; Long[k] = {x, 0.5, x, 0.5 + 0.4*math.sin(20*x), x, 0.5} end
+C = Graphics.ToTable(Graphics.Add(Graphics.New(), Long)).Curve[1]
+if #C.Point ~= 20000 or math.abs(C.Point[20000][2] - (0.5 + 0.4*math.sin(20*20000/20001))) > 1E-12 then
+	error("Graphics.Add a curve of 20000 points failed\n", 1)
+end
+-- texts with characters that have a meaning in svg (& < >) or in PostScript strings (( ) \)
+G = Graphics.Add(Graphics.New(), "a < b & c > d", 0.1, 0.1, "f(x \\ y", 0.1, 0.5)
+SVG, PS = Graphics.ToSVG(G), Graphics.ToPS(G)
+if not string.find(SVG, "a &lt; b &amp; c &gt; d", 1, true) or string.find(SVG, "a < b", 1, true) then
+	error("Graphics.ToSVG does not write < & > in a text as &lt; &amp; &gt;\n", 1)
+end
+if not string.find(PS, "(f\\(x \\\\ y)", 1, true) then
+	error("Graphics.ToPS does not write ( ) \\ in a text with a backslash\n", 1)
+end
+print("arcs with negative angles, a curve of 20000 points and texts with & < > ( ) \\ passed")
