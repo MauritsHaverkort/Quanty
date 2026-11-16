@@ -1300,7 +1300,13 @@ static void LuaReadPointList(lua_State *L, int narg, SpectraType *S, double **X,
 // nucleus, is not lost. An infinite Xmin or Xmax (no Frame range given) is the first or the last
 // of its own points. The values go into the spectrum S (Im 0) and the points into *X, as in
 // LuaReadPointList. Curve is the number of the curve, for error messages.
-static void LuaReadInterpolatingFunction(lua_State *L, int narg, double Xmin, double Xmax, int NE, SpectraType *S, double **X, int Curve)
+// A function with a continuous derivative (CubicSpline, CubicHermiteSpline, a BSpline of degree 2
+// or more, a DKBSpline of degree 3 or more, whose small component has the derivative of the
+// B-splines) also gives its slopes, *DL left and *DR right of each point, and is drawn with cubic
+// pieces (AddDataPointsToGraphics); otherwise *DL and *DR are NULL. Outside its own range, from the
+// first to the last knot or data point, the function is 0, and a piece between two points that is
+// not inside that range is drawn straight: both its slopes are that of the straight line.
+static void LuaReadInterpolatingFunction(lua_State *L, int narg, double Xmin, double Xmax, int NE, SpectraType *S, double **X, double **DL, double **DR, int Curve)
 {
   Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, narg, "InterpolatingFunction_Type");
   std::vector<double> own = (f->type == "BSpline") ? BSpline::SamplePoints(*f) : f->GetX();
@@ -1327,6 +1333,45 @@ static void LuaReadInterpolatingFunction(lua_State *L, int narg, double Xmin, do
   {
     S->Re[k] = y[k];
     (*X)[k]  = x[k];
+  }
+  // the slopes of a function with a continuous derivative, and the range in which it is that function
+  *DL = NULL;
+  *DR = NULL;
+  double First, Last;
+  if(f->type == "BSpline")
+  {
+    BSpline::TBSpline const *b = (BSpline::TBSpline const *) f;
+    if((b->degree<2) || b->knots.empty()) return;
+    First = b->knots.front();
+    Last  = b->knots.back();
+  }
+  else if(f->type == "DKBSpline")
+  {
+    Interpolation::DKBSpline const *b = (Interpolation::DKBSpline const *) f;
+    if((b->degree<3) || b->knots.empty()) return;
+    First = b->knots.front();
+    Last  = b->knots.back();
+  }
+  else if((f->type == "CubicSpline") || (f->type == "CubicHermiteSpline"))
+  {
+    First = *std::min_element(own.begin(), own.end());
+    Last  = *std::max_element(own.begin(), own.end());
+  }
+  else return;
+  std::vector<double> d = (*f)(x, 1);
+  *DL = (double*)malloc(N*sizeof(double));
+  *DR = (double*)malloc(N*sizeof(double));
+  for(int k=0;k<N;k++)
+  {
+    (*DL)[k] = d[k];
+    (*DR)[k] = d[k];
+  }
+  for(int k=0;k+1<N;k++)
+  {
+    if((x[k]>=First) && (x[k+1]<=Last)) continue;
+    double const Chord = (y[k+1]-y[k])/(x[k+1]-x[k]);
+    (*DR)[k]   = Chord;
+    (*DL)[k+1] = Chord;
   }
 }
 
@@ -1370,6 +1415,7 @@ int LuaPlotGraphics(lua_State * L)
   View.Spec=NULL; // the selected spectra, sharing their data with the spectra they are taken from
   double *YPos=NULL; // the heights of the spectra in a waterfall plot or a colour map
   double **PointX=NULL; // for curves given as lists of points their x values, NULL for spectra on an even mesh
+  double **PointDL=NULL, **PointDR=NULL; // for interpolating functions with a continuous derivative their slopes, else NULL
   int NPointX=0;
   bool AutoYRange=false; // the y range was chosen from the data, the y ticks then lie on multiples of dYTick
   uint32_t len = (uint32_t) lua_gettop(L);
@@ -1654,7 +1700,12 @@ int LuaPlotGraphics(lua_State * L)
             NPointX = (int)a->NSpectra;
             PointX = (double**)calloc(NPointX, sizeof(double*));
           }
-          LuaReadInterpolatingFunction(L, -1, Options.Frame.PlotRange[0].X, Options.Frame.PlotRange[1].X, Options.PlotPoints, &(a->Spec[k]), &(PointX[k]), i+1);
+          if(PointDL==NULL)
+          {
+            PointDL = (double**)calloc(NPointX, sizeof(double*));
+            PointDR = (double**)calloc(NPointX, sizeof(double*));
+          }
+          LuaReadInterpolatingFunction(L, -1, Options.Frame.PlotRange[0].X, Options.Frame.PlotRange[1].X, Options.PlotPoints, &(a->Spec[k]), &(PointX[k]), &(PointDL[k]), &(PointDR[k]), i+1);
         }
         else if (luaL_testudata(L, -1, "ResponseFunction_Type") != NULL)
         {
@@ -1880,7 +1931,7 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos, PointX);
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos, PointX, PointDL, PointDR);
         free(LPORe);
         free(LPOIm);
       }
@@ -2013,7 +2064,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset), NULL); // one spectrum
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset), NULL, NULL, NULL); // one spectrum
         free(LPORe);
         free(LPOIm);
       }
@@ -2097,6 +2148,9 @@ int LuaPlotGraphics(lua_State * L)
   free(YPos);
   for(i=0;i<NPointX;i++) free(PointX[i]);
   free(PointX);
+  for(i=0;(PointDL!=NULL)&&(i<NPointX);i++) { free(PointDL[i]); free(PointDR[i]); }
+  free(PointDL);
+  free(PointDR);
   luaL_unref(L, LUA_REGISTRYINDEX, Options.ColorFunction);
   FreeSpectraTypeArray(&aa);
   return 1;

@@ -408,8 +408,9 @@ for k, n in ipairs({-1, 4}) do
   if pcall(Graphics.Plot, Lists, {LineFrame, {"LineStyleCycle",n}}) then error("Graphics.Plot accepted LineStyleCycle "..n.." with 3 styles\n", 1) end
 end
 
--- interpolating functions are drawn as a list of points: PlotPoints+1 equally spaced points of the
--- x range and the own points of the function (f.x) inside it; the same plot as that list of points
+-- interpolating functions are evaluated at PlotPoints+1 equally spaced points of the x range and at
+-- their own points (f.x) inside it: the dots (PointSize) lie at these points, the same as for that
+-- list of points
 print("Interpolating functions")
 function Mesh(f, Xmin, Xmax, NE)
   local x, seen, points = {}, {}, {}
@@ -422,25 +423,103 @@ function Mesh(f, Xmin, Xmax, NE)
   for _, v in ipairs(x) do if not seen[v] then seen[v] = true; points[#points+1] = {v, f(v)} end end
   return points
 end
-function SameSVG(A, B, What)
-  if Graphics.ToSVG(A) ~= Graphics.ToSVG(B) then error("Graphics.Plot "..What..": not the plot of the list of points\n", 1) end
+-- the options Opt and dots at all points
+function WithDots(Opt)
+  local o = {{"LineStyle", { {{"PointSize",0.002}}, {{"PointSize",0.002}} }}}
+  for _, v in ipairs(Opt) do o[#o+1] = v end
+  return o
+end
+function SameDots(A, B, What)
+  local a, b = Graphics.ToTable(A).Arc, Graphics.ToTable(B).Arc
+  local same = (#a == #b)
+  for k = 1, #a do
+    if not same then break end
+    same = math.abs(a[k].Point[1] - b[k].Point[1]) < 1e-12 and math.abs(a[k].Point[2] - b[k].Point[2]) < 1e-12
+  end
+  if not same then error("Graphics.Plot "..What..": the dots are not those of the list of points ("..#a.." and "..#b.." dots)\n", 1) end
 end
 Bs = InterpolatingFunction.BSpline({-2, -1.5, -0.4, 0.1, 1.2, 2.5}, {1, 3, -1, -2, 0.5, 4}, 3)
 Cs = InterpolatingFunction.Spline({-2, -1.5, -0.4, 0.1, 1.2, 2.5}, {1, 3, -1, -2, 0.5, 4})
 FrameIF = {{"Ymin",-10},{"Ymax",10},{"Xmin",-1},{"Xmax",2}}
-SameSVG(Graphics.Plot(Bs, {{"plotIm",false}, {"PlotPoints",7}, {"Frame",FrameIF}}),
-        Graphics.Plot(Mesh(Bs, -1, 2, 7), {{"plotIm",false}, {"PlotPoints",7}, {"Frame",FrameIF}}), "BSpline in a narrower frame")
-SameSVG(Graphics.Plot(Cs, {{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}}),
-        Graphics.Plot(Mesh(Cs, nil, nil, 600), {{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}}), "Spline, default x range")
-SameSVG(Graphics.Plot({Bs, Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}}),
-        Graphics.Plot({Mesh(Bs, -1, 2, 600), Uneven}, {{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}}), "BSpline with a list of points")
+SameDots(Graphics.Plot(Bs, WithDots({{"plotIm",false}, {"PlotPoints",7}, {"Frame",FrameIF}})),
+         Graphics.Plot(Mesh(Bs, -1, 2, 7), WithDots({{"plotIm",false}, {"PlotPoints",7}, {"Frame",FrameIF}})), "BSpline in a narrower frame")
+SameDots(Graphics.Plot(Cs, WithDots({{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}})),
+         Graphics.Plot(Mesh(Cs, nil, nil, 600), WithDots({{"plotIm",false}, {"Frame",{{"Ymin",-10},{"Ymax",10}}}})), "Spline, default x range")
+SameDots(Graphics.Plot({Bs, Uneven}, WithDots({{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}})),
+         Graphics.Plot({Mesh(Bs, -1, 2, 600), Uneven}, WithDots({{"plotIm",false}, {"WaterfallShift",2}, {"Frame",FrameIF}})), "BSpline with a list of points")
 -- a DKBSpline: the hydrogen 1s, its quadrature points dense near the nucleus
 Gh, Fh = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s0"}, {"Nucleus","Point"}})
 FrameH = {{"Xmin",0},{"Xmax",10},{"Ymin",-1},{"Ymax",1}}
-SameSVG(Graphics.Plot({Gh[1], Fh[1]}, {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}),
-        Graphics.Plot({Mesh(Gh[1], 0, 10, 50), Mesh(Fh[1], 0, 10, 50)}, {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}}), "DKBSpline")
-T = Graphics.ToTable(Graphics.Plot(Gh[1], {{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}, {"LineStyle",{ {{"PointSize",0.002}} }}}))
+SameDots(Graphics.Plot({Gh[1], Fh[1]}, WithDots({{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}})),
+         Graphics.Plot({Mesh(Gh[1], 0, 10, 50), Mesh(Fh[1], 0, 10, 50)}, WithDots({{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}})), "DKBSpline")
+T = Graphics.ToTable(Graphics.Plot(Gh[1], WithDots({{"plotIm",false}, {"PlotPoints",50}, {"Frame",FrameH}})))
 if #T.Arc < 1000 then error("Graphics.Plot DKBSpline: "..#T.Arc.." points, the quadrature points are missing\n", 1) end
+
+-- a function with a continuous derivative (Spline, BSpline of degree 2 or more, DKBSpline) is drawn as
+-- a curve of cubic Bezier pieces, thinned like a line: at every point where it is evaluated the drawn
+-- curve lies within 0.01 mm of the function (the distance along y times the cosine of the slope).
+-- The Bezier pieces are cubics of x, their control points a third of the way along x.
+print("Interpolating functions as curves")
+-- the largest distance in mm of the points {x, f(x)} of f inside the frame from the curves of T
+function CurveDistance(T, f, Points, Xmin, Xmax, Ymin, Ymax)
+  local SX, SY = (1-ML-MR)/(Xmax-Xmin), (1-MB-MT)/(Ymax-Ymin)
+  local Worst = 0
+  for _, p in ipairs(Points) do
+    if p[1] >= Xmin and p[1] <= Xmax and p[2] >= Ymin and p[2] <= Ymax then
+      local X, Y, d = CanvasX(p[1], Xmin, Xmax), CanvasY(p[2], Ymin, Ymax), math.huge
+      for _, c in ipairs(T.Curve) do
+        for k = 1, #c.Point-1 do
+          local X0, X3 = c.Point[k][1], c.Point[k+1][1]
+          if math.abs(c.VR[k][1] - (2*X0+X3)/3) > 1e-12 or math.abs(c.VL[k+1][1] - (X0+2*X3)/3) > 1e-12 then
+            error("Graphics.Plot: a Bezier piece whose control points are not a third of the way along x\n", 1)
+          end
+          if X >= X0 - 1e-14 and X <= X3 + 1e-14 then
+            local t = (X3 > X0) and (X - X0)/(X3 - X0) or 0
+            local y = (1-t)^3*c.Point[k][2] + 3*(1-t)^2*t*c.VR[k][2] + 3*(1-t)*t^2*c.VL[k+1][2] + t^3*c.Point[k+1][2]
+            local s = f(p[1], 1)*SY/SX*CanvasMM[2]/CanvasMM[1]
+            d = math.min(d, math.abs(Y - y)*CanvasMM[2]/math.sqrt(1 + s*s))
+          end
+        end
+      end
+      Worst = math.max(Worst, d)
+    end
+  end
+  return Worst
+end
+for _, w in ipairs({ {Bs, "BSpline of degree 3", -3, 3, -10, 10, 600},     -- the x range wider than the knots
+                     {Cs, "Spline", -2, 2.5, -10, 10, 600},
+                     {Bs, "BSpline cut at the frame", -3, 3, -1.5, 2.5, 600},
+                     {Gh[1], "DKBSpline G of the hydrogen 1s", 0, 10, -1, 1, 50},
+                     {Fh[1], "DKBSpline F of the hydrogen 1s", 0, 0.5, -0.002, 0.001, 50} }) do
+  local f, What, Xmin, Xmax, Ymin, Ymax, NE = w[1], w[2], w[3], w[4], w[5], w[6], w[7]
+  T = Graphics.ToTable(Graphics.Plot(f, {{"plotIm",false}, {"PlotPoints",NE}, {"Frame",{{"Xmin",Xmin},{"Xmax",Xmax},{"Ymin",Ymin},{"Ymax",Ymax}}}}))
+  if T.Curve == nil then error("Graphics.Plot "..What..": no curve\n", 1) end
+  local NPieces, Inside = 0, true
+  for _, c in ipairs(T.Curve) do
+    NPieces = NPieces + #c.Point - 1
+    for _, q in ipairs(c.Point) do
+      if q[1] < CanvasX(Xmin, Xmin, Xmax)-1e-12 or q[1] > CanvasX(Xmax, Xmin, Xmax)+1e-12 or q[2] < CanvasY(Ymin, Ymin, Ymax)-1e-12 or q[2] > CanvasY(Ymax, Ymin, Ymax)+1e-12 then Inside = false end
+    end
+  end
+  local Points = Mesh(f, Xmin, Xmax, NE)
+  local d = CurveDistance(T, f, Points, Xmin, Xmax, Ymin, Ymax)
+  print(string.format("%-32s %4d points drawn with %3d Bezier pieces in %d curves, worst distance %.4f mm", What, #Points, NPieces, #T.Curve, d))
+  if d > 0.01 + 1e-9 or not Inside then error(string.format("Graphics.Plot %s: worst distance %.4f mm, inside the frame %s\n", What, d, tostring(Inside)), 1) end
+end
+-- a curve cut at the frame ends on its edge: Bs crosses y = 2.5 between 1.2 and 2.5
+T = Graphics.ToTable(Graphics.Plot(Bs, {{"plotIm",false}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-1.5},{"Ymax",2.5}}}}))
+OnEdge = false
+for _, c in ipairs(T.Curve) do
+  for _, q in ipairs({c.Point[1], c.Point[#c.Point]}) do
+    if math.abs(q[2] - CanvasY(2.5, -1.5, 2.5)) < 1e-12 and q[1] > CanvasX(1.2, -3, 3) then OnEdge = true end
+  end
+end
+if not OnEdge then error("Graphics.Plot: the curve of a BSpline cut at the frame does not end on its edge\n", 1) end
+-- a BSpline of degree 1 has kinks: it is drawn as a line
+T = Graphics.ToTable(Graphics.Plot(InterpolatingFunction.BSpline({-2, -1.5, -0.4, 0.1, 1.2, 2.5}, {1, 3, -1, -2, 0.5, 4}, 1),
+                                   {{"plotIm",false}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}}}))
+if T.Curve ~= nil then error("Graphics.Plot drew a BSpline of degree 1 as a curve\n", 1) end
+
 -- errors: more arguments than the function, and a colour map (needs an even mesh)
 for k, w in ipairs({ function() return Graphics.Plot(Bs, 0.1) end, function() return Graphics.Plot({Bs, Bs}, {{"ColorMap",true}}) end }) do
   if pcall(w) then error("Graphics.Plot accepted a wrong plot of an interpolating function in case "..k.."\n", 1) end

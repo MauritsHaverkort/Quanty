@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   AddPlotAxisToGraphics(&G,PlotRange,Margins,Color,0.001,0,0);
   AddXTicksToGraphics(&G, PlotRange, Margins, Color, 0.001, Color, 0.5, -1, 1, 0.01 * sqrt(2), 9);
   AddYTicksToGraphics(&G, PlotRange, Margins, Color, 0.001, Color, 0.5, -2, 0.5, 0.01, 4);
-  AddDataPointsToGraphics(&G, PlotRange, Margins, Data, 20, 0.001, Color, 0.002, Color);
+  AddDataPointsToGraphics(&G, PlotRange, Margins, Data, NULL, NULL, 20, 0.001, Color, 0.002, Color);
   AddXTicksLabelToGraphics(&G, PlotRange, Margins, Color, 0.03, TIMES_NEW_ROMAN, -2, 1, "%.0f");
   AddYTicksLabelToGraphics(&G, PlotRange, Margins, Color, 0.03, TIMES_NEW_ROMAN, -2, 0.5, "%.1f");
   InitText(&Text);

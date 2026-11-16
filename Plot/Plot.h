@@ -9,6 +9,7 @@ int InitLine(LineType* Line, int NPoints);
 LineType* NewLine();
 void FreeLine(LineType* Line);
 void InitCurve(CurveType* Curve);
+int InitCurve(CurveType* Curve, int NPoints);
 CurveType* NewCurve();
 void FreeCurve(CurveType* Curve);
 void InitArc(ArcType* Arc);

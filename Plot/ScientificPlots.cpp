@@ -330,13 +330,61 @@ static double WorstPointOfSegment(PointType const *P, int i, int j, PointType Si
   return Max;
 }
 
+// The cubic from y0 at t = 0 to y1 at t = 1 with the slopes dy/dt m0 and m1 there (Hermite), and
+// its slope dy/dt, at t
+static double Hermite(double y0, double m0, double y1, double m1, double t)
+{
+  double const t2 = t*t, t3 = t2*t;
+  return (2*t3-3*t2+1)*y0 + (t3-2*t2+t)*m0 + (-2*t3+3*t2)*y1 + (t3-t2)*m1;
+}
+static double HermiteSlope(double y0, double m0, double y1, double m1, double t)
+{
+  double const t2 = t*t;
+  return (6*t2-6*t)*y0 + (3*t2-4*t+1)*m0 + (-6*t2+6*t)*y1 + (3*t2-2*t)*m1;
+}
+
+// A curve through the points P[0 .. N-1] with the slopes dY/dX DL (left of each point) and DR
+// (right of it), X increasing, in fractions of a canvas of Size mm: between two neighbours it is the
+// cubic of X with their values and slopes. The point of P[i+1 .. j-1] farthest, in mm, from the
+// single cubic from P[i] to P[j] (slopes DR[i], DL[j]); the middle of each piece between two
+// neighbours counts as well, as a point of its neighbour inside the range. The distance is the one
+// along Y times the cosine of the slope, close to the distance from the curve. Its index in *Worst.
+static double WorstPointOfCubic(PointType const *P, double const *DL, double const *DR, int i, int j, PointType Size, int *Worst)
+{
+  double const h = P[j].X - P[i].X;
+  if(!(h>0)) return WorstPointOfSegment(P, i, j, Size, Worst);
+  double const r = Size.Y/Size.X; // a slope of the canvas fractions times r is a slope in mm
+  double Max = 0;
+  *Worst = -1;
+  for(int k=i;k<j;k++)
+  {
+    if(k>i)
+    {
+      double const y = Hermite(P[i].Y, DR[i]*h, P[j].Y, DL[j]*h, (P[k].X-P[i].X)/h);
+      double const s = 0.5*(DL[k]+DR[k])*r;
+      double const d = fabs(P[k].Y-y)*Size.Y/sqrt(1+s*s);
+      if(d>Max) { Max = d; *Worst = k; }
+    }
+    double const hk = P[k+1].X - P[k].X;
+    if(!(hk>0)) continue;
+    double const ym = Hermite(P[k].Y, DR[k]*hk, P[k+1].Y, DL[k+1]*hk, 0.5);
+    double const sm = HermiteSlope(P[k].Y, DR[k]*hk, P[k+1].Y, DL[k+1]*hk, 0.5)/hk*r;
+    double const y  = Hermite(P[i].Y, DR[i]*h, P[j].Y, DL[j]*h, (P[k].X+0.5*hk-P[i].X)/h);
+    double const d  = fabs(ym-y)*Size.Y/sqrt(1+sm*sm);
+    if(d>Max) { Max = d; *Worst = (k>i) ? k : k+1; }
+  }
+  return Max;
+}
+
 // Douglas-Peucker: Keep[k] is set for the points of P[0 .. N-1] (fractions of a canvas of Size mm)
 // that are kept, the first, the last, and as few others as needed for every point dropped to lie
 // within Tolerance mm of the line through the kept ones: the range from the first to the last point
 // is split at its point farthest from the straight segment between them as long as that point lies
-// farther than Tolerance. The ranges still to be done are kept on a stack, not in recursion, as a curve
-// can have many thousands of points. Returns the number of points kept, or -1 if malloc failed.
-static int ThinPath(PointType const *P, int N, PointType Size, double Tolerance, bool *Keep)
+// farther than Tolerance. With slopes (DL and DR not NULL) the line between two kept points is the
+// cubic with their values and slopes, and the curve is that through all points (WorstPointOfCubic).
+// The ranges still to be done are kept on a stack, not in recursion, as a curve can have many
+// thousands of points. Returns the number of points kept, or -1 if malloc failed.
+static int ThinPath(PointType const *P, double const *DL, double const *DR, int N, PointType Size, double Tolerance, bool *Keep)
 {
   for(int k=0;k<N;k++) Keep[k] = (k==0)||(k==N-1);
   if(N<=2) return N;
@@ -352,7 +400,8 @@ static int ThinPath(PointType const *P, int N, PointType Size, double Tolerance,
     int const i = Stack[--NStack];
     if(j-i<2) continue;
     int k;
-    if(WorstPointOfSegment(P, i, j, Size, &k) > Tolerance)
+    double const Worst = (DL==NULL) ? WorstPointOfSegment(P, i, j, Size, &k) : WorstPointOfCubic(P, DL, DR, i, j, Size, &k);
+    if(Worst > Tolerance)
     {
       Keep[k] = true;
       NKeep++;
@@ -366,93 +415,146 @@ static int ThinPath(PointType const *P, int N, PointType Size, double Tolerance,
   return NKeep;
 }
 
-// Adds the polyline Line to Graphics, thinned by ThinPath to within CurveTolerance; the points of
-// Line are overwritten by the kept ones
-static int AddThinnedLine(GraphicsType *Graphics, LineType *Line)
+// Adds the curve through P[0 .. N-1], thinned by ThinPath to within CurveTolerance, to Graphics: a
+// line, or with slopes (DL, DR not NULL) a curve of cubic Bezier pieces, each the cubic of X with
+// the values and slopes of its two ends (control points a third of the way along X)
+static int AddThinnedPath(GraphicsType *Graphics, PointType const *P, double const *DL, double const *DR, int N, double Width, uint32_t Color)
 {
-  bool *Keep = (bool*)malloc(Line->NPoints*sizeof(bool));
-  if(Keep==NULL) { printf("Malloc failed in AddThinnedLine\n"); return 1; }
-  if(ThinPath(Line->Point, Line->NPoints, Graphics->CanvasSize, CurveTolerance, Keep) < 0) { free(Keep); printf("Malloc failed in ThinPath\n"); return 1; }
-  int n = 0;
-  for(int k=0;k<Line->NPoints;k++) if(Keep[k]) Line->Point[n++] = Line->Point[k];
+  bool *Keep = (bool*)malloc(N*sizeof(bool));
+  if(Keep==NULL) { printf("Malloc failed in AddThinnedPath\n"); return 1; }
+  int const n = ThinPath(P, DL, DR, N, Graphics->CanvasSize, CurveTolerance, Keep);
+  if(n<0) { free(Keep); printf("Malloc failed in ThinPath\n"); return 1; }
+  int Error;
+  if(DL==NULL)
+  {
+    LineType Line;
+    if(InitLine(&Line, n)) { free(Keep); return 1; }
+    Line.Color = Color;
+    Line.Width = Width;
+    Line.CloseAndFill = false;
+    int m = 0;
+    for(int k=0;k<N;k++) if(Keep[k]) Line.Point[m++] = P[k];
+    Error = AddLine(Graphics, &Line);
+    FreeLine(&Line);
+  }
+  else
+  {
+    CurveType Curve;
+    if(InitCurve(&Curve, n)) { free(Keep); return 1; }
+    Curve.Color = Color;
+    Curve.Width = Width;
+    int m = 0, Last = -1;
+    for(int k=0;k<N;k++)
+    {
+      if(!Keep[k]) continue;
+      Curve.Point[m] = P[k];
+      Curve.VL[m] = P[k];
+      Curve.VR[m] = P[k];
+      if(Last>=0)
+      {
+        double const h = (P[k].X - P[Last].X)/3;
+        Curve.VR[m-1].X = P[Last].X + h;
+        Curve.VR[m-1].Y = P[Last].Y + DR[Last]*h;
+        Curve.VL[m].X   = P[k].X - h;
+        Curve.VL[m].Y   = P[k].Y - DL[k]*h;
+      }
+      Last = k;
+      m++;
+    }
+    Error = AddCurve(Graphics, &Curve);
+    FreeCurve(&Curve);
+  }
   free(Keep);
-  int const NPoints = Line->NPoints;
-  Line->NPoints = n;
-  int const Error = AddLine(Graphics, Line);
-  Line->NPoints = NPoints;
   return Error;
 }
 
-int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, PointType *Data, int NPoints, double LineWidth, uint32_t LineColor, double PointSize, uint32_t PointColor)
+// The point where the cubic from In to Out, with the slopes dy/dx DIn and DOut there (Hermite in x),
+// leaves the box Boundary, and the slope there; In inside, Out outside the box, found by bisection
+static void FindBoundaryPointOfCubic(PointType const *Boundary, PointType const *In, double DIn, PointType const *Out, double DOut, PointType *OnBoundary, double *D)
+{
+  double const h = Out->X - In->X;
+  double tIn = 0, tOut = 1;
+  for(int k=0;k<60;k++)
+  {
+    double const t = 0.5*(tIn+tOut);
+    double const x = In->X + t*h;
+    double const y = Hermite(In->Y, DIn*h, Out->Y, DOut*h, t);
+    if( (x>=Boundary[0].X) && (x<=Boundary[1].X) && (y>=Boundary[0].Y) && (y<=Boundary[1].Y) ) tIn = t;
+    else tOut = t;
+  }
+  OnBoundary->X = In->X + tIn*h;
+  OnBoundary->Y = Hermite(In->Y, DIn*h, Out->Y, DOut*h, tIn);
+  *D = (h!=0) ? HermiteSlope(In->Y, DIn*h, Out->Y, DOut*h, tIn)/h : DIn;
+}
+
+// Adds the curve through the points Data[0 .. NPoints-1] to Graphics, inside the plot range only: a
+// part that leaves the range ends where it crosses its edge. DL and DR, if not NULL, are the slopes
+// dy/dx of the curve left and right of each point, and the curve is drawn with cubic pieces
+// (AddThinnedPath), otherwise with straight ones; the x of the points must then increase. Dots of
+// PointSize are drawn at all points inside the range.
+int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, PointType *Data, double const *DL, double const *DR, int NPoints, double LineWidth, uint32_t LineColor, double PointSize, uint32_t PointColor)
 {
   if( ( (LineWidth==0) || (!ColorVisible(LineColor)) ) && ( (PointSize==0) || (!ColorVisible(PointColor)) ) ) return 0;
-  LineType Line;
   ArcType Arc;
   int i;
-  bool render;
-  PointType Ofset, Scale, OnBoundary;
+  PointType Ofset, Scale;
   Scale.X = (1-Margins[0].X-Margins[1].X) / (PlotRange[1].X - PlotRange[0].X);
   Scale.Y = (1-Margins[0].Y-Margins[1].Y) / (PlotRange[1].Y - PlotRange[0].Y);
   Ofset.X = Margins[0].X - PlotRange[0].X * Scale.X;
   Ofset.Y = Margins[0].Y - PlotRange[0].Y * Scale.Y;
   if((LineWidth!=0) && (ColorVisible(LineColor)))
   {
-    Line.Color = LineColor;
-    Line.Width = LineWidth;
-    Line.NPoints = NPoints;
-    Line.Point = (PointType*)malloc(NPoints * sizeof(PointType));
-    Line.CloseAndFill = false;
-    if(Line.Point==NULL)
+    // a part inside the plot range: its points on the canvas and their slopes there
+    bool const Slopes = (DL!=NULL) && (DR!=NULL);
+    PointType *P = (PointType*)malloc(NPoints * sizeof(PointType));
+    double *PL = Slopes ? (double*)malloc(NPoints * sizeof(double)) : NULL;
+    double *PR = Slopes ? (double*)malloc(NPoints * sizeof(double)) : NULL;
+    if((P==NULL) || (Slopes && ((PL==NULL) || (PR==NULL))))
     {
       printf("Malloc failed in AddDataPointsToGraphics\n");
+      free(P); free(PL); free(PR);
       return 1;
     }
-    render=false;
+    double const SlopeScale = Scale.Y/Scale.X;
+    int n = 0;
+    bool render = false;
+    PointType OnBoundary;
+    double D = 0;
     for (i=0;i<NPoints;i++)
     {
-      if( (Data[i].X >= PlotRange[0].X) && (Data[i].Y >= PlotRange[0].Y) && (Data[i].X <= PlotRange[1].X) && ((Data[i].Y <= PlotRange[1].Y)) )
-      { // inside plot range
-        if(render==false)
-        { // new plot segment starts
-          Line.NPoints=0;
-          if(i!=0)
-          {
-            FindBoundaryPoint(PlotRange, &(Data[i]), &(Data[i-1]), &OnBoundary);
-            Line.Point[Line.NPoints].X = Ofset.X + Scale.X * OnBoundary.X;
-            Line.Point[Line.NPoints].Y = Ofset.Y + Scale.Y * OnBoundary.Y;
-            Line.NPoints++;
-          }
-          Line.Point[Line.NPoints].X = Ofset.X + Scale.X * Data[i].X;
-          Line.Point[Line.NPoints].Y = Ofset.Y + Scale.Y * Data[i].Y;
-          Line.NPoints++;
+      bool const Inside = (Data[i].X >= PlotRange[0].X) && (Data[i].Y >= PlotRange[0].Y) && (Data[i].X <= PlotRange[1].X) && (Data[i].Y <= PlotRange[1].Y);
+      if(Inside)
+      {
+        if((render==false) && (i!=0))
+        { // a new part starts where the curve from point i-1 to point i enters the range
+          if(Slopes) FindBoundaryPointOfCubic(PlotRange, &(Data[i]), DL[i], &(Data[i-1]), DR[i-1], &OnBoundary, &D);
+          else       FindBoundaryPoint(PlotRange, &(Data[i]), &(Data[i-1]), &OnBoundary);
+          P[n].X = Ofset.X + Scale.X * OnBoundary.X;
+          P[n].Y = Ofset.Y + Scale.Y * OnBoundary.Y;
+          if(Slopes) { PL[n] = SlopeScale * D; PR[n] = PL[n]; }
+          n++;
         }
-        else
-        {
-          Line.Point[Line.NPoints].X = Ofset.X + Scale.X * Data[i].X;
-          Line.Point[Line.NPoints].Y = Ofset.Y + Scale.Y * Data[i].Y;
-          Line.NPoints++;
-        }
-        render=true;
+        P[n].X = Ofset.X + Scale.X * Data[i].X;
+        P[n].Y = Ofset.Y + Scale.Y * Data[i].Y;
+        if(Slopes) { PL[n] = SlopeScale * DL[i]; PR[n] = SlopeScale * DR[i]; }
+        n++;
+        render = true;
       }
-      else
-      { // outside plot range
-        if(render==true)
-        { // find the crossing between the line connecting point i and i-1 and the boundary.
-          FindBoundaryPoint(PlotRange, &(Data[i-1]), &(Data[i]), &OnBoundary);
-          Line.Point[Line.NPoints].X = Ofset.X + Scale.X * OnBoundary.X;
-          Line.Point[Line.NPoints].Y = Ofset.Y + Scale.Y * OnBoundary.Y;
-          Line.NPoints++;
-          render=false;
-          AddThinnedLine(Graphics, &Line);
-          Line.NPoints=0;
-        }
+      else if(render==true)
+      { // the part ends where the curve from point i-1 to point i leaves the range
+        if(Slopes) FindBoundaryPointOfCubic(PlotRange, &(Data[i-1]), DR[i-1], &(Data[i]), DL[i], &OnBoundary, &D);
+        else       FindBoundaryPoint(PlotRange, &(Data[i-1]), &(Data[i]), &OnBoundary);
+        P[n].X = Ofset.X + Scale.X * OnBoundary.X;
+        P[n].Y = Ofset.Y + Scale.Y * OnBoundary.Y;
+        if(Slopes) { PL[n] = SlopeScale * D; PR[n] = PL[n]; }
+        n++;
+        AddThinnedPath(Graphics, P, PL, PR, n, LineWidth, LineColor);
+        n = 0;
+        render = false;
       }
     }
-    if(render==true)
-    {
-      AddThinnedLine(Graphics, &Line);
-    }
-    FreeLine(&Line);
+    if(render==true) AddThinnedPath(Graphics, P, PL, PR, n, LineWidth, LineColor);
+    free(P); free(PL); free(PR);
   }
   if((PointSize!=0) && (ColorVisible(PointColor)))
   {
@@ -476,16 +578,21 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
   return 0;
 }
 
-// Data->N+1 values at the energies X, or on the even mesh from Data->Emin to Data->Emax if X is NULL
-int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint32_t LineColorRe, double PointSizeRe, uint32_t PointColorRe, double LineWidthIm, uint32_t LineColorIm, double PointSizeIm, uint32_t PointColorIm, double YScale, double YShift, double const *X)
+// Data->N+1 values at the energies X, or on the even mesh from Data->Emin to Data->Emax if X is NULL;
+// DL and DR, if not NULL, the slopes of the real part left and right of each point (AddDataPointsToGraphics)
+int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, SpectraType *Data, double LineWidthRe, uint32_t LineColorRe, double PointSizeRe, uint32_t PointColorRe, double LineWidthIm, uint32_t LineColorIm, double PointSizeIm, uint32_t PointColorIm, double YScale, double YShift, double const *X, double const *DL, double const *DR)
 {
   PointType *DataPoints;
   int NPoints=Data->N+1;
   int i;
+  bool const Slopes = (DL!=NULL) && (DR!=NULL);
   DataPoints = (PointType*)malloc(NPoints*sizeof(PointType));
-  if(DataPoints==NULL)
+  double *SL = Slopes ? (double*)malloc(NPoints*sizeof(double)) : NULL;
+  double *SR = Slopes ? (double*)malloc(NPoints*sizeof(double)) : NULL;
+  if((DataPoints==NULL) || (Slopes && ((SL==NULL) || (SR==NULL))))
   {
     printf("Malloc failed in AddSpectraTypeToGraphics\n");
+    free(DataPoints); free(SL); free(SR);
     return 1;
   }
   for(i=0;i<NPoints;i++)
@@ -494,14 +601,15 @@ int AddSpectraTypeToGraphics(GraphicsType* Graphics, PointType *PlotRange, Point
     else if(NPoints==1) DataPoints[i].X = Data->Emin;
     else                DataPoints[i].X = i * Data->Emax / (NPoints-1) + (NPoints-i-1) * Data->Emin / (NPoints-1);
     DataPoints[i].Y = YScale * Data->Re[i] + YShift;
+    if(Slopes) { SL[i] = YScale * DL[i]; SR[i] = YScale * DR[i]; }
   }
-  AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NPoints, LineWidthRe, LineColorRe, PointSizeRe, PointColorRe);
+  AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, SL, SR, NPoints, LineWidthRe, LineColorRe, PointSizeRe, PointColorRe);
   for(i=0;i<NPoints;i++)
   {
     DataPoints[i].Y = YScale * Data->Im[i] + YShift;
   }
-  AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NPoints, LineWidthIm, LineColorIm, PointSizeIm, PointColorIm);
-  free(DataPoints);
+  AddDataPointsToGraphics(Graphics, PlotRange, Margins, DataPoints, NULL, NULL, NPoints, LineWidthIm, LineColorIm, PointSizeIm, PointColorIm);
+  free(DataPoints); free(SL); free(SR);
   return 0;
 }
 
@@ -629,14 +737,14 @@ int PlotAllButDataToBandGraphics(GraphicsType* Graphics, FramePlotOptions *FPO, 
 int PlotPointsToGraphics(GraphicsType* Graphics, PointType *Data, int NPoints, LinePlotOptions *LPO, FramePlotOptions *FPO)
 {
   PlotAllButDataToGraphics(Graphics, FPO);
-  AddDataPointsToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, NPoints, LPO->LineWidth, LPO->LineColor, LPO->PointSize, LPO->PointColor);
+  AddDataPointsToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, NULL, NULL, NPoints, LPO->LineWidth, LPO->LineColor, LPO->PointSize, LPO->PointColor);
   return 0;
 }
 
 int PlotSpectraTypeToGraphics(GraphicsType* Graphics, SpectraType *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale)
 {
   PlotAllButDataToGraphics(Graphics, FPO);
-  AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, LPORe->LineWidth, LPORe->LineColor, LPORe->PointSize, LPORe->PointColor, LPOIm->LineWidth, LPOIm->LineColor, LPOIm->PointSize, LPOIm->PointColor, YScale, 0, NULL);
+  AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, Data, LPORe->LineWidth, LPORe->LineColor, LPORe->PointSize, LPORe->PointColor, LPOIm->LineWidth, LPOIm->LineColor, LPOIm->PointSize, LPOIm->PointColor, YScale, 0, NULL, NULL, NULL);
   return 0;
 }
 
@@ -652,14 +760,15 @@ void WaterfallPositions(SpectraTypeArray const *Data, double WaterfallOffset, do
 }
 
 // spectrum i is drawn shifted up by YPos[i], or not shifted if YPos is NULL; its values are at the
-// energies X[i], or on its even mesh if X or X[i] is NULL
-int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double const *YPos, double * const *X)
+// energies X[i], or on its even mesh if X or X[i] is NULL; DL[i] and DR[i], if DL, DR and they are
+// not NULL, are the slopes of its real part left and right of each point (AddDataPointsToGraphics)
+int PlotSpectraTypeArrayToGraphics(GraphicsType* Graphics, SpectraTypeArray *Data, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double const *YPos, double * const *X, double * const *DL, double * const *DR)
 {
   int i;
   PlotAllButDataToGraphics(Graphics, FPO);
   for(i=0;i<Data->NSpectra;i++)
   {
-    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, (YPos==NULL)?0:YPos[i], (X==NULL)?NULL:X[i]);
+    AddSpectraTypeToGraphics(Graphics, FPO->PlotRange, FPO->Margins, &(Data->Spec[i]), LPORe[i].LineWidth, LPORe[i].LineColor, LPORe[i].PointSize, LPORe[i].PointColor, LPOIm[i].LineWidth, LPOIm[i].LineColor, LPOIm[i].PointSize, LPOIm[i].PointColor, YScale, (YPos==NULL)?0:YPos[i], (X==NULL)?NULL:X[i], (DL==NULL)?NULL:DL[i], (DR==NULL)?NULL:DR[i]);
   }
   return 0;
 }
@@ -818,7 +927,7 @@ int PlotSpectraTypeArrayToColorMap(GraphicsType* Graphics, SpectraTypeArray cons
 
 int PlotSpectraTypeArrayToGraphicsArray(GraphicsType* Graphics, SpectraTypeArray *Data, int NXPlots, int NYPlots, LinePlotOptions *LPORe, LinePlotOptions *LPOIm, FramePlotOptions *FPO, double YScale, double ScaleOffDiagonal, double ShiftOffDiagonal)
 {
-  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,NULL,NULL);
+  if((NXPlots==1)&&(NYPlots==1)) return PlotSpectraTypeArrayToGraphics(Graphics,Data,LPORe,LPOIm,FPO,YScale,NULL,NULL,NULL,NULL);
   int i;
   FramePlotOptions FPOInset;
   // plot graphs to layer 1 to NXPlots * NYPlots
