@@ -1,0 +1,341 @@
+====== CalculateAtomicBasisFunctions ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
+###
+//G, F, Atom = CalculateAtomicBasisFunctions(Z, Options)// calculates the radial functions of the orbitals of an atom. //CalculateAtomicBasisFunctions(Z)// is enough for the ground state of the neutral atom. The atom is calculated self-consistently, relativistically (Dirac equation) or nonrelativistically (Schrödinger equation), either in the configuration-average Hartree-Fock approximation or in density functional theory (LDA, PBE). The radial functions are expanded in B-splines and returned as interpolating functions.
+###
+
+###
+Beyond the orbitals of the ground state, the function can generate basis functions for a solid or a molecule: empty and polarization orbitals, and orbitals contracted by a confining potential or an extra nuclear charge, each orbital with its own parameters. All functions returned are orthonormal.
+###
+
+===== Example =====
+
+###
+The nickel atom with all defaults: its ground-state configuration, Dirac-Fock, and a Gaussian nucleus of the most abundant isotope, $^{58}$Ni. Energies are in Hartree, lengths in bohr.
+###
+
+<code Quanty Example.Quanty>
+-- the Ni atom: the ground-state configuration, Dirac-Fock, a Gaussian nucleus of 58Ni
+G, F, Atom = CalculateAtomicBasisFunctions(28)
+
+print(Atom.Configuration, Atom.A)
+
+print(string.format("Etot = %.6f Hartree, converged in %d iterations", Atom.Etot, Atom.Iterations))
+for i, o in ipairs(Atom.Orbitals) do
+  print(string.format("%-6s occupation %5.3f   energy %13.6f   <r> %8.5f", o.Label, o.Occupation, o.Energy, o.RExpectation[1]))
+end
+local Fk = Atom.SlaterIntegralsNL["3d 3d 3d 3d"]
+print(string.format("F2(3d,3d) = %.4f eV, F4(3d,3d) = %.4f eV, zeta(3d) = %.4f eV", Fk[2]*27.211386, Fk[4]*27.211386, Atom.Zeta["3d"]*27.211386))
+</code>
+
+<file Quanty_Output Example.out>
+[Ar] 3d8 4s2	58
+Etot = -1519.305625 Hartree, converged in 13 iterations
+1s1/2  occupation 2.000   energy   -308.949448   <r>  0.05406
+2s1/2  occupation 2.000   energy    -38.645530   <r>  0.24347
+2p1/2  occupation 2.000   energy    -33.535006   <r>  0.21278
+2p3/2  occupation 4.000   energy    -32.882964   <r>  0.21593
+3s1/2  occupation 2.000   energy     -5.009863   <r>  0.73947
+3p1/2  occupation 2.000   energy     -3.365576   <r>  0.77486
+3p3/2  occupation 4.000   energy     -3.278732   <r>  0.78430
+3d3/2  occupation 3.200   energy     -0.685811   <r>  0.96874
+3d5/2  occupation 4.800   energy     -0.675628   <r>  0.97538
+4s1/2  occupation 2.000   energy     -0.281529   <r>  3.01211
+F2(3d,3d) = 11.9417 eV, F4(3d,3d) = 7.4024 eV, zeta(3d) = 0.1108 eV
+</file>
+
+###
+Each $nl$ shell is split into its two $j$ subshells, $nl_{j=l-1/2}$ and $nl_{j=l+1/2}$, with the electrons shared in proportion to $2j+1$ (the average over the configuration). //Atom.SlaterIntegralsNL// holds the Slater integrals of the $nl$ shells, //Atom.Zeta// the spin-orbit coupling constants $\zeta_{nl}$.
+###
+
+===== Input =====
+
+  * //Z// : Real, the nuclear charge.
+  * Options : (optional) A table of options. Possible options are:
+      * //"Configuration"// : String, the electron configuration, for example //"[Ar] 3d8 4s2"//, see below. Default value is the ground-state configuration of the neutral atom (from the NIST atomic spectra database, for $Z$ = 1 to 103). Every orbital of the configuration is calculated and returned; an orbital with occupation 0, for example //"4p0"//, is calculated as an empty orbital. A configuration of empty orbitals only, for example //"1s0 2s0 2p0"//, is the bare nucleus: the orbitals of a hydrogen-like ion of charge $Z$.
+      * //"Method"// : String. //"DHF"// (default) for configuration-average Hartree-Fock, //"LDA"// (Slater exchange and Perdew-Wang 92 correlation), //"LDA-VWN"// (Slater and Vosko-Wilk-Nusair), //"RLDA-MV"// (VWN with the relativistic MacDonald-Vosko correction of the exchange), //"PBE"// or //"PBE-VWN"//.
+      * //"Relativistic"// : Boolean. Default value is true (Dirac equation); false solves the Schrödinger equation.
+      * //"NMax"// : Table, also calculate all orbitals up to this principal quantum number, per $l$, for example //{s = 5, p = 4, d = 4}//; per $\kappa$ with entries such as //["p1/2"] = 5//.
+      * //"Q"// : Table, an extra nuclear charge for the equation of an orbital, for example //{["4p"] = 1, ["5s1/2"] = 2}//, see below. An $nl$ key sets both $j$. Only orbitals that are calculated (in the configuration or within //"NMax"//) can be given.
+      * //"P"// : Table, the confinement scale of an orbital, for example //{["4d5/2"] = 0.8}//; default 1. Needs //"Confinement"//.
+      * //"Confinement"// : Table //{Rho = .., N = ..}//: a confining potential for every orbital, see below. Without it there is no confinement.
+      * //"Nucleus"// : String, the model of the nucleus: //"Point"//, //"Gaussian"// (default), //"Uniform"// (a homogeneously charged sphere), //"Fermi"//, //"Function"// or //"Function3D"//.
+      * //"A"// : Real, the mass number. The radius of the nucleus is then $R_{\mathrm{rms}} = (0.836 A^{1/3} + 0.570)$ fm. Default: the mass number of the most abundant isotope.
+      * //"Rrms"// : Real, the root-mean-square radius of the nucleus in bohr, in place of //"A"//.
+      * //"FermiThickness"// : Real, the skin thickness of the Fermi nucleus. Default value is 2.30 fm.
+      * //"Density"// : Function, the charge density of the nucleus (charge per volume) for //"Function"// ($\rho(r)$) and //"Function3D"// ($\rho(x,y,z)$). It is rescaled to the charge //Z//.
+      * //"DensityTolerance"// : Real, a warning is printed when the charge of //"Density"// differs from //Z// by more than this, relative. Default value is $10^{-10}$.
+      * //"NucleusLmax"//, //"NucleusNTheta"//, //"NucleusNPhi"// : Integers, the expansion of a //"Function3D"// nucleus in spherical harmonics: the largest $L$ (only even $L$; default 4), and the numbers of points in $\cos\theta$ (default //NucleusLmax// + 8, at most 127) and in $\phi$ (default 2 //NucleusLmax// + 16). The orbitals are calculated with the spherical part of the nucleus; the rest is the operator //[[documentation:standard_operators:nuclear_multipole|NewOperator("NuclearMultipole", ...)]]//.
+      * //"Orthonormalize"// : String, //"GramSchmidt"// (default; per $\kappa$ from the lowest $n$ upwards) or //"Lowdin"//.
+      * //"FourierBessel"// : Table //{KMax = .., NK = ..}//: also calculate the radial functions in momentum space on //NK// points from 0 to //KMax//.
+      * //"Precision"// : String, //"Normal"// (default) or //"High"//: tighter convergence, more quadrature points and a convergence check (see below).
+      * //"ConvergenceCheck"// : Boolean. Repeat the calculation with twice the number of knot intervals and report the changes. Default value is false.
+      * //"Degree"//, //"NIntervals"//, //"rMin"//, //"rMax"// : the B-spline basis: polynomial degree (default 8), number of knot intervals (120), first and last knot in bohr (default $R_{\mathrm{rms}}/50$ or $10^{-6}/Z$, and 40).
+      * //"MaxIterations"// (200), //"EnergyTolerance"// ($10^{-10}$ Hartree), //"ResidualTolerance"// ($10^{-8}$, density functional theory), //"OrbitalTolerance"// ($10^{-8}$, Hartree-Fock), //"Mixing"//, //"OrbitalMixing"//, //"History"// : the self-consistent field.
+
+===== Output =====
+
+  * //G// : A table of the large components $P(r) = r g(r)$ of the orbitals, [[documentation:language_reference:objects:interpolatingfunction:start|interpolating functions]] of type //"DKBSpline"// (relativistic) or //"BSpline"// (nonrelativistic).
+  * //F// : A table of the small components $Q(r) = r f(r)$ (empty without relativity). The functions are normalized as $\int (P^2 + Q^2) \, \mathrm{d}r = 1$. Every function returned, also the potentials in //Atom.Potential//, gives the radial points of the quadrature as //f.x//, for example //x = G[1].x//.
+  * //Atom// : A table with
+      * //Etot//, //Ekin//, //Eenuc// and //Edirect//, //Eexchange// (Hartree-Fock) or //Ecoul//, //Exc// (density functional theory): the total energy and its parts, //EtotEigenvalueSum//, the total energy from the orbital energies (equal to //Etot// when the calculation is converged; for Hartree-Fock for any orbitals), and //Converged//, //Iterations//, //Residual//.
+      * //Orbitals// : per returned orbital //{Label, n, l, kappa, j, Occupation, Energy, RExpectation, ...}//, with //RExpectation[k]// $= \langle r^k \rangle$ for $k = -3$ (for $l > 0$), $-1$, $1$, $2$.
+      * //Labels// : the labels of the orbitals, in the order of //G// and //F//: all calculated orbitals, ordered by $n$, $l$ and $j$. A selection is made in Lua.
+      * //SlaterIntegrals// : the Slater integrals $F^k$ and $G^k$ between all returned orbitals, in the format of //GetSlaterIntegrals()//: //SlaterIntegrals["3d5/2 4s1/2 3d5/2 4s1/2"][k]// is $F^k$, //SlaterIntegrals["3d5/2 4s1/2 4s1/2 3d5/2"][k]// is $G^k$.
+      * //SlaterIntegralsNL// : the same for the $nl$ shells, averaged over the two $j$ subshells with weights $(2j+1)/(4l+2)$, for example //SlaterIntegralsNL["3d 3d 3d 3d"][2]//.
+      * //Zeta// : the spin-orbit coupling constant of every shell returned with both $j$, //Zeta["3d"]//.
+      * //Nucleus// : the nucleus as a list of options, to pass on to //[[documentation:standard_operators:dirac_operator|NewOperator("Dirac", ...)]]// and //[[documentation:standard_operators:nuclear_multipole|NewOperator("NuclearMultipole", ...)]]//.
+      * //NuclearMultipoleMoments// : for a //"Function3D"// nucleus, the multipole moments $q_{LM} = \int r^L S_{LM}(\hat{r})\, \rho_N(\mathbf{r})\, \mathrm{d}^3 r$ for $L \geq 2$, with $S_{LM}$ the real spherical harmonics: a list of tables with the fields //L//, //M// and //Value//, in $e$ bohr$^L$.
+      * //Potential// : //rVN//, //rVH// and (density functional theory) //rVxc//, $r$ times the potential of the nucleus, the Hartree potential and the exchange-correlation potential of the ground state, interpolating functions of type //"BSpline"//, see [[#the_potentials|The potentials]] below.
+      * //FourierBessel//, //ConvergenceCheck//, //VirialRatio// (nonrelativistic), //PotentialResidual// and //MixDensity// (density functional theory), //Gradient//, //PairGradient// (Hartree-Fock), //EavJJ// (nonrelativistic Hartree-Fock: the average energy with the angular factors of the $j$ subshells, equal to //Etot//), //MinOverlapEigenvalue//, //OrthonormalityError//, and the input: //Method//, //Relativistic//, //c//, //Z//, //Configuration//, //A//, //NElectron//, //rMin//, //rMax//.
+
+All energies are in Hartree and all lengths in bohr. The speed of light is //PhysicalConstants.cAU.value//.
+
+===== The configuration =====
+
+###
+The configuration lists the occupation of the shells, for example //"1s2 2s2 2p6 3s2 3p6 3d8 4s2"//, with //"[He]"//, //"[Ne]"//, //"[Ar]"//, //"[Kr]"//, //"[Xe]"// and //"[Rn]"// for the closed shells of the noble gases. Occupations may be fractional. An $nl$ entry such as //"3d8"// is averaged over all $4l+2$ spin-orbitals of the shell. A relativistic subshell can be given its own occupation in brackets, //"[Kr] 4d3/2(4) 4d5/2(5)"//; it is then averaged over its own $2j+1$ spin-orbitals only. Both forms can be mixed. An occupation of 0 adds an empty orbital to the calculation, //"4p0"// or //"5p1/2(0)"//.
+###
+
+###
+With //"Method" "DHF"// the total energy is the average of the energies of all Slater determinants of the configuration (the average of configuration of Cowan's programs, or its relativistic counterpart). The orbitals minimize this average. The density functional methods use the spherical density of the mean occupations.
+###
+
+===== Using the Slater integrals in a multiplet calculation =====
+
+###
+The Hartree-Fock Slater integrals and the spin-orbit coupling of Ni$^{2+}$ ($3d^8$) in the usual nonrelativistic shell. The energies of the multiplets follow; the progress output of //Eigensystem// is left out.
+###
+
+<code Quanty Example.Quanty>
+-- Hartree-Fock Slater integrals and spin-orbit coupling of Ni2+ in a 3d8 multiplet calculation
+G, F, Atom = CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8"}})
+eV = 27.211386
+F2 = Atom.SlaterIntegralsNL["3d 3d 3d 3d"][2]*eV
+F4 = Atom.SlaterIntegralsNL["3d 3d 3d 3d"][4]*eV
+zeta = Atom.Zeta["3d"]*eV
+print(string.format("F2 = %.4f eV, F4 = %.4f eV, zeta = %.4f eV", F2, F4, zeta))
+
+NF = 10
+IndexDn = {0, 2, 4, 6, 8}
+IndexUp = {1, 3, 5, 7, 9}
+H = NewOperator("U", NF, IndexUp, IndexDn, {0, F2, F4}) + zeta*NewOperator("ldots", NF, IndexUp, IndexDn)
+psiList = Eigensystem(H, {NF, 0, {"1111111111", 8, 8}}, 45)
+E0 = psiList[1]*H*psiList[1]
+for i = 1, #psiList, 1 do
+  local E = psiList[i]*H*psiList[i]
+  if i == 1 or math.abs(E - (psiList[i-1]*H*psiList[i-1])) > 1e-6 then print(string.format("%8.4f eV", E - E0)) end
+end
+</code>
+
+<file Quanty_Output Example.out>
+F2 = 12.2301 eV, F4 = 7.5950 eV, zeta = 0.1099 eV
+  0.0000 eV
+  0.2234 eV
+  0.3723 eV
+  2.1473 eV
+  2.6260 eV
+  2.6757 eV
+  2.7169 eV
+  3.3395 eV
+  7.9983 eV
+</file>
+
+###
+These are the $^3F_{4,3,2}$, $^1D_2$, $^3P_{2,1,0}$, $^1G_4$ and $^1S_0$ levels of the free ion. In a crystal the Hartree-Fock values of $F^2$ and $F^4$ are usually reduced, often to about 80 %.
+###
+
+===== The relativistic many-electron Hamiltonian =====
+
+###
+The functions //G// and //F// can be used with //[[documentation:standard_operators:dirac_operator|NewOperator("Dirac", ...)]]// and //[[documentation:standard_operators:atomic_coulomb_repulsion|NewOperator("AU", ...)]]//. For these functions both operators are calculated exactly on the B-spline basis of the atom. The one-particle operator takes the model of the nucleus from the option list //Atom.Nucleus//. For a closed-shell atom the energy of the Hartree-Fock Slater determinant is the total energy.
+###
+
+<code Quanty Example.Quanty>
+-- the full relativistic Hamiltonian of Ne from its own Dirac-Fock orbitals
+G, F, Atom = CalculateAtomicBasisFunctions(10)
+indices, NF = CreateAtomicIndicesList(Atom.Labels, {{"Kappas", true}})
+H = NewOperator("Dirac", NF, 10, indices, G, F, Atom.Nucleus) + NewOperator("AU", NF, indices, G, F)
+psi = NewWavefunction(NF, 0, {{string.rep("1", NF), 1}})
+print(string.format("Etot = %.10f Hartree, <psi|H|psi> = %.10f Hartree", Atom.Etot, psi*H*psi))
+</code>
+
+<file Quanty_Output Example.out>
+Etot = -128.6919305272 Hartree, <psi|H|psi> = -128.6919305272 Hartree
+</file>
+
+===== Basis functions with confinement and an extra nuclear charge =====
+
+###
+For a calculation of a solid or a molecule one often wants more compact functions than those of the free atom, and functions for orbitals that are empty in the atom. Every orbital $(n, \kappa)$ can be given
+###
+
+  * a confining potential, a Lorentz scalar (it acts like a position dependent mass), $V_{\beta}(r) = (r/r_c)^N$ with $r_c = P_{n\kappa} \, \rho$, from the option //"Confinement" {Rho = rho, N = N}// and the scale $P_{n\kappa}$ of the orbital in the option //"P"// (default 1);
+  * an extra nuclear charge $Q_{n\kappa}$, the option //"Q"//, as in FPLO.
+
+###
+The function of such an orbital comes from its own calculation, in which only the equation of that orbital has the nuclear charge $Z + Q$ and the confinement; all other electrons see the nucleus $Z$ and no confinement. For an occupied orbital this calculation is self-consistent, for an empty orbital it is one solution in the potential of the atom. The functions from these different calculations are not orthogonal; they are made orthonormal per $\kappa$, from the lowest $n$ upwards, so the lowest orbital of every $\kappa$ keeps its shape. With //"Confinement"// every orbital is confined; //"P"// of an orbital changes its radius.
+###
+
+<code Quanty Example.Quanty>
+-- a confined basis for Fe: all orbitals up to 5s, 4p and 4d, the empty 4p and 4d contracted
+G, F, Atom = CalculateAtomicBasisFunctions(26, {{"Configuration", "[Ar] 3d6 4s2"}, {"Method", "LDA"},
+  {"NMax", {s = 5, p = 4, d = 4}},
+  {"Confinement", {Rho = 4, N = 8}},
+  {"Q", {["4p"] = 1, ["4d"] = 2}},
+  {"P", {["4d"] = 0.8}}})
+for i, o in ipairs(Atom.Orbitals) do
+  print(string.format("%-6s occupation %5.3f  Q %3.1f  rc %5.2f  energy %11.5f  <r> %7.4f", o.Label, o.Occupation, o.Q, o.rc, o.Energy, o.RExpectation[1]))
+end
+print(string.format("smallest overlap eigenvalue %.3f, orthonormality error %.1e", Atom.MinOverlapEigenvalue, Atom.OrthonormalityError))
+</code>
+
+<file Quanty_Output Example.out>
+1s1/2  occupation 2.000  Q 0.0  rc  4.00  energy  -256.57291  <r>  0.0586
+2s1/2  occupation 2.000  Q 0.0  rc  4.00  energy   -30.04817  <r>  0.2674
+2p1/2  occupation 2.000  Q 0.0  rc  4.00  energy   -25.94864  <r>  0.2337
+2p3/2  occupation 4.000  Q 0.0  rc  4.00  energy   -25.49112  <r>  0.2368
+3s1/2  occupation 2.000  Q 0.0  rc  4.00  energy    -3.43574  <r>  0.8122
+3p1/2  occupation 2.000  Q 0.0  rc  4.00  energy    -2.23987  <r>  0.8520
+3p3/2  occupation 4.000  Q 0.0  rc  4.00  energy    -2.18266  <r>  0.8616
+3d3/2  occupation 2.400  Q 0.0  rc  4.00  energy    -0.26808  <r>  1.0844
+3d5/2  occupation 3.600  Q 0.0  rc  4.00  energy    -0.25397  <r>  1.0926
+4s1/2  occupation 2.000  Q 0.0  rc  4.00  energy     0.00653  <r>  2.2786
+4p1/2  occupation 0.000  Q 1.0  rc  4.00  energy    -0.37154  <r>  2.1096
+4p3/2  occupation 0.000  Q 1.0  rc  4.00  energy    -0.36155  <r>  2.1198
+4d3/2  occupation 0.000  Q 2.0  rc  3.20  energy    -0.28268  <r>  1.5914
+4d5/2  occupation 0.000  Q 2.0  rc  3.20  energy    -0.27983  <r>  1.5865
+5s1/2  occupation 0.000  Q 0.0  rc  4.00  energy     1.08709  <r>  2.7221
+smallest overlap eigenvalue 0.558, orthonormality error 2.2e-16
+</file>
+
+###
+The energies are those of the equation each function was calculated with, including its confinement and its extra charge. //Atom.Orbitals[i].EnergyGround// gives the energy of the returned function in the potential of the free atom.
+###
+
+===== The potentials =====
+
+###
+//Atom.Potential// holds the potentials of the ground state as functions of $r$. Like the radial functions, $P(r) = r g(r)$, they are multiplied by $r$:
+###
+
+  * //rVN// : $r V_N(r)$, the potential of the nucleus. It is $-Z$ for a point nucleus; for a finite nucleus it goes from 0 at the origin to $-Z$ outside the nucleus.
+  * //rVH// : $r V_H(r)$, the Hartree potential of the electron density. It goes from 0 at the origin to the number of electrons $N$ far from the atom.
+  * //rVxc// : $r V_{xc}(r)$, the exchange-correlation potential, only in density functional theory. For the gradient corrected functionals //"PBE"// and //"PBE-VWN"// it is the whole potential $\delta E_{xc}/\delta n(r)$, including the term with the gradient of the density. Hartree-Fock has no //rVxc//: its exchange is not a potential but an integral operator, different for every orbital.
+
+###
+$r V(r)$ stays finite at the nucleus and becomes constant far from the atom, where $V$ itself diverges as $1/r$ or goes to 0 slowly. Each potential is a //BSpline// of the degree of the radial functions through its values on the radial points of the quadrature, //G[1].x//. It equals the numbers of the calculation on these points and interpolates between them. The three have the same points and degree, so their sum is again a //BSpline//, without approximation: //rVN + rVH + rVxc// is $r$ times the Kohn-Sham potential that every orbital feels.
+###
+
+###
+The derivative of a function $f(r) = r V(r)$ is $f'(r) = V(r) + r V'(r)$, not $V'(r)$. The derivative of the potential is
+$$
+V'(r) = \frac{f'(r) - f(r)/r}{r},
+$$
+with //f(r, 1)// for $f'(r)$. Like every interpolating function the potentials are 0 outside $[x_1, x_N]$, also beyond the last point, where $r V_N$ is still $-Z$.
+###
+
+###
+The potentials of Kr in LDA. $-r V(r)$ is the charge an electron at $r$ sees: the nucleus, screened by the electrons.
+###
+
+<code Quanty Example.Quanty>
+-- the potentials of the Kr atom in LDA, as r V(r)
+G, F, Atom = CalculateAtomicBasisFunctions(36, {{"Configuration", "[Ar] 3d10 4s2 4p6"}, {"Method", "LDA"}})
+V = Atom.Potential
+print(V.rVN.type, V.rVN.degree, #V.rVN.x == #G[1].x)
+
+-- the charge an electron sees: the nucleus, screened by the electrons
+ZNH = -(V.rVN + V.rVH)
+ZKS = -(V.rVN + V.rVH + V.rVxc)
+print("    r    -r(V_N+V_H)   -r V_KS")
+for _, r in ipairs({0.001, 0.01, 0.1, 0.5, 1, 2, 4, 8}) do
+  print(string.format("%6.3f  %10.5f  %10.5f", r, ZNH(r), ZKS(r)))
+end
+
+eV = 27.211386
+for _, o in ipairs(Atom.Orbitals) do
+  if o.Label == "4p3/2" then print(string.format("energy of the 4p3/2 orbital %.3f eV", o.Energy*eV)) end
+end
+
+-- the plot on a logarithmic r axis
+function Curve(f)
+  local c = {}
+  for i = 0, 500 do local t = -3 + i*4.5/500; c[i+1] = {t, f(10^t)} end
+  return c
+end
+pl = Graphics.Plot({Curve(ZNH), Curve(ZKS), {{-3, 1}, {1.5, 1}}},
+       {{"plotIm", false},
+        {"Frame", {{"Xmin", -3}, {"Xmax", 1.5}, {"Ymin", 0}, {"Ymax", 37}, {"FirstXTick", -3}, {"dXTick", 1}, {"FirstYTick", 0}, {"dYTick", 5},
+                   {"XFormat", "%.0f"}, {"YFormat", "%.0f"}, {"XLabel", "log10(r/bohr)"}, {"YLabel", "-r V(r)"}, {"XLMargin", 0.1}, {"YAxis", -10}}}})
+file = io.open("atomic_potentials.svg", "w")
+file:write(Graphics.ToSVG(pl, {{"RelativeSize", true}}))
+file:close()
+</code>
+
+<file Quanty_Output Example.out>
+BSpline	8	true
+    r    -r(V_N+V_H)   -r V_KS
+ 0.001    35.81293    35.84639
+ 0.010    34.18424    34.44019
+ 0.100    23.89042    24.62054
+ 0.500     7.89282     9.04174
+ 1.000     3.27177     4.17051
+ 2.000     0.61982     1.56722
+ 4.000     0.01626     0.54163
+ 8.000     0.00001     0.09413
+energy of the 4p3/2 orbital -9.179 eV
+</file>
+
+{{ :documentation:language_reference:functions:atomic_potentials.png?nolink&600 |}}
+
+###
+The black curve, $-r(V_N + V_H)$, goes from $Z = 36$ at the nucleus to $Z - N = 0$ for the neutral atom. The red curve includes the exchange-correlation potential. Far from the atom an electron sees the positive ion that remains, and the exact Kohn-Sham potential goes to $-1/r$: $-r V$ goes to 1 (the blue line). The LDA potential goes to 0 exponentially instead, because the Hartree potential contains the interaction of every electron with itself, and LDA removes this only in part. The outer electrons are therefore bound too weakly: the energy of the 4p orbital is $-9.2$ eV, while the ionization energy of Kr is 14.0 eV.
+###
+
+###
+The derivative gives the spin-orbit coupling of a nonrelativistic calculation, from the Kohn-Sham potential $V$,
+$$
+\zeta_{nl} = \frac{1}{2c^2} \int_0^\infty P_{nl}(r)^2 \, \frac{1}{r} \frac{\mathrm{d}V}{\mathrm{d}r} \, \mathrm{d}r,
+$$
+here for the 3d shell of Ni. The integrand is made into an interpolating function through the radial points of the quadrature, //x = G[1].x//, and integrated.
+###
+
+<code Quanty Example.Quanty>
+-- the spin-orbit coupling of the Ni 3d shell from the derivative of the potential
+G, F, Atom = CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8 4s2"}, {"Method", "LDA"}, {"Relativistic", false}})
+x = G[1].x
+c = Atom.c
+rV = Atom.Potential.rVN + Atom.Potential.rVH + Atom.Potential.rVxc
+for i, label in ipairs(Atom.Labels) do if label == "3d" then d = i end end
+-- zeta = 1/(2c^2) int P^2 (1/r) dV/dr dr, with (1/r) dV/dr = (f'(r) - f(r)/r)/r^2 for f = r V
+P, f, df = G[d](x), rV(x), rV(x, 1)
+y = {}
+for i = 1, #x do y[i] = P[i]^2*(df[i] - f[i]/x[i])/x[i]^2/(2*c*c) end
+zeta = InterpolatingFunction.Integrate(InterpolatingFunction.BSpline(x, y, 8))
+
+G, F, Dirac = CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8 4s2"}, {"Method", "LDA"}})
+eV = 27.211386
+print(string.format("zeta(3d) = %.4f eV from the Schroedinger potential, %.4f eV from the Dirac calculation", zeta*eV, Dirac.Zeta["3d"]*eV))
+</code>
+
+<file Quanty_Output Example.out>
+zeta(3d) = 0.0974 eV from the Schroedinger potential, 0.0962 eV from the Dirac calculation
+</file>
+
+###
+The two agree to about 1 %. The Dirac value comes from the splitting of the $3d_{3/2}$ and $3d_{5/2}$ energies and includes the relativistic change of the 3d function.
+###
+
+===== Accuracy =====
+
+###
+The radial functions are expansions in B-splines of degree 8 on an exponential grid of 120 knot intervals and are evaluated exactly, without interpolation. With the default settings total energies and orbital energies are accurate to about $10^{-8}$ Hartree for light and $10^{-7}$ Hartree for heavy atoms. The results were compared with the nonrelativistic Hartree-Fock limits of He to Xe (to $10^{-9}$ Hartree), with the LDA and RLDA atoms of the NIST atomic reference data for He to U (to $10^{-6}$ Hartree), and with FPLO (all orbital energies of Re to $10^{-7}$ Hartree). //"Precision" "High"// tightens the convergence and reports in //Atom.ConvergenceCheck// how much the energies change when the number of knot intervals is doubled. For heavy atoms use a finite nucleus: with a point nucleus the $s_{1/2}$ and $p_{1/2}$ functions are singular at the origin.
+###
+
+===== Table of contents =====
+{{indexmenu>.#1}}
+

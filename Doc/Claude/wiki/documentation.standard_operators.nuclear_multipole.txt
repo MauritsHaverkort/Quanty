@@ -1,0 +1,148 @@
+{{indexmenu_n>12}}
+====== Nuclear multipole operator ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
+###
+//NewOperator("NuclearMultipole", NF, Z, indices, G, F, Nucleus)// creates the one-particle operator of the field of a non-spherical nucleus: the part of the attraction by the nucleus that is not spherical. It acts on atomic orbitals calculated by //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]// for a nucleus of type //"Function3D"//, a nucleus with a charge density $\rho_N(x,y,z)$ given as a Lua function. The spherical part of this nucleus is in the //[[documentation:standard_operators:dirac_operator|Dirac operator]]//; the Hamiltonian of the atom with a non-spherical nucleus is
+###
+
+<code Quanty Example.Quanty>
+H = NewOperator("Dirac", NF, Z, indices, G, F, Atom.Nucleus) + NewOperator("NuclearMultipole", NF, Z, indices, G, F, Atom.Nucleus) + NewOperator("AU", NF, indices, G, F)
+</code>
+
+###
+The charge density of the nucleus is expanded in real spherical harmonics $S_{LM}$ of even $L$,
+$$
+\rho_N(\mathbf{r}) = \sum_{L\ \mathrm{even}} \sum_{M=-L}^{L} \rho_{LM}(r)\, S_{LM}(\hat{r}),
+\qquad \rho_{LM}(r) = \int \rho_N(\mathbf{r})\, S_{LM}(\hat{r})\, \mathrm{d}\Omega ,
+$$
+and the potential energy of an electron in the field of the nucleus is
+$$
+V_N(\mathbf{r}) = \sum_{LM} V_{LM}(r)\, S_{LM}(\hat{r}),
+\qquad V_{LM}(r) = -\frac{4\pi}{2L+1} \int_0^\infty \frac{r_<^L}{r_>^{L+1}}\, \rho_{LM}(r')\, r'^2\, \mathrm{d}r' .
+$$
+The term $L = 0$ is the spherical nucleus. The operator //"NuclearMultipole"// is the sum of the terms $L \geq 2$:
+$$
+O = \sum_{L \geq 2} \sum_{M} V_{LM}(r)\, S_{LM}(\hat{r}),
+\qquad
+\langle a|O|b\rangle = \sum_{L \geq 2} \sum_{M} \int_0^\infty V_{LM}(r) \left(P_a P_b + Q_a Q_b\right) \mathrm{d}r \; \langle \kappa_a \mu_a | S_{LM} | \kappa_b \mu_b \rangle ,
+$$
+with $P$ and $Q$ the large and small components of the orbitals, //G// and //F//. The angular factor is the same for both components. The operator couples orbitals of the same parity, with $|j_a - j_b| \leq L \leq j_a + j_b$; it has no elements within an orbital of $j = 1/2$. Odd $L$ are not included: a nucleus has no static electric dipole moment. All energies are in Hartree and all lengths in bohr.
+###
+
+###
+Outside the nucleus $V_{LM}(r) = -\frac{4\pi}{2L+1}\, q_{LM}/r^{L+1}$, with the multipole moments of the nucleus
+$$
+q_{LM} = \int r^L S_{LM}(\hat{r})\, \rho_N(\mathbf{r})\, \mathrm{d}^3 r ,
+$$
+which //CalculateAtomicBasisFunctions()// returns in //Atom.NuclearMultipoleMoments//, a list of tables with the fields //L//, //M// and //Value// for $L \geq 2$, in units of $e$ bohr$^L$. The quadrupole moment $\int (3z^2 - r^2)\, \rho_N\, \mathrm{d}^3 r$ is $\sqrt{16\pi/5}\; q_{20}$.
+###
+
+###
+The real spherical harmonics are, for $M > 0$ and with the complex spherical harmonics $Y_{LM}$,
+$$
+S_{L0} = Y_{L0}, \qquad
+S_{LM} = \frac{Y_{L,-M} + (-1)^M Y_{LM}}{\sqrt{2}} \propto \cos(M\phi), \qquad
+S_{L,-M} = i\,\frac{Y_{L,-M} - (-1)^M Y_{LM}}{\sqrt{2}} \propto \sin(M\phi) .
+$$
+The operator is written in the basis of $\kappa$ and $\mu$ of //indices//. It is real for a density with only $S_{LM}$ of $M \geq 0$ and complex otherwise. Components that are zero by symmetry come out as rounding errors, of the order of $10^{-16}$ times the largest one, which can make the operator complex; //[[documentation:language_reference:functions:chop|Chop]]// removes them (see the example).
+###
+
+###
+The orbitals of //CalculateAtomicBasisFunctions()// are calculated with the spherical part of the nucleus. The operator is added in the basis of these orbitals; for a nucleus the non-spherical part is so small that this is exact for all practical purposes. The nucleus is fixed in space: the nuclear spin and the rotation of the nucleus are not included.
+###
+
+===== Input =====
+
+  * //NF// : Integer, the number of fermionic modes (spin-orbitals) in the one particle basis.
+  * //Z// : Real, the nuclear charge. The density is rescaled to the charge //Z//.
+  * //indices// : Table, for every orbital the list of its $2|\kappa|$ fermion indices, from $\mu = -j$ to $\mu = j$, and the field //kappas// with the $\kappa$ of every orbital. //[[documentation:language_reference:functions:createatomicindiceslist|CreateAtomicIndicesList]](labels, { {"Kappas", true} })// makes this table from the orbital labels, for example //Atom.Labels//.
+  * //G// : Table, the large components $P(r)$ of the orbitals, interpolating functions of type //"DKBSpline"// from //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//, in the order of //indices//. All functions must come from the same call (one set of knots).
+  * //F// : Table, the small components $Q(r)$ of the orbitals, in the same order.
+  * //Nucleus// : Table, the nucleus as a list of options, normally //Atom.Nucleus// of //CalculateAtomicBasisFunctions()// called with //{"Nucleus", "Function3D"}//. Unlike the options of most functions this list is required, since it holds the density. Possible entries are:
+      * //"Nucleus"// : String, must be //"Function3D"//, which is also the default.
+      * //"Density"// : Function $\rho(x, y, z)$, the charge density of the nucleus (charge per volume, $x$, $y$, $z$ in bohr). Required.
+      * //"DensityTolerance"// : Real, a warning is printed when the charge of //"Density"// differs from //Z// by more than this, relative. Default value is $10^{-10}$.
+      * //"NucleusLmax"// : Integer, the largest $L$ of the expansion; only even $L$ are used. Default value is 4.
+      * //"NucleusNTheta"// : Integer, the number of Gauss-Legendre points in $\cos\theta$ with which the density is projected on $S_{LM}$. Default value is //NucleusLmax// + 8, at most 127.
+      * //"NucleusNPhi"// : Integer, the number of equally spaced points in $\phi$. Default value is 2 //NucleusLmax// + 16.
+
+###
+The same options, with the same defaults, set the expansion of the nucleus in //CalculateAtomicBasisFunctions()//; //Atom.Nucleus// carries the values used there.
+###
+
+===== Output =====
+
+  * O : Operator, the one-particle operator of the non-spherical part of the nucleus, real or complex (see above).
+
+===== Example =====
+
+###
+A boron atom with a prolate nucleus: a Gaussian charge density that is 20 % longer along $z$ than along $x$ and $y$. The density is symmetric around the $z$ axis, so of the quadrupole moments only $q_{20}$ is not zero; for this density $q_{20} = \sqrt{5/(16\pi)}\, Z\,(2c^2 - a^2 - b^2)$, with $a$, $b$ and $c$ the widths along $x$, $y$ and $z$. The operator couples the states of equal $\mu$: it splits the $2p_{3/2}$ orbital (fermion indices 6 to 9) into the states $|\mu| = 3/2$ and $|\mu| = 1/2$, and couples $2p_{1/2}$ (indices 4 and 5) to $2p_{3/2}$. Outside the nucleus the potential is $-\frac{4\pi}{5}\, q_{20}\, S_{20}(\hat{r})/r^3$, which, with $\langle 2p_{3/2}, \tfrac{3}{2}|S_{20}|2p_{3/2}, \tfrac{3}{2}\rangle = -\frac{1}{5}\sqrt{5/(4\pi)}$, gives the diagonal element of $\mu = 3/2$ from $\langle r^{-3} \rangle$ of the orbital; the part of the orbital inside the nucleus is negligible.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- boron with a prolate nucleus: a Gaussian charge density, 20 % longer along z
+Z = 5
+s = 4e-5   -- the width of the nucleus in bohr
+function rho(x, y, z)
+  local a, b, c = s, s, 1.2*s
+  return Z/((2*math.pi)^1.5*a*b*c)*math.exp(-x^2/(2*a^2) - y^2/(2*b^2) - z^2/(2*c^2))
+end
+G, F, Atom = CalculateAtomicBasisFunctions(Z, {{"Configuration", "1s2 2s2 2p1"}, {"Nucleus", "Function3D"}, {"Density", rho}})
+indices, NF = CreateAtomicIndicesList(Atom.Labels, {{"Kappas", true}})
+
+-- the quadrupole moment
+for _, m in ipairs(Atom.NuclearMultipoleMoments) do
+  if m.L == 2 and m.M == 0 then q20 = m.Value end
+end
+print(string.format("q_20 = %.6e e bohr^2, analytic %.6e e bohr^2", q20, math.sqrt(5/(16*math.pi))*Z*(2*(1.2*s)^2 - 2*s^2)))
+
+-- the operator, without the rounding errors of the components that are zero
+O = NewOperator("NuclearMultipole", NF, Z, indices, G, F, Atom.Nucleus)
+O.Chop(1e-20)
+print(O)
+
+-- 2p3/2, mu = 3/2: outside the nucleus the potential is -(4 pi/5) q_20 S_20/r^3
+M = OperatorToMatrix(O)
+r3 = Atom.Orbitals[4].RExpectation[-3]
+print(string.format("<2p3/2, 3/2|O|2p3/2, 3/2> = %.6e Hartree, (4 pi/25) sqrt(5/(4 pi)) q_20 <r^-3> = %.6e Hartree",
+                    M[10][10], 4*math.pi/25*math.sqrt(5/(4*math.pi))*q20*r3))
+print(string.format("splitting of 2p3/2: %.3f MHz", 2*M[10][10]*EnergyUnits.Ha.value/EnergyUnits.THz.value*1e6))
+</code>
+
+<file Quanty_Output Example.out>
+q_20 = 2.220357e-09 e bohr^2, analytic 2.220357e-09 e bohr^2
+
+Operator: NuclearMultipole
+QComplex         =          0 (Real==0 or Complex==1 or Mixed==2)
+MaxLength        =          2 (largest number of product of lader operators)
+NFermionic modes =         10 (Number of fermionic modes (site, spin, orbital, ...) in the one particle basis)
+NBosonic modes   =          0 (Number of bosonic modes (phonon modes, ...) in the one particle basis)
+
+Operator of Length   2
+QComplex      =          0 (Real==0 or Complex==1)
+N             =          8 (number of operators of length   2)
+C  4 A  7 | -7.72441525937721E-10
+C  5 A  8 |  7.72441525937721E-10
+C  6 A  6 |  5.45853435931713E-10
+C  7 A  4 | -7.72441525937721E-10
+C  7 A  7 | -5.45853435931713E-10
+C  8 A  5 |  7.72441525937721E-10
+C  8 A  8 | -5.45853435931713E-10
+C  9 A  9 |  5.45853435931713E-10
+
+
+<2p3/2, 3/2|O|2p3/2, 3/2> = 5.458534e-10 Hartree, (4 pi/25) sqrt(5/(4 pi)) q_20 <r^-3> = 5.458535e-10 Hartree
+splitting of 2p3/2: 7.183 MHz
+</file>
+
+###
+The states with $|\mu| = 3/2$, whose density lies away from the $z$ axis, are raised: the electron is further from the ends of the nucleus, where the extra positive charge is. The splitting is 7 MHz. A real nucleus also has a spin, which is not included here.
+###
+
+===== Table of contents =====
+{{indexmenu>.#1|msort}}

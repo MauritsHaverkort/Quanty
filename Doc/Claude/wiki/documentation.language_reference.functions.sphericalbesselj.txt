@@ -1,0 +1,74 @@
+====== math.SphericalBesselJ ======
+
+###
+//math.SphericalBesselJ(l, x)// returns the spherical Bessel function of the first kind $j_l(x)$,
+$$
+j_l(x) = \sqrt{\frac{\pi}{2x}} \, J_{l+1/2}(x),
+$$
+with $J$ the Bessel function. The first two are $j_0(x) = \sin(x)/x$ and $j_1(x) = \sin(x)/x^2 - \cos(x)/x$. The spherical Bessel functions appear, for example, in the expansion of a plane wave in spherical harmonics, $e^{i \mathbf{k} \cdot \mathbf{r}} = 4\pi \sum_{lm} i^l j_l(kr) Y_{lm}^*(\hat{k}) Y_{lm}(\hat{r})$, and in the integrals of [[documentation:language_reference:functions:getmultipolebesselintegral|]].
+###
+
+===== Input =====
+
+  * //l// : Integer, the order, $l \ge 0$.
+  * //x// : Real, the argument, $x \ge 0$.
+  * Options : (optional) A table of options. Possible options are:
+      * //"Method"// : String, //"Recurrence"// (default) or //"Series"//. //"Recurrence"// is accurate to about $10^{-13}$ (relative), also for large $l$. //"Series"// is the method of earlier versions of Quanty, two series expansions, one for small and one for large $x$. For large $l$ it is inaccurate in between, for $x$ near $l/2$. <color #ed1c24>New in 0.9.1</color>
+
+===== Output =====
+
+  * Real, the value $j_l(x)$.
+
+===== Example =====
+
+###
+$j_0$ and $j_1$ compared with their closed forms. At $x = 0.001$ the closed form of $j_1$ loses digits, as two almost equal terms are subtracted; the exact value is $j_1(0.001) = 3.33333300000001 \cdot 10^{-4}$. At $x = 0$, $j_0 = 1$ and $j_l = 0$ for $l > 0$.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- j0 and j1 against their closed forms
+print("   x        j0(x)              sin(x)/x           j1(x)              sin(x)/x^2-cos(x)/x")
+for _, x in ipairs({0.001, 0.5, 2, 10, 100}) do
+  local j0 = math.SphericalBesselJ(0, x)
+  local j1 = math.SphericalBesselJ(1, x)
+  print(string.format("%7.3f  %18.15f %18.15f %18.15f %18.15f", x, j0, math.sin(x)/x, j1, math.sin(x)/x^2 - math.cos(x)/x))
+end
+print(math.SphericalBesselJ(0, 0), math.SphericalBesselJ(3, 0))
+</code>
+
+==== Result ====
+<file Quanty_Output>
+   x        j0(x)              sin(x)/x           j1(x)              sin(x)/x^2-cos(x)/x
+  0.001   0.999999833333342  0.999999833333342  0.000333333300000  0.000333333300091
+  0.500   0.958851077208406  0.958851077208406  0.162537030636067  0.162537030636067
+  2.000   0.454648713412841  0.454648713412841  0.435397774979992  0.435397774979992
+ 10.000  -0.054402111088937 -0.054402111088937  0.078466941798752  0.078466941798752
+100.000  -0.005063656411098 -0.005063656411098 -0.008673825286988 -0.008673825286988
+1	0
+</file>
+
+###
+The two methods for larger $l$, compared with values of $j_l(x)$ to 15 digits. For $l = 5$ they agree; for $l = 20$ and $l = 30$ near $x = l/2$ the series loses accuracy.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the two methods for large l, against values of j_l(x) to 15 digits
+for _, r in ipairs({{5, 2, 2.63516977024412e-3}, {20, 11.88, 4.33642532610588e-5}, {30, 17, 4.24200329973575e-7}}) do
+  local l, x, exact = r[1], r[2], r[3]
+  local rec = math.SphericalBesselJ(l, x)
+  local ser = math.SphericalBesselJ(l, x, {{"Method", "Series"}})
+  print(string.format("j_%d(%g) = %.14e   Recurrence %.14e   Series %.14e", l, x, exact, rec, ser))
+end
+</code>
+
+==== Result ====
+<file Quanty_Output>
+j_5(2) = 2.63516977024412e-03   Recurrence 2.63516977024412e-03   Series 2.63516977024412e-03
+j_20(11.88) = 4.33642532610588e-05   Recurrence 4.33642532610588e-05   Series 4.33642406151829e-05
+j_30(17) = 4.24200329973575e-07   Recurrence 4.24200329973575e-07   Series 4.29528587547419e-07
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

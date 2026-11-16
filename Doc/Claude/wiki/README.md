@@ -13,10 +13,46 @@ commit `ec5a6a39`, and for the batch of 2026-11-16 up to `a6fa487a`.
 
 ## Open pages
 
-None. The 12 drafts of 2026-11-16 (version tags, CODATA 2022, the interpolating functions,
-CalculateAtomicBasisFunctions, AtomNumberToName, AtomNameToNumber, Graphics.Plot) were pasted
-the same day (commit 2f697975). The live pages were compared with the drafts afterwards: they
-are the same, apart from blank lines at the end and the HermiteCSpline link below.
+Batch of 2026-11-17, built on the live sources of that day; every example was run with the
+build of commit `a6fa487a` and its output pasted. Images in `media/` (untracked), to upload to
+the namespace given.
+
+New pages:
+- `documentation:language_reference:objects:graphics:functions:add`, `...:new`, `...:totable`,
+  `...:rotate` (all already in 0.9.0, no tags). Images `add_elements.png`, `new_triangle.png`,
+  `rotate_cards.png` to `documentation:language_reference:objects:graphics:functions`.
+- The BitMap object: `documentation:language_reference:objects:bitmap:start`,
+  `...:bitmap:functions:start`, `...:functions:new`, `...:functions:pixel`, `...:functions:save`
+  (in 0.9.0, no tags; no properties page, a BitMap has no readable fields). Image
+  `bitmap_drum.png` to `documentation:language_reference:objects:bitmap`, `bitmap_new.png` and
+  `bitmap_save.png` to `documentation:language_reference:objects:bitmap:functions`.
+  BitMap.Overlay and BitMap.FromMatrix get no page: they are empty in the code.
+- `documentation:language_reference:functions:xcfunctional` (New in 0.9.1) and
+  `documentation:language_reference:functions:sphericalbesselj`, title math.SphericalBesselJ
+  (option Method New in 0.9.1).
+- `documentation:standard_operators:dirac_operator` (Modified in 0.9.1; indexmenu_n 11) and
+  `documentation:standard_operators:nuclear_multipole` (New in 0.9.1; indexmenu_n 12).
+
+Changes to live pages:
+- `documentation:standard_operators:atomic_coulomb_repulsion`: indexmenu_n 13 (after Dirac and
+  NuclearMultipole), and one sentence linking the Dirac operator.
+- `documentation:language_reference:functions:newoperator`: "Dirac", "AU" and
+  "NuclearMultipole" in the first paragraph link their pages.
+- `documentation:language_reference:functions:calculateatomicbasisfunctions`: the options
+  DensityTolerance, NucleusLmax, NucleusNTheta, NucleusNPhi and the output
+  NuclearMultipoleMoments added; links to the Dirac, NuclearMultipole and AU pages.
+- `documentation:language_reference:objects:start`: BitMaps in the list of objects.
+- `documentation:language_reference:objects:interpolatingfunction:start` and
+  `...:interpolatingfunction:functions:spline`: the links to the missing page `hermitecspline`
+  point to `monotoniccspline`, as internal links.
+- `documentation:language_reference:functions:createspectra`: the first example has a
+  description, its definitions written out instead of `dofile("../definitions.Quanty")`, and
+  the output of the present version (the second output is a list of poles for this small
+  space; the numbers differ in the 9th digit by the CODATA 2022 tesla).
+
+The drafts of 2026-11-16 (version tags, CODATA 2022, the interpolating functions,
+CalculateAtomicBasisFunctions, AtomNumberToName, AtomNameToNumber, Graphics.Plot) are live and
+match the drafts (checked 2026-11-16, commit 2f697975); `atomic_potentials.png` is uploaded.
 
 ## Version tags
 
@@ -28,25 +64,8 @@ get no tag.
 
 ## Open points without a file
 
-- The image `atomic_potentials.png` (in `media/`, 2400 x 1697) is not on the site: the page
-  `documentation:language_reference:functions:calculateatomicbasisfunctions` shows it, the file
-  gives 404 (checked 2026-11-16). Upload it to the namespace
-  `documentation:language_reference:functions`.
-- The page `documentation:language_reference:objects:interpolatingfunction:functions:hermitecspline`
-  does not exist; HermiteCSpline is documented on `...:functions:monotoniccspline`. Two links
-  still point to the missing page: on `...:interpolatingfunction:functions:spline` (Example, "for
-  data that must not overshoot") and in the text of `...:interpolatingfunction:start` (the
-  paragraph on HermiteCSpline). The table on the start page now links the right page, but as a
-  full web address; the internal form is
-  `[[documentation:language_reference:objects:interpolatingfunction:functions:monotoniccspline|...]]`.
-- `documentation:language_reference:functions:createspectra`: the first example has
-  "description text" as its description and loads `../definitions.Quanty`.
-- No pages yet for `ImpurityGreensFunction`, `NewOperator("Dirac")` and
-  `NewOperator("NuclearMultipole")` (only the overview on the NewOperator page),
-  `XCFunctional`, and `math.SphericalBesselJ`; when written, all but ImpurityGreensFunction
-  need a 0.9.1 tag (NuclearMultipole and XCFunctional new; Dirac: Z real, c = cAU instead of
-  137.0; SphericalBesselJ: option Method).
-- Graphics: the pages Add, New, ToTable and Rotate under
-  `documentation:language_reference:objects:graphics:functions`, and BitMap as its own object,
-  are not written yet (the start, functions start, Plot, ToSVG, ToPS, SVGHTMLViewer, PlotBands
-  and properties pages exist).
+- `math.SphericalBesselJ` is wrong for negative x with the default method "Recurrence" (j0(-5)
+  gives 0.018 instead of -0.192); 0.9.0 was right. The draft says x >= 0; drop that once the code
+  is fixed.
+- ImpurityGreensFunction is not registered in Lua (commented out in `LuaInterface/ssp.cpp`), so
+  it gets no page.
