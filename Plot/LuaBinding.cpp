@@ -531,14 +531,12 @@ int LuaNewGraphics(lua_State * L)
       double CanvasSizeY;
       double CanvasOriginX;
       double CanvasOriginY;
-      uint32_t NLayer;
     } Options;
     LuaOptionsType LuaNewGraphicsOptions[]={
       {"Canvas.Size.X","double",&(Options.CanvasSizeX)},
       {"Canvas.Size.Y","double",&(Options.CanvasSizeY)},
       {"Canvas.Origin.X","double",&(Options.CanvasOriginX)},
       {"Canvas.Origin.Y","double",&(Options.CanvasOriginY)},
-      {"NLayer","uint32_t",&(Options.NLayer)},
       {NULL, NULL, NULL}};
     if(LuaTestOptionsList(L, -2))
     {
