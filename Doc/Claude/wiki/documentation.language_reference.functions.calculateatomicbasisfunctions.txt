@@ -1,4 +1,7 @@
 ====== CalculateAtomicBasisFunctions ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
 
 ###
 //G, F, Atom = CalculateAtomicBasisFunctions(Z, Configuration, Options)// calculates the radial functions of the orbitals of an atom. //CalculateAtomicBasisFunctions(Z)// is enough for the ground state of the neutral atom. The atom is calculated self-consistently, relativistically (Dirac equation) or nonrelativistically (Schrödinger equation), either in the configuration-average Hartree-Fock approximation or in density functional theory (LDA, PBE). The radial functions are expanded in B-splines and returned as interpolating functions.

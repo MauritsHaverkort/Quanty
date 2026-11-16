@@ -1,6 +1,9 @@
 
 {{indexmenu_n>999}}
 ====== Atomic coulomb repulsion ======
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 NewOperator("AtomicU",NF,indices,RadialWavefunctions1,RadialWavefunctions2,options) calculates the full Coulomb interaction operator between all given atomic orbitals.
@@ -19,11 +22,18 @@ NewOperator("AtomicU",NF,indices,RadialWavefunctions1,RadialWavefunctions2,kappa
               * "conserve" : (default false) if true only the Slater integrals that conserve the occupation of every orbital are calculated, the direct and exchange integrals $(ab|ab)$ and $(ab|ba)$. Without kappas1 and kappas2 only.
               * "1P-Operator" : (default true) with kappas1 and kappas2 only. If true the core-valence interaction is returned as the one particle operator it is when the core is filled, the Hartree-Fock potential of the core acting on the valence orbitals (see the second example). If false the two particle core-valence interaction is returned. For radial functions on a grid the core orbitals must also have the lowest fermion indices, 0 to the number of core spin-orbitals minus 1.
 
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
 ###
 The radial wave-functions can be read from FPLO with //ReadFPLOBasisFunctions()//, or calculated with //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//. For the functions of //CalculateAtomicBasisFunctions()// the Slater integrals are calculated exactly on the B-spline basis of the atom, without a radial grid (see the second example). All functions must then come from the same call.
 ###
 
 ===== Example =====
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
 
 ###
 The example below shows how to create the full Coulomb interaction between multiple atomic orbitals with relativistic wave-functions. It is recommended to use CreateAtomicIndicesList(orbitallabels,{ {"Kappas",true} }) for index creation, since it automatically calculates the quantum numbers kappa and stores them in the field ind.kappas which needs to be set when calling NewOperator("AtomicU",...) with relativistic wave-functions.

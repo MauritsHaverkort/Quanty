@@ -1,5 +1,8 @@
 {{indexmenu_n>999}}
 ====== Plot ======
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 //pl = Graphics.Plot(Data, Options)// plots spectra, lists of data points, interpolating functions and response functions and returns a [[documentation:language_reference:objects:graphics:start|Graphics object]], an A4 page in landscape with a frame, axes and the curves. //Graphics.ToSVG(pl)// and //Graphics.ToPS(pl)// turn it into the text of an svg or a PostScript file. //pl = Graphics.Plot(G, GammaL, GammaG, NE, Options)// plots a response function, broadened. Several curves can be drawn in one frame, as a waterfall plot shifted above each other, as a color map, or as a grid of panels.
@@ -10,7 +13,7 @@
   * //Data// : one of
       * a [[documentation:language_reference:objects:spectra:start|Spectra]] object, as made by //CreateSpectra//, //CreateResonantSpectra// or //ResponseFunction.ToSpectra//. A Spectra object with several spectra is drawn as several curves.
       * a list of points //{ {x1, y1}, {x2, y2}, ...}//. The points are drawn at their own //x// and joined in the order of the list, so they need not be equally spaced. The //y// are real or complex numbers; a real //y// is the real part, so a list of real data is plotted with //{"plotIm",false}//.
-      * an [[documentation:language_reference:objects:interpolatingfunction:start|interpolating function]] //f//. It is evaluated at //"PlotPoints"// + 1 equally spaced points of the plot range and at its own points //f.x// inside that range (the data points, or for a //DKBSpline// the radial points of the quadrature of the atom), and drawn as the list of these points. A narrow feature between the equally spaced points, such as a 1s orbital near the nucleus, is therefore not lost. Without //"Xmin"// and //"Xmax"// the plot range runs from the first to the last point of //f//. The values are real, so they are drawn with //{"plotIm",false}//.
+      * an [[documentation:language_reference:objects:interpolatingfunction:start|interpolating function]] //f//. It is evaluated at //"PlotPoints"// + 1 equally spaced points of the plot range and at its own points //f.x// inside that range (the data points, or for a //DKBSpline// the radial points of the quadrature of the atom), and drawn as the list of these points. A narrow feature between the equally spaced points, such as a 1s orbital near the nucleus, is therefore not lost. Without //"Xmin"// and //"Xmax"// the plot range runs from the first to the last point of //f//. The values are real, so they are drawn with //{"plotIm",false}//. <color #ed1c24>New in 0.9.1</color>
       * a list of curves, //{C1, C2, ...}//, each a Spectra object, a list of points, an interpolating function or a response function. The response functions are broadened by the fields //GammaL// and //GammaG// of the list, //{C1, C2, ..., GammaL = 0.2}//, and evaluated at //"PlotPoints"// + 1 equally spaced energies of the plot range.
   * //G// : a [[documentation:language_reference:objects:responsefunction:start|response function]]. It is evaluated at the energies of the plot range, from //"Xmin"// to //"Xmax"// of the //"Frame"//, by default from -1 to 1. A matrix valued (block) response function is drawn as a grid of panels, one for each matrix element.
   * //GammaL// : (optional) Real, the Lorentzian broadening of //G// (full width at half maximum). Default value 0
@@ -23,7 +26,7 @@
       * //"Negate"// : Boolean, draw minus the values, for example $-\mathrm{Im}\,G$ for an intensity. Default value false
       * //"Scale"// : Real, the values are multiplied by //"Scale"// before they are drawn. Default value 1
       * //"LineStyle"// : a list of line styles, see [[#line_styles|Line styles]] below
-      * //"LineStyleCycle"// : Integer, the curves of a list take the styles 1 to //"LineStyleCycle"// in turn. Default value: all styles
+      * //"LineStyleCycle"// : Integer, the curves of a list take the styles 1 to //"LineStyleCycle"// in turn. Default value: all styles <color #ed1c24>New in 0.9.1</color>
       * //"PlotPoints"// : Integer, the number of intervals of the equally spaced mesh on which response functions (unbroadened, or in a list) and interpolating functions are evaluated: //"PlotPoints"// + 1 points, for an interpolating function in addition to its own points. Default value 600, so 601 points
       * //"WaterfallShift"// : Real, curve $n$ is shifted up by $(n-1)$ //"WaterfallShift"//. Default value 0
       * //"WaterfallOffset"// : Real, all curves are shifted up by //"WaterfallOffset"//. Default value 0
@@ -61,6 +64,9 @@ The option //"Frame"// is a table of options:
   * //"Font"// : String, the PostScript name of the font. Default value "TimesNewRomanPSMT"
 
 ===== Line styles =====
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 The option //"LineStyle"// is a list of styles, //{style1, style2, ...}//, each a table of options:
@@ -107,6 +113,9 @@ A matrix valued response function, and a Spectra object with //"Nrow"// and //"N
 ###
 
 ===== Example =====
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 Three peaks as a Spectra object and as a response function, several curves in one frame, a waterfall plot and a color map.

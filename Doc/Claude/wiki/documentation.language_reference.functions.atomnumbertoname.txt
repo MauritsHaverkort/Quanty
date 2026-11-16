@@ -1,4 +1,7 @@
 ====== AtomNumberToName ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
 
 ###
 //AtomNumberToName(Z)// returns the symbol of the chemical element with atomic number $Z$, from //"H"// for $Z = 1$ to //"Og"// for $Z = 118$. The inverse is //[[documentation:language_reference:functions:atomnametonumber|AtomNameToNumber()]]//.

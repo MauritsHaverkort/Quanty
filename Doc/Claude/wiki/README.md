@@ -13,6 +13,24 @@ commit `ec5a6a39`.
 
 ## Open pages
 
+Version tags (2026-11-16): every page with something that is not in release 0.9.0
+(tag `0.9.0`, 2026-10-03) carries `New in 0.9.1` or `Modified in 0.9.1`, red and right
+aligned under the page or section heading (`;;#` block, layout from the live
+CalculateAtomicBasisFunctions page), or inline in red at the end of a list item.
+Older tags stay, newest first: `Modified in 0.9.5 - New in 0.9.1`. Bug fixes get no tag.
+Tagged in the drafts below; the pages without other changes:
+
+- `documentation:language_reference:constants:physical_constants` and
+  `...:constants:energy_units`: CODATA 2022 (commit 9ab94392), the outputs rerun
+  (listing order of the live page kept, PhysicalConstants.cAU added at the end; Joule
+  and Ha, cut off at the top of the live EnergyUnits listing, restored), one paragraph
+  each on CODATA 2022 versus 2014. Built on the live sources of 2026-11-16.
+- `documentation:language_reference:objects:interpolatingfunction:functions:bspline`,
+  `...:spline`, `...:monotoniccspline` (HermiteCSpline): f.knots, f.degree,
+  f.coefficients, f.type and f.x of a BSpline (commits 2e584f4b, 4caf4f00) in Output
+  and in the examples that use them; B-spline arithmetic (a8a582b4). Live sources of
+  2026-11-16, tags only.
+
 - `documentation:language_reference:objects:graphics:functions:plot`: interpolating
   functions as data (PlotPoints + 1 equally spaced points and f.x, drawn as a list of
   points), in Data, PlotPoints and the color-map restriction. PlotPoints and NE count
@@ -50,4 +68,7 @@ commit `ec5a6a39`.
 - `documentation:language_reference:functions:createspectra`: the first example
   has "description text" as its description and loads `../definitions.Quanty`.
 - No pages yet for `ImpurityGreensFunction`, `NewOperator("Dirac")` and
-  `NewOperator("NuclearMultipole")`.
+  `NewOperator("NuclearMultipole")`, `XCFunctional`, and no page for
+  `math.SphericalBesselJ`; when written, all but ImpurityGreensFunction need a 0.9.1
+  tag (NuclearMultipole and XCFunctional new; Dirac: Z real, c = cAU instead of 137.0;
+  SphericalBesselJ: option Method).

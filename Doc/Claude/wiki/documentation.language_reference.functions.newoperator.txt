@@ -1,4 +1,7 @@
 ====== NewOperator ======
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 //NewOperator(name, ...)// creates one of the standard operators as described in the section on standard operators. A "Basis" option on the last position selects the one particle basis the orbitals are in, see below. //[[documentation:language_reference:functions:angularmomentumoperators|AngularMomentumOperators()]]// creates several of the standard operators of a single atomic shell in one call. The operators //"Dirac"//, //"AU"// and //"NuclearMultipole"// act on atomic orbitals given by their radial functions, see below.
@@ -40,6 +43,9 @@ Whereby positive indices create a particle, negative indices annihilate a partic
   * O : Operator
 
 ===== Example 1 =====
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
 
 <code Quanty Example.Quanty>
 -- the atomic operators of Ne on its own Dirac-Fock orbitals

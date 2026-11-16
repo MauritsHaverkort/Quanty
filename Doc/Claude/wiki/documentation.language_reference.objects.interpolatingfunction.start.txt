@@ -1,5 +1,8 @@
 {{indexmenu_n>999}}
 ====== Interpolating function ======
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 An interpolating function is a function $f(x)$ of one real variable made from a table of data points $(x_i, y_i)$, $i = 1 \dots N$. It passes through every data point, $f(x_i) = y_i$, and between the points it is a smooth curve, a polynomial of low degree on each interval. Once made, an interpolating function can be evaluated at any $x$, differentiated, integrated, and combined with other interpolating functions by arithmetic. Outside the interval $[x_1, x_N]$ it is 0, its derivatives as well.
@@ -25,6 +28,9 @@ Which type to choose:
 ###
 
 ===== Example =====
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 A step, sampled at $x = 0, 1, \dots, 10$, interpolated by a //Spline// (black), a //HermiteCSpline// (red) and a //BSpline// of degree 5 (blue). The cubic spline and the B-spline overshoot near the step and ripple around the flat parts; the higher the degree, the larger the ripples. The Hermite spline stays between 0 and 1. For smooth data the order is reversed: there the B-spline of high degree is the most accurate, see //[[documentation:language_reference:objects:interpolatingfunction:functions:bspline|InterpolatingFunction.BSpline()]]//.
@@ -94,6 +100,9 @@ BSpline        degree 5   min  -0.1343   max   1.1260
 ###
 
 ===== DKBSpline =====
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
 
 ###
 An interpolating function of type //"DKBSpline"// is not made from data. It is one of the two components of a radial Dirac spinor, as returned by //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//: the large component $G = P(r) = r g(r)$ or the small component $F = Q(r) = r f(r)$ of an orbital with quantum number $\kappa$. The two belong together. They are expanded in a dual kinetic balance (DKB) B-spline basis (V. M. Shabaev et al., [[https://doi.org/10.1103/PhysRevLett.93.130405|Phys. Rev. Lett. 93, 130405 (2004)]]), with the two sets of coefficients $a_j$ and $b_j$ of the orbital,
@@ -141,6 +150,9 @@ type DKBSpline, degree 8, 121 knots from 0 to 40, 1560 points x
 </file>
 
 ===== Evaluation =====
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 An interpolating function //f// is evaluated as a function:
@@ -152,6 +164,9 @@ Outside $[x_1, x_N]$ (for a //DKBSpline// outside its knots) the value and all d
 ###
 
 ===== Properties =====
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
   * //f.x//, //f.y// : the points the function is given on and its values there. For //Spline//, //HermiteCSpline// and //BSpline// these are the data points; a //BSpline// made from coefficients gives its knots. The radial functions and the potentials of //[[documentation:language_reference:functions:calculateatomicbasisfunctions|CalculateAtomicBasisFunctions()]]//, of type //DKBSpline// or //BSpline//, give the radial points of the quadrature of the atom.
@@ -194,6 +209,9 @@ type: Spline and BSpline
 </file>
 
 ===== Arithmetic =====
+;;# 
+<color #ed1c24>Modified in 0.9.1</color>
+;;#
 
 ###
 For two interpolating functions //f// and //g//, //-f//, //f + g//, //f - g//, //f * g//, //f / g//, //f ^ n// (with //n// a number) and the composition //f .. g//, $f(g(x))$, are again interpolating functions, of the type of //f//; a //DKBSpline// acts as the //BSpline// through its values on its points //f.x//, so its results are //BSpline//s. Both operands must be interpolating functions; a number is not converted. The result is made on the data points of //f// and //g// together (//f ^ n// and //f .. g// on those of //f//), through the exact values $f(x_i) + g(x_i)$, ... at these points, and is interpolated between them by the type of //f//. It is therefore exact at the points, and in general a new approximation between them. Exact everywhere are:
