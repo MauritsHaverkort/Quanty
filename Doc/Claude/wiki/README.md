@@ -8,72 +8,45 @@ into the page's edit box, and delete the file here once the page is saved.
 
 See `../WIKI_EDITING_WORKFLOW.md` for the house style. The notes of the earlier
 batches (what was checked and how) are in the git history of this file, up to
-commit `ec5a6a39`.
+commit `ec5a6a39`, and for the batch of 2026-11-16 up to `a6fa487a`.
 
 
 ## Open pages
 
-Version tags (2026-11-16): every page with something that is not in release 0.9.0
-(tag `0.9.0`, 2026-10-03) carries `New in 0.9.1` or `Modified in 0.9.1`, red and right
-aligned under the page or section heading (`;;#` block, layout from the live
-CalculateAtomicBasisFunctions page), or inline in red at the end of a list item.
-Older tags stay, newest first: `Modified in 0.9.5 - New in 0.9.1`. Bug fixes get no tag.
-Tagged in the drafts below; the pages without other changes:
+None. The 12 drafts of 2026-11-16 (version tags, CODATA 2022, the interpolating functions,
+CalculateAtomicBasisFunctions, AtomNumberToName, AtomNameToNumber, Graphics.Plot) were pasted
+the same day (commit 2f697975). The live pages were compared with the drafts afterwards: they
+are the same, apart from blank lines at the end and the HermiteCSpline link below.
 
-- `documentation:language_reference:constants:physical_constants` and
-  `...:constants:energy_units`: CODATA 2022 (commit 9ab94392), the outputs rerun
-  (listing order of the live page kept, PhysicalConstants.cAU added at the end; Joule
-  and Ha, cut off at the top of the live EnergyUnits listing, restored), one paragraph
-  each on CODATA 2022 versus 2014. Built on the live sources of 2026-11-16.
-- `documentation:language_reference:objects:interpolatingfunction:functions:bspline`,
-  `...:spline`, `...:monotoniccspline` (HermiteCSpline): f.knots, f.degree,
-  f.coefficients, f.type and f.x of a BSpline (commits 2e584f4b, 4caf4f00) in Output
-  and in the examples that use them; B-spline arithmetic (a8a582b4). Live sources of
-  2026-11-16, tags only.
+## Version tags
 
-- `documentation:language_reference:objects:graphics:functions:plot`: interpolating
-  functions as data (PlotPoints + 1 equally spaced points and f.x, drawn as a list of
-  points), in Data, PlotPoints and the color-map restriction. PlotPoints and NE count
-  intervals (PlotPoints + 1 points; checked: 400 gives 401), the live text said
-  "number of energies". Built on the live page source of 2026-11-16. Later the same day: smooth
-  interpolating functions are drawn as curves of cubic pieces (Data), and every line is thinned
-  to within 0.01 mm (a paragraph under Line styles; commits 435896ed and the next one).
-- New pages `documentation:language_reference:functions:atomnumbertoname` and
-  `documentation:language_reference:functions:atomnametonumber`: the element symbol of
-  Z = 1 .. 118 and back (exported to Lua 2026-11-16); examples run on the present build.
-- `documentation:language_reference:functions:calculateatomicbasisfunctions`: the
-  potentials are now `rVN`, `rVH`, `rVxc` as BSplines (commit 50df4172): the Output
-  entry, and a new section "The potentials" before "Accuracy" (what r V is, the
-  derivative V' = (f' - f/r)/r, Kr LDA screening with a figure, the Ni 3d spin-orbit
-  constant from dV/dr). The G entry links the interpolating function page. Built on
-  the live page source of 2026-11-15; the four existing examples were rerun and
-  their outputs are unchanged. Image `atomic_potentials.png` (in `media/`,
-  2400 x 1697) to upload to the namespace `documentation:language_reference:functions`.
-  Also the new call `G, F, Atom = CalculateAtomicBasisFunctions(...)`: `x` is gone
-  (every returned function gives the quadrature points as `f.x`), and the fields
-  `EtotEigenvalueSum`, `PotentialResidual`, `MixDensity`, `EavJJ` in Output; a
-  configuration of empty orbitals only is the bare nucleus (Input, Configuration).
-  The configuration is an option, no longer the second argument (2026-11-16):
-  `CalculateAtomicBasisFunctions(28, {{"Configuration", "[Ar] 3d8"}})`; Input and the
-  examples changed accordingly.
-- `documentation:standard_operators:atomic_coulomb_repulsion` and
-  `documentation:language_reference:functions:newoperator`: only the call
-  `G, F, x, Atom = ...` becomes `G, F, Atom = ...` in the examples (outputs rerun,
-  unchanged).
-- `documentation:language_reference:objects:interpolatingfunction:start`: one
-  sentence under Properties, f.x of the radial functions of
-  CalculateAtomicBasisFunctions is now the quadrature grid also for the
-  nonrelativistic BSpline; DiracRadialSolve (removed) is no longer named in the
-  DKBSpline section; DKBSpline arithmetic (as a BSpline through f.x, result a BSpline)
-  in the DKBSpline and Arithmetic sections, and the DKBSpline example now computes
-  overlaps instead of showing the error (`G, F, Atom` call; rerun).
+Every page with something that is not in release 0.9.0 (tag `0.9.0`, 2026-10-03) carries
+`New in 0.9.1` or `Modified in 0.9.1`, red and right aligned under the page or section heading
+(`;;#` block, layout from the live CalculateAtomicBasisFunctions page), or inline in red at the
+end of a list item. Older tags stay, newest first: `Modified in 0.9.5 - New in 0.9.1`. Bug fixes
+get no tag.
 
 ## Open points without a file
 
-- `documentation:language_reference:functions:createspectra`: the first example
-  has "description text" as its description and loads `../definitions.Quanty`.
+- The image `atomic_potentials.png` (in `media/`, 2400 x 1697) is not on the site: the page
+  `documentation:language_reference:functions:calculateatomicbasisfunctions` shows it, the file
+  gives 404 (checked 2026-11-16). Upload it to the namespace
+  `documentation:language_reference:functions`.
+- The page `documentation:language_reference:objects:interpolatingfunction:functions:hermitecspline`
+  does not exist; HermiteCSpline is documented on `...:functions:monotoniccspline`. Two links
+  still point to the missing page: on `...:interpolatingfunction:functions:spline` (Example, "for
+  data that must not overshoot") and in the text of `...:interpolatingfunction:start` (the
+  paragraph on HermiteCSpline). The table on the start page now links the right page, but as a
+  full web address; the internal form is
+  `[[documentation:language_reference:objects:interpolatingfunction:functions:monotoniccspline|...]]`.
+- `documentation:language_reference:functions:createspectra`: the first example has
+  "description text" as its description and loads `../definitions.Quanty`.
 - No pages yet for `ImpurityGreensFunction`, `NewOperator("Dirac")` and
-  `NewOperator("NuclearMultipole")`, `XCFunctional`, and no page for
-  `math.SphericalBesselJ`; when written, all but ImpurityGreensFunction need a 0.9.1
-  tag (NuclearMultipole and XCFunctional new; Dirac: Z real, c = cAU instead of 137.0;
-  SphericalBesselJ: option Method).
+  `NewOperator("NuclearMultipole")` (only the overview on the NewOperator page),
+  `XCFunctional`, and `math.SphericalBesselJ`; when written, all but ImpurityGreensFunction
+  need a 0.9.1 tag (NuclearMultipole and XCFunctional new; Dirac: Z real, c = cAU instead of
+  137.0; SphericalBesselJ: option Method).
+- Graphics: the pages Add, New, ToTable and Rotate under
+  `documentation:language_reference:objects:graphics:functions`, and BitMap as its own object,
+  are not written yet (the start, functions start, Plot, ToSVG, ToPS, SVGHTMLViewer, PlotBands
+  and properties pages exist).
