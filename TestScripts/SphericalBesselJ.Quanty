@@ -3,7 +3,9 @@
  *  (sqrt(pi/2x) J_{n+1/2}(x)), including the middle range x ~ n/2 of large n where the former
  *  two-series implementation (Method "Series") fails. Core/BasicMath/BasicMath_StandardFunctions.cpp:
  *  measured on n = 0 .. 60, x = 1e-4 .. 1e3: recurrence <= 1.3e-13 relative, checked 1e-12
- *  here; the series is checked where it is good (n <= 7: 1e-10).
+ *  here; the series is checked where it is good (n <= 7: 1e-10). Negative x: the same values
+ *  times (-1)^n, j_n(-x) = (-1)^n j_n(x) (both methods were wrong there before, the series only
+ *  for large |x|).
 ]]
 
 local ref = {
@@ -37,6 +39,11 @@ for _, r in ipairs(ref) do
   local ser = math.SphericalBesselJ(r[1], r[2], {{"Method", "Series"}})
   local e1, e2 = math.abs(rec - r[3])/math.abs(r[3]), math.abs(ser - r[3])/math.abs(r[3])
   check(e1 < 1e-12 and (r[1] > 7 or e2 < 1e-10), string.format("j_%d(%g) = %.15e: Recurrence %.1e, Series %.1e", r[1], r[2], r[3], e1, e2))
+  local sign = (r[1] % 2 == 0) and 1 or -1
+  rec = math.SphericalBesselJ(r[1], -r[2])
+  ser = math.SphericalBesselJ(r[1], -r[2], {{"Method", "Series"}})
+  e1, e2 = math.abs(rec - sign*r[3])/math.abs(r[3]), math.abs(ser - sign*r[3])/math.abs(r[3])
+  check(e1 < 1e-12 and (r[1] > 7 or e2 < 1e-10), string.format("j_%d(%g) = %.15e: Recurrence %.1e, Series %.1e", r[1], -r[2], sign*r[3], e1, e2))
 end
 check(math.SphericalBesselJ(0, 0) == 1 and math.SphericalBesselJ(2, 0) == 0, "j_0(0) = 1, j_2(0) = 0")
 local ok = pcall(function() return math.SphericalBesselJ(1, 1, {{"Method", "Taylor"}}) end)

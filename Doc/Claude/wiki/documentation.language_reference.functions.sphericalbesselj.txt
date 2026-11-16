@@ -11,7 +11,7 @@ with $J$ the Bessel function. The first two are $j_0(x) = \sin(x)/x$ and $j_1(x)
 ===== Input =====
 
   * //l// : Integer, the order, $l \ge 0$.
-  * //x// : Real, the argument, $x \ge 0$.
+  * //x// : Real, the argument; for $x < 0$, $j_l(-x) = (-1)^l j_l(x)$.
   * Options : (optional) A table of options. Possible options are:
       * //"Method"// : String, //"Recurrence"// (default) or //"Series"//. //"Recurrence"// is accurate to about $10^{-13}$ (relative), also for large $l$. //"Series"// is the method of earlier versions of Quanty, two series expansions, one for small and one for large $x$. For large $l$ it is inaccurate in between, for $x$ near $l/2$. <color #ed1c24>New in 0.9.1</color>
 

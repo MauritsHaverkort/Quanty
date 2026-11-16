@@ -64,8 +64,5 @@ get no tag.
 
 ## Open points without a file
 
-- `math.SphericalBesselJ` is wrong for negative x with the default method "Recurrence" (j0(-5)
-  gives 0.018 instead of -0.192); 0.9.0 was right. The draft says x >= 0; drop that once the code
-  is fixed.
 - ImpurityGreensFunction is not registered in Lua (commented out in `LuaInterface/ssp.cpp`), so
   it gets no page.

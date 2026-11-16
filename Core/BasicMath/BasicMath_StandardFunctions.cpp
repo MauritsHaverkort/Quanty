@@ -45,10 +45,12 @@ double SphericalBesselJ(const double x, const uint32_t n)
  *  The large x works great for x> 2+n
  *
  *  The gap is filled by taking the limmit to be 2+n/2, where number loss in both series is not so bad that the function is useless.
+ *  For x < 0 from j_n(-x) = (-1)^n j_n(x); the large x series is wrong there.
  */
 double SphericalBesselJSeries(const double x, const uint32_t n)
 {
   double res=0;
+  if(x<0) return (n&1) ? -SphericalBesselJSeries(-x, n) : SphericalBesselJSeries(-x, n);
   if(x<((double)(n+4))/((double)2))
   {
     uint32_t i,imax=30;
@@ -76,7 +78,8 @@ double SphericalBesselJSeries(const double x, const uint32_t n)
   return res;
 }
 
-/*  Spherical Bessel function j_l(x) by recurrences, to rounding for all x >= 0 (DFT stage A5d):
+/*  Spherical Bessel function j_l(x) by recurrences, to rounding for all x (DFT stage A5d); for
+ *  x < 0 from j_l(-x) = (-1)^l j_l(x):
  *   - x > l: upward recurrence j_{n+1} = (2n+1)/x j_n - j_{n-1} from j_0 = sin(x)/x and
  *     j_1 = sin(x)/x^2 - cos(x)/x, stable there; j_1 by its series below x = 1/2;
  *   - x <= l: Miller's downward recurrence from n = l + 20 + 2x with arbitrary start values,
@@ -88,6 +91,7 @@ double SphericalBesselJRecurrence(const double x, const uint32_t l)
 {
   uint32_t n, nStart;
   double jm, j, jp, sum, ref, val = 0., t, s;
+  if (x < 0.) return (l & 1) ? -SphericalBesselJRecurrence(-x, l) : SphericalBesselJRecurrence(-x, l);
   if (x < 1e-3)
   {
     t = 1.;
