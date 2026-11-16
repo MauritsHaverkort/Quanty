@@ -300,6 +300,89 @@ void FindBoundaryPoint(PointType *Boundary, PointType *In, PointType *Out, Point
   OnBoundary->Y = alpha * Out->Y + (1-alpha) * In->Y;
 }
 
+// The largest distance, in mm on the canvas, by which a drawn curve may lie from the curve through
+// all its data points. SVG and PostScript files have a resolution of 0.1 point, 0.035 mm
+// (GraphicsToSVG.cpp, GraphicsToPS.cpp); a quarter of that does not show.
+static double const CurveTolerance = 0.01;
+
+// The distance in mm from P to the segment from A to B, all in fractions of a canvas of Size mm
+static double DistanceToSegment(PointType P, PointType A, PointType B, PointType Size)
+{
+  double const px = (P.X-A.X)*Size.X, py = (P.Y-A.Y)*Size.Y;
+  double const bx = (B.X-A.X)*Size.X, by = (B.Y-A.Y)*Size.Y;
+  double const bb = bx*bx + by*by;
+  double t = (bb>0) ? (px*bx + py*by)/bb : 0;
+  if(t<0) t=0;
+  if(t>1) t=1;
+  return hypot(px - t*bx, py - t*by);
+}
+
+// The point of P[i+1 .. j-1] farthest from the straight segment P[i] P[j], in mm; its index in *Worst
+static double WorstPointOfSegment(PointType const *P, int i, int j, PointType Size, int *Worst)
+{
+  double Max = 0;
+  *Worst = -1;
+  for(int k=i+1;k<j;k++)
+  {
+    double const d = DistanceToSegment(P[k], P[i], P[j], Size);
+    if(d>Max) { Max = d; *Worst = k; }
+  }
+  return Max;
+}
+
+// Douglas-Peucker: Keep[k] is set for the points of P[0 .. N-1] (fractions of a canvas of Size mm)
+// that are kept, the first, the last, and as few others as needed for every point dropped to lie
+// within Tolerance mm of the line through the kept ones: the range from the first to the last point
+// is split at its point farthest from the straight segment between them as long as that point lies
+// farther than Tolerance. The ranges still to be done are kept on a stack, not in recursion, as a curve
+// can have many thousands of points. Returns the number of points kept, or -1 if malloc failed.
+static int ThinPath(PointType const *P, int N, PointType Size, double Tolerance, bool *Keep)
+{
+  for(int k=0;k<N;k++) Keep[k] = (k==0)||(k==N-1);
+  if(N<=2) return N;
+  // a range splits into two whose lengths add up to its own, so at most N-1 ranges wait at a time
+  int *Stack = (int*)malloc(2*N*sizeof(int));
+  if(Stack==NULL) return -1;
+  int NStack = 0, NKeep = 2;
+  Stack[NStack++] = 0;
+  Stack[NStack++] = N-1;
+  while(NStack>0)
+  {
+    int const j = Stack[--NStack];
+    int const i = Stack[--NStack];
+    if(j-i<2) continue;
+    int k;
+    if(WorstPointOfSegment(P, i, j, Size, &k) > Tolerance)
+    {
+      Keep[k] = true;
+      NKeep++;
+      Stack[NStack++] = i;
+      Stack[NStack++] = k;
+      Stack[NStack++] = k;
+      Stack[NStack++] = j;
+    }
+  }
+  free(Stack);
+  return NKeep;
+}
+
+// Adds the polyline Line to Graphics, thinned by ThinPath to within CurveTolerance; the points of
+// Line are overwritten by the kept ones
+static int AddThinnedLine(GraphicsType *Graphics, LineType *Line)
+{
+  bool *Keep = (bool*)malloc(Line->NPoints*sizeof(bool));
+  if(Keep==NULL) { printf("Malloc failed in AddThinnedLine\n"); return 1; }
+  if(ThinPath(Line->Point, Line->NPoints, Graphics->CanvasSize, CurveTolerance, Keep) < 0) { free(Keep); printf("Malloc failed in ThinPath\n"); return 1; }
+  int n = 0;
+  for(int k=0;k<Line->NPoints;k++) if(Keep[k]) Line->Point[n++] = Line->Point[k];
+  free(Keep);
+  int const NPoints = Line->NPoints;
+  Line->NPoints = n;
+  int const Error = AddLine(Graphics, Line);
+  Line->NPoints = NPoints;
+  return Error;
+}
+
 int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointType *Margins, PointType *Data, int NPoints, double LineWidth, uint32_t LineColor, double PointSize, uint32_t PointColor)
 {
   if( ( (LineWidth==0) || (!ColorVisible(LineColor)) ) && ( (PointSize==0) || (!ColorVisible(PointColor)) ) ) return 0;
@@ -360,14 +443,14 @@ int AddDataPointsToGraphics(GraphicsType* Graphics, PointType *PlotRange, PointT
           Line.Point[Line.NPoints].Y = Ofset.Y + Scale.Y * OnBoundary.Y;
           Line.NPoints++;
           render=false;
-          AddLine(Graphics, &Line);
+          AddThinnedLine(Graphics, &Line);
           Line.NPoints=0;
         }
       }
     }
     if(render==true)
     {
-      AddLine(Graphics, &Line);
+      AddThinnedLine(Graphics, &Line);
     }
     FreeLine(&Line);
   }
