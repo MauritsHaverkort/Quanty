@@ -2497,10 +2497,12 @@ uint32_t CompactMatrixGramSchmidtOrthogonalizeColplusT(CompactMatrixType const *
  *  Matrix M contains the values psi_i^* . H . psi_j
  *  Matrix S contains the values psi_i^* . psi_j
  *
- *  on exit val defines a diagonal matrix H and
- *  H = T^* . M . T^{\dag}
- *  I = T^* . S . T^{\dag}
- *  S = Sroot . Sroot^{\dag}
+ *  on exit val defines a diagonal matrix H and the rows of T are the eigenvectors
+ *  (M T^T = S T^T H), with
+ *  H = T^* . M . T^T
+ *  I = T^* . S . T^T
+ *  S = Sroot . Sroot^{\dag}, Sroot lower triangular
+ *  The complex routines are used when M or S is complex.
  *
  */
 uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatrixType * const S, CompactMatrixType * const T, CompactMatrixType * const Sroot, double *val)
@@ -2531,7 +2533,15 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatr
   {
     for (j = i + 1; j < Sroot->Nj; j++)
     {
-      Sroot->VRe[i*Sroot->Nj+j] = 0;
+      if (Sroot->QComplex)
+      {
+        Sroot->V[i*Sroot->Nj+j].Re = 0;
+        Sroot->V[i*Sroot->Nj+j].Im = 0;
+      }
+      else
+      {
+        Sroot->VRe[i*Sroot->Nj+j] = 0;
+      }
     }
   }
   if (CompactMatrixCopy(*M,T))
@@ -2542,7 +2552,7 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatr
   }
   strcpy(T->Name, "Eigenvectors of ");
   strncat(T->Name, M->Name, Max(0, MAXStrLength - 16));
-  if (M->QComplex == 0)
+  if ((M->QComplex == 0) && (S->QComplex == 0))
   {                             /* Real */
     dsygv(&itype, jobz, uplo, &M->Ni, T->VRe, &M->Ni, Sroot->VRe, &M->Ni, val, work, &lwork, &info);
     if (info)
@@ -2589,11 +2599,15 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatr
   {                             /* complex */
     uint32_t  lcwork = 2 * M->Ni + Sqr(M->Ni);
     Complex16 cwork[lcwork];
+    if(T->QComplex==0)
+    {
+      MakeCompactRealMatrixComplex(T);
+    }
     if(Sroot->QComplex==0)
     {
       MakeCompactRealMatrixComplex(Sroot);
     }
-    zhegv(&itype, jobz, uplo, &M->Ni, M->V, &M->Ni, Sroot->V, &M->Ni, val, cwork, &lcwork, work, &info);
+    zhegv(&itype, jobz, uplo, &M->Ni, T->V, &M->Ni, Sroot->V, &M->Ni, val, cwork, &lcwork, work, &info);
     if (info != 0)
     {
       printf("zhegv failed in Generalized Eigensystem with info value %i\n", info);
@@ -2613,7 +2627,15 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatr
       {
         for (j = i + 1; j < Sroot->Nj; j++)
         {
-          Sroot->VRe[i*Sroot->Nj+j] = 0;
+          if (Sroot->QComplex)
+          {
+            Sroot->V[i*Sroot->Nj+j].Re = 0;
+            Sroot->V[i*Sroot->Nj+j].Im = 0;
+          }
+          else
+          {
+            Sroot->VRe[i*Sroot->Nj+j] = 0;
+          }
         }
       }
       if (CompactMatrixCopy(*M,T))
@@ -2624,18 +2646,15 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatr
       }
       strcpy(T->Name, "Eigenvectors of ");
       strncat(T->Name, M->Name, Max(0, MAXStrLength - 16));
-      dsygvd(&itype, jobz, uplo, &M->Ni, T->VRe, &M->Ni, Sroot->VRe, &M->Ni, val, work, &lwork, iwork, &liwork, &info);
-      if (info)
+      if(T->QComplex==0)
       {
-        printf("ERORR also dsygvd failed in Eigensystem with info value %i\n", info);
-        fflush(stdout);
-        return 1;
+        MakeCompactRealMatrixComplex(T);
       }
       if(Sroot->QComplex==0)
       {
         MakeCompactRealMatrixComplex(Sroot);
       }
-      zhegvd(&itype, jobz, uplo, &M->Ni, M->V, &M->Ni, Sroot->V, &M->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
+      zhegvd(&itype, jobz, uplo, &M->Ni, T->V, &M->Ni, Sroot->V, &M->Ni, val, cwork, &lcwork, work, &lwork, iwork, &liwork, &info);
       if (info != 0)
       {
         printf("ERORR, also zhegvd failed in Generalized Eigensystem with info value %i\n", info);
@@ -2643,6 +2662,9 @@ uint32_t CompactMatrixGeneralEigensystem(CompactMatrixType const *M, CompactMatr
         return 1;
       }
     }
+    /* LAPACK sees the transpose (complex conjugate) of the row-major matrices, so its
+     * eigenvectors are the complex conjugates of ours, as in CompactMatrixEigensystem */
+    CompactMatrixConjugate(T);
   }
   return 0;
 }

@@ -151,3 +151,61 @@ zero=Chop(SSqrtQ3*Matrix.Transpose(SSqrtQ3)-overlap2)
 if(zero~=Matrix.Zero(4)) then
   error("Cholesky decomposition of the overlap matrix S=G*G^T is not correct",1)
 end
+----------------------------------------------------------------------------------
+-- Complex matrices. The rows of the eigenvector matrix are the eigenvectors c_k:
+-- H c_k = val_k S c_k, c_k^dag S c_l = delta_kl, and S = G G^dag with G = SSqrt
+-- lower triangular. Checked through residuals, so no reference solution is needed.
+-- Bound: a backward stable solver gives residuals of order n eps kappa(S) times the
+-- norms involved; the threshold allows a factor 1000 on top of that for the
+-- differences between LAPACK implementations.
+----------------------------------------------------------------------------------
+local function cconj(x) if type(x)=="number" then return x end return Complex.Re(x) - I*Complex.Im(x) end
+local function TestComplexGeneralEigensystem(name, H, S)
+  print("----------------------------------------------------------------------------------")
+  print("Test GeneralEigensystem(H,S) with "..name)
+  print("----------------------------------------------------------------------------------")
+  local n = #H
+  local valS = Eigensystem(S)
+  local kappa = valS[n]/valS[1]
+  local normH, normS = 0, 0
+  for i=1,n do for j=1,n do
+    normH = math.max(normH, math.abs(H[i][j])); normS = math.max(normS, math.abs(S[i][j]))
+  end end
+  local eps = 2.220446049250313e-16
+  local tol = 1000 * n * eps * kappa
+  local val, fun, G = GeneralEigensystem(H, S)
+  local res, orth, chol, upper = 0, 0, 0, 0
+  for k=1,n do
+    for i=1,n do
+      local r = 0
+      for j=1,n do r = r + (H[i][j] - val[k]*S[i][j]) * fun[k][j] end
+      res = math.max(res, math.abs(r) / (normH + math.abs(val[k])*normS))
+    end
+    for l=1,n do
+      local o = 0
+      for i=1,n do for j=1,n do o = o + cconj(fun[k][i]) * S[i][j] * fun[l][j] end end
+      if k==l then o = o - 1 end
+      orth = math.max(orth, math.abs(o))
+    end
+  end
+  for i=1,n do for j=1,n do
+    local s = 0
+    for m=1,n do s = s + G[i][m] * cconj(G[j][m]) end
+    chol = math.max(chol, math.abs(s - S[i][j]) / normS)
+    if j>i then upper = math.max(upper, math.abs(G[i][j])) end
+  end end
+  print(string.format("residual %.1e  orthonormality %.1e  Cholesky %.1e  upper triangle %.1e  threshold %.1e", res, orth, chol, upper, tol))
+  if not (res < tol)   then error("eigenvectors and eigenvalues do not solve H c = val S c", 1) end
+  if not (orth < tol)  then error("eigenvectors are not orthonormal in the metric S", 1) end
+  if not (chol < tol)  then error("SSqrt SSqrt^dag is not S", 1) end
+  if not (upper == 0)  then error("SSqrt is not lower triangular", 1) end
+end
+
+local Hc = {{2, 0.3+0.2*I, 0.1*I, 0}, {0.3-0.2*I, 1, 0.4*I, 0.2}, {-0.1*I, -0.4*I, 3, 0.5-0.1*I}, {0, 0.2, 0.5+0.1*I, 0.5}}
+local Sc = {{1, 0.2+0.1*I, 0.05, 0.1*I}, {0.2-0.1*I, 1, 0.1*I, 0}, {0.05, -0.1*I, 1, 0.2+0.2*I}, {-0.1*I, 0, 0.2-0.2*I, 1}}
+local Hr = {{2, 0.3, 0.1, 0}, {0.3, 1, 0.4, 0.2}, {0.1, 0.4, 3, 0.5}, {0, 0.2, 0.5, 0.5}}
+local Sr = {{1, 0.2, 0.05, 0.1}, {0.2, 1, 0.1, 0}, {0.05, 0.1, 1, 0.2}, {0.1, 0, 0.2, 1}}
+TestComplexGeneralEigensystem("a complex H and a complex S", Hc, Sc)
+TestComplexGeneralEigensystem("a complex H and a real S", Hc, Sr)
+TestComplexGeneralEigensystem("a real H and a complex S", Hr, Sc)
+TestComplexGeneralEigensystem("a real H and a real S", Hr, Sr)
