@@ -27,6 +27,7 @@
 #include "Interpolation/BSpline.h"
 #include "Interpolation/TBSpline.h"
 #include "Interpolation/BSplineMatrix.h"
+#include "Interpolation/DKBSpline.h"
 
 
 

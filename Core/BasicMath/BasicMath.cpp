@@ -54,6 +54,7 @@
 #include "Interpolation/InterpolatingFunction.cpp"
 #include "Interpolation/BSpline.cpp"
 #include "Interpolation/BSplineMatrix.cpp"
+#include "Interpolation/DKBSpline.cpp"
 
 
 /*

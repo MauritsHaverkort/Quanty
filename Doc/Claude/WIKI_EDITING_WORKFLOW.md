@@ -118,6 +118,10 @@ an open question for Maurits; DokuWiki can move pages afterwards, but the
 - [ ] Prose in `###` fences
 - [ ] Code in `<code Quanty …>` blocks, and the code actually runs
 - [ ] Links written as `[[target|]]`
+- [ ] Nested Lua tables in running text written `{ {`, not `{{`: outside a
+      `<code>` block DokuWiki reads `{{` as the start of an image
 - [ ] Index footers of sibling pages updated if a page was added
-- [ ] Saved as one file per page under `Doc/Claude/wiki/`
-- [ ] Sibling pages needing a follow-up edit listed explicitly in the handover
+- [ ] Saved as one file per page under `Doc/Claude/wiki/`, the whole page ready
+      to paste, built on the live source fetched with `curl` and `?do=export_raw`
+- [ ] A change to a page that is not a whole new page is a file of its own too,
+      not a line-level edit described in the README

@@ -1,6 +1,8 @@
 double ChebyshevT(const double x, const int n);
 double ChebyshevU(const double x, const int n);
 double SphericalBesselJ(const double x, const uint32_t n);
+double SphericalBesselJSeries(const double x, const uint32_t n);
+double SphericalBesselJRecurrence(const double x, const uint32_t n);
 double LaguerrePolynomial(const int n, const int l, const double x);
 double LaguerreHo(const int n, const int l, const double r);
 double Gaussian(const double w, const double FWHM);

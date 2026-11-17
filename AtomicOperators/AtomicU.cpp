@@ -12,6 +12,19 @@ using std::string;
 using std::ifstream;
 using std::map;
 
+// radial Dirac spinors of type "DKBSpline", DFT stage A (DFT/LuaAtomicOperators.cpp)
+int DFTLuaFunctionsAreDKB(lua_State *L, int arg);
+int DFTLuaNewOperatorDiracDKB(lua_State *L);
+int DFTLuaNewOperatorUDKB(lua_State *L);
+int DFTLuaHasOption(lua_State *L, int arg, const char *name);   // DFT/LuaAtom.cpp
+
+/* NewOperator("AU", ...) for radial functions that are not B-splines.
+ * Accuracy: the Slater integrals converge only as O(h^2) in the spacing h of the grid
+ * G[1]:GetX(), however accurate the functions are. With F (relativistic,
+ * Slater_Integrate) the double integral is a trapezoid-type sum over that grid; without F
+ * (GetSlaterIntegrals) it uses 3 Gauss points per grid interval, but the kernel
+ * r<^k/r>^(k+1) has a kink on the diagonal r = r', which limits the order to 2.
+ * B-splines take LuaOperatorNewAtomicUBSpline instead. */
 static int LuaOperatorNewAtomicUGeneralFunction (lua_State *L)
 {
     OperatorType *op;
@@ -418,6 +431,9 @@ static int LuaOperatorNewAtomicUBSpline (lua_State *L)
 
 static int LuaOperatorNewAtomicU (lua_State *L)
 {
+	// radial Dirac spinors of type "DKBSpline" (DFT stage A): Galerkin Poisson solver on
+	// their knot set (DFT/LuaAtomicOperators.cpp); they must not reach the grid quadrature
+	if (DFTLuaFunctionsAreDKB(L, 3) || DFTLuaFunctionsAreDKB(L, 4)) return DFTLuaNewOperatorUDKB(L);
 	luaL_checktype(L, 3, LUA_TTABLE);
 	lua_rawgeti(L, 3, 1); //TODO: remove > 4 in line below and implememnt non rel stuff
 	if ( ((Interpolation::InterpolatingFunction *)luaL_checkudata(L, -1, "InterpolatingFunction_Type"))->type == "BSpline" )

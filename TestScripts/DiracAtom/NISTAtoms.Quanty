@@ -1,0 +1,129 @@
+--[[
+ *  DFT stage A, check 9 (Doc/Claude/QuantyDFT_StageA, design section 12): the Kohn-Sham
+ *  atom (CalculateAtomicBasisFunctions) against the NIST atomic reference data for electronic structure
+ *  calculations (Kotochigova, Levine, Shirley, Stiles, Clark; NIST SRD 141, Phys. Rev. A
+ *  55, 191 (1997)), read 2026-11-11 from www.nist.gov/pml/atomic-reference-data-electronic-
+ *  structure-calculations. Their conventions: point nucleus, c = 137.0359895 (CODATA 1986),
+ *  VWN correlation (Ceperley-Alder fit), Slater exchange, in RLDA with the MacDonald-Vosko
+ *  factor; j-subshells occupied in proportion to 2j+1; total energies to 1 microhartree,
+ *  tables with 6 decimals.
+ *    LDA:  Schroedinger,  Method "LDA-VWN", {"Relativistic", false}
+ *    RLDA: Dirac,         Method "RLDA-MV"
+ *  Checked, with the default basis (degree 8, 120 intervals, rMin = 1e-6/Z, rMax = 40):
+ *  - Etot to 1e-6 Ha (the rounding of the tables, 5e-7, plus ours): all agree to 5.3e-7;
+ *  - every orbital eigenvalue to 2e-6 Ha (NIST: the spread of their four codes is below
+ *    2e-6); all agree to 1.2e-6 (Kr 4p3/2 is printed with 5 decimals: 1e-5);
+ *  - the components Ekin, Ecoul, Eenuc, Exc to 1e-5 Ha. NIST claims 1e-6 for Etot only. For
+ *    Z <= 36 they agree to 9e-7; for Xe, Rn, U Ekin and Eenuc differ by up to 7e-6, with
+ *    opposite signs and Etot still to 1e-7. Our converged values (160..240 intervals,
+ *    rMax 40..60, rMin 1e-8/Z..1e-10/Z, degree 8..10 all agree to 1e-7) differ from NIST by
+ *    4.3e-6 (Ekin) and 4.4e-6 (Eenuc) for Rn: the spread of the reference itself.
+]]
+
+local NIST = {
+  {Z = 2, configuration = "1s2",
+   LDA  = {-2.834836, 2.767922, 1.996120, -6.625564, -0.973314, {["1s"] = -0.570425}},
+   RLDA = {-2.834785, 2.767773, 1.996036, -6.625496, -0.973098, {["1s1/2"] = -0.570345}}},
+  {Z = 10, configuration = "[He] 2s2 2p6",
+   LDA  = {-128.233481, 127.738667, 65.726488, -309.988206, -11.710430, {["1s"] = -30.305855, ["2s"] = -1.322809, ["2p"] = -0.498034}},
+   RLDA = {-128.336403, 128.048273, 65.770740, -310.476301, -11.679115,
+           {["1s1/2"] = -30.314393, ["2s1/2"] = -1.326075, ["2p1/2"] = -0.500040, ["2p3/2"] = -0.496232}}},
+  {Z = 18, configuration = "[Ne] 3s2 3p6",
+   LDA  = {-525.946195, 524.969812, 231.458124, -1253.131982, -29.242149,
+           {["1s"] = -113.800134, ["2s"] = -10.794172, ["2p"] = -8.443439, ["3s"] = -0.883384, ["3p"] = -0.382330}},
+   RLDA = {-527.519049, 529.722274, 232.084684, -1260.276935, -29.049073,
+           {["1s1/2"] = -114.077082, ["2s1/2"] = -10.860926, ["2p1/2"] = -8.496195, ["2p3/2"] = -8.414503,
+            ["3s1/2"] = -0.890597, ["3p1/2"] = -0.386117, ["3p3/2"] = -0.379536}}},
+  {Z = 36, configuration = "[Ar] 3d10 4s2 4p6",
+   LDA  = {-2750.147940, 2747.813142, 1171.723688, -6577.865761, -91.819009,
+           {["1s"] = -509.982989, ["2s"] = -66.285953, ["2p"] = -60.017328, ["3s"] = -9.315192, ["3p"] = -7.086634,
+            ["3d"] = -3.074109, ["4s"] = -0.820574, ["4p"] = -0.346340}},
+   RLDA = {-2784.199238, 2852.569866, 1181.732417, -6728.329838, -90.171683,
+           {["1s1/2"] = -517.456410, ["2s1/2"] = -68.209637, ["2p1/2"] = -61.753188, ["2p3/2"] = -59.789712,
+            ["3s1/2"] = -9.639319, ["3p1/2"] = -7.347319, ["3p3/2"] = -7.057577, ["3d3/2"] = -3.032140, ["3d5/2"] = -2.984281,
+            ["4s1/2"] = -0.851373, ["4p1/2"] = -0.361325, ["4p3/2"] = -0.33742}}},     -- 4p3/2 printed with 5 decimals
+  {Z = 54, configuration = "[Kr] 4d10 5s2 5p6",
+   LDA  = {-7228.856107, 7225.097817, 2880.919348, -17159.159426, -175.713845,
+           {["1s"] = -1208.688993, ["2s"] = -183.327495, ["2p"] = -172.599583, ["3s"] = -37.415454, ["3p"] = -32.867042,
+            ["3d"] = -24.378230, ["4s"] = -6.678340, ["4p"] = -5.063802, ["4d"] = -2.286666, ["5s"] = -0.672086, ["5p"] = -0.309835}},
+   RLDA = {-7433.498065, 7874.305721, 2934.185566, -18071.845782, -170.143570,
+           {["1s1/2"] = -1254.713974, ["2s1/2"] = -195.477659, ["2p1/2"] = -183.896903, ["2p3/2"] = -172.083686,
+            ["3s1/2"] = -39.988929, ["3p1/2"] = -35.132640, ["3p3/2"] = -32.888012, ["3d3/2"] = -24.271177, ["3d5/2"] = -23.794336,
+            ["4s1/2"] = -7.209464, ["4p1/2"] = -5.484117, ["4p3/2"] = -5.032027, ["4d3/2"] = -2.228325, ["4d5/2"] = -2.155148,
+            ["5s1/2"] = -0.731339, ["5p1/2"] = -0.340204, ["5p3/2"] = -0.293849}}},
+  {Z = 86, configuration = "[Xe] 4f14 5d10 6s2 6p6",
+   LDA  = {-21861.346869, 21854.672700, 8632.016039, -51966.120382, -381.915225,
+           {["1s"] = -3204.756288, ["2s"] = -546.577960, ["2p"] = -527.533025, ["3s"] = -133.369144, ["3p"] = -124.172862,
+            ["3d"] = -106.945006, ["4s"] = -31.230804, ["4p"] = -27.108985, ["4d"] = -19.449994, ["4f"] = -8.953318,
+            ["5s"] = -5.889683, ["5p"] = -4.408702, ["5d"] = -1.911329, ["6s"] = -0.626570, ["6p"] = -0.293180}},
+   RLDA = {-23556.323085, 27839.562791, 8980.890066, -60018.170941, -358.605001,
+           {["1s1/2"] = -3590.911234, ["2s1/2"] = -653.943650, ["2p1/2"] = -629.384272, ["2p3/2"] = -529.745459,
+            ["3s1/2"] = -160.451783, ["3p1/2"] = -149.290847, ["3p3/2"] = -126.726749, ["3d3/2"] = -108.610708, ["3d5/2"] = -103.858731,
+            ["4s1/2"] = -38.215793, ["4p1/2"] = -33.292086, ["4p3/2"] = -27.607283, ["4d3/2"] = -19.630351, ["4d5/2"] = -18.565610,
+            ["4f5/2"] = -8.102001, ["4f7/2"] = -7.843506, ["5s1/2"] = -7.349489, ["5p1/2"] = -5.558376, ["5p3/2"] = -4.359837,
+            ["5d3/2"] = -1.793818, ["5d5/2"] = -1.631236, ["6s1/2"] = -0.804950, ["6p1/2"] = -0.387498, ["6p3/2"] = -0.255692}}},
+  {Z = 92, configuration = "[Rn] 5f3 6d1 7s2",
+   LDA  = {-25658.417889, 25651.231184, 9991.594178, -60876.210623, -425.032628,
+           {["1s"] = -3689.355141, ["2s"] = -639.778728, ["2p"] = -619.108550, ["3s"] = -161.118073, ["3p"] = -150.978980,
+            ["3d"] = -131.977358, ["4s"] = -40.528084, ["4p"] = -35.853321, ["4d"] = -27.123212, ["4f"] = -15.027460,
+            ["5s"] = -8.824089, ["5p"] = -7.018092, ["5d"] = -3.866175, ["5f"] = -0.366543, ["6s"] = -1.325976,
+            ["6p"] = -0.822538, ["6d"] = -0.143190, ["7s"] = -0.130948}},
+   RLDA = {-28001.132325, 34199.392283, 10455.164247, -72259.684711, -396.004144,
+           {["1s1/2"] = -4223.419021, ["2s1/2"] = -789.489782, ["2p1/2"] = -761.374476, ["2p3/2"] = -622.848095,
+            ["3s1/2"] = -199.429806, ["3p1/2"] = -186.663713, ["3p3/2"] = -154.701027, ["3d3/2"] = -134.541180, ["3d5/2"] = -128.016657,
+            ["4s1/2"] = -50.788948, ["4p1/2"] = -45.037171, ["4p3/2"] = -36.688610, ["4d3/2"] = -27.529306, ["4d5/2"] = -25.985429,
+            ["4f5/2"] = -13.889514, ["4f7/2"] = -13.485470, ["5s1/2"] = -11.295587, ["5p1/2"] = -9.057964, ["5p3/2"] = -7.069296,
+            ["5d3/2"] = -3.797416, ["5d5/2"] = -3.501217, ["5f5/2"] = -0.146788, ["5f7/2"] = -0.116047, ["6s1/2"] = -1.748040,
+            ["6p1/2"] = -1.101119, ["6p3/2"] = -0.775784, ["6d3/2"] = -0.103041, ["6d5/2"] = -0.084802, ["7s1/2"] = -0.160947}}}}
+
+local tolE, tolComponent, tolEig = 1e-6, 1e-5, 2e-6
+local saved = PhysicalConstants.cAU.value
+PhysicalConstants.cAU.value = 137.0359895
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local names = {"Etot", "Ekin", "Ecoul", "Eenuc", "Exc"}
+-- the Atom table (and G, F) of CalculateAtomicBasisFunctions
+local function CalculateAtom(Z, configuration, options)
+  local o = {{"Configuration", configuration}}
+  for _, v in ipairs(options or {}) do o[#o+1] = v end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, o)
+  return A, G, F
+end
+for _, a in ipairs(NIST) do
+  for _, kind in ipairs({"LDA", "RLDA"}) do
+    local rel = (kind == "RLDA")
+    local ref = a[kind]
+    local A = CalculateAtom(a.Z, a.configuration, {{"Nucleus", "Point"}, {"Method", rel and "RLDA-MV" or "LDA-VWN"}, {"Relativistic", rel}})
+    check(A.Converged, string.format("Z = %2d %-4s converged in %d iterations", a.Z, kind, A.Iterations))
+    check(math.abs(A.Etot - ref[1]) < tolE, string.format("Z = %2d %-4s Etot = %.6f (NIST %.6f) %+.1e", a.Z, kind, A.Etot, ref[1], A.Etot - ref[1]))
+    local worst, which = 0, ""
+    for i, name in ipairs(names) do
+      local d = math.abs(A[name] - ref[i])
+      if d > worst then worst, which = d, name end
+    end
+    check(worst < tolComponent, string.format("Z = %2d %-4s largest deviation of Ekin, Ecoul, Eenuc, Exc %.1e (%s)", a.Z, kind, worst, which))
+    local count, eworst, ewhich = 0, 0, ""
+    for _, o in ipairs(A.Orbitals) do
+      local r = ref[6][o.Label]
+      if r ~= nil then
+        count = count + 1
+        local tol = (o.Label == "4p3/2" and a.Z == 36) and 1e-5 or tolEig
+        local d = math.abs(o.Energy - r)
+        if d/tol > eworst/tolEig then eworst, ewhich = d*tolEig/tol, o.Label end
+      end
+    end
+    local nRef = 0
+    for _ in pairs(ref[6]) do nRef = nRef + 1 end
+    check(count == nRef and eworst < tolEig, string.format("Z = %2d %-4s %2d of %2d eigenvalues compared, largest deviation %.1e (%s)",
+                                                           a.Z, kind, count, nRef, eworst, ewhich))
+  end
+end
+
+PhysicalConstants.cAU.value = saved
+if failed then error("Kohn-Sham atom: NIST atomic reference data not reproduced", 1) end
+print("passed")

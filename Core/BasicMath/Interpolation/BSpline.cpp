@@ -302,6 +302,28 @@ int BSplineCollocationBand(const double *knot, uint32_t nKnot, uint32_t degree, 
   return 0;
 }
 
+/* Knots for radial functions on [0, rMax] with exponentially growing intervals: degree+1
+ * knots at 0, then
+ *     t_j = r1 (rMax/r1)^((j-1)/(nInterval-1)),   j = 1 .. nInterval,
+ * the last of which is rMax, then degree more knots at rMax. That gives nInterval knot
+ * intervals ([0, r1] is the first), nKnot = nInterval + 2 degree + 1 knots and
+ * nInterval + degree basis functions; only the first is nonzero at 0 and only the last
+ * at rMax. (DFT stage A, design section 2.1.) Allocates *knot (the caller frees it).
+ * Returns 0, or 1 for nInterval < 2 or not 0 < r1 < rMax. */
+int BSplineKnotsExponential(uint32_t degree, uint32_t nInterval, double r1, double rMax, double **knot, uint32_t *nKnot)
+{
+  uint32_t i, n = nInterval + 2*degree + 1;
+  double *x;
+  if (nInterval < 2 || !(r1 > 0.) || !(r1 < rMax)) return 1;
+  x = (double *) malloc(n*sizeof(double));
+  for (i = 0; i <= degree; i++) x[i] = 0.;
+  for (i = 0; i+1 < nInterval; i++) x[degree+1+i] = r1*pow(rMax/r1, (double) i/(double) (nInterval-1));
+  for (i = degree + nInterval; i < n; i++) x[i] = rMax;
+  *knot = x;
+  *nKnot = n;
+  return 0;
+}
+
 /* Knots for radial functions after Froese Fischer: degree+1 knots at 0, then m+1 steps
  * of h = 2^-m, then a geometric grid r -> r(1+h) while h r < hMax, then steps of hMax up
  * to rMax, and the last knot degree+1 times; everything divided by Z. Allocates *knot

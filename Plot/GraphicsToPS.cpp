@@ -197,7 +197,14 @@ int AddTextToPS(DynamicString *Buff, TextType *Text, int X0, int Y0, double scal
   sprintfAdd(Buff, "%.4f %.4f %.4f %d /%s %d %d %d f\n", ((double)ColorRed(Text->Color))/255., ((double)ColorGreen(Text->Color))/255., ((double)ColorBlue(Text->Color))/255.,
                                                          (int)round(scaleV * Text->Size), Text->Font, (int)round(Text->Angle*180/Pi),
                                                          (int)round(X0 + scaleX * Text->Point.X),(int)round(Y0 + scaleY * Text->Point.Y) );
-  sprintfAdd(Buff,"(%s) ",Text->String);
+  // a PostScript string: ( ) and \ get a backslash
+  sprintfAdd(Buff,"(");
+  for(const char *c=Text->String;*c!='\0';c++)
+  {
+    if((*c=='(')||(*c==')')||(*c=='\\')) sprintfAdd(Buff,"\\%c",*c);
+    else sprintfAdd(Buff,"%c",*c);
+  }
+  sprintfAdd(Buff,") ");
   switch(Text->Alignment)
   {
     case 'l':

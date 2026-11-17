@@ -1,0 +1,130 @@
+--[[
+ *  DFT stage A5c, check 13 (Doc/Claude/QuantyDFT_StageA, design sections 3.1 and 12): the
+ *  nucleus "Function3D", a Lua density rho(x, y, z) expanded in real spherical harmonics
+ *  S_LM of even L <= NucleusLmax (DFT/NucleusMultipole.cpp), and the operator
+ *  NewOperator("NuclearMultipole", NF, Z, indices, G, F, nucleus options) of its L >= 2 part.
+ *  - Check 13: a spherical Gaussian given as Function3D gives the orbital energies of the
+ *    "Gaussian" nucleus (U, kappa = -1, 1, -2, three states each), measured <= 2.1e-11
+ *    relative (the Poisson route against the analytic erf, as for "Function" in A1), checked
+ *    1e-10 (design),
+ *    and a multipole operator of 0 (measured 2.9e-20 Ha, checked 1e-15).
+ *  - A triaxial Gaussian (widths a, 1.05 a, 1.1 a along x, y, z): the quadrupole moments
+ *    q_LM = int r^L S_LM rho against the analytic q_20 = sqrt(5/16pi) Z (2c^2 - a^2 - b^2),
+ *    q_22 = sqrt(15/16pi) Z (a^2 - b^2), measured 2.7e-13, checked 1e-10; q_2,-2, q_2,+-1 = 0.
+ *  - The angular algebra (Wigner-Eckart in the jj basis, S_LM -> Y_LM) against Quanty's
+ *    NewOperator("CF") on the 3d spin-orbitals rotated with YtojjzMatrix(2), which is
+ *    independent of it: with a single non-spherical component (2z^2-x^2-y^2, x^2-y^2, xy) the
+ *    blocks 3d3/2-3d3/2, 3d5/2-3d5/2 and 3d3/2-3d5/2 are each the CF matrix times one real
+ *    number (the radial integral), measured 5.7e-15, checked 1e-12; the three numbers agree
+ *    in sign and within 2 % (they differ only by the j dependence of the radial functions).
+ *  - Atom.Nucleus of CalculateAtomicBasisFunctions carries the Function3D options:
+ *    <det|H0 + U|det> with NewOperator("Dirac", ..., Atom.Nucleus) equals Etot.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local function cabs(z) if type(z) == "number" then return math.abs(z) end return math.sqrt(Complex.Re(z)^2 + Complex.Im(z)^2) end
+local a0fm = PhysicalConstants.a0.value*1e15
+
+-- check 13
+local Z, A = 92, 238
+local Rrms = (0.836*A^(1/3) + 0.570)/a0fm
+local zeta = 1.5/Rrms^2
+local function sphere(x, y, z) return Z*(zeta/math.pi)^1.5*math.exp(-zeta*(x*x + y*y + z*z)) end
+local empty = "1s0 2s0 3s0 2p0 3p0 4p0 3d0"
+local Gg, Fg, Ag = CalculateAtomicBasisFunctions(Z, {{"Configuration", empty}, {"Nucleus", "Gaussian"}, {"Rrms", Rrms}})
+local Gf, Ff, Af = CalculateAtomicBasisFunctions(Z, {{"Configuration", empty}, {"Nucleus", "Function3D"}, {"Density", sphere}, {"Rrms", Rrms}})
+local worst = 0
+for i, o in ipairs(Ag.Orbitals) do worst = math.max(worst, math.abs(Af.Orbitals[i].Energy - o.Energy)/math.abs(o.Energy)) end
+local G1, F1, G2, F2 = {}, {}, {}, {}
+for i, o in ipairs(Af.Orbitals) do
+  if o.Label == "3d3/2" then G1[1], F1[1] = Gf[i], Ff[i] end
+  if o.Label == "3d5/2" then G2[1], F2[1] = Gf[i], Ff[i] end
+end
+local idx, NF = CreateAtomicIndicesList({"3d3/2", "3d5/2"}, {{"Kappas", true}})
+local M = OperatorToMatrix(NewOperator("NuclearMultipole", NF, Z, idx, {G1[1], G2[1]}, {F1[1], F2[1]}, {{"Nucleus", "Function3D"}, {"Density", sphere}}))
+local mx = 0
+for i = 1, NF do for j = 1, NF do mx = math.max(mx, cabs(M[i][j])) end end
+check(worst < 1e-10 and mx < 1e-15, string.format("U, spherical Gaussian as Function3D: energies - Gaussian %.1e relative, multipole operator %.1e Ha", worst, mx))
+
+-- a triaxial Gaussian: moments
+local Zl, s0 = 20, 0.5e-4
+local function gauss(ax, ay, az)
+  return function(x, y, z) return Zl/((2*math.pi)^1.5*ax*ay*az)*math.exp(-x*x/(2*ax*ax) - y*y/(2*ay*ay) - z*z/(2*az*az)) end
+end
+local ax, ay, az = s0, 1.05*s0, 1.1*s0
+local G, F, At = CalculateAtomicBasisFunctions(Zl, {{"Configuration", "[Ar] 3d0 4s2"}, {"Method", "LDA"},
+                                                    {"Nucleus", "Function3D"}, {"Density", gauss(ax, ay, az)}, {"rMin", s0/50}})
+local q20 = math.sqrt(5/(16*math.pi))*Zl*(2*az^2 - ax^2 - ay^2)
+local q22 = math.sqrt(15/(16*math.pi))*Zl*(ax^2 - ay^2)
+local d20, d22, d0 = 1, 1, 0
+for _, m in ipairs(At.NuclearMultipoleMoments) do
+  if m.L == 2 and m.M == 0 then d20 = math.abs(m.Value - q20)/math.abs(q20) end
+  if m.L == 2 and m.M == 2 then d22 = math.abs(m.Value - q22)/math.abs(q22) end
+  if m.L == 2 and m.M ~= 0 and m.M ~= 2 then d0 = math.max(d0, math.abs(m.Value)/math.abs(q20)) end
+end
+check(d20 < 1e-10 and d22 < 1e-10 and d0 < 1e-12, string.format("triaxial Gaussian: q_20 %.1e, q_22 %.1e relative to analytic, q_2,-2 q_2,+-1 %.1e", d20, d22, d0))
+
+-- the angular algebra against CF rotated to jj
+-- the 3d functions (CalculateAtomicBasisFunctions returns all orbitals)
+local G3, F3 = {}, {}
+for i, lab in ipairs(At.Labels) do if lab == "3d3/2" or lab == "3d5/2" then G3[#G3+1] = G[i]; F3[#F3+1] = F[i] end end
+local idx2, NF2 = CreateAtomicIndicesList({"3d3/2", "3d5/2"}, {{"Kappas", true}})
+local T = YtojjzMatrix(2)
+local c = math.sqrt(5/(4*math.pi))
+local cases = {
+  {"2z2-x2-y2", function(x, y, z) return 2*z*z - x*x - y*y end, {{2, 0, c}}},
+  {"x2-y2",     function(x, y, z) return x*x - y*y end, {{2, -2, c/math.sqrt(2)}, {2, 2, c/math.sqrt(2)}}},
+  {"xy",        function(x, y, z) return x*y end, {{2, -2, I*c/math.sqrt(2)}, {2, 2, -I*c/math.sqrt(2)}}}}
+for _, cs in ipairs(cases) do
+  local rho0 = gauss(s0, s0, s0)
+  local function rho(x, y, z) return rho0(x, y, z)*(1 + 1e7*cs[2](x, y, z)) end
+  local Mo = OperatorToMatrix(NewOperator("NuclearMultipole", NF2, Zl, idx2, G3, F3, {{"Nucleus", "Function3D"}, {"Density", rho}}))
+  local Mc = OperatorToMatrix(NewOperator("CF", 10, {1, 3, 5, 7, 9}, {0, 2, 4, 6, 8}, cs[3]))
+  local Mj = {}
+  for i = 1, 10 do Mj[i] = {} for j = 1, 10 do
+    local s = 0
+    for k = 1, 10 do for l = 1, 10 do s = s + T[i][k]*Mc[k][l]*T[j][l] end end
+    Mj[i][j] = s
+  end end
+  local ratios, dev = {}, 0
+  for b, bl in ipairs({{1, 4, 1, 4}, {5, 10, 5, 10}, {1, 4, 5, 10}}) do
+    local ratio
+    for i = bl[1], bl[2] do for j = bl[3], bl[4] do
+      if cabs(Mj[i][j]) > 1e-8 then
+        local r = Mo[i][j]/Mj[i][j]
+        if ratio == nil then ratio = r end
+        dev = math.max(dev, cabs(r - ratio)/cabs(ratio))
+      else dev = math.max(dev, cabs(Mo[i][j])/1e-8) end
+    end end
+    ratios[b] = (type(ratio) == "number") and ratio or Complex.Re(ratio)
+    if type(ratio) ~= "number" then dev = math.max(dev, math.abs(Complex.Im(ratio)/Complex.Re(ratio))) end
+  end
+  local spread = math.max(math.abs(ratios[2]/ratios[1] - 1), math.abs(ratios[3]/ratios[1] - 1))
+  check(dev < 1e-12 and ratios[1]*ratios[2] > 0 and ratios[1]*ratios[3] > 0 and spread < 0.02,
+        string.format("%-9s: jj blocks = CF rotated times %.6e, %.6e, %.6e (deviation %.1e, spread %.1e)", cs[1], ratios[1], ratios[2], ratios[3], dev, spread))
+end
+
+-- Atom.Nucleus with NewOperator("Dirac")
+local Gn, Fn, An = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, 
+   {"Nucleus", "Function3D"}, {"Density", function(x, y, z) return 10/((2*math.pi)^1.5*1e-12)*math.exp(-(x*x + y*y + 1.1*z*z)/2e-8)*math.sqrt(1.1) end}, {"rMin", 2e-6}})
+local idx3, NF3 = CreateAtomicIndicesList(An.Labels, {{"Kappas", true}})
+local H = NewOperator("Dirac", NF3, 10, idx3, Gn, Fn, An.Nucleus) + NewOperator("AU", NF3, idx3, Gn, Fn)
+local psi = NewWavefunction(NF3, 0, {{string.rep("1", NF3), 1}})
+local d = psi*H*psi - An.Etot
+check(math.abs(d) < 1e-12*math.abs(An.Etot) and An.Nucleus[1][2] == "Function3D", string.format("Ne, oblate Function3D nucleus: <det|H0 + U|det> - Etot %+.1e with Atom.Nucleus", d))
+
+-- errors
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "1s0"}, {"Nucleus", "Function3D"}, {"Density", function(x, y, z) return nil end}}) end, "Density returns nil")
+fails(function() return NewOperator("NuclearMultipole", NF, Z, idx, {G1[1], G2[1]}, {F1[1], F2[1]}, {{"Nucleus", "Gaussian"}}) end, "NuclearMultipole needs Function3D")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "1s0"}, {"Nucleus", "Function3D"}}) end, "Function3D without Density")
+
+if failed then error("Function3D nucleus: checks failed", 1) end
+print("passed")

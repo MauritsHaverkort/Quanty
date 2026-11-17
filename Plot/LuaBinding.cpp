@@ -531,14 +531,12 @@ int LuaNewGraphics(lua_State * L)
       double CanvasSizeY;
       double CanvasOriginX;
       double CanvasOriginY;
-      uint32_t NLayer;
     } Options;
     LuaOptionsType LuaNewGraphicsOptions[]={
       {"Canvas.Size.X","double",&(Options.CanvasSizeX)},
       {"Canvas.Size.Y","double",&(Options.CanvasSizeY)},
       {"Canvas.Origin.X","double",&(Options.CanvasOriginX)},
       {"Canvas.Origin.Y","double",&(Options.CanvasOriginY)},
-      {"NLayer","uint32_t",&(Options.NLayer)},
       {NULL, NULL, NULL}};
     if(LuaTestOptionsList(L, -2))
     {
@@ -929,9 +927,9 @@ int LuaAddToGraphics(lua_State * L)
                 {
                   Arc.ThetaR = Arc.ThetaR - TwoPi;
                 }
-                if(Arc.ThetaR < 0 )
+                while(Arc.ThetaR < 0 )
                 {
-                  Arc.ThetaR = 0;
+                  Arc.ThetaR = Arc.ThetaR + TwoPi;
                 }
                 lua_rawgeti(L, 2, 5); // thetamax
                 Arc.ThetaL=(double)luaL_checknumber(L, -1);
@@ -940,9 +938,9 @@ int LuaAddToGraphics(lua_State * L)
                 {
                   Arc.ThetaL = Arc.ThetaL - TwoPi;
                 }
-                if(Arc.ThetaL < 0 )
+                while(Arc.ThetaL < 0 )
                 {
-                  Arc.ThetaL = 0;
+                  Arc.ThetaL = Arc.ThetaL + TwoPi;
                 }
                 if(Arc.ThetaL <= Arc.ThetaR )
                 {
@@ -1149,7 +1147,6 @@ int LuaAddToGraphics(lua_State * L)
                   Curve.VL[i].Y=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
                   
-                  lua_rawgeti(L, 2, i+1);
                   lua_rawgeti(L, -1, 3); // X
                   Curve.Point[i].X=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
@@ -1157,7 +1154,6 @@ int LuaAddToGraphics(lua_State * L)
                   Curve.Point[i].Y=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
                   
-                  lua_rawgeti(L, 2, i+1);
                   lua_rawgeti(L, -1, 5); // X
                   Curve.VR[i].X=(double)luaL_checknumber(L, -1);
                   lua_pop(L, 1);
@@ -1293,6 +1289,88 @@ static void LuaReadPointList(lua_State *L, int narg, SpectraType *S, double **X,
   }
 }
 
+// Graphics.Plot: the interpolating function at narg as a curve, drawn like a list of points. It
+// is evaluated at NE+1 equally spaced points from Xmin to Xmax (NE = PlotPoints) and at its own
+// points inside that range (what Lua shows as f.x: the data points, or the quadrature points of a
+// DKBSpline), so that a feature narrower than the even spacing, such as a 1s orbital near the
+// nucleus, is not lost. An infinite Xmin or Xmax (no Frame range given) is the first or the last
+// of its own points. The values go into the spectrum S (Im 0) and the points into *X, as in
+// LuaReadPointList. Curve is the number of the curve, for error messages.
+// A function with a continuous derivative (CubicSpline, CubicHermiteSpline, a BSpline of degree 2
+// or more, a DKBSpline of degree 3 or more, whose small component has the derivative of the
+// B-splines) also gives its slopes, *DL left and *DR right of each point, and is drawn with cubic
+// pieces (AddDataPointsToGraphics); otherwise *DL and *DR are NULL. Outside its own range, from the
+// first to the last knot or data point, the function is 0, and a piece between two points that is
+// not inside that range is drawn straight: both its slopes are that of the straight line.
+static void LuaReadInterpolatingFunction(lua_State *L, int narg, double Xmin, double Xmax, int NE, SpectraType *S, double **X, double **DL, double **DR, int Curve)
+{
+  Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, narg, "InterpolatingFunction_Type");
+  std::vector<double> own = (f->type == "BSpline") ? BSpline::SamplePoints(*f) : f->GetX();
+  if(own.empty()) luaL_error(L, "Graphics.Plot: the interpolating function of curve %d has no points\n", Curve);
+  if(Xmin==-INFINITY) Xmin = *std::min_element(own.begin(), own.end());
+  if(Xmax== INFINITY) Xmax = *std::max_element(own.begin(), own.end());
+  if(!(Xmax>Xmin)) luaL_error(L, "Graphics.Plot: the x range of curve %d is empty\n", Curve);
+  std::vector<double> x;
+  for(int k=0;(NE>0)&&(k<=NE);k++) x.push_back(Xmin + (Xmax-Xmin)*k/NE);
+  for(uint32_t k=0;k<(uint32_t)own.size();k++) if((own[k]>=Xmin)&&(own[k]<=Xmax)) x.push_back(own[k]);
+  std::sort(x.begin(), x.end());
+  x.erase(std::unique(x.begin(), x.end()), x.end());
+  std::vector<double> y = (*f)(x);
+  int const N = (int)x.size();
+  memset(S, 0, sizeof(SpectraType));
+  S->ResonantEnergy = NAN;
+  S->N    = N-1;
+  S->Emin = x[0];
+  S->Emax = x[N-1];
+  S->Re = (double*)malloc(N*sizeof(double));
+  S->Im = (double*)calloc(N, sizeof(double));
+  *X    = (double*)malloc(N*sizeof(double));
+  for(int k=0;k<N;k++)
+  {
+    S->Re[k] = y[k];
+    (*X)[k]  = x[k];
+  }
+  // the slopes of a function with a continuous derivative, and the range in which it is that function
+  *DL = NULL;
+  *DR = NULL;
+  double First, Last;
+  if(f->type == "BSpline")
+  {
+    BSpline::TBSpline const *b = (BSpline::TBSpline const *) f;
+    if((b->degree<2) || b->knots.empty()) return;
+    First = b->knots.front();
+    Last  = b->knots.back();
+  }
+  else if(f->type == "DKBSpline")
+  {
+    Interpolation::DKBSpline const *b = (Interpolation::DKBSpline const *) f;
+    if((b->degree<3) || b->knots.empty()) return;
+    First = b->knots.front();
+    Last  = b->knots.back();
+  }
+  else if((f->type == "CubicSpline") || (f->type == "CubicHermiteSpline"))
+  {
+    First = *std::min_element(own.begin(), own.end());
+    Last  = *std::max_element(own.begin(), own.end());
+  }
+  else return;
+  std::vector<double> d = (*f)(x, 1);
+  *DL = (double*)malloc(N*sizeof(double));
+  *DR = (double*)malloc(N*sizeof(double));
+  for(int k=0;k<N;k++)
+  {
+    (*DL)[k] = d[k];
+    (*DR)[k] = d[k];
+  }
+  for(int k=0;k+1<N;k++)
+  {
+    if((x[k]>=First) && (x[k+1]<=Last)) continue;
+    double const Chord = (y[k+1]-y[k])/(x[k+1]-x[k]);
+    (*DR)[k]   = Chord;
+    (*DL)[k+1] = Chord;
+  }
+}
+
 // The colour of a colour map made by Graphics.Plot without a ColorFunction:
 // white to RGB as Saturation times the value (Im, or Re) goes from 0 to 1
 typedef struct BuiltInColorContext
@@ -1333,6 +1411,7 @@ int LuaPlotGraphics(lua_State * L)
   View.Spec=NULL; // the selected spectra, sharing their data with the spectra they are taken from
   double *YPos=NULL; // the heights of the spectra in a waterfall plot or a colour map
   double **PointX=NULL; // for curves given as lists of points their x values, NULL for spectra on an even mesh
+  double **PointDL=NULL, **PointDR=NULL; // for interpolating functions with a continuous derivative their slopes, else NULL
   int NPointX=0;
   bool AutoYRange=false; // the y range was chosen from the data, the y ticks then lie on multiples of dYTick
   uint32_t len = (uint32_t) lua_gettop(L);
@@ -1486,6 +1565,15 @@ int LuaPlotGraphics(lua_State * L)
     if((Options.NPixelX<1)||(Options.NPixelY<1)) return luaL_error(L, "Graphics.Plot: NPixelX and NPixelY should be 1 or larger, not %d and %d\n",Options.NPixelX,Options.NPixelY);
   }
   bool const SelectSpectra = (Options.SpectraStart!=1)||(Options.SpectraStep!=1)||(Options.SpectraStop!=INT_MAX);
+  // a single interpolating function is plotted as a list with one curve
+  if(luaL_testudata(L, 1, "InterpolatingFunction_Type") != NULL)
+  {
+    if(len!=1) return luaL_error(L, "Graphics.Plot: an interpolating function is plotted as Graphics.Plot(f [, {options}]), got %d arguments before the options\n", len);
+    lua_createtable(L, 1, 0);
+    lua_pushvalue(L, 1);
+    lua_rawseti(L, -2, 1);
+    lua_replace(L, 1);
+  }
   // select the type of graph to plot
   if(lua_type(L,1)==LUA_TTABLE)
   {
@@ -1602,8 +1690,18 @@ int LuaPlotGraphics(lua_State * L)
         }
         else if (luaL_testudata(L, -1, "InterpolatingFunction_Type") != NULL)
         {
-          // TODO: we found an interpolating function, convert it to a spectra
-          return luaL_error(L, "TODO plot of Interpolating Function\n");
+          // an interpolating function, drawn as a list of points (LuaReadInterpolatingFunction)
+          if(PointX==NULL)
+          {
+            NPointX = (int)a->NSpectra;
+            PointX = (double**)calloc(NPointX, sizeof(double*));
+          }
+          if(PointDL==NULL)
+          {
+            PointDL = (double**)calloc(NPointX, sizeof(double*));
+            PointDR = (double**)calloc(NPointX, sizeof(double*));
+          }
+          LuaReadInterpolatingFunction(L, -1, Options.Frame.PlotRange[0].X, Options.Frame.PlotRange[1].X, Options.PlotPoints, &(a->Spec[k]), &(PointX[k]), &(PointDL[k]), &(PointDR[k]), i+1);
         }
         else if (luaL_testudata(L, -1, "ResponseFunction_Type") != NULL)
         {
@@ -1829,7 +1927,7 @@ int LuaPlotGraphics(lua_State * L)
             return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
           }
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos, PointX);
+        PlotSpectraTypeArrayToGraphics(Graphics, a, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, YPos, PointX, PointDL, PointDR);
         free(LPORe);
         free(LPOIm);
       }
@@ -1872,11 +1970,6 @@ int LuaPlotGraphics(lua_State * L)
     {
       // TODO:
       return luaL_error(L, "TODO: Plot of Gaussian Radial function\n");
-    }
-    else if (luaL_testudata(L, 1, "InterpolatingFunction_Type") != NULL)
-    {
-      // TODO:
-      return luaL_error(L, "TODO plot of Interpolating Function\n");
     }
     else if (luaL_testudata(L, 1, "ResponseFunction_Type") != NULL)
     {
@@ -1967,7 +2060,7 @@ int LuaPlotGraphics(lua_State * L)
         {
           return luaL_error(L, "Plot a spectrum but both PlotRe and PlotIm are set to false so there is nothing to do here\n");
         }
-        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset), NULL); // one spectrum
+        PlotSpectraTypeArrayToGraphics(Graphics, &Spec, LPORe, LPOIm, &(Options.Frame), (Options.Negate?-1:1)*Options.Scale, &(Options.WaterfallOffset), NULL, NULL, NULL); // one spectrum
         free(LPORe);
         free(LPOIm);
       }
@@ -2051,6 +2144,9 @@ int LuaPlotGraphics(lua_State * L)
   free(YPos);
   for(i=0;i<NPointX;i++) free(PointX[i]);
   free(PointX);
+  for(i=0;(PointDL!=NULL)&&(i<NPointX);i++) { free(PointDL[i]); free(PointDR[i]); }
+  free(PointDL);
+  free(PointDR);
   luaL_unref(L, LUA_REGISTRYINDEX, Options.ColorFunction);
   FreeSpectraTypeArray(&aa);
   return 1;
@@ -2315,7 +2411,7 @@ int LuaNewBitMap(lua_State * L)
       return luaL_error(L, "Error in LuaNewBitMap BitMap.New called with last argument that has the wrong format for options\n");
     }
   }
-  if ( (len==2) || (len=3) )
+  if ( (len==2) || (len==3) )
   {
     BitMap->NpointsX=(uint32_t)luaL_checkinteger(L, 1);
     BitMap->NpointsY=(uint32_t)luaL_checkinteger(L, 2);
@@ -2368,9 +2464,9 @@ int LuaBitMapSetPixel(lua_State *L)
   uint32_t len = (uint32_t)lua_gettop(L);
   BitMapType *BitMap = (BitMapType *) luaL_checkudata(L, 1, "BitMap_Type");
   int i = (int) luaL_checkinteger(L, 2);
-  if(i>BitMap->NpointsX) return luaL_error(L, "Error: can not index column %d from %d available\n",i, BitMap->NpointsX);
+  if((i<1)||(i>(int)BitMap->NpointsX)) return luaL_error(L, "Error: can not index column %d from %d available\n",i, (int)BitMap->NpointsX);
   int j = (int) luaL_checkinteger(L, 3);
-  if(j>BitMap->NpointsY) return luaL_error(L, "Error: can not index row %d from %d available\n",j, BitMap->NpointsY);
+  if((j<1)||(j>(int)BitMap->NpointsY)) return luaL_error(L, "Error: can not index row %d from %d available\n",j, (int)BitMap->NpointsY);
   uint32_t rgb = (uint32_t) luaL_checkinteger(L, 4);
   // the colour 0xAARRGGBB, AA the transparency, and with a fifth argument an opacity alpha (255 opaque) on top
   BitMap->Pixels[(i-1) + (j-1)*BitMap->NpointsX] = rgb;
@@ -2385,8 +2481,8 @@ int LuaBitMapSetPixel(lua_State *L)
 int LuaBitMapToFile(lua_State * L)
 {
   BitMapType *BitMap = (BitMapType *) luaL_checkudata(L, 1, "BitMap_Type");
-  const char *filename = lua_tostring(L, 2);
-  BitMapToFile(BitMap, filename);
+  const char *filename = luaL_checkstring(L, 2);
+  if(BitMapToFile(BitMap, filename)) return luaL_error(L, "Error in BitMap.Save: can not open the file %s\n", filename);
   return 0;
 }
 

@@ -657,18 +657,28 @@ static int math_TesseralHarmonicD(lua_State * L)
   return 1;
 }
 
-/* on stack l,x
+/* on stack l,x and optionally {{"Method", "Recurrence"}} or {{"Method", "Series"}}
  *  returns a real number
+ *  Method "Recurrence" (default, SphericalBesselJRecurrence, = SphericalBesselJ) or "Series"
+ *  (SphericalBesselJSeries, the former implementation, inaccurate in the middle range for
+ *  l >~ 15); see Core/BasicMath/BasicMath_StandardFunctions.cpp
  */
 static int math_SphericalBesselJ(lua_State * L)
 {
   int l;
   double x;
   double res;
-  if(lua_gettop(L)!=2) return luaL_error(L, "math.SphericalBesselJ expects 2 parameters l,x");
+  struct { char *Method; } Options;
+  LuaOptionsType LuaBesselOptions[] = {{"Method", "char*", &(Options.Method)}, {NULL, NULL, NULL}};
+  Options.Method = (char *) "Recurrence";
+  if(lua_gettop(L)!=2 && lua_gettop(L)!=3) return luaL_error(L, "math.SphericalBesselJ expects 2 parameters l,x and optionally {{\"Method\", \"Recurrence\" or \"Series\"}}");
+  if(lua_gettop(L)==3) LuaCheckOptions(L, 3, LuaBesselOptions);
   l = (int) luaL_checknumber(L, 1);
   x = (double) luaL_checknumber(L, 2);
-  res = SphericalBesselJ(x, l);
+  if(l<0) return luaL_error(L, "math.SphericalBesselJ expects l >= 0, l=%d", l);
+  if(strcicmp(Options.Method, "Recurrence") == 0) res = SphericalBesselJRecurrence(x, (uint32_t) l);
+  else if(strcicmp(Options.Method, "Series") == 0) res = SphericalBesselJSeries(x, (uint32_t) l);
+  else return luaL_error(L, "math.SphericalBesselJ: unknown Method \"%s\" (Recurrence or Series)", Options.Method);
   lua_pushnumber(L, res);
   return 1;
 }

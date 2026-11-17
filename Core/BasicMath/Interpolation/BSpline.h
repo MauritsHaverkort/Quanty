@@ -42,4 +42,6 @@ int BSplineCollocationBand(const double *knot, uint32_t nKnot, uint32_t degree, 
 
 int BSplineKnotsFischer(int m, double hMax, double rMax, double Z, uint32_t degree, double **knot, uint32_t *nKnot);
 
+int BSplineKnotsExponential(uint32_t degree, uint32_t nInterval, double r1, double rMax, double **knot, uint32_t *nKnot);
+
 #endif /* CORE_BASICMATH_INTERPOLATION_BSPLINE_H_ */

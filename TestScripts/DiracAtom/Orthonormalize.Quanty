@@ -1,0 +1,69 @@
+--[[
+ *  DFT stage A, check 14 (Doc/Claude/QuantyDFT_StageA, design sections 6.1 and 12):
+ *  on-site orthonormalization of orbitals of one kappa generated in different potentials,
+ *  on one knot set, through CalculateAtomicBasisFunctions (option Orthonormalize). The bare
+ *  Fe nucleus (no electrons), kappa = -3, every orbital with its own extra charge Q and
+ *  confinement scale P (rc = P Rho, Rho = 3, N = 8, rMax = 15):
+ *      3d5/2 Q = 0, rc = 3;  4d5/2 Q = -1, rc = 2;  5d5/2 Q = 0, rc = 4;  6d5/2 Q = -2, rc = 9
+ *  - the generated functions are not orthogonal (smallest overlap eigenvalue < 1);
+ *  - Gram-Schmidt (default): max |C^T S C - 1| < 1e-13 afterwards, the first orbital
+ *    unchanged (equal to the 3d5/2 of a call with that orbital alone, 1e-14), and orbital k
+ *    depends on the orbitals 1..k only (the 4d5/2 equals that of a call with 3d5/2 and
+ *    4d5/2 alone);
+ *  - Lowdin: max |C^T S C - 1| < 1e-13, and symmetric: the first orbital changes too;
+ *  - RedundancyTolerance above the smallest overlap eigenvalue gives the redundancy error.
+ *  Until 2026-11-15 through the temporary DiracRadialSolve and DiracOrthonormalize, which
+ *  also checked the independence of the Lowdin result of the input order and the errors for
+ *  functions of different kappa or knots (not possible for the functions of one call).
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local Q = {["3d5/2"] = 0, ["4d5/2"] = -1, ["5d5/2"] = 0, ["6d5/2"] = -2}
+local P = {["3d5/2"] = 1, ["4d5/2"] = 2/3, ["5d5/2"] = 4/3, ["6d5/2"] = 3}
+local function atom(configuration, extra)
+  local q, p = {}, {}          -- Q and P of the orbitals of this configuration only
+  for label in string.gmatch(configuration, "(%d%a%d/%d)") do q[label], p[label] = Q[label], P[label] end
+  local o = {{"Configuration", configuration}, {"A", 56}, {"rMin", 2e-6}, {"rMax", 15}, {"NIntervals", 140}, {"Confinement", {Rho = 3, N = 8}}, {"Q", q}, {"P", p}}
+  for _, v in ipairs(extra or {}) do o[#o+1] = v end
+  return CalculateAtomicBasisFunctions(26, o)
+end
+-- the largest difference of two radial functions on the quadrature points, relative to max |a|
+local function difference(Ga, Fa, Gb, Fb)
+  local x = Ga.x
+  local ga, gb, fa, fb = Ga(x), Gb(x), Fa(x), Fb(x)
+  local d, m = 0, 0
+  for i = 1, #x do
+    d = math.max(d, math.abs(ga[i] - gb[i]), math.abs(fa[i] - fb[i]))
+    m = math.max(m, math.abs(ga[i]))
+  end
+  return d/m
+end
+
+local all = "3d5/2(0) 4d5/2(0) 5d5/2(0) 6d5/2(0)"
+local G, F, A = atom(all)
+print(string.format("        smallest eigenvalue of the overlap of the generated functions %.3e", A.MinOverlapEigenvalue))
+check(A.NElectron == 0 and A.MinOverlapEigenvalue < 0.999, "the generated orbitals are not orthogonal")
+check(A.OrthonormalityError < 1e-13, string.format("Gram-Schmidt: max |C^T S C - 1| = %.1e", A.OrthonormalityError))
+local G1, F1 = atom("3d5/2(0)")
+local d1 = difference(G1[1], F1[1], G[1], F[1])
+check(d1 < 1e-14, string.format("Gram-Schmidt: first orbital unchanged, %.1e of max |G|", d1))
+local G2, F2 = atom("3d5/2(0) 4d5/2(0)")
+local d2 = difference(G2[2], F2[2], G[2], F[2])
+check(d2 < 1e-13, string.format("Gram-Schmidt: the 4d5/2 does not depend on the orbitals after it, %.1e", d2))
+
+-- Lowdin: symmetric, all orbitals change
+local GL, FL, AL = atom(all, {{"Orthonormalize", "Lowdin"}})
+local dL = difference(G[1], F[1], GL[1], FL[1])
+check(AL.OrthonormalityError < 1e-13 and dL > 1e-3, string.format("Lowdin: max |C^T S C - 1| = %.1e; the first orbital changes by %.1e", AL.OrthonormalityError, dL))
+
+-- the redundancy error
+local ok, message = pcall(function() return atom(all, {{"RedundancyTolerance", 2*A.MinOverlapEigenvalue}}) end)
+check(not ok, "RedundancyTolerance above the smallest overlap eigenvalue: " .. string.gsub(tostring(message), "\n", ""))
+
+if failed then error("orthonormalization checks failed", 1) end
+print("passed")

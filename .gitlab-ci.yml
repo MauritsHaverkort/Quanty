@@ -2,6 +2,7 @@ stages:
   - build
   - test_math
   - test_interpolatingfunction
+  - test_diracatom
   - test_matrix
   - test_plot
   - test_responsefunction
@@ -120,6 +121,44 @@ test-jobs-interpolatingfunction:
 
 
 # =========================================================================
+# ===== Test the radial Dirac solver of the DFT/HF add-on (stage A) and the
+# ===== atomic Dirac operator
+# ===== The code lives in DFT/, Core/BasicMath/Interpolation and AtomicOperators
+#
+
+test-jobs-diracatom:
+  stage: test_diracatom
+  parallel:
+    matrix:
+      - TEST_NAME:
+          - "AtomicBasisFunctions"
+          - "AtomicBasisReport"
+          - "Confinement"
+          - "DKBSplineEvaluate"
+          - "FourierBessel"
+          - "FPLOAtom"
+          - "Function3DNucleus"
+          - "FunctionNucleus"
+          - "GaussianNucleus"
+          - "HartreeFockAverage"
+          - "HartreeFockLimits"
+          - "NewOperatorAUCore"
+          - "NewOperatorDKB"
+          - "NewOperatorDiracZ"
+          - "NISTAtoms"
+          - "Orthonormalize"
+          - "PBEAtoms"
+          - "PointNucleus"
+          - "RadialPoisson"
+          - "XCFunctional"
+  script:
+    - export OMP_NUM_THREADS=8
+    - ./Quanty.exe "TestScripts/DiracAtom/${TEST_NAME}.Quanty"
+  dependencies:
+    - build-job
+
+
+# =========================================================================
 # ===== Test functions related to Matrix objects
 # ===== These functions are registered in Matrix.cpp
 #
@@ -184,6 +223,7 @@ test-jobs-plot:
     matrix:
       - TEST_NAME:
           - "Add"
+          - "BitMap"
           - "New"
           - "Plot"
           - "Rotate"
@@ -310,6 +350,7 @@ test-jobs:
     matrix:
       - TEST_NAME:
           - "AngularMomentumOperators"
+          - "AtomNumberToName"
           - "BitMaskCombine"
           - "BitMaskToIndex"
           - "BlockBandDiagonalize"
@@ -358,6 +399,7 @@ test-jobs:
           - "Rotate"
           - "ScriptDirectory"
           - "ShellAverage"
+          - "SphericalBesselJ"
           - "Statistics"
           - "TensorProduct"
           - "TimeStartStopPrintSet"
@@ -372,6 +414,18 @@ test-jobs:
     - ./Quanty.exe "TestScripts/${TEST_NAME}.Quanty"
   dependencies:
     - build-job
+
+
+# =========================================================================
+# ===== The atomic code and the DFT/HF add-on use double precision only
+# ===== (no float, no single-precision math functions); a source check, no build
+#
+
+test-job-nosingleprecision:
+  stage: test
+  script:
+    - sh TestScripts/NoSinglePrecision.sh
+  dependencies: []
 
 
 # =========================================================================

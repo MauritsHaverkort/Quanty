@@ -244,3 +244,84 @@ double BSplineSlaterIntegral(const double *ci1, const double *cj1, const double 
   }
   return val;
 }
+
+/* The radial Poisson equation for Y^k (DFT stage A, design section 7):
+ *     Y'' - k(k+1) Y/r^2 = -(2k+1) rho/r,   Y(0) = 0,   Y'(R) = -k Y(R)/R,
+ * R = knot[nKnot-1]. For a radial (pair) density rho (in dr, e.g. P_a P_b + Q_a Q_b) that
+ * vanishes beyond R, the solution is
+ *     Y^k(r) = r int_0^R rho(r') r<^k / r>^(k+1) dr'.
+ * Galerkin in the B-splines B_1 .. B_{N-1} (B_0, the only one nonzero at r = 0, is left
+ * out; the knot vector must start with degree+1 knots at 0), Y = sum_j y_j B_j:
+ *     sum_j [ int B_i' B_j' + k(k+1) int B_i B_j / r^2 + (k/R) B_i(R) B_j(R) ] y_j
+ *         = (2k+1) int B_i rho / r.
+ * The last term is the Robin condition; for k = 0 it is Y'(R) = 0. The matrix is
+ * symmetric positive definite and banded (bandwidth degree).
+ *
+ * BSplinePoissonSetup assembles it on the quadrature points rq, wq (all r > 0) and
+ * factorizes it (dpbtrf), for the n = nKnot-degree-2 functions B_1 .. B_{N-1}, in LAPACK
+ * band storage band[(i-j) + j*ldBand], i >= j, ldBand >= degree+1. Factorize once per k
+ * and reuse it for every density. Returns 0, or 1 for invalid arguments or a matrix that
+ * is not positive definite. */
+int BSplinePoissonSetup(const double *knot, uint32_t nKnot, uint32_t degree, const double *rq, const double *wq, uint32_t nPoint,
+                        uint32_t k, double *band, uint32_t ldBand)
+{
+  double *fq, *tmp, val[BSplineMaxDegree+1], R;
+  uint32_t n, q, i, j, mu, kd = degree;
+  int info = 0;
+  char uplo = 'L';
+  if (degree > BSplineMaxDegree || nKnot < degree + 3 || ldBand < degree+1) return 1;
+  n = nKnot - degree - 2;
+  if (BSplineMatrixBanded(knot, nKnot, degree, rq, wq, nPoint, NULL, 1, 1, 1, n, band, ldBand)) return 1;
+  if (k > 0)
+  {
+    fq = (double *) malloc(nPoint*sizeof(double));
+    tmp = (double *) malloc(ldBand*n*sizeof(double));
+    for (q = 0; q < nPoint; q++) fq[q] = (double) k*(k+1)/(rq[q]*rq[q]);
+    BSplineMatrixBanded(knot, nKnot, degree, rq, wq, nPoint, fq, 0, 0, 1, n, tmp, ldBand);
+    for (i = 0; i < ldBand*n; i++) band[i] += tmp[i];
+    free(fq);
+    free(tmp);
+    // Robin term: the basis functions B_{mu-degree} .. B_mu that are nonzero at R
+    R = knot[nKnot-1];
+    mu = BSplineFindInterval(R, knot, nKnot);
+    BSplineValues(R, mu, knot, nKnot, degree, 0, val);
+    for (j = 0; j <= degree; j++)
+      for (i = j; i <= degree; i++)
+        if (mu + j >= degree + 1)   // B_0 is not in the set
+          band[(i-j) + (mu-degree+j-1)*ldBand] += (double) k/R*val[i]*val[j];
+  }
+  dpbtrf(&uplo, &n, &kd, band, &ldBand, &info);
+  return (info != 0);
+}
+
+/* Y^k for the radial density rho given on the quadrature points rq (as in
+ * BSplinePoissonSetup, with the same k and its factorized band). On return Y holds the
+ * coefficients of Y^k for all nKnot-degree-1 B-splines (Y[0] = 0), so Y^k(r) =
+ * BSplineDerivative(r, knot, nKnot, degree, Y, 0). Returns 0, or 1 if dpbtrs fails. */
+int BSplinePoissonSolve(const double *knot, uint32_t nKnot, uint32_t degree, const double *rq, const double *wq, uint32_t nPoint,
+                        uint32_t k, const double *band, uint32_t ldBand, const double *rho, double *Y)
+{
+  double val[BSplineMaxDegree+1];
+  uint32_t n, nSpline, q, j, mu, kd = degree, nrhs = 1;
+  int64_t i;
+  int info = 0;
+  char uplo = 'L';
+  if (degree > BSplineMaxDegree || nKnot < degree + 3) return 1;
+  nSpline = nKnot - degree - 1;
+  n = nSpline - 1;
+  for (j = 0; j < nSpline; j++) Y[j] = 0.;
+  // right-hand side (2k+1) int B_i rho/r, stored at Y[i] for i = 1 .. N-1
+  for (q = 0; q < nPoint; q++)
+  {
+    mu = BSplineFindInterval(rq[q], knot, nKnot);
+    if (mu >= nKnot) continue;
+    BSplineValues(rq[q], mu, knot, nKnot, degree, 0, val);
+    for (j = 0; j <= degree; j++)
+    {
+      i = (int64_t) mu - degree + j;
+      if (i >= 1 && i < nSpline) Y[i] += (2.*k + 1.)*wq[q]*rho[q]*val[j]/rq[q];
+    }
+  }
+  dpbtrs(&uplo, &n, &kd, &nrhs, (double *) band, &ldBand, Y+1, &n, &info);
+  return (info != 0);
+}

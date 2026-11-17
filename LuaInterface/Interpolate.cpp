@@ -171,12 +171,30 @@ static int LuaCubicHermiteSplineInterpolate(lua_State * L)
 	return 1;
 }
 /*
+ * In arithmetic and comparison a radial Dirac spinor component of type "DKBSpline" (DFT
+ * stage A) acts as the BSpline of its degree through its values on its quadrature points
+ * (f.x): a sum or product of DKB functions is no DKB function (different kappa, terms in
+ * 1/r^2), and the BSpline on the same points integrates such products to rounding (the
+ * overlaps int (P_a P_b + Q_a Q_b) dr of Hg to 3e-15). The result is a BSpline. *tmp is
+ * the caller's storage for the BSpline; f itself is returned for the other types.
+ */
+static Interpolation::InterpolatingFunction *LuaInterpolateAsBSpline(Interpolation::InterpolatingFunction *f, BSpline::TBSpline *tmp)
+{
+	if (f->type != "DKBSpline") return f;
+	std::vector<double> x = f->GetX();
+	tmp->Create(x, (*f)(x), ((Interpolation::DKBSpline *) f)->degree);
+	return tmp;
+}
+
+/*
  *
  */
 static int LuaInterpolateUnm(lua_State * L)
 {
 	void* memory;
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf;
+	f = LuaInterpolateAsBSpline(f, &tf);
 	if (f->type == "CubicSpline")
 	{
 		memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -216,6 +234,9 @@ static int LuaInterpolateAdd(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf, tg;
+	f = LuaInterpolateAsBSpline(f, &tf);
+	g = LuaInterpolateAsBSpline(g, &tg);
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -252,6 +273,9 @@ static int LuaInterpolateSub(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf, tg;
+	f = LuaInterpolateAsBSpline(f, &tf);
+	g = LuaInterpolateAsBSpline(g, &tg);
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -289,6 +313,9 @@ static int LuaInterpolateMul(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf, tg;
+	f = LuaInterpolateAsBSpline(f, &tf);
+	g = LuaInterpolateAsBSpline(g, &tg);
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -325,6 +352,9 @@ static int LuaInterpolateDiv(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf, tg;
+	f = LuaInterpolateAsBSpline(f, &tf);
+	g = LuaInterpolateAsBSpline(g, &tg);
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -361,6 +391,8 @@ static int LuaInterpolatePow(lua_State * L)
 {
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf;
+	f = LuaInterpolateAsBSpline(f, &tf);
     double n;
     lua_check(L,2,n);
     if (f->type == "CubicSpline")
@@ -400,6 +432,9 @@ static int LuaInterpolateConcat(lua_State * L)
 	void* memory;
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf, tg;
+	f = LuaInterpolateAsBSpline(f, &tf);
+	g = LuaInterpolateAsBSpline(g, &tg);
     if (f->type == "CubicSpline")
     {
         memory = lua_newuserdata(L, sizeof(Interpolation::CubicSpline));
@@ -435,6 +470,9 @@ static int LuaInterpolateEq(lua_State * L)
 {
     Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
     Interpolation::InterpolatingFunction *g = (Interpolation::InterpolatingFunction *) luaL_checkudata(L, 2, "InterpolatingFunction_Type");
+	BSpline::TBSpline tf, tg;
+	f = LuaInterpolateAsBSpline(f, &tf);
+	g = LuaInterpolateAsBSpline(g, &tg);
 
     bool equal = false;
     if (f->type == "CubicSpline" && f->type == g->type)
@@ -554,35 +592,74 @@ static int LuaInterpolateToString(lua_State * L)
 	return 1;
 }
 
+/* the distinct values of a knot sequence, in order */
+static std::vector<double> LuaInterpolateBreakpoints(const std::vector<double> &knots)
+{
+	std::vector<double> r;
+	for (uint32_t i = 0; i < (uint32_t) knots.size(); i++)
+		if (i == 0 || knots[i] > knots[i-1]) r.push_back(knots[i]);
+	return r;
+}
+
 /*
- *
+ * f.x, f.y      the points the function is given on and its values there: the data points
+ *               of a Spline, HermiteCSpline or BSpline (a B-spline made from coefficients:
+ *               its breakpoints), the quadrature points of a DKBSpline
+ * f.knots       the breakpoints, where the polynomial pieces join (for the cubic splines
+ *               the data points, for BSpline and DKBSpline the distinct knots)
+ * f.degree      the polynomial degree (3 for the cubic splines; of the B-splines of a
+ *               DKBSpline)
+ * f.coefficients  the B-spline coefficients of a BSpline, one per B-spline
+ * f.type        the name of its constructor: "Spline", "HermiteCSpline", "BSpline", or
+ *               "DKBSpline" (no constructor; CalculateAtomicBasisFunctions)
  */
 static int LuaInterpolateIndex(lua_State *L)
 {
 	string str;
 	Interpolation::InterpolatingFunction *f = (Interpolation::InterpolatingFunction*) luaL_checkudata(L, 1, "InterpolatingFunction_Type");
-	if (luaL_isType(L, 2, str))
+	int bspline = (f->type == "BSpline"), dkb = (f->type == "DKBSpline");
+	if (!luaL_isType(L, 2, str)) return luaL_error(L, "Error: Interpolation function indexed with unrecognised type!");
+	lua_check(L, 2, str);
+	if (str.compare("x") == 0 || str.compare("X") == 0)
 	{
-		lua_check(L, 2, str);
-		if (str.compare("x") == 0 || str.compare("X") == 0)
-		{
-			lua_push(L, f->GetX());
-			return 1;
-		}
-		else if (str.compare("y") == 0 || str.compare("Y") == 0)
-		{
-			lua_push(L, f->GetY());
-			return 1;
-		}
-		else
-		{
-			return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\"", str.c_str());
-		}
+		if (bspline) lua_push(L, BSpline::SamplePoints(*f));
+		else lua_push(L, f->GetX());
+		return 1;
 	}
-	else
+	if (str.compare("y") == 0 || str.compare("Y") == 0)
 	{
-		return luaL_error(L, "Error: Interpolation function indexed with unrecognised type!");
+		if (bspline) lua_push(L, (*f)(BSpline::SamplePoints(*f)));
+		else lua_push(L, f->GetY());
+		return 1;
 	}
+	if (str.compare("knots") == 0)
+	{
+		if (bspline) lua_push(L, LuaInterpolateBreakpoints(((BSpline::TBSpline *) f)->knots));
+		else if (dkb) lua_push(L, LuaInterpolateBreakpoints(((Interpolation::DKBSpline *) f)->knots));
+		else lua_push(L, f->GetX());
+		return 1;
+	}
+	if (str.compare("degree") == 0)
+	{
+		if (bspline) lua_pushinteger(L, (lua_Integer) ((BSpline::TBSpline *) f)->degree);
+		else if (dkb) lua_pushinteger(L, (lua_Integer) ((Interpolation::DKBSpline *) f)->degree);
+		else lua_pushinteger(L, 3);
+		return 1;
+	}
+	if (str.compare("type") == 0 || str.compare("Type") == 0)
+	{
+		if (f->type == "CubicSpline") lua_pushstring(L, "Spline");
+		else if (f->type == "CubicHermiteSpline") lua_pushstring(L, "HermiteCSpline");
+		else lua_pushstring(L, f->type.c_str());
+		return 1;
+	}
+	if (str.compare("coefficients") == 0)
+	{
+		if (!bspline) return luaL_error(L, "Error: coefficients only for an interpolating function of type BSpline, this one is of type %s", f->type.c_str());
+		lua_push(L, f->GetY());
+		return 1;
+	}
+	return luaL_error(L, "Error: Interpolation function indexed with unrecognised string \"%s\" (x, y, knots, degree, coefficients or type)", str.c_str());
 }
 
 /*
@@ -609,6 +686,14 @@ static int LuaInterpolationIntegrate(lua_State * L)
 		double a,b;
 		lua_check(L,2,a);
 		lua_check(L,3,b);
+		if (f->type == "DKBSpline")
+		{
+			// the range of a DKBSpline is its knots, [0, rMax]; f->x are its quadrature points
+			Interpolation::DKBSpline *d = (Interpolation::DKBSpline *) f;
+			if (((a < d->knots.front() || b > d->knots.back()) && a < b) || ((b < d->knots.front() || a > d->knots.back()) && b < a)) return luaL_error(L,"error in InterpolatingFunction.Integrate, integration limits out of interpolation range\n");
+			lua_push(L, Interpolation::Integrate(*f,a,b));
+			return 1;
+		}
 		if ( ((a < f->x[0] || b > f->x.back()) && a < b) || ((b < f->x[0] || a > f->x.back()) && b < a)) return luaL_error(L,"error in InterpolatingFunction.Integrate, integration limits out of interpolation range\n");
 		value = Interpolation::Integrate(*f,a,b);
 	}

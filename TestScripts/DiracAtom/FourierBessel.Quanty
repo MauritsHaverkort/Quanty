@@ -1,0 +1,59 @@
+--[[
+ *  DFT stage A5d, check 11 (Doc/Claude/QuantyDFT_StageA, design sections 10 and 12): the
+ *  Fourier-Bessel transforms P~(k) = sqrt(2/pi) int r P j_l(kr) dr, Q~ with lbar, of the
+ *  option {"FourierBessel", {KMax, NK}} of CalculateAtomicBasisFunctions (DFT/FourierBessel.cpp).
+ *  - Analytic: hydrogen 1s (Schroedinger) has P~ = 4 sqrt(2/pi)/(1+k^2)^2; measured 8.1e-10
+ *    (the B-spline representation of e^-r; the energy is -0.5 to 1e-12), checked 1e-8.
+ *  - Plancherel: int_0^KMax k^2 (P~^2 + Q~^2) dk = 1 (Simpson on the k grid); measured
+ *    <= 2.3e-10 for He 1s1/2 (Dirac, KMax 400) and Ne 2p1/2, 2p3/2 (KMax 150; the rest is
+ *    the tail beyond KMax), checked 1e-9.
+ *  - The inverse transform P(r) = sqrt(2/pi) r int k^2 P~ j_l(kr) dk, and Q with lbar,
+ *    reproduces G(r), F(r) at r = 0.5, 1, 2: measured <= 1.8e-6 (the cut at KMax), checked
+ *    1e-5 (a wrong lbar or normalization is off by 1e-3 or more).
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local pt = {"Nucleus", "Point"}
+local function simpson(f, h)
+  local n, s = #f, 0
+  for i = 1, n do s = s + f[i]*((i == 1 or i == n) and 1 or (i % 2 == 0 and 4 or 2)) end
+  return s*h/3
+end
+
+local G, F, A = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s1"}, pt, {"Relativistic", false}, {"FourierBessel", {KMax = 50, NK = 501}}})
+local w = 0
+for j, k in ipairs(A.FourierBessel.k) do w = math.max(w, math.abs(A.FourierBessel.P[1][j] - 4*math.sqrt(2/math.pi)/(1 + k*k)^2)) end
+check(w < 1e-8 and #A.FourierBessel.Q == 0, string.format("hydrogen 1s (Schroedinger): max |P~ - 4 sqrt(2/pi)/(1+k^2)^2| %.1e", w))
+
+for _, a in ipairs({{2, "1s2", nil, 400, 8001}, {10, "[He] 2s2 2p6", {"2p1/2", "2p3/2"}, 150, 3001}}) do
+  G, F, A = CalculateAtomicBasisFunctions(a[1], {{"Configuration", a[2]}, pt, {"FourierBessel", {KMax = a[4], NK = a[5]}}})
+  local fb = A.FourierBessel
+  local h = fb.k[2] - fb.k[1]
+  for i, o in ipairs(A.Orbitals) do
+    local selected = (a[3] == nil)
+    for _, lab in ipairs(a[3] or {}) do if lab == o.Label then selected = true end end
+    if selected then
+      local f = {}
+      for j, k in ipairs(fb.k) do f[j] = k*k*(fb.P[i][j]^2 + fb.Q[i][j]^2) end
+      local l, lb = o.l, (o.kappa > 0) and o.l - 1 or o.l + 1
+      local worst = 0
+      for _, r in ipairs({0.5, 1.0, 2.0}) do
+        local fp, fq = {}, {}
+        for j, k in ipairs(fb.k) do fp[j] = k*k*fb.P[i][j]*math.SphericalBesselJ(l, k*r); fq[j] = k*k*fb.Q[i][j]*math.SphericalBesselJ(lb, k*r) end
+        worst = math.max(worst, math.abs(math.sqrt(2/math.pi)*r*simpson(fp, h) - G[i](r)), math.abs(math.sqrt(2/math.pi)*r*simpson(fq, h) - F[i](r)))
+    end
+    local norm = simpson(f, h)
+    check(math.abs(norm - 1) < 1e-9 and worst < 1e-5,
+          string.format("Z = %2d %s: Plancherel - 1 %+.1e, inverse transform %.1e (KMax %d)", a[1], o.Label, norm - 1, worst, a[4]))
+    end
+  end
+end
+
+local ok = pcall(function() return CalculateAtomicBasisFunctions(1, {{"Configuration", "1s1"}, pt, {"FourierBessel", {NK = 10}}}) end)
+check(not ok, "FourierBessel without KMax is an error")
+if failed then error("Fourier-Bessel transforms: checks failed", 1) end
+print("passed")

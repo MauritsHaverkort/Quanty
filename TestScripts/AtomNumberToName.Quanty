@@ -1,0 +1,46 @@
+--[[
+ *  AtomNumberToName(Z) and AtomNameToNumber(name), the element symbols H .. Og of Z = 1 .. 118
+ *  (Tight_Binding/Tight_Binding_lib.cpp, Lua bindings in LuaInterface/ssp.cpp):
+ *  - a few symbols checked by hand, among them the one- and two-letter ones around them;
+ *  - the round trip AtomNameToNumber(AtomNumberToName(Z)) = Z for all 118 elements, and the
+ *    118 symbols are different;
+ *  - errors for Z = 0, 119, 26.5, an unknown symbol, a symbol written in other case, and a
+ *    missing argument.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local known = {[1] = "H", [2] = "He", [6] = "C", [8] = "O", [9] = "F", [26] = "Fe", [28] = "Ni", [53] = "I", [57] = "La",
+               [71] = "Lu", [74] = "W", [79] = "Au", [92] = "U", [103] = "Lr", [118] = "Og"}
+local wrong = 0
+for Z, name in pairs(known) do
+  if AtomNumberToName(Z) ~= name or AtomNameToNumber(name) ~= Z then wrong = wrong + 1 end
+end
+check(wrong == 0, string.format("15 elements by hand: %d wrong (Fe = %s, %s = %d)", wrong, AtomNumberToName(26), "Og", AtomNameToNumber("Og")))
+
+local seen, roundTrip, distinct = {}, 0, true
+for Z = 1, 118 do
+  local name = AtomNumberToName(Z)
+  if AtomNameToNumber(name) ~= Z then roundTrip = roundTrip + 1 end
+  if seen[name] then distinct = false end
+  seen[name] = true
+end
+check(roundTrip == 0 and distinct, string.format("round trip for Z = 1 .. 118: %d wrong; all symbols different: %s", roundTrip, tostring(distinct)))
+
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+fails(function() return AtomNumberToName(0) end, "Z = 0")
+fails(function() return AtomNumberToName(119) end, "Z = 119")
+fails(function() return AtomNumberToName(26.5) end, "Z = 26.5")
+fails(function() return AtomNameToNumber("Xx") end, "unknown symbol")
+fails(function() return AtomNameToNumber("fe") end, "symbol in lower case")
+fails(function() return AtomNumberToName() end, "no argument")
+
+if failed then error("AtomNumberToName / AtomNameToNumber checks failed", 1) end
+print("passed")

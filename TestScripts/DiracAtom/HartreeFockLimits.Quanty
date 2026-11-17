@@ -1,0 +1,58 @@
+--[[
+ *  DFT stage A, check 7 (Doc/Claude/QuantyDFT_StageA, design section 12): the closed-shell
+ *  Hartree-Fock atom, nonrelativistic (CalculateAtomicBasisFunctions, Method "DHF", {"Relativistic", false}),
+ *  point nucleus, against the fully numerical (finite-element) Hartree-Fock limits of
+ *  S. Lehtola, Int. J. Quantum Chem. 119, e25945 (2019), arXiv:1810.11651, Table 5
+ *  (nine decimals: He, Be, Ne, Mg, Ar), and Phys. Rev. A 101, 012516 (2020),
+ *  arXiv:1908.02528, Table 4 (six decimals: Ca, Zn, Kr, Xe).
+ *  No Dirac-Fock reference could be fetched (decided by Maurits: the nonrelativistic HF
+ *  limits); the Dirac atom is checked against the Dirac-Fock He of the design, -2.8618133 Ha
+ *  (seven decimals), and internally in HartreeFockAverage.Quanty.
+ *  Measured with the defaults (Degree 8, 120 intervals, rMax 40): |Etot - limit| <= 5.1e-10
+ *  for the nine-decimal rows (the rounding of the table is 5e-10), <= 3.5e-7 for the
+ *  six-decimal rows; checked against 2e-9 and 1e-6. Each converges in 9 .. 15 iterations.
+ *  Also checked: EtotEigenvalueSum = 1/2 sum qbar (eps + I) equals Etot for any orbitals
+ *  (the Fock operators are the derivative of the energy), to rounding, 1e-12 + 1e-13 |Etot|
+ *  (measured <= 2.7e-12, Xe).
+]]
+
+local limits = {
+  {2,  "1s2",               -2.861679996,   2e-9},
+  {4,  "1s2 2s2",           -14.573023168,  2e-9},
+  {10, "[He] 2s2 2p6",      -128.547098109, 2e-9},
+  {12, "[Ne] 3s2",          -199.614636424, 2e-9},
+  {18, "[Ne] 3s2 3p6",      -526.817512803, 2e-9},
+  {20, "[Ar] 4s2",          -676.758186,    1e-6},
+  {30, "[Ar] 3d10 4s2",     -1777.848116,   1e-6},
+  {36, "[Kr]",              -2752.054977,   1e-6},
+  {54, "[Xe]",              -7232.138364,   1e-6}}
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local function identity(A) return math.abs(A.EtotEigenvalueSum - A.Etot) < 1e-12 + 1e-13*math.abs(A.Etot) end
+-- the Atom table (and G, F) of CalculateAtomicBasisFunctions
+local function CalculateAtom(Z, configuration, options)
+  local o = {{"Configuration", configuration}}
+  for _, v in ipairs(options or {}) do o[#o+1] = v end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, o)
+  return A, G, F
+end
+
+for _, a in ipairs(limits) do
+  local A = CalculateAtom(a[1], a[2], {{"Nucleus", "Point"}, {"Relativistic", false}})
+  local d = A.Etot - a[3]
+  check(A.Converged and math.abs(d) < a[4] and identity(A),
+        string.format("Z = %2d Etot = %.9f (limit %.9f) %+.1e, eigenvalue expression %+.1e, %d iterations",
+                      a[1], A.Etot, a[3], d, A.EtotEigenvalueSum - A.Etot, A.Iterations))
+end
+
+-- Dirac-Fock He, point nucleus
+local A = CalculateAtom(2, "1s2", {{"Nucleus", "Point"}})
+check(A.Converged and math.abs(A.Etot + 2.8618133) < 1e-7 and identity(A) and A.Orbitals[1].Label == "1s1/2",
+      string.format("Dirac-Fock He Etot = %.10f (design -2.8618133)", A.Etot))
+
+if failed then error("Hartree-Fock limits failed", 1) end
+print("passed")

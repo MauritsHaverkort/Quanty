@@ -1,0 +1,165 @@
+--[[
+ *  Interpolating functions of type "DKBSpline": the large (G = P) and small (F = Q)
+ *  components of the radial Dirac spinors of the bare nucleus (CalculateAtomicBasisFunctions
+ *  without electrons; until 2026-11-15 the temporary DiracRadialSolve of DFT stage A1).
+ *
+ *  - Hydrogen 1s1/2 (point nucleus): against the exact P = A sqrt(1+gamma) r^gamma e^-r,
+ *    Q = -A sqrt(1-gamma) r^gamma e^-r, values and first derivatives.
+ *  - Derivatives 1 .. 3 against central finite differences (Richardson extrapolated).
+ *  - Derivatives continuous at the first knot rMin (they come from an exact integral).
+ *  - The DKB functions are small but not exactly 0 at r = 0 and r = rMax.
+ *  - 0 outside [0, rMax], value and derivatives.
+ *  - int (G^2 + F^2) dr = 1 (Atom.OrthonormalityError, exact in coefficient space);
+ *    Integrate against the exact integral of P (Gamma function), and split at r = 1.
+ *  - Arithmetic: a DKBSpline acts as the BSpline of its degree through its values on its
+ *    quadrature points, and the result is a BSpline. -G, G + F, G - G, G^2 on the points
+ *    (measured 2e-16 of max |G|, checked 1e-14); the overlaps int (G_a G_b + F_a F_b) dr of
+ *    1s and 2s through Integrate (measured 4e-16, checked 1e-12); a product with a
+ *    potential, int (G^2 + F^2) rVN / r dr = -Z <1/r> (checked 1e-10); == ; a BSpline plus
+ *    a DKBSpline at a common point.
+ *  - NewOperator("AU") with a large component passed as the small one is an error (the AU
+ *    path itself: NewOperatorDKB.Quanty, A5).
+]]
+
+local c = PhysicalConstants.cAU.value
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local rMin, rMax = 1e-6, 80
+local G, F, Atom = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s0 2s0"}, {"Nucleus", "Point"}, {"rMin", rMin}, {"rMax", rMax}})
+local P, Q = G[1], F[1]
+local x = P.x
+
+-- the Gamma function (Lanczos, g = 7, 9 terms; 1e-15 relative for x near 2 and 3)
+local lanczos = {0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+                 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7}
+local function Gamma(z)
+  z = z - 1
+  local a, t = lanczos[1], z + 7.5
+  for i = 1, 8 do a = a + lanczos[i+1]/(z + i) end
+  return math.sqrt(2*math.pi)*t^(z + 0.5)*math.exp(-t)*a
+end
+-- exact hydrogen 1s1/2: P = A sqrt(1+gamma) r^gamma e^-r, Q = -A sqrt(1-gamma) r^gamma e^-r,
+-- int (P^2 + Q^2) dr = 2 A^2 Gamma(2 gamma + 1)/2^(2 gamma + 1) = 1 (the box at 80 bohr adds e^-160)
+local gam = math.sqrt(1 - (1/c)^2)
+local function Pe(r) return math.sqrt(1+gam)*r^gam*math.exp(-r) end
+local function Qe(r) return -math.sqrt(1-gam)*r^gam*math.exp(-r) end
+local A = 1/math.sqrt(2*Gamma(2*gam + 1)/2^(2*gam + 1))
+check(Atom.NElectron == 0 and Atom.OrthonormalityError < 1e-13, string.format("bare nucleus; int (G^2 + F^2) dr - 1 (OrthonormalityError) %.1e", Atom.OrthonormalityError))
+-- errors relative to the largest value of the exact function (in the tail the function
+-- itself is tiny and its relative error large, from the sparse knots there). The
+-- derivatives from r = 1e-3 on: for a point nucleus P' and Q' go as r^(gamma-1), which
+-- no polynomial follows near r = 0 (the error of Q' is 1e-6 of its largest value at
+-- r = 1e-5, 6e-13 at r = 0.1).
+local rs = {1e-5, 1e-3, 0.01, 0.1, 0.5, 1, 2, 5, 10, 20}
+local eP, eQ, eP1, eQ1, mP, mQ, mP1, mQ1 = 0, 0, 0, 0, 0, 0, 0, 0
+for i, r in ipairs(rs) do
+  local dPe = A*math.sqrt(1+gam)*math.exp(-r)*r^gam*(gam/r - 1)
+  local dQe = -A*math.sqrt(1-gam)*math.exp(-r)*r^gam*(gam/r - 1)
+  eP, mP = math.max(eP, math.abs(P(r) - A*Pe(r))), math.max(mP, math.abs(A*Pe(r)))
+  eQ, mQ = math.max(eQ, math.abs(Q(r) - A*Qe(r))), math.max(mQ, math.abs(A*Qe(r)))
+  if r >= 1e-3 then
+    eP1, mP1 = math.max(eP1, math.abs(P(r, 1) - dPe)), math.max(mP1, math.abs(dPe))
+    eQ1, mQ1 = math.max(eQ1, math.abs(Q(r, 1) - dQe)), math.max(mQ1, math.abs(dQe))
+  end
+end
+check(eP/mP < 3e-8 and eQ/mQ < 3e-8, string.format("hydrogen 1s: G and F against the exact P and Q, %.1e and %.1e of their largest value", eP/mP, eQ/mQ))
+check(eP1/mP1 < 3e-8 and eQ1/mQ1 < 3e-8, string.format("hydrogen 1s: G' and F' against the exact P' and Q', %.1e and %.1e of their largest value", eP1/mP1, eQ1/mQ1))
+
+-- derivatives against finite differences, for the 2s state and both components
+local function fd(f, r, k, h)
+  -- central differences of order h^2 for derivative k, from derivative k-1
+  return (f(r + h, k-1) - f(r - h, k-1))/(2*h)
+end
+for name, f in pairs({G2s = G[2], F2s = F[2]}) do
+  local worst = 0
+  for _, r in ipairs({0.05, 0.2, 1.3, 4, 9}) do
+    for k = 1, 3 do
+      local h = 1e-3*r
+      local d = (4*fd(f, r, k, h/2) - fd(f, r, k, h))/3       -- Richardson: order h^4
+      local scale = math.abs(f(r, k)) + math.abs(f(r, k-1))/r
+      worst = math.max(worst, math.abs(f(r, k) - d)/scale)
+    end
+  end
+  check(worst < 1e-8, string.format("%s: derivatives 1..3 against finite differences, relative %.1e", name, worst))
+end
+
+-- small r: the derivatives of B/r come from an exact integral, without the cancellation
+-- of the Leibniz sum; they are continuous at the first knot rMin and smooth below it
+for name, f in pairs({G2s = G[2], F2s = F[2]}) do
+  local worst = 0
+  for k = 0, 6 do
+    local left, right = f(rMin*(1 - 1e-13), k), f(rMin*(1 + 1e-13), k)
+    worst = math.max(worst, math.abs(left - right)/math.max(math.abs(left), math.abs(right)))
+  end
+  check(worst < 1e-9, string.format("%s: derivatives 0..6 continuous at rMin = %g, relative %.1e", name, rMin, worst))
+end
+-- the DKB functions are not exactly 0 at the ends: P(0) = h b_1 B_1'(0) (1 - kappa),
+-- and P(rMax), Q(rMax) contain S'(rMax); small against the function
+local gmax = 0
+for i = 1, #x do gmax = math.max(gmax, math.abs(P(x[i]))) end
+check(math.abs(P(0)) < 1e-10*gmax and math.abs(P(rMax)) < 1e-10*gmax and math.abs(Q(rMax)) < 1e-10*gmax,
+      string.format("G(0) = %.1e, G(rMax) = %.1e, F(rMax) = %.1e, max |G| = %.3f", P(0), P(rMax), Q(rMax), gmax))
+
+-- zero outside the knots
+local outside = 0
+for _, r in ipairs({-1, -1e-12, rMax*(1 + 1e-12), rMax + 1, 1e6}) do
+  for k = 0, 3 do outside = math.max(outside, math.abs(P(r, k)), math.abs(Q(r, k))) end
+end
+check(outside == 0, "0 outside [0, rMax], value and derivatives")
+
+-- Integrate: per knot interval, against the exact int P dr = A sqrt(1+gamma) Gamma(gamma + 1).
+-- The quadrature is exact for G; the difference is that of the DKB 1s from the exact one,
+-- about 1e-9 of max |G| (checked 3e-8 above), with a cancellation that depends on the
+-- LAPACK: measured 5.2e-12 (macOS, Accelerate) and 1.2e-10 (lin0, MKL). Checked as G, 3e-8.
+local exactI = A*math.sqrt(1+gam)*Gamma(gam + 1)
+local I1, I2 = InterpolatingFunction.Integrate(P), InterpolatingFunction.Integrate(P, 0, rMax)
+check(math.abs(I1 - exactI) < 3e-8*exactI and I1 == I2, string.format("Integrate(G) = %.15f, exact %.15f, %.1e relative", I1, exactI, I1/exactI - 1))
+local Ihalf = InterpolatingFunction.Integrate(P, 0, 1) + InterpolatingFunction.Integrate(P, 1, rMax)
+check(math.abs(Ihalf - I1) < 1e-13, string.format("Integrate(G,0,1) + Integrate(G,1,rMax) - Integrate(G) = %.1e", Ihalf - I1))
+local xq = Atom.Potential.rVN.x
+check(#x == #xq and x[11] == xq[11], string.format("G.x holds the %d quadrature points", #x))
+local K = P.knots
+local distinct = true
+for i = 2, #K do distinct = distinct and K[i] > K[i-1] end
+check(K[1] == 0 and K[2] == rMin and math.abs(K[#K] - rMax) < 1e-12*rMax and distinct and P.degree == 8 and Q.degree == 8 and P.type == "DKBSpline",
+      string.format("G.knots: %d breakpoints from 0, rMin to rMax; G.degree = %d; G.type = %s", #K, P.degree, P.type))
+
+-- arithmetic: as the BSpline through the values on the quadrature points
+local scale = 0
+for i = 1, #x do scale = math.max(scale, math.abs(G[2](x[i]))) end
+local neg, sum, zero, sq = -G[2], G[2] + F[2], G[2] - G[2], G[2]^2
+local e = 0
+for _, i in ipairs({1, 100, 700, 1200, #x}) do
+  local r = x[i]
+  e = math.max(e, math.abs(neg(r) + G[2](r)), math.abs(sum(r) - G[2](r) - F[2](r)), math.abs(zero(r)), math.abs(sq(r) - G[2](r)^2)/scale)
+end
+check(e < 1e-14*scale and neg.type == "BSpline" and sq.type == "BSpline", string.format("-G, G + F, G - G, G^2 on the quadrature points: %.1e of max |G|; the results are BSplines", e/scale))
+local S11 = InterpolatingFunction.Integrate(G[1]*G[1] + F[1]*F[1])
+local S12 = InterpolatingFunction.Integrate(G[1]*G[2] + F[1]*F[2])
+local S22 = InterpolatingFunction.Integrate(G[2]*G[2] + F[2]*F[2])
+local dS = math.max(math.abs(S11 - 1), math.abs(S12), math.abs(S22 - 1))
+check(dS < 1e-12, string.format("overlaps int (G_a G_b + F_a F_b) dr of 1s and 2s: max |S - 1| = %.1e", dS))
+local yinv = {}
+for i = 1, #x do yinv[i] = 1/x[i] end
+local inv = InterpolatingFunction.BSpline(x, yinv, P.degree)
+local VN = InterpolatingFunction.Integrate((G[1]*G[1] + F[1]*F[1])*Atom.Potential.rVN*inv)
+local exactVN = -Atom.Orbitals[1].RExpectation[-1]
+check(math.abs(VN/exactVN - 1) < 1e-10, string.format("int (G^2 + F^2) rVN / r dr = %.12f, -Z <1/r> = %.12f, %.1e relative", VN, exactVN, VN/exactVN - 1))
+check(G[1] == G[1] and not (G[1] == G[2]), "G1 == G1, G1 ~= G2")
+local B = InterpolatingFunction.BSpline({0, 1, 2, 3, 4}, {0, 1, 0, 1, 0}, 3)
+local BP = B + P
+check(BP.type == "BSpline" and math.abs(BP(1) - B(1) - P(1)) < 1e-12, string.format("BSpline + DKBSpline at r = 1: %.1e", BP(1) - B(1) - P(1)))
+
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+local indices, NF = CreateAtomicIndicesList({"1s1/2"}, {{"Kappas", true}})
+fails(function() return NewOperator("AU", NF, indices, {P}, {P}) end, "NewOperator(\"AU\") with G as F")
+
+if failed then error("DKBSpline evaluation checks failed", 1) end
+print("passed")

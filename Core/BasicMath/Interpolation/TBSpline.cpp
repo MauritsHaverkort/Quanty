@@ -116,8 +116,10 @@ std::vector<double> TBSpline::operator()(const std::vector<double> &t, unsigned 
  * their grid. The result has the degree of f. -f, and f + g and f - g for two B-splines
  * of the same degree and knots, act on the coefficients and are exact everywhere. */
 
-// the points on which arithmetic samples a function
-static std::vector<double> SamplePoints(Interpolation::InterpolatingFunction &f)
+/* The points a function is sampled on: for a B-spline the points it interpolates (its data;
+ * the breakpoints x if it was made from coefficients), for the other types their grid x.
+ * Arithmetic samples here, and these are f.x in Lua (with f.y the values f(points)). */
+std::vector<double> SamplePoints(Interpolation::InterpolatingFunction &f)
 {
 	if (f.type == "BSpline" && ((TBSpline &) f).points.size() > 0) return ((TBSpline &) f).points;
 	return f.GetX();

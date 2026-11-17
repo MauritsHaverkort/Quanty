@@ -19,6 +19,9 @@ public:
 	TBSpline(const std::vector<double> &u,const std::vector<double> &k,const std::vector<double> &v, uint32_t n);
 	virtual ~TBSpline();
 
+	// In C x holds the breakpoints (the distinct knots) and y the coefficients, one per
+	// B-spline; Integrate and the old atomic code use them so. Lua shows f.x = points and
+	// f.y = the values there, f.knots, f.degree and f.coefficients (LuaInterpolateIndex).
 	std::vector<double> knots;
 	uint32_t degree;
 	std::vector<double> points;  // the points the spline interpolates; arithmetic samples it there
@@ -30,6 +33,7 @@ public:
 	std::vector<double> operator()(const std::vector<double> &t, unsigned int k);
 };
 
+std::vector<double> SamplePoints(Interpolation::InterpolatingFunction &f);
 void UnaryMinus(TBSpline &f, TBSpline &g);
 void Add(TBSpline &f, Interpolation::InterpolatingFunction &g, TBSpline &r);
 void Sub(TBSpline &f, Interpolation::InterpolatingFunction &g, TBSpline &r);

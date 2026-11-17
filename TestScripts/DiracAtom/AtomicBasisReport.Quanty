@@ -1,0 +1,81 @@
+--[[
+ *  DFT stage A5e (Doc/Claude/QuantyDFT_StageA, design section 0.1): the accuracy report and
+ *  the preset of CalculateAtomicBasisFunctions.
+ *  - RExpectation and VirialRatio: hydrogen 1s (Schroedinger) <1/r> = 1, <r> = 3/2,
+ *    <r^2> = 3, -V/T = 2 (measured to the 12 printed digits, checked 1e-10); Ne Hartree-Fock
+ *    -V/T = 2 to the basis (measured 3.8e-10, checked 1e-8).
+ *  - Potential: rVN, rVH (and rVxc for Kohn-Sham only) are BSplines through the points x;
+ *    -(r V_N + r V_H) runs from Z at the nucleus to Z - N = 0 at rMax (point nucleus, neutral
+ *    atom). The Kohn-Sham potential is complete: <a|T + V_N + V_H + V_xc|a> with the exported
+ *    potentials, integrated as a BSpline through the points (plus the piece from 0 to x_1),
+ *    equals Orbitals[a].EnergyGround for every occupied orbital of Ne: Schroedinger LDA and
+ *    PBE (point nucleus), Dirac PBE (Gaussian nucleus). For the GGA this needs the term -g' of
+ *    the weak form; without it the 1s was 2.7e-2 Ha off. Measured <= 7e-14 relative
+ *    (Schroedinger) and 1.6e-11 (Dirac PBE; Fe 1.4e-12, with a point nucleus 1.1e-11),
+ *    checked 1e-10.
+ *  - {"Precision", "High"}: converges with OrbitalTolerance 1e-9, NQuadrature Degree+9, and
+ *    reports ConvergenceCheck (twice the knot intervals): Ne DHF dEtot 2.8e-14, dEnergy 1.1e-9
+ *    (checked 1e-10 and 1e-7); DHF reports Gradient and PairGradient.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local pt = {"Nucleus", "Point"}
+
+local G, F, A = CalculateAtomicBasisFunctions(1, {{"Configuration", "1s1"}, pt, {"Relativistic", false}})
+local R = A.Orbitals[1].RExpectation
+check(math.abs(R[-1] - 1) < 1e-10 and math.abs(R[1] - 1.5) < 1e-10 and math.abs(R[2] - 3) < 1e-10 and R[-3] == nil and math.abs(A.VirialRatio - 2) < 1e-10,
+      string.format("H 1s: <1/r> %.12f, <r> %.12f, <r^2> %.12f, -V/T %.12f", R[-1], R[1], R[2], A.VirialRatio))
+
+G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Relativistic", false}})
+local x = G[1].x
+local n = #x
+local V = A.Potential
+local Zeff = -(V.rVN + V.rVH)
+check(math.abs(A.VirialRatio - 2) < 1e-8 and V.rVN.type == "BSpline" and V.rVH.type == "BSpline" and V.rVxc == nil and #V.rVN.x == n and V.rVH.x[n] == x[n]
+      and math.abs(Zeff(x[1]) - 10) < 1e-6 and math.abs(Zeff(x[n])) < 1e-10,
+      string.format("Ne HF (Schroedinger): -V/T - 2 = %.1e; rVN, rVH BSplines, no rVxc; -(rVN + rVH) %.9f at x_1, %.1e at rMax", A.VirialRatio - 2, Zeff(x[1]), Zeff(x[n])))
+
+-- <a|T + V|a> from the exported potentials against EnergyGround, every occupied orbital
+local function orbitalEnergies(text, options)
+  local G, F, A = CalculateAtomicBasisFunctions(10, options)
+  local x = G[1].x
+  local v = (A.Potential.rVN + A.Potential.rVH + A.Potential.rVxc)(x)
+  local worst = 0
+  for o, orb in ipairs(A.Orbitals) do
+    if orb.Occupation > 0 then
+      local P, dP, h = G[o](x), G[o](x, 1), {}
+      if A.Relativistic then
+        local Q, dQ, k, c = F[o](x), F[o](x, 1), orb.kappa, A.c
+        for i = 1, #x do
+          local r = x[i]
+          h[i] = v[i]/r*(P[i]^2 + Q[i]^2) - 2*c*c*Q[i]^2 + c*P[i]*(-dQ[i] + k*Q[i]/r) + c*Q[i]*(dP[i] + k*P[i]/r)
+        end
+      else
+        for i = 1, #x do h[i] = 0.5*dP[i]^2 + orb.l*(orb.l + 1)/(2*x[i]^2)*P[i]^2 + P[i]^2*v[i]/x[i] end
+      end
+      local h0 = A.Relativistic and 0 or 0.5*G[o](0, 1)^2
+      local e = InterpolatingFunction.Integrate(InterpolatingFunction.BSpline(x, h, G[1].degree)) + 0.5*x[1]*(h0 + h[1])
+      worst = math.max(worst, math.abs(e - orb.EnergyGround)/math.abs(orb.EnergyGround))
+    end
+  end
+  check(worst < 1e-10, string.format("%s: <a|T + V_N + V_H + V_xc|a> against EnergyGround, worst %.1e relative", text, worst))
+end
+orbitalEnergies("Ne LDA (Schroedinger)", {{"Configuration", "[He] 2s2 2p6"}, pt, {"Method", "LDA"}, {"Relativistic", false}})
+orbitalEnergies("Ne PBE (Schroedinger)", {{"Configuration", "[He] 2s2 2p6"}, pt, {"Method", "PBE"}, {"Relativistic", false}})
+orbitalEnergies("Ne PBE (Dirac, Gaussian nucleus)", {{"Configuration", "[He] 2s2 2p6"}, {"Nucleus", "Gaussian"}, {"Method", "PBE"}})
+
+G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, {"Nucleus", "Gaussian"}, {"A", 20}, {"Precision", "High"}})
+local cc = A.ConvergenceCheck
+check(A.Converged and A.Residual < 1e-9 and A.Gradient ~= nil and A.PairGradient ~= nil and cc ~= nil and cc.NIntervals == 240
+      and math.abs(cc.dEtot) < 1e-10 and cc.dEnergy < 1e-7,
+      string.format("Ne DHF, Precision High: converged (step %.1e), ConvergenceCheck NIntervals %d, dEtot %.1e, dEnergy %.1e", A.Residual, cc and cc.NIntervals or 0,
+                    cc and cc.dEtot or 0, cc and cc.dEnergy or 0))
+
+local ok = pcall(function() return CalculateAtomicBasisFunctions(2, {{"Configuration", "1s2"}, pt, {"Precision", "Extreme"}}) end)
+check(not ok, "unknown Precision is an error")
+if failed then error("the accuracy report: checks failed", 1) end
+print("passed")

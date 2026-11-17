@@ -47,6 +47,10 @@ Check(Page, {5,-3, 45,7, 100,40, 65,17, 20,10}, "SizeX does not scale the layers
 Page.SizeY = 50    -- half as high, about y = -3
 Check(Page, {5,-3, 45,2, 100,20, 65,7, 20,5}, "SizeY does not scale the layers")
 
+-- the options of Graphics.New are the size and origin of the canvas; NLayer was accepted and
+-- never used, and is no longer an option
+if pcall(Graphics.New, {{"NLayer",2}}) then error("Graphics.New accepted the removed option NLayer\n", 1) end
+
 pl = nil
 collectgarbage()
 collectgarbage()

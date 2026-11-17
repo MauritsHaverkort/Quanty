@@ -190,6 +190,27 @@ int AddBitMapToSVG(DynamicString *Buff, BitMapType *BitMap, int X0, int Y0, doub
   return 0;
 }
 
+// adds the string S to Buff with the characters that have a meaning in svg (XML) written as
+// entities: & as &amp;, < as &lt; and > as &gt;
+static void AddEscapedSVGString(DynamicString *Buff, const char *S)
+{
+  size_t n = 0;
+  for(const char *c=S;*c!='\0';c++) n += (*c=='&') ? 5 : ((*c=='<')||(*c=='>')) ? 4 : 1;
+  char *E = (char*)malloc(n+1);
+  if(E==NULL) { printf("Malloc failed in AddEscapedSVGString\n"); return; }
+  char *e = E;
+  for(const char *c=S;*c!='\0';c++)
+  {
+    if(*c=='&')      { memcpy(e, "&amp;", 5); e += 5; }
+    else if(*c=='<') { memcpy(e, "&lt;", 4);  e += 4; }
+    else if(*c=='>') { memcpy(e, "&gt;", 4);  e += 4; }
+    else *e++ = *c;
+  }
+  *e = '\0';
+  sprintfAdd(Buff, "%s", E);
+  free(E);
+}
+
 int AddTextToSVG(DynamicString *Buff, TextType *Text, int X0, int Y0, double scaleX, double scaleY, double scaleV)
 {
   if(!ColorVisible(Text->Color)) return 0;
@@ -213,7 +234,9 @@ int AddTextToSVG(DynamicString *Buff, TextType *Text, int X0, int Y0, double sca
       printf("ERROR: unrecognized allignment token for text in graph to svg\n");
       sprintfAdd(Buff,"\"\n");
   }
-  sprintfAdd(Buff, ">\n%s\n</text>\n",Text->String);
+  sprintfAdd(Buff, ">\n");
+  AddEscapedSVGString(Buff, Text->String);
+  sprintfAdd(Buff, "\n</text>\n");
   return 0;
 }
 

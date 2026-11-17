@@ -1,0 +1,64 @@
+--[[
+ *  DFT stage A, check 13, spherical part (Doc/Claude/QuantyDFT_StageA, design section 12):
+ *  Nucleus "Function" given the Gaussian density rho(r) = Z (zeta/pi)^(3/2) exp(-zeta r^2),
+ *  zeta = 3/(2 Rrms^2), for U (Z = 92, A = 238). The potential comes from the radial
+ *  Poisson equation (Galerkin, B-splines) and must equal the analytic -Z erf(sqrt(zeta) r)/r
+ *  of Nucleus "Gaussian", and the orbital energies those of the "Gaussian" run, both to
+ *  1e-10 relative, on the same knots (160 intervals, rMin = Rrms/50).
+ *  A density normalized to 1.01 Z gives a warning, is rescaled to Z, and gives the same
+ *  energies. Unsupported combinations of options give errors.
+ *  The bare nucleus: CalculateAtomicBasisFunctions without electrons, three roots each of
+ *  kappa = -1, +1, -2; the potentials compared are Atom.Potential.rVN on the quadrature
+ *  points (until 2026-11-15 the temporary DiracRadialSolve, which also reported the charge
+ *  of the density before rescaling).
+]]
+
+local Z, A = 92, 238
+local a0fm = PhysicalConstants.a0.value*1e15
+local Rrms = (0.836*A^(1/3) + 0.570)/a0fm
+local zeta = 1.5/Rrms^2
+local function rho(r) return Z*(zeta/math.pi)^1.5*math.exp(-zeta*r*r) end
+local common = {{"NIntervals", 160}, {"rMin", Rrms/50}, {"rMax", 60/math.sqrt(Z)}}
+local function options(extra)
+  local o = {}
+  for _, v in ipairs(common) do o[#o+1] = v end
+  for _, v in ipairs(extra) do o[#o+1] = v end
+  return o
+end
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local empty = "1s0 2s0 3s0 2p0 3p0 4p0"
+local Gg, Fg, Ag = CalculateAtomicBasisFunctions(Z, options({{"Configuration", empty}, {"Nucleus", "Gaussian"}, {"Rrms", Rrms}}))
+local Gf, Ff, Af = CalculateAtomicBasisFunctions(Z, options({{"Configuration", empty}, {"Nucleus", "Function"}, {"Density", rho}}))
+local vg, vf = Ag.Potential.rVN.y, Af.Potential.rVN.y
+local dV = 0
+for i = 1, #vg do dV = math.max(dV, math.abs(vf[i]/vg[i] - 1)) end
+check(dV < 1e-10, string.format("max |V_Function/V_Gaussian - 1| = %.1e over %d quadrature points", dV, #vg))
+for i, o in ipairs(Ag.Orbitals) do
+  local Eg, Ef = o.Energy, Af.Orbitals[i].Energy
+  local d = math.abs(Ef/Eg - 1)
+  check(d < 1e-10, string.format("%-6s Gaussian %.10f Function %.10f relative %.1e", o.Label, Eg, Ef, d))
+end
+
+-- a density that is 1 % too large: warning, rescaled, same energies
+local G1, F1, A1 = CalculateAtomicBasisFunctions(Z, options({{"Configuration", "1s0"}, {"Nucleus", "Function"}, {"Density", function(r) return 1.01*rho(r) end}}))
+local Eg, Ef = Ag.Orbitals[1].Energy, A1.Orbitals[1].Energy
+check(math.abs(Ef/Eg - 1) < 1e-10, string.format("rescaled: 1s1/2 = %.10f relative %.1e", Ef, math.abs(Ef/Eg - 1)))
+
+-- errors
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. tostring(message):gsub("\n", ""))
+end
+fails(function() return CalculateAtomicBasisFunctions(Z, {{"Configuration", "1s0"}, {"Nucleus", "Function"}}) end, "Function without Density")
+fails(function() return CalculateAtomicBasisFunctions(Z, {{"Configuration", "1s0"}, {"Nucleus", "Gaussian"}, {"A", A}, {"Density", rho}}) end, "Density with Gaussian")
+fails(function() return CalculateAtomicBasisFunctions(1, {{"Configuration", "1s0"}, {"Nucleus", "Fermi"}, {"A", 1}}) end, "Fermi nucleus for A = 1")
+fails(function() return CalculateAtomicBasisFunctions(Z, {{"Configuration", "1s0"}, {"A", A}, {"NQuadrature", 128}}) end, "128 quadrature points")
+
+if failed then error("nucleus Function checks failed", 1) end
+print("passed")

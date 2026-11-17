@@ -1,0 +1,65 @@
+--[[
+ *  DFT stage A, checks 5 and 7 (Doc/Claude/QuantyDFT_StageA, design section 12): the
+ *  configuration-average Hartree-Fock atom with open shells, and the Dirac-Fock atom.
+ *  - Check 5: in Schroedinger mode, Atom.EavJJ (E_av of the converged radial functions with
+ *    the relativistic angular factors Gamma^k = (j_a k j_b; 1/2 0 -1/2)^2 and pair counts of
+ *    the j = l -+ 1/2 subshells, design 8.1-8.3) equals Cowan's E_av, Atom.Etot, to
+ *    rounding: p^4, d^6 s^2, d^9, f^7 d^1 s^2.
+ *  - Brillouin: two occupied subshells of one kappa, not both closed (Li 1s2 2s, Na [Ne] 3s,
+ *    Pd+ [Kr] 4d9 with 3d closed, and Dirac Li): the SCF converges and the gradient for
+ *    rotations between them, PairGradient, is small (measured <= 4.4e-8 at the default
+ *    ResidualTolerance 1e-8, checked < 1e-6). Dirac O (open 2p1/2 and 2p3/2, no partner of
+ *    the same kappa) for the open Dirac subshells.
+ *  - One electron (U91+ 1s and 2p, Dirac): no electron-electron term, so Etot equals the
+ *    bare Dirac eigenvalues (the same call without electrons) on the same basis; for 2p^1 the mean
+ *    occupations are 1/3 (2p1/2) and 2/3 (2p3/2).
+ *  - EtotEigenvalueSum = 1/2 sum qbar (eps + I) equals Etot (to 1e-12 + 1e-13 |Etot|).
+ *  The design's Dirac-Fock check 7 needs a literature reference that could not be fetched;
+ *  the Dirac atom is checked here internally and in HartreeFockLimits.Quanty against He.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local function identity(A) return math.abs(A.EtotEigenvalueSum - A.Etot) < 1e-12 + 1e-13*math.abs(A.Etot) end
+local point = {"Nucleus", "Point"}
+-- the Atom table (and G, F) of CalculateAtomicBasisFunctions
+local function CalculateAtom(Z, configuration, options)
+  local o = {{"Configuration", configuration}}
+  for _, v in ipairs(options or {}) do o[#o+1] = v end
+  local G, F, A = CalculateAtomicBasisFunctions(Z, o)
+  return A, G, F
+end
+
+-- check 5
+for _, a in ipairs({{8, "1s2 2s2 2p4"}, {26, "[Ar] 3d6 4s2"}, {46, "[Kr] 4d9"}, {64, "[Xe] 4f7 5d1 6s2"}}) do
+  local A = CalculateAtom(a[1], a[2], {point, {"Relativistic", false}})
+  local d = A.EavJJ - A.Etot
+  check(A.Converged and math.abs(d) < 1e-12 + 1e-13*math.abs(A.Etot) and identity(A),
+        string.format("Z = %2d %-18s Cowan E_av = %.9f, jj E_av %+.1e, %d iterations", a[1], a[2], A.Etot, d, A.Iterations))
+end
+
+-- Brillouin pairs
+for _, a in ipairs({{3, "1s2 2s1", false}, {11, "[Ne] 3s1", false}, {46, "[Kr] 4d9", false}, {3, "1s2 2s1", true}, {8, "1s2 2s2 2p4", true}}) do
+  local A = CalculateAtom(a[1], a[2], {point, {"Relativistic", a[3]}})
+  check(A.Converged and A.PairGradient < 1e-6 and identity(A),
+        string.format("Z = %2d %-12s %-12s Etot = %.9f, PairGradient %.1e, Residual %.1e, %d iterations", a[1], a[2],
+                      a[3] and "Dirac" or "Schroedinger", A.Etot, A.PairGradient, A.Residual, A.Iterations))
+end
+
+-- one electron
+local bare = CalculateAtom(92, "1s0 2p0", {point})
+local E1s, E2p1, E2p3 = {bare.Orbitals[1].Energy}, {bare.Orbitals[2].Energy}, {bare.Orbitals[3].Energy}
+local A = CalculateAtom(92, "1s1", {point})
+local B = CalculateAtom(92, "1s2 2p1", {point})
+local C = CalculateAtom(92, "2p1", {point})
+local d1 = A.Etot - E1s[1]
+local d2 = C.Etot - (E2p1[1] + 2*E2p3[1])/3
+check(math.abs(d1) < 1e-11*math.abs(E1s[1]) and math.abs(d2) < 1e-11*math.abs(E2p1[1]) and A.Converged and C.Converged and B.Converged
+      and C.Orbitals[1].Label == "2p1/2" and math.abs(C.Orbitals[1].Occupation - 1/3) < 1e-15 and math.abs(C.Orbitals[2].Occupation - 2/3) < 1e-15,
+      string.format("U91+ 1s: Etot - eps %+.1e; 2p: Etot - (eps(2p1/2) + 2 eps(2p3/2))/3 %+.1e", d1, d2))
+
+if failed then error("Hartree-Fock: configuration-average checks failed", 1) end
+print("passed")

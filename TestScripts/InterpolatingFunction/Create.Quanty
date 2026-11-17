@@ -5,7 +5,8 @@
  *    InterpolatingFunction.HermiteCSpline(x, y)        cubic Hermite spline, monotone slopes
  *    InterpolatingFunction.HermiteCSpline(x, y, y')    cubic Hermite spline with given slopes
  *    InterpolatingFunction.BSpline(x, y, degree)       B-spline interpolation
- *  and f(t), f(t, k), f({t...}), f({t...}, k), f.x, f.y, tostring(f).
+ *  and f(t), f(t, k), f({t...}), f({t...}, k), f.x, f.y, f.knots, f.degree, f.coefficients,
+ *  f.type, tostring(f).
  *
  *  Every constructor must reproduce exactly the polynomials its space contains, with
  *  their derivatives: linear functions for the natural spline and the Hermite spline
@@ -121,7 +122,7 @@ end
 print("passed")
 
 print("===========================================")
-print("f.x, f.y and tostring")
+print("f.x, f.y, f.knots, f.degree, f.coefficients and tostring")
 local function same(a, b, name)
   if #a ~= #b then error(name..": lengths differ", 2) end
   for i = 1, #a do if a[i] ~= b[i] then error(name..": element "..i.." differs", 2) end end
@@ -130,11 +131,33 @@ same(S.x, x, "Spline.x")
 same(S.y, tabulate(lin, x), "Spline.y")
 same(H.x, x, "HermiteCSpline.x")
 same(H.y, tabulate(lin, x), "HermiteCSpline.y")
--- a B-spline holds its distinct knots in x and its coefficients in y
+-- the cubic splines join their pieces at the data points
+same(S.knots, x, "Spline.knots")
+same(H.knots, x, "HermiteCSpline.knots")
+if S.degree ~= 3 or H.degree ~= 3 then error("the cubic splines should have degree 3", 1) end
+-- a B-spline: x its data points, y its values there, knots the distinct knots, one
+-- coefficient per data point
 local B3 = InterpolatingFunction.BSpline(x, y, 3)
-if #B3.y ~= #x then error("BSpline.y should hold one coefficient per data point", 1) end
-if B3.x[1] ~= x[1] or B3.x[#B3.x] ~= x[#x] then error("BSpline.x should start and end at the data", 1) end
-if #B3.x ~= #x - 3 + 1 then error("BSpline.x should hold the distinct knots", 1) end
+same(B3.x, x, "BSpline.x")
+local B3y = B3.y
+if #B3y ~= #x then error("BSpline.y should hold one value per data point", 1) end
+for i = 1, #x do
+  if not (math.abs(B3y[i] - y[i]) < 1e-13) then error(string.format("BSpline.y[%d] = %.17g, data %.17g", i, B3y[i], y[i]), 1) end
+end
+if #B3.coefficients ~= #x then error("BSpline.coefficients should hold one coefficient per data point", 1) end
+local K = B3.knots
+if K[1] ~= x[1] or K[#K] ~= x[#x] then error("BSpline.knots should start and end at the data", 1) end
+if #K ~= #x - 3 + 1 then error("BSpline.knots should hold the distinct knots", 1) end
+for i = 2, #K do if not (K[i] > K[i-1]) then error("BSpline.knots should be distinct and increasing", 1) end end
+if B3.degree ~= 3 or InterpolatingFunction.BSpline(x, y, 5).degree ~= 5 then error("BSpline.degree", 1) end
+-- f.type is the name of the constructor, so InterpolatingFunction[f.type] makes another
+if S.type ~= "Spline" or H.type ~= "HermiteCSpline" or B3.type ~= "BSpline" or B3.Type ~= "BSpline" then error("f.type", 1) end
+for _, f in ipairs({S, H}) do
+  if not (InterpolatingFunction[f.type](x, f.y) == f) then error("InterpolatingFunction[f.type] does not rebuild a " .. f.type, 1) end
+end
+if not (InterpolatingFunction[B3.type](B3.x, B3.y, B3.degree) == B3) then error("InterpolatingFunction[f.type] does not rebuild a BSpline", 1) end
+local ok = pcall(function() return S.coefficients end)
+if ok then error("Spline.coefficients should be an error", 1) end
 if string.sub(tostring(S), 1, 11) ~= "CubicSpline" then error("tostring of a Spline", 1) end
 if string.sub(tostring(H), 1, 18) ~= "CubicHermiteSpline" then error("tostring of a HermiteCSpline", 1) end
 if tostring(B3) ~= "Interpolating Function" then error("tostring of a BSpline", 1) end

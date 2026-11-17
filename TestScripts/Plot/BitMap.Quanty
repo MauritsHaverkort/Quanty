@@ -1,0 +1,50 @@
+print("-------------------------------------------------------")
+print("--                      BitMap                       --")
+print("-------------------------------------------------------")
+--[[
+ *  The BitMap object (Plot/LuaBinding.cpp): BitMap.New, BitMap.Pixel, BitMap.Save and a BitMap
+ *  added to a Graphics object.
+ *  - the pixels of a new bitmap, a pixel set, read back through Graphics.Add and Graphics.ToTable;
+ *  - errors: BitMap.New with one argument, BitMap.Pixel outside the bitmap (also column or row 0),
+ *    BitMap.Save without a file name or to a file that can not be opened;
+ *  - BitMap.Save writes a bmp file (138 bytes of header, BITMAPV5HEADER, and 4 bytes per pixel).
+]]
+
+directory = debug.getinfo(1, "S").source:sub(2):match("(.*/)") or "./"
+-- the pixels of the first bitmap of Graphics.ToTable(G), a hex string of 8 digits per pixel, as numbers
+function Pixels(G)
+  local B = Graphics.ToTable(G).BitMap[1]
+  local hex, p = string.gsub(string.gsub(B.Pixels, "\n", ""), ">", ""), {}
+  for k = 1, #hex/8 do p[k] = tonumber(string.sub(hex, 8*k-7, 8*k), 16) end
+  return p, B
+end
+
+-- 3 by 2 pixels, transparent white, with column 2 of row 1 opaque red
+b = BitMap.New(3, 2)
+BitMap.Pixel(b, 2, 1, 0x00FF0000)
+P, B = Pixels(Graphics.Add(Graphics.New(), b))
+if B.NpointsX ~= 3 or B.NpointsY ~= 2 or #P ~= 6 or P[2] ~= 0x00FF0000 or P[1] ~= P[6] or P[1] == 0x00FF0000 then
+	error("BitMap.New and BitMap.Pixel: wrong pixels "..table.concat(P, " ").."\n", 1)
+end
+
+-- errors
+for k, f in ipairs({ function() return BitMap.New(2) end,
+                     function() BitMap.Pixel(b, 0, 1, 0) end, function() BitMap.Pixel(b, 1, 0, 0) end,
+                     function() BitMap.Pixel(b, 4, 1, 0) end, function() BitMap.Pixel(b, 1, 3, 0) end,
+                     function() BitMap.Pixel(b, -1, 1, 0) end,
+                     function() BitMap.Save(b) end, function() BitMap.Save(b, directory.."no_such_directory/b.bmp") end }) do
+	if pcall(f) then error("BitMap: case "..k.." should give an error\n", 1) end
+end
+-- the pixels next to the ones that could not be set are unchanged
+P = Pixels(Graphics.Add(Graphics.New(), b))
+if P[2] ~= 0x00FF0000 or P[1] ~= P[6] then error("BitMap.Pixel outside the bitmap changed a pixel\n", 1) end
+
+-- a bmp file
+file = directory.."OutputPlots/BitMap.bmp"
+BitMap.Save(b, file)
+f = assert(io.open(file, "rb"))
+data = f:read("*a")
+f:close()
+if string.sub(data, 1, 2) ~= "BM" or #data ~= 14 + 124 + 4*3*2 then error("BitMap.Save: "..#data.." bytes, not a bmp file of 3 by 2 pixels\n", 1) end
+
+print("BitMap tests passed")

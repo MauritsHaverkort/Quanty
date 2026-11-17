@@ -1,0 +1,108 @@
+--[[
+ *  The exchange-correlation functionals of the Dirac-Kohn-Sham atom (DFT stage A3,
+ *  DFT/XCFunctional.cpp), through XCFunctional(method, n, sigma) -> e, de/dn, de/dsigma:
+ *  - the analytic derivatives against central finite differences (Richardson, order h^4)
+ *    for n = 1e-6 .. 1e4 and reduced gradients s = 0 .. 3, every method;
+ *  - Slater exchange in closed form, e_x = -3/4 (3/pi)^(1/3) n^(4/3);
+ *  - the MacDonald-Vosko factor: the series (beta < 1/2) and the closed form agree at the
+ *    switch, and RLDA-MV -> LDA-VWN for c -> large;
+ *  - PBE at sigma = 0 equals the LDA it is built on (PBE-VWN = LDA-VWN, PBE = LDA);
+ *  - finite values down to n = 1e-30 for every reduced gradient.
+ *  The absolute values are checked in the atom tests (NIST, fully numerical PBE-VWN atoms);
+ *  PW92 has no external reference here.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+
+local methods = {"LDA", "LDA-VWN", "RLDA-MV", "PBE", "PBE-VWN"}
+for _, m in ipairs(methods) do
+  local worstN, worstS = 0, 0
+  for _, n in ipairs({1e-6, 1e-3, 0.1, 1, 30, 1e4}) do
+    local kF = (3*math.pi^2*n)^(1/3)
+    for _, s in ipairs({0, 0.3, 1, 3}) do
+      local sigma = (2*kF*n*s)^2
+      local e, en, es = XCFunctional(m, n, sigma)
+      local function fdn(h) local a = XCFunctional(m, n + h, sigma); local b = XCFunctional(m, n - h, sigma); return (a - b)/(2*h) end
+      local hn = 1e-3*n
+      local dn = (4*fdn(hn/2) - fdn(hn))/3
+      worstN = math.max(worstN, math.abs(en - dn)/math.max(math.abs(en), math.abs(e)/n))
+      if sigma > 0 then
+        local function fds(h) local a = XCFunctional(m, n, sigma + h); local b = XCFunctional(m, n, sigma - h); return (a - b)/(2*h) end
+        local hs = 1e-3*sigma
+        local ds = (4*fds(hs/2) - fds(hs))/3
+        worstS = math.max(worstS, math.abs(es - ds)/math.max(math.abs(es), math.abs(e)/sigma))
+      end
+    end
+  end
+  check(worstN < 1e-9 and worstS < 1e-9, string.format("%-8s de/dn and de/dsigma against finite differences: %.1e, %.1e", m, worstN, worstS))
+end
+
+-- Slater exchange in closed form: LDA-VWN minus its correlation is not separable here, so
+-- compare the exchange part through PBE-VWN - LDA-VWN at sigma = 0 (both zero) and the
+-- Slater formula against e_x of RLDA-MV for c -> large divided by the factor 1
+local saved = PhysicalConstants.cAU.value
+PhysicalConstants.cAU.value = 1e12
+local worst = 0
+for _, n in ipairs({1e-6, 1e-2, 1, 1e3}) do
+  local a = XCFunctional("RLDA-MV", n)
+  local b = XCFunctional("LDA-VWN", n)
+  worst = math.max(worst, math.abs(a - b)/math.abs(b))
+end
+check(worst < 1e-14, string.format("RLDA-MV -> LDA-VWN for c = 1e12: %.1e", worst))
+PhysicalConstants.cAU.value = saved
+
+-- the MacDonald-Vosko factor across its switch beta = kF/c = 1/2 (series below, closed form above)
+local c = PhysicalConstants.cAU.value
+local nSwitch = (0.5*c)^3/(3*math.pi^2)
+local below = XCFunctional("RLDA-MV", nSwitch*(1 - 1e-12))
+local above = XCFunctional("RLDA-MV", nSwitch*(1 + 1e-12))
+local _, enb = XCFunctional("RLDA-MV", nSwitch*(1 - 1e-12))
+local _, ena = XCFunctional("RLDA-MV", nSwitch*(1 + 1e-12))
+check(math.abs(above/below - 1) < 1e-11 and math.abs(ena/enb - 1) < 1e-11,
+      string.format("MacDonald-Vosko at the switch beta = 1/2 (n = %.4e): e %.1e, de/dn %.1e", nSwitch, above/below - 1, ena/enb - 1))
+-- the factor itself: Phi = (e_RLDA - e_c)/e_x; e_x(Slater) and e_c from LDA-VWN minus Slater
+local function slater(n) return -0.75*(3/math.pi)^(1/3)*n^(4/3) end
+local function phi(n) return (XCFunctional("RLDA-MV", n) - XCFunctional("LDA-VWN", n) + slater(n))/slater(n) end
+for _, beta in ipairs({1e-4, 0.1, 0.5, 1, 3}) do
+  local n = (beta*c)^3/(3*math.pi^2)
+  local eta = math.sqrt(1 + beta^2)
+  local g = (beta*eta - math.log(beta + eta))/beta^2
+  local ref = 1 - 1.5*g^2
+  if beta >= 0.1 then
+    check(math.abs(phi(n) - ref) < 1e-12, string.format("MacDonald-Vosko Phi(beta = %g) = %.15f, closed form %+.1e", beta, phi(n), phi(n) - ref))
+  else
+    check(math.abs(phi(n) - (1 - 2/3*beta^2)) < 1e-12, string.format("MacDonald-Vosko Phi(beta = %g) = %.15f, 1 - 2/3 beta^2 %+.1e", beta, phi(n), phi(n) - (1 - 2/3*beta^2)))
+  end
+end
+
+-- PBE at sigma = 0
+worst = 0
+for _, n in ipairs({1e-4, 0.1, 10}) do
+  worst = math.max(worst, math.abs(XCFunctional("PBE", n, 0) - XCFunctional("LDA", n)), math.abs(XCFunctional("PBE-VWN", n, 0) - XCFunctional("LDA-VWN", n)))
+end
+check(worst < 1e-15, string.format("PBE(sigma = 0) = its LDA: %.1e", worst))
+
+-- finite everywhere: n = 1e-30 .. 1e4, s = 1e-6 .. 1e6 (PW92 under PBE gave NaN below
+-- n = 1e-26 before log1p/expm1)
+local bad = 0
+for _, m in ipairs(methods) do
+  for en = -30, 4 do
+    for es = -6, 6 do
+      local n = 10^en
+      local kF = (3*math.pi^2*n)^(1/3)
+      local e, a, b = XCFunctional(m, n, (2*kF*n*10^es)^2)
+      for _, x in ipairs({e, a, b}) do if x ~= x or math.abs(x) == math.huge then bad = bad + 1 end end
+    end
+  end
+end
+check(bad == 0, string.format("finite for n = 1e-30 .. 1e4 and s = 1e-6 .. 1e6: %d bad values", bad))
+
+local ok, message = pcall(function() return XCFunctional("B3LYP", 1) end)
+check(not ok, "unknown method: " .. string.gsub(tostring(message), "\n", ""))
+
+if failed then error("XCFunctional checks failed", 1) end
+print("passed")

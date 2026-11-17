@@ -1,0 +1,172 @@
+--[[
+ *  DFT stage A5b (Doc/Claude/QuantyDFT_StageA, section 0.2): CalculateAtomicBasisFunctions.
+ *  - Without Q and P the functions are the ground state: for Ne DHF (Gaussian nucleus)
+ *    <det|H0 + U|det> with NewOperator("Dirac", ..., Atom.Nucleus) equals Etot, and so does
+ *    EtotEigenvalueSum = 1/2 sum qbar (eps + I). G[1].x and F[1].x are the quadrature points
+ *    of the radial basis, also in the Schroedinger case (G a BSpline).
+ *  - Q per n kappa: only the target's equation has Z+Q. Its generating SCF is variational
+ *    (orbitals orthonormal; rotations kept out only where E itself is invariant), so
+ *    Hellmann-Feynman holds at Q = 0: dE_gen/dQ = qbar <a|-1/r|a> (point nucleus; <-1/r>
+ *    from NewOperator("Dirac") at Z = 1 minus Z = 0). Checked for a closed target sharing
+ *    its kappa with a closed shell (Ne 2s1/2, DHF and LDA), one alone in its kappa (2p3/2)
+ *    and an open one with a genuine rotation (Li 2s1/2): fourth-order central differences,
+ *    step 1e-3, measured <= 3.5e-9 relative, checked 1e-7.
+ *  - Confinement: dE_gen/d ln rc = -N qbar <beta V_beta> (He 1s, rc = 2, N = 8, DHF and LDA),
+ *    the same differences in ln rc (second order failed at 7e-6: the third derivative grows
+ *    as N^3); measured <= 3.6e-8 (the SCF noise over the step), checked 1e-6 (P^2 + Q^2
+ *    instead of P^2 - Q^2 would be 1e-4 off).
+ *  - The minimal call CalculateAtomicBasisFunctions(Z): the ground-state configuration of NIST
+ *    and a Gaussian nucleus of the most abundant isotope (Ne: A = 20), equal to the explicit call.
+ *  - Empty orbitals (DHF): the V^N Fock operator. For a closed-shell atom it is the operator
+ *    of the occupied orbitals, so Koopmans holds exactly with the returned orbitals:
+ *    <core + a|H|core + a> - <core|H|core> = Energy(a) (Ne + 3s1/2, 3p3/2, 3d5/2).
+ *  - n kappa occupations: O 1s2 2s2 2p1/2(2) 2p3/2(2), E_av = the mean of its 6 determinants.
+ *  - Slater integrals (Schroedinger, Fe 3d6 4s2): Galerkin against Martin's cell method of
+ *    GetSlaterIntegrals for B-splines, measured 9.5e-13, checked 1e-10.
+ *  - Orthonormality (OrthonormalityError < 1e-13) and Gram-Schmidt from the lowest n: with
+ *    Q on 2s1/2 the 1s1/2 stays the ground-state orbital (EnergyGround = Energy).
+ *  - NMax, the order of the returned orbitals (n, l, j), and errors.
+]]
+
+local failed = false
+local function check(ok, text)
+  print((ok and "ok    " or "FAILED") .. "  " .. text)
+  if not ok then failed = true end
+end
+local pt = {"Nucleus", "Point"}
+
+-- ground state
+local nucNe = {{"Nucleus", "Gaussian"}, {"A", 20}}
+local G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, nucNe[1], nucNe[2]})
+local de = A.EtotEigenvalueSum - A.Etot
+local indices, NF = CreateAtomicIndicesList(A.Labels, {{"Kappas", true}})
+local H = NewOperator("Dirac", NF, 10, indices, G, F, A.Nucleus) + NewOperator("AU", NF, indices, G, F)
+local psi = NewWavefunction(NF, 0, {{string.rep("1", NF), 1}})
+local dd = psi*H*psi - A.Etot
+local Gs, Fs, As = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Relativistic", false}})
+local gx, fx, sx = G[1].x, F[1].x, Gs[1].x
+check(math.abs(de) < 1e-12*math.abs(A.Etot) and math.abs(dd) < 1e-12*math.abs(A.Etot) and A.Nucleus[1][2] == "Gaussian"
+      and #gx > 100 and #fx == #gx and fx[7] == gx[7] and Gs[1].type == "BSpline" and #sx == #As.Potential.rVN.x and sx[7] == As.Potential.rVN.x[7],
+      string.format("Ne DHF ground state: EtotEigenvalueSum - Etot %+.1e, <det|H|det> - Etot %+.1e; G.x, F.x and the Schroedinger G.x are the %d quadrature points", de, dd, #gx))
+
+-- the fourth-order central difference of the generating energy of orbital i
+local function derivative(run, x0, h, i)
+  local e = {}
+  for _, s in ipairs({-2, -1, 1, 2}) do
+    local G, F, A = run(x0 + s*h)
+    if not A.Orbitals[i].Converged then return nil end
+    e[s] = A.Orbitals[i].EtotGenerating
+  end
+  return (8*(e[1] - e[-1]) - (e[2] - e[-2]))/(12*h)
+end
+
+-- the minimal call: the NIST ground state of the neutral atom and a Gaussian nucleus of the most abundant isotope
+local Gm, Fm, Am = CalculateAtomicBasisFunctions(10)
+check(Am.Configuration == "1s2 2s2 2p6" and Am.A == 20 and table.concat(Am.Labels, " ") == "1s1/2 2s1/2 2p1/2 2p3/2" and math.abs(Am.Etot - A.Etot) < 1e-12*math.abs(A.Etot),
+      string.format("CalculateAtomicBasisFunctions(10): %s, A = %s, %s, Etot - explicit call %+.1e", Am.Configuration, tostring(Am.A), table.concat(Am.Labels, " "), Am.Etot - A.Etot))
+
+-- Hellmann-Feynman in Q
+local function hfQ(Z, conf, target, method)
+  local d = 1e-3
+  local function run(q) return CalculateAtomicBasisFunctions(Z, {{"Configuration", conf}, pt, {"Method", method}, {"Q", {[target] = q}}}) end
+  local G0, F0, A0 = run(0)
+  local idx, NF1 = CreateAtomicIndicesList(A0.Labels, {{"Kappas", true}})
+  local M1 = OperatorToMatrix(NewOperator("Dirac", NF1, 1, idx, G0, F0))
+  local M0 = OperatorToMatrix(NewOperator("Dirac", NF1, 0, idx, G0, F0))
+  for i, o in ipairs(A0.Orbitals) do
+    if o.Label == target then
+      local k = idx[i][1] + 1
+      local exact = o.Occupation*(M1[k][k] - M0[k][k])
+      local fd = derivative(run, 0, d, i) or 0
+      check(math.abs(fd - exact) < 1e-7*math.abs(exact),
+            string.format("%-3s Z = %2d %-6s dE/dQ %.10f, qbar <-1/r> %.10f, %.1e", method, Z, target, fd, exact, math.abs(fd - exact)/math.abs(exact)))
+    end
+  end
+end
+hfQ(10, "[He] 2s2 2p6", "2s1/2", "DHF")
+hfQ(10, "[He] 2s2 2p6", "2p3/2", "DHF")
+hfQ(10, "[He] 2s2 2p6", "2s1/2", "LDA")
+hfQ(3, "1s2 2s1", "2s1/2", "DHF")
+
+-- Hellmann-Feynman in the confinement radius (He 1s, rc = 2, N = 8): in ln rc
+for _, m in ipairs({"DHF", "LDA"}) do
+  local N = 8
+  local function run(lnrc) return CalculateAtomicBasisFunctions(2, {{"Configuration", "1s2"}, pt, {"Method", m}, {"Confinement", {Rho = math.exp(lnrc), N = N}}, {"rMax", 40}}) end
+  local G0, F0, A0 = run(math.log(2))
+  local o = A0.Orbitals[1]
+  local fd = derivative(run, math.log(2), 1e-3, 1) or 0
+  local exact = -N*o.Occupation*o.Vbeta
+  check(math.abs(fd - exact) < 1e-6*math.abs(exact), string.format("%-3s He 1s1/2 confined: dE/dln rc %.10f, -N qbar <beta V_beta> %.10f, %.1e", m, fd, exact, math.abs(fd - exact)/math.abs(exact)))
+end
+
+-- empty orbitals: Koopmans with V^N
+G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6 3s1/2(0) 3p3/2(0) 3d5/2(0)"}, pt})
+indices, NF = CreateAtomicIndicesList(A.Labels, {{"Kappas", true}})
+H = NewOperator("Dirac", NF, 10, indices, G, F) + NewOperator("AU", NF, indices, G, F)
+local core = {}
+for i = 1, NF do core[i] = "0" end
+for o = 1, 4 do for _, k in ipairs(indices[o]) do core[k+1] = "1" end end
+local E0 = NewWavefunction(NF, 0, {{table.concat(core), 1}})
+E0 = E0*H*E0
+local worst = 0
+for o = 5, 7 do
+  local det = {}
+  for i = 1, NF do det[i] = core[i] end
+  det[indices[o][1]+1] = "1"
+  local p = NewWavefunction(NF, 0, {{table.concat(det), 1}})
+  worst = math.max(worst, math.abs(p*H*p - E0 - A.Orbitals[o].Energy))
+end
+check(worst < 1e-10 and A.OrthonormalityError < 1e-13,
+      string.format("Ne + 3s1/2, 3p3/2, 3d5/2 (V^N): max |E(core + a) - E(core) - eps_a| %.1e (eps 3s %.6f), OrthonormalityError %.1e", worst, A.Orbitals[5].Energy, A.OrthonormalityError))
+
+-- n kappa occupations
+G, F, A = CalculateAtomicBasisFunctions(8, {{"Configuration", "1s2 2s2 2p1/2(2) 2p3/2(2)"}, pt})
+indices, NF = CreateAtomicIndicesList(A.Labels, {{"Kappas", true}})
+H = NewOperator("Dirac", NF, 8, indices, G, F, A.Nucleus) + NewOperator("AU", NF, indices, G, F)
+local sum, nd = 0, 0
+for a = 1, 4 do for b = a + 1, 4 do
+  local det = {}
+  for i = 1, NF do det[i] = "0" end
+  for o = 1, 3 do for _, k in ipairs(indices[o]) do det[k+1] = "1" end end
+  det[indices[4][a]+1] = "1"; det[indices[4][b]+1] = "1"
+  local p = NewWavefunction(NF, 0, {{table.concat(det), 1}})
+  sum = sum + p*H*p; nd = nd + 1
+end end
+check(table.concat(A.Labels, " ") == "1s1/2 2s1/2 2p1/2 2p3/2" and math.abs(sum/nd - A.Etot) < 1e-12*math.abs(A.Etot),
+      string.format("O 1s2 2s2 2p1/2(2) 2p3/2(2): E_av - mean of %d determinants %+.1e", nd, sum/nd - A.Etot))
+
+-- Slater integrals against the cell method (Schroedinger)
+G, F, A = CalculateAtomicBasisFunctions(26, {{"Configuration", "[Ar] 3d6 4s2"}, pt, {"Relativistic", false}})
+local S = GetSlaterIntegrals(A.Labels, G)
+local count = 0
+worst = 0
+for key, t in pairs(A.SlaterIntegrals) do
+  for k, v in pairs(t) do
+    if S[key] == nil or S[key][k] == nil then worst = 1 else worst = math.max(worst, math.abs(v - S[key][k])/math.abs(v)) end
+    count = count + 1
+  end
+end
+check(worst < 1e-10 and count == 59 and #F == 0, string.format("Fe Schroedinger: %d Slater integrals, Galerkin - cell method %.1e", count, worst))
+
+-- Gram-Schmidt from the lowest n; NMax
+G, F, A = CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"NMax", {s = 3, p = 3, ["p1/2"] = 2}}, {"Q", {["2s1/2"] = 1}}})
+local o1 = A.Orbitals[1]
+check(table.concat(A.Labels, " ") == "1s1/2 2s1/2 2p1/2 2p3/2 3s1/2 3p3/2" and o1.Label == "1s1/2" and not o1.Generated and math.abs(o1.EnergyGround - o1.Energy) < 1e-12*math.abs(o1.Energy)
+      and A.Orbitals[2].Generated and A.OrthonormalityError < 1e-13,
+      string.format("NMax {s = 3, p = 3, p1/2 = 2}: %s; 1s1/2 unchanged by Gram-Schmidt (%.1e), OrthonormalityError %.1e", table.concat(A.Labels, " "),
+                    o1.EnergyGround - o1.Energy, A.OrthonormalityError))
+
+-- errors
+local function fails(f, text)
+  local ok, message = pcall(f)
+  check(not ok, text .. ": " .. string.gsub(tostring(message), "\n", ""))
+end
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"P", {["2p3/2"] = 0.9}}}) end, "P without Confinement")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Q", {["3d"] = 1}}}) end, "Q of an orbital that is not calculated")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Confinement", {Rho = 4, N = 8, P = 0.9}}}) end, "an atom-wide P in Confinement")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p1/2(2) 2p6"}, pt}) end, "2p given as nl and as n kappa")
+fails(function() return CalculateAtomicBasisFunctions(10, {{"Configuration", "[He] 2s2 2p6"}, pt, {"Method", "B3LYP"}}) end, "unknown method")
+fails(function() return CalculateAtomicBasisFunctions(26.5) end, "no ground-state configuration for Z = 26.5")
+
+if failed then error("CalculateAtomicBasisFunctions: checks failed", 1) end
+print("passed")

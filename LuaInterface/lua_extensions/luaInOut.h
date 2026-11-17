@@ -44,6 +44,7 @@ void lua_check(lua_State *L, int arg, AtomType* &in);
 template<typename T>void lua_check(lua_State * L, int arg, vector<T> &in);
 template<typename keyType, typename valType>void lua_check(lua_State * L, int arg, map<keyType, valType> &in);
 void lua_check(lua_State *L, int arg, Interpolation::InterpolatingFunction* &in);
+void lua_check(lua_State *L, int arg, Interpolation::DKBSpline* &in);
 bool luaL_isudata(lua_State *L, int ud, const char *tname);
 bool luaL_isType(lua_State *L, int arg, const OperatorType &example);
 bool luaL_isType(lua_State *L, int arg, const WaveFunctionType &example);

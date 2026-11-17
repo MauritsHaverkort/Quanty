@@ -860,6 +860,11 @@ static int LuaNewOperator(lua_State * L)
     lua_remove(L, 1);
     return LuaOperatorNewCF(L);
   }
+  if (strcmp(OT, "NuclearMultipole") == 0)    // DFT stage A5c, DFT/LuaAtomicOperators.cpp
+  {
+    lua_remove(L, 1);
+    return DFTLuaNewOperatorNuclearMultipole(L);
+  }
   if ((strcmp(OT, "Create") == 0)||(strcmp(OT, "Cr") == 0))
   {
     lua_remove(L, 1);
@@ -5507,6 +5512,39 @@ static int LuaCreateAtomicIndicesList(lua_State *L)
 	return lua_createAtomicIndices(L,false);
 }
 
+/*
+ *     name = AtomNumberToName(Z)
+ * The symbol of element Z = 1 .. 118, "H" .. "Og" (AtomNumberToName, Tight_Binding_lib.cpp).
+ * The C function returns "XX" for any other Z; here that is an error.
+ */
+static int LuaAtomNumberToName(lua_State *L)
+{
+	lua_Number Z;
+	if (lua_gettop(L) != 1) return luaL_error(L, "Error in AtomNumberToName: 1 argument expected (Z), got %d\n", (int) lua_gettop(L));
+	Z = luaL_checknumber(L, 1);
+	if (Z != floor(Z) || Z < 1 || Z > 118) return luaL_error(L, "Error in AtomNumberToName: Z must be an integer from 1 to 118, got %f\n", (double) Z);
+	lua_pushstring(L, AtomNumberToName((uint32_t) Z));
+	return 1;
+}
+
+/*
+ *     Z = AtomNameToNumber(name)
+ * The atomic number of the element symbol name, "H" .. "Og", written as in the periodic
+ * table ("Fe", not "fe" or "FE") (AtomNameToNumber, Tight_Binding_lib.cpp). The C function
+ * returns 0 for any other string; here that is an error.
+ */
+static int LuaAtomNameToNumber(lua_State *L)
+{
+	const char *name;
+	uint32_t Z;
+	if (lua_gettop(L) != 1) return luaL_error(L, "Error in AtomNameToNumber: 1 argument expected (name), got %d\n", (int) lua_gettop(L));
+	name = luaL_checkstring(L, 1);
+	Z = AtomNameToNumber(name);
+	if (Z == 0) return luaL_error(L, "Error in AtomNameToNumber: \"%s\" is not an element symbol (H .. Og, written as \"Fe\")\n", name);
+	lua_pushinteger(L, (lua_Integer) Z);
+	return 1;
+}
+
 static int LuaPartialOperator(lua_State *L)
 {
 	OperatorType *O, *OPartial;
@@ -6107,6 +6145,10 @@ static const struct luaL_Reg global_functions[] = {
   {"CoupledSphericalTensorKToSphericalTensorYMatrix", LuaCoupledSphericalTensorKToSphericalTensorYMatrix},
 	{"CreateAtomicIndicesDict",LuaCreateAtomicIndicesDict},
 	{"CreateAtomicIndicesList",LuaCreateAtomicIndicesList},
+	{"AtomNameToNumber",LuaAtomNameToNumber},
+	{"AtomNumberToName",LuaAtomNumberToName},
+	{"CalculateAtomicBasisFunctions",LuaCalculateAtomicBasisFunctions}, // DFT stage A5
+	{"XCFunctional",LuaXCFunctional},               // DFT stage A3
   {"CreateSpectra", LuaCreateSpectra},
   {"CreateFluorescenceYield", LuaCreateFluorescenceYield},
   {"CreateResonantSpectra", LuaCreateResonantSpectra},
