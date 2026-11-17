@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, check 4 (Doc/Claude/QuantyDFT_StageA, design section 12): the Galerkin
+ *  DFT stage A, check 4 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12): the Galerkin
  *  solution of the radial Poisson equation (BSplinePoissonSetup/Solve),
  *      Y^k(r) = r int rho(r') r<^k / r>^(k+1) dr',
  *  through CalculateAtomicBasisFunctions, against closed forms:

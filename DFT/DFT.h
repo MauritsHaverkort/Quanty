@@ -2,7 +2,7 @@
  * DFT.h
  *
  * The DFT/HF add-on of Quanty: relativistic atoms on B-splines (stage A), later the
- * solid. Design: Doc/Claude/QuantyDFT_StageA/QuantyDFT_StageA_DiracAtom.md.
+ * solid. Design: QuantyDFT_StageA_DiracAtom.md in Doc/Agents.
  *
  * Conventions (design section 0 and 0.1):
  *  - Hartree atomic units; the speed of light c is an argument of every routine that

@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A5, check 12 (Doc/Claude/QuantyDFT_StageA, design section 12) and the AU path:
+ *  DFT stage A5, check 12 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12) and the AU path:
  *  NewOperator("Dirac", ...) and NewOperator("AU", ...) for radial functions of type
  *  DKBSpline (DFT/LuaAtomicOperators.cpp), exact on the shared knot set.
  *  - Check 12: for the bare-nucleus eigen-orbitals (CalculateAtomicBasisFunctions without

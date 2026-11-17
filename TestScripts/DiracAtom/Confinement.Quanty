@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, check 3 (Doc/Claude/QuantyDFT_StageA, design section 12): Lorentz-scalar
+ *  DFT stage A, check 3 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12): Lorentz-scalar
  *  confinement V_beta = (r/r0)^8 for Fe25+ (Z = 26, A = 56, Gaussian nucleus), 140 knot
  *  intervals, rMax automatic (V_beta(rMax) = ConfinementVmax = 1e5 Ha, rMax = 4.22 r0).
  *  E - E_free on the same knots for 3d5/2 and 4s1/2, r0 = 0.5, 1, 2, 4, against the

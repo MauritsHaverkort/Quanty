@@ -4,7 +4,7 @@
 been *measured* is narrower than what is *claimed*, and that the right long-term
 answer is a choice offered to the user rather than one algorithm fixed by us.
 
-Kept apart from [TODO.md](TODO.md) because it is a programme rather than a defect:
+Kept apart from `TODO.md` because it is a programme rather than a defect:
 it wants a proper accuracy harness first, then an `Algorithm` option on
 `ChangeType`.
 
@@ -20,7 +20,7 @@ max over a uniform grid of  |G_new(w) - G_old(w)| / |G_old(w)|
 with the grid spanning the band in 300 to 400 points and **two** broadenings,
 `Gamma = 0.3` and `Gamma = 0.02`. That is a coarse, uniform, real-axis probe at
 two values of one parameter. Everything reported as "1e-13" or "agrees to the
-last digit" in the plan and in the commit messages means exactly that and no
+last digit" in commit messages and test comments means exactly that and no
 more.
 
 What it does **not** probe:
@@ -70,35 +70,11 @@ a factor of five to seven, for 0.53 s against 0.007 s at 1000 poles and O(N²)
 memory against O(N). That is the trade the user should be allowed to make. Plain
 Lanczos without re-orthogonalization is 1e-2 at 1000 poles and is not a candidate.
 
-**Three tolerances sit exactly where the log mesh would go**, one of them now
-settled.
+**Two tolerances sit exactly where the log mesh would go.** (A third, the merge
+of degenerate poles in the block types, is settled: `MinimalPoleDistance`, see
+`CONVENTIONS.md` §4. Where exactly its default should sit is still unmeasured,
+and the harness above is what would measure it.)
 
-- **the block degenerate-pole merge — RESOLVED, and the reasoning is worth
-  keeping.** `BlockAndersonMatrixToBlockListOfPoles` used to hard-code
-  `BlockSize * N * DBL_EPSILON * BandWidth`. At `BlockSize = 10`, a 50-block bath
-  and a 60 eV band that is `5100 · 2.2e-16 · 60 ≈ 70 µeV`; at `BlockSize = 2`
-  with 100 poles it is still ≈ 3 µeV. Magnetic fields give µeV splittings on
-  bands of tens of eV, so that threshold merged away exactly the physics the
-  block types exist to resolve. The eigenvalue error it is meant to hide under is
-  `O(ε·‖a_k‖)` from *independent* `BlockSize × BlockSize` diagonalizations and
-  does **not** grow with the number of poles, so a few·`ε`·bandwidth — about
-  `1e-13 eV` — is both sufficient and nine orders below µeV.
-
-  It is now an argument, `MinimalPoleDistance`, threaded from `ChangeType`
-  through `ConvertResponsefunction` / `ConvertBlockMatrix` to every conversion
-  that merges, and **`BlockListOfPolesMergeDegeneratePoles` is the single place
-  that turns an unset (negative) value into the standard**
-  `10 · DBL_EPSILON · (BandWidth + DBL_EPSILON)`, with the band width taken from
-  the outermost poles. Every caller only forwards what it was handed; do not add
-  a second default anywhere. Note `MinimalPoleDistance == 0` merges **nothing**,
-  not even two bit-identical poles: the test inside the merge is a strict `<`.
-
-  Merging is not optional: summing the rank-1 weights over a degenerate group
-  gives `b·P_D·b^†` with `P_D` the spectral projector, which is basis-independent,
-  and that is what makes the result independent of the arbitrary rotation LAPACK
-  picks inside a degenerate subspace. So the threshold has to be tight *and*
-  nonzero. Where exactly it should sit is still unmeasured — that part is open,
-  and it is what the harness above is for.
 - `PolesToTriDiagonalCoefficients` merges poles closer than
   `4·DBL_EPSILON·(|E_i|+|E_j|)`. That is a relative tolerance, and a logarithmic
   mesh accumulating near `mu` is precisely where level spacings get small. It is
@@ -113,8 +89,9 @@ settled.
 
 ## The option
 
-`ChangeType` already takes an options list — `SingularValue`, `EffectivekBT`,
-`Deflate` — so an `Algorithm` option fits where the others are, in
+`ChangeType` already takes an options list — `SingularValue`,
+`MinimalPoleDistance`, `EffectivekBT`, `Deflate` — so an `Algorithm` option fits
+where the others are, in
 `LuaChangeTypeResponseFunction` and through `ConvertResponsefunction`.
 
 Candidates worth offering, all of which exist or nearly exist:
@@ -149,8 +126,8 @@ know they did not get it.
 
 ## Meanwhile
 
-Read "agrees to 1e-13" in the plan and the commit messages as "agrees to 1e-13 on
-a uniform grid at `Gamma` of 0.3 and 0.02".
+Read "agrees to 1e-13" in commit messages and test comments as "agrees to 1e-13
+on a uniform grid at `Gamma` of 0.3 and 0.02".
 
 Note also that the two families do not use the same algorithm.
 `DiagonalMatrixBlockTridiagonalize` passes `ReOrthogonalize = true`, so every
@@ -158,6 +135,6 @@ Note also that the two families do not use the same algorithm.
 full-re-orthogonalization row of the table above, while the non-block `a → d` is
 RKPW. Block and non-block conversions of the same input therefore should *not*
 agree to the last digit, and the block one should be the more accurate. Do not
-read a 1e-14 disagreement between them as a defect in either. Do not read it as a statement about
-small `Gamma`, about `w` near `mu`, or about the coefficients of a long chain,
-none of which have been tested.
+read a 1e-14 disagreement between them as a defect in either. Do not read it as a
+statement about small `Gamma`, about `w` near `mu`, or about the coefficients of a
+long chain, none of which have been tested.

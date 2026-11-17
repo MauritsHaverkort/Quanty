@@ -2,7 +2,7 @@
  * DKBSpline.h
  *
  * One component of a radial Dirac spinor in the dual-kinetic-balance (DKB) B-spline
- * basis of the DFT/HF add-on, stage A (Doc/Claude/QuantyDFT_StageA, section 5 and 10).
+ * basis of the DFT/HF add-on, stage A (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, section 5 and 10).
  *
  * With the working B-splines B_i (all but the first and the last of the knot set) and
  * h = 1/(2c), the 2n DKB functions are

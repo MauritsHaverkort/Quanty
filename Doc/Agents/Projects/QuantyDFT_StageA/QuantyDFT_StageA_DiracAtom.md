@@ -1,6 +1,6 @@
 # Quanty DFT/HF add-on — Stage A design: relativistic atom on B-splines
 
-Status: design, ready for implementation. Step 0 is done (branch `Claude`, up to commit 9a14a753; interfaces in `Doc/Claude/BSPLINE_DESIGN.md`). Its open remainder is the first task of stage A (§0.2). Date: 2026-11-11, revision 3.
+Status: finished 2026-11-11 with task A5e (commit `df3c7788`); a dated record, not updated since. The code as it is now is described in `QuantyDFT_StageA_Implementation.md`. History below: revision 3 of the design, 2026-11-11; §0.2 records every task as it was done.
 - Revision 2 added: nucleus models including Lua functions and non-spherical nuclei; $V_\beta$ notation; on-site orthonormalization; Lua interface aligned with `ReadFPLOBasisFunctions`, `NewOperator("Dirac")` and `NewOperator("AU")`.
 - Revision 3: §2, §5, §7 and §11 refer to the B-spline core that now exists (`BSplineFindInterval`, `BSplineValues`, `BSplineKnotsExponential`, `BSplineQuadratureSetup`, `BSplineMatrixBanded`, `GaussLegendreNodesWeights`). It adds §0.2 (status of step 0 and stage-A task A0) and adopts the step-0 conventions: 0 outside the knot range, and `cAU` read at call time.
 Scope of stage A: atomic eigenstates and radial 4-spinor functions on a B-spline basis, with a Lorentz-scalar confining potential; Dirac–Hartree–Fock (configuration average, Cowan-compatible) and Dirac–Kohn–Sham (LDA, PBE). The output is a set of contracted radial spinors that become the local basis for stages B–E.
@@ -565,7 +565,7 @@ typedef struct { NucleusType nucleus; BSplineBasisType basis; uint32_t nSub; Rad
 
 ## 12. Checkpoints
 
-Prototype results (Python, from a scratch implementation of exactly the equations above, double precision, $c$ = 137.035999177) are given where available; the C implementation must reproduce them. The prototype scripts are in `Doc/Claude/QuantyDFT_StageA/QuantyDFT_StageA_proto/` (one script per check, see its README).
+Prototype results (Python, from a scratch implementation of exactly the equations above, double precision, $c$ = 137.035999177) are given where available; the C implementation must reproduce them. The prototype scripts are in the folder `QuantyDFT_StageA_proto` next to this file (one script per check, see its README).
 
 | # | Test | Target / prototype result |
 |---|---|---|

@@ -1,14 +1,18 @@
 # B-spline consolidation: design note
 
-Status: proposal, 2026-11-09. Companion to `QuantyDFT_Step0_BSplineConsolidation.md`
-(steps 0.1–0.5 and 0.7). The CODATA update (0.6) is done separately and first.
+Status: finished 2026-11-09 (commits `6da95110` to `9a14a753` on branch `Claude`); a
+dated record, not updated since. The C core it describes is in
+`Core/BasicMath/Interpolation/`, and its headers document the interface as it is.
+This design was step 0 of the DFT add-on (steps 0.1–0.5 and 0.7 of that plan, which
+is not in the repository); the CODATA update (0.6) was done separately and first.
+Steps 0.7b and 0.8 became task A0 of stage A (`QuantyDFT_StageA_DiracAtom.md`).
 
 ## 1. Decisions taken
 
 - **C core, class kept.** New plain-array C functions do the work. The class
   `BSpline::TBSpline : Interpolation::InterpolatingFunction` stays and calls them.
   Replacing the class hierarchy with the 2018 `InterpolatingFunctionType` struct
-  (commented out in `Core/StructDef.cpp:1838`) is a later, separate project.
+  (commented out at the end of `Core/StructDef.cpp`) is a later, separate project.
 - **Location.** Everything reachable from a main Quanty function (`NewOperator`,
   `Interpolate`, `ReadFPLOBasisFunctions`, `GetSlaterIntegrals`, …) moves to
   `Core/BasicMath/Interpolation/`. Code reachable only as `Martin.<Name>` stays in

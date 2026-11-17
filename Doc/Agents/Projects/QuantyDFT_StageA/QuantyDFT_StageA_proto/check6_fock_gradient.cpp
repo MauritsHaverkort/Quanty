@@ -5,7 +5,7 @@
  * difference along a random direction, Richardson-extrapolated from h = 1e-2 and 5e-3, is
  * exact for a quartic, so what is left is rounding (|E| eps / h).
  * Build from the repository root (the harness includes Quanty's single compilation unit):
- *   g++ -I. Doc/Claude/QuantyDFT_StageA/QuantyDFT_StageA_proto/check6_fock_gradient.cpp \
+ *   g++ -I. $(find Doc/Agents -name check6_fock_gradient.cpp) \
  *       -D LUA_USE_MACOSX -DBLASunderscore -O2 -o check6 -framework Accelerate -lreadline
  * Result (2026-11-11): relative agreement 2.5e-13 .. 2.8e-10 for Ni 3d8 4s2 (Dirac, ten
  * subshells), O 2p4 and Fe 3d6 4s2 (Dirac and Schroedinger); absolute <= 3.3e-10. The

@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, checks 1a and 1b (Doc/Claude/QuantyDFT_StageA, design section 12):
+ *  DFT stage A, checks 1a and 1b (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12):
  *  the radial Dirac equation for a point nucleus on the dual-kinetic-balance B-spline basis
  *  (CalculateAtomicBasisFunctions without electrons, the bare nucleus; degree 8, 120 knot
  *  intervals, rMin = 1e-6/Z, rMax = 60/sqrt(Z), 80 for Z = 1) against the exact

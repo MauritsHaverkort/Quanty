@@ -1,11 +1,11 @@
 # Atomic radial functions in Quanty: the stage-A implementation
 
-This document describes the code of stage A of the DFT/HF add-on as it is (branch `Claude`, November 2026, up to commit `df3c7788`). Stage A gives Quanty its own routine for atomic radial functions: relativistic (Dirac) or nonrelativistic (Schrödinger) atoms, self-consistent in configuration-average Hartree–Fock or in Kohn–Sham density functional theory, on a B-spline basis. The results feed Quanty's existing atomic operators directly.
+This document describes the code of stage A of the DFT/HF add-on as it is. Stage A gives Quanty its own routine for atomic radial functions: relativistic (Dirac) or nonrelativistic (Schrödinger) atoms, self-consistent in configuration-average Hartree–Fock or in Kohn–Sham density functional theory, on a B-spline basis. The results feed Quanty's existing atomic operators directly.
 
 Companion documents:
 
-- `QuantyDFT_StageA_DiracAtom.md` — the design: equations (sections 1–11), checkpoints (section 12), and in section 0.2 the history of every task (A0–A5e) with the decisions and the deviations from the design. This document does not repeat that history; it describes the result.
-- `QuantyDFT_StageA_proto/` — the Python prototype of the design checks, and the C harness `check6_fock_gradient.cpp`.
+- `QuantyDFT_StageA_DiracAtom.md` — the design record, finished with task A5e on 2026-11-11: equations (sections 1–11), checkpoints (section 12), and in section 0.2 the history of every task (A0–A5e) with the decisions and the deviations from the design. This document does not repeat that history; it describes the result.
+- the folder `QuantyDFT_StageA_proto`, next to the design record — the Python prototype of the design checks, and the C harness `check6_fock_gradient.cpp`.
 
 Contents:
 

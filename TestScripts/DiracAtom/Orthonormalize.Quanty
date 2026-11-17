@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, check 14 (Doc/Claude/QuantyDFT_StageA, design sections 6.1 and 12):
+ *  DFT stage A, check 14 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design sections 6.1 and 12):
  *  on-site orthonormalization of orbitals of one kappa generated in different potentials,
  *  on one knot set, through CalculateAtomicBasisFunctions (option Orthonormalize). The bare
  *  Fe nucleus (no electrons), kappa = -3, every orbital with its own extra charge Q and
