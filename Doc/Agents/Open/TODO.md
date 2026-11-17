@@ -617,6 +617,20 @@ block is right, is the open question.
 one; to make them cheaper, loosen `epsilon` (a larger value) or take fewer steps.
 
 
+### `CalculateGbathfromGandSigma` ignores its `Format` option
+
+**Status:** open.
+
+`LuaCalculateGBathFromGandSigma` in `LuaInterface/ResponseFunction.cpp` reads the
+option `Format` and hands it to `CalculateGBathFromGandSigma` in
+`Core/BasicMath/BasicMath_GreenFunctionArithmetic.cpp` as `Type`, which does
+nothing with it: the routine carries `// TODO: change type to requested type`
+(and `// TODO: check if we need to set Gv and or Gc`). A user who asks for a
+format gets the default one, without a message.
+
+**Meanwhile:** convert the result with `ResponseFunction.ChangeType`.
+
+
 ## Operators and angular momentum
 
 ### `PyramidalHarmonicsP` has no rotation matrix
@@ -726,6 +740,19 @@ not with `H(k)`. It needs checking before it is either fixed or dismissed.
 **Meanwhile:** treat a relative-units model that has been through `Rotate` as
 suspect, and do not rely on `TightBinding.Derivative` for cells with more than
 one atom position until the sign has been checked.
+
+### `DOSandBands.Quanty` uses models that are not Hermitian, and is not run
+
+**Status:** open.
+
+`TestScripts/TightBindingDef/DOSandBands.Quanty` lists every hopping for `+T`
+only. `CreateHamiltonianFromTightBindingDef` adds each entry once and makes no
+Hermitian conjugate, so `H(k)` of these models is not Hermitian (for one `s`
+orbital and a single hopping along `x` it is `e^{ik_x}`). The script is also in no
+`TEST_NAME` list of `.gitlab-ci.yml`, so the CI never runs it.
+
+**Meanwhile:** do not copy its hopping lists. To fix it, add the `-T` hoppings,
+check the output, and register the script in the tight-binding test job.
 
 
 ## Lua interface
@@ -854,6 +881,34 @@ The design, if it is done: one option in the standard options list, for example
 `{{"NumberDigits",10}}` (the name is open), applied to **every** `ToString` and
 `__tostring` function, and to `print` through `tostring` — which means a change in
 the Lua core, not a digits argument to one Matrix function.
+
+
+## Graphics
+
+### The comment on `ArcType` contradicts itself
+
+**Status:** open; a one-line fix once the intended direction is confirmed.
+
+In `Plot/StructDef.cpp` the comment on `ThetaL` says the arc "is drawn clockwise"
+and, in the same line, "theta 0 is x running anti clockwise". The SVG writer draws
+counter-clockwise from the x axis (y flipped, `-sin`), and `GRAPHICS.md` follows
+the writer. The comment should say the same.
+
+### Plotting a `Matrix` names a function that does not exist
+
+**Status:** open.
+
+`Graphics.Plot` given a `Matrix` stops with "Use the function MatrixPlot to plot
+matrices instead of the function Plot" (`Plot/LuaBinding.cpp`). There is no
+`MatrixPlot`. Either the message should say what to do instead (for example
+`BitMap.FromMatrix`), or the function should exist.
+
+### No colour bar for colour maps
+
+**Status:** open; the agreed next step after the colour map.
+
+`Graphics.Plot` with `ColorMap` draws a map but no colour bar, so the scale of the
+colours cannot be read off the figure. Nothing in `Plot/` draws one yet.
 
 
 ## Repository and documentation
