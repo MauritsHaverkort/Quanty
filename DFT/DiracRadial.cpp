@@ -3,7 +3,7 @@
  *
  * The radial Dirac equation for one electron in a spherical potential V (vector) and
  * V_beta (Lorentz scalar), on a dual-kinetic-balance (DKB) B-spline basis. DFT/HF add-on,
- * stage A; design Doc/Claude/QuantyDFT_StageA/QuantyDFT_StageA_DiracAtom.md, sections
+ * stage A; design QuantyDFT_StageA_DiracAtom.md in Doc/Agents, sections
  * 2-5. Hartree atomic units, energies measured from mc^2, c an argument.
  *
  * Radial spinor psi = (1/r) (P Omega_kappa,mu ; i Q Omega_-kappa,mu), int (P^2+Q^2) dr = 1,

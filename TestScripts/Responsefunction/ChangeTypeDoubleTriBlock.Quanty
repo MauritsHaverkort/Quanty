@@ -336,7 +336,7 @@ CheckRotationExact("two degenerate blocks",
 -- deflation inside the block Lanczos then cuts in a different place: the chain gets a
 -- different number of blocks. So the chain itself is not a basis invariant object
 -- here, only G is. That is the same "the chain tail is not determined" behaviour
--- documented in Doc/Claude/TODO_ConversionAccuracy.md, showing up in the length
+-- documented in TODO_ConversionAccuracy.md in Doc/Agents, showing up in the length
 -- rather than in the coefficients.
 function CheckRotationG(name, a, b, kBT)
 	local G1, G2 = BothWays(a, b, kBT)

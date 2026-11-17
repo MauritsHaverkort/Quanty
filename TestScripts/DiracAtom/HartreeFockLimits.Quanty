@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, check 7 (Doc/Claude/QuantyDFT_StageA, design section 12): the closed-shell
+ *  DFT stage A, check 7 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12): the closed-shell
  *  Hartree-Fock atom, nonrelativistic (CalculateAtomicBasisFunctions, Method "DHF", {"Relativistic", false}),
  *  point nucleus, against the fully numerical (finite-element) Hartree-Fock limits of
  *  S. Lehtola, Int. J. Quantum Chem. 119, e25945 (2019), arXiv:1810.11651, Table 5

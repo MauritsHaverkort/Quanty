@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A5b (Doc/Claude/QuantyDFT_StageA, section 0.2): CalculateAtomicBasisFunctions.
+ *  DFT stage A5b (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, section 0.2): CalculateAtomicBasisFunctions.
  *  - Without Q and P the functions are the ground state: for Ne DHF (Gaussian nucleus)
  *    <det|H0 + U|det> with NewOperator("Dirac", ..., Atom.Nucleus) equals Etot, and so does
  *    EtotEigenvalueSum = 1/2 sum qbar (eps + I). G[1].x and F[1].x are the quadrature points

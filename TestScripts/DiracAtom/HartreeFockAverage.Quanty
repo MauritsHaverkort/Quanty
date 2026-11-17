@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, checks 5 and 7 (Doc/Claude/QuantyDFT_StageA, design section 12): the
+ *  DFT stage A, checks 5 and 7 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12): the
  *  configuration-average Hartree-Fock atom with open shells, and the Dirac-Fock atom.
  *  - Check 5: in Schroedinger mode, Atom.EavJJ (E_av of the converged radial functions with
  *    the relativistic angular factors Gamma^k = (j_a k j_b; 1/2 0 -1/2)^2 and pair counts of

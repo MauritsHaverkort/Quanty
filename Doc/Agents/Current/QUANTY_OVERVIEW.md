@@ -8,10 +8,8 @@ Two sources are mixed here and kept distinguishable:
 
 - **[site]** — the user documentation at <https://www.quanty.org>, i.e. Maurits'
   own account of the concepts.
-- **[code]** — checked directly against the `Claude` branch at commit `e5b5f0d2`.
-
-Where the two could drift, the code reference is given so the claim can be
-re-checked.
+- **[code]** — checked directly against the source. Code is cited by file and
+  function name, so a claim can be re-checked with `grep`.
 
 
 ## 1. What Quanty is
@@ -35,9 +33,8 @@ This explains several things about the codebase that otherwise look odd:
 
 - Control flow, loops, temperature averaging, file output and plotting are all
   the user's problem, done in Lua. The C side only has to be fast at the
-  primitives. Compare the Boltzmann-average loop in
-  `Debug examples/Tutorials/03_XAS/03_XAS.Quanty`, which is plain Lua around
-  calls to `CreateSpectra`.
+  primitives. In the XAS tutorial of §3 the average over states and
+  polarisations is a call to `Spectra.Sum` with weights the script computes.
 - The Lua binding layer is large relative to the numerics, because every
   physics concept needs a constructor, a metamethod set, and option parsing.
 - Legacy `main()` functions survive in `DMFT/`, `Hubbard_Model/`,
@@ -50,15 +47,11 @@ Quanty has a 20+ year history [site]. It began as a tool for x-ray
 spectroscopy, which is why most of the examples are still core-level
 spectroscopy, and grew outward from there.
 
-Its original claim on users, against the established CTM4/Cowan-derived
-multiplet codes in the field, was that it was **faster and more flexible** —
-enough so that it was adopted even inside the groups maintaining those codes.
-That comparison is Maurits' own and is now 10+ years old, so it is history
-rather than a current benchmark. It does explain the culture of the codebase:
-performance is not a late-stage concern here, it is the reason the program was
-adopted, and it is why the C-in-C++ restriction and the allocation discipline
-(see `CompactMatrixType` in the architecture notes) are enforced as firmly as
-they are.
+Quanty was adopted because it was **faster and more flexible** than the multiplet
+codes of the time. That explains the culture of the codebase: performance is not
+a late-stage concern here, it is the reason the program is used, and it is why
+the C-in-C++ restriction and the allocation discipline (see `CompactMatrixType` in
+`QUANTY_NOTES_ARCHITECTURE.md`) are enforced as firmly as they are.
 
 Two constraints follow, and both should be treated as hard:
 
@@ -66,11 +59,10 @@ Two constraints follow, and both should be treated as hard:
   expected to keep running. Any change to Lua-visible behaviour — function
   names, option names, defaults, output formats — needs to be considered in
   that light, not just the C-level refactor that motivated it.
-- **Maintenance capacity is finite.** Maurits runs a group *and* is personally
-  involved in code management. Proposals should be sized accordingly: a change
-  that is correct but demands a large coordinated rewrite is, in practice, a
-  change that will not happen. This is the same reasoning behind the deferred
-  items in `TODO.md`.
+- **Maintenance capacity is finite.** One maintainer reviews and merges
+  everything. A change that is correct but demands a large coordinated rewrite is,
+  in practice, a change that will not happen. This is the same reasoning behind
+  the deferred items in `TODO.md`.
 
 The open performance question is the other side of the same coin: the
 shared-memory parallelism that made Quanty fast on the machines of the time
@@ -121,20 +113,32 @@ identically everywhere it appears:
 NWord = NBoson + Min(NFermion, 1 + (NFermion - 1) / 8);
 ```
 
-`LuaInterface/ssp.cpp:600`; `NWord > 4096` is rejected there. This is the same
-invariant flagged in `QUANTY_NOTES_ARCHITECTURE.md` — every code path that
-builds an operator by hand must set it, or restrictions silently pass
-everything.
+`LuaNewOperator` in `LuaInterface/ssp.cpp` computes it and rejects
+`NWord > 4096`. This is the same invariant flagged in
+`QUANTY_NOTES_ARCHITECTURE.md` — every code path that builds an operator by hand
+must set it, or restrictions silently pass everything.
 
 A general state is a linear combination of determinants; that is exactly what
 `WaveFunctionType` stores (a hash table keyed on the bit pattern).
 
+**Bosons stop at operators.** Operators, restrictions (an `FF` byte per boson
+mode in the mask) and `StringToDet` handle bosons, but `NewWavefunction` with
+`NB > 0` stops with "Bosons not included in this version". Where a boson is
+needed, emulate it with pairs of fermions, which commute with the electrons. A
+mode truncated at two quanta is
+`b^dag = g1^dag h1^dag (1-n_g2) + sqrt(2) g2^dag h2^dag n_g1 (1-n_g2)`; both
+`(1-n_g2)` factors are needed, and a mask counting excitations must include `g1`
+and `g2`. `TestScripts/CreateSpectraWithBathExcitations.Quanty` does this.
+
 
 ## 3. The canonical script arc
 
-Nearly every real Quanty script is the same five movements. Using
-`Debug examples/Tutorials/03_XAS/03_XAS.Quanty` as the reference specimen — a
-2p → 3d L-edge XAS calculation for a divalent transition-metal ion:
+Nearly every real Quanty script is the same five movements. The reference
+specimen is the tutorial `08_Materials/NiO/01_NiO_Crystal_field_theory/02_XAS_L23`
+in the tutorials repository (<https://git.quanty.org/Quanty/tutorials>, a separate
+repository from the source) — a 2p → 3d L-edge XAS calculation for NiO in crystal
+field theory. (`Debug examples/Tutorials/` in this repository is an old copy of
+the tutorials from 2019; see `TODO.md`.)
 
 **1. Declare the basis.** `NFermion`, `NBoson`, and the shell index lists.
 
@@ -197,39 +201,44 @@ G(ω) = ⟨ψi| T† 1/(ω - H + iΓ/2) T |ψi⟩
 ```
 
 ```lua
-Spectra_z = CreateSpectra(XASHamiltonian, TXASz, psiList[j],
-              {{"Emin",-10}, {"Emax",20}, {"NE",3500}, {"Gamma",1.0}})
+XASSpectra = CreateSpectra(XASHamiltonian, {TXASz,TXASr,TXASl}, psiList,
+               {{"Emin",-10}, {"Emax",20}, {"NE",3000}, {"Gamma",0.1}})
 ```
 
+A list of transition operators and a list of states give one spectrum per
+pair — here 3 states times 3 polarisations, 9 spectra in one `Spectra` object.
 The choice of transition operator `T` is what selects the experiment —
 annihilation for photoemission, creation for inverse photoemission, a
 creation-annihilation product for absorption.
 
-**5. Finite temperature, output, plotting.** A plain Lua loop over `psiList`
-weighting by `exp(-(E_j - E_0)/T)`; `Spectra` objects support `+` and scalar
-`*`, so Boltzmann averaging is arithmetic on spectra. Then `.Print{{"file",...}}`
-and, typically, a gnuplot script written and `os.execute`d from Lua.
+**5. Finite temperature, output, plotting.** `Spectra.Sum(XASSpectra, weights)`
+adds the spectra with weights the script computes — Boltzmann factors
+`exp(-(E_j - E_0)/T)`, polarisation averages, or both. `Spectra` objects also
+support `+` and scalar `*`. Then `.Broaden(...)`, `.Print({{"file",...}})`, and a
+plot with `Graphics.Plot`, written to file with `Graphics.ToSVG`. Older scripts
+write a gnuplot script and `os.execute` it; new scripts and tutorials use
+`Graphics`.
 
-Two supporting conveniences visible in that script: `EnergyUnits.Kelvin.value`
-and `EnergyUnits.Tesla.value` convert to the internal unit (eV) — the unit table
-is built in `LuaInterface/units.cpp:233` — and `Verbosity(0)` silences the
-progress reporting that longer runs emit.
+Two supporting conveniences: `EnergyUnits.Kelvin.value` and
+`EnergyUnits.Tesla.value` convert to the internal unit (eV) — the unit table is
+built by `luaopen_units` in `LuaInterface/units.cpp` — and `Verbosity(0)`
+silences the progress reporting that longer runs emit.
 
 
 ## 4. Operators in more detail
 
-### Named constructors  [code: `LuaInterface/ssp.cpp:659` onward]
+### Named constructors  [code: `LuaNewOperator`, `LuaInterface/ssp.cpp`]
 
 `NewOperator("Name", ...)` dispatches on the leading string. The full set of
 recognised names, in dispatch order:
 
     Coulomb/U · AtomicU/AU · ContinuumU/CU · Dirac · H0
-    Sx Sy Sz Splus Smin Ssqr/S2
-    Lx Ly Lz Lplus Lmin Lsqr/L2
-    Jx Jy Jz Jplus Jmin Jsqr/J2
+    Sx Sy Sz Splus Smin Ssqr/S^2/S2
+    Lx Ly Lz Lplus Lmin Lsqr/L^2/L2
+    Jx Jy Jz Jplus Jmin Jsqr/J^2/J2
     Tx Ty Tz Tplus Tmin Tsqr
     Qx Qxx Qy Qyy Qz Qzz Qxy Qyx Qxz Qzx Qyz Qzy
-    ldots · CF
+    ldots · CF · NuclearMultipole
     Create/Cr · Annihilate/An · Number/CrAn/n · Identity/I/1
     HarmonicOscillatorOnStandingWaves/HOSW · HarmonicOscillatorOnGrid/HOGrid
 
@@ -240,7 +249,7 @@ tutorial are `CF` with `Akm = {{1,-1,t},{1,1,-t}}` and 3d/2p index lists.
 `PotentialExpandedOnClm("Oh", 2, {0.6,-0.4})` generates the `Akm` for a
 point-group potential.
 
-### Raw form  [code: `LuaInterface/ssp.cpp:563`]
+### Raw form  [code: `LuaNewOperator`, `LuaInterface/ssp.cpp`]
 
 When the first argument is a *number* rather than a string, `NewOperator` builds
 an arbitrary ladder-operator sum directly:
@@ -271,6 +280,7 @@ The five structures that carry the physics, and what the user sees of each:
 | `Spectra` | `SpectraTypeArray` | several `SpectraType` on one energy grid; supports `+` and scalar `*` |
 | `ResponseFunction` | `ResponsefunctionType` | thin tag + `void *data`; concrete form chosen by tag |
 | `TightBinding` | `TightBindingDef` | periodic hopping model; the route in for DFT data |
+| `Graphics`, `BitMap` | `GraphicsType`, `BitMapType` | plots and images, defined in `Plot/StructDef.cpp`, apart from the physics |
 
 Supporting objects — `Complex`, `Matrix`, `Tensor`, `InterpolatingFunction` —
 plus the internal-only structs are tabulated in `QUANTY_NOTES_ARCHITECTURE.md`.
@@ -300,8 +310,8 @@ parts worth knowing about:
   `objects`. The authoritative per-function reference; more complete than
   `LUA_API_OVERVIEW.md`, which was assembled from the binding tables.
 - `/documentation/tutorials/start` — quick start, introduction, NiO crystal
-  field, NiO ligand field, connection to DFT, model examples. These correspond
-  to the scripts under `Debug examples/Tutorials/`.
+  field, NiO ligand field, connection to DFT, model examples. The scripts are in
+  the tutorials repository, <https://git.quanty.org/Quanty/tutorials>.
 - `/documentation/memory`, `/documentation/parallel` — memory management and
   parallelisation notes.
 
@@ -314,23 +324,5 @@ Mathematica / MATLAB / Python front ends (`Quanty.nb`, `Quanty.m`, `Quanty.py`),
 and the external programs that drive Quanty (CTM4, Crispy).
 
 The site is user-facing: it documents *what the functions do*, never how they
-are implemented. For implementation, the repo docs are the only source.
-
-
-## 6. Still to write
-
-Identified while assembling this, not yet covered anywhere in `Doc/Claude`:
-
-- **Testing and verification** — `Test/`, `TestScripts/*.Quanty`, and
-  `Debug examples/Test_All.sh` with its `Reference/` set. What each layer
-  covers and how to check a change.
-- **Spectra and response functions** — the concrete `ResponsefunctionType`
-  representations, and the Lanczos family (`FiniteTemperatureLanczos`,
-  `ImpurityLanczos`, `LanczosDyson`).
-- **Physics-model layers** — `AtomicOperators/` (Slater integrals, Coulomb,
-  Dirac), `Ligand_Field_Theory/OperatorDeffinitions`, and `IO/` (Wannier90,
-  FPLO, Stuttgart NMTO) as the route for external electronic-structure data.
-- **Call path** — how one Lua call travels from `ssp.cpp` down into `Core/`.
-
-Written since: `NUMERICS_TRUNCATION.md`, on `epsilon`, restrictions, and how the
-Lanczos truncation relaxes with Γ.
+are implemented. For implementation, the notes in `Doc/Agents` are the only
+source.

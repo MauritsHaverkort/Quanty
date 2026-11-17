@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A5e (Doc/Claude/QuantyDFT_StageA, section 0.2): the Dirac-Kohn-Sham atom against
+ *  DFT stage A5e (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, section 0.2): the Dirac-Kohn-Sham atom against
  *  FPLO 21.00, the set "No Contraction Of Virtual Orbitals/Re_Q0_V0" of
  *  tutorials/03_Atomic_Physics/FPLO radial function (Q = 0, V = 0: the basis states are the
  *  eigenstates of FPLO's atom). FPLO there: Perdew-Wang 92, full relativistic, nucleus

@@ -13,3 +13,6 @@
 *.ps
 *.dat
 build/
+
+# Images for the wiki drafts; uploaded by hand, never committed
+Doc/Agents/Wiki/media/

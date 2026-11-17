@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, check 9 (Doc/Claude/QuantyDFT_StageA, design section 12): the Kohn-Sham
+ *  DFT stage A, check 9 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12): the Kohn-Sham
  *  atom (CalculateAtomicBasisFunctions) against the NIST atomic reference data for electronic structure
  *  calculations (Kotochigova, Levine, Shirley, Stiles, Clark; NIST SRD 141, Phys. Rev. A
  *  55, 191 (1997)), read 2026-11-11 from www.nist.gov/pml/atomic-reference-data-electronic-

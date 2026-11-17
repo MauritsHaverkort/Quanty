@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A, check 10 (Doc/Claude/QuantyDFT_StageA, design section 12): the GGA atom.
+ *  DFT stage A, check 10 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 12): the GGA atom.
  *  Reference: fully numerical (finite-element, microhartree) total energies of
  *  S. Lehtola, Phys. Rev. A 101, 012516 (2020), arXiv:1908.02528, Table 1: VWN (= NIST LDA)
  *  and "a PBE functional based on VWN correlation", here Method "PBE-VWN" (PBE exchange,

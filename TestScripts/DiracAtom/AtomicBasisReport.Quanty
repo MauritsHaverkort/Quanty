@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A5e (Doc/Claude/QuantyDFT_StageA, design section 0.1): the accuracy report and
+ *  DFT stage A5e (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design section 0.1): the accuracy report and
  *  the preset of CalculateAtomicBasisFunctions.
  *  - RExpectation and VirialRatio: hydrogen 1s (Schroedinger) <1/r> = 1, <r> = 3/2,
  *    <r^2> = 3, -V/T = 2 (measured to the 12 printed digits, checked 1e-10); Ne Hartree-Fock

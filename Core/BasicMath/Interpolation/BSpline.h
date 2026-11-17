@@ -1,7 +1,7 @@
 /*
  * BSpline.h
  *
- * B-splines in plain C. See BSpline.cpp and Doc/Claude/BSPLINE_DESIGN.md.
+ * B-splines in plain C. See BSpline.cpp and BSPLINE_DESIGN.md in Doc/Agents.
  *
  * Conventions:
  *  - degree, not order (order = degree + 1), as Lua "Degree";

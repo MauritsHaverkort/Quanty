@@ -1,5 +1,5 @@
 --[[
- *  DFT stage A5d, check 11 (Doc/Claude/QuantyDFT_StageA, design sections 10 and 12): the
+ *  DFT stage A5d, check 11 (QuantyDFT_StageA_DiracAtom.md in Doc/Agents, design sections 10 and 12): the
  *  Fourier-Bessel transforms P~(k) = sqrt(2/pi) int r P j_l(kr) dr, Q~ with lbar, of the
  *  option {"FourierBessel", {KMax, NK}} of CalculateAtomicBasisFunctions (DFT/FourierBessel.cpp).
  *  - Analytic: hydrogen 1s (Schroedinger) has P~ = 4 sqrt(2/pi)/(1+k^2)^2; measured 8.1e-10

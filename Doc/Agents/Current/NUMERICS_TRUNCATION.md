@@ -6,7 +6,7 @@ to get **progressively coarser** with each Lanczos step, at no cost to the
 accuracy of the spectrum, and the rate at which it coarsens is set by the
 Lorentzian broadening Γ.
 
-Line references are to the `Claude` branch at commit `e5b5f0d2`.
+Code is cited by file and function name.
 
 
 ## 1. Why truncation is unavoidable
@@ -36,9 +36,9 @@ They are independent and compose; most real calculations use both.
 ### A priori — restrictions
 
 Fix the subspace before starting: allowed occupations per group of orbitals.
-`DeterminantRestrictionType` (`Core/StructDef.cpp:195`) is `N` filters, each a
+`DeterminantRestrictionType` (`Core/StructDef.cpp`) is `N` filters, each a
 bitmask plus a `Min`/`Max` occupation. A determinant is kept only if it passes
-all of them (`QDetNotRestricted`, `Core/OperatorWaveFunction.cpp:2260`).
+all of them (`QDetNotRestricted`, `Core/OperatorWaveFunction.cpp`).
 
 ```lua
 StartRestrictions = {NF, NB, {"111111 0000000000",6,6},
@@ -57,10 +57,10 @@ Let the state pick its own basis, and throw away determinants whose expansion
 coefficient is too small. This is what `epsilon` controls:
 
 > `epsilon` — smallest absolute prefactor of a determinant in wave-functions
-> considered different from 0 — `Core/StructDef.cpp:247`
+> considered different from 0 — `ConvergenceSettingsType`, `Core/StructDef.cpp`
 
 The workhorse is `WaveFunctionTruncateBasis(psi, epsilon)`
-(`Core/WaveFunctionArithmetic.cpp:953`), which dispatches to real, complex and
+(`Core/WaveFunctionArithmetic.cpp`), which dispatches to real, complex and
 block variants. For complex states the test is on the modulus, done squared to
 avoid the square root:
 
@@ -68,7 +68,7 @@ avoid the square root:
 const double Sqrepsilon = Sqr(epsilon);
 if (Sqr(a->ValueRe[iBlok][iElement]) + Sqr(a->ValueIm[iBlok][iElement]) > Sqrepsilon)
 ```
-`Core/ComplexWaveFunctionArithmetic.cpp:1072`
+`ComplexWaveFunctionTruncateBasis`, `Core/ComplexWaveFunctionArithmetic.cpp`
 
 The determinant is not merely zeroed — it is removed from the hash table, so
 the state genuinely shrinks and every later operator application is cheaper.
@@ -79,15 +79,15 @@ subspace chosen in advance.
 ## 3. `epsilon` and `zero`
 
 Two distinct knobs, easy to confuse, both settable from Lua on `Eigensystem`
-and `CreateSpectra` (both spellings accepted, `LuaInterface/ssp.cpp:1855`,
-`:3614`):
+and `CreateSpectra` (both spellings accepted, see their option lists in
+`LuaInterface/ssp.cpp`):
 
 | option | meaning | default | default value |
 |---|---|---|---|
 | `epsilon` | smallest determinant coefficient kept | `sqrt(DBL_EPSILON)/100` | ≈ 1.5e-10 |
 | `zero` | smallest number distinguishable from one in convergence tests | `100*sqrt(DBL_EPSILON)` | ≈ 1.5e-6 |
 
-`InitConvergenceSettings()` (`Core/StructDef.cpp:269`) sets these, along with
+`InitConvergenceSettings()` (`Core/StructDef.cpp`) sets these, along with
 the other numerical knobs on `ConvergenceSettingsType`: `DenseBorder` (1513 —
 below this dimension a dense LAPACK diagonalisation is used instead of
 Lanczos), `NKrylovStart/Max/Step/Min`, and `NTri` (200 — the number of Lanczos
@@ -104,8 +104,8 @@ will quietly do something quite different.
 `Eigensystem` converges on **the state itself**, so it cannot afford to relax
 its truncation: everything downstream reads that wave function.
 
-In the ground-state Lanczos (`LanczosGroundStateRestrictedCC`,
-`Core/Lanczos.cpp:1675`, and its siblings), `epsilon` is passed as a
+In the ground-state Lanczos (`LanczosGroundStateRestrictedCC` in
+`Core/Lanczos.cpp`, and its siblings), `epsilon` is passed as a
 `double *` and truncation is applied flat:
 
 ```c
@@ -119,7 +119,6 @@ convergence test — on both the energy gain and the variance:
 while ((((energy - energy1) > (zero * (1.0 + fabs(energy)))) || minloop)
        && ((energysqr - Sqr(energy1)) > zero * (fabs(energy1) + DBL_EPSILON)))
 ```
-`Core/Lanczos.cpp:1717`
 
 So for eigenstates: `epsilon` sets how much of the wave function is carried,
 `zero` sets when to stop iterating. Neither adapts.
@@ -156,8 +155,8 @@ carries a running `errorestimate`, initialised to 1.0. Once per Lanczos step:
 ```c
 errorestimate *= M->b[i] * M->b[i] / (M->b[i] * M->b[i] + 4 * Gamma * Gamma);
 ```
-`Core/Lanczos.cpp:2003` — and identically in the RC, CC, MC, all four
-`Restricted` and all four `PlusDensity` variants, twelve sites in total.
+`Core/Lanczos.cpp` — identically in every `LanczosTriDiagonalize*` variant (RR,
+RC, CC, MC, the `Restricted` and the `PlusDensity` ones).
 
 The factor `b²/(b² + 4Γ²)` is at most 1, so `errorestimate` decreases
 monotonically. Truncation then uses it as a *divisor*:
@@ -165,7 +164,6 @@ monotonically. Truncation then uses it as a *divisor*:
 ```c
 RealWaveFunctionTruncateBasis(&(v[vi]), epsilon / errorestimate);
 ```
-`Core/Lanczos.cpp:1992`
 
 `errorestimate` shrinking means `epsilon / errorestimate` **grows**: the
 threshold gets looser at every step, the Krylov vectors are held ever more
@@ -193,36 +191,49 @@ The same argument applies to any evaluation away from the real axis — Matsubar
 frequencies, or a self-energy evaluated at finite imaginary part — not only to
 a Lorentzian lineshape.
 
-### Two consequences that will bite
+### What `Gamma` decides, and when not to set it
 
-**Set `Gamma` explicitly if you want the speedup.** In `LuaCreateSpectra` the
-tridiagonalisation is called as
+**`Gamma` sets the lineshape and the accuracy of the deeper levels at once.** In
+the Lanczos path of `LuaCreateSpectra` the tridiagonalisation is called as
 
 ```c
 LanczosTriDiagonalize(*H, Tpsi[...], Options.Settings.epsilon, &GTri[...],
                       Max(Options.Settings.Gamma, Options.Settings.epsilon));
 ```
-`LuaInterface/ssp.cpp:2429`
 
 but the automatic choice of `Gamma`,
 
 ```c
 if(Options.Settings.Gamma==0) Options.Settings.Gamma = 10*(Emax-Emin)/NE;
 ```
-`LuaInterface/ssp.cpp:2490`
 
-happens **after** the Lanczos has already run. So if `Gamma` is left
-unspecified it is still 0 at tridiagonalisation time, `Max(0, epsilon)` is
-`epsilon` ≈ 1.5e-10, and the relaxation never engages — you get the default
-broadening in the output but pay the un-relaxed price to compute it. Passing
-`{"Gamma", 1.0}` is not only a statement about the lineshape; it is what makes
-the calculation cheap.
+happens **after** the Lanczos has run. So if `Gamma` is left unspecified it is
+still 0 at tridiagonalisation time, `Max(0, epsilon)` is `epsilon` ≈ 1.5e-10, and
+the truncation stays flat: every level of the continued fraction is computed to
+`epsilon`, and the output is broadened with the default `Gamma` afterwards. (The
+dense method, `DenseMethod`, sets the default `Gamma` before its loop; there the
+poles are exact anyway.)
+
+That is a trade-off, not a mistake to avoid:
+
+- **Pass `Gamma`** when the broadened spectrum is the result: the deeper levels
+  are then computed only as accurately as that broadening can show, and the
+  calculation is much cheaper.
+- **Leave `Gamma` unset** when the tridiagonal result is used for more than one
+  broadened spectrum — evaluated at a smaller broadening later, converted to
+  another representation, or used together with its Krylov space. Then every
+  level must be accurate, and the flat truncation is what delivers that.
 
 **Requesting the Krylov basis disables the relaxation.** The
-`LanczosTriDiagonalizeKrylov*` variants (`Core/Lanczos.cpp:3536` onward) take
-no `Gamma` argument at all — necessarily, since with `KrylovBasis` the vectors
-are the deliverable and may not be degraded. Expect the cost of a spectrum to
-rise when you ask to keep the basis.
+`LanczosTriDiagonalizeKrylov*` variants in `Core/Lanczos.cpp` take no `Gamma`
+argument at all — necessarily, since with `KrylovBasis` the vectors are the
+deliverable and may not be degraded. Expect the cost of a spectrum to rise when
+you ask to keep the basis.
+
+**The block Lanczos does not relax.** `LanczosBlockTriDiagonalize*` in
+`Core/BlockLanczos.cpp`, used for block spectra and for the bath-excitation
+methods, takes `Gamma` but truncates with a flat `epsilon` at every step. That
+is not deliberate; see `TODO.md`.
 
 
 ## 6. The out-of-memory fallback
@@ -241,7 +252,7 @@ while (OperatorPsiRR(H, v[0], &(v[1])))
   RealWaveFunctionTruncateBasis(&(v[0]), epsilon);
 }
 ```
-`Core/Lanczos.cpp:1954`
+`Core/Lanczos.cpp`
 
 `epsilon` doubles, the state is re-truncated, the operation is retried; when the
 state is down to a single block and still will not fit, `AllocFailed()`. The
@@ -263,11 +274,11 @@ VerbosityPrintf(0x0100,"%12i ", v[vi].N);
 VerbosityPrintf(0x0100,"| M.a[%3i] M.b[%3i]: %12.5E %12.5E | Err: %12.5E\n",
                 i, i-1, M->a[i], M->b[i-1], errorestimate);
 ```
-`Core/Lanczos.cpp:1951`, `:1993`, `:1994`
+`Core/Lanczos.cpp`
 
 `VerbosityPrintf(mask, …)` prints when `mask & GlobalVerbosity`
-(`IO/Print.cpp:6`), and `GlobalVerbosity` defaults to `0xF`
-(`Headers/header.h:39`) — so this bit is **off** by default. To watch the
+(`IO/Print.cpp`), and `GlobalVerbosity` defaults to `0xF`
+(`Headers/header.h`) — so this bit is **off** by default. To watch the
 relaxation happen:
 
 ```lua
@@ -275,9 +286,9 @@ Verbosity(0x10F)
 ```
 
 The two basis-set sizes per line are the state before and after truncation, and
-`Err:` is `errorestimate`. What you want to see is the sizes rising for a while
-and then falling away as `Err` drops. If `Err` stays at 1.0, `Gamma` did not
-reach the tridiagonalisation — see §5.
+`Err:` is `errorestimate`. With `Gamma` set you should see the sizes rising for
+a while and then falling away as `Err` drops. If `Err` stays at 1.0, `Gamma` did
+not reach the tridiagonalisation — see §5.
 
 
 ## 8. Summary of the knobs
@@ -287,7 +298,7 @@ reach the tridiagonalisation — see §5.
 | `Restrictions` | `Eigensystem`, `CreateSpectra`, `H.Restrictions` | fixes the subspace a priori; exact within it |
 | `epsilon` | both | smallest determinant coefficient kept; default ≈ 1.5e-10 |
 | `zero` | both | relative convergence tolerance; default ≈ 1.5e-6 |
-| `Gamma` | `CreateSpectra` | broadening — *and* the relaxation rate of the truncation |
+| `Gamma` | `CreateSpectra` | broadening — *and* the relaxation rate of the truncation; unset means flat truncation |
 | `NTri` | `CreateSpectra` | Lanczos steps, i.e. continued-fraction depth; default 200 |
 | `DenseBorder` | both | below this dimension use dense LAPACK; default 1513 |
 | `Verbosity(0x10F)` | global | show basis sizes and `errorestimate` per step |
@@ -295,7 +306,9 @@ reach the tridiagonalisation — see §5.
 Rules of thumb that follow:
 
 - Restrict first. It is exact and it shrinks the problem the most.
-- Always pass `Gamma` to `CreateSpectra` explicitly.
+- Pass `Gamma` to `CreateSpectra` when the broadened spectrum is the result;
+  leave it unset when every level of the continued fraction must be accurate
+  (§5).
 - Loosen `epsilon` before reducing `NTri` — `epsilon` trades accuracy you
   probably do not need, `NTri` truncates the continued fraction and can
   distort lineshape.

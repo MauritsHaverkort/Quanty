@@ -1,37 +1,23 @@
 # Quanty — architecture orientation notes
 
-Working notes assembled while getting oriented in the codebase (August 2026).
-Intended as a starting point for a session that continues exploring the general
-structure of Quanty, not as authoritative documentation. Line numbers refer to
-the state of the `Claude` branch at commit `5124437d`.
-
-Everything below was checked against the source; where something is a
-convention stated by Maurits rather than enforced by the code, it says so.
+How the C side of Quanty is organised: the build, the central structs, and the
+mechanisms that are not obvious from reading one function. Everything below was
+checked against the source; where something is a convention rather than
+enforced by the code, it says so. Code is cited by file and function name.
+Notation and index conventions are in `CONVENTIONS.md`.
 
 
 ## Build
 
 The whole program is one translation unit. `CMakeLists.txt` registers exactly
-one source file:
+one source file, `LuaInterface/main.cpp`, which `#include`s everything else —
+the Core library, the Lua interpreter, and the Lua binding layer. There are no
+object libraries and no per-directory builds; `CONTRIBUTING.md` explains why.
+Compilers, options and flags are in `BUILDING.md`.
 
-    set(SOURCES LuaInterface/main.cpp)
-
-`LuaInterface/main.cpp` (127 lines) `#include`s everything else — the Core
-library, the Lua interpreter, and the Lua binding layer. There are no object
-libraries and no per-directory builds. C++11, options `USE_INTEL`, `USE_OPENMP`
-(default ON), `USE_MKL`, falling back to `find_package(BLAS/LAPACK)`.
-
-`README.md` gives compile commands for Intel and GNU on Linux. A working
-command on macOS, using the Accelerate framework for BLAS/LAPACK:
-
-    g++ LuaInterface/main.cpp -D LUA_USE_MACOSX -DBLASunderscore -O2 \
-        -o Quanty -framework Accelerate -lreadline
-
-`-lreadline` is required because `LUA_USE_MACOSX` enables Lua's readline
-support. `-DBLASunderscore` selects the underscore-suffixed BLAS/LAPACK symbol
-convention, which Accelerate uses. Note that `g++ -fsyntax-only` on this
-translation unit reports a spurious `luai_hashnum` error from the bundled Lua;
-a real compile succeeds. Build takes roughly 80 s at `-O2`.
+`g++ -fsyntax-only` on this translation unit reports a spurious `luai_hashnum`
+error from the bundled Lua; a real compile succeeds. A build takes roughly 80 s
+at `-O2`.
 
 
 ## The central structures
@@ -41,25 +27,25 @@ act on them. The style is functional rather than object-oriented — there are n
 methods on the C side, only free functions taking struct pointers — but the
 structs are still the spine of the program, and the natural way in.
 
-Defined in `Core/StructDef.cpp` (1802 lines). Note that `Core/StructDef.h`
-contains only a single function prototype — the struct definitions live in the
-`.cpp`, which is consistent with the single-translation-unit build.
+Defined in `Core/StructDef.cpp`. `Core/StructDef.h` contains only a single
+function prototype — the struct definitions live in the `.cpp`, which is
+consistent with the single-translation-unit build.
 
 **Five structures carry the physics.** Each is exposed to Lua as an object, and
 the user-facing behaviour of that object is documented on quanty.org:
 
-| # | Struct | Line | Lua object | Role | User documentation |
-|---|---|---|---|---|---|
-| 1 | `WaveFunctionType` | 172 | `Wavefunction` | Slater-determinant expansion | [objects/wavefunction](https://www.quanty.org/documentation/language_reference/objects/wavefunction/start) |
-| 2 | `OperatorType` | 222 | `Operator` | Sum of ladder-operator products | [objects/operator](https://www.quanty.org/documentation/language_reference/objects/operator/start) |
-| 3 | `SpectraType` | 918 | `Spectra` | Discretised spectrum | [objects/spectra](https://www.quanty.org/documentation/language_reference/objects/spectra/start) |
-| 4 | `ResponsefunctionType` | 869 | `ResponseFunction` | Green's function dispatcher | [objects/responsefunction](https://www.quanty.org/documentation/language_reference/objects/responsefunction/start) |
-| 5 | `TightBindingDef` | 1005 | `TightBinding` | Periodic hopping model | [objects/tightbinding](https://www.quanty.org/documentation/language_reference/objects/tightbinding/start) |
+| # | Struct | Lua object | Role | User documentation |
+|---|---|---|---|---|
+| 1 | `WaveFunctionType` | `Wavefunction` | Slater-determinant expansion | [objects/wavefunction](https://www.quanty.org/documentation/language_reference/objects/wavefunction/start) |
+| 2 | `OperatorType` | `Operator` | Sum of ladder-operator products | [objects/operator](https://www.quanty.org/documentation/language_reference/objects/operator/start) |
+| 3 | `SpectraType` | `Spectra` | Discretised spectrum | [objects/spectra](https://www.quanty.org/documentation/language_reference/objects/spectra/start) |
+| 4 | `ResponsefunctionType` | `ResponseFunction` | Green's function dispatcher | [objects/responsefunction](https://www.quanty.org/documentation/language_reference/objects/responsefunction/start) |
+| 5 | `TightBindingDef` | `TightBinding` | Periodic hopping model | [objects/tightbinding](https://www.quanty.org/documentation/language_reference/objects/tightbinding/start) |
 
 Two naming mismatches to be aware of when moving between the Lua side and the C
 side, both verified against the `luaL_checkudata` calls:
 
-- The Lua `Spectra` object wraps **`SpectraTypeArray`** (`:939`), a bundle of
+- The Lua `Spectra` object wraps **`SpectraTypeArray`**, a bundle of
   `SpectraType` columns sharing one energy axis — not a bare `SpectraType`.
   That is why one `CreateSpectra` call can return several polarisations at once.
 - `TightBindingDef` is the only one of the five not named `...Type`.
@@ -69,21 +55,21 @@ side, both verified against the `luaL_checkudata` calls:
 These exist to serve the calculations above rather than to represent physics in
 their own right. The first three are also exposed to Lua as objects:
 
-| Struct | Line | Lua object | Role | User documentation |
-|---|---|---|---|---|
-| `Complex16` | 53 | `Complex` | `{Re, Im}` pair; the scalar type throughout | [objects/complex](https://www.quanty.org/documentation/language_reference/objects/complex/start) |
-| `CompactMatrixType` | 353 | `Matrix` | Dense matrix as exposed to Lua | [objects/matrix](https://www.quanty.org/documentation/language_reference/objects/matrix/start) |
-| `CompactTensorType` | 376 | `Tensor` | Rank-`n` tensor, with per-rank co/contravariance | *(not documented on the site)* |
-| `Interpolation::InterpolatingFunction` | — | `InterpolatingFunction` | Splines; see below | [objects/interpolatingfunction](https://www.quanty.org/documentation/language_reference/objects/interpolatingfunction/start) |
-| `MatrixType` | 325 | — | Internal dense matrix, `VRe[i][j]` | |
-| `CompactVectorType` | 397 | — | Vector, real or complex | |
-| `SparseMatrixType` | 415 | — | Sparse matrix | |
-| `OperatorFixedLengthType` | 207 | — | One length-`l` block of an `OperatorType` | |
-| `DeterminantRestrictionType` | 195 | — | Occupation restrictions | |
-| `ConvergenceSettingsType` | 236 | — | Lanczos / convergence knobs | |
-| `LuaOptionsType` | 884 | — | Option-table parsing for the bindings | |
-| `AtomType`, `CrystalStructureType` | 949, 965 | — | Geometry, used by `TightBindingDef` | |
-| `BandstructurePointType`, `BandstructurePathType` | 1016, 1024 | — | k-paths for band structures | |
+| Struct | Lua object | Role | User documentation |
+|---|---|---|---|
+| `Complex16` | `Complex` | `{Re, Im}` pair; the scalar type throughout | [objects/complex](https://www.quanty.org/documentation/language_reference/objects/complex/start) |
+| `CompactMatrixType` | `Matrix` | Dense matrix as exposed to Lua | [objects/matrix](https://www.quanty.org/documentation/language_reference/objects/matrix/start) |
+| `CompactTensorType` | `Tensor` | Rank-`n` tensor, with per-rank co/contravariance | *(not documented on the site)* |
+| `Interpolation::InterpolatingFunction` | `InterpolatingFunction` | Splines; see below | [objects/interpolatingfunction](https://www.quanty.org/documentation/language_reference/objects/interpolatingfunction/start) |
+| `MatrixType` | — | Internal dense matrix, `VRe[i][j]` | |
+| `CompactVectorType` | — | Vector, real or complex | |
+| `SparseMatrixType` | — | Sparse matrix | |
+| `OperatorFixedLengthType` | — | One length-`l` block of an `OperatorType` | |
+| `DeterminantRestrictionType` | — | Occupation restrictions | |
+| `ConvergenceSettingsType` | — | Lanczos / convergence knobs | |
+| `LuaOptionsType` | — | Option-table parsing for the bindings | |
+| `AtomType`, `CrystalStructureType` | — | Geometry, used by `TightBindingDef` | |
+| `BandstructurePointType`, `BandstructurePathType` | — | k-paths for band structures | |
 
 #### MatrixType versus CompactMatrixType — use CompactMatrixType in new code
 
@@ -95,7 +81,7 @@ separate blocks — so a complex `Ni × Nj` matrix costs on the order of
 allocating memory**. Removing allocations was the fix, and `CompactMatrixType`
 is the result:
 
-| | `MatrixType` (325) | `CompactMatrixType` (353) |
+| | `MatrixType` | `CompactMatrixType` |
 |---|---|---|
 | storage | `double **VRe, **VIm` | `union { double *VRe; Complex16 *V; }` |
 | allocations | one per row, per part | **one**, flat |
@@ -107,7 +93,7 @@ is the result:
 **New code should use `CompactMatrixType`.** A full rewrite of the remaining
 `MatrixType` call sites is expensive and has not been done, so the old struct
 stays and conversion is allowed: `MatrixToCompactMatrix`
-(`Core/BasicMath/BasicMath_MatrixTypeConversion.h:60`). Note there is no reverse
+(`Core/BasicMath/BasicMath_MatrixTypeConversion.h`). Note there is no reverse
 conversion — the flow is one-way, which matches the intended direction of
 travel. `MatrixType` is still what several internals pass around; it is the
 hopping-matrix member of `TightBindingDefHopping`, for instance.
@@ -118,15 +104,20 @@ fraction. See `TODO.md` for the migration.
 `InterpolatingFunction` is the one place among these that is genuine C++: a
 class hierarchy in `namespace Interpolation` under
 `Core/BasicMath/Interpolation/` (`InterpolatingFunction.h`, `CubicSpline`,
-`CubicHermiteSpline`), used through virtual dispatch.
+`CubicHermiteSpline`, `TBSpline`), used through virtual dispatch.
 
-It got there by drift rather than by design. Maurits started it in C — the
-commented-out `InterpolatingFunctionType` at `StructDef.cpp:1796` is that
-original — and a student then took it over and rewrote it as real C++. It sits
-within what `README.md` tolerates, being separated from the core, but it should
-not be read as a worked example of how to write new Quanty code. **An overhaul
-is expected when the next student picks it up, and whether it ends up in C or in
-C++ is genuinely open.** Treat the current shape as provisional; see `TODO.md`.
+It got there by drift rather than by design. It was started in C — the
+commented-out `InterpolatingFunctionType` at the end of `Core/StructDef.cpp` is
+that original — and a student then rewrote it as real C++. It should not be read
+as a worked example of how to write new Quanty code.
+
+**The direction is decided: C.** The numerics are plain C functions on arrays —
+for B-splines `BSpline.cpp`, `BSplineMatrix.cpp`, `GaussLegendre.cpp` and the
+dual-kinetic-balance basis `DKBSpline.cpp` in the same folder (see
+`BSPLINE_DESIGN.md`). The C++ classes remain as thin wrappers that call them.
+Replacing the class hierarchy by a C struct, along the lines of the commented-out
+`InterpolatingFunctionType`, is a later, separate project; see `TODO.md`. New
+interpolation code goes into the C functions, not into the classes.
 
 A further large family of structs — `TriDiagonalMatrixType`,
 `AndersonMatrixType`, their `Double`, `Second` and `Block` variants, and
@@ -153,7 +144,7 @@ over ladder strings, with real (`VRe`) or complex (`V`) values.
 ### SpectraType
 
 A discretised spectrum. The Lua object is the array form, `SpectraTypeArray`
-(`:939`) — several spectra over a shared energy grid — which is what makes
+— several spectra over a shared energy grid — which is what makes
 `Spectra` support `+` and scalar `*` for Boltzmann averaging over a list of
 eigenstates.
 
@@ -230,39 +221,13 @@ two chain heads, which is only defined if both exist, so both `BADouble…`
 constructors reject a chain of length zero and that reject is not a guard to be
 tidied away.
 
-#### Conjugation: the head is not like the levels below it
-
-A block representation couples its **head** as `b0^* ( ) b0^T` and every level
-**below** as `b ( ) b^+`. `EvaluateBlockTriDiagonalMatrix` shows both:
-`TransformCompactMatrixInlinecT` for the first block, `TransformCompactMatrixInlineNC`
-for the rest. `CompactMatrixSqrt` returns the hermitian `B` with `B B^† = W`, the
-below form. Only a **complex** test can tell a head error from a below error, so
-every test of a block conversion needs a complex case.
-
-The transpose of a response function is the same substitution at every level —
-`A_i → A_i^T`, `B_i → B_i^*` — which covers both conventions:
-`(B^* X B^T)^T = B X^T B^+` and `(B X B^+)^T = B^* X^T B^T`.
-
-#### Two more conventions that are easy to get wrong
-
-- **Rows are eigenvectors.** Wherever a routine returns an eigenvector matrix
-  `vec` next to eigenvalues, `vec^* H vec^T` is the diagonal matrix of the
-  eigenvalues. `CompactMatrixEigensystem` and `Eigensystem` on a response
-  function both follow it.
-- **`ToMatrix` returns the `H` in the denominator and neglects `A0` and `B0`.**
-  For a `t` that is `a[1…N]` with its couplings, `b[0]` being left to `GetB0`;
-  for a `d` it is the impurity with both chains. So the eigenvalues of
-  `ToMatrix(G)` are the poles of `G`, and a format that stores redundant levels
-  returns more of them — one for a `n`, two per bath block for a `d` — the extra
-  ones sitting at zero and decoupled. The block `n` needs care here: it has no
-  `b0` member, so the weight of `G` lives in its head couplings and a basis
-  transformation built from them has to be Löwdin-normalised, which is what
-  `GetNormalizedTFromValandConInBlockNaturalImpurityOrbitalMatrixType` is for.
+The conjugation of the head versus the levels below, the layout of the block
+types, and what `ToMatrix` returns are in `CONVENTIONS.md`, §4.
 
 ### TightBindingDef
 
 A periodic hopping model: a `CrystalStructureType Cell` for the geometry, and
-`nH` hopping entries `TightBindingDefHopping` (`:993`). Each hopping carries the
+`nH` hopping entries `TightBindingDefHopping`. Each hopping carries the
 two atom/shell endpoints, the integer translation between unit cells
 (`TransVecs[3]`), the resulting `ConnectingVector[3]` in the cell's units, and a
 `MatrixType Hop` holding the hopping matrix itself. `NFermion` and
@@ -283,8 +248,8 @@ indices.
 
 An important asymmetry: an **operator's** hash tables are used only while the
 operator is being *built* — `RealOperatorAddLader`
-(`Core/OperatorArithmetic.cpp:322`) uses them to merge duplicate terms, and
-`OperatorRemoveSmallValues` (`:1309`) rebuilds them after a `Chop`. Every
+(`Core/OperatorArithmetic.cpp`) uses them to merge duplicate terms, and
+`OperatorRemoveSmallValues` rebuilds them after a `Chop`. Every
 routine that *applies* an operator to a wave function iterates `l[length].N`
 linearly over `o[]`/`VRe[]` and never touches `KeyList`. Consequently two
 operators holding identical terms may legitimately report different `NBitsKey`
@@ -296,7 +261,7 @@ operand was copied first in a sum.
 
 `DeterminantRestrictionType` is a set of `N` filters: for each, a bitmask
 `Determinant[i]` selecting orbitals, plus `Min[i]`/`Max[i]` allowed particle
-counts. `QDetNotRestricted` (`Core/OperatorWaveFunction.cpp:2260`) returns 1
+counts. `QDetNotRestricted` (`Core/OperatorWaveFunction.cpp`) returns 1
 if a determinant passes all filters.
 
 **Invariant worth knowing:** that function uses the *operator's* `NWord` as its
@@ -320,7 +285,7 @@ unrestricted unless `H.Restrictions` is set.
 
 ## Ground-state solver
 
-`BlockGroundState` (`Core/BlockLanczos.cpp:5782`) alternates: apply `H` to the
+`BlockGroundState` (`Core/BlockLanczos.cpp`) alternates: apply `H` to the
 current basis (`BlockOperatorPsiSerialRestricted`), grow the basis to the
 result, then converge in-basis with `BlockLanczosGroundStateConserveBasis`.
 Convergence is judged on the energy variance against `Settings->zero`. Small
@@ -328,9 +293,9 @@ bases (`N <= DenseBorder`) go to a dense LAPACK diagonalisation instead.
 
 Two behaviours to be aware of when reading traces:
 
-- The shift scheme at `:5913` calls `OperatorAddLader(H, NULL, 0, ...)`, which
-  mutates `H`'s scalar term in place on every outer loop.
-- The outer loop aborts with an error after 100 iterations (`:5843`).
+- The shift scheme calls `OperatorAddLader(H, NULL, 0, ...)`, which mutates
+  `H`'s scalar term in place on every outer loop.
+- The outer loop aborts with an error after 100 iterations (`iloop >= 100`).
 
 `NBitsKey` for *wave functions* is re-tuned each loop
 (`BlockWaveFunctionResetKeylist`) to track the growing basis — unlike operator
@@ -339,21 +304,22 @@ Two behaviours to be aware of when reading traces:
 
 ## Lua binding layer
 
-`LuaInterface/` holds one `.cpp`/`.h` pair per exposed type — `Wavefunction`,
-`Operator`, `Spectra`, `ResponseFunction`, `Matrix`, `Tensor`, `BraKet`,
-`TightBinding`, `Plot`, `PostScript` — each implementing the metamethods
+`LuaInterface/` holds one `.cpp`/`.h` pair per exposed type — `Complex`,
+`Wavefunction`, `Operator`, `Spectra`, `ResponseFunction`, `Matrix`, `Tensor`,
+`BraKet`, `TightBinding`, `Interpolate` — each implementing the metamethods
 (`__add`, `__sub`, `__mul`, `__index`, `__newindex`, `__tostring`, `__gc`) that
-make the C struct behave as a Lua object. `ssp.cpp` carries the large
-free-function surface (`Eigensystem`, `CreateSpectra`, ...) and its option
-parsing via `LuaOptionsType`/`LuaCheckOptions`. `eval.cpp` drives evaluation;
-`lua/` is the vendored interpreter and `lua_extensions/` the additions
-(including `get_put.cpp`, which serialises objects back to Lua source).
+make the C struct behave as a Lua object. `Graphics` and `BitMap` are bound in
+`Plot/LuaBinding.cpp`. `LuaInterface/Plot.cpp` and `LuaInterface/PostScript.cpp`
+are dead code: their `#include` in `main.cpp` is commented out. `ssp.cpp` carries
+the large free-function surface (`Eigensystem`, `CreateSpectra`, ...) and its
+option parsing via `LuaOptionsType`/`LuaCheckOptions`. `eval.cpp` drives
+evaluation; `lua/` is the vendored interpreter and `lua_extensions/` the
+additions (including `get_put.cpp`, which serialises objects back to Lua source).
 
-`Doc/Claude/LUA_API_OVERVIEW.md` is an existing survey of everything exported
-to Lua.
+`LUA_API_OVERVIEW.md` is a survey of everything exported to Lua.
 
 Defaults that surprise: `Chop()` with no argument uses `10*DBL_EPSILON`
-(`Operator.cpp:5024`), i.e. essentially a bit-exactness cutoff, applied as an
+(`LuaOperatorChop`), i.e. essentially a bit-exactness cutoff, applied as an
 *absolute* threshold.
 
 
@@ -365,25 +331,33 @@ real/complex/block variants (`RealWaveFunctionArithmetic`,
 mixed-type bridges), Lanczos variants, density matrices, spectra,
 `BasicMath/` and `BasicMathBlock/` for matrix and Green's-function algebra.
 
-Physics-model folders each still contain a legacy `main()` from the era when
-input files *were* C main functions — `DMFT/`, `Hubbard_Model/`,
-`Tight_Binding/`, `Model/`. They are not part of the CMake build.
+`DFT/` holds the relativistic atom on B-splines (radial Dirac and Schrödinger
+equations, Kohn–Sham and configuration-average Hartree–Fock, the atomic basis
+functions behind `CalculateAtomicBasisFunctions`); see the `QuantyDFT_StageA`
+notes. `AtomicOperators/` builds the atomic operators (Slater integrals,
+Coulomb), `IO/` reads external electronic-structure output, `Tight_Binding/`
+holds the tight-binding library.
 
-Per-student folders (`Martin/`, `MartinDresden/`, `Robert/`, `Yi/`, `Simon/`,
-`Charles/`-era code, ...) hold experimental work exposed in Lua as
-`Name.something`. `README.md` marks these explicitly unsafe and unsupported
-outside collaboration with their author.
+The physics-model folders `DMFT/`, `Hubbard_Model/`, `Tight_Binding/` and
+`Model/` each still contain a legacy `main()` from the era when input files
+*were* C main functions. Those `main()`s are not part of the build; the library
+functions next to them are, through `main.cpp`.
+
+Per-student folders hold experimental work. `Martin/`, `Yi/` and `Simon/` are
+compiled in and exposed in Lua as `Name.something`; `CONTRIBUTING.md` marks these
+unsafe and unsupported outside collaboration with their author. `Robert/`,
+`MartinDresden/` and `Tools/` are not compiled at all. `Test/` has an entry point
+of its own (`Test/Test.cpp`) and is not part of the Quanty binary either.
 
 `Plot/` is the first example of pulling structure definitions out of the
-monolith: `Plot/StructDef.cpp` (163 lines) holds `GraphicsType`, `LineType`,
-`CurveType`, `ArcType`, `TextType`, `BitMapType` and the plot option structs,
-independent of the physics core. More of this splitting is intended — see
-`TODO.md`.
+monolith: `Plot/StructDef.cpp` holds `GraphicsType`, `LineType`, `CurveType`,
+`ArcType`, `TextType`, `BitMapType` and the plot option structs, independent of
+the physics core. More of this splitting is intended — see `TODO.md`.
 
 
 ## Coding conventions
 
-From `README.md` and confirmed directly: Quanty began in C and moved to C++ on
+From `CONTRIBUTING.md` and confirmed directly: Quanty began in C and moved to C++ on
 request, but the core is deliberately written in the **common subset of C and
 C++** despite the `.cpp` extension. Use arrays with `malloc`/`calloc` rather
 than `vector`/`map`/`string`, and `struct` rather than `class`. The stated
