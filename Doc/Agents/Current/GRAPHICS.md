@@ -166,6 +166,13 @@ panel, see §6.
 SVG of a dense curve shrinks tenfold with the same picture. Dots (`PointSize`)
 are still drawn at every point, which is how the tests count points.
 
+**Lines are cut at the frame.** A part of a curve outside the plot range is left
+out, and each part inside ends where the curve crosses the edge
+(`FindBoundaryPoint`, or `FindBoundaryPointOfCubic` for Bezier pieces). The edge
+is the one the segment moves towards; until this was fixed, a line whose point
+lay on the left or bottom edge and that left the frame through the top shrank to
+that point. Dots outside the range are not drawn.
+
 
 ## 5. Colour maps and bitmaps
 

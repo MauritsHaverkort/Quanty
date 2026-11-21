@@ -520,6 +520,21 @@ T = Graphics.ToTable(Graphics.Plot(InterpolatingFunction.BSpline({-2, -1.5, -0.4
                                    {{"plotIm",false}, {"Frame",{{"Xmin",-3},{"Xmax",3},{"Ymin",-10},{"Ymax",10}}}}))
 if T.Curve ~= nil then error("Graphics.Plot drew a BSpline of degree 1 as a curve\n", 1) end
 
+-- a line that starts on the left (or bottom) edge of the frame and leaves it through the top:
+-- the part inside ends where it crosses the top edge, it is not shrunk to its first point
+for k, w in ipairs({ {{{0,0},{1,5},{2,0}}, {0,0}, {0.4,2}},       -- first point on x = Xmin
+                     {{{0.5,-2},{1.5,5}},  {0.5,-2}, {0.5+4/7,2}} }) do  -- first point on y = Ymin
+  T = Graphics.ToTable(Graphics.Plot({w[1]}, {{"plotIm",false}, {"LineStyle",{ {{"LineColor",0x0000FF}} }},
+                                              {"Frame",{{"Xmin",0},{"Xmax",2},{"Ymin",-2},{"Ymax",2}}}}))
+  local Found = false
+  for _, c in ipairs(T.Line) do
+    local a, b = c.Point[1], c.Point[#c.Point]
+    if c.Color == 0x0000FF and math.abs(a[1]-CanvasX(w[2][1],0,2)) < 1e-12 and math.abs(a[2]-CanvasY(w[2][2],-2,2)) < 1e-12
+       and math.abs(b[1]-CanvasX(w[3][1],0,2)) < 1e-12 and math.abs(b[2]-CanvasY(w[3][2],-2,2)) < 1e-12 then Found = true end
+  end
+  if not Found then error("Graphics.Plot: a line from the edge of the frame out through the top is not cut at the top in case "..k.."\n", 1) end
+end
+
 -- errors: more arguments than the function, and a colour map (needs an even mesh)
 for k, w in ipairs({ function() return Graphics.Plot(Bs, 0.1) end, function() return Graphics.Plot({Bs, Bs}, {{"ColorMap",true}}) end }) do
   if pcall(w) then error("Graphics.Plot accepted a wrong plot of an interpolating function in case "..k.."\n", 1) end
