@@ -36,6 +36,7 @@ uint32_t OperatorMultiplyInline(OperatorType * const O, OperatorType const B);
 uint32_t OperatorMultiply2NormalOrder(OperatorType * const O, OperatorType const B, OperatorType const A, char const Bset, char const Aset, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorMultiplyNormalOrder(OperatorType * const O, OperatorType const B, OperatorType const A, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorMultiplyNormalOrderInline(OperatorType * const O, OperatorType const B, uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
+uint32_t OperatorMultiplyOneParticleNormalOrder(OperatorType * const O, OperatorType const B, OperatorType const A);
 uint32_t OperatorMultiply3(OperatorType * const O, OperatorType const C, OperatorType const B, OperatorType const A, char const Cset, char const Bset, char const Aset);
 uint32_t OperatorMultiply3NormalOrder(OperatorType * const O, OperatorType const C, OperatorType const B,OperatorType const A, char const Cset, char const Bset, char const Aset,uint32_t(*QDetNotOrdered) (uint16_t, uint16_t, uint32_t));
 uint32_t OperatorMultiply4(OperatorType * const O, OperatorType const D, OperatorType const C, OperatorType const B,OperatorType const A, char const Dset, char const Cset, char const Bset, char const Aset);

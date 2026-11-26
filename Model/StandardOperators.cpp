@@ -5434,13 +5434,11 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
   Anew = (OperatorType *)malloc((2 * k + 1) * sizeof(OperatorType));
   Qold = (bool *)calloc(2 * k + 1, sizeof(bool));
   Qnew = (bool *)calloc(2 * k + 1, sizeof(bool));
-  for (il = 0; il < 3; il++)
-    if (StevensChargeNeeded(charge[il], 1, ik, m, both))
-    {
-      OperatorCopy(&Aold[charge[il] + ik], letter[il]);
-      Qold[charge[il] + ik] = true;
-    }
-  for (d = 2; d <= ik; d++)
+  /*  start from A_0(0) = 1, so that every left factor is a normal ordered product */
+  StevensInitOperator(&Aold[ik], Jx);
+  RealOperatorAddLader(&Aold[ik], NULL, 0, 1);
+  Qold[ik] = true;
+  for (d = 1; d <= ik; d++)
   {
     for (n = -d; n <= d; n++)
     {
@@ -5473,7 +5471,7 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
         StevensInitOperator(&tmp, Jx);
         for (len = 1; len <= Aold[nold + ik].MaxLength + letter[il].MaxLength; len++)
           InitOperatorFixedLength(&tmp, len, StevensKeyBits(StevensProductTerms(&Aold[nold + ik], &letter[il], len), Jx->NFermion, Jx->NBoson, len));
-        OperatorMultiply2NormalOrder(&tmp, Aold[nold + ik], letter[il], 'N', 'N', &QDetNotOrderedFcFaBcBa);
+        OperatorMultiplyOneParticleNormalOrder(&tmp, Aold[nold + ik], letter[il]);
         OperatorAdd(&Anew[n + ik], tmp);
         FreeOperator(&tmp);
       }

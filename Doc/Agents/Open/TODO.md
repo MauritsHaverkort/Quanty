@@ -682,24 +682,27 @@ the transition operators are not Hermitian to begin with.
 
 `StevensO(k, m, Jx, Jy, Jz)` with operators multiplies one particle operators k
 times, so the result is a k particle operator. For the total J of an f shell
-(14 orbitals) `k = 6` takes 18 s and gives 526108 terms, `k = 4` 0.2 s.
+(14 orbitals) `k = 6` takes 10 s and gives 526108 terms, `k = 4` 0.1 s.
 
-Measured with `sample` on macOS, what the time went to:
+Measured with `sample` on macOS, what the time went to, and what was done:
 
 - The hash table of an operator has a fixed size, 2^NBitsKey entries, and
   `InitOperatorForMult` gives every length 2^8. With 10^5 terms every addition
   walks a chain of hundreds of strings: 94% of the time for the f shell at
   `k = 6`, which did not finish in 150 s. `CreateOperatorStevens` now sizes the
   tables from a bound on the number of terms (`StevensKeyBits`), which made it
-  2 to 3 times faster for smaller cases and the f shell at `k = 6` possible.
-- What remains is the normal ordering in `OperatorMultiply2NormalOrder`: 46% in
-  `ComplexOperatorAddLaderNormalOrder`, which sorts each product string by
-  swapping neighbours and recurses for every contraction, 30% in the hash
-  lookup, 10% in the ordering test called through a function pointer. A product
-  of a normal ordered string with a one particle string `c^dag_i c_j` has at
-  most two terms, whose positions and sign can be found directly. A dedicated
-  product for that case would remove most of this, and would serve other one
-  particle products as well. Not written, it needs discussing first.
+  2 to 3 times faster for smaller cases and the f shell at `k = 6` take 18 s.
+- Then the normal ordering in `OperatorMultiply2NormalOrder` took most of the
+  time: 46% in `ComplexOperatorAddLaderNormalOrder`, which sorts each product
+  string by swapping neighbours and recurses for every contraction, 10% in the
+  ordering test called through a function pointer. The product of a normal
+  ordered string with a one particle string `c^dag_i c_j` has at most two
+  terms, written in order directly by `OperatorMultiplyOneParticleNormalOrder`.
+  That made it another 1.8 to 2.4 times faster (d shell `k = 8`: 6.1 s to
+  2.6 s; f shell `k = 6`: 18 s to 9.8 s).
+- What remains (d shell, `k = 8`) is 65% adding the product strings to the hash
+  tables and 27% in `OperatorMultiplyOneParticleNormalOrder` itself. Only lua
+  `StevensO` and friends use the new product; `*` in lua does not.
 
 The same fixed table size slows down every operator product made with
 `InitOperatorForMult`, `*` in lua included: `(Jx^2+Jy^2)^3` of an f shell did
