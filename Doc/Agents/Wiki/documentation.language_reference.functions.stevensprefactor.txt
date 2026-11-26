@@ -1,0 +1,50 @@
+====== StevensPrefactor ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
+###
+//StevensPrefactor(k, m)// returns the factor between the Stevens operator and the renormalized tesseral harmonic of rank $k$ and component $m$,
+\begin{equation}
+O_k^m = \mathrm{StevensPrefactor}(k,m) \, D_{k,m},
+\end{equation}
+as used by //[[documentation:language_reference:functions:stevenso|StevensO()]]//. The factor makes the polynomial $O_k^m(x,y,z)$, written as the real or imaginary part of $(x + \imath y)^{|m|}$ times a polynomial in $z$ and $r^2$, have integer coefficients without a common divisor and a positive coefficient for the highest power of $z$. It is calculated for any $k$, and depends on $|m|$ only. The definitions are on the page [[documentation:standard_operators:stevens_operators|]].
+###
+
+===== Input =====
+
+  * //k// : Integer, the rank, $k \geq 0$.
+  * //m// : Integer, the component, from $-k$ to $k$.
+
+===== Output =====
+
+  * A real number, the factor $O_k^m / D_{k,m}$.
+
+===== Example =====
+
+###
+The factors for $k \leq 6$, for $m$ from $0$ to $k$.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+for k = 0, 6 do
+  local line = "k = "..k.." :"
+  for m = 0, k do line = line .. string.format(" %12.8f", StevensPrefactor(k, m)) end
+  print(line)
+end
+</code>
+
+==== Result ====
+<file Quanty_Output>
+k = 0 :   1.00000000
+k = 1 :   1.00000000   1.00000000
+k = 2 :   2.00000000   0.57735027   1.15470054
+k = 3 :   2.00000000   1.63299316   0.51639778   1.26491106
+k = 4 :   8.00000000   1.26491106   1.78885438   0.47809144   1.35224681
+k = 5 :   8.00000000   2.06559112   0.39036003   1.91236577   0.45074894   1.42539329
+k = 6 :  16.00000000   1.74574312   2.20820979   1.10410489   2.01581052   0.42977225   1.48877474
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

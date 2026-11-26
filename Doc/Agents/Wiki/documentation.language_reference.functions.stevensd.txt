@@ -1,0 +1,69 @@
+====== StevensD ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
+###
+//StevensD(k, m, Jx, Jy, Jz)// returns $D_{k,m}(\vec{J})$, the renormalized tesseral harmonic of rank $k$ and component $m$ with $x$, $y$ and $z$ replaced by the symmetrized products of //Jx//, //Jy// and //Jz//. For $k=1$ these are the components themselves: $D_{1,1} = J_x$, $D_{1,-1} = J_y$ and $D_{1,0} = J_z$. The definitions are on the page [[documentation:standard_operators:stevens_operators|]].
+###
+
+===== Input =====
+
+  * //k// : Integer, the rank, $k \geq 0$.
+  * //m// : Integer, the component, from $-k$ to $k$. For $|m| > k$ the result is zero.
+  * //Jx//, //Jy//, //Jz// : Three [[documentation:language_reference:objects:operator:start|Operators]] with the same number of fermionic and bosonic modes, or three square matrices of the same size, given as [[documentation:language_reference:objects:matrix:start|Matrix]] objects or as tables.
+  * Options:
+     * "Epsilon" : A real number, at least 0. Real and imaginary parts of the result that are at most //Epsilon// times the scale of the result are removed. The scale is $s^k$, with $s$ the largest absolute prefactor or matrix element of //Jx//, //Jy// and //Jz//, times the normalization of the function. This removes rounding errors, and an operator that should vanish, for example for $k > 2J$, comes back as exactly zero. //Epsilon// = 0 keeps everything. The default is $10^{8}$ times the machine precision ($2.2 \cdot 10^{-8}$) for Operators and $10^{3}$ times the machine precision ($2.2 \cdot 10^{-13}$) for matrices, because the rounding errors of a product of Operators grow with $k$.
+
+===== Output =====
+
+  * //O// : The operator, of the same kind as //Jx//: an Operator, a Matrix object or a table.
+
+===== Example =====
+
+###
+The operator of rank one for a spin 1/2, with the spin matrices ordered from $m=-1/2$ to $m=1/2$.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the spin matrices of spin S, rows and columns ordered from m = -S to m = S
+function SpinMatrices(S)
+  local d = math.floor(2*S + 1.5)
+  local Sx, Sy, Sz = {}, {}, {}
+  for i = 1, d do
+    Sx[i], Sy[i], Sz[i] = {}, {}, {}
+    for j = 1, d do Sx[i][j], Sy[i][j], Sz[i][j] = 0, 0, 0 end
+    Sz[i][i] = i - 1 - S
+  end
+  for i = 1, d-1 do
+    local m = i - 1 - S
+    local v = math.sqrt(S*(S+1) - m*(m+1))
+    Sx[i+1][i], Sx[i][i+1] = v/2, v/2
+    Sy[i+1][i], Sy[i][i+1] = -I*v/2, I*v/2
+  end
+  return Sx, Sy, Sz
+end
+
+Sx, Sy, Sz = SpinMatrices(1/2)
+for m = -1, 1 do
+  print("D(1,"..m..")")
+  print(StevensD(1, m, Sx, Sy, Sz))
+end
+</code>
+
+==== Result ====
+<file Quanty_Output>
+D(1,-1)
+{ { 0 , (0 + 0.5 I) } , 
+  { (0 - 0.5 I) , 0 } }
+D(1,0)
+{ { -0.5 , 0 } , 
+  { 0 , 0.5 } }
+D(1,1)
+{ { 0 , 0.5 } , 
+  { 0.5 , 0 } }
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}
