@@ -83,3 +83,6 @@ int CreateOperatorHarmonicOscillatorOnStandingWavesPointInteractionOnBasis(doubl
 
 
 
+double StevensPrefactorOtoD(uint32_t const k, int const m);
+uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, OperatorType const * const Jx, OperatorType const * const Jy, OperatorType const * const Jz, double const epsilon, OperatorType * const O);
+uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const m, CompactMatrixType const * const Jx, CompactMatrixType const * const Jy, CompactMatrixType const * const Jz, double const epsilon, CompactMatrixType * const O);

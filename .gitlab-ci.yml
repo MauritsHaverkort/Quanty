@@ -401,6 +401,7 @@ test-jobs:
           - "ShellAverage"
           - "SphericalBesselJ"
           - "Statistics"
+          - "StevensOperators"
           - "TensorProduct"
           - "TimeStartStopPrintSet"
           - "Transpose"

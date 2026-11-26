@@ -2724,6 +2724,161 @@ uint32_t OperatorMultiplyNormalOrderInline(OperatorType * const O, OperatorType 
   return 0;
 }
 
+/*  O <- O + B A, with B in normal order (QDetNotOrderedFcFaBcBa) and A a one-particle operator: a
+ *  constant and fermion strings c^dag_i c_j only. In storage order (o[0] acts first) a normal ordered
+ *  string of B holds its bosons, then its q fermion annihilators Y and then its fermion creators X, each
+ *  ascending. The bosons commute with c^dag_i c_j, and as Y holds c_i at most once
+ *
+ *    X Y c^dag_i c_j = (-1)^q X c^dag_i Y c_j + [c_i in Y] (-1)^(number of Y below i) X (Y\c_i) c_j
+ *
+ *  so a string gives at most two strings. Each is written in normal order directly: c^dag_i is sorted
+ *  into X and c_j into Y (or Y\c_i), each with the sign (-1)^(number of indices below it passed), and a
+ *  string that would hold an index twice is zero. This replaces the pairwise swaps and the recursion of
+ *  OperatorMultiply2NormalOrder, which does the product instead if A holds anything else. As there,
+ *  O->MaxLength must equal A.MaxLength + B.MaxLength.
+ */
+uint32_t OperatorMultiplyOneParticleNormalOrder(OperatorType * const O, OperatorType const B, OperatorType const A)
+{
+  uint32_t lA, lB, iNA, iNB, NA2, k, p, nbos, nann, ilow, jlow, xlow, iInX, iInY, jInY, done;
+  uint16_t const *s;
+  uint16_t i, j;
+  uint16_t det[B.MaxLength + 2];
+  double vBRe, vBIm, vARe, vAIm, vRe, vIm, sign;
+
+  /* A must hold a constant and fermion strings c^dag_i c_j only */
+  for (lA = 1; lA <= A.MaxLength; lA++)
+  {
+    if (A.l[lA].N == 0) continue;
+    if (lA != 2) return OperatorMultiply2NormalOrder(O, B, A, 'N', 'N', &QDetNotOrderedFcFaBcBa);
+    for (iNA = 0; iNA < A.l[2].N; iNA++)
+      if ((A.l[2].o[2 * iNA] >= A.NFermion) || !(A.l[2].o[2 * iNA + 1] & CrAnMask) || ((A.l[2].o[2 * iNA + 1] & NotCrAnMask) >= A.NFermion))
+        return OperatorMultiply2NormalOrder(O, B, A, 'N', 'N', &QDetNotOrderedFcFaBcBa);
+  }
+  NA2 = (A.MaxLength >= 2) ? A.l[2].N : 0;
+
+  for (lB = 0; lB <= B.MaxLength; lB++)
+    for (iNB = 0; iNB < B.l[lB].N; iNB++)
+    {
+      s = &B.l[lB].o[lB * iNB];
+      if (B.l[lB].QComplex)
+      {
+        vBRe = B.l[lB].V[iNB].Re;
+        vBIm = B.l[lB].V[iNB].Im;
+      }
+      else
+      {
+        vBRe = B.l[lB].VRe[iNB];
+        vBIm = 0;
+      }
+      nbos = 0;
+      while ((nbos < lB) && ((s[nbos] & NotCrAnMask) >= B.NFermion)) nbos++;
+      nann = 0;
+      while ((nbos + nann < lB) && !(s[nbos + nann] & CrAnMask)) nann++;
+
+      /* the constant of A */
+      for (iNA = 0; iNA < A.l[0].N; iNA++)
+      {
+        if (A.l[0].QComplex)
+        {
+          vARe = A.l[0].V[iNA].Re;
+          vAIm = A.l[0].V[iNA].Im;
+        }
+        else
+        {
+          vARe = A.l[0].VRe[iNA];
+          vAIm = 0;
+        }
+        if (OperatorAddLader(O, s, lB, vBRe * vARe - vBIm * vAIm, vBRe * vAIm + vBIm * vARe))
+        {
+          printf("OperatorAddLader failed in OperatorMultiplyOneParticleNormalOrder\n");
+          fflush(stdout);
+          return 1;
+        }
+      }
+
+      /* the strings c^dag_i c_j of A, stored as {c_j, c^dag_i} */
+      for (iNA = 0; iNA < NA2; iNA++)
+      {
+        j = A.l[2].o[2 * iNA];
+        i = A.l[2].o[2 * iNA + 1] & NotCrAnMask;
+        if (A.l[2].QComplex)
+        {
+          vARe = A.l[2].V[iNA].Re;
+          vAIm = A.l[2].V[iNA].Im;
+        }
+        else
+        {
+          vARe = A.l[2].VRe[iNA];
+          vAIm = 0;
+        }
+        vRe = vBRe * vARe - vBIm * vAIm;
+        vIm = vBRe * vAIm + vBIm * vARe;
+
+        ilow = 0; jlow = 0; iInY = 0; jInY = 0;
+        for (p = nbos; p < nbos + nann; p++)
+        {
+          if (s[p] < j) jlow++;
+          else if (s[p] == j) jInY = 1;
+          if (s[p] < i) ilow++;
+          else if (s[p] == i) iInY = 1;
+        }
+        xlow = 0; iInX = 0;
+        for (p = nbos + nann; p < lB; p++)
+        {
+          if ((s[p] & NotCrAnMask) < i) xlow++;
+          else if ((s[p] & NotCrAnMask) == i) iInX = 1;
+        }
+
+        /* (-1)^q X c^dag_i Y c_j */
+        if (!iInX && !jInY)
+        {
+          k = 0;
+          for (p = 0; p < nbos + jlow; p++) det[k++] = s[p];
+          det[k++] = j;
+          for (p = nbos + jlow; p < nbos + nann + xlow; p++) det[k++] = s[p];
+          det[k++] = i | CrAnMask;
+          for (p = nbos + nann + xlow; p < lB; p++) det[k++] = s[p];
+          sign = ((nann + jlow + xlow) % 2) ? -1 : 1;
+          if (OperatorAddLader(O, det, lB + 2, sign * vRe, sign * vIm))
+          {
+            printf("OperatorAddLader failed in OperatorMultiplyOneParticleNormalOrder\n");
+            fflush(stdout);
+            return 1;
+          }
+        }
+
+        /* (-1)^(number of Y below i) X (Y\c_i) c_j */
+        if (iInY && (!jInY || (j == i)))
+        {
+          k = 0;
+          for (p = 0; p < nbos; p++) det[k++] = s[p];
+          done = 0;
+          for (p = nbos; p < nbos + nann; p++)
+          {
+            if (s[p] == i) continue;
+            if (!done && (s[p] > j))
+            {
+              det[k++] = j;
+              done = 1;
+            }
+            det[k++] = s[p];
+          }
+          if (!done) det[k++] = j;
+          for (p = nbos + nann; p < lB; p++) det[k++] = s[p];
+          sign = ((ilow + jlow - ((i < j) ? 1 : 0)) % 2) ? -1 : 1;
+          if (OperatorAddLader(O, det, lB, sign * vRe, sign * vIm))
+          {
+            printf("OperatorAddLader failed in OperatorMultiplyOneParticleNormalOrder\n");
+            fflush(stdout);
+            return 1;
+          }
+        }
+      }
+    }
+  SetQComplexOperator(O);
+  return 0;
+}
+
 #undef HASH_QCOMPLEX
 
 

@@ -5153,3 +5153,492 @@ int CreateOperatorHarmonicOscillatorOnSplineWaveletAInteraction(double const d, 
   
   return 0;
 }
+
+
+
+/*  Stevens operators
+ *
+ *  The Stevens operators are the crystal field potential written with angular momentum operators: in the
+ *  solid harmonic r^k C_{k,m}(x,y,z) the coordinates x, y and z are replaced by Jx, Jy and Jz, and every
+ *  product by the average over all orderings of its factors (the symmetrised product). They follow the
+ *  Mathematica package Quanty`StevensOperators`, which has five normalisations, selected by type:
+ *
+ *    'C'  the renormalised spherical harmonics, C_{k,m} = sqrt(4 pi/(2k+1)) Y_{k,m}, with the phases of
+ *         Condon and Shortley
+ *    'Y'  the normalised spherical harmonics Y_{k,m}
+ *    'D'  the renormalised tesseral harmonics, the real combinations of C_{k,m} and C_{k,-m} with the
+ *         phases of YToZMatrix
+ *           D_{k,0}   = C_{k,0}
+ *           D_{k,m>0} = sqrt(1/2) (C_{k,-m} + (-1)^m C_{k,m})
+ *           D_{k,m<0} = i sqrt(1/2) (C_{k,m} - (-1)^m C_{k,-m})
+ *    'Z'  the normalised tesseral harmonics, Z_{k,m} = sqrt((2k+1)/(4 pi)) D_{k,m}
+ *    'O'  the operators of Stevens, O_{k,m} = D_{k,m} / StevensPrefactorOtoD(k,m)
+ *
+ *  The symmetrised product is not built by permuting factors. Racah's expression of the solid harmonic
+ *
+ *    r^k C_{k,m} = sqrt((k+m)!(k-m)!) sum_{p-q=m, p+q+s=k} a^p b^q z^s / (p! q! s!)
+ *
+ *  with a = -(x+iy)/2 and b = (x-iy)/2 is linear in each factor, so the symmetrised product of a^p b^q
+ *  z^s may be built from the operators a = -J+/2, b = J-/2 and c = Jz. It is the sum of the k!/(p! q! s!)
+ *  distinct orderings of its factors divided by their number. The p! q! s! cancels, which leaves
+ *
+ *    C_{k,m} = sqrt((k+m)!(k-m)!)/k! A_k(m)
+ *
+ *  where A_k(m) is the sum of all products of k factors a, b or c whose charge, the number of factors a
+ *  minus the number of factors b, is m. These sums follow from the recursion
+ *
+ *    A_0(0) = 1,   A_{d+1}(n) = A_d(n-1) a + A_d(n+1) b + A_d(n) c
+ *
+ *  which takes at most 3(2d+1) products at level d, about 3k^2 in all, where averaging over the orderings
+ *  takes up to 3^k products of k factors. Nothing in it uses the commutation relations of angular
+ *  momentum, so Jx, Jy and Jz may be any three operators, as in the Mathematica package.
+ *
+ *  For a fermion operator the product of k one particle operators is a k particle operator. That is cheap
+ *  for a small shell, but the k particle part grows as (NFermion choose k)^2. For an angular momentum J
+ *  represented by one fermion in 2J+1 orbitals only the one particle part acts, and the matrix version,
+ *  CreateCompactMatrixStevens, is the better choice.
+ */
+
+/*  FactorialPrimeExponent returns the exponent of the prime p in n!, by Legendre's formula
+ *  sum_i floor(n/p^i)
+ */
+static uint32_t FactorialPrimeExponent(uint32_t n, uint32_t const p)
+{
+  uint32_t e = 0;
+  while (n >= p)
+  {
+    n /= p;
+    e += n;
+  }
+  return e;
+}
+
+/*  StevensPrefactorOtoD returns the factor between Stevens' operator and the renormalised tesseral
+ *  harmonic, D_{k,m} = StevensPrefactorOtoD(k,m) O_{k,m}, and 0 for |m| > k. Stevens chose his
+ *  normalisation by a rule. Write the classical polynomial of the operator as
+ *
+ *    O_{k,m} = Re[(x+iy)^|m|] F(z, r^2)   for m >= 0, and Im[(x+iy)^|m|] F(z, r^2) for m < 0
+ *
+ *  Then the coefficients of F are integers without a common divisor, and the coefficient of z^(k-|m|) is
+ *  positive. The rule must be applied to this classical polynomial. Written with Jz and J(J+1) some
+ *  operators have half integer constants, for example O_{3,1} = 1/4 {J+ + J-, 5 Jz^2 - J(J+1) - 1/2}.
+ *  The rule reproduces the table PrefactorOtoD of the Mathematica package for k <= 6, and the extended
+ *  Stevens operators of Ryabov, J. Magn. Reson. 140, 141 (1999), as implemented in EasySpin (stev), for
+ *  k <= 12. The one exception is k = 9, |m| = 1 and 2, where the table in EasySpin has 725700 and the
+ *  pattern of all its other rows 725760.
+ *
+ *  F is proportional to the |m|-th derivative of the Legendre polynomial P_k, whose coefficients are, up
+ *  to a common factor,
+ *
+ *    c_j = (2k-2j)! / (j! (k-j)! (k-2j-|m|)!),   j = 0 ... (k-|m|)/2
+ *
+ *  With g their greatest common divisor this gives
+ *
+ *    StevensPrefactorOtoD(k,m) = s g sqrt((k-|m|)!/(k+|m|)!) / 2^k,   s = 1 for m = 0, sqrt(2) otherwise
+ *
+ *  The c_j do not fit in a 64 bit integer above k = 14, so g is built from the exponent of each prime
+ *  p <= 2k in it, which is the smallest exponent of p in the c_j.
+ */
+double StevensPrefactorOtoD(uint32_t const k, int const m)
+{
+  uint32_t am, p, d, j, e, emin;
+  double val;
+  am = (uint32_t)abs(m);
+  if (am > k) return 0;
+  val = 1;
+  for (p = 2; p <= 2 * k; p++)
+  {
+    for (d = 2; d * d <= p; d++) if (p % d == 0) break;
+    if (d * d <= p) continue;   /* p is not a prime */
+    emin = UINT32_MAX;
+    for (j = 0; 2 * j + am <= k; j++)
+    {
+      e = FactorialPrimeExponent(2 * k - 2 * j, p) - FactorialPrimeExponent(j, p) - FactorialPrimeExponent(k - j, p) - FactorialPrimeExponent(k - 2 * j - am, p);
+      if (e < emin) emin = e;
+    }
+    for (e = 0; e < emin; e++) val *= (double)p;
+  }
+  val /= pow(2.0, (double)k);
+  for (j = k - am + 1; j <= k + am; j++) val /= sqrt((double)j);
+  if (am != 0) val *= sqrt(2.0);
+  return val;
+}
+
+/*  StevensCoefficients returns the operator of the given type as alpha A_k(m) + beta A_k(-m), with A_k
+ *  the charge sums described above. It returns 1 for an unknown type.
+ */
+static uint32_t StevensCoefficients(char const type, uint32_t const k, int const m, Complex16 * const alpha, Complex16 * const beta)
+{
+  uint32_t am, j;
+  double f, s, sgn;
+  am = (uint32_t)abs(m);
+  /*  f = sqrt((k+|m|)!(k-|m|)!)/k! */
+  f = 1;
+  for (j = 1; j <= am; j++) f *= (double)(k + j) / (double)(k - am + j);
+  f = sqrt(f);
+  alpha->Re = f;
+  alpha->Im = 0;
+  beta->Re = 0;
+  beta->Im = 0;
+  if (((type == 'D') || (type == 'Z') || (type == 'O')) && (am != 0))
+  {
+    sgn = (am % 2) ? -1 : 1;
+    if (m > 0)
+    {
+      alpha->Re = sgn * f * sqrt(0.5);
+      beta->Re = f * sqrt(0.5);
+    }
+    else
+    {
+      alpha->Re = 0;
+      alpha->Im = f * sqrt(0.5);
+      beta->Im = -sgn * f * sqrt(0.5);
+    }
+  }
+  if ((type == 'C') || (type == 'D')) s = 1;
+  else if ((type == 'Y') || (type == 'Z')) s = sqrt((2 * k + 1) / (4 * M_PI));
+  else if (type == 'O') s = 1 / StevensPrefactorOtoD(k, m);
+  else return 1;
+  alpha->Re *= s;
+  alpha->Im *= s;
+  beta->Re *= s;
+  beta->Im *= s;
+  return 0;
+}
+
+/*  StevensChargeNeeded tells if the charge sum A_d(n) at level d leads to A_k(m), or with both set also
+ *  if it leads to A_k(-m)
+ */
+static bool StevensChargeNeeded(int const n, int const d, int const k, int const m, bool const both)
+{
+  if (abs(n - m) <= k - d) return true;
+  if (both && (abs(n + m) <= k - d)) return true;
+  return false;
+}
+
+/*  StevensInitOperator initialises an empty operator on the basis of O */
+static void StevensInitOperator(OperatorType * const O, OperatorType const * const Oset)
+{
+  InitOperator(O);
+  O->NFermion = Oset->NFermion;
+  O->NBoson = Oset->NBoson;
+  O->NWord = Oset->NWord;
+}
+
+/*  StevensKeyBits returns the number of bits of the hash table for Nterms strings of the given length:
+ *  one entry per string, at least 2^8 and at most 2^22. The hash table of an operator does not grow, so a
+ *  table that is too small makes every addition walk a long chain. For fermions Nterms is capped by the
+ *  number of normal ordered strings of that length, sum_nc C(NF,nc) C(NF,length-nc).
+ */
+static uint32_t StevensKeyBits(double Nterms, uint32_t const NFermion, uint32_t const NBoson, uint32_t const length)
+{
+  uint32_t nc, i, bits;
+  double Nmax, c1, c2;
+  if (NBoson == 0)
+  {
+    Nmax = 0;
+    for (nc = 0; nc <= length; nc++)
+    {
+      if ((nc > NFermion) || (length - nc > NFermion)) continue;
+      c1 = 1;
+      for (i = 1; i <= nc; i++) c1 *= (double)(NFermion - nc + i) / (double)i;
+      c2 = 1;
+      for (i = 1; i <= length - nc; i++) c2 *= (double)(NFermion - (length - nc) + i) / (double)i;
+      Nmax += c1 * c2;
+    }
+    if (Nterms > Nmax) Nterms = Nmax;
+  }
+  bits = 8;
+  while ((bits < 22) && ((double)((uint32_t)1 << bits) < Nterms)) bits++;
+  return bits;
+}
+
+/*  StevensProductTerms returns an upper bound to the number of strings of the given length in the normal
+ *  ordered product A B: a string of length la times one of length lb gives strings of length la + lb,
+ *  la + lb - 2, ... |la - lb|
+ */
+static double StevensProductTerms(OperatorType const * const A, OperatorType const * const B, uint32_t const length)
+{
+  uint32_t la, lb;
+  double N = 0;
+  for (la = 0; la <= A->MaxLength; la++)
+    for (lb = 0; lb <= B->MaxLength; lb++)
+      if ((la + lb >= length) && ((la + lb - length) % 2 == 0) && (length + lb >= la) && (length + la >= lb))
+        N += (double)A->l[la].N * (double)B->l[lb].N;
+  return N;
+}
+
+/*  StevensOperatorMaxAbs returns the largest absolute value of a prefactor of O */
+static double StevensOperatorMaxAbs(OperatorType const * const O)
+{
+  uint32_t il, j;
+  double v, vmax = 0;
+  for (il = 0; il <= O->MaxLength; il++)
+    for (j = 0; j < O->l[il].N; j++)
+    {
+      if (O->l[il].QComplex) v = sqrt(Sqr(O->l[il].V[j].Re) + Sqr(O->l[il].V[j].Im));
+      else v = fabs(O->l[il].VRe[j]);
+      if (v > vmax) vmax = v;
+    }
+  return vmax;
+}
+
+/*  CreateOperatorStevens creates the Stevens operator of rank k and component m (-k ... k) in the
+ *  normalisation type ('C', 'Y', 'D', 'Z' or 'O', see above) from the operators Jx, Jy and Jz. For |m| > k
+ *  the operator is zero. It returns 1 for an unknown type.
+ *
+ *  Rounding leaves prefactors that should be zero, among them imaginary parts that would make the
+ *  operator complex, and an operator that vanishes, for example for k > 2J, comes out as noise. Its size
+ *  is not set by the result but by the inputs. With s the largest absolute prefactor of Jx, Jy and Jz the
+ *  scale is
+ *
+ *    S = (|alpha| + |beta|) s^k
+ *
+ *  and real and imaginary parts at most epsilon S are removed, so an operator that should vanish comes
+ *  out empty. The rounding noise grows with k and, for operators, with the number of orbitals. epsilon = 0
+ *  keeps everything.
+ */
+uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, OperatorType const * const Jx, OperatorType const * const Jy, OperatorType const * const Jz, double const epsilon, OperatorType * const O)
+{
+  int const charge[3] = {1, -1, 0};
+  int const ik = (int)k;
+  OperatorType letter[3], tmp, *Aold, *Anew, *Aswap;
+  bool *Qold, *Qnew, *Qswap, both;
+  Complex16 alpha, beta;
+  int n, d, il, nold;
+  uint32_t len, maxlen;
+  double scale, Nterms;
+
+  StevensInitOperator(O, Jx);
+  snprintf(O->Name, MAXStrLength, "Stevens%c(%u,%d)", type, k, m);
+  if (StevensCoefficients(type, k, m, &alpha, &beta)) return 1;
+  if ((uint32_t)abs(m) > k) return 0;
+  if (k == 0)
+  {
+    RealOperatorAddLader(O, NULL, 0, alpha.Re);
+    return 0;
+  }
+  both = ((beta.Re != 0) || (beta.Im != 0));
+
+  /*  the factors a = -(Jx + i Jy)/2, b = (Jx - i Jy)/2 and c = Jz */
+  OperatorCopy(&letter[0], *Jx);
+  OperatorAdd(&letter[0], *Jy, 0, 1);
+  OperatorScale(&letter[0], -0.5, 0);
+  OperatorCopy(&letter[1], *Jx);
+  OperatorAdd(&letter[1], *Jy, 0, -1);
+  OperatorScale(&letter[1], 0.5, 0);
+  OperatorCopy(&letter[2], *Jz);
+
+  /*  A[n+k] holds A_d(n), Q[n+k] tells if it has been made */
+  Aold = (OperatorType *)malloc((2 * k + 1) * sizeof(OperatorType));
+  Anew = (OperatorType *)malloc((2 * k + 1) * sizeof(OperatorType));
+  Qold = (bool *)calloc(2 * k + 1, sizeof(bool));
+  Qnew = (bool *)calloc(2 * k + 1, sizeof(bool));
+  /*  start from A_0(0) = 1, so that every left factor is a normal ordered product */
+  StevensInitOperator(&Aold[ik], Jx);
+  RealOperatorAddLader(&Aold[ik], NULL, 0, 1);
+  Qold[ik] = true;
+  for (d = 1; d <= ik; d++)
+  {
+    for (n = -d; n <= d; n++)
+    {
+      if (!StevensChargeNeeded(n, d, ik, m, both)) continue;
+      /*  size the hash tables of the sum and of each product from the number of terms they can hold */
+      StevensInitOperator(&Anew[n + ik], Jx);
+      maxlen = 0;
+      for (il = 0; il < 3; il++)
+      {
+        nold = n - charge[il];
+        if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
+        if (Aold[nold + ik].MaxLength + letter[il].MaxLength > maxlen) maxlen = Aold[nold + ik].MaxLength + letter[il].MaxLength;
+      }
+      for (len = 1; len <= maxlen; len++)
+      {
+        Nterms = 0;
+        for (il = 0; il < 3; il++)
+        {
+          nold = n - charge[il];
+          if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
+          Nterms += StevensProductTerms(&Aold[nold + ik], &letter[il], len);
+        }
+        InitOperatorFixedLength(&Anew[n + ik], len, StevensKeyBits(Nterms, Jx->NFermion, Jx->NBoson, len));
+      }
+      Qnew[n + ik] = true;
+      for (il = 0; il < 3; il++)
+      {
+        nold = n - charge[il];
+        if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
+        StevensInitOperator(&tmp, Jx);
+        for (len = 1; len <= Aold[nold + ik].MaxLength + letter[il].MaxLength; len++)
+          InitOperatorFixedLength(&tmp, len, StevensKeyBits(StevensProductTerms(&Aold[nold + ik], &letter[il], len), Jx->NFermion, Jx->NBoson, len));
+        OperatorMultiplyOneParticleNormalOrder(&tmp, Aold[nold + ik], letter[il]);
+        OperatorAdd(&Anew[n + ik], tmp);
+        FreeOperator(&tmp);
+      }
+    }
+    for (n = 1 - d; n <= d - 1; n++)
+      if (Qold[n + ik])
+      {
+        FreeOperator(&Aold[n + ik]);
+        Qold[n + ik] = false;
+      }
+    Aswap = Aold; Aold = Anew; Anew = Aswap;
+    Qswap = Qold; Qold = Qnew; Qnew = Qswap;
+  }
+
+  /*  size the hash tables of the result from the number of terms it holds */
+  maxlen = Aold[m + ik].MaxLength;
+  if (both && (Aold[-m + ik].MaxLength > maxlen)) maxlen = Aold[-m + ik].MaxLength;
+  for (len = 1; len <= maxlen; len++)
+  {
+    Nterms = 0;
+    if (len <= Aold[m + ik].MaxLength) Nterms += Aold[m + ik].l[len].N;
+    if (both && (len <= Aold[-m + ik].MaxLength)) Nterms += Aold[-m + ik].l[len].N;
+    InitOperatorFixedLength(O, len, StevensKeyBits(Nterms, Jx->NFermion, Jx->NBoson, len));
+  }
+  OperatorAdd(O, Aold[m + ik], alpha.Re, alpha.Im);
+  if (both) OperatorAdd(O, Aold[-m + ik], beta.Re, beta.Im);
+  scale = StevensOperatorMaxAbs(Jx);
+  if (StevensOperatorMaxAbs(Jy) > scale) scale = StevensOperatorMaxAbs(Jy);
+  if (StevensOperatorMaxAbs(Jz) > scale) scale = StevensOperatorMaxAbs(Jz);
+  scale = (sqrt(Sqr(alpha.Re) + Sqr(alpha.Im)) + sqrt(Sqr(beta.Re) + Sqr(beta.Im))) * pow(scale, (double)k);
+  if (epsilon > 0) OperatorChop(O, epsilon * scale);
+
+  for (n = -ik; n <= ik; n++) if (Qold[n + ik]) FreeOperator(&Aold[n + ik]);
+  for (il = 0; il < 3; il++) FreeOperator(&letter[il]);
+  free(Aold);
+  free(Anew);
+  free(Qold);
+  free(Qnew);
+  return 0;
+}
+
+/*  StevensMatrixElement returns element i of M, real or complex */
+static Complex16 StevensMatrixElement(CompactMatrixType const * const M, uint32_t const i)
+{
+  Complex16 v;
+  if (M->QComplex) return M->V[i];
+  v.Re = M->VRe[i];
+  v.Im = 0;
+  return v;
+}
+
+/*  StevensInitMatrix initialises a complex zero matrix of N by N */
+static void StevensInitMatrix(CompactMatrixType * const M, uint32_t const N)
+{
+  M->Ni = N;
+  M->Nj = N;
+  M->QComplex = 1;
+  M->OnLuaStack = false;
+  InitCompactMatrix(M);
+}
+
+/*  CreateCompactMatrixStevens is CreateOperatorStevens for three square matrices of equal size, for
+ *  example the matrices of Jx, Jy and Jz on the 2J+1 states of an angular momentum J. The matrix O is
+ *  allocated here. Real and imaginary parts at most epsilon S are set to zero, with S as in
+ *  CreateOperatorStevens and s the largest absolute element of Jx, Jy and Jz, and O is real if no
+ *  imaginary part remains. It returns 1 for an unknown type.
+ */
+uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const m, CompactMatrixType const * const Jx, CompactMatrixType const * const Jy, CompactMatrixType const * const Jz, double const epsilon, CompactMatrixType * const O)
+{
+  int const charge[3] = {1, -1, 0};
+  int const ik = (int)k;
+  uint32_t const N = Jx->Ni;
+  CompactMatrixType letter[3], *Aold, *Anew, *Aswap;
+  bool *Qold, *Qnew, *Qswap, both;
+  Complex16 alpha, beta, x, y, z;
+  int n, d, il, nold;
+  uint32_t i;
+  double scale;
+
+  StevensInitMatrix(O, N);
+  if (StevensCoefficients(type, k, m, &alpha, &beta)) return 1;
+  if ((uint32_t)abs(m) > k)
+  {
+    MakeCompactComplexMatrixReal(O);
+    return 0;
+  }
+  if (k == 0)
+  {
+    for (i = 0; i < N; i++) O->V[i * N + i].Re = alpha.Re;
+    MakeCompactComplexMatrixReal(O);
+    return 0;
+  }
+  both = ((beta.Re != 0) || (beta.Im != 0));
+
+  /*  the factors a = -(Jx + i Jy)/2, b = (Jx - i Jy)/2 and c = Jz, and the largest element s of the input */
+  scale = 0;
+  for (il = 0; il < 3; il++) StevensInitMatrix(&letter[il], N);
+  for (i = 0; i < N * N; i++)
+  {
+    x = StevensMatrixElement(Jx, i);
+    y = StevensMatrixElement(Jy, i);
+    z = StevensMatrixElement(Jz, i);
+    if (sqrt(Sqr(x.Re) + Sqr(x.Im)) > scale) scale = sqrt(Sqr(x.Re) + Sqr(x.Im));
+    if (sqrt(Sqr(y.Re) + Sqr(y.Im)) > scale) scale = sqrt(Sqr(y.Re) + Sqr(y.Im));
+    if (sqrt(Sqr(z.Re) + Sqr(z.Im)) > scale) scale = sqrt(Sqr(z.Re) + Sqr(z.Im));
+    letter[0].V[i].Re = -0.5 * (x.Re - y.Im);
+    letter[0].V[i].Im = -0.5 * (x.Im + y.Re);
+    letter[1].V[i].Re = 0.5 * (x.Re + y.Im);
+    letter[1].V[i].Im = 0.5 * (x.Im - y.Re);
+    letter[2].V[i] = z;
+  }
+
+  /*  A[n+k] holds A_d(n), Q[n+k] tells if it has been made */
+  Aold = (CompactMatrixType *)malloc((2 * k + 1) * sizeof(CompactMatrixType));
+  Anew = (CompactMatrixType *)malloc((2 * k + 1) * sizeof(CompactMatrixType));
+  Qold = (bool *)calloc(2 * k + 1, sizeof(bool));
+  Qnew = (bool *)calloc(2 * k + 1, sizeof(bool));
+  for (il = 0; il < 3; il++)
+    if (StevensChargeNeeded(charge[il], 1, ik, m, both))
+    {
+      CompactMatrixCopy(letter[il], &Aold[charge[il] + ik]);
+      Qold[charge[il] + ik] = true;
+    }
+  for (d = 2; d <= ik; d++)
+  {
+    for (n = -d; n <= d; n++)
+    {
+      if (!StevensChargeNeeded(n, d, ik, m, both)) continue;
+      StevensInitMatrix(&Anew[n + ik], N);
+      Qnew[n + ik] = true;
+      for (il = 0; il < 3; il++)
+      {
+        nold = n - charge[il];
+        if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
+        CompactMatrixAddMultiply('N', 'N', &Aold[nold + ik], &letter[il], &Anew[n + ik], 1, 0, 1, 0);
+      }
+    }
+    for (n = 1 - d; n <= d - 1; n++)
+      if (Qold[n + ik])
+      {
+        FreeCompactMatrix(&Aold[n + ik]);
+        Qold[n + ik] = false;
+      }
+    Aswap = Aold; Aold = Anew; Anew = Aswap;
+    Qswap = Qold; Qold = Qnew; Qnew = Qswap;
+  }
+
+  for (i = 0; i < N * N; i++)
+  {
+    x = StevensMatrixElement(&Aold[m + ik], i);
+    O->V[i].Re = alpha.Re * x.Re - alpha.Im * x.Im;
+    O->V[i].Im = alpha.Re * x.Im + alpha.Im * x.Re;
+    if (both)
+    {
+      y = StevensMatrixElement(&Aold[-m + ik], i);
+      O->V[i].Re += beta.Re * y.Re - beta.Im * y.Im;
+      O->V[i].Im += beta.Re * y.Im + beta.Im * y.Re;
+    }
+  }
+  scale = (sqrt(Sqr(alpha.Re) + Sqr(alpha.Im)) + sqrt(Sqr(beta.Re) + Sqr(beta.Im))) * pow(scale, (double)k);
+  if (epsilon > 0) CompactMatrixChop(O, epsilon * scale);
+
+  for (n = -ik; n <= ik; n++) if (Qold[n + ik]) FreeCompactMatrix(&Aold[n + ik]);
+  for (il = 0; il < 3; il++) FreeCompactMatrix(&letter[il]);
+  free(Aold);
+  free(Anew);
+  free(Qold);
+  free(Qnew);
+  return 0;
+}
