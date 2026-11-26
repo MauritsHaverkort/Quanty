@@ -8,6 +8,8 @@
 --  4  the ladder relation [J-, C(k,m)] = sqrt((k+m)(k-m+1)) C(k,m-1) and hermiticity, J = 6, k <= 12
 --  5  operators: J = 3/2 as one fermion in 4 orbitals; the one particle matrix elements of the Stevens
 --     operator built from operators equal the Stevens matrix built from matrices
+--  6  the cutoff Epsilon: Stevens operators that vanish come back without terms, as operators and as
+--     matrices, and an explicit Epsilon replaces the default
 --
 -- Matrices are compared by a fingerprint, sum_ij M_ij (cos(i+2j) + I sin(3i-j)), which the reference
 -- script in Mathematica computes the same way. Thresholds are relative to the size of the elements.
@@ -270,6 +272,39 @@ for k = 0, 4 do
   end
 end
 print("5  J = 3/2 as operators, k <= 4: largest deviation of the one particle matrix elements "..string.format("%.1e", MaxDev))
+
+-- 6  the cutoff. With J held by one fermion in 2J+1 orbitals the total angular momentum of every particle
+--    sector is at most 1 for J = 1 and at most 2 for J = 3/2, so for k > 2 and k > 4 the operator vanishes
+--    on the whole Fock space, and the matrix for k > 2J. Rounding leaves noise, which the default removes.
+function NTerms(O)
+  local n = 0
+  for _, v in pairs(O.N) do n = n + v end
+  return n
+end
+NZero = 0
+for _, c in ipairs({{1, 3}, {1, 4}, {3/2, 5}, {3/2, 6}}) do
+  local J, k = c[1], c[2]
+  local Jx, Jy, Jz = Jmat(J)
+  local X, Y, Z = Matrix.ToOperator(Jx), Matrix.ToOperator(Jy), Matrix.ToOperator(Jz)
+  for m = -k, k do
+    for t = 1, 5 do
+      local n = NTerms(Functions[t](k, m, X, Y, Z))
+      Check(Names[t].."("..k..","..m..") for J = "..J.." as an operator should have no terms, it has "..n, n == 0)
+      local _, _, sum = Fingerprint(Functions[t](k, m, Jx, Jy, Jz))
+      Check(Names[t].."("..k..","..m..") for J = "..J.." as a matrix should be zero, the sum of |elements| is "..sum, sum == 0)
+      NZero = NZero + 1
+    end
+  end
+end
+Jx, Jy, Jz = Jmat(3)
+X, Y, Z = Matrix.ToOperator(Jx), Matrix.ToOperator(Jy), Matrix.ToOperator(Jz)
+N0 = NTerms(StevensO(6, 0, X, Y, Z, {{"Epsilon", 0}}))
+Ndefault = NTerms(StevensO(6, 0, X, Y, Z))
+Nlarge = NTerms(StevensO(6, 0, X, Y, Z, {{"Epsilon", 1}}))
+Check("Epsilon = 0 should keep at least as many terms as the default, "..N0.." and "..Ndefault, N0 >= Ndefault)
+Check("Epsilon = 1 should remove terms, "..Nlarge.." of "..Ndefault, Nlarge < Ndefault)
+Check("a negative Epsilon should raise an error", not pcall(StevensO, 2, 0, X, Y, Z, {{"Epsilon", -1}}))
+print("6  "..NZero.." vanishing Stevens operators come back empty as operators and as matrices; J = 3, O(6,0): "..N0.." terms at Epsilon = 0, "..Ndefault.." by default")
 
 if Failed > 0 then error(Failed.." checks of the Stevens operators failed") end
 print("All checks of the Stevens operators passed")

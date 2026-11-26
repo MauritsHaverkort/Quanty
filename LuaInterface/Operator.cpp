@@ -5708,16 +5708,42 @@ static int LuaAngularMomentumOperators(lua_State * L)
   return 1;
 }
 
-/*  StevensO(k, m, Jx, Jy, Jz) returns Stevens' operator O_{k,m}, and StevensD, StevensZ, StevensC and
- *  StevensY the same operator in the other four normalisations of the Mathematica package
- *  Quanty`StevensOperators`. See CreateOperatorStevens in StandardOperators.cpp. Jx, Jy and Jz are three
- *  operators, or three square matrices of equal size, as Matrix objects or as Lua tables. The result is of
- *  the same kind as Jx.
+/*  StevensO(k, m, Jx, Jy, Jz, {{"Epsilon", ...}}) returns Stevens' operator O_{k,m}, and StevensD,
+ *  StevensZ, StevensC and StevensY the same operator in the other four normalisations of the Mathematica
+ *  package Quanty`StevensOperators`. See CreateOperatorStevens in StandardOperators.cpp. Jx, Jy and Jz are
+ *  three operators, or three square matrices of equal size, as Matrix objects or as Lua tables. The result
+ *  is of the same kind as Jx.
+ *
+ *  The option Epsilon sets which rounding noise is removed: real and imaginary parts at most Epsilon S,
+ *  with S = (|alpha| + |beta|) s^k set by the largest prefactor s of the input (see CreateOperatorStevens).
+ *  Epsilon = 0 keeps everything. The default differs for matrices and operators, because their rounding
+ *  noise does. Measured for J <= 11 and k <= 2J+2 (matrices) and for shells of up to 14 orbitals and
+ *  k <= 14 (operators), in units of DBL_EPSILON S:
+ *
+ *               largest noise          smallest genuine element      default Epsilon
+ *    matrices   1.25, for any k        7.4e6 (J = 11, k = 22)        1e3 DBL_EPSILON
+ *    operators  6.1e4, growing with k  2.3e13                        1e8 DBL_EPSILON
+ *
+ *  A matrix of Jx, Jy and Jz has one element per row in each, and its noise does not grow with k. A
+ *  product of operators is normal ordered through many contractions, and its noise grows by about a factor
+ *  3 per order in k. A default that is too small leaves noise, which is harmless but costs time later: at
+ *  Epsilon = 0 the Stevens operator of order 8 of the total J of a d shell has 90316 terms, of which
+ *  20003 are not noise.
  */
 static int LuaStevens(lua_State * L, char const type)
 {
+  double Epsilon = NAN;
+  LuaOptionsType LuaStevensOptions[] = {
+    {"Epsilon", "double", &(Epsilon)},
+    {NULL, NULL, NULL}};
   uint32_t i, len = (uint32_t)lua_gettop(L);
-  if (len != 5) return luaL_error(L, "Stevens%c called with %d arguments, 5 expected: k, m, Jx, Jy and Jz", type, len);
+  if (LuaTestOptionsList(L, -1))
+  {
+    LuaCheckOptions(L, -1, LuaStevensOptions);
+    len--;
+  }
+  if (len != 5) return luaL_error(L, "Stevens%c called with %d arguments, 5 expected: k, m, Jx, Jy and Jz, and an optional list of options", type, len);
+  if (Epsilon < 0) return luaL_error(L, "Stevens%c called with Epsilon = %g, Epsilon can not be negative", type, Epsilon);
   lua_Integer k = luaL_checkinteger(L, 1);
   lua_Integer m = luaL_checkinteger(L, 2);
   if (k < 0) return luaL_error(L, "Stevens%c called with k = %d, k can not be negative", type, (int)k);
@@ -5728,14 +5754,16 @@ static int LuaStevens(lua_State * L, char const type)
     for (i = 1; i < 3; i++)
       if ((J[i]->NFermion != J[0]->NFermion) || (J[i]->NBoson != J[0]->NBoson))
         return luaL_error(L, "Stevens%c called with operators on different bases, Jx has NF=%d NB=%d, argument %d NF=%d NB=%d", type, J[0]->NFermion, J[0]->NBoson, 3 + i, J[i]->NFermion, J[i]->NBoson);
+    if (isnan(Epsilon)) Epsilon = 1e8 * DBL_EPSILON;
     O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
-    CreateOperatorStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], O);
+    CreateOperatorStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], Epsilon, O);
     luaL_setmetatable(L, "Operator_Type");
     return 1;
   }
   {
     CompactMatrixType *J[3], *O, R;
     bool OnStack[3], ok = true;
+    if (isnan(Epsilon)) Epsilon = 1e3 * DBL_EPSILON;
     for (i = 0; i < 3; i++)
     {
       OnStack[i] = (luaL_testudata(L, (int)(3 + i), "Matrix_Type") != NULL);
@@ -5749,12 +5777,12 @@ static int LuaStevens(lua_State * L, char const type)
       {
         O = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
         luaL_setmetatable(L, "Matrix_Type");
-        CreateCompactMatrixStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], O);
+        CreateCompactMatrixStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], Epsilon, O);
         O->OnLuaStack = true;
       }
       else
       {
-        CreateCompactMatrixStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], &R);
+        CreateCompactMatrixStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], Epsilon, &R);
         LuaPushTable_CompactMatrixType(L, &R);
         FreeCompactMatrix(&R);
       }

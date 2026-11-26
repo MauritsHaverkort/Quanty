@@ -5342,11 +5342,20 @@ static double StevensOperatorMaxAbs(OperatorType const * const O)
 
 /*  CreateOperatorStevens creates the Stevens operator of rank k and component m (-k ... k) in the
  *  normalisation type ('C', 'Y', 'D', 'Z' or 'O', see above) from the operators Jx, Jy and Jz. For |m| > k
- *  the operator is zero. Rounding leaves prefactors that should be zero at about 1e-16 of the largest,
- *  among them imaginary parts that would make the operator complex. Prefactors below 16 DBL_EPSILON
- *  times the largest are removed. It returns 1 for an unknown type.
+ *  the operator is zero. It returns 1 for an unknown type.
+ *
+ *  Rounding leaves prefactors that should be zero, among them imaginary parts that would make the
+ *  operator complex, and an operator that vanishes, for example for k > 2J, comes out as noise. Its size
+ *  is not set by the result but by the inputs. With s the largest absolute prefactor of Jx, Jy and Jz the
+ *  scale is
+ *
+ *    S = (|alpha| + |beta|) s^k
+ *
+ *  and real and imaginary parts at most epsilon S are removed, so an operator that should vanish comes
+ *  out empty. The rounding noise grows with k and, for operators, with the number of orbitals. epsilon = 0
+ *  keeps everything.
  */
-uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, OperatorType const * const Jx, OperatorType const * const Jy, OperatorType const * const Jz, OperatorType * const O)
+uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, OperatorType const * const Jx, OperatorType const * const Jy, OperatorType const * const Jz, double const epsilon, OperatorType * const O)
 {
   int const charge[3] = {1, -1, 0};
   int const ik = (int)k;
@@ -5354,6 +5363,7 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
   bool *Qold, *Qnew, *Qswap, both;
   Complex16 alpha, beta;
   int n, d, il, nold;
+  double scale;
 
   StevensInitOperator(O, Jx);
   snprintf(O->Name, MAXStrLength, "Stevens%c(%u,%d)", type, k, m);
@@ -5415,7 +5425,11 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
 
   OperatorAdd(O, Aold[m + ik], alpha.Re, alpha.Im);
   if (both) OperatorAdd(O, Aold[-m + ik], beta.Re, beta.Im);
-  OperatorChop(O, 16 * DBL_EPSILON * StevensOperatorMaxAbs(O));
+  scale = StevensOperatorMaxAbs(Jx);
+  if (StevensOperatorMaxAbs(Jy) > scale) scale = StevensOperatorMaxAbs(Jy);
+  if (StevensOperatorMaxAbs(Jz) > scale) scale = StevensOperatorMaxAbs(Jz);
+  scale = (sqrt(Sqr(alpha.Re) + Sqr(alpha.Im)) + sqrt(Sqr(beta.Re) + Sqr(beta.Im))) * pow(scale, (double)k);
+  if (epsilon > 0) OperatorChop(O, epsilon * scale);
 
   for (n = -ik; n <= ik; n++) if (Qold[n + ik]) FreeOperator(&Aold[n + ik]);
   for (il = 0; il < 3; il++) FreeOperator(&letter[il]);
@@ -5448,10 +5462,11 @@ static void StevensInitMatrix(CompactMatrixType * const M, uint32_t const N)
 
 /*  CreateCompactMatrixStevens is CreateOperatorStevens for three square matrices of equal size, for
  *  example the matrices of Jx, Jy and Jz on the 2J+1 states of an angular momentum J. The matrix O is
- *  allocated here. Elements below 16 DBL_EPSILON times the largest are set to zero, and O is real if no
+ *  allocated here. Real and imaginary parts at most epsilon S are set to zero, with S as in
+ *  CreateOperatorStevens and s the largest absolute element of Jx, Jy and Jz, and O is real if no
  *  imaginary part remains. It returns 1 for an unknown type.
  */
-uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const m, CompactMatrixType const * const Jx, CompactMatrixType const * const Jy, CompactMatrixType const * const Jz, CompactMatrixType * const O)
+uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const m, CompactMatrixType const * const Jx, CompactMatrixType const * const Jy, CompactMatrixType const * const Jz, double const epsilon, CompactMatrixType * const O)
 {
   int const charge[3] = {1, -1, 0};
   int const ik = (int)k;
@@ -5461,7 +5476,7 @@ uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const
   Complex16 alpha, beta, x, y, z;
   int n, d, il, nold;
   uint32_t i;
-  double v, vmax;
+  double scale;
 
   StevensInitMatrix(O, N);
   if (StevensCoefficients(type, k, m, &alpha, &beta)) return 1;
@@ -5478,13 +5493,17 @@ uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const
   }
   both = ((beta.Re != 0) || (beta.Im != 0));
 
-  /*  the factors a = -(Jx + i Jy)/2, b = (Jx - i Jy)/2 and c = Jz */
+  /*  the factors a = -(Jx + i Jy)/2, b = (Jx - i Jy)/2 and c = Jz, and the largest element s of the input */
+  scale = 0;
   for (il = 0; il < 3; il++) StevensInitMatrix(&letter[il], N);
   for (i = 0; i < N * N; i++)
   {
     x = StevensMatrixElement(Jx, i);
     y = StevensMatrixElement(Jy, i);
     z = StevensMatrixElement(Jz, i);
+    if (sqrt(Sqr(x.Re) + Sqr(x.Im)) > scale) scale = sqrt(Sqr(x.Re) + Sqr(x.Im));
+    if (sqrt(Sqr(y.Re) + Sqr(y.Im)) > scale) scale = sqrt(Sqr(y.Re) + Sqr(y.Im));
+    if (sqrt(Sqr(z.Re) + Sqr(z.Im)) > scale) scale = sqrt(Sqr(z.Re) + Sqr(z.Im));
     letter[0].V[i].Re = -0.5 * (x.Re - y.Im);
     letter[0].V[i].Im = -0.5 * (x.Im + y.Re);
     letter[1].V[i].Re = 0.5 * (x.Re + y.Im);
@@ -5527,7 +5546,6 @@ uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const
     Qswap = Qold; Qold = Qnew; Qnew = Qswap;
   }
 
-  vmax = 0;
   for (i = 0; i < N * N; i++)
   {
     x = StevensMatrixElement(&Aold[m + ik], i);
@@ -5539,10 +5557,9 @@ uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const
       O->V[i].Re += beta.Re * y.Re - beta.Im * y.Im;
       O->V[i].Im += beta.Re * y.Im + beta.Im * y.Re;
     }
-    v = sqrt(Sqr(O->V[i].Re) + Sqr(O->V[i].Im));
-    if (v > vmax) vmax = v;
   }
-  CompactMatrixChop(O, 16 * DBL_EPSILON * vmax);
+  scale = (sqrt(Sqr(alpha.Re) + Sqr(alpha.Im)) + sqrt(Sqr(beta.Re) + Sqr(beta.Im))) * pow(scale, (double)k);
+  if (epsilon > 0) CompactMatrixChop(O, epsilon * scale);
 
   for (n = -ik; n <= ik; n++) if (Qold[n + ik]) FreeCompactMatrix(&Aold[n + ik]);
   for (il = 0; il < 3; il++) FreeCompactMatrix(&letter[il]);
