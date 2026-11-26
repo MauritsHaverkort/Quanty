@@ -5707,3 +5707,85 @@ static int LuaAngularMomentumOperators(lua_State * L)
   free(LindexDn);
   return 1;
 }
+
+/*  StevensO(k, m, Jx, Jy, Jz) returns Stevens' operator O_{k,m}, and StevensD, StevensZ, StevensC and
+ *  StevensY the same operator in the other four normalisations of the Mathematica package
+ *  Quanty`StevensOperators`. See CreateOperatorStevens in StandardOperators.cpp. Jx, Jy and Jz are three
+ *  operators, or three square matrices of equal size, as Matrix objects or as Lua tables. The result is of
+ *  the same kind as Jx.
+ */
+static int LuaStevens(lua_State * L, char const type)
+{
+  uint32_t i, len = (uint32_t)lua_gettop(L);
+  if (len != 5) return luaL_error(L, "Stevens%c called with %d arguments, 5 expected: k, m, Jx, Jy and Jz", type, len);
+  lua_Integer k = luaL_checkinteger(L, 1);
+  lua_Integer m = luaL_checkinteger(L, 2);
+  if (k < 0) return luaL_error(L, "Stevens%c called with k = %d, k can not be negative", type, (int)k);
+  if (luaL_testudata(L, 3, "Operator_Type") != NULL)
+  {
+    OperatorType *J[3], *O;
+    for (i = 0; i < 3; i++) J[i] = (OperatorType *) luaL_checkudata(L, (int)(3 + i), "Operator_Type");
+    for (i = 1; i < 3; i++)
+      if ((J[i]->NFermion != J[0]->NFermion) || (J[i]->NBoson != J[0]->NBoson))
+        return luaL_error(L, "Stevens%c called with operators on different bases, Jx has NF=%d NB=%d, argument %d NF=%d NB=%d", type, J[0]->NFermion, J[0]->NBoson, 3 + i, J[i]->NFermion, J[i]->NBoson);
+    O = (OperatorType *) lua_newuserdata(L, sizeof(OperatorType));
+    CreateOperatorStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], O);
+    luaL_setmetatable(L, "Operator_Type");
+    return 1;
+  }
+  {
+    CompactMatrixType *J[3], *O, R;
+    bool OnStack[3], ok = true;
+    for (i = 0; i < 3; i++)
+    {
+      OnStack[i] = (luaL_testudata(L, (int)(3 + i), "Matrix_Type") != NULL);
+      J[i] = luaL_checkCompactMatrix(L, (int)(3 + i));
+    }
+    for (i = 0; i < 3; i++)
+      if ((J[i]->Ni != J[0]->Ni) || (J[i]->Nj != J[0]->Ni)) ok = false;
+    if (ok)
+    {
+      if (OnStack[0])
+      {
+        O = (CompactMatrixType *) lua_newuserdata(L, sizeof(CompactMatrixType));
+        luaL_setmetatable(L, "Matrix_Type");
+        CreateCompactMatrixStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], O);
+        O->OnLuaStack = true;
+      }
+      else
+      {
+        CreateCompactMatrixStevens(type, (uint32_t)k, (int)m, J[0], J[1], J[2], &R);
+        LuaPushTable_CompactMatrixType(L, &R);
+        FreeCompactMatrix(&R);
+      }
+    }
+    for (i = 0; i < 3; i++)
+      if (!OnStack[i])
+      {
+        FreeCompactMatrix(J[i]);
+        free(J[i]);
+      }
+    if (!ok) return luaL_error(L, "Stevens%c called with matrices that are not square or not of equal size", type);
+    return 1;
+  }
+}
+
+static int LuaStevensO(lua_State * L) { return LuaStevens(L, 'O'); }
+static int LuaStevensD(lua_State * L) { return LuaStevens(L, 'D'); }
+static int LuaStevensZ(lua_State * L) { return LuaStevens(L, 'Z'); }
+static int LuaStevensC(lua_State * L) { return LuaStevens(L, 'C'); }
+static int LuaStevensY(lua_State * L) { return LuaStevens(L, 'Y'); }
+
+/*  StevensPrefactor(k, m) returns the factor between Stevens' operator and the renormalised tesseral
+ *  harmonic, O_{k,m} = StevensPrefactor(k,m) D_{k,m}, as StevensPrefactor in the Mathematica package
+ */
+static int LuaStevensPrefactor(lua_State * L)
+{
+  uint32_t len = (uint32_t)lua_gettop(L);
+  if (len != 2) return luaL_error(L, "StevensPrefactor called with %d arguments, 2 expected: k and m", len);
+  lua_Integer k = luaL_checkinteger(L, 1);
+  lua_Integer m = luaL_checkinteger(L, 2);
+  if ((k < 0) || (m < -k) || (m > k)) return luaL_error(L, "StevensPrefactor called with k = %d and m = %d, k >= 0 and -k <= m <= k expected", (int)k, (int)m);
+  lua_pushnumber(L, 1 / StevensPrefactorOtoD((uint32_t)k, (int)m));
+  return 1;
+}

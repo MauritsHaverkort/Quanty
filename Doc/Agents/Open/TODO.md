@@ -678,6 +678,19 @@ disappear if `RotateOperatorNormalOrder` summed the two orders symmetrically.
 Explicitly symmetrizing after the rotation is *not* the fix: `Lplus`, `Lmin` and
 the transition operators are not Hermitian to begin with.
 
+### Stevens operators of a large shell are slow
+
+`StevensO(k, m, Jx, Jy, Jz)` with operators multiplies one particle operators k
+times, so the result is a k particle operator. With the total `Jx`, `Jy` and
+`Jz` of an f shell (14 orbitals) `k = 4` takes 0.7 s, but `k = 6` had not
+finished after 150 s. Where the time goes has not been measured. A candidate is
+`InitOperatorForMult`, which gives every length of the product a key table of
+2^8 entries however many terms it will hold. For the crystal field of an f
+shell the one particle `NewOperator("CF", …)` is the right operator anyway, and
+for an angular momentum J held by one fermion in 2J+1 orbitals the matrix
+version, turned into a one particle operator afterwards, is fast. The slowness
+only matters for k particle Stevens operators of a large shell.
+
 
 ## Tight binding
 
