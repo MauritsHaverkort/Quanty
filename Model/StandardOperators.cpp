@@ -5325,6 +5325,49 @@ static void StevensInitOperator(OperatorType * const O, OperatorType const * con
   O->NWord = Oset->NWord;
 }
 
+/*  StevensKeyBits returns the number of bits of the hash table for Nterms strings of the given length:
+ *  one entry per string, at least 2^8 and at most 2^22. The hash table of an operator does not grow, so a
+ *  table that is too small makes every addition walk a long chain. For fermions Nterms is capped by the
+ *  number of normal ordered strings of that length, sum_nc C(NF,nc) C(NF,length-nc).
+ */
+static uint32_t StevensKeyBits(double Nterms, uint32_t const NFermion, uint32_t const NBoson, uint32_t const length)
+{
+  uint32_t nc, i, bits;
+  double Nmax, c1, c2;
+  if (NBoson == 0)
+  {
+    Nmax = 0;
+    for (nc = 0; nc <= length; nc++)
+    {
+      if ((nc > NFermion) || (length - nc > NFermion)) continue;
+      c1 = 1;
+      for (i = 1; i <= nc; i++) c1 *= (double)(NFermion - nc + i) / (double)i;
+      c2 = 1;
+      for (i = 1; i <= length - nc; i++) c2 *= (double)(NFermion - (length - nc) + i) / (double)i;
+      Nmax += c1 * c2;
+    }
+    if (Nterms > Nmax) Nterms = Nmax;
+  }
+  bits = 8;
+  while ((bits < 22) && ((double)((uint32_t)1 << bits) < Nterms)) bits++;
+  return bits;
+}
+
+/*  StevensProductTerms returns an upper bound to the number of strings of the given length in the normal
+ *  ordered product A B: a string of length la times one of length lb gives strings of length la + lb,
+ *  la + lb - 2, ... |la - lb|
+ */
+static double StevensProductTerms(OperatorType const * const A, OperatorType const * const B, uint32_t const length)
+{
+  uint32_t la, lb;
+  double N = 0;
+  for (la = 0; la <= A->MaxLength; la++)
+    for (lb = 0; lb <= B->MaxLength; lb++)
+      if ((la + lb >= length) && ((la + lb - length) % 2 == 0) && (length + lb >= la) && (length + la >= lb))
+        N += (double)A->l[la].N * (double)B->l[lb].N;
+  return N;
+}
+
 /*  StevensOperatorMaxAbs returns the largest absolute value of a prefactor of O */
 static double StevensOperatorMaxAbs(OperatorType const * const O)
 {
@@ -5363,7 +5406,8 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
   bool *Qold, *Qnew, *Qswap, both;
   Complex16 alpha, beta;
   int n, d, il, nold;
-  double scale;
+  uint32_t len, maxlen;
+  double scale, Nterms;
 
   StevensInitOperator(O, Jx);
   snprintf(O->Name, MAXStrLength, "Stevens%c(%u,%d)", type, k, m);
@@ -5401,13 +5445,34 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
     for (n = -d; n <= d; n++)
     {
       if (!StevensChargeNeeded(n, d, ik, m, both)) continue;
+      /*  size the hash tables of the sum and of each product from the number of terms they can hold */
       StevensInitOperator(&Anew[n + ik], Jx);
+      maxlen = 0;
+      for (il = 0; il < 3; il++)
+      {
+        nold = n - charge[il];
+        if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
+        if (Aold[nold + ik].MaxLength + letter[il].MaxLength > maxlen) maxlen = Aold[nold + ik].MaxLength + letter[il].MaxLength;
+      }
+      for (len = 1; len <= maxlen; len++)
+      {
+        Nterms = 0;
+        for (il = 0; il < 3; il++)
+        {
+          nold = n - charge[il];
+          if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
+          Nterms += StevensProductTerms(&Aold[nold + ik], &letter[il], len);
+        }
+        InitOperatorFixedLength(&Anew[n + ik], len, StevensKeyBits(Nterms, Jx->NFermion, Jx->NBoson, len));
+      }
       Qnew[n + ik] = true;
       for (il = 0; il < 3; il++)
       {
         nold = n - charge[il];
         if ((nold < 1 - d) || (nold > d - 1) || !Qold[nold + ik]) continue;
-        InitOperatorForMult(&tmp, 2, &Aold[nold + ik], &letter[il]);
+        StevensInitOperator(&tmp, Jx);
+        for (len = 1; len <= Aold[nold + ik].MaxLength + letter[il].MaxLength; len++)
+          InitOperatorFixedLength(&tmp, len, StevensKeyBits(StevensProductTerms(&Aold[nold + ik], &letter[il], len), Jx->NFermion, Jx->NBoson, len));
         OperatorMultiply2NormalOrder(&tmp, Aold[nold + ik], letter[il], 'N', 'N', &QDetNotOrderedFcFaBcBa);
         OperatorAdd(&Anew[n + ik], tmp);
         FreeOperator(&tmp);
@@ -5423,6 +5488,16 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
     Qswap = Qold; Qold = Qnew; Qnew = Qswap;
   }
 
+  /*  size the hash tables of the result from the number of terms it holds */
+  maxlen = Aold[m + ik].MaxLength;
+  if (both && (Aold[-m + ik].MaxLength > maxlen)) maxlen = Aold[-m + ik].MaxLength;
+  for (len = 1; len <= maxlen; len++)
+  {
+    Nterms = 0;
+    if (len <= Aold[m + ik].MaxLength) Nterms += Aold[m + ik].l[len].N;
+    if (both && (len <= Aold[-m + ik].MaxLength)) Nterms += Aold[-m + ik].l[len].N;
+    InitOperatorFixedLength(O, len, StevensKeyBits(Nterms, Jx->NFermion, Jx->NBoson, len));
+  }
   OperatorAdd(O, Aold[m + ik], alpha.Re, alpha.Im);
   if (both) OperatorAdd(O, Aold[-m + ik], beta.Re, beta.Im);
   scale = StevensOperatorMaxAbs(Jx);

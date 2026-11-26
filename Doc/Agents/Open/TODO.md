@@ -681,15 +681,35 @@ the transition operators are not Hermitian to begin with.
 ### Stevens operators of a large shell are slow
 
 `StevensO(k, m, Jx, Jy, Jz)` with operators multiplies one particle operators k
-times, so the result is a k particle operator. With the total `Jx`, `Jy` and
-`Jz` of an f shell (14 orbitals) `k = 4` takes 0.7 s, but `k = 6` had not
-finished after 150 s. Where the time goes has not been measured. A candidate is
-`InitOperatorForMult`, which gives every length of the product a key table of
-2^8 entries however many terms it will hold. For the crystal field of an f
-shell the one particle `NewOperator("CF", …)` is the right operator anyway, and
-for an angular momentum J held by one fermion in 2J+1 orbitals the matrix
-version, turned into a one particle operator afterwards, is fast. The slowness
-only matters for k particle Stevens operators of a large shell.
+times, so the result is a k particle operator. For the total J of an f shell
+(14 orbitals) `k = 6` takes 18 s and gives 526108 terms, `k = 4` 0.2 s.
+
+Measured with `sample` on macOS, what the time went to:
+
+- The hash table of an operator has a fixed size, 2^NBitsKey entries, and
+  `InitOperatorForMult` gives every length 2^8. With 10^5 terms every addition
+  walks a chain of hundreds of strings: 94% of the time for the f shell at
+  `k = 6`, which did not finish in 150 s. `CreateOperatorStevens` now sizes the
+  tables from a bound on the number of terms (`StevensKeyBits`), which made it
+  2 to 3 times faster for smaller cases and the f shell at `k = 6` possible.
+- What remains is the normal ordering in `OperatorMultiply2NormalOrder`: 46% in
+  `ComplexOperatorAddLaderNormalOrder`, which sorts each product string by
+  swapping neighbours and recurses for every contraction, 30% in the hash
+  lookup, 10% in the ordering test called through a function pointer. A product
+  of a normal ordered string with a one particle string `c^dag_i c_j` has at
+  most two terms, whose positions and sign can be found directly. A dedicated
+  product for that case would remove most of this, and would serve other one
+  particle products as well. Not written, it needs discussing first.
+
+The same fixed table size slows down every operator product made with
+`InitOperatorForMult`, `*` in lua included: `(Jx^2+Jy^2)^3` of an f shell did
+not finish in 290 s. Sizing the tables there, or letting a table grow when its
+chains get long, is a project of its own.
+
+For the crystal field of an f shell the one particle `NewOperator("CF", …)` is
+the right operator anyway, and for an angular momentum J held by one fermion in
+2J+1 orbitals the matrix version, turned into a one particle operator
+afterwards, is fast.
 
 
 ## Tight binding
