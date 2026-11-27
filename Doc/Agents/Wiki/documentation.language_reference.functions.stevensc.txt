@@ -18,6 +18,7 @@
 ===== Output =====
 
   * //O// : The operator, of the same kind as //Jx//: an Operator, a Matrix object or a table.
+  * For Hermitian //Jx//, //Jy// and //Jz// the result for $m = 0$ is Hermitian to the last bit, so that //[[documentation:language_reference:functions:eigensystem|Eigensystem()]]// takes it as it is. Inputs whose anti-Hermitian part is at most //Epsilon// times the largest absolute prefactor or matrix element count as Hermitian; for //Epsilon// = 0 they must be Hermitian exactly.
 
 ===== Example =====
 

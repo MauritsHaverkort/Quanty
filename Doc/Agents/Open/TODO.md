@@ -715,22 +715,6 @@ the right operator anyway, and for an angular momentum J held by one fermion in
 afterwards, is fast.
 
 
-### Stevens operators are Hermitian only to rounding
-
-`StevensO`, `StevensD` and `StevensZ` of Hermitian operators are Hermitian, but
-for `k >= 3` the Operator that comes back is so only to rounding (about 1e-15
-relative), also for `m = 0`: the terms of `A_k(m)` and `A_k(-m)`, and the terms
-of a string and of its conjugate within `A_k(0)`, are summed in different
-orders. `Eigensystem` tests Hermiticity exactly (to 100 DBL_MIN) and prints a
-warning, then repairs the operator; the eigenvalues are right. Matrices have the
-same rounding, but `Matrix.Eigensystem` does not test for it.
-
-A fix, not yet discussed: when Jx, Jy and Jz are exactly Hermitian, return
-`(O + O^dag)/2` for D, Z and O, which is Hermitian to the bit, at the cost of
-one conjugate transpose. For `m != 0` one could instead build only `A_k(m)` and
-take `A_k(-m) = (-1)^m A_k(m)^dag`, which is also Hermitian to the bit and halves
-the work, but `m = 0` still needs the symmetrization.
-
 ## Tight binding
 
 ### Tight binding in `Relative` units: what remains

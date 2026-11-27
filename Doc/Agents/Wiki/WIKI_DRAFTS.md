@@ -30,16 +30,16 @@ index footer needs an entry. No images.
 
 What was checked:
 
-- Every example was run with the build of commit `bf448269` (exit 0) and its output pasted.
+- Every example was run (exit 0) and its output pasted, last with the build that symmetrizes.
   The matrix examples build the spin matrices in the script, ordered from m = -S to S;
   checked that [Sx, Sy] = i Sz and that S+ raises m.
 - The low order forms on the overview page (O20, O21, O2-2, O22, O40, O44), D(1,m) = Jx, Jy,
   Jz and C(1,m) were compared with the matrices of J = 5/2 (deviations below 5e-14).
-- The Result block of the Ce³⁺ example shows only the lines the script prints. Eigensystem
-  also prints its progress and, at present, a warning that the operator "is not fully
-  Hermitian" (see "Stevens operators are Hermitian only to rounding" in `TODO.md`). The
-  energies are right: they are the analytic -2ζ - 240 B4, -2ζ + 120 B4 and 3ζ/2 +
-  (-1080, 120, 840) B4.
+- The Result block of the Ce³⁺ example shows only the lines the script prints; the progress
+  lines of Eigensystem are left out. The energies are the analytic -2ζ - 240 B4, -2ζ + 120 B4
+  and 3ζ/2 + (-1080, 120, 840) B4.
+- The Hermiticity sentences on the function pages and the overview describe the symmetrization
+  of the commit after `bf448269`; without it Eigensystem warns about the Ce³⁺ Hamiltonian.
 
 ## Version tags
 

@@ -57,6 +57,7 @@ The factor is calculated for any $k$, and reproduces the usual tables for $k \le
   * No commutation relations are used. $J_x$, $J_y$ and $J_z$ can be the spin, the orbital or the total angular momentum, or any three operators or matrices; the result is always the symmetrized polynomial defined above.
   * Within a multiplet of fixed $J$ the operators vanish for $k > 2J$. They are then returned as exactly zero: an Operator without terms, or a matrix of zeros.
   * Rounding errors are removed with the option "Epsilon", described on the function pages. Its default differs for Operators and for matrices.
+  * For Hermitian $J_x$, $J_y$ and $J_z$ the operators $D$, $Z$ and $O$, and $C$ and $Y$ for $m=0$, are returned Hermitian to the last bit, without the rounding errors that would otherwise make them Hermitian only to about $10^{-15}$.
   * For Operators acting on a shell the product of $k$ one particle operators is a $k$ particle operator, whose number of terms grows quickly with $k$ and with the size of the shell. For the total angular momentum of an $f$ shell $O_6^0$ has 526108 terms and takes about 10 seconds to create on a laptop. When only a single multiplet matters, the matrix version is fast for any $k$.
 
 ===== Example =====
