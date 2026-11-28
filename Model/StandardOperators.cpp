@@ -5316,6 +5316,14 @@ static bool StevensChargeNeeded(int const n, int const d, int const k, int const
   return false;
 }
 
+/*  StevensHermitianType tells if the operator of this type and m is Hermitian for Hermitian Jx, Jy and
+ *  Jz: D, Z and O always, C and Y only for m = 0, as C_{k,m}^dag = (-1)^m C_{k,-m}
+ */
+static bool StevensHermitianType(char const type, int const m)
+{
+  return (type == 'D') || (type == 'Z') || (type == 'O') || (m == 0);
+}
+
 /*  StevensInitOperator initialises an empty operator on the basis of O */
 static void StevensInitOperator(OperatorType * const O, OperatorType const * const Oset)
 {
@@ -5397,12 +5405,18 @@ static double StevensOperatorMaxAbs(OperatorType const * const O)
  *  and real and imaginary parts at most epsilon S are removed, so an operator that should vanish comes
  *  out empty. The rounding noise grows with k and, for operators, with the number of orbitals. epsilon = 0
  *  keeps everything.
+ *
+ *  For Hermitian Jx, Jy and Jz the operators D, Z and O, and C and Y for m = 0, are Hermitian, but after
+ *  rounding only to about DBL_EPSILON, as the terms of A_k(m) and A_k(-m) are summed in different orders.
+ *  Such an operator is replaced by (O + O^dag)/2, which is Hermitian to the bit, before the small values
+ *  are removed. The inputs count as Hermitian if isOperatorAlmostHermitian finds their anti-Hermitian part
+ *  at most epsilon s, which for epsilon = 0 is an exact test.
  */
 uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, OperatorType const * const Jx, OperatorType const * const Jy, OperatorType const * const Jz, double const epsilon, OperatorType * const O)
 {
   int const charge[3] = {1, -1, 0};
   int const ik = (int)k;
-  OperatorType letter[3], tmp, *Aold, *Anew, *Aswap;
+  OperatorType letter[3], tmp, OT, *Aold, *Anew, *Aswap;
   bool *Qold, *Qnew, *Qswap, both;
   Complex16 alpha, beta;
   int n, d, il, nold;
@@ -5501,6 +5515,13 @@ uint32_t CreateOperatorStevens(char const type, uint32_t const k, int const m, O
   scale = StevensOperatorMaxAbs(Jx);
   if (StevensOperatorMaxAbs(Jy) > scale) scale = StevensOperatorMaxAbs(Jy);
   if (StevensOperatorMaxAbs(Jz) > scale) scale = StevensOperatorMaxAbs(Jz);
+  if (StevensHermitianType(type, m) && isOperatorAlmostHermitian(*Jx, epsilon * scale) && isOperatorAlmostHermitian(*Jy, epsilon * scale) && isOperatorAlmostHermitian(*Jz, epsilon * scale))
+  {
+    OperatorConjugateTransposeNormalOrder(*O, &OT, &QDetNotOrderedFcFaBcBa);
+    OperatorScale(O, 0.5, 0);
+    OperatorAdd(O, OT, 0.5, 0);
+    FreeOperator(&OT);
+  }
   scale = (sqrt(Sqr(alpha.Re) + Sqr(alpha.Im)) + sqrt(Sqr(beta.Re) + Sqr(beta.Im))) * pow(scale, (double)k);
   if (epsilon > 0) OperatorChop(O, epsilon * scale);
 
@@ -5537,7 +5558,8 @@ static void StevensInitMatrix(CompactMatrixType * const M, uint32_t const N)
  *  example the matrices of Jx, Jy and Jz on the 2J+1 states of an angular momentum J. The matrix O is
  *  allocated here. Real and imaginary parts at most epsilon S are set to zero, with S as in
  *  CreateOperatorStevens and s the largest absolute element of Jx, Jy and Jz, and O is real if no
- *  imaginary part remains. It returns 1 for an unknown type.
+ *  imaginary part remains. As there O is made Hermitian to the bit if it should be Hermitian and
+ *  QCompactMatrixHermitian(J, epsilon) accepts Jx, Jy and Jz. It returns 1 for an unknown type.
  */
 uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const m, CompactMatrixType const * const Jx, CompactMatrixType const * const Jy, CompactMatrixType const * const Jz, double const epsilon, CompactMatrixType * const O)
 {
@@ -5631,6 +5653,8 @@ uint32_t CreateCompactMatrixStevens(char const type, uint32_t const k, int const
       O->V[i].Im += beta.Re * y.Im + beta.Im * y.Re;
     }
   }
+  if (StevensHermitianType(type, m) && QCompactMatrixHermitian(*Jx, epsilon) && QCompactMatrixHermitian(*Jy, epsilon) && QCompactMatrixHermitian(*Jz, epsilon))
+    SquareCompactMatrixMakeHermitian(O);
   scale = (sqrt(Sqr(alpha.Re) + Sqr(alpha.Im)) + sqrt(Sqr(beta.Re) + Sqr(beta.Im))) * pow(scale, (double)k);
   if (epsilon > 0) CompactMatrixChop(O, epsilon * scale);
 

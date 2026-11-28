@@ -1,0 +1,84 @@
+====== StevensO ======
+;;# 
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
+###
+//StevensO(k, m, Jx, Jy, Jz)// returns the Stevens operator $O_k^m$ of rank $k$ and component $m$ of the angular momentum given by //Jx//, //Jy// and //Jz//. It is the renormalized tesseral harmonic $D_{k,m}$ with $x$, $y$ and $z$ replaced by the symmetrized products of $J_x$, $J_y$ and $J_z$, times //[[documentation:language_reference:functions:stevensprefactor|StevensPrefactor(k, m)]]//, so that for example $O_2^0 = 3 J_z^2 - J(J+1)$ and $O_2^2 = J_x^2 - J_y^2$. The definitions of this and of the other normalizations are on the page [[documentation:standard_operators:stevens_operators|]].
+###
+
+===== Input =====
+
+  * //k// : Integer, the rank, $k \geq 0$.
+  * //m// : Integer, the component, from $-k$ to $k$. For $|m| > k$ the result is zero.
+  * //Jx//, //Jy//, //Jz// : Three [[documentation:language_reference:objects:operator:start|Operators]] with the same number of fermionic and bosonic modes, or three square matrices of the same size, given as [[documentation:language_reference:objects:matrix:start|Matrix]] objects or as tables.
+  * Options:
+     * "Epsilon" : A real number, at least 0. Real and imaginary parts of the result that are at most //Epsilon// times the scale of the result are removed. The scale is $s^k$, with $s$ the largest absolute prefactor or matrix element of //Jx//, //Jy// and //Jz//, times the normalization of the function. This removes rounding errors, and an operator that should vanish, for example for $k > 2J$, comes back as exactly zero. //Epsilon// = 0 keeps everything. The default is $10^{8}$ times the machine precision ($2.2 \cdot 10^{-8}$) for Operators and $10^{3}$ times the machine precision ($2.2 \cdot 10^{-13}$) for matrices, because the rounding errors of a product of Operators grow with $k$.
+
+===== Output =====
+
+  * //O// : The operator, of the same kind as //Jx//: an Operator, a Matrix object or a table.
+  * For Hermitian //Jx//, //Jy// and //Jz// the result is Hermitian to the last bit, so that //[[documentation:language_reference:functions:eigensystem|Eigensystem()]]// takes it as it is. Inputs whose anti-Hermitian part is at most //Epsilon// times the largest absolute prefactor or matrix element count as Hermitian; for //Epsilon// = 0 they must be Hermitian exactly.
+
+===== Example =====
+
+###
+The zero field splitting of a spin 1, $H = D \left( S_z^2 - \tfrac{1}{3} S(S+1) \right) + E \left( S_x^2 - S_y^2 \right) = \tfrac{D}{3} O_2^0 + E\, O_2^2$, with the spin matrices ordered from $m=-1$ to $m=1$. The Stevens operators of rank $k > 2S$ vanish.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- the spin matrices of spin S, rows and columns ordered from m = -S to m = S
+function SpinMatrices(S)
+  local d = math.floor(2*S + 1.5)
+  local Sx, Sy, Sz = {}, {}, {}
+  for i = 1, d do
+    Sx[i], Sy[i], Sz[i] = {}, {}, {}
+    for j = 1, d do Sx[i][j], Sy[i][j], Sz[i][j] = 0, 0, 0 end
+    Sz[i][i] = i - 1 - S
+  end
+  for i = 1, d-1 do
+    local m = i - 1 - S
+    local v = math.sqrt(S*(S+1) - m*(m+1))
+    Sx[i+1][i], Sx[i][i+1] = v/2, v/2
+    Sy[i+1][i], Sy[i][i+1] = -I*v/2, I*v/2
+  end
+  return Sx, Sy, Sz
+end
+
+Sx, Sy, Sz = SpinMatrices(1)
+print("O(2,0) = 3 Sz^2 - S(S+1)")
+print(StevensO(2, 0, Sx, Sy, Sz))
+print("O(2,2) = Sx^2 - Sy^2")
+print(StevensO(2, 2, Sx, Sy, Sz))
+print("O(3,0) vanishes for k > 2S")
+print(StevensO(3, 0, Sx, Sy, Sz))
+
+-- the zero field splitting of a spin 1, D (Sz^2 - S(S+1)/3) + E (Sx^2 - Sy^2)
+D, E = 1.0, 0.1
+H = (D/3) * StevensO(2, 0, Sx, Sy, Sz) + E * StevensO(2, 2, Sx, Sy, Sz)
+print("Eigenvalues -2D/3, D/3-E and D/3+E")
+val = Matrix.Eigensystem(H)
+print(val)
+</code>
+
+==== Result ====
+<file Quanty_Output>
+O(2,0) = 3 Sz^2 - S(S+1)
+{ { 1 , 0 , 0 } , 
+  { 0 , -2 , 0 } , 
+  { 0 , 0 , 1 } }
+O(2,2) = Sx^2 - Sy^2
+{ { 0 , 0 , 1 } , 
+  { 0 , 0 , 0 } , 
+  { 1 , 0 , 0 } }
+O(3,0) vanishes for k > 2S
+{ { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } , 
+  { 0 , 0 , 0 } }
+Eigenvalues -2D/3, D/3-E and D/3+E
+{ -0.66666666666667 , 0.23333333333333 , 0.43333333333333 }
+</file>
+
+===== Table of contents =====
+{{indexmenu>.#1}}

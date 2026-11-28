@@ -10,6 +10,8 @@
 --     operator built from operators equal the Stevens matrix built from matrices
 --  6  the cutoff Epsilon: Stevens operators that vanish come back without terms, as operators and as
 --     matrices, and an explicit Epsilon replaces the default
+--  7  the Stevens operators of Hermitian input are Hermitian to the bit, and non Hermitian input is left
+--     alone
 --
 -- Matrices are compared by a fingerprint, sum_ij M_ij (cos(i+2j) + I sin(3i-j)), which the reference
 -- script in Mathematica computes the same way. Thresholds are relative to the size of the elements.
@@ -305,6 +307,45 @@ Check("Epsilon = 0 should keep at least as many terms as the default, "..N0.." a
 Check("Epsilon = 1 should remove terms, "..Nlarge.." of "..Ndefault, Nlarge < Ndefault)
 Check("a negative Epsilon should raise an error", not pcall(StevensO, 2, 0, X, Y, Z, {{"Epsilon", -1}}))
 print("6  "..NZero.." vanishing Stevens operators come back empty as operators and as matrices; J = 3, O(6,0): "..N0.." terms at Epsilon = 0, "..Ndefault.." by default")
+
+-- 7  for Hermitian Jx, Jy and Jz the operators D, Z and O, and C and Y for m = 0, are Hermitian to the bit,
+--    so that Eigensystem takes them as they are. Without the symmetrization rounding leaves them Hermitian
+--    only to about 1e-15 for k >= 3. Inputs that are not Hermitian, beyond Epsilon, are not symmetrized.
+function NonHermitianTerms(O)
+  local D = O - ConjugateTranspose(O)
+  D.Chop(1e-300)
+  return NTerms(D)
+end
+function NonHermitianElements(M)
+  local D = Matrix.ToTable(M - Matrix.ConjugateTranspose(M))
+  local n = 0
+  for i = 1, #D do for j = 1, #D do if Abs(D[i][j]) ~= 0 then n = n + 1 end end end
+  return n
+end
+NHerm = 0
+X = NewOperator("Jx", 10, {1,3,5,7,9}, {0,2,4,6,8})
+Y = NewOperator("Jy", 10, {1,3,5,7,9}, {0,2,4,6,8})
+Z = NewOperator("Jz", 10, {1,3,5,7,9}, {0,2,4,6,8})
+Jx, Jy, Jz = Jmat(6)
+Jx, Jy, Jz = Matrix.ToUserdata(Jx), Matrix.ToUserdata(Jy), Matrix.ToUserdata(Jz)
+for k = 3, 4 do
+  for m = -k, k do
+    for t = 1, 5 do
+      if (Names[t] == "StevensD") or (Names[t] == "StevensZ") or (Names[t] == "StevensO") or (m == 0) then
+        local n = NonHermitianTerms(Functions[t](k, m, X, Y, Z))
+        Check(Names[t].."("..k..","..m..") of the total J of a d shell should be Hermitian to the bit, "..n.." terms of O - O^dag are not zero", n == 0)
+        n = NonHermitianElements(Functions[t](k, m, Jx, Jy, Jz))
+        Check(Names[t].."("..k..","..m..") for J = 6 should be Hermitian to the bit, "..n.." elements of O - O^dag are not zero", n == 0)
+        NHerm = NHerm + 2
+      end
+    end
+  end
+end
+Check("StevensC(3,1) is not Hermitian and should not be symmetrized", NonHermitianTerms(StevensC(3, 1, X, Y, Z)) > 0)
+Check("StevensO(3,1) of a non Hermitian Jz should not be symmetrized", NonHermitianTerms(StevensO(3, 1, X, Y, Z + 0.1*I*X)) > 0)
+Check("StevensO(3,1) of a Jz that is Hermitian within Epsilon should be symmetrized", NonHermitianTerms(StevensO(3, 1, X, Y, Z + 1e-12*I*X)) == 0)
+Check("StevensO(3,1) of a Jz that is Hermitian within Epsilon should not be symmetrized for Epsilon = 0", NonHermitianTerms(StevensO(3, 1, X, Y, Z + 1e-12*I*X, {{"Epsilon", 0}})) > 0)
+print("7  "..NHerm.." Stevens operators of Hermitian input are Hermitian to the bit, as operators and as matrices; non Hermitian input is left alone")
 
 if Failed > 0 then error(Failed.." checks of the Stevens operators failed") end
 print("All checks of the Stevens operators passed")

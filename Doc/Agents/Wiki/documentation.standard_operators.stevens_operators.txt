@@ -1,0 +1,117 @@
+{{indexmenu_n>14}}
+====== Stevens operators ======
+;;#
+<color #ed1c24>New in 0.9.1</color>
+;;#
+
+###
+Stevens operators are polynomials in the components of an angular momentum $\vec{J}$ that transform like spherical harmonics. They are the usual way to write a crystal field acting within a single multiplet of fixed $J$, or the zero field splitting of a spin:
+\begin{equation}
+H = \sum_{k=0}^{2J} \sum_{m=-k}^{k} B_k^m O_k^m.
+\end{equation}
+Quanty creates them for any rank $k$ and any component $m$ from $-k$ to $k$, in five normalizations, with the functions //[[documentation:language_reference:functions:stevenso|StevensO()]]//, //[[documentation:language_reference:functions:stevensd|StevensD()]]//, //[[documentation:language_reference:functions:stevensz|StevensZ()]]//, //[[documentation:language_reference:functions:stevensc|StevensC()]]// and //[[documentation:language_reference:functions:stevensy|StevensY()]]//. All five take $k$, $m$ and the three operators $J_x$, $J_y$ and $J_z$. These can be [[documentation:language_reference:objects:operator:start|Operators]], or square matrices given as [[documentation:language_reference:objects:matrix:start|Matrix]] objects or as tables, and the result is of the same kind.
+###
+
+===== Definition =====
+
+###
+The starting point is the solid harmonic $r^k C_{k,m}(\theta,\phi)$, a homogeneous polynomial of degree $k$ in $x$, $y$ and $z$. Here
+\begin{equation}
+C_{k,m}(\theta,\phi) = \sqrt{\frac{4 \pi}{2k+1}} Y_{k,m}(\theta,\phi)
+\end{equation}
+are the renormalized spherical harmonics, with the same phases as everywhere else in Quanty. In this polynomial $x$, $y$ and $z$ are replaced by $J_x$, $J_y$ and $J_z$. As these do not commute, every product is replaced by the average over all orderings of its factors, for example $x z \rightarrow \frac{1}{2}(J_x J_z + J_z J_x)$. The result is the operator $C_{k,m}(\vec{J})$, and the five functions differ only in the linear combination and normalization:
+###
+
+^ function ^ operator ^ related to ^
+| //StevensC(k, m, Jx, Jy, Jz)// | $C_{k,m}(\vec{J})$ | renormalized spherical harmonics |
+| //StevensY(k, m, Jx, Jy, Jz)// | $Y_{k,m}(\vec{J}) = \sqrt{\frac{2k+1}{4\pi}} C_{k,m}(\vec{J})$ | spherical harmonics |
+| //StevensD(k, m, Jx, Jy, Jz)// | $D_{k,m}(\vec{J})$, defined below | renormalized tesseral harmonics |
+| //StevensZ(k, m, Jx, Jy, Jz)// | $Z_{k,m}(\vec{J}) = \sqrt{\frac{2k+1}{4\pi}} D_{k,m}(\vec{J})$ | tesseral harmonics |
+| //StevensO(k, m, Jx, Jy, Jz)// | $O_k^m(\vec{J}) = \mathrm{StevensPrefactor}(k,m) \, D_{k,m}(\vec{J})$ | Stevens operators |
+
+###
+The renormalized tesseral harmonics are the real combinations
+\begin{eqnarray}
+D_{k,0}  &=& C_{k,0}, \\
+D_{k,m}  &=& \sqrt{\tfrac{1}{2}} \left( C_{k,-m} + (-1)^m C_{k,m} \right) \quad \mathrm{for} \quad m>0, \\
+D_{k,m}  &=& \imath \sqrt{\tfrac{1}{2}} \left( C_{k,m} - (-1)^m C_{k,-m} \right) \quad \mathrm{for} \quad m<0,
+\end{eqnarray}
+with the same phases as //[[documentation:language_reference:functions:ytozmatrix|YtoZMatrix()]]//. For $k=1$ they are the components themselves: $D_{1,1} = J_x$, $D_{1,-1} = J_y$ and $D_{1,0} = J_z$. For Hermitian $J_x$, $J_y$ and $J_z$ the operators $D$, $Z$ and $O$ are Hermitian, and $C$ and $Y$ are not for $m \neq 0$: $C_{k,m}^{\dagger} = (-1)^m C_{k,-m}$.
+###
+
+###
+The Stevens operators $O_k^m$ are the tesseral harmonics scaled by //[[documentation:language_reference:functions:stevensprefactor|StevensPrefactor(k, m)]]//. The factor is chosen such that the polynomial $O_k^m(x,y,z)$, written as the real or imaginary part of $(x + \imath y)^{|m|}$ times a polynomial in $z$ and $r^2$, has integer coefficients without a common divisor, and a positive coefficient for the highest power of $z$. This gives, with $X = J(J+1)$,
+\begin{eqnarray}
+O_2^0    &=& 3 J_z^2 - X, \\
+O_2^1    &=& \tfrac{1}{2} \left( J_z J_x + J_x J_z \right), \\
+O_2^{-2} &=& J_x J_y + J_y J_x, \\
+O_2^2    &=& J_x^2 - J_y^2 = \tfrac{1}{2} \left( J_+^2 + J_-^2 \right), \\
+O_4^0    &=& 35 J_z^4 - (30 X - 25) J_z^2 + 3 X^2 - 6 X, \\
+O_4^4    &=& \tfrac{1}{2} \left( J_+^4 + J_-^4 \right).
+\end{eqnarray}
+The factor is calculated for any $k$, and reproduces the usual tables for $k \leq 6$.
+###
+
+===== Remarks =====
+
+  * No commutation relations are used. $J_x$, $J_y$ and $J_z$ can be the spin, the orbital or the total angular momentum, or any three operators or matrices; the result is always the symmetrized polynomial defined above.
+  * Within a multiplet of fixed $J$ the operators vanish for $k > 2J$. They are then returned as exactly zero: an Operator without terms, or a matrix of zeros.
+  * Rounding errors are removed with the option "Epsilon", described on the function pages. Its default differs for Operators and for matrices.
+  * For Hermitian $J_x$, $J_y$ and $J_z$ the operators $D$, $Z$ and $O$, and $C$ and $Y$ for $m=0$, are returned Hermitian to the last bit, without the rounding errors that would otherwise make them Hermitian only to about $10^{-15}$.
+  * For Operators acting on a shell the product of $k$ one particle operators is a $k$ particle operator, whose number of terms grows quickly with $k$ and with the size of the shell. For the total angular momentum of an $f$ shell $O_6^0$ has 526108 terms and takes about 10 seconds to create on a laptop. When only a single multiplet matters, the matrix version is fast for any $k$.
+
+===== Example =====
+
+###
+One $4f$ electron (Ce$^{3+}$) with spin orbit coupling and a cubic crystal field. The crystal field is written with the Stevens operators of the total angular momentum of the shell, $B_4 (O_4^0 + 5 O_4^4)$. Functions of $\vec{J}$ do not mix multiplets of different $J$, so the $J=5/2$ multiplet splits into a doublet at $-240 B_4$ and a quartet at $+120 B_4$, and the $J=7/2$ multiplet into two doublets at $-1080 B_4$ and $+840 B_4$ and a quartet at $+120 B_4$, relative to the spin orbit energies $-2\zeta$ and $\frac{3}{2}\zeta$.
+###
+
+==== Input ====
+<code Quanty Example.Quanty>
+-- one 4f electron (Ce3+) with spin-orbit coupling and a cubic crystal field,
+-- written with the Stevens operators of the total angular momentum of the shell
+NF = 14
+IndexDn = {0,2,4,6,8,10,12}
+IndexUp = {1,3,5,7,9,11,13}
+
+Jx = NewOperator("Jx", NF, IndexUp, IndexDn)
+Jy = NewOperator("Jy", NF, IndexUp, IndexDn)
+Jz = NewOperator("Jz", NF, IndexUp, IndexDn)
+Jsqr = NewOperator("Jsqr", NF, IndexUp, IndexDn)
+ldots = NewOperator("ldots", NF, IndexUp, IndexDn)
+
+-- in eV
+zeta, B4 = 0.087, 0.00005
+H = zeta * ldots + B4 * (StevensO(4, 0, Jx, Jy, Jz) + 5 * StevensO(4, 4, Jx, Jy, Jz))
+
+psiList = Eigensystem(H, {NF, 0, {"11111111111111", 1, 1}}, 14)
+for i, psi in ipairs(psiList) do
+  local J2 = Complex.Re(psi * Jsqr * psi)
+  print(string.format("%2d   E = %8.5f   J = %3.1f", i, Complex.Re(psi * H * psi), (math.sqrt(1 + 4*J2) - 1)/2))
+end
+</code>
+
+==== Result ====
+<file Quanty_Output>
+ 1   E = -0.18600   J = 2.5
+ 2   E = -0.18600   J = 2.5
+ 3   E = -0.16800   J = 2.5
+ 4   E = -0.16800   J = 2.5
+ 5   E = -0.16800   J = 2.5
+ 6   E = -0.16800   J = 2.5
+ 7   E =  0.07650   J = 3.5
+ 8   E =  0.07650   J = 3.5
+ 9   E =  0.13650   J = 3.5
+10   E =  0.13650   J = 3.5
+11   E =  0.13650   J = 3.5
+12   E =  0.13650   J = 3.5
+13   E =  0.17250   J = 3.5
+14   E =  0.17250   J = 3.5
+</file>
+
+###
+The zero field splitting of a spin, with matrices, is the example on the page of //[[documentation:language_reference:functions:stevenso|StevensO()]]//.
+###
+
+===== Table of contents =====
+{{indexmenu>.#1|msort nsort}}
